@@ -1,0 +1,581 @@
+<style>
+  #algo-topological-sort-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-topological-sort-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #f59e0b55, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #d9770655, transparent 55%),
+                linear-gradient(135deg, #451a03 0%, #78350f 25%, #451a03 50%, #92400e 75%, #451a03 100%);
+    z-index: -2;
+  }
+
+  #algo-topological-sort-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(69, 26, 3, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-topological-sort-view .ts-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ts-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .ts-hero .ts-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .ts-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .ts-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .ts-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .ts-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .ts-tip strong {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  #algo-topological-sort-view .ts-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-topological-sort-view .ts-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .ts-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .ts-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .ts-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .ts-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .ts-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .ts-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ts-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .ts-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+  }
+
+  .ts-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .ts-stat-val {
+    color: #f59e0b;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .ts-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 280px;
+  }
+
+  .ts-graph-container svg {
+    width: 100%;
+    max-width: 480px;
+    height: 280px;
+  }
+
+  .ts-indegree-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ts-indegree-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .ts-indegree-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .ts-indegree-item {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 32px;
+    text-align: center;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .ts-indegree-item .ts-idx {
+    display: block;
+    font-size: 9px;
+    color: rgba(204, 214, 244, 0.5);
+    margin-bottom: 2px;
+  }
+
+  .ts-indegree-item.zero {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #22c55e;
+  }
+
+  .ts-indegree-item.changed {
+    background: rgba(245, 158, 11, 0.4);
+    border-color: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  }
+
+  .ts-queue-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ts-queue-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .ts-queue-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .ts-queue-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #f59e0b;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .ts-queue-item.current {
+    background: rgba(245, 158, 11, 0.5);
+    border-color: #f59e0b;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  }
+
+  .ts-result-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ts-result-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .ts-result-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .ts-result-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .ts-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .ts-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .ts-log div {
+    padding: 2px 0;
+  }
+
+  .ts-log div.active {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  .ts-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .ts-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .ts-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ts-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ts-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .ts-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ts-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .ts-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(245, 158, 11, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .ts-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .ts-pb-btn:not(:disabled):hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    transform: translateY(-1px);
+  }
+
+  .ts-pb-btn.play {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .ts-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .ts-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .ts-speed-row input {
+    flex: 1;
+    accent-color: #f59e0b;
+  }
+
+  .ts-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pathPulse {
+    0%, 100% { stroke-opacity: 1; }
+    50% { stroke-opacity: 0.5; }
+  }
+
+  .ts-node {
+    transition: all 0.3s ease;
+  }
+
+  .ts-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="ts-page">
+  <div class="ts-hero">
+    <div class="ts-title-wrapper">
+      <div class="ts-hero-icon">📐</div>
+      <div class="ts-hero-text">
+        <h2>拓扑排序</h2>
+        <p>Kahn 算法：反复移除入度为 0 的节点，得到 DAG 的线性序</p>
+      </div>
+    </div>
+    <div class="ts-tip"><strong>核心思想：</strong>计算所有节点的入度，将入度为 0 的节点加入队列。每次取出队首节点加入拓扑序，并减少其邻接节点的入度。若邻接节点入度变为 0，则入队。最终得到 DAG 的拓扑排序。</div>
+  </div>
+
+  <div class="ts-layout">
+    <div class="ts-main">
+      <div class="ts-card">
+        <div class="ts-controls">
+          <button id="ts-start" class="ts-btn">开始拓扑排序</button>
+        </div>
+
+        <div class="ts-stats">
+          <div class="ts-stat"><span class="ts-stat-label">当前节点</span><span class="ts-stat-val" id="ts-current">-</span></div>
+          <div class="ts-stat"><span class="ts-stat-label">已排序</span><span class="ts-stat-val" id="ts-sorted-count">0</span></div>
+          <div class="ts-stat"><span class="ts-stat-label">队列大小</span><span class="ts-stat-val" id="ts-queue-size">0</span></div>
+        </div>
+
+        <div class="ts-graph-container" id="ts-graph"></div>
+
+        <div class="ts-indegree-container">
+          <div class="ts-indegree-title">入度数组 inDegree[]</div>
+          <div class="ts-indegree-row" id="ts-indegree"></div>
+        </div>
+
+        <div class="ts-queue-container">
+          <div class="ts-queue-title">零入度队列</div>
+          <div class="ts-queue-row" id="ts-queue"></div>
+        </div>
+
+        <div class="ts-result-container">
+          <div class="ts-result-title">拓扑排序结果</div>
+          <div class="ts-result-row" id="ts-result"></div>
+        </div>
+
+        <div class="ts-message" id="step-message">点击「开始拓扑排序」执行 Kahn 拓扑排序算法。</div>
+
+        <div class="ts-log" id="ts-log"></div>
+      </div>
+    </div>
+
+    <div class="ts-right">
+      <div data-code-panel class="ts-code-card"></div>
+      <div class="ts-legend">
+        <div class="ts-legend-item"><span class="ts-legend-box" style="background:rgba(245,158,11,0.2);border:2px solid #f59e0b"></span>未处理节点</div>
+        <div class="ts-legend-item"><span class="ts-legend-box" style="background:rgba(34,197,94,0.4);border:2px solid #22c55e"></span>已排序节点</div>
+        <div class="ts-legend-item"><span class="ts-legend-box" style="background:#f59e0b"></span>当前处理节点</div>
+        <div class="ts-legend-item"><span class="ts-legend-box" style="background:rgba(100,100,120,0.3);border:2px solid #64748b"></span>已移除节点</div>
+      </div>
+      <div class="ts-playback">
+        <div class="ts-pb-row">
+          <button id="step-reset" class="ts-pb-btn">重置</button>
+          <button id="step-prev" class="ts-pb-btn">上一步</button>
+          <button id="step-play" class="ts-pb-btn play">播放</button>
+          <button id="step-next" class="ts-pb-btn">下一步</button>
+        </div>
+        <div class="ts-speed-row">
+          <span>速度</span>
+          <input id="ts-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="ts-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="ts-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

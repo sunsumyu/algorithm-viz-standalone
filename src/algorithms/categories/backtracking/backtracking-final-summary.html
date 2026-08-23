@@ -1,0 +1,165 @@
+<style>
+  .bt-article { padding: 1.6rem; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+  .bt-article .article-shell { max-width: 1120px; margin: 0 auto; }
+
+  .bt-article .hero {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1.25rem;
+    margin-bottom: 1.6rem; padding: 1.2rem 1.4rem;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  .bt-article .hero-left { display: flex; align-items: flex-start; gap: 16px; }
+  .bt-article .icon-badge {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, #a78bfa, #6366f1);
+    color: #100b1a;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.45);
+  }
+  .bt-article .eyebrow {
+    color: #818cf8; font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 700;
+  }
+  .bt-article h1 {
+    margin: 0 0 0.55rem; font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    color: #f1f5f9; line-height: 1.3;
+  }
+  .bt-article .lead { color: #c7cbe0; line-height: 1.85; max-width: 900px; font-size: 14.5px; }
+
+  .bt-article .btn-back {
+    border: 1px solid rgba(99, 102, 241, 0.4); background: rgba(20, 18, 38, 0.6);
+    backdrop-filter: blur(18px) saturate(160%); color: #e0d9f6; border-radius: 11px;
+    padding: 10px 14px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: 600;
+    transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+  }
+  .bt-article .btn-back:hover {
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(99, 102, 241, 0.2));
+    border-color: #818cf8; color: #fff; transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(167, 139, 250, 0.3);
+  }
+
+  .bt-article .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px; margin: 1.4rem 0;
+  }
+  .bt-article .card { grid-column: 1 / -1; }
+
+  .bt-article .card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; padding: 1.4rem 1.6rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), border-color 0.3s, box-shadow 0.3s;
+    animation: bfs-pop-in 0.55s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .bt-article .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(167, 139, 250, 0.12);
+  }
+
+  .bt-article .card h2 { color: #a78bfa; margin: 0 0 0.8rem; font-size: 16.5px; font-weight: 700; line-height: 1.4; }
+  .bt-article .card h3 { color: #c094fc; margin: 0 0 0.6rem; font-size: 14px; font-weight: 700; line-height: 1.4; }
+
+  .bt-article code {
+    color: #a5f3fc; background: rgba(8, 8, 24, 0.6); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 0.05rem 0.4rem; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.88em;
+  }
+
+  .bt-article pre {
+    background: rgba(8, 8, 24, 0.62); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 1rem 1.2rem; overflow: auto;
+    color: #c7d2fe; line-height: 1.6; font-size: 13px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    margin: 0.5rem 0;
+  }
+
+  .bt-article table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    overflow: hidden; border-radius: 10px;
+    background: rgba(8, 8, 24, 0.4);
+    margin-top: 0.6rem; font-size: 13.5px;
+  }
+  .bt-article th, .bt-article td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.65rem 0.8rem; text-align: left; color: #c7cbe0; vertical-align: top;
+  }
+  .bt-article thead th {
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.22), rgba(99, 102, 241, 0.16));
+    color: #a78bfa; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .bt-article tbody tr:hover td { background: rgba(99, 102, 241, 0.06); }
+  .bt-article tbody tr:last-child td { border-bottom: none; }
+
+  .bt-article p, .bt-article li { color: #c7cbe0; line-height: 1.75; font-size: 14px; }
+  .bt-article ul, .bt-article ol { padding-left: 1.3rem; margin: 0.3rem 0; }
+  .bt-article li { margin-bottom: 0.5rem; list-style-type: circle; }
+  .bt-article ol li { list-style-type: decimal; }
+  .bt-article strong { color: #e0d9f6; }
+  .bt-article em { color: #c4b5fd; font-style: normal; }
+
+  @keyframes bfs-pop-in {
+    0% { opacity: 0; transform: translateY(14px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 1100px) {
+    .bt-article .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .bt-article .hero { flex-direction: column; align-items: flex-start; }
+    .bt-article .hero-left { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+</style>
+
+<article class="bt-article">
+  <div class="article-shell">
+    <header class="hero">
+      <div class="hero-left">
+        <div class="icon-badge">🏁</div>
+        <div>
+          <div class="eyebrow">Backtracking / Final Review</div>
+          <h1>回溯法总结篇</h1>
+          <p class="lead">回溯专题的题型、模板、剪枝和去重总复盘</p>
+        </div>
+      </div>
+      <button class="btn-back" data-back-selector>← 返回算法列表</button>
+    </header>
+
+    <section class="card">
+      <h2>总模板</h2>
+      <pre><code>for (let i = 起点; i < 选择列表.length; i++) {
+  if (不合法 || 重复 || 无法达成目标) continue;
+  做选择;
+  backtrack(下一层);
+  撤销选择;
+}</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>题型地图</h2>
+      <table>
+        <thead><tr><th>题型</th><th>代表题</th><th>核心变量</th></tr></thead>
+        <tbody>
+          <tr><td>组合</td><td>77 / 216 / 39 / 40</td><td><em>startIndex、sum</em></td></tr>
+          <tr><td>切割</td><td>131 / 93</td><td><em>startIndex、段合法性</em></td></tr>
+          <tr><td>子集</td><td>78 / 90 / 491</td><td><em>每个节点收集、层去重</em></td></tr>
+          <tr><td>排列</td><td>46 / 47</td><td><em>used、树层去重</em></td></tr>
+          <tr><td>棋盘</td><td>51 / 37</td><td><em>board、合法性检查</em></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>实践建议</h2>
+      <p>先写出不剪枝的正确回溯，再补剪枝与去重；调试时观察 <code>path</code>、<code>startIndex/used</code>、结果收集时机，通常就能定位问题。</p>
+    </section>
+  </div>
+</article>

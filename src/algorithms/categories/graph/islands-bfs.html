@@ -1,0 +1,608 @@
+<style>
+  #algo-islands-bfs-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-islands-bfs-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 8% 6%, #06b6d455, transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #0891b255, transparent 55%),
+                linear-gradient(135deg, #042f2e 0%, #083344 25%, #042f2e 50%, #164e63 75%, #042f2e 100%);
+    z-index: -2;
+  }
+
+  #algo-islands-bfs-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(4, 47, 46, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-islands-bfs-view .ibfs-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ibfs-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .ibfs-hero .ibfs-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .ibfs-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .ibfs-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .ibfs-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .ibfs-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(6, 182, 212, 0.08);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .ibfs-tip strong {
+    color: #06b6d4;
+    font-weight: 600;
+  }
+
+  #algo-islands-bfs-view .ibfs-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-islands-bfs-view .ibfs-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .ibfs-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .ibfs-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .ibfs-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .ibfs-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    color: #cdd6f4;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .ibfs-input:focus {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+  }
+
+  .ibfs-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: #042f2e;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .ibfs-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  }
+
+  .ibfs-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .ibfs-example {
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    background: rgba(6, 182, 212, 0.1);
+    color: #cdd6f4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .ibfs-example:hover {
+    background: rgba(6, 182, 212, 0.2);
+    border-color: #06b6d4;
+  }
+
+  .ibfs-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ibfs-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .ibfs-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #06b6d4, #0891b2);
+  }
+
+  .ibfs-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .ibfs-stat-val {
+    color: #06b6d4;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ibfs-grid {
+    display: grid;
+    gap: 3px;
+    background: rgba(11, 10, 23, 0.8);
+    border-radius: 12px;
+    padding: 12px;
+    justify-content: center;
+    align-content: center;
+    margin: 16px auto;
+  }
+
+  .ibfs-cell {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .ibfs-cell.water {
+    background: rgba(28, 27, 50, 0.4);
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .ibfs-cell.land {
+    background: rgba(45, 55, 72, 0.5);
+    color: #cdd6f4;
+  }
+
+  .ibfs-cell.current {
+    background: rgba(6, 182, 212, 0.7);
+    color: #042f2e;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.3);
+    animation: ibfs-pulse 1s infinite;
+  }
+
+  .ibfs-cell.visited {
+    background: rgba(100, 116, 139, 0.6);
+    color: #cdd6f4;
+    animation: ibfs-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .ibfs-cell.queue {
+    background: rgba(251, 191, 36, 0.6);
+    color: #0f172a;
+    animation: ibfs-pulse 0.8s infinite;
+  }
+
+  .ibfs-cell.frontier {
+    background: rgba(6, 182, 212, 0.4);
+    color: #cdd6f4;
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.3);
+  }
+
+  .ibfs-cell.island {
+    background: rgba(6, 182, 212, 0.5);
+    color: #042f2e;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+  }
+
+  .ibfs-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    background: rgba(6, 182, 212, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .ibfs-log {
+    min-height: 0;
+    max-height: 130px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .ibfs-log div {
+    padding: 2px 0;
+  }
+
+  .ibfs-log div.active {
+    color: #06b6d4;
+    font-weight: 600;
+  }
+
+  .ibfs-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .ibfs-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .ibfs-queue-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  .ibfs-queue-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .ibfs-queue-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 30px;
+  }
+
+  .ibfs-queue-item {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    color: #06b6d4;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    animation: ibfs-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .ibfs-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ibfs-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ibfs-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .ibfs-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ibfs-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .ibfs-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(6, 182, 212, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .ibfs-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .ibfs-pb-btn:not(:disabled):hover {
+    background: rgba(6, 182, 212, 0.2);
+    border-color: #06b6d4;
+    transform: translateY(-1px);
+  }
+
+  .ibfs-pb-btn.play {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border: none;
+    color: #042f2e;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .ibfs-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  }
+
+  .ibfs-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .ibfs-speed-row input {
+    flex: 1;
+    accent-color: #06b6d4;
+  }
+
+  .ibfs-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @keyframes ibfs-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(6, 182, 212, 0);
+    }
+  }
+
+  @keyframes ibfs-popIn {
+    0% {
+      transform: scale(0) rotate(-10deg);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes ibfs-ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7);
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+      box-shadow: 0 0 0 12px rgba(6, 182, 212, 0);
+    }
+  }
+
+  .ibfs-cell.current {
+    animation: ibfs-ripple 0.6s ease-out;
+  }
+
+  .ibfs-cell.visited {
+    animation: ibfs-popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @media (max-width: 1100px) {
+    .ibfs-main {
+      overflow: visible;
+    }
+  }
+</style>
+
+<div class="ibfs-page">
+  <div class="ibfs-hero">
+    <div class="ibfs-title-wrapper">
+      <div class="ibfs-hero-icon">🔍</div>
+      <div class="ibfs-hero-text">
+        <h2>孤岛计数 · 广搜版（BFS）</h2>
+        <p>LeetCode 200 · 用 BFS 逐层扩展探索每座岛屿，统计连通分量数量。</p>
+      </div>
+    </div>
+    <div class="ibfs-tip"><strong>BFS 扩展：</strong>从陆地 '1' 出发，用队列逐层向四方向扩展，直到队列清空即完成一座岛屿的探索。</div>
+  </div>
+
+  <div class="ibfs-layout">
+    <div class="ibfs-main">
+      <div class="ibfs-card">
+        <div class="ibfs-controls">
+          <input id="ibfs-input" class="ibfs-input" value="1,1,0,0,0;1,1,0,0,0;0,0,1,0,0;0,0,0,1,1" />
+          <button id="ibfs-start" class="ibfs-btn">开始搜索</button>
+          <button class="ibfs-example" data-val="1,1,0,0,0;1,1,0,0,0;0,0,1,0,0;0,0,0,1,1">示例1</button>
+          <button class="ibfs-example" data-val="1,0,1;0,1,0;1,0,1">示例2</button>
+          <button class="ibfs-example" data-val="1,1,1,1,0;1,1,0,1,0;1,1,0,0,0;0,0,0,0,0">示例3</button>
+        </div>
+
+        <div class="ibfs-stats">
+          <div class="ibfs-stat"><span class="ibfs-stat-label">当前扫描</span><span class="ibfs-stat-val" id="ibfs-scan">-</span></div>
+          <div class="ibfs-stat"><span class="ibfs-stat-label">队列大小</span><span class="ibfs-stat-val" id="ibfs-queue-size">0</span></div>
+          <div class="ibfs-stat"><span class="ibfs-stat-label">已访问</span><span class="ibfs-stat-val" id="ibfs-visited">0</span></div>
+          <div class="ibfs-stat"><span class="ibfs-stat-label">岛屿数</span><span class="ibfs-stat-val" id="ibfs-count">0</span></div>
+        </div>
+
+        <div class="ibfs-grid" id="ibfs-grid"></div>
+
+        <div class="ibfs-message" id="step-message">点击「开始搜索」查看 BFS 逐层探索岛屿的过程。</div>
+
+        <div class="ibfs-log" id="ibfs-log"></div>
+      </div>
+    </div>
+
+    <div class="ibfs-right">
+      <div data-code-panel class="ibfs-code-card"></div>
+      <div class="ibfs-queue-card">
+        <div class="ibfs-queue-title">BFS 队列</div>
+        <div class="ibfs-queue-items" id="ibfs-queue-vis"></div>
+      </div>
+      <div class="ibfs-legend">
+        <div class="ibfs-legend-item"><span class="ibfs-legend-box" style="background:rgba(28,27,50,0.4)"></span>水（'0'）</div>
+        <div class="ibfs-legend-item"><span class="ibfs-legend-box" style="background:rgba(45,55,72,0.5)"></span>未访问陆地（'1'）</div>
+        <div class="ibfs-legend-item"><span class="ibfs-legend-box" style="background:rgba(251,191,36,0.6)"></span>队列中</div>
+        <div class="ibfs-legend-item"><span class="ibfs-legend-box" style="background:rgba(6,182,212,0.7)"></span>当前访问</div>
+        <div class="ibfs-legend-item"><span class="ibfs-legend-box" style="background:rgba(100,116,139,0.6)"></span>已访问</div>
+        <div class="ibfs-legend-item"><span class="ibfs-legend-box" style="background:rgba(6,182,212,0.5)"></span>已探索岛屿</div>
+      </div>
+      <div class="ibfs-playback">
+        <div class="ibfs-pb-row">
+          <button id="step-reset" class="ibfs-pb-btn">重置</button>
+          <button id="step-prev" class="ibfs-pb-btn">上一步</button>
+          <button id="step-play" class="ibfs-pb-btn play">播放</button>
+          <button id="step-next" class="ibfs-pb-btn">下一步</button>
+        </div>
+        <div class="ibfs-speed-row">
+          <span>速度</span>
+          <input id="ibfs-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="ibfs-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="ibfs-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

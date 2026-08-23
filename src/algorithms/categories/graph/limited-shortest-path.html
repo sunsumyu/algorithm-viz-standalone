@@ -1,0 +1,492 @@
+<style>
+  #algo-limited-shortest-path-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-limited-shortest-path-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #06b6d455, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #0891b255, transparent 55%),
+                linear-gradient(135deg, #041520 0%, #062230 25%, #041520 50%, #073040 75%, #041520 100%);
+    z-index: -2;
+  }
+
+  #algo-limited-shortest-path-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(4, 21, 32, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-limited-shortest-path-view .lsp-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .lsp-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .lsp-hero .lsp-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lsp-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .lsp-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .lsp-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .lsp-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(6, 182, 212, 0.08);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .lsp-tip strong {
+    color: #06b6d4;
+    font-weight: 600;
+  }
+
+  #algo-limited-shortest-path-view .lsp-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-limited-shortest-path-view .lsp-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .lsp-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .lsp-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .lsp-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .lsp-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .lsp-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  }
+
+  .lsp-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .lsp-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .lsp-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #06b6d4, #0891b2);
+  }
+
+  .lsp-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .lsp-stat-val {
+    color: #06b6d4;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .lsp-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 280px;
+  }
+
+  .lsp-graph-container svg {
+    width: 100%;
+    max-width: 500px;
+    height: 280px;
+  }
+
+  .lsp-dist-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .lsp-dist-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .lsp-dist-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 40px;
+    align-items: center;
+  }
+
+  .lsp-dist-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(6, 182, 212, 0.12);
+    border: 1px solid rgba(6, 182, 212, 0.25);
+    color: #06b6d4;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 44px;
+    text-align: center;
+    animation: lsp-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .lsp-dist-item .lsp-idx {
+    display: block;
+    font-size: 9px;
+    color: rgba(204, 214, 244, 0.5);
+    margin-bottom: 2px;
+  }
+
+  .lsp-dist-item.changed {
+    background: rgba(6, 182, 212, 0.35);
+    border-color: #06b6d4;
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+  }
+
+  .lsp-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    background: rgba(6, 182, 212, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .lsp-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .lsp-log div {
+    padding: 2px 0;
+  }
+
+  .lsp-log div.active {
+    color: #06b6d4;
+    font-weight: 600;
+  }
+
+  .lsp-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .lsp-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .lsp-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lsp-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .lsp-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .lsp-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .lsp-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .lsp-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(6, 182, 212, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .lsp-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .lsp-pb-btn:not(:disabled):hover {
+    background: rgba(6, 182, 212, 0.2);
+    border-color: #06b6d4;
+    transform: translateY(-1px);
+  }
+
+  .lsp-pb-btn.play {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .lsp-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  }
+
+  .lsp-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .lsp-speed-row input {
+    flex: 1;
+    accent-color: #06b6d4;
+  }
+
+  .lsp-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes lsp-popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes lsp-pulse {
+    0%, 100% { stroke-opacity: 1; }
+    50% { stroke-opacity: 0.5; }
+  }
+
+  .lsp-node {
+    transition: all 0.3s ease;
+  }
+
+  .lsp-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="lsp-page">
+  <div class="lsp-hero">
+    <div class="lsp-title-wrapper">
+      <div class="lsp-hero-icon">🔗</div>
+      <div class="lsp-hero-text">
+        <h2>Bellman-Ford之单源有限最短路</h2>
+        <p>限制最多经过 k 条边的单源最短路径</p>
+      </div>
+    </div>
+    <div class="lsp-tip"><strong>核心思路：</strong>修改版 Bellman-Ford，只迭代 k 轮。第 i 轮结束后 dist[v] 表示从源点出发、最多经过 i 条边到达 v 的最短距离。每轮需要备份 dist 数组避免串联更新。</div>
+  </div>
+
+  <div class="lsp-layout">
+    <div class="lsp-main">
+      <div class="lsp-card">
+        <div class="lsp-controls">
+          <button id="lsp-start" class="lsp-btn">开始寻路</button>
+        </div>
+
+        <div class="lsp-stats">
+          <div class="lsp-stat"><span class="lsp-stat-label">节点数</span><span class="lsp-stat-val" id="lsp-nodes">5</span></div>
+          <div class="lsp-stat"><span class="lsp-stat-label">当前轮次</span><span class="lsp-stat-val" id="lsp-round">0</span></div>
+          <div class="lsp-stat"><span class="lsp-stat-label">最大边数 k</span><span class="lsp-stat-val" id="lsp-k">3</span></div>
+          <div class="lsp-stat"><span class="lsp-stat-label">到终点距离</span><span class="lsp-stat-val" id="lsp-target">INF</span></div>
+        </div>
+
+        <div class="lsp-graph-container" id="lsp-graph"></div>
+
+        <div class="lsp-dist-container">
+          <div class="lsp-dist-title">距离数组 dist[]（最多 i 条边到达）</div>
+          <div class="lsp-dist-row" id="lsp-dist"></div>
+        </div>
+
+        <div class="lsp-message" id="step-message">点击「开始寻路」运行 Bellman-Ford 有限边数最短路。</div>
+
+        <div class="lsp-log" id="lsp-log"></div>
+      </div>
+    </div>
+
+    <div class="lsp-right">
+      <div data-code-panel class="lsp-code-card"></div>
+      <div class="lsp-legend">
+        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:rgba(6,182,212,0.2);border:2px solid #06b6d4"></span>普通节点</div>
+        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:#f59e0b"></span>当前松弛边</div>
+        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:rgba(6,182,212,0.5);border:2px solid #06b6d4"></span>已更新的节点</div>
+        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:rgba(34,197,94,0.4);border:2px solid #22c55e"></span>源点 / 终点</div>
+      </div>
+      <div class="lsp-playback">
+        <div class="lsp-pb-row">
+          <button id="step-reset" class="lsp-pb-btn">重置</button>
+          <button id="step-prev" class="lsp-pb-btn">上一步</button>
+          <button id="step-play" class="lsp-pb-btn play">播放</button>
+          <button id="step-next" class="lsp-pb-btn">下一步</button>
+        </div>
+        <div class="lsp-speed-row">
+          <span>速度</span>
+          <input id="lsp-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="lsp-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="lsp-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

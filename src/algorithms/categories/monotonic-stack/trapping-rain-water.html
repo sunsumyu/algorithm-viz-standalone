@@ -1,0 +1,598 @@
+<style>
+  #algo-trapping-rain-water-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-trapping-rain-water-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 8% 6%, #3b82f6ee, transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #22d3ee55, transparent 55%),
+                linear-gradient(135deg, #1e3a8a 0%, #1e40af 25%, #1e3a8a 50%, #1e40af 75%, #1e3a8a 100%);
+    z-index: -2;
+  }
+
+  #algo-trapping-rain-water-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(30, 58, 138, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-trapping-rain-water-view .trw-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .trw-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .trw-hero .trw-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .trw-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .trw-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .trw-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .trw-tip {
+    max-width: 500px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .trw-tip strong {
+    color: #3b82f6;
+    font-weight: 600;
+  }
+
+  #algo-trapping-rain-water-view .trw-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-trapping-rain-water-view .trw-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .trw-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .trw-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .trw-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .trw-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    color: #cdd6f4;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .trw-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+
+  .trw-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+    color: #1e3a8a;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .trw-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .trw-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .trw-example {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(110, 203, 192, 0.3);
+    background: rgba(59, 130, 246, 0.1);
+    color: #cdd6f4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .trw-example:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+  }
+
+  .trw-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .trw-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .trw-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #22d3ee);
+  }
+
+  .trw-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .trw-stat-val {
+    color: #3b82f6;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trw-cols {
+    padding: 18px;
+    background: rgba(11, 10, 23, 0.6);
+    min-height: 240px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .trw-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .trw-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    width: 24px;
+    height: 200px;
+    position: relative;
+  }
+
+  .trw-water {
+    width: 100%;
+    background: rgba(34, 211, 238, 0.5);
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .trw-water.new {
+    animation: rise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .trw-bar {
+    width: 100%;
+    background: rgba(45, 55, 72, 0.7);
+    border-radius: 2px 2px 0 0;
+    border-top: 2px solid #3b82f6;
+    transition: background 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .trw-bar.left-pointer {
+    background: rgba(132, 204, 146, 0.6);
+    border-top-color: #34d399;
+    box-shadow: 0 4px 15px rgba(132, 204, 146, 0.4);
+  }
+
+  .trw-bar.right-pointer {
+    background: rgba(248, 113, 113, 0.6);
+    border-top-color: #f87171;
+    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.4);
+  }
+
+  .trw-bar.new {
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .trw-bar.match {
+    animation: burst 0.4s ease;
+  }
+
+  .trw-bar.zero {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+
+  .trw-idx {
+    font-size: 11px;
+    color: rgba(204, 214, 244, 0.6);
+    margin-top: 2px;
+  }
+
+  .trw-ptr {
+    font-size: 11px;
+    font-weight: 700;
+    height: 12px;
+  }
+
+  .trw-ptr.l {
+    color: #34d399;
+  }
+
+  .trw-ptr.r {
+    color: #f87171;
+  }
+
+  .trw-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .trw-log {
+    min-height: 0;
+    max-height: 130px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .trw-log div {
+    padding: 2px 0;
+  }
+
+  .trw-log div.active {
+    color: #3b82f6;
+    font-weight: 600;
+  }
+
+  .trw-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .trw-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .trw-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .trw-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .trw-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .trw-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .trw-pb-btn:not(:disabled):hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+  }
+
+  .trw-pb-btn.play {
+    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+    border: none;
+    color: #1e3a8a;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .trw-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .trw-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .trw-speed-row input {
+    flex: 1;
+    accent-color: #3b82f6;
+  }
+
+  .trw-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Animations */
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0) rotate(-10deg);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes burst {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    20%, 60% {
+      transform: translateX(-5px);
+    }
+    40%, 80% {
+      transform: translateX(5px);
+    }
+  }
+
+  @keyframes rise {
+    from {
+      transform: scaleY(0);
+      opacity: 0;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  .trw-pb-btn#play.play {
+    animation: pulse 1.2s infinite;
+  }
+
+  .trw-water.new {
+    animation: rise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .trw-bar.new {
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .trw-bar.match {
+    animation: burst 0.4s ease;
+  }
+
+  @media (max-width: 1100px) {
+    .trw-main {
+      overflow: visible;
+    }
+  }
+</style>
+
+<div class="trw-page">
+  <div class="trw-hero">
+    <div class="trw-title-wrapper">
+      <div class="trw-hero-icon">💧</div>
+      <div class="trw-hero-text">
+        <h2>接雨水（双指针）</h2>
+        <p>LeetCode 42 · 用左右双指针从两端向中间收敛，维护左侧最大值 leftMax 与右侧最大值 rightMax，处理较矮的一侧即可累加雨水。</p>
+      </div>
+    </div>
+    <div class="trw-tip"><strong>左右双指针：</strong>维护两侧最大值 leftMax/rightMax，每次处理较矮的一侧，计算该位置能接多少雨水。</div>
+  </div>
+
+  <div class="trw-layout">
+    <div class="trw-main">
+      <div class="trw-card">
+        <div class="trw-controls">
+          <input id="trw-input" class="trw-input" value="0,1,0,2,1,0,1,3,2,1,2,1" />
+          <button id="trw-start" class="trw-btn">开始接雨水</button>
+          <button class="trw-example" data-val="0,1,0,2,1,0,1,3,2,1,2,1">示例1</button>
+          <button class="trw-example" data-val="4,2,0,3,2,5">示例2</button>
+          <button class="trw-example" data-val="3,0,2,0,1,4">示例3</button>
+        </div>
+
+        <div class="trw-stats">
+          <div class="trw-stat"><div class="trw-stat-label">左指针 L</div><div class="trw-stat-val" id="trw-l">0</div></div>
+          <div class="trw-stat"><div class="trw-stat-label">右指针 R</div><div class="trw-stat-val" id="trw-r">-</div></div>
+          <div class="trw-stat"><div class="trw-stat-label">leftMax / rightMax</div><div class="trw-stat-val" id="trw-max">0 / 0</div></div>
+          <div class="trw-stat"><div class="trw-stat-label">累计雨水</div><div class="trw-stat-val" id="trw-sum">0</div></div>
+        </div>
+
+        <div class="trw-cols" id="trw-cols"></div>
+
+        <div class="trw-message" id="step-message">点击「开始接雨水」查看接雨水的双指针过程。</div>
+
+        <div class="trw-log" id="trw-log"></div>
+      </div>
+    </div>
+
+    <div class="trw-right">
+      <div data-code-panel class="trw-code-card"></div>
+      <div class="trw-playback">
+        <div class="trw-pb-row">
+          <button id="step-reset" class="trw-pb-btn">重置</button>
+          <button id="step-prev" class="trw-pb-btn">上一步</button>
+          <button id="step-play" class="trw-pb-btn play">播放</button>
+          <button id="step-next" class="trw-pb-btn">下一步</button>
+        </div>
+        <div class="trw-speed-row">
+          <span>速度</span>
+          <input id="step-speed" type="range" min="200" max="2000" step="100" value="900" />
+          <span id="step-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.9s</span>
+        </div>
+        <div id="step-counter" class="trw-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

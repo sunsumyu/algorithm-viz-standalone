@@ -1,0 +1,254 @@
+<style>
+  /* === 复原 IP 地址 · SVG 决策树版本 === */
+  #algo-restore-ip-view {
+    --accent-a: #3b82f6;
+    --accent-b: #22d3ee;
+    --accent-glow: rgba(59, 130, 246, .4);
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(59, 130, 246, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(34, 211, 238, .22), transparent 55%),
+      linear-gradient(135deg, #0a1628 0%, #0e1a30 50%, #0a2028 100%);
+    overflow: hidden;
+  }
+  #algo-restore-ip-view .bt-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-restore-ip-view .bt-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-restore-ip-view .bt-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-restore-ip-view .bt-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-restore-ip-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-restore-ip-view .bt-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-restore-ip-view .bt-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(34, 211, 238, .08));
+    border: 1px solid rgba(59, 130, 246, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-restore-ip-view .bt-tip strong { color: #93c5fd; }
+  #algo-restore-ip-view .bt-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-restore-ip-view .bt-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-restore-ip-view .bt-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-restore-ip-view .bt-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-restore-ip-view .bt-tag {
+    font-size: 11px; color: #93c5fd; background: rgba(59, 130, 246, .14);
+    border: 1px solid rgba(59, 130, 246, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-restore-ip-view .bt-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-restore-ip-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-restore-ip-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
+  #algo-restore-ip-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-restore-ip-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-restore-ip-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-restore-ip-view .bt-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-restore-ip-view .bt-chip-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(34, 211, 238, .12); border: 1px solid rgba(34, 211, 238, .28);
+    color: #67e8f9; cursor: pointer; transition: all .2s;
+  }
+  #algo-restore-ip-view .bt-chip-btn:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* Stats */
+  #algo-restore-ip-view .bt-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  #algo-restore-ip-view .bt-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-restore-ip-view .bt-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-restore-ip-view .bt-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-restore-ip-view .bt-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    color: #93c5fd;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Tree display */
+  #algo-restore-ip-view .bt-tree-card {
+    flex: 1; min-height: 220px; display: flex; flex-direction: column;
+  }
+  #algo-restore-ip-view #bt-tree-display {
+    flex: 1; min-height: 180px; padding: 12px 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: auto;
+  }
+  #algo-restore-ip-view #bt-tree-display svg {
+    max-width: 100%; max-height: 100%;
+  }
+  /* Result banner */
+  #algo-restore-ip-view .bt-message {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(34, 211, 238, .06));
+    border: 1px solid rgba(59, 130, 246, .28);
+    line-height: 1.55; font-size: 14px; color: #dbeafe;
+  }
+  #algo-restore-ip-view .bt-message .bt-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  /* Log */
+  #algo-restore-ip-view .bt-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-restore-ip-view .bt-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-restore-ip-view .bt-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-restore-ip-view .bt-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-restore-ip-view .bt-controls .bt-ctrl-btn { min-width: 64px; }
+  #algo-restore-ip-view .bt-controls .bt-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-restore-ip-view .bt-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-restore-ip-view .bt-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-restore-ip-view #step-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-restore-ip-view .bt-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-restore-ip-view .bt-code { min-height: 360px; }
+  }
+  /* Shared tree CSS injected at runtime */
+</style>
+<style id="cs-tree-style"></style>
+
+<div class="bt-shell">
+  <div class="bt-hero">
+    <div class="bt-hero-left">
+      <span class="bt-icon">&#x1F310;</span>
+      <div>
+        <h1>复原 IP 地址（回溯决策树）</h1>
+        <div class="bt-sub">LeetCode 93 · 在字符串中放置 3 个点，每段 0–255 且无多余前导零</div>
+      </div>
+    </div>
+    <div class="bt-tip"><strong>核心动画：</strong>橙色<span style="color:#fb923c">脉冲</span>为当前节点，紫色为已访问节点，绿色为合法 IP 段，灰色虚线为剪枝分支。观察回溯搜索决策树的完整结构。</div>
+  </div>
+  <div class="bt-main">
+    <div class="bt-left">
+      <section class="bt-card">
+        <div class="bt-card-title">输入 <span class="bt-tag">数字字符串</span></div>
+        <div class="bt-input-row">
+          <input id="bt-text" value="25525511135" placeholder="纯数字字符串">
+          <button id="bt-start">生成IP地址</button>
+        </div>
+        <div class="bt-examples">
+          <button class="bt-chip-btn bt-example" data-text="25525511135">示例1</button>
+          <button class="bt-chip-btn bt-example" data-text="101023">示例2</button>
+          <button class="bt-chip-btn bt-example" data-text="0000">全零</button>
+        </div>
+      </section>
+
+      <div class="bt-stats">
+        <div class="bt-stat"><div class="bt-stat-label">段数</div><div class="bt-stat-val" data-metric="depth">0</div></div>
+        <div class="bt-stat"><div class="bt-stat-label">下标</div><div class="bt-stat-val" data-metric="start">0</div></div>
+        <div class="bt-stat"><div class="bt-stat-label">答案数</div><div class="bt-stat-val" data-metric="count">0</div></div>
+        <div class="bt-stat"><div class="bt-stat-label">剩余字符</div><div class="bt-stat-val" data-metric="remain">0</div></div>
+      </div>
+
+      <section class="bt-card bt-tree-card">
+        <div class="bt-card-title">回溯决策树 <span class="bt-tag">SVG</span></div>
+        <div id="bt-tree-display"></div>
+        <div class="bt-message" id="step-message">
+          <span class="bt-emoji">&#x1F310;</span>
+          <div>点击「生成IP地址」观看回溯搜索决策树动画</div>
+        </div>
+      </section>
+
+      <section class="bt-card">
+        <div class="bt-card-title">执行日志 <button id="bt-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="bt-log" id="bt-log"></div>
+      </section>
+    </div>
+    <aside class="bt-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="bt-controls">
+    <button id="step-reset" class="bt-ctrl-btn">&#x23EE; 重置</button>
+    <button id="step-prev" class="bt-ctrl-btn">&#x25C0; 上一步</button>
+    <button id="step-play" class="bt-ctrl-btn bt-ctrl-primary">&#x25B6; 播放</button>
+    <button id="step-next" class="bt-ctrl-btn">下一步 &#x25B6;</button>
+    <span id="step-counter" class="bt-counter">步骤: 0 / 0</span>
+    <div class="bt-speed-wrap">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

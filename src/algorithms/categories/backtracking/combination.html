@@ -1,0 +1,350 @@
+<style>
+  #algo-combination-view {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(251, 146, 60, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(192, 132, 252, .22), transparent 55%),
+      linear-gradient(135deg, #1a0e05 0%, #2a0e1d 50%, #1d1a30 100%);
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+  #algo-combination-view .cs-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-combination-view .cs-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-combination-view .cs-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-combination-view .cs-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, #fb923c, #c084fc);
+    color: #06121f; box-shadow: 0 6px 20px rgba(251, 146, 60, .35);
+  }
+  #algo-combination-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-combination-view .cs-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-combination-view .cs-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(192, 132, 252, .08));
+    border: 1px solid rgba(251, 146, 60, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-combination-view .cs-tip strong { color: #fdba74; }
+  #algo-combination-view .cs-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-combination-view .cs-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-combination-view .cs-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-combination-view .cs-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-combination-view .cs-tag {
+    font-size: 11px; color: #fdba74; background: rgba(251, 146, 60, .14);
+    border: 1px solid rgba(251, 146, 60, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-combination-view .cs-input-row {
+    display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-combination-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-combination-view input:focus { border-color: #fb923c; box-shadow: 0 0 0 3px rgba(251, 146, 60, .15); }
+  #algo-combination-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-combination-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fb923c, #c084fc);
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(251, 146, 60, .35);
+  }
+  #algo-combination-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-combination-view .cs-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-combination-view .cs-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(192, 132, 252, .12); border: 1px solid rgba(192, 132, 252, .28);
+    color: #e9d5ff; cursor: pointer; transition: all .2s;
+  }
+  #algo-combination-view .cs-chip:hover {
+    background: linear-gradient(135deg, #fb923c, #c084fc);
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* Stats & Variables Monitor */
+  #algo-combination-view .cs-stats {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  }
+  #algo-combination-view .cs-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-combination-view .cs-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-combination-view .cs-stat--i::before { background: linear-gradient(180deg, #38bdf8, #0ea5e9); }
+  #algo-combination-view .cs-stat--i .cs-stat-val { color: #7dd3fc; }
+  #algo-combination-view .cs-stat--start::before { background: linear-gradient(180deg, #c084fc, #a78bfa); }
+  #algo-combination-view .cs-stat--start .cs-stat-val { color: #e9d5ff; }
+  #algo-combination-view .cs-stat--path-val::before { background: linear-gradient(180deg, #fb923c, #f97316); }
+  #algo-combination-view .cs-stat--path-val .cs-stat-val { color: #ffedd5; font-size: 17px; line-height: 1.3; }
+  #algo-combination-view .cs-stat--path::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-combination-view .cs-stat--path .cs-stat-val { color: #6ee7b7; }
+  #algo-combination-view .cs-stat--count::before { background: linear-gradient(180deg, #f472b6, #ec4899); }
+  #algo-combination-view .cs-stat--count .cs-stat-val { color: #f9a8d4; }
+  #algo-combination-view .cs-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; }
+  #algo-combination-view .cs-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+  }
+
+  /* ── Tree display (SVG-based) ── */
+  #algo-combination-view .cs-tree-card {
+    flex: 1; min-height: 220px; display: flex; flex-direction: column;
+  }
+  #algo-combination-view #combination-tree-display {
+    flex: 1; min-height: 180px; padding: 12px 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: auto;
+  }
+  #algo-combination-view #combination-tree-display svg {
+    max-width: 100%; max-height: 100%;
+  }
+
+  /* SVG edge styles */
+  #algo-combination-view .cs-edge {
+    stroke: #45475a; stroke-width: 2;
+    transition: stroke .3s, stroke-width .3s, opacity .3s;
+  }
+  #algo-combination-view .cs-edge-active {
+    stroke: #fb923c; stroke-width: 3;
+    filter: drop-shadow(0 0 4px rgba(251, 146, 60, .6));
+  }
+  #algo-combination-view .cs-edge-found {
+    stroke: #a6e3a1; stroke-width: 2.5;
+    filter: drop-shadow(0 0 3px rgba(166, 227, 161, .5));
+  }
+  #algo-combination-view .cs-edge-pruned {
+    stroke: #585b70; stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+    opacity: 0.5;
+  }
+  #algo-combination-view .cs-edge-dim {
+    opacity: 0.25;
+  }
+
+  /* SVG node styles */
+  #algo-combination-view .cs-node-circle {
+    fill: #1e1e2e; stroke: #45475a; stroke-width: 2;
+    transition: fill .3s, stroke .3s, stroke-width .3s;
+  }
+  #algo-combination-view .cs-node-current {
+    fill: rgba(251, 146, 60, .45); stroke: #ff9800; stroke-width: 3.5;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: combo-tree-pulse 0.9s ease-in-out infinite alternate;
+  }
+  #algo-combination-view .cs-node-visited {
+    fill: rgba(192, 132, 252, .12); stroke: #a78bfa; stroke-width: 2;
+  }
+  #algo-combination-view .cs-node-found {
+    fill: rgba(166, 227, 161, .25); stroke: #a6e3a1; stroke-width: 3;
+    filter: drop-shadow(0 0 6px rgba(166, 227, 161, .6));
+  }
+  #algo-combination-view .cs-node-pruned {
+    fill: #181825; stroke: #45475a; stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+    opacity: 0.45;
+  }
+
+  /* SVG text label */
+  #algo-combination-view .cs-node-label {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-weight: 700;
+    fill: #cdd6f4;
+    pointer-events: none;
+    transition: fill .3s;
+  }
+  #algo-combination-view .cs-node-current + .cs-node-label,
+  #algo-combination-view g:has(.cs-node-current) .cs-node-label {
+    fill: #ffffff;
+    font-weight: 900;
+    filter: drop-shadow(0 0 4px #ff9800);
+  }
+  #algo-combination-view .cs-node-pruned + .cs-node-label,
+  #algo-combination-view g:has(.cs-node-pruned) .cs-node-label {
+    fill: #585b70;
+  }
+  #algo-combination-view .cs-node-found + .cs-node-label,
+  #algo-combination-view g:has(.cs-node-found) .cs-node-label {
+    fill: #a6e3a1;
+  }
+
+  /* Checkmark on found leaves */
+  #algo-combination-view .cs-node-check {
+    font-size: 12px; font-weight: 900;
+    fill: #a6e3a1;
+  }
+
+  /* Animations */
+  @keyframes combo-tree-pulse {
+    0% {
+      transform: scale(1.0);
+      filter: drop-shadow(0 0 4px rgba(255, 152, 0, .6));
+    }
+    100% {
+      transform: scale(1.22);
+      filter: drop-shadow(0 0 18px rgba(255, 152, 0, 1)) drop-shadow(0 0 32px rgba(251, 146, 60, .85));
+    }
+  }
+
+  /* Result banner */
+  #algo-combination-view .cs-result-banner {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    background: rgba(192, 132, 252, .08);
+    border: 1px solid rgba(192, 132, 252, .2);
+    color: #e2e8f0; font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+  }
+  #algo-combination-view .cs-emoji { font-size: 18px; }
+
+  /* Log */
+  #algo-combination-view .cs-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-combination-view .cs-log-line { display: flex; gap: 8px; }
+  #algo-combination-view .cs-log-line .cs-log-num { color: #64748b; flex-shrink: 0; }
+  #algo-combination-view .cs-log-line.cs-log-active { color: #fdba74; font-weight: 600; }
+  #algo-combination-view .cs-log-line.cs-log-active .cs-log-num { color: #fb923c; }
+
+  /* Code panel */
+  #algo-combination-view .cs-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-combination-view .cs-code [data-code-panel] { flex: 1; min-width: 0; }
+
+  /* Controls */
+  #algo-combination-view .cs-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-combination-view .cs-controls .cs-ctrl-btn { min-width: 64px; }
+  #algo-combination-view .cs-controls .cs-ctrl-primary {
+    background: linear-gradient(135deg, #fb923c, #c084fc);
+    color: #06121f; border-color: transparent;
+  }
+  #algo-combination-view .cs-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-combination-view .cs-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-combination-view #step-speed { width: 130px; accent-color: #fb923c; }
+  #algo-combination-view #step-speed-label { min-width: 42px; }
+
+  @media (max-width: 1100px) {
+    #algo-combination-view .cs-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-combination-view .cs-code { min-height: 360px; }
+  }
+</style>
+
+<div class="cs-shell">
+  <div class="cs-hero">
+    <div class="cs-hero-left">
+      <span class="cs-icon">&#x1F3AF;</span>
+      <div>
+        <h1>组合问题（回溯）</h1>
+        <div class="cs-sub">LeetCode 77 · 从 1...n 中选择 k 个数的所有组合</div>
+      </div>
+    </div>
+    <div class="cs-tip"><strong>核心动画：</strong>橙色<span style="color:#fb923c">脉冲</span>为当前节点，紫色为已访问节点，绿色为找到的组合。本页为基础版，展示回溯搜索决策树的完整结构（剪枝优化见「组合（优化）」页面）。</div>
+  </div>
+  <div class="cs-main">
+    <div class="cs-left">
+      <section class="cs-card">
+        <div class="cs-card-title">输入 <span class="cs-tag">n / k</span></div>
+        <div class="cs-input-row">
+          <input id="combination-n" type="number" value="4" placeholder="总数 n">
+          <input id="combination-k" type="number" value="2" placeholder="选择数 k">
+          <button id="combination-start">生成组合</button>
+        </div>
+        <div class="cs-examples">
+          <button class="cs-chip" data-n="4" data-k="2">经典: 4C2</button>
+          <button class="cs-chip" data-n="5" data-k="3">示例: 5C3</button>
+          <button class="cs-chip" data-n="3" data-k="1">小数据</button>
+        </div>
+      </section>
+
+      <div class="cs-stats">
+        <div class="cs-stat cs-stat--i"><div class="cs-stat-label">循环变量 i</div><div class="cs-stat-val" id="combination-var-i">-</div></div>
+        <div class="cs-stat cs-stat--start"><div class="cs-stat-label">start</div><div class="cs-stat-val" id="combination-start-index">1</div></div>
+        <div class="cs-stat cs-stat--path-val"><div class="cs-stat-label">path 内容</div><div class="cs-stat-val" id="combination-var-path">[]</div></div>
+        <div class="cs-stat cs-stat--path"><div class="cs-stat-label">path.size()</div><div class="cs-stat-val" id="combination-count">0</div></div>
+        <div class="cs-stat cs-stat--count"><div class="cs-stat-label">result.size()</div><div class="cs-stat-val" id="combination-total">0</div></div>
+      </div>
+
+      <section class="cs-card cs-tree-card">
+        <div class="cs-card-title">回溯决策树 <span class="cs-tag">SVG</span></div>
+        <div id="combination-tree-display"></div>
+        <div class="cs-result-banner" id="combination-results-banner">
+          <span class="cs-emoji">&#x1F3AF;</span>
+          <div id="step-message">点击「生成组合」观看回溯搜索树生成动画</div>
+        </div>
+      </section>
+
+      <section class="cs-card">
+        <div class="cs-card-title">执行日志 <button id="cs-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="cs-log" id="cs-log"></div>
+      </section>
+    </div>
+    <aside class="cs-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="cs-controls">
+    <button id="step-reset" class="cs-ctrl-btn">&#x23EE; 重置</button>
+    <button id="step-prev" class="cs-ctrl-btn">&#x25C0; 上一步</button>
+    <button id="step-play" class="cs-ctrl-btn cs-ctrl-primary">&#x25B6; 播放</button>
+    <button id="step-next" class="cs-ctrl-btn">下一步 &#x25B6;</button>
+    <span id="step-counter" class="cs-counter">步骤: 0 / 0</span>
+    <div class="cs-speed-wrap">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="200" max="2500" step="100" value="600">
+      <span id="step-speed-label">0.6s</span>
+    </div>
+  </div>
+</div>

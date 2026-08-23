@@ -1,0 +1,538 @@
+<style>
+  #algo-a-star-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-a-star-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #eab30855, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #ca8a0455, transparent 55%),
+                linear-gradient(135deg, #1a1505 0%, #2d2408 25%, #1a1505 50%, #3b3009 75%, #1a1505 100%);
+    z-index: -2;
+  }
+
+  #algo-a-star-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(26, 21, 5, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-a-star-view .astar-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .astar-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .astar-hero .astar-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .astar-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+  }
+
+  .astar-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .astar-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .astar-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(234, 179, 8, 0.08);
+    border: 1px solid rgba(234, 179, 8, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .astar-tip strong {
+    color: #eab308;
+    font-weight: 600;
+  }
+
+  #algo-a-star-view .astar-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-a-star-view .astar-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .astar-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .astar-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .astar-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .astar-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+  }
+
+  .astar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+  }
+
+  .astar-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .astar-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .astar-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #eab308, #ca8a04);
+  }
+
+  .astar-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .astar-stat-val {
+    color: #eab308;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .astar-grid-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .astar-grid {
+    display: grid;
+    gap: 3px;
+    background: rgba(11, 10, 23, 0.8);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .astar-cell {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: ui-monospace, monospace;
+    transition: all 0.25s ease;
+    position: relative;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+  }
+
+  .astar-cell.empty {
+    background: rgba(20, 18, 38, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(204, 214, 244, 0.3);
+  }
+
+  .astar-cell.obstacle {
+    background: rgba(30, 30, 50, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .astar-cell.start {
+    background: rgba(34, 197, 94, 0.3);
+    border: 2px solid #22c55e;
+    color: #22c55e;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .astar-cell.end {
+    background: rgba(239, 68, 68, 0.3);
+    border: 2px solid #ef4444;
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .astar-cell.open {
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    color: #22c55e;
+    animation: astar-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .astar-cell.closed {
+    background: rgba(100, 100, 120, 0.3);
+    border: 1px solid rgba(150, 150, 170, 0.3);
+    color: rgba(204, 214, 244, 0.5);
+  }
+
+  .astar-cell.current {
+    background: rgba(234, 179, 8, 0.5);
+    border: 2px solid #eab308;
+    color: #1a1505;
+    transform: scale(1.08);
+    box-shadow: 0 0 12px rgba(234, 179, 8, 0.4);
+    animation: astar-pulse 1s infinite;
+  }
+
+  .astar-cell.path {
+    background: rgba(234, 179, 8, 0.3);
+    border: 2px solid #eab308;
+    color: #eab308;
+    font-weight: 700;
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.3);
+  }
+
+  .astar-f-val {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .astar-gh-val {
+    font-size: 8px;
+    color: rgba(204, 214, 244, 0.5);
+    line-height: 1;
+  }
+
+  .astar-info {
+    padding: 12px 16px;
+    margin: 0 16px 12px;
+    border-radius: 12px;
+    background: rgba(234, 179, 8, 0.08);
+    border: 1px solid rgba(234, 179, 8, 0.2);
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    color: #cdd6f4;
+    text-align: center;
+  }
+
+  .astar-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(234, 179, 8, 0.2);
+    background: rgba(234, 179, 8, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .astar-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .astar-log div {
+    padding: 2px 0;
+  }
+
+  .astar-log div.active {
+    color: #eab308;
+    font-weight: 600;
+  }
+
+  .astar-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .astar-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .astar-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .astar-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .astar-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .astar-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .astar-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .astar-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(234, 179, 8, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .astar-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .astar-pb-btn:not(:disabled):hover {
+    background: rgba(234, 179, 8, 0.2);
+    border-color: #eab308;
+    transform: translateY(-1px);
+  }
+
+  .astar-pb-btn.play {
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+  }
+
+  .astar-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+  }
+
+  .astar-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .astar-speed-row input {
+    flex: 1;
+    accent-color: #eab308;
+  }
+
+  .astar-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes astar-popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes astar-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+    50% { box-shadow: 0 0 14px 4px rgba(234, 179, 8, 0.3); }
+  }
+</style>
+
+<div class="astar-page">
+  <div class="astar-hero">
+    <div class="astar-title-wrapper">
+      <div class="astar-hero-icon">⭐</div>
+      <div class="astar-hero-text">
+        <h2>A*算法</h2>
+        <p>启发式搜索：f(n) = g(n) + h(n)，兼顾已走距离和预估代价</p>
+      </div>
+    </div>
+    <div class="astar-tip"><strong>A* 核心：</strong>使用优先队列，每次选 f 值最小的节点扩展。g(n) 是起点到 n 的实际代价，h(n) 是 n 到终点的启发式估计（曼哈顿距离）。当 h 满足可容许性时，A* 保证找到最优路径。</div>
+  </div>
+
+  <div class="astar-layout">
+    <div class="astar-main">
+      <div class="astar-card">
+        <div class="astar-controls">
+          <button id="astar-start" class="astar-btn">开始寻路</button>
+        </div>
+
+        <div class="astar-stats">
+          <div class="astar-stat"><span class="astar-stat-label">Open Set</span><span class="astar-stat-val" id="astar-open">0</span></div>
+          <div class="astar-stat"><span class="astar-stat-label">Closed Set</span><span class="astar-stat-val" id="astar-closed">0</span></div>
+          <div class="astar-stat"><span class="astar-stat-label">当前节点</span><span class="astar-stat-val" id="astar-current">-</span></div>
+          <div class="astar-stat"><span class="astar-stat-label">路径长度</span><span class="astar-stat-val" id="astar-path-len">-</span></div>
+        </div>
+
+        <div class="astar-grid-container">
+          <div class="astar-grid" id="astar-grid"></div>
+        </div>
+
+        <div class="astar-info" id="astar-info" style="display:none;"></div>
+
+        <div class="astar-message" id="step-message">点击「开始寻路」运行 A* 寻路算法。</div>
+
+        <div class="astar-log" id="astar-log"></div>
+      </div>
+    </div>
+
+    <div class="astar-right">
+      <div data-code-panel class="astar-code-card"></div>
+      <div class="astar-legend">
+        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(34,197,94,0.3);border:2px solid #22c55e"></span>起点 S</div>
+        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(239,68,68,0.3);border:2px solid #ef4444"></span>终点 E</div>
+        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.5)"></span>Open Set (待探索)</div>
+        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(100,100,120,0.3);border:1px solid rgba(150,150,170,0.3)"></span>Closed Set (已探索)</div>
+        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(234,179,8,0.5);border:2px solid #eab308"></span>当前节点 / 最终路径</div>
+        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(30,30,50,0.9);border:1px solid rgba(255,255,255,0.15)"></span>障碍物</div>
+      </div>
+      <div class="astar-playback">
+        <div class="astar-pb-row">
+          <button id="step-reset" class="astar-pb-btn">重置</button>
+          <button id="step-prev" class="astar-pb-btn">上一步</button>
+          <button id="step-play" class="astar-pb-btn play">播放</button>
+          <button id="step-next" class="astar-pb-btn">下一步</button>
+        </div>
+        <div class="astar-speed-row">
+          <span>速度</span>
+          <input id="astar-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="astar-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="astar-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

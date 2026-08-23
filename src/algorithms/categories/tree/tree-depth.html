@@ -1,0 +1,402 @@
+<!-- 二叉树最大深度 LeetCode 104 -->
+<style>
+  #algo-tree-depth-view {
+    padding: 1.5rem;
+    color: #cdd6f4;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  @keyframes td-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(163, 230, 53, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(163, 230, 53, 0); }
+  }
+
+  @keyframes td-pop-in {
+    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes td-glow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(163, 230, 53, 0.5)); }
+    50% { filter: drop-shadow(0 0 14px rgba(163, 230, 53, 0.9)); }
+  }
+
+  .td-theme {
+    --accent-a: rgb(163, 230, 53);
+    --accent-b: rgb(34, 197, 94);
+    --bg-start: 20, 18, 38;
+    --bg-mid: 25, 23, 50;
+    --bg-end: 35, 32, 60;
+  }
+
+  .td-container {
+    position: relative;
+    min-height: calc(100vh - 3rem);
+  }
+
+  .td-root {
+    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.18), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.18), transparent 55%),
+                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
+    min-height: 100%;
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .td-header {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .td-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .td-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(163, 230, 53, 0.3);
+  }
+
+  .td-title {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+  }
+
+  .td-desc {
+    color: #9399b2;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .td-tip {
+    background: rgba(163, 230, 53, 0.1);
+    border: 1px solid rgba(163, 230, 53, 0.2);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--accent-a);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .td-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1rem;
+  }
+
+  @media (max-width: 1100px) {
+    .td-layout { grid-template-columns: 1fr; }
+  }
+
+  .td-main {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .td-controls {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .td-btn {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(163, 230, 53, 0.3);
+  }
+
+  .td-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(163, 230, 53, 0.4);
+  }
+
+  .td-example {
+    background: rgba(255, 255, 255, 0.05);
+    color: #cdd6f4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .td-example:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .td-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .td-stat-wrapper {
+    position: relative;
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 10px;
+    padding: 0.6rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .td-stat-wrapper::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    bottom: 2px;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+    border-radius: 3px;
+  }
+
+  .td-stat-label {
+    font-size: 0.7rem;
+    color: #6c7086;
+    margin-bottom: 0.25rem;
+  }
+
+  .td-stat-val {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-a);
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+
+  .td-tree {
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 10px;
+    padding: 1rem;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .td-message {
+    background: rgba(15, 14, 26, 0.5);
+    border-left: 3px solid var(--accent-a);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .td-log {
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 140px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.78rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .td-log div { padding: 2px 0; color: #9399b2; }
+
+  .td-log div.active {
+    color: #cdd6f4;
+    font-weight: 600;
+    background: rgba(163, 230, 53, 0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .td-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .td-playback {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1rem;
+  }
+
+  .td-pb-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .td-pb-btn {
+    flex: 1;
+    background: rgba(49, 50, 68, 0.6);
+    color: #cdd6f4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .td-pb-btn:hover:not(:disabled) {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .td-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .td-pb-btn.play {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(163, 230, 53, 0.3);
+  }
+
+  .td-pb-btn.play:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(163, 230, 53, 0.4);
+  }
+
+  .td-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #6c7086;
+    margin-bottom: 0.5rem;
+  }
+
+  .td-speed-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent-a);
+  }
+
+  .td-speed-row span {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .td-counter {
+    color: #6c7086;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  /* Tree node animations */
+  svg circle.current-node {
+    animation: td-pulse 1.2s infinite;
+    stroke: var(--accent-a);
+    stroke-width: 3;
+  }
+
+  svg circle.new-visited {
+    animation: td-pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  svg circle.computed-node {
+    animation: td-glow 2s ease-in-out infinite;
+  }
+
+  svg line {
+    transition: stroke 0.3s, stroke-width 0.3s;
+  }
+</style>
+
+<div class="td-container">
+  <div class="td-root">
+    <div class="td-header">
+      <div class="td-header-content">
+        <div class="td-icon-badge">📏</div>
+        <div>
+          <h1 class="td-title">二叉树最大深度</h1>
+          <div class="td-desc">LeetCode 104 · 后序遍历求高度：maxDepth = max(左子树深度, 右子树深度) + 1。空节点深度为 0。</div>
+        </div>
+      </div>
+      <div class="td-tip">💡 核心动画：递归进入→计算左右子树深度→回溯计算高度→更新最大深度</div>
+    </div>
+
+    <div class="td-layout">
+      <div class="td-main">
+        <div class="td-controls">
+          <button id="td-start" class="td-btn">计算深度</button>
+          <button class="td-example" data-id="1">示例树1</button>
+          <button class="td-example" data-id="2">示例树2</button>
+          <button class="td-example" data-id="3">空树</button>
+        </div>
+
+        <div class="td-stats">
+          <div class="td-stat-wrapper"><div class="td-stat-label">当前节点</div><div class="td-stat-val" id="td-cur">-</div></div>
+          <div class="td-stat-wrapper"><div class="td-stat-label">递归深度</div><div class="td-stat-val" id="td-depth">0</div></div>
+          <div class="td-stat-wrapper"><div class="td-stat-label">当前子树高度</div><div class="td-stat-val" id="td-h">0</div></div>
+          <div class="td-stat-wrapper"><div class="td-stat-label">最大深度</div><div class="td-stat-val" id="td-max">0</div></div>
+        </div>
+
+        <div class="td-tree" id="td-tree"></div>
+
+        <div class="td-message" id="step-message">点击「计算深度」查看后序求深度的过程。</div>
+
+        <div class="td-log" id="td-log"></div>
+      </div>
+
+      <div class="td-right">
+        <div data-code-panel></div>
+        <div class="td-playback">
+          <div class="td-pb-row">
+            <button id="step-reset" class="td-pb-btn">⏮重置</button>
+            <button id="step-prev" class="td-pb-btn">◀上一步</button>
+            <button id="step-play" class="td-pb-btn play">▶播放</button>
+            <button id="step-next" class="td-pb-btn">下一步▶</button>
+          </div>
+          <div class="td-speed-row">
+            <span>速度</span>
+            <input id="step-speed" type="range" min="200" max="2000" step="100" value="800" />
+            <span id="step-speed-label">0.8s</span>
+          </div>
+          <div class="td-counter" id="step-counter">步骤: 1 / 1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

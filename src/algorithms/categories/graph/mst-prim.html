@@ -1,0 +1,496 @@
+<style>
+  #algo-mst-prim-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-mst-prim-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #22c55e55, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #16a34a55, transparent 55%),
+                linear-gradient(135deg, #052e16 0%, #14532d 25%, #052e16 50%, #166534 75%, #052e16 100%);
+    z-index: -2;
+  }
+
+  #algo-mst-prim-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(5, 46, 22, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-mst-prim-view .mstp-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .mstp-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .mstp-hero .mstp-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mstp-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+  }
+
+  .mstp-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .mstp-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .mstp-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .mstp-tip strong {
+    color: #22c55e;
+    font-weight: 600;
+  }
+
+  #algo-mst-prim-view .mstp-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-mst-prim-view .mstp-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .mstp-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .mstp-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .mstp-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .mstp-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+  }
+
+  .mstp-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+  }
+
+  .mstp-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mstp-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .mstp-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+  }
+
+  .mstp-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .mstp-stat-val {
+    color: #22c55e;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .mstp-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 280px;
+  }
+
+  .mstp-graph-container svg {
+    width: 100%;
+    max-width: 480px;
+    height: 280px;
+  }
+
+  .mstp-dist-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mstp-dist-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .mstp-dist-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .mstp-dist-item {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 40px;
+    text-align: center;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .mstp-dist-item.updated {
+    background: rgba(34, 197, 94, 0.4);
+    border-color: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+  }
+
+  .mstp-dist-item .mstp-idx {
+    display: block;
+    font-size: 9px;
+    color: rgba(204, 214, 244, 0.5);
+    margin-bottom: 2px;
+  }
+
+  .mstp-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    background: rgba(34, 197, 94, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .mstp-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .mstp-log div {
+    padding: 2px 0;
+  }
+
+  .mstp-log div.active {
+    color: #22c55e;
+    font-weight: 600;
+  }
+
+  .mstp-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .mstp-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .mstp-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mstp-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mstp-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .mstp-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mstp-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .mstp-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(34, 197, 94, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .mstp-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .mstp-pb-btn:not(:disabled):hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: #22c55e;
+    transform: translateY(-1px);
+  }
+
+  .mstp-pb-btn.play {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+  }
+
+  .mstp-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+  }
+
+  .mstp-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .mstp-speed-row input {
+    flex: 1;
+    accent-color: #22c55e;
+  }
+
+  .mstp-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pathPulse {
+    0%, 100% { stroke-opacity: 1; }
+    50% { stroke-opacity: 0.5; }
+  }
+
+  .mstp-node {
+    transition: all 0.3s ease;
+  }
+
+  .mstp-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="mstp-page">
+  <div class="mstp-hero">
+    <div class="mstp-title-wrapper">
+      <div class="mstp-hero-icon">🌳</div>
+      <div class="mstp-hero-text">
+        <h2>最小生成树之 Prim 算法</h2>
+        <p>从起点开始，贪心地选择连接树与非树节点的最小权边</p>
+      </div>
+    </div>
+    <div class="mstp-tip"><strong>Prim 核心：</strong>维护一个 growing tree，每次选连接 tree 和 non-tree 的最小权边，将新节点加入 tree。用距离数组 dist 记录每个非树节点到 tree 的最小距离。</div>
+  </div>
+
+  <div class="mstp-layout">
+    <div class="mstp-main">
+      <div class="mstp-card">
+        <div class="mstp-controls">
+          <button id="mstp-start" class="mstp-btn">开始建树</button>
+        </div>
+
+        <div class="mstp-stats">
+          <div class="mstp-stat"><span class="mstp-stat-label">当前节点</span><span class="mstp-stat-val" id="mstp-current">-</span></div>
+          <div class="mstp-stat"><span class="mstp-stat-label">MST边数</span><span class="mstp-stat-val" id="mstp-edges">0</span></div>
+          <div class="mstp-stat"><span class="mstp-stat-label">MST权重</span><span class="mstp-stat-val" id="mstp-weight">0</span></div>
+          <div class="mstp-stat"><span class="mstp-stat-label">最小边</span><span class="mstp-stat-val" id="mstp-minedge">-</span></div>
+        </div>
+
+        <div class="mstp-graph-container" id="mstp-graph"></div>
+
+        <div class="mstp-dist-container">
+          <div class="mstp-dist-title">dist 数组（节点到 MST 的最小距离）</div>
+          <div class="mstp-dist-row" id="mstp-dist"></div>
+        </div>
+
+        <div class="mstp-message" id="step-message">点击「开始建树」用 Prim 算法构建最小生成树。</div>
+
+        <div class="mstp-log" id="mstp-log"></div>
+      </div>
+    </div>
+
+    <div class="mstp-right">
+      <div data-code-panel class="mstp-code-card"></div>
+      <div class="mstp-legend">
+        <div class="mstp-legend-item"><span class="mstp-legend-box" style="background:rgba(34,197,94,0.2);border:2px solid #22c55e"></span>未加入MST</div>
+        <div class="mstp-legend-item"><span class="mstp-legend-box" style="background:rgba(34,197,94,0.5);border:2px solid #16a34a"></span>已加入MST</div>
+        <div class="mstp-legend-item"><span class="mstp-legend-box" style="background:#f59e0b"></span>当前选择</div>
+        <div class="mstp-legend-item"><span class="mstp-legend-box" style="background:rgba(156,163,175,0.3);border:2px solid rgba(156,163,175,0.5)"></span>非MST边</div>
+      </div>
+      <div class="mstp-playback">
+        <div class="mstp-pb-row">
+          <button id="step-reset" class="mstp-pb-btn">重置</button>
+          <button id="step-prev" class="mstp-pb-btn">上一步</button>
+          <button id="step-play" class="mstp-pb-btn play">播放</button>
+          <button id="step-next" class="mstp-pb-btn">下一步</button>
+        </div>
+        <div class="mstp-speed-row">
+          <span>速度</span>
+          <input id="mstp-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="mstp-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="mstp-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

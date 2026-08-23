@@ -1,0 +1,455 @@
+<style>
+  #algo-graph-summary-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-graph-summary-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #10b98155, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #05966955, transparent 55%),
+                linear-gradient(135deg, #041f15 0%, #063820 25%, #041f15 50%, #074a2a 75%, #041f15 100%);
+    z-index: -2;
+  }
+
+  #algo-graph-summary-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(4, 31, 21, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-graph-summary-view .gs-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .gs-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .gs-hero .gs-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .gs-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .gs-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #10b981, #059669);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gs-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  #algo-graph-summary-view .gs-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-graph-summary-view .gs-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .gs-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: auto;
+    flex: 1;
+  }
+
+  .gs-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .gs-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .gs-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .gs-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .gs-section-title {
+    padding: 14px 20px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .gs-mindmap-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 240px;
+  }
+
+  .gs-mindmap-container svg {
+    width: 100%;
+    max-width: 600px;
+    height: 240px;
+  }
+
+  .gs-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    padding: 16px 20px;
+  }
+
+  .gs-category-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gs-category-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .gs-category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+  }
+
+  .gs-category-card.active {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.08);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+  }
+
+  .gs-category-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .gs-category-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #10b981;
+    margin-bottom: 6px;
+  }
+
+  .gs-category-desc {
+    font-size: 12px;
+    color: rgba(204, 214, 244, 0.7);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .gs-algo-list {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .gs-algo-tag {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: #10b981;
+  }
+
+  .gs-detail {
+    margin: 0 20px 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+  }
+
+  .gs-detail-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #10b981;
+    margin-bottom: 8px;
+  }
+
+  .gs-detail-content {
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.85);
+    line-height: 1.7;
+  }
+
+  .gs-detail-content ul {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+
+  .gs-detail-content li {
+    margin-bottom: 4px;
+  }
+
+  .gs-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .gs-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .gs-log div {
+    padding: 2px 0;
+  }
+
+  .gs-log div.active {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  .gs-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .gs-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .gs-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .gs-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .gs-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(16, 185, 129, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .gs-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .gs-pb-btn:not(:disabled):hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    transform: translateY(-1px);
+  }
+
+  .gs-pb-btn.play {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .gs-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .gs-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .gs-speed-row input {
+    flex: 1;
+    accent-color: #10b981;
+  }
+
+  .gs-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes gs-popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes gs-fadeIn {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div class="gs-page">
+  <div class="gs-hero">
+    <div class="gs-title-wrapper">
+      <div class="gs-hero-icon">🗺️</div>
+      <div class="gs-hero-text">
+        <h2>图论总结篇</h2>
+        <p>图论算法全景：DFS/BFS、并查集、最小生成树、拓扑排序、最短路</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="gs-layout">
+    <div class="gs-main">
+      <div class="gs-card">
+        <div class="gs-controls">
+          <button id="gs-start" class="gs-btn">开始总览</button>
+        </div>
+
+        <div class="gs-section-title">图论算法知识树</div>
+
+        <div class="gs-mindmap-container" id="gs-mindmap"></div>
+
+        <div class="gs-section-title">按类别浏览</div>
+
+        <div class="gs-cards-grid" id="gs-cards"></div>
+
+        <div class="gs-detail" id="gs-detail" style="display:none;"></div>
+
+        <div class="gs-message" id="step-message">点击分类卡片查看图论各领域的核心算法。</div>
+
+        <div class="gs-log" id="gs-log"></div>
+      </div>
+    </div>
+
+    <div class="gs-right">
+      <div data-code-panel class="gs-code-card"></div>
+      <div class="gs-playback">
+        <div class="gs-pb-row">
+          <button id="step-reset" class="gs-pb-btn">重置</button>
+          <button id="step-prev" class="gs-pb-btn">上一步</button>
+          <button id="step-play" class="gs-pb-btn play">播放</button>
+          <button id="step-next" class="gs-pb-btn">下一步</button>
+        </div>
+        <div class="gs-speed-row">
+          <span>速度</span>
+          <input id="gs-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="gs-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="gs-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

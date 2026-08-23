@@ -1,0 +1,467 @@
+<!-- 路径总和 LeetCode 112 -->
+<style>
+  #algo-path-sum-view {
+    padding: 1.5rem;
+    color: #cdd6f4;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  @keyframes ps-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(250, 179, 135, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(250, 179, 135, 0); }
+  }
+
+  @keyframes ps-pop-in {
+    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes ps-glow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(166, 227, 161, 0.4)); }
+    50% { filter: drop-shadow(0 0 14px rgba(166, 227, 161, 0.8)); }
+  }
+
+  .ps-theme {
+    --accent-a: rgb(250, 179, 135);
+    --accent-b: rgb(166, 227, 161);
+    --bg-start: 20, 18, 38;
+    --bg-mid: 25, 23, 50;
+    --bg-end: 35, 32, 60;
+  }
+
+  .ps-viz-container {
+    position: relative;
+    min-height: calc(100vh - 3rem);
+  }
+
+  .ps-root {
+    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.3), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.3), transparent 55%),
+                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
+    min-height: 100%;
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .ps-header {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ps-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .ps-back-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: #cdd6f4;
+  }
+
+  .ps-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .ps-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .ps-subtitle {
+    font-size: 0.78rem;
+    color: #6c7086;
+    margin-top: 0.2rem;
+  }
+
+  .ps-tip {
+    background: rgba(250, 179, 135, 0.1);
+    border: 1px solid rgba(250, 179, 135, 0.25);
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.78rem;
+    color: #fab387;
+    max-width: 280px;
+  }
+
+  .ps-main-content {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1rem;
+  }
+
+  .ps-left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .ps-panel {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .ps-panel-header {
+    background: rgba(25, 24, 42, 0.6);
+    padding: 0.6rem 0.9rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-a);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .ps-tree-container {
+    padding: 1rem;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ps-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    padding: 0.8rem;
+  }
+
+  .ps-stat-item {
+    text-align: center;
+  }
+
+  .ps-stat-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent-a);
+  }
+
+  .ps-stat-label {
+    font-size: 0.65rem;
+    color: #6c7086;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ps-controls {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .ps-btn {
+    background: rgba(49, 50, 68, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .ps-btn:hover:not(:disabled) {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .ps-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .ps-btn-play {
+    flex: 1;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    font-weight: 600;
+    min-width: 70px;
+  }
+
+  .ps-message {
+    text-align: center;
+    padding: 0.65rem;
+    font-size: 0.88rem;
+    color: #9399b2;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s;
+  }
+
+  .ps-message.success {
+    color: var(--accent-b);
+    font-weight: 600;
+  }
+
+  .ps-message.error {
+    color: #f38ba8;
+    font-weight: 600;
+  }
+
+  .ps-path-display {
+    padding: 0.8rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .ps-path-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 28px;
+    padding: 0 0.45rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: rgba(250, 179, 135, 0.15);
+    border: 1px solid rgba(250, 179, 135, 0.4);
+    color: #fab387;
+  }
+
+  .ps-path-chip.current {
+    background: rgba(250, 179, 135, 0.35);
+    border-color: #fab387;
+    animation: ps-pop-in 0.4s ease;
+  }
+
+  .ps-path-chip.leaf {
+    background: rgba(166, 227, 161, 0.25);
+    border-color: #a6e3a1;
+    color: #a6e3a1;
+  }
+
+  .ps-path-arrow {
+    color: #6c7086;
+    font-size: 0.7rem;
+  }
+
+  .ps-log {
+    padding: 0.6rem 0.8rem;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+
+  .ps-log div {
+    color: #6c7086;
+    transition: color 0.2s;
+  }
+
+  .ps-log div.active {
+    color: var(--accent-a);
+    font-weight: 600;
+  }
+
+  .ps-example-row {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .ps-example-btn {
+    background: rgba(49, 50, 68, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    color: #cdd6f4;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .ps-example-btn:hover {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: var(--accent-a);
+  }
+
+  .ps-input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.8rem;
+  }
+
+  .ps-input-row label {
+    font-size: 0.8rem;
+    color: #9399b2;
+  }
+
+  .ps-input-num {
+    background: rgba(49, 50, 68, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    color: #cdd6f4;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.85rem;
+    width: 80px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .ps-input-num:focus {
+    border-color: var(--accent-a);
+  }
+
+  .ps-code-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 1100px) {
+    .ps-main-content {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="ps-viz-container">
+  <div class="ps-root ps-theme">
+    <div class="ps-header">
+      <div class="ps-header-left">
+        <button id="btn-back" class="ps-back-btn" title="返回">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="ps-title">路径总和</h1>
+          <div class="ps-subtitle">LeetCode 112 · 判断是否存在根到叶子的路径和等于目标值</div>
+        </div>
+      </div>
+      <div class="ps-tip">💡 思路：递归遍历到叶子节点，累减路径值，到叶子时判断是否恰好为0</div>
+    </div>
+
+    <div class="ps-main-content">
+      <div class="ps-left-col">
+        <div class="ps-panel">
+          <div class="ps-panel-header">🌳 二叉树结构</div>
+          <div id="ps-tree" class="ps-tree-container"></div>
+          <div id="ps-message" class="ps-message">设置目标和后点击「开始查找」</div>
+        </div>
+
+        <div class="ps-panel">
+          <div class="ps-panel-header">📊 统计面板</div>
+          <div class="ps-stats">
+            <div class="ps-stat-item">
+              <div class="ps-stat-value" id="ps-depth">0</div>
+              <div class="ps-stat-label">深度</div>
+            </div>
+            <div class="ps-stat-item">
+              <div class="ps-stat-value" id="ps-remaining">0</div>
+              <div class="ps-stat-label">剩余目标</div>
+            </div>
+            <div class="ps-stat-item">
+              <div class="ps-stat-value" id="ps-current">-</div>
+              <div class="ps-stat-label">当前节点</div>
+            </div>
+            <div class="ps-stat-item">
+              <div class="ps-stat-value" id="ps-result">?</div>
+              <div class="ps-stat-label">结果</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ps-panel">
+          <div class="ps-panel-header">🛤️ 当前路径</div>
+          <div id="ps-path" class="ps-path-display"></div>
+        </div>
+
+        <div class="ps-panel">
+          <div class="ps-panel-header">📋 执行日志</div>
+          <div id="ps-log" class="ps-log"></div>
+        </div>
+      </div>
+
+      <div class="ps-code-col">
+        <div class="ps-panel" style="flex:1;">
+          <div class="ps-panel-header">代码</div>
+          <div data-code-panel style="flex:1;min-height:260px;overflow:hidden;"></div>
+        </div>
+
+        <div class="ps-panel" style="margin-top:0.75rem;">
+          <div class="ps-panel-header">⚙️ 控制</div>
+          <div class="ps-controls">
+            <button id="step-reset" class="ps-btn" title="重置">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+            <button id="step-prev" class="ps-btn" title="上一步">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button id="step-play" class="ps-btn ps-btn-play">播放</button>
+            <button id="step-next" class="ps-btn" title="下一步">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+          </div>
+          <div style="padding: 0 0.8rem 0.6rem;">
+            <span style="font-size: 0.78rem; color: #6c7086;" id="step-counter">步骤: 0 / 0</span>
+            <input type="range" id="step-speed" min="200" max="2000" value="900" step="100"
+                   style="width:100%; margin-top:0.4rem; accent-color: var(--accent-a);" />
+            <div style="text-align:center; font-size:0.72rem; color:#585b70;">
+              速度: <span id="step-speed-label">0.9s</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ps-panel" style="margin-top:0.75rem;">
+          <div class="ps-panel-header">🎯 目标和</div>
+          <div class="ps-input-row">
+            <label>targetSum:</label>
+            <input type="number" id="ps-target" class="ps-input-num" value="22">
+            <button id="ps-start" class="ps-btn ps-btn-play" style="flex:none; width:auto; padding: 0 1rem;">开始查找</button>
+          </div>
+        </div>
+
+        <div class="ps-panel" style="margin-top:0.75rem;">
+          <div class="ps-panel-header">📌 示例</div>
+          <div class="ps-example-row">
+            <button class="ps-example-btn" data-id="1">示例1: [5,4,8,11,null,13,4,7,2,null,null,null,1]</button>
+            <button class="ps-example-btn" data-id="2">示例2: [1,2,3]</button>
+            <button class="ps-example-btn" data-id="3">空树 []</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,495 @@
+<style>
+  #algo-redundant-edge-ii-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-ii-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #f59e0b55, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #d9770655, transparent 55%),
+                linear-gradient(135deg, #1c1206 0%, #451a03 25%, #1c1206 50%, #78350f 75%, #1c1206 100%);
+    z-index: -2;
+  }
+
+  #algo-redundant-edge-ii-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(28, 18, 6, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-redundant-edge-ii-view .re2-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .re2-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .re2-hero .re2-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .re2-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .re2-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .re2-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .re2-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .re2-tip strong {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  #algo-redundant-edge-ii-view .re2-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-redundant-edge-ii-view .re2-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .re2-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .re2-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .re2-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .re2-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .re2-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .re2-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .re2-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .re2-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+  }
+
+  .re2-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .re2-stat-val {
+    color: #f59e0b;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .re2-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 260px;
+  }
+
+  .re2-graph-container svg {
+    width: 100%;
+    max-width: 480px;
+    height: 260px;
+  }
+
+  .re2-degree-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .re2-degree-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .re2-degree-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .re2-degree-item {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 32px;
+    text-align: center;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .re2-degree-item.high {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+  }
+
+  .re2-degree-item .re2-idx {
+    display: block;
+    font-size: 9px;
+    color: rgba(204, 214, 244, 0.5);
+    margin-bottom: 2px;
+  }
+
+  .re2-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .re2-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .re2-log div {
+    padding: 2px 0;
+  }
+
+  .re2-log div.active {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  .re2-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .re2-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .re2-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .re2-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .re2-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .re2-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .re2-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .re2-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(245, 158, 11, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .re2-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .re2-pb-btn:not(:disabled):hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    transform: translateY(-1px);
+  }
+
+  .re2-pb-btn.play {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .re2-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .re2-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .re2-speed-row input {
+    flex: 1;
+    accent-color: #f59e0b;
+  }
+
+  .re2-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pathPulse {
+    0%, 100% { stroke-opacity: 1; }
+    50% { stroke-opacity: 0.4; }
+  }
+
+  .re2-node {
+    transition: all 0.3s ease;
+  }
+
+  .re2-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="re2-page">
+  <div class="re2-hero">
+    <div class="re2-title-wrapper">
+      <div class="re2-hero-icon">🔀</div>
+      <div class="re2-hero-text">
+        <h2>多余的边 II (LeetCode 685)</h2>
+        <p>有向图中找出多余的边，使图变为一棵有根树</p>
+      </div>
+    </div>
+    <div class="re2-tip"><strong>核心思路：</strong>有向图中可能出现两种情况：(1) 某节点有两条入边（冲突），(2) 存在环。需要判断并删除多余的边。</div>
+  </div>
+
+  <div class="re2-layout">
+    <div class="re2-main">
+      <div class="re2-card">
+        <div class="re2-controls">
+          <button id="re2-start" class="re2-btn">检测环</button>
+        </div>
+
+        <div class="re2-stats">
+          <div class="re2-stat"><span class="re2-stat-label">当前边</span><span class="re2-stat-val" id="re2-edge">-</span></div>
+          <div class="re2-stat"><span class="re2-stat-label">问题类型</span><span class="re2-stat-val" id="re2-issue">-</span></div>
+          <div class="re2-stat"><span class="re2-stat-label">最大入度</span><span class="re2-stat-val" id="re2-maxin">-</span></div>
+          <div class="re2-stat"><span class="re2-stat-val" id="re2-status">分析中</span></div>
+        </div>
+
+        <div class="re2-graph-container" id="re2-graph"></div>
+
+        <div class="re2-degree-container">
+          <div class="re2-degree-title">各节点入度 (indegree)</div>
+          <div class="re2-degree-row" id="re2-degrees"></div>
+        </div>
+
+        <div class="re2-message" id="step-message">点击「检测环」分析有向图，找出多余的边。</div>
+
+        <div class="re2-log" id="re2-log"></div>
+      </div>
+    </div>
+
+    <div class="re2-right">
+      <div data-code-panel class="re2-code-card"></div>
+      <div class="re2-legend">
+        <div class="re2-legend-item"><span class="re2-legend-box" style="background:rgba(245,158,11,0.2);border:2px solid #f59e0b"></span>普通有向边</div>
+        <div class="re2-legend-item"><span class="re2-legend-box" style="background:rgba(239,68,68,0.3);border:2px solid #ef4444"></span>多余边</div>
+        <div class="re2-legend-item"><span class="re2-legend-box" style="background:rgba(16,185,129,0.3);border:2px solid #10b981"></span>有效边</div>
+      </div>
+      <div class="re2-playback">
+        <div class="re2-pb-row">
+          <button id="step-reset" class="re2-pb-btn">重置</button>
+          <button id="step-prev" class="re2-pb-btn">上一步</button>
+          <button id="step-play" class="re2-pb-btn play">播放</button>
+          <button id="step-next" class="re2-pb-btn">下一步</button>
+        </div>
+        <div class="re2-speed-row">
+          <span>速度</span>
+          <input id="re2-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="re2-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="re2-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

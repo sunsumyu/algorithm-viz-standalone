@@ -1,0 +1,188 @@
+<style>
+  #algo-replace-digits-view {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(168, 85, 247, 0.18), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, 0.18), transparent 55%),
+      linear-gradient(135deg, #181229, #1a162c, #11131d);
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #algo-replace-digits-view .rd-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  #algo-replace-digits-view .rd-header { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-shrink: 0; }
+  #algo-replace-digits-view .rd-header-left { display: flex; align-items: center; gap: 1rem; }
+  #algo-replace-digits-view .rd-icon-badge {
+    width: 44px; height: 44px; border-radius: 11px;
+    background: linear-gradient(135deg, #a855f7, #3b82f6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  #algo-replace-digits-view h2 {
+    margin: 0 0 5px; font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, #a855f7, #3b82f6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  #algo-replace-digits-view .rd-desc { margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.5; }
+  #algo-replace-digits-view .rd-tip {
+    max-width: 420px; padding: 9px 12px; border-radius: 10px;
+    background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.24);
+    color: #e9d5ff; font-size: 13px; line-height: 1.55;
+  }
+  #algo-replace-digits-view .rd-tip strong { color: #a855f7; }
+  #algo-replace-digits-view .rd-main {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: minmax(0, 1fr) 420px;
+    gap: 14px; padding: 14px; overflow: hidden;
+  }
+  #algo-replace-digits-view .rd-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 4px; }
+  #algo-replace-digits-view .rd-card {
+    backdrop-filter: blur(18px) saturate(160%);
+    background: rgba(20, 18, 38, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+  #algo-replace-digits-view .rd-card-title {
+    padding: 11px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex; justify-content: space-between;
+    color: #e2e8f0; font-weight: 700; font-size: 14px;
+  }
+  #algo-replace-digits-view .rd-input-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 14px; }
+  #algo-replace-digits-view input {
+    width: 100%; padding: 9px 11px; border-radius: 10px;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    background: rgba(17, 17, 27, 0.7); color: #e2e8f0;
+    font-family: Consolas, monospace; outline: none; transition: border-color 0.2s;
+  }
+  #algo-replace-digits-view input:focus { border-color: rgba(168, 85, 247, 0.5); }
+  #algo-replace-digits-view button {
+    padding: 8px 14px; border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 10px; background: rgba(100, 116, 139, 0.2);
+    color: #e2e8f0; cursor: pointer; transition: all 0.2s; font-size: 14px;
+  }
+  #algo-replace-digits-view button:hover:not(:disabled) { background: linear-gradient(135deg, #a855f7, #3b82f6); border-color: transparent; color: #1e1e2e; }
+  #algo-replace-digits-view button:disabled { opacity: 0.45; cursor: not-allowed; }
+  #algo-replace-digits-view .rd-examples { padding: 0 14px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-replace-digits-view .rd-example-btn { padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+  #algo-replace-digits-view .rd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #algo-replace-digits-view .rd-stat {
+    position: relative; overflow: hidden; padding: 12px 12px 12px 18px;
+    backdrop-filter: blur(18px) saturate(160%);
+    background: rgba(20, 18, 38, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  #algo-replace-digits-view .rd-stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, #a855f7, #3b82f6); border-radius: 2px 0 0 2px; }
+  #algo-replace-digits-view .rd-stat label { display: block; margin-bottom: 6px; color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  #algo-replace-digits-view .rd-stat span { color: #a855f7; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  #algo-replace-digits-view .rd-visual { flex: 1; min-height: 230px; display: flex; flex-direction: column; }
+  #algo-replace-digits-view .rd-track { flex: 1; min-height: 0; padding: 28px 18px 18px; overflow: auto; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  #algo-replace-digits-view .rd-cell {
+    width: 42px; height: 50px; border-radius: 10px;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    background: rgba(17, 17, 27, 0.7);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    transition: all 0.25s ease; position: relative;
+  }
+  #algo-replace-digits-view .rd-cell .idx { color: #64748b; font-size: 10px; font-family: ui-monospace, monospace; }
+  #algo-replace-digits-view .rd-cell .val { color: #e2e8f0; font-weight: 800; font-size: 16px; }
+  #algo-replace-digits-view .rd-cell.current { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18); animation: pulseCur 1.2s infinite; }
+  #algo-replace-digits-view .rd-cell.done { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18); }
+  #algo-replace-digits-view .rd-cell.digit { background: rgba(168, 85, 247, 0.14); border-color: #a855f7; }
+  #algo-replace-digits-view .rd-cell.replaced { background: rgba(59, 130, 246, 0.22); border-color: #3b82f6; animation: replaceGlow 0.5s ease; }
+  #algo-replace-digits-view .rd-cell.kept { background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.4); }
+  #algo-replace-digits-view .rd-ptr { position: absolute; top: -16px; font-size: 11px; font-weight: 700; color: #a855f7; }
+  #algo-replace-digits-view .rd-message { margin: 0 16px 16px; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(168, 85, 247, 0.22); background: rgba(168, 85, 247, 0.08); line-height: 1.5; font-size: 14px; color: #e9d5ff; }
+  #algo-replace-digits-view .rd-log { min-height: 80px; max-height: 110px; padding: 10px 14px; overflow: auto; background: rgba(17, 17, 27, 0.7); font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.7; color: #94a3b8; }
+  #algo-replace-digits-view .rd-log .active { color: #a855f7; background: rgba(168, 85, 247, 0.05); font-weight: 600; }
+  #algo-replace-digits-view .rd-code { min-height: 0; display: flex; background: rgba(17, 17, 27, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; backdrop-filter: blur(18px) saturate(160%); }
+  #algo-replace-digits-view .rd-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-replace-digits-view .rd-controls { padding: 12px 16px; background: rgba(24, 24, 37, 0.9); border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  #algo-replace-digits-view .rd-controls button { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  #algo-replace-digits-view .rd-controls #step-play { background: linear-gradient(135deg, #a855f7, #3b82f6); border: none; color: #1e1e2e; }
+  #algo-replace-digits-view .rd-controls button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2); }
+  #algo-replace-digits-view .rd-controls button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  #algo-replace-digits-view .rd-counter { color: #94a3b8; font-size: 14px; font-family: ui-monospace, monospace; }
+  #algo-replace-digits-view .control-divider { width: 1px; height: 24px; background: rgba(255, 255, 255, 0.1); }
+  #algo-replace-digits-view #step-speed { accent-color: #a855f7; width: 100px; }
+  @keyframes pulseCur { 0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(168, 85, 247, 0); } }
+  @keyframes replaceGlow { 0% { transform: scale(1.2); box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); } 100% { transform: scale(1); box-shadow: none; } }
+  @media (max-width: 1100px) { #algo-replace-digits-view .rd-main { grid-template-columns: 1fr; overflow: auto; } #algo-replace-digits-view .rd-code { min-height: 360px; } }
+</style>
+
+<div class="rd-page">
+  <div class="rd-header">
+    <div class="rd-header-left">
+      <div class="rd-icon-badge">🔢</div>
+      <div>
+        <h2>替换数字（双指针遍历）</h2>
+        <p class="rd-desc">字符串遍历：把数字字符替换为指定字符串</p>
+      </div>
+    </div>
+    <div class="rd-tip"><strong>单指针遍历：</strong>从左到右扫描字符串，遇到数字字符就替换，其他字符保留，动画演示替换过程。</div>
+  </div>
+  <div class="rd-main">
+    <div class="rd-left">
+      <section class="rd-card">
+        <div class="rd-card-title"><span>输入字符串</span></div>
+        <div class="rd-input-row">
+          <input id="rd-input" value="a1b2c3def45" placeholder="输入字符串">
+          <button id="rd-start">开始替换</button>
+        </div>
+        <div class="rd-input-row" style="padding-top:0;">
+          <input id="rd-replace" value="number" placeholder="替换为" style="grid-column: 1 / -1;">
+        </div>
+        <div class="rd-examples">
+          <button class="rd-example-btn" data-val="a1b2c3def45" data-replace="number">a1b2c3def45 → number</button>
+          <button class="rd-example-btn" data-val="abc123" data-replace="数字">abc123 → 数字</button>
+          <button class="rd-example-btn" data-val="hello2025world" data-replace="#">hello2025world → #</button>
+        </div>
+      </section>
+      <div class="rd-stats">
+        <div class="rd-stat"><label>当前位置 i</label><span id="rd-i">0</span></div>
+        <div class="rd-stat"><label>当前字符</label><span id="rd-cur">-</span></div>
+        <div class="rd-stat"><label>已替换次数</label><span id="rd-replaced">0</span></div>
+        <div class="rd-stat"><label>总长度</label><span id="rd-len">0</span></div>
+      </div>
+      <section class="rd-card rd-visual">
+        <div class="rd-card-title"><span>字符遍历</span><span id="rd-phase" style="color:#94a3b8;font-size:12px;font-weight:400;">就绪</span></div>
+        <div class="rd-track" id="rd-track"></div>
+        <div class="rd-message" id="step-message">点击"开始替换"</div>
+      </section>
+      <section class="rd-card">
+        <div class="rd-card-title">执行日志</div>
+        <div class="rd-log" id="rd-log"></div>
+      </section>
+    </div>
+    <aside class="rd-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="rd-controls">
+    <button id="step-reset">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+      重置
+    </button>
+    <button id="step-prev">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" /></svg>
+      上一步
+    </button>
+    <button id="step-play">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z" /></svg>
+      播放
+    </button>
+    <button id="step-next">
+      下一步
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" /></svg>
+    </button>
+    <div class="control-divider"></div>
+    <span id="step-counter" class="rd-counter">步骤: 0 / 0</span>
+    <div style="display:flex; align-items:center; gap:0.5rem;">
+      <span class="rd-counter">速度</span>
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" class="rd-counter">0.9s</span>
+    </div>
+  </div>
+</div>

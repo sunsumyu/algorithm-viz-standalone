@@ -1,0 +1,474 @@
+<!-- 最长公共前缀 LeetCode 14 -->
+<style>
+  #algo-longest-common-prefix-view {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #181229, #1a162c, #11131d);
+    padding: 1.5rem;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #algo-longest-common-prefix-view .lcp-title {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #2dd4bf, #22d3ee);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+  #algo-longest-common-prefix-view .lcp-desc {
+    color: #94a3b8;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+  }
+  #algo-longest-common-prefix-view .glass-card {
+    backdrop-filter: blur(18px) saturate(160%);
+    background: rgba(20, 18, 38, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+  #algo-longest-common-prefix-view .lcp-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1rem;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  @media (max-width: 1100px) {
+    #algo-longest-common-prefix-view .lcp-layout { grid-template-columns: 1fr; }
+  }
+  #algo-longest-common-prefix-view .lcp-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  /* Glass hero */
+  #algo-longest-common-prefix-view .glass-hero {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+  }
+  #algo-longest-common-prefix-view .glass-hero .icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #2dd4bf, #22d3ee);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  #algo-longest-common-prefix-view .glass-hero .content h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+  #algo-longest-common-prefix-view .glass-hero .content .tip-box {
+    margin-top: 0.25rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 8px;
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    color: #a5f3fc;
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 500px;
+  }
+  #algo-longest-common-prefix-view .lcp-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  #algo-longest-common-prefix-view .glass-input {
+    background: rgba(17, 17, 27, 0.7);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 10px;
+    padding: 0.5rem 0.8rem;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    width: 240px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #algo-longest-common-prefix-view .glass-input:focus {
+    border-color: rgba(34, 211, 238, 0.5);
+  }
+  #algo-longest-common-prefix-view .glass-btn {
+    background: linear-gradient(135deg, #2dd4bf, #22d3ee);
+    color: #0f172a;
+    border: none;
+    border-radius: 10px;
+    padding: 0.45rem 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+  }
+  #algo-longest-common-prefix-view .glass-btn:hover {
+    opacity: 0.9;
+  }
+  #algo-longest-common-prefix-view .glass-btn-secondary {
+    background: rgba(100, 116, 139, 0.2);
+    color: #e2e8f0;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 10px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #algo-longest-common-prefix-view .glass-btn-secondary:hover {
+    background: rgba(100, 116, 139, 0.3);
+  }
+  #algo-longest-common-prefix-view .glass-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+  #algo-longest-common-prefix-view .glass-stat {
+    position: relative;
+    overflow: hidden;
+  }
+  #algo-longest-common-prefix-view .glass-stat::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #2dd4bf, #22d3ee);
+    border-radius: 2px 0 0 2px;
+  }
+  #algo-longest-common-prefix-view .glass-stat-label {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  #algo-longest-common-prefix-view .glass-stat-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2dd4bf;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  #algo-longest-common-prefix-view .glass-info {
+    padding: 0.75rem 1rem;
+    border-left: 3px solid #22d3ee;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  #algo-longest-common-prefix-view .glass-log {
+    padding: 0.75rem;
+    background: rgba(17, 17, 27, 0.7);
+    border-radius: 0 0 0 12px;
+    max-height: 180px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.8rem;
+  }
+  #algo-longest-common-prefix-view .glass-log div {
+    padding: 2px 0;
+    color: #94a3b8;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+  #algo-longest-common-prefix-view .glass-log div.active {
+    color: #22d3ee;
+    font-weight: 600;
+    background: rgba(34, 211, 238, 0.05);
+  }
+  /* Glass controls bar */
+  #algo-longest-common-prefix-view .glass-controls {
+    padding: 0.75rem 1.25rem;
+    background: rgba(24, 24, 37, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+  }
+  #algo-longest-common-prefix-view .glass-controls button {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #e2e8f0;
+  }
+  #algo-longest-common-prefix-view .glass-controls .btn-reset {
+    background: rgba(100, 116, 139, 0.2);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+  }
+  #algo-longest-common-prefix-view .glass-controls .btn-prev {
+    background: rgba(100, 116, 139, 0.2);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+  }
+  #algo-longest-common-prefix-view .glass-controls .btn-play {
+    background: linear-gradient(135deg, #2dd4bf, #22d3ee);
+    border: none;
+    color: #0f172a;
+  }
+  #algo-longest-common-prefix-view .glass-controls .btn-next {
+    background: rgba(100, 116, 139, 0.2);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+  }
+  #algo-longest-common-prefix-view .glass-controls button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 211, 238, 0.2);
+  }
+  #algo-longest-common-prefix-view .glass-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+  #algo-longest-common-prefix-view .glass-controls .control-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  #algo-longest-common-prefix-view .glass-controls .step-counter {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  #algo-longest-common-prefix-view .glass-controls .speed-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  #algo-longest-common-prefix-view .glass-controls .speed-label {
+    color: #64748b;
+    font-size: 0.8rem;
+  }
+  #algo-longest-common-prefix-view #step-speed {
+    width: 100px;
+    accent-color: #2dd4bf;
+  }
+  /* LCP Strings visualization */
+  #algo-longest-common-prefix-view .lcp-strings-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  #algo-longest-common-prefix-view .lcp-strings-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.35rem;
+    padding-left: 1rem;
+  }
+  #algo-longest-common-prefix-view .lcp-str-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+  #algo-longest-common-prefix-view .lcp-index {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 11px;
+  }
+  #algo-longest-common-prefix-view .lcp-char {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: rgba(30, 30, 46, 0.6);
+    border: 1px solid rgba(100, 116, 139, 0.25);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    transition: all 0.25s ease;
+  }
+  #algo-longest-common-prefix-view .lcp-char.common {
+    background: rgba(45, 212, 191, 0.25);
+    border-color: rgba(45, 212, 191, 0.4);
+    color: #2dd4bf;
+  }
+  #algo-longest-common-prefix-view .lcp-char.diff {
+    background: rgba(248, 113, 113, 0.2);
+    border-color: rgba(248, 113, 113, 0.4);
+    color: #f87171;
+    animation: pulse 1.2s infinite;
+  }
+  #algo-longest-common-prefix-view .lcp-result {
+    margin: 0.75rem 0;
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    background: rgba(45, 212, 191, 0.1);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #5eead4;
+    text-align: center;
+  }
+  /* Keyframe animations */
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(45, 212, 191, 0); }
+  }
+  @keyframes matchBurst {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); filter: brightness(1.1); }
+    100% { transform: scale(1); }
+  }
+  @keyframes mismatchShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .lcp-char.common.animate-match {
+    animation: matchBurst 0.5s ease;
+  }
+  .lcp-char.diff.animate-mismatch {
+    animation: mismatchShake 0.5s ease;
+  }
+  /* Code panel */
+  #algo-longest-common-prefix-view .code-panel {
+    padding: 1rem;
+    background: rgba(17, 17, 27, 0.8);
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+  #algo-longest-common-prefix-view .code-line {
+    padding: 1px 0;
+    padding-left: 0.75rem;
+    border-radius: 4px;
+    white-space: pre;
+    display: flex;
+    align-items: center;
+    color: #94a3b8;
+  }
+  #algo-longest-common-prefix-view .code-line.active {
+    background: rgba(34, 211, 238, 0.15);
+    border-left: 3px solid #22d3ee;
+    color: #22d3ee;
+  }
+</style>
+
+<div class="glass-hero">
+  <div class="icon-badge">📖</div>
+  <div class="content">
+    <div class="lcp-title">最长公共前缀（逐列扫描）</div>
+    <p class="lcp-desc">LeetCode 14 · 以第一个字符串为基准,逐列扫描找公共前缀</p>
+    <div class="tip-box">💡 核心动画：逐列对比字符，显示公共前缀高亮（青色），发现差异则停止并震动当前字符</div>
+  </div>
+</div>
+
+<div class="glass-card lcp-layout">
+  <div class="lcp-left">
+    <!-- Input section -->
+    <div class="glass-card" style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+      <div class="lcp-controls">
+        <input id="lcp-input" class="glass-input" value="flower,flow,flight" />
+        <button id="lcp-start" class="glass-btn">开始查找</button>
+        <button class="glass-btn-secondary" data-val="flower,flow,flight">示例1</button>
+        <button class="glass-btn-secondary" data-val="dog,racecar,car">示例2（无公共）</button>
+        <button class="glass-btn-secondary" data-val="ab,abc,abcd">示例3</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="glass-stats">
+        <div class="glass-stat">
+          <div class="glass-stat-label">当前列索引</div>
+          <div class="glass-stat-val" id="lcp-idx">0</div>
+        </div>
+        <div class="glass-stat">
+          <div class="glass-stat-label">公共前缀长度</div>
+          <div class="glass-stat-val" id="lcp-len">0</div>
+        </div>
+        <div class="glass-stat">
+          <div class="glass-stat-label">状态</div>
+          <div class="glass-stat-val" id="lcp-res">准备中</div>
+        </div>
+      </div>
+
+      <!-- Visual strings -->
+      <div class="glass-card" style="padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.35rem;">
+        <div class="lcp-strings-title">输入字符串逐列显示</div>
+        <div class="lcp-strings-wrapper" id="lcp-strings"></div>
+      </div>
+
+      <!-- Message -->
+      <div class="glass-info" id="step-message">点击「开始查找」查看逐列扫描找公共前缀的过程</div>
+
+      <!-- Logs -->
+      <div class="glass-log" id="lcp-log"></div>
+    </div>
+  </div>
+
+  <aside class="code-panel" style="background: transparent; border-radius: 0;">
+    <div data-code-panel></div>
+  </aside>
+</div>
+
+<div class="glass-controls">
+  <button id="step-reset" class="btn-reset">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
+    重置
+  </button>
+  <button id="step-prev" class="btn-prev">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+    上一步
+  </button>
+  <button id="step-play" class="btn-play">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M5 3l14 9-14 9V3z" />
+    </svg>
+    播放
+  </button>
+  <button id="step-next" class="btn-next">
+    下一步
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  </button>
+  <div class="control-divider"></div>
+  <span id="step-counter" class="step-counter">步骤: 1 / 1</span>
+  <div class="speed-container">
+    <span class="speed-label">速度</span>
+    <input id="step-speed" type="range" min="200" max="2000" step="100" value="700" />
+  </div>
+</div>

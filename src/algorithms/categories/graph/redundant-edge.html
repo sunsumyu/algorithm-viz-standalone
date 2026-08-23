@@ -1,0 +1,495 @@
+<style>
+  #algo-redundant-edge-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #f43f5e55, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #e11d4855, transparent 55%),
+                linear-gradient(135deg, #1c0a12 0%, #4c0519 25%, #1c0a12 50%, #881337 75%, #1c0a12 100%);
+    z-index: -2;
+  }
+
+  #algo-redundant-edge-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(28, 10, 18, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-redundant-edge-view .re-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .re-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .re-hero .re-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .re-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+  }
+
+  .re-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .re-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .re-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(244, 63, 94, 0.08);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .re-tip strong {
+    color: #f43f5e;
+    font-weight: 600;
+  }
+
+  #algo-redundant-edge-view .re-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-redundant-edge-view .re-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .re-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .re-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .re-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .re-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+  }
+
+  .re-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+  }
+
+  .re-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .re-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .re-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f43f5e, #e11d48);
+  }
+
+  .re-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .re-stat-val {
+    color: #f43f5e;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .re-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 260px;
+  }
+
+  .re-graph-container svg {
+    width: 100%;
+    max-width: 480px;
+    height: 260px;
+  }
+
+  .re-edge-log {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .re-edge-log-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .re-edge-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .re-edge-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(244, 63, 94, 0.15);
+    border: 1px solid rgba(244, 63, 94, 0.3);
+    color: #f43f5e;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .re-edge-item.accepted {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #10b981;
+  }
+
+  .re-edge-item.redundant {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+    color: #ef4444;
+    animation: shakeIn 0.5s ease;
+  }
+
+  .re-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    background: rgba(244, 63, 94, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .re-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .re-log div {
+    padding: 2px 0;
+  }
+
+  .re-log div.active {
+    color: #f43f5e;
+    font-weight: 600;
+  }
+
+  .re-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .re-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .re-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .re-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .re-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .re-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .re-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .re-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(244, 63, 94, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .re-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .re-pb-btn:not(:disabled):hover {
+    background: rgba(244, 63, 94, 0.2);
+    border-color: #f43f5e;
+    transform: translateY(-1px);
+  }
+
+  .re-pb-btn.play {
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+  }
+
+  .re-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+  }
+
+  .re-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .re-speed-row input {
+    flex: 1;
+    accent-color: #f43f5e;
+  }
+
+  .re-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes shakeIn {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2) rotate(5deg); }
+    70% { transform: scale(0.9) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  .re-node {
+    transition: all 0.3s ease;
+  }
+
+  .re-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="re-page">
+  <div class="re-hero">
+    <div class="re-title-wrapper">
+      <div class="re-hero-icon">✂️</div>
+      <div class="re-hero-text">
+        <h2>多余的边 (LeetCode 684)</h2>
+        <p>用并查集检测图中构成环的边，找出多余的那条边</p>
+      </div>
+    </div>
+    <div class="re-tip"><strong>核心思路：</strong>图是一棵树加一条边，所以恰好有一个环。用并查集逐条加边，当某条边的两端已属于同一集合时，该边即为多余边。</div>
+  </div>
+
+  <div class="re-layout">
+    <div class="re-main">
+      <div class="re-card">
+        <div class="re-controls">
+          <button id="re-start" class="re-btn">检测环</button>
+        </div>
+
+        <div class="re-stats">
+          <div class="re-stat"><span class="re-stat-label">当前边</span><span class="re-stat-val" id="re-edge">-</span></div>
+          <div class="re-stat"><span class="re-stat-label">find(u)</span><span class="re-stat-val" id="re-findu">-</span></div>
+          <div class="re-stat"><span class="re-stat-label">find(v)</span><span class="re-stat-val" id="re-findv">-</span></div>
+          <div class="re-stat"><span class="re-stat-label">状态</span><span class="re-stat-val" id="re-status">-</span></div>
+        </div>
+
+        <div class="re-graph-container" id="re-graph"></div>
+
+        <div class="re-edge-log">
+          <div class="re-edge-log-title">边处理记录</div>
+          <div class="re-edge-list" id="re-edge-list"></div>
+        </div>
+
+        <div class="re-message" id="step-message">点击「检测环」用并查集逐条加边，找出构成环的多余边。</div>
+
+        <div class="re-log" id="re-log"></div>
+      </div>
+    </div>
+
+    <div class="re-right">
+      <div data-code-panel class="re-code-card"></div>
+      <div class="re-legend">
+        <div class="re-legend-item"><span class="re-legend-box" style="background:rgba(244,63,94,0.2);border:2px solid #f43f5e"></span>普通边</div>
+        <div class="re-legend-item"><span class="re-legend-box" style="background:rgba(16,185,129,0.3);border:2px solid #10b981"></span>已接受边</div>
+        <div class="re-legend-item"><span class="re-legend-box" style="background:rgba(239,68,68,0.4);border:2px solid #ef4444"></span>多余边(环)</div>
+      </div>
+      <div class="re-playback">
+        <div class="re-pb-row">
+          <button id="step-reset" class="re-pb-btn">重置</button>
+          <button id="step-prev" class="re-pb-btn">上一步</button>
+          <button id="step-play" class="re-pb-btn play">播放</button>
+          <button id="step-next" class="re-pb-btn">下一步</button>
+        </div>
+        <div class="re-speed-row">
+          <span>速度</span>
+          <input id="re-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="re-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="re-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

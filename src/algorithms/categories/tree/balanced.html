@@ -1,0 +1,43 @@
+<style>
+  .blv { padding:1.5rem; color:#cdd6f4; max-width:1400px; margin:0 auto; font-family:system-ui,sans-serif }
+  .blroot { background:radial-gradient(ellipse at 8% 6%,rgba(203,166,247,.3),transparent 55%),radial-gradient(ellipse at 92% 94%,rgba(137,180,250,.3),transparent 55%),linear-gradient(135deg,rgb(20,18,38),rgb(25,23,50),rgb(35,32,60)); min-height:100%; padding:1.5rem; border-radius:20px }
+  .blh { background:rgba(20,18,38,.55); backdrop-filter:blur(18px); border-radius:16px; padding:1.25rem 1.5rem; margin-bottom:1rem; box-shadow:0 8px 32px rgba(0,0,0,.2); display:flex; justify-content:space-between; align-items:center }
+  .bltitle { font-size:22px; font-weight:800; margin:0; background:linear-gradient(135deg,rgb(203,166,247),rgb(137,180,250)); -webkit-background-clip:text; -webkit-text-fill-color:transparent }
+  .blsub { font-size:.78rem; color:#6c7086 }
+  .bltip { background:rgba(203,166,247,.1); border:1px solid rgba(203,166,247,.25); border-radius:10px; padding:.6rem .9rem; font-size:.78rem; color:rgb(203,166,247); max-width:280px }
+  .blmain { display:grid; grid-template-columns:1fr 320px; gap:1rem }
+  .blpanel { background:rgba(20,18,38,.55); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08); border-radius:16px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.35) }
+  .blph { background:rgba(25,24,42,.6); padding:.6rem .9rem; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:rgb(203,166,247); border-bottom:1px solid rgba(255,255,255,.05) }
+  .bltree { padding:1rem; min-height:260px; display:flex; align-items:center; justify-content:center }
+  .blstats { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; padding:.8rem }
+  .blstats div { text-align:center }
+  .blsv { font-size:1.2rem; font-weight:800; color:rgb(203,166,247) }
+  .blsl { font-size:.65rem; color:#6c7086; text-transform:uppercase; letter-spacing:.05em }
+  .blctrls { display:flex; gap:.3rem; padding:.8rem; flex-wrap:wrap }
+  .blbtn { background:rgba(49,50,68,.6); border:1px solid rgba(255,255,255,.1); color:#cdd6f4; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:8px; flex-shrink:0 }
+  .blbtn:hover:not(:disabled) { background:rgba(49,50,68,.8) }
+  .blbtn:disabled { opacity:.4; cursor:not-allowed }
+  .blplay { flex:1; background:linear-gradient(135deg,rgb(203,166,247),rgb(137,180,250)); color:#111; font-weight:600; min-width:70px }
+  .blmsg { text-align:center; padding:.65rem; font-size:.88rem; color:#9399b2; border-top:1px solid rgba(255,255,255,.05) }
+  .blmsg.success { color:rgb(137,180,250); font-weight:600 }
+  .blmsg.error { color:#f38ba8; font-weight:600 }
+  .bllog { padding:.6rem .8rem; max-height:150px; overflow-y:auto; font-family:ui-monospace,monospace; font-size:.75rem; line-height:1.6 }
+  .bllog div { color:#6c7086 }
+  .bllog div.active { color:rgb(203,166,247); font-weight:600 }
+  .blex { display:flex; gap:.4rem; padding:.8rem; flex-wrap:wrap }
+  .blex-btn { background:rgba(49,50,68,.5); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:.3rem .7rem; font-size:.72rem; color:#cdd6f4; cursor:pointer; transition:all .2s }
+  .blex-btn:hover { background:rgba(49,50,68,.8); border-color:rgb(203,166,247) }
+  @media (max-width:1100px){.blmain{grid-template-columns:1fr}}
+</style>
+<div style="position:relative;min-height:calc(100vh - 3rem)"><div class="blroot">
+<div class="blh"><div style="display:flex;align-items:center;gap:1rem"><button id="btn-back" style="background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:8px;cursor:pointer;width:36px;height:36px;color:#cdd6f4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><div><h1 class="bltitle">⚖️ 平衡二叉树</h1><div class="blsub">LeetCode 110</div></div></div><div class="bltip">💡 任意节点左右子树高度差不超过1</div></div>
+<div class="blmain"><div style="display:flex;flex-direction:column;gap:.75rem">
+<div class="blpanel"><div class="blph">🌳 二叉树</div><div id="bltree" class="bltree"></div><div id="blmsg" class="blmsg">点击演示查看过程</div></div>
+<div class="blpanel"><div class="blph">📊 状态</div><div class="blstats"><div><div class="blsv" id="blcur">-</div><div class="blsl">当前</div></div><div><div class="blsv" id="bldepth">0</div><div class="blsl">深度</div></div><div><div class="blsv" id="blaux">-</div><div class="blsl">辅助</div></div><div><div class="blsv" id="blresult">?</div><div class="blsl">结果</div></div></div></div>
+<div class="blpanel"><div class="blph">📋 日志</div><div id="bllog" class="bllog"></div></div>
+</div><div style="display:flex;flex-direction:column">
+<div class="blpanel" style="flex:1"><div class="blph">代码</div><div data-code-panel style="flex:1;min-height:260px;overflow:hidden"></div></div>
+<div class="blpanel" style="margin-top:.75rem"><div class="blph">⚙️ 控制</div><div class="blctrls"><button id="step-reset" class="blbtn" title="重置"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button id="step-prev" class="blbtn" title="上一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button><button id="step-play" class="blbtn blplay">播放</button><button id="step-next" class="blbtn" title="下一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></button></div>
+<div style="padding:0 .8rem .6rem"><span style="font-size:.78rem;color:#6c7086" id="step-counter">步骤: 0 / 0</span><input type="range" id="step-speed" min="200" max="2000" value="900" step="100" style="width:100%;margin-top:.4rem;accent-color:rgb(203,166,247)"><div style="text-align:center;font-size:.72rem;color:#585b70">速度: <span id="step-speed-label">0.9s</span></div></div></div>
+<div class="blpanel" style="margin-top:.75rem"><div class="blph">📌 示例</div><div class="blex"><button class="bl-ex-btn" data-id="1">[3,9,20,null,null,15,7]</button><button class="bl-ex-btn" data-id="2">[1,2,2,3,3,null,null,4,4]</button><button class="bl-ex-btn" data-id="3">[1]</button></div></div>
+</div></div></div></div>

@@ -1,0 +1,730 @@
+<style>
+    /* === 斐波那契数列 · 4 阶段演化看板 (自顶向下到自底向上演化) === */
+    .fib-viz-container {
+        --accent-a: #60a5fa;
+        --accent-b: #c084fc;
+        --accent-glow: rgba(96, 165, 250, .4);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        color: #e2e8f0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 0;
+        gap: 0;
+        box-sizing: border-box;
+        background:
+            radial-gradient(ellipse at 8% 6%, rgba(96, 165, 250, .22), transparent 55%),
+            radial-gradient(ellipse at 92% 94%, rgba(192, 132, 252, .22), transparent 55%),
+            linear-gradient(135deg, #0a0e1d 0%, #1a0e2a 50%, #2a1a30 100%);
+    }
+
+    .fib-viz-container .viz-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(8, 8, 24, .35);
+        backdrop-filter: blur(14px) saturate(150%);
+        padding: 10px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, .06);
+        flex-shrink: 0;
+        gap: 12px;
+    }
+
+    .fib-viz-container .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .fib-viz-container .fib-icon {
+        width: 38px; height: 38px; border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 20px;
+        background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+        color: #06121f; box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .fib-viz-container .header-left h1 {
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -.02em;
+        color: #f1f5f9;
+        margin: 0;
+    }
+    .fib-viz-container .header-left .sub { color: #94a3b8; font-size: 11.5px; margin-top: 1px; }
+
+    /* 4 阶段演化药丸选择器 */
+    .fib-viz-container .evolution-stage-selector {
+        display: flex;
+        gap: 4px;
+        background: rgba(0, 0, 0, 0.45);
+        padding: 3px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0;
+    }
+
+    .fib-viz-container .stage-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        color: #94a3b8;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(.4,0,.2,1);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .fib-viz-container .stage-btn:hover {
+        color: #f8fafc;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .fib-viz-container .stage-btn.active {
+        background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+        color: #06121f;
+        font-weight: 800;
+        box-shadow: 0 3px 12px var(--accent-glow);
+    }
+
+    .fib-viz-container .stage-btn .badge {
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.25);
+    }
+
+    .fib-viz-container .stage-btn.active .badge {
+        background: rgba(0, 0, 0, 0.2);
+        color: #06121f;
+    }
+
+    .fib-viz-container .btn-icon {
+        background: rgba(255, 255, 255, .04);
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all .25s cubic-bezier(.4, 0, .2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        color: #e2e8f0;
+    }
+
+    .fib-viz-container .btn-icon:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+        border-color: transparent; color: #06121f; transform: translateY(-1px);
+        box-shadow: 0 4px 14px var(--accent-glow);
+    }
+    .fib-viz-container .btn-icon:disabled { opacity: .4; cursor: not-allowed; }
+
+    .fib-viz-container .viz-main-content {
+        display: flex;
+        flex-direction: row;
+        flex: 1;
+        gap: 16px;
+        overflow: hidden;
+        width: 100%;
+        min-height: 0;
+        padding: 16px;
+    }
+
+    .fib-viz-container .col-viz {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        gap: 12px;
+    }
+
+    .fib-viz-container .col-code {
+        width: 420px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        background: rgba(8, 8, 24, .55);
+        backdrop-filter: blur(18px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .fib-viz-container .viz-stage-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: rgba(20, 18, 38, .55);
+        backdrop-filter: blur(18px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 16px;
+        min-width: 0;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+        position: relative;
+    }
+
+    .fib-viz-container .stage-header {
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, .06);
+        font-size: 13px;
+        font-weight: 700;
+        color: #cbd5e1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: space-between;
+        background: rgba(8, 8, 24, 0.4);
+    }
+
+    .fib-viz-container .tree-container {
+        flex: 1;
+        overflow: auto;
+        padding: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .fib-viz-container .tree-svg {
+        min-width: 100%;
+        min-height: 100%;
+    }
+
+    .fib-viz-container .tree-node {
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .fib-viz-container .tree-node circle {
+        fill: rgba(255, 255, 255, .06);
+        stroke: rgba(255, 255, 255, .15);
+        stroke-width: 2;
+        transition: all 0.3s;
+    }
+
+    .fib-viz-container .tree-node.current circle {
+        fill: rgba(96, 165, 250, .35);
+        stroke: var(--accent-a);
+        filter: drop-shadow(0 0 8px rgba(96, 165, 250, .6));
+        animation: fib-node-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes fib-node-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+    }
+
+    .fib-viz-container .tree-node.computed circle {
+        fill: rgba(52, 211, 153, .25);
+        stroke: #34d399;
+    }
+
+    .fib-viz-container .tree-node.repeated circle {
+        fill: rgba(251, 191, 36, .3);
+        stroke: #fbbf24;
+    }
+
+    .fib-viz-container .tree-node.memo-hit circle {
+        fill: rgba(192, 132, 252, .3);
+        stroke: #c084fc;
+        filter: drop-shadow(0 0 8px rgba(192, 132, 252, .5));
+    }
+
+    .fib-viz-container .tree-node text {
+        fill: #e2e8f0;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+    }
+
+    .fib-viz-container .tree-node.computed text { fill: #6ee7b7; }
+    .fib-viz-container .tree-node.current text { fill: #bfdbfe; }
+    .fib-viz-container .tree-node.memo-hit text { fill: #e9d5ff; }
+
+    .fib-viz-container .tree-edge {
+        stroke: rgba(255, 255, 255, .15);
+        stroke-width: 1.5;
+        fill: none;
+        transition: all 0.3s;
+    }
+
+    .fib-viz-container .tree-edge.active {
+        stroke: var(--accent-a);
+        stroke-width: 2.5;
+        filter: drop-shadow(0 0 4px rgba(96, 165, 250, .4));
+    }
+
+    /* DP 数组与备忘录表格容器 */
+    .fib-viz-container .dp-table-container {
+        flex: 1;
+        overflow: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+    }
+
+    /* Arc arrow animations for dependency visualization */
+    @keyframes fib-arc-draw {
+        from { stroke-dashoffset: var(--arc-len, 200); }
+        to   { stroke-dashoffset: 0; }
+    }
+    @keyframes fib-arc-label {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 0.9; transform: translateY(0); }
+    }
+
+    .fib-viz-container .dp-table {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .fib-viz-container .dp-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .fib-viz-container .dp-cell {
+        width: 56px;
+        height: 48px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, .04);
+        border: 1.5px solid rgba(255, 255, 255, .1);
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+        font-family: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    .fib-viz-container .dp-cell .index {
+        font-size: 10.5px;
+        color: #64748b;
+    }
+
+    .fib-viz-container .dp-cell .value {
+        font-size: 15px;
+        font-weight: 800;
+        color: #cbd5e1;
+    }
+
+    .fib-viz-container .dp-cell.current {
+        background: linear-gradient(135deg, rgba(96, 165, 250, .35), rgba(96, 165, 250, .12));
+        border-color: var(--accent-a);
+        transform: scale(1.12) translateY(-2px);
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, .2), 0 8px 22px rgba(96, 165, 250, .4);
+        animation: fib-dp-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes fib-dp-pulse {
+        0%, 100% { box-shadow: 0 0 0 3px rgba(96, 165, 250, .2), 0 8px 22px rgba(96, 165, 250, .4); }
+        50% { box-shadow: 0 0 0 6px rgba(96, 165, 250, .1), 0 10px 28px rgba(96, 165, 250, .55); }
+    }
+    .fib-viz-container .dp-cell.current .value { color: #bfdbfe; }
+
+    .fib-viz-container .dp-cell.computed {
+        background: linear-gradient(135deg, rgba(52, 211, 153, .2), rgba(16, 185, 129, .08));
+        border-color: rgba(52, 211, 153, .5);
+    }
+    .fib-viz-container .dp-cell.computed .value { color: #6ee7b7; }
+
+    .fib-viz-container .dp-cell.depends {
+        background: linear-gradient(135deg, rgba(251, 191, 36, .2), rgba(245, 158, 11, .08));
+        border-color: rgba(251, 191, 36, .5);
+        animation: fib-dep-flash .6s ease-in-out;
+    }
+    @keyframes fib-dep-flash {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); box-shadow: 0 0 12px rgba(251, 191, 36, .4); }
+        100% { transform: scale(1); }
+    }
+    .fib-viz-container .dp-cell.depends .value { color: #fde68a; }
+
+    .fib-viz-container .dp-label {
+        font-size: 12px;
+        color: #94a3b8;
+        font-weight: 700;
+        width: 60px;
+        text-align: right;
+        padding-right: 8px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* 空间压缩滚动变量专属展示区 */
+    .fib-viz-container .rolling-vars-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        gap: 20px;
+    }
+
+    .fib-viz-container .rolling-cards-row {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .fib-viz-container .rolling-card {
+        width: 140px;
+        height: 110px;
+        background: rgba(15, 23, 42, 0.75);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .fib-viz-container .rolling-card.active {
+        border-color: #60a5fa;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(15, 23, 42, 0.85));
+        transform: translateY(-4px);
+        box-shadow: 0 12px 36px rgba(59, 130, 246, 0.35);
+    }
+
+    .fib-viz-container .rolling-card.highlight {
+        border-color: #34d399;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(15, 23, 42, 0.85));
+    }
+
+    .fib-viz-container .rolling-card-label {
+        font-size: 12px;
+        color: #94a3b8;
+        font-weight: 700;
+        letter-spacing: .05em;
+    }
+
+    .fib-viz-container .rolling-card-val {
+        font-size: 26px;
+        font-weight: 900;
+        color: #f8fafc;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .fib-viz-container .rolling-operator {
+        font-size: 24px;
+        font-weight: 800;
+        color: #fbbf24;
+    }
+
+    .fib-viz-container .stats-panel {
+        padding: 10px 16px;
+        background: rgba(8, 8, 24, .55);
+        backdrop-filter: blur(18px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 14px;
+        display: flex;
+        gap: 20px;
+        font-size: 12.5px;
+        flex-shrink: 0;
+    }
+
+    .fib-viz-container .stats-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .fib-viz-container .stats-title {
+        font-size: 10.5px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        font-weight: 700;
+    }
+
+    .fib-viz-container .stats-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .fib-viz-container .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .fib-viz-container .stat-label {
+        color: #94a3b8;
+        font-size: 11.5px;
+    }
+
+    .fib-viz-container .stat-value {
+        color: #bfdbfe;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        font-size: 13px;
+    }
+
+    .fib-viz-container .stat-value.highlight { color: #fde68a; }
+    .fib-viz-container .stat-value.success { color: #6ee7b7; }
+
+    .fib-viz-container #fib-status {
+        padding: 10px 16px;
+        text-align: center;
+        color: #cbd5e1;
+        background: linear-gradient(135deg, rgba(96, 165, 250, .12), rgba(192, 132, 252, .06));
+        border: 1px solid rgba(96, 165, 250, .28);
+        border-radius: 10px;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .fib-viz-container .legend {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+        color: #94a3b8;
+        flex-wrap: wrap;
+    }
+
+    .fib-viz-container .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .fib-viz-container .legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 3px;
+    }
+
+    .fib-viz-container .viz-footer {
+        background: rgba(8, 8, 24, .55);
+        backdrop-filter: blur(18px) saturate(160%);
+        padding: 10px 18px;
+        border-top: 1px solid rgba(255, 255, 255, .06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        gap: 12px;
+    }
+
+    .fib-viz-container .control-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .fib-viz-container .btn-primary {
+        background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+        border: none;
+        border-radius: 9px;
+        cursor: pointer;
+        transition: all .25s cubic-bezier(.4, 0, .2, 1);
+        padding: 6px 14px;
+        color: #06121f;
+        font-weight: 700;
+        font-size: 12.5px;
+    }
+
+    .fib-viz-container .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px var(--accent-glow);
+    }
+    .fib-viz-container .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+    .fib-viz-container input[type="number"] {
+        background: rgba(8, 8, 24, .6);
+        padding: 6px 10px;
+        border-radius: 8px;
+        color: #e2e8f0;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        font-size: 12.5px;
+        outline: none;
+        width: 65px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        transition: all .2s;
+    }
+    .fib-viz-container input[type="number"]:focus {
+        border-color: var(--accent-a);
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, .15);
+    }
+
+    .fib-viz-container input[type="range"] {
+        width: 110px;
+        accent-color: var(--accent-a);
+    }
+</style>
+
+<div class="fib-viz-container">
+    <div class="viz-header">
+        <div class="header-left">
+            <span class="fib-icon">🔢</span>
+            <div>
+                <h1>斐波那契数 · 4 阶段算法演化</h1>
+                <div class="sub">自顶向下递归 ➔ 备忘录剪枝 ➔ 递推填表 ➔ 空间滚动压缩</div>
+            </div>
+        </div>
+
+        <!-- 4 阶段算法演化选择器 -->
+        <div id="evolution-stage-selector" class="evolution-stage-selector">
+            <button class="stage-btn" data-stage="naive-recursive" title="1. 朴素递归 (自顶向下分治，指数级 O(2ⁿ))">
+                <span>1. 朴素递归</span>
+                <span class="badge">O(2ⁿ)</span>
+            </button>
+            <button class="stage-btn active" data-stage="memo-topdown" title="2. 记忆化搜索 (自顶向下备忘录剪枝，线性 O(n))">
+                <span>2. 记忆化搜索</span>
+                <span class="badge">O(n)</span>
+            </button>
+            <button class="stage-btn" data-stage="tabulation-bottomup" title="3. 递推填表法 (自底向上迭代填表，线性 O(n))">
+                <span>3. 递推填表</span>
+                <span class="badge">O(n)</span>
+            </button>
+            <button class="stage-btn" data-stage="space-optimized" title="4. 空间状态压缩 (滚动变量优化，常数空间 O(1))">
+                <span>4. 空间压缩</span>
+                <span class="badge">O(1)</span>
+            </button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#60a5fa;"></div> 当前计算</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#34d399;"></div> 已计算</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;"></div> 依赖项/重复</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#c084fc;"></div> 备忘录命中</div>
+        </div>
+    </div>
+
+    <div class="viz-main-content">
+        <div class="col-viz">
+            <!-- 演化可视化主视口 -->
+            <div class="viz-stage-card">
+                <div class="stage-header">
+                    <span id="stage-title-text">🌳 阶段 2：记忆化搜索 (Top-Down Memoization)</span>
+                    <span id="stage-badge-info" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #bfdbfe;">时间: O(n) | 空间: O(n)</span>
+                </div>
+
+                <!-- 视口 1 & 2: 递归调用树 (朴素递归 / 记忆化搜索) -->
+                <div id="tree-container" class="tree-container">
+                    <svg id="tree-svg" class="tree-svg"></svg>
+                </div>
+
+                <!-- 视口 3: 递推 DP 1D 表格 (递推填表法 / 备忘录数组) -->
+                <div id="dp-table-container" class="dp-table-container" style="display: none;"></div>
+
+                <!-- 视口 4: 空间压缩滚动变量卡片 (空间状态压缩) -->
+                <div id="rolling-vars-container" class="rolling-vars-container" style="display: none;">
+                    <div class="rolling-cards-row">
+                        <div id="card-prev2" class="rolling-card">
+                            <span class="rolling-card-label">prev2 (dp[i-2])</span>
+                            <span id="val-prev2" class="rolling-card-val">0</span>
+                        </div>
+                        <span class="rolling-operator">+</span>
+                        <div id="card-prev1" class="rolling-card">
+                            <span class="rolling-card-label">prev1 (dp[i-1])</span>
+                            <span id="val-prev1" class="rolling-card-val">1</span>
+                        </div>
+                        <span class="rolling-operator">=</span>
+                        <div id="card-curr" class="rolling-card active">
+                            <span class="rolling-card-label">curr (当前值)</span>
+                            <span id="val-curr" class="rolling-card-val">1</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 12.5px; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+                        <span>🔄 滑动规则：</span>
+                        <code style="background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; color: #6ee7b7;">prev2 = prev1; prev1 = curr;</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 演化监控指标面板 -->
+            <div class="stats-panel">
+                <div class="stats-group">
+                    <div class="stats-title">当前演化模式</div>
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">阶段方向:</span>
+                            <span id="stat-direction" class="stat-value">自顶向下</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">时间复杂度:</span>
+                            <span id="stat-time-comp" class="stat-value highlight">O(n)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">空间复杂度:</span>
+                            <span id="stat-space-comp" class="stat-value success">O(n)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-title">执行统计与剪枝指标</div>
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">函数调用次数:</span>
+                            <span id="stat-calls" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">备忘录命中:</span>
+                            <span id="stat-hits" class="stat-value success">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">朴素递归调用:</span>
+                            <span id="stat-naive-calls" class="stat-value highlight">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fib-status">输入 n 值后点击开始推导</div>
+        </div>
+
+        <!-- 右侧：多语言代码与逐行精讲 CodePanel -->
+        <div class="col-code">
+            <div data-code-panel style="flex:1;overflow:hidden;"></div>
+        </div>
+    </div>
+
+    <!-- 底部控制栏 -->
+    <div class="viz-footer">
+        <div class="control-group">
+            <span style="font-size:12px;color:#94a3b8;">目标项 n =</span>
+            <input type="number" id="fib-input" value="6" min="1" max="10">
+            <button id="fib-start" class="btn-primary">重置并计算</button>
+        </div>
+        <div class="control-group">
+            <button id="fib-reset" class="btn-icon" title="重置回第一步">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                </svg>
+            </button>
+            <button id="fib-prev" class="btn-icon" title="上一步">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button id="fib-play" class="btn-primary" style="min-width:76px;">播放</button>
+            <button id="fib-next" class="btn-icon" title="下一步">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+        </div>
+        <div class="control-group">
+            <span style="font-size:12px;color:#94a3b8;">速度</span>
+            <input type="range" id="fib-speed" min="200" max="2000" step="100" value="800">
+            <span id="fib-speed-label" style="font-size:12px;color:#94a3b8;width:38px;text-align:right;">0.8s</span>
+        </div>
+    </div>
+</div>

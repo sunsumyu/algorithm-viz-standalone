@@ -1,0 +1,452 @@
+<!-- 构造二叉树（从先序+中序）LeetCode 105 -->
+<style>
+  #algo-build-tree-view {
+    padding: 1.5rem;
+    color: #cdd6f4;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  @keyframes bt-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 233, 253, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(139, 233, 253, 0); }
+  }
+
+  @keyframes bt-pop-in {
+    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .bt-theme {
+    --accent-a: rgb(139, 233, 253);
+    --accent-b: rgb(205, 214, 244);
+    --bg-start: 20, 18, 38;
+    --bg-mid: 25, 23, 50;
+    --bg-end: 35, 32, 60;
+  }
+
+  .bt-viz-container {
+    position: relative;
+    min-height: calc(100vh - 3rem);
+  }
+
+  .bt-root {
+    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.3), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.3), transparent 55%),
+                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
+    min-height: 100%;
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .bt-header {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .bt-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .bt-back-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: #cdd6f4;
+  }
+
+  .bt-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .bt-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bt-subtitle {
+    font-size: 0.78rem;
+    color: #6c7086;
+    margin-top: 0.2rem;
+  }
+
+  .bt-tip {
+    background: rgba(139, 233, 253, 0.1);
+    border: 1px solid rgba(139, 233, 253, 0.25);
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.78rem;
+    color: #8be9fd;
+    max-width: 300px;
+  }
+
+  .bt-main-content {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1rem;
+  }
+
+  .bt-left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .bt-panel {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .bt-panel-header {
+    background: rgba(25, 24, 42, 0.6);
+    padding: 0.6rem 0.9rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-a);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .bt-tree-container {
+    padding: 1rem;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bt-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    padding: 0.8rem;
+  }
+
+  .bt-stat-item {
+    text-align: center;
+  }
+
+  .bt-stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--accent-a);
+  }
+
+  .bt-stat-label {
+    font-size: 0.65rem;
+    color: #6c7086;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .bt-controls {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .bt-btn {
+    background: rgba(49, 50, 68, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .bt-btn:hover:not(:disabled) {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .bt-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .bt-btn-play {
+    flex: 1;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    font-weight: 600;
+    min-width: 70px;
+  }
+
+  .bt-message {
+    text-align: center;
+    padding: 0.65rem;
+    font-size: 0.88rem;
+    color: #9399b2;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s;
+  }
+
+  .bt-message.success {
+    color: var(--accent-a);
+    font-weight: 600;
+  }
+
+  .bt-traversal-display {
+    padding: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .bt-traversal-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .bt-traversal-label {
+    font-size: 0.72rem;
+    color: #6c7086;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 50px;
+  }
+
+  .bt-traversal-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 26px;
+    padding: 0 0.4rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .bt-traversal-chip.pre {
+    background: rgba(139, 233, 253, 0.15);
+    border: 1px solid rgba(139, 233, 253, 0.4);
+    color: #8be9fd;
+  }
+
+  .bt-traversal-chip.in {
+    background: rgba(205, 214, 244, 0.15);
+    border: 1px solid rgba(205, 214, 244, 0.4);
+    color: #cdd6f4;
+  }
+
+  .bt-traversal-chip.active {
+    background: rgba(139, 233, 253, 0.35);
+    border-color: #8be9fd;
+    animation: bt-pop-in 0.3s ease;
+  }
+
+  .bt-traversal-chip.used {
+    background: rgba(139, 233, 253, 0.25);
+    border-color: #8be9fd;
+  }
+
+  .bt-traversal-chip.used.in {
+    background: rgba(205, 214, 244, 0.25);
+    border-color: #cdd6f4;
+  }
+
+  .bt-log {
+    padding: 0.6rem 0.8rem;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+
+  .bt-log div {
+    color: #6c7086;
+    transition: color 0.2s;
+  }
+
+  .bt-log div.active {
+    color: var(--accent-a);
+    font-weight: 600;
+  }
+
+  .bt-example-row {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .bt-example-btn {
+    background: rgba(49, 50, 68, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    color: #cdd6f4;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .bt-example-btn:hover {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: var(--accent-a);
+  }
+
+  .bt-code-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 1100px) {
+    .bt-main-content {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="bt-viz-container">
+  <div class="bt-root bt-theme">
+    <div class="bt-header">
+      <div class="bt-header-left">
+        <button id="btn-back" class="bt-back-btn" title="返回">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="bt-title">构造二叉树</h1>
+          <div class="bt-subtitle">LeetCode 105 · 从先序和中序遍历序列构造二叉树</div>
+        </div>
+      </div>
+      <div class="bt-tip">💡 先序确定根，中序划分左右子树范围</div>
+    </div>
+
+    <div class="bt-main-content">
+      <div class="bt-left-col">
+        <div class="bt-panel">
+          <div class="bt-panel-header">🌳 构建中的二叉树</div>
+          <div id="bt-tree" class="bt-tree-container"></div>
+          <div id="bt-message" class="bt-message">点击上方示例查看构建过程</div>
+        </div>
+
+        <div class="bt-panel">
+          <div class="bt-panel-header">📊 状态</div>
+          <div class="bt-stats">
+            <div class="bt-stat-item">
+              <div class="bt-stat-value" id="bt-depth">0</div>
+              <div class="bt-stat-label">深度</div>
+            </div>
+            <div class="bt-stat-item">
+              <div class="bt-stat-value" id="bt-root-node">-</div>
+              <div class="bt-stat-label">当前根</div>
+            </div>
+            <div class="bt-stat-item">
+              <div class="bt-stat-value" id="bt-left-size">0</div>
+              <div class="bt-stat-label">左子树大小</div>
+            </div>
+            <div class="bt-stat-item">
+              <div class="bt-stat-value" id="bt-built">0</div>
+              <div class="bt-stat-label">已建节点</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bt-panel">
+          <div class="bt-panel-header">📐 遍历序列</div>
+          <div class="bt-traversal-display">
+            <div class="bt-traversal-row">
+              <span class="bt-traversal-label">先序:</span>
+              <div id="bt-pre-chips" style="display:flex; gap:0.3rem; flex-wrap:wrap;"></div>
+            </div>
+            <div class="bt-traversal-row">
+              <span class="bt-traversal-label">中序:</span>
+              <div id="bt-in-chips" style="display:flex; gap:0.3rem; flex-wrap:wrap;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bt-panel">
+          <div class="bt-panel-header">📋 执行日志</div>
+          <div id="bt-log" class="bt-log"></div>
+        </div>
+      </div>
+
+      <div class="bt-code-col">
+        <div class="bt-panel" style="flex:1;">
+          <div class="bt-panel-header">代码</div>
+          <div data-code-panel style="flex:1;min-height:260px;overflow:hidden;"></div>
+        </div>
+
+        <div class="bt-panel" style="margin-top:0.75rem;">
+          <div class="bt-panel-header">⚙️ 控制</div>
+          <div class="bt-controls">
+            <button id="step-reset" class="bt-btn" title="重置">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+            <button id="step-prev" class="bt-btn" title="上一步">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button id="step-play" class="bt-btn bt-btn-play">播放</button>
+            <button id="step-next" class="bt-btn" title="下一步">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+          </div>
+          <div style="padding: 0 0.8rem 0.6rem;">
+            <span style="font-size: 0.78rem; color: #6c7086;" id="step-counter">步骤: 0 / 0</span>
+            <input type="range" id="step-speed" min="200" max="2000" value="900" step="100"
+                   style="width:100%; margin-top:0.4rem; accent-color: var(--accent-a);" />
+            <div style="text-align:center; font-size:0.72rem; color:#585b70;">
+              速度: <span id="step-speed-label">0.9s</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bt-panel" style="margin-top:0.75rem;">
+          <div class="bt-panel-header">📌 示例</div>
+          <div class="bt-example-row">
+            <button class="bt-example-btn" data-id="1">示例1: [3,9,20,15,7]</button>
+            <button class="bt-example-btn" data-id="2">示例2: [1,2,3]</button>
+            <button class="bt-example-btn" data-id="3">示例3: [5,4,8,11,13,4,7,2,1]</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

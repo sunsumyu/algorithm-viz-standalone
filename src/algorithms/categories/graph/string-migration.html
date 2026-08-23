@@ -1,0 +1,336 @@
+<style>
+  #algo-string-migration-view {
+    width: 100%; height: 100%;
+    color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative; overflow: hidden;
+  }
+
+  #algo-string-migration-view::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #8b5cf655, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #7c3aed55, transparent 55%),
+                linear-gradient(135deg, #1a0a2e 0%, #4c1d95 25%, #1a0a2e 50%, #5b21b6 75%, #1a0a2e 100%);
+    z-index: -2;
+  }
+
+  #algo-string-migration-view::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(26, 10, 46, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  .sm-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+  .sm-hero {
+    padding: 16px 24px; background: rgba(20,18,38,0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0 0 16px 16px;
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  }
+
+  .sm-hero .sm-title-wrapper { display: flex; align-items: center; gap: 12px; }
+
+  .sm-hero-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; box-shadow: 0 4px 15px rgba(139,92,246,0.3);
+  }
+
+  .sm-hero-text h2 {
+    margin: 0 0 4px; font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .sm-hero-text p { margin: 0; color: rgba(204,214,244,0.8); font-size: 13px; }
+
+  .sm-tip {
+    max-width: 480px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2);
+    color: rgba(204,214,244,0.9); font-size: 13px; line-height: 1.55;
+  }
+
+  .sm-tip strong { color: #8b5cf6; font-weight: 600; }
+
+  #algo-string-migration-view .sm-layout {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: 1fr 380px;
+    gap: 16px; padding: 16px; overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-string-migration-view .sm-layout { grid-template-columns: 1fr; overflow: auto; }
+  }
+
+  .sm-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; }
+
+  .sm-card {
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+
+  .sm-controls {
+    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+
+  .sm-input {
+    flex: 1; min-width: 120px; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(11,10,23,0.8); color: #cdd6f4;
+    font-family: ui-monospace, monospace; font-size: 13px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .sm-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+
+  .sm-btn {
+    padding: 10px 18px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
+    transition: all 0.2s; box-shadow: 0 4px 15px rgba(139,92,246,0.3);
+  }
+
+  .sm-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139,92,246,0.4); }
+
+  .sm-example {
+    padding: 8px 14px; border-radius: 999px;
+    border: 1px solid rgba(139,92,246,0.3);
+    background: rgba(139,92,246,0.1); color: #cdd6f4;
+    font-size: 12px; cursor: pointer; transition: all 0.2s;
+  }
+
+  .sm-example:hover { background: rgba(139,92,246,0.2); border-color: #8b5cf6; }
+
+  .sm-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .sm-stat {
+    padding: 14px 0; position: relative;
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
+  }
+
+  .sm-stat::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+  }
+
+  .sm-stat-label { display: block; margin-bottom: 6px; color: rgba(204,214,244,0.7); font-size: 12px; }
+  .sm-stat-val { color: #8b5cf6; font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; }
+
+  .sm-string-display {
+    padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+    min-height: 200px;
+  }
+
+  .sm-string-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .sm-string-label {
+    color: rgba(204,214,244,0.7); font-size: 12px; font-weight: 600;
+    min-width: 40px; text-align: right;
+  }
+
+  .sm-char-box {
+    width: 40px; height: 40px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; font-size: 18px; font-weight: 700;
+    transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .sm-shift-info {
+    color: rgba(204,214,244,0.8); font-size: 14px; font-family: ui-monospace, monospace;
+    padding: 8px 16px; border-radius: 8px;
+    background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2);
+  }
+
+  .sm-concat-display {
+    padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .sm-concat-title {
+    color: rgba(204,214,244,0.7); font-size: 12px; margin-bottom: 8px;
+  }
+
+  .sm-concat-chars {
+    display: flex; gap: 2px; flex-wrap: wrap;
+  }
+
+  .sm-concat-char {
+    width: 28px; height: 28px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; font-size: 13px; font-weight: 600;
+    background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.25);
+    color: #c4b5fd; transition: all 0.3s;
+  }
+
+  .sm-concat-char.matched {
+    background: rgba(34,197,94,0.3); border-color: #22c55e; color: #bbf7d0;
+  }
+
+  .sm-concat-char.window {
+    background: rgba(139,92,246,0.5); border-color: #a78bfa;
+  }
+
+  .sm-message {
+    margin: 0 14px 14px; padding: 12px 16px; border-radius: 12px;
+    border: 1px solid rgba(139,92,246,0.2); background: rgba(139,92,246,0.08);
+    color: #cdd6f4; font-size: 13px; line-height: 1.5;
+  }
+
+  .sm-log {
+    min-height: 0; max-height: 130px; padding: 14px 16px; overflow: auto;
+    background: rgba(11,10,23,0.8); font-family: ui-monospace, monospace;
+    font-size: 12px; line-height: 1.7; color: rgba(204,214,244,0.8);
+  }
+
+  .sm-log div { padding: 2px 0; }
+  .sm-log div.active { color: #8b5cf6; font-weight: 600; }
+
+  .sm-right { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+
+  .sm-code-card {
+    background: rgba(11,10,23,0.8); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; overflow: hidden; flex: 1;
+  }
+
+  .sm-legend {
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+    padding: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .sm-legend-item { display: flex; align-items: center; gap: 10px; }
+  .sm-legend-box { width: 16px; height: 16px; border-radius: 4px; }
+
+  .sm-playback {
+    background: rgba(20,18,38,0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .sm-pb-row { display: flex; gap: 10px; align-items: center; }
+
+  .sm-pb-btn {
+    flex: 1; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(139,92,246,0.1); color: #cdd6f4;
+    cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;
+  }
+
+  .sm-pb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .sm-pb-btn:not(:disabled):hover { background: rgba(139,92,246,0.2); border-color: #8b5cf6; transform: translateY(-1px); }
+
+  .sm-pb-btn.play {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    border: none; color: #fff; box-shadow: 0 4px 15px rgba(139,92,246,0.3);
+  }
+
+  .sm-pb-btn.play:not(:disabled):hover { box-shadow: 0 6px 20px rgba(139,92,246,0.4); }
+
+  .sm-speed-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: rgba(204,214,244,0.7);
+  }
+
+  .sm-speed-row input { flex: 1; accent-color: #8b5cf6; }
+
+  .sm-counter {
+    color: rgba(204,214,244,0.6); font-size: 13px;
+    font-family: ui-monospace, monospace; text-align: center;
+  }
+
+  @keyframes sm-rotate {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-42px); }
+  }
+
+  @keyframes sm-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(139,92,246,0.4); }
+    50% { box-shadow: 0 0 18px rgba(139,92,246,0.7); }
+  }
+
+  .sm-char-box.matched {
+    animation: sm-glow 0.8s infinite;
+    background: rgba(34,197,94,0.4); border-color: #22c55e; color: #bbf7d0;
+  }
+</style>
+
+<div class="sm-page">
+  <div class="sm-hero">
+    <div class="sm-title-wrapper">
+      <div class="sm-hero-icon">🔄</div>
+      <div class="sm-hero-text">
+        <h2>字符串迁移</h2>
+        <p>判断字符串能否通过循环移位变换为目标串</p>
+      </div>
+    </div>
+    <div class="sm-tip"><strong>算法要点：</strong>将 str1 自身拼接得到 str1+str1，若 str2 是其子串，则 str2 是 str1 的循环移位。可用 KMP 或内置 indexOf 在 O(n) 内判断。</div>
+  </div>
+
+  <div class="sm-layout">
+    <div class="sm-main">
+      <div class="sm-card">
+        <div class="sm-controls">
+          <input id="sm-str1-input" class="sm-input" value="abcde" title="原字符串" placeholder="str1" />
+          <input id="sm-str2-input" class="sm-input" value="cdeab" title="目标字符串" placeholder="str2" />
+          <button id="sm-start" class="sm-btn">开始检测</button>
+          <button class="sm-example" data-s1="abcde" data-s2="cdeab">示例1</button>
+          <button class="sm-example" data-s1="hello" data-s2="lohel">示例2</button>
+          <button class="sm-example" data-s1="abcd" data-s2="acbd">示例3</button>
+        </div>
+
+        <div class="sm-stats">
+          <div class="sm-stat"><span class="sm-stat-label">移位次数</span><span class="sm-stat-val" id="sm-shift">0</span></div>
+          <div class="sm-stat"><span class="sm-stat-label">当前窗口</span><span class="sm-stat-val" id="sm-window">-</span></div>
+          <div class="sm-stat"><span class="sm-stat-label">匹配位置</span><span class="sm-stat-val" id="sm-match-pos">-</span></div>
+          <div class="sm-stat"><span class="sm-stat-label">结果</span><span class="sm-stat-val" id="sm-result">-</span></div>
+        </div>
+
+        <div class="sm-string-display" id="sm-display"></div>
+
+        <div class="sm-concat-display">
+          <div class="sm-concat-title">拼接串 str1 + str1（滑动窗口）</div>
+          <div class="sm-concat-chars" id="sm-concat"></div>
+        </div>
+
+        <div class="sm-message" id="step-message">输入两个字符串，点击「开始检测」查看循环移位检测过程。</div>
+
+        <div class="sm-log" id="sm-log"></div>
+      </div>
+    </div>
+
+    <div class="sm-right">
+      <div data-code-panel class="sm-code-card"></div>
+      <div class="sm-legend">
+        <div class="sm-legend-item"><span class="sm-legend-box" style="background:rgba(139,92,246,0.3)"></span>原字符串</div>
+        <div class="sm-legend-item"><span class="sm-legend-box" style="background:rgba(34,197,94,0.4)"></span>匹配成功</div>
+        <div class="sm-legend-item"><span class="sm-legend-box" style="background:rgba(139,92,246,0.5);border:2px solid #a78bfa"></span>滑动窗口</div>
+      </div>
+      <div class="sm-playback">
+        <div class="sm-pb-row">
+          <button id="step-reset" class="sm-pb-btn">重置</button>
+          <button id="step-prev" class="sm-pb-btn">上一步</button>
+          <button id="step-play" class="sm-pb-btn play">播放</button>
+          <button id="step-next" class="sm-pb-btn">下一步</button>
+        </div>
+        <div class="sm-speed-row">
+          <span>速度</span>
+          <input id="sm-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="sm-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="sm-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

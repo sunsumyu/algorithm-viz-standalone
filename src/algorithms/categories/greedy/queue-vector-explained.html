@@ -1,0 +1,167 @@
+<style>
+  .greedy-article {
+    height: 100%;
+    overflow: auto;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(45, 212, 191, 0.42), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, 0.42), transparent 55%),
+      linear-gradient(135deg, #0d1a25 0%, #14222f 50%, #100f1b 100%);
+    padding: 1.6rem;
+    box-sizing: border-box;
+  }
+
+  .greedy-article .article-shell { max-width: 1120px; margin: 0 auto; }
+
+  .greedy-article .article-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1.25rem; margin-bottom: 1.6rem;
+  }
+  .greedy-article .hero-left { display: flex; align-items: flex-start; gap: 16px; }
+  .greedy-article .icon-badge {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, #2dd4bf, #3b82f6);
+    color: #02141f;
+    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.45);
+  }
+  .greedy-article .eyebrow {
+    color: #60a5fa; font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 700;
+  }
+  .greedy-article h1 {
+    margin: 0 0 0.55rem; font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    color: #f1f5f9; line-height: 1.3;
+  }
+  .greedy-article .lead { color: #c7cbe0; line-height: 1.85; max-width: 800px; font-size: 14.5px; }
+
+  .greedy-article .btn-back {
+    border: 1px solid rgba(59, 130, 246, 0.4); background: rgba(20, 18, 38, 0.6);
+    backdrop-filter: blur(18px) saturate(160%); color: #e0d9f6; border-radius: 11px;
+    padding: 10px 14px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: 600;
+    transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+  }
+  .greedy-article .btn-back:hover {
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(59, 130, 246, 0.2));
+    border-color: #60a5fa; color: #fff; transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(45, 212, 191, 0.3);
+  }
+
+  .greedy-article .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+    gap: 16px; margin: 1.4rem 0;
+  }
+
+  .greedy-article .card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; padding: 1.4rem 1.6rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), border-color 0.3s, box-shadow 0.3s;
+    animation: bve-pop-in 0.55s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .greedy-article .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(45, 212, 191, 0.12);
+  }
+
+  .greedy-article .card h2,
+  .greedy-article .card h3 {
+    color: #60a5fa; margin: 0 0 0.7rem; font-size: 16.5px; font-weight: 700; line-height: 1.4;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .greedy-article .card h3 { font-size: 15px; color: #93c5fd; }
+
+  .greedy-article p,
+  .greedy-article li { color: #c7cbe0; line-height: 1.8; font-size: 14px; }
+  .greedy-article ul, .greedy-article ol { padding-left: 1.3rem; margin: 0.3rem 0; }
+  .greedy-article li { margin-bottom: 0.5rem; list-style-type: circle; }
+  .greedy-article ol li { list-style-type: decimal; }
+  .greedy-article strong { color: #e0d9f6; }
+
+  .greedy-article code {
+    color: #a5f3fc; background: rgba(8, 8, 24, 0.6); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 0.05rem 0.4rem; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.88em;
+  }
+
+  .greedy-article pre {
+    background: rgba(8, 8, 24, 0.62); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 1rem 1.2rem; overflow: auto;
+    color: #93c5fd; line-height: 1.6; font-size: 13px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .greedy-article .note {
+    border-left: 4px solid #60a5fa;
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.12), rgba(59, 130, 246, 0.08));
+    backdrop-filter: blur(18px);
+    border-radius: 12px; padding: 1.1rem 1.4rem; margin: 1.4rem 0;
+    color: #e0d9f6; line-height: 1.8; font-size: 14px;
+  }
+  .greedy-article .note strong { color: #a5f3fc; }
+
+  @keyframes bve-pop-in {
+    0% { opacity: 0; transform: translateY(14px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 1100px) {
+    .greedy-article .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .greedy-article .article-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<div class="greedy-article">
+  <div class="article-shell">
+    <header class="article-header">
+      <div class="hero-left">
+        <div class="icon-badge">📚</div>
+        <div>
+          <div class="eyebrow">Greedy / Queue Reconstruction</div>
+          <h1>根据身高重建队列（vector 原理讲解）</h1>
+          <p class="lead">本题已经有交互动画，这里补充 vector/数组插入的原理：为什么按身高降序、k 升序排序后，把每个人插入到下标 k 就能得到答案。</p>
+        </div>
+      </div>
+      <button class="btn-back" data-back-selector>← 返回算法列表</button>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>排序规则</h2>
+        <p>先按照身高 <strong>从高到低</strong> 排序；身高相同时，按照 <strong>k 从小到大</strong> 排序。</p>
+        <pre><code>people.sort((a, b) => {
+  if (a[0] !== b[0]) return b[0] - a[0];
+  return a[1] - b[1];
+});</code></pre>
+      </div>
+      <div class="card">
+        <h2>为什么先放高个？</h2>
+        <p>当我们处理某个人 <code>[h, k]</code> 时，队列里已经存在的人都比他高或和他一样高。矮个之后再插入，不会增加他前面"身高大于等于 h"的人数。</p>
+      </div>
+      <div class="card">
+        <h2>插入到 k 的含义</h2>
+        <p>当前队列全部是比当前人高或等高的人，所以插入下标 <code>k</code>，就保证他前面刚好有 <code>k</code> 个符合条件的人。</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>vector / 数组 splice 的过程</h2>
+      <pre><code>const queue = [];
+for (const person of people) {
+  // JS 数组 splice 与 C++ vector insert 类似：
+  // 从 person[1] 位置插入，后面的元素整体右移
+  queue.splice(person[1], 0, person);
+}</code></pre>
+      <p style="color: #e0d9f6;">数组/向量中间插入的代价是 <code>O(n)</code>，排序是 <code>O(n log n)</code>，总复杂度通常记为 <code>O(n²)</code>，空间复杂度 <code>O(n)</code>。</p>
+    </section>
+
+    <div class="note">关键点：插入矮个不会影响高个的 k 值；这正是先处理高个的贪心正确性来源。理解 <code>splice</code> 的 O(n) 特质，有助于把握整体算法的时间复杂度。</div>
+  </div>
+</div>

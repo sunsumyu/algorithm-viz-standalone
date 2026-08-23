@@ -1,0 +1,524 @@
+<style>
+  #algo-bfs-theory-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-bfs-theory-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #06b6d455, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #0891b255, transparent 55%),
+                linear-gradient(135deg, #083344 0%, #164e63 25%, #083344 50%, #155e75 75%, #083344 100%);
+    z-index: -2;
+  }
+
+  #algo-bfs-theory-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(8, 51, 68, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-bfs-theory-view .bfs-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .bfs-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .bfs-hero .bfs-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bfs-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .bfs-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bfs-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .bfs-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(6, 182, 212, 0.08);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .bfs-tip strong {
+    color: #06b6d4;
+    font-weight: 600;
+  }
+
+  #algo-bfs-theory-view .bfs-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-bfs-theory-view .bfs-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .bfs-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .bfs-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .bfs-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .bfs-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .bfs-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  }
+
+  .bfs-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .bfs-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .bfs-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #06b6d4, #0891b2);
+  }
+
+  .bfs-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .bfs-stat-val {
+    color: #06b6d4;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .bfs-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 260px;
+  }
+
+  .bfs-graph-container svg {
+    width: 100%;
+    max-width: 480px;
+    height: 240px;
+  }
+
+  .bfs-queue-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .bfs-queue-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .bfs-queue {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .bfs-queue-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(6, 182, 212, 0.2);
+    border: 1px solid rgba(6, 182, 212, 0.4);
+    color: #06b6d4;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .bfs-queue-item.front {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(6, 182, 212, 0.4);
+  }
+
+  .bfs-order-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .bfs-order-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .bfs-order {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .bfs-order-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #10b981;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .bfs-order-item.level-sep {
+    background: rgba(251, 191, 36, 0.2);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    color: #f59e0b;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .bfs-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    background: rgba(6, 182, 212, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .bfs-log {
+    min-height: 0;
+    max-height: 130px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .bfs-log div {
+    padding: 2px 0;
+  }
+
+  .bfs-log div.active {
+    color: #06b6d4;
+    font-weight: 600;
+  }
+
+  .bfs-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .bfs-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .bfs-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bfs-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bfs-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+
+  .bfs-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bfs-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .bfs-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(6, 182, 212, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .bfs-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .bfs-pb-btn:not(:disabled):hover {
+    background: rgba(6, 182, 212, 0.2);
+    border-color: #06b6d4;
+    transform: translateY(-1px);
+  }
+
+  .bfs-pb-btn.play {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+
+  .bfs-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  }
+
+  .bfs-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .bfs-speed-row input {
+    flex: 1;
+    accent-color: #06b6d4;
+  }
+
+  .bfs-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .bfs-node {
+    transition: all 0.3s ease;
+  }
+
+  .bfs-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="bfs-page">
+  <div class="bfs-hero">
+    <div class="bfs-title-wrapper">
+      <div class="bfs-hero-icon">🌊</div>
+      <div class="bfs-hero-text">
+        <h2>广度优先搜索理论基础</h2>
+        <p>BFS 层序遍历图：队列驱动、逐层扩展、最短路径发现</p>
+      </div>
+    </div>
+    <div class="bfs-tip"><strong>BFS 核心：</strong>从起点开始，先访问所有邻居，再访问邻居的邻居。用队列实现，保证按层序遍历，可求无权图最短路径。</div>
+  </div>
+
+  <div class="bfs-layout">
+    <div class="bfs-main">
+      <div class="bfs-card">
+        <div class="bfs-controls">
+          <button id="bfs-start" class="bfs-btn">开始遍历</button>
+        </div>
+
+        <div class="bfs-stats">
+          <div class="bfs-stat"><span class="bfs-stat-label">当前节点</span><span class="bfs-stat-val" id="bfs-current">-</span></div>
+          <div class="bfs-stat"><span class="bfs-stat-label">当前层</span><span class="bfs-stat-val" id="bfs-level">0</span></div>
+          <div class="bfs-stat"><span class="bfs-stat-label">已访问</span><span class="bfs-stat-val" id="bfs-visited">0</span></div>
+          <div class="bfs-stat"><span class="bfs-stat-label">队列大小</span><span class="bfs-stat-val" id="bfs-qsize">0</span></div>
+        </div>
+
+        <div class="bfs-graph-container" id="bfs-graph"></div>
+
+        <div class="bfs-queue-container">
+          <div class="bfs-queue-title">队列 (Queue) - 左进右出</div>
+          <div class="bfs-queue" id="bfs-queue"></div>
+        </div>
+
+        <div class="bfs-order-container">
+          <div class="bfs-order-title">遍历顺序 (按层分组)</div>
+          <div class="bfs-order" id="bfs-order"></div>
+        </div>
+
+        <div class="bfs-message" id="step-message">点击「开始遍历」观看 BFS 层序遍历过程。</div>
+
+        <div class="bfs-log" id="bfs-log"></div>
+      </div>
+    </div>
+
+    <div class="bfs-right">
+      <div data-code-panel class="bfs-code-card"></div>
+      <div class="bfs-legend">
+        <div class="bfs-legend-item"><span class="bfs-legend-box" style="background:rgba(6,182,212,0.2);border:2px solid #06b6d4"></span>未访问</div>
+        <div class="bfs-legend-item"><span class="bfs-legend-box" style="background:#f59e0b"></span>当前访问</div>
+        <div class="bfs-legend-item"><span class="bfs-legend-box" style="background:#10b981"></span>已访问</div>
+      </div>
+      <div class="bfs-playback">
+        <div class="bfs-pb-row">
+          <button id="step-reset" class="bfs-pb-btn">重置</button>
+          <button id="step-prev" class="bfs-pb-btn">上一步</button>
+          <button id="step-play" class="bfs-pb-btn play">播放</button>
+          <button id="step-next" class="bfs-pb-btn">下一步</button>
+        </div>
+        <div class="bfs-speed-row">
+          <span>速度</span>
+          <input id="bfs-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="bfs-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="bfs-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

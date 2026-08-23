@@ -1,0 +1,291 @@
+<style>
+  #algo-coastline-view {
+    width: 100%; height: 100%;
+    color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative; overflow: hidden;
+  }
+
+  #algo-coastline-view::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #38bdf855, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #0ea5e955, transparent 55%),
+                linear-gradient(135deg, #0a1929 0%, #0c4a6e 25%, #0a1929 50%, #0e7490 75%, #0a1929 100%);
+    z-index: -2;
+  }
+
+  #algo-coastline-view::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(10, 25, 41, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  .cl-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+  .cl-hero {
+    padding: 16px 24px; background: rgba(20,18,38,0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0 0 16px 16px;
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  }
+
+  .cl-hero .cl-title-wrapper { display: flex; align-items: center; gap: 12px; }
+
+  .cl-hero-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; box-shadow: 0 4px 15px rgba(56,189,248,0.3);
+  }
+
+  .cl-hero-text h2 {
+    margin: 0 0 4px; font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .cl-hero-text p { margin: 0; color: rgba(204,214,244,0.8); font-size: 13px; }
+
+  .cl-tip {
+    max-width: 480px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2);
+    color: rgba(204,214,244,0.9); font-size: 13px; line-height: 1.55;
+  }
+
+  .cl-tip strong { color: #38bdf8; font-weight: 600; }
+
+  #algo-coastline-view .cl-layout {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: 1fr 380px;
+    gap: 16px; padding: 16px; overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-coastline-view .cl-layout { grid-template-columns: 1fr; overflow: auto; }
+  }
+
+  .cl-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; }
+
+  .cl-card {
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+
+  .cl-controls {
+    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+
+  .cl-input {
+    flex: 1; min-width: 140px; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(11,10,23,0.8); color: #cdd6f4;
+    font-family: ui-monospace, monospace; font-size: 13px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .cl-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
+
+  .cl-btn {
+    padding: 10px 18px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
+    transition: all 0.2s; box-shadow: 0 4px 15px rgba(56,189,248,0.3);
+  }
+
+  .cl-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56,189,248,0.4); }
+
+  .cl-example {
+    padding: 8px 14px; border-radius: 999px;
+    border: 1px solid rgba(56,189,248,0.3);
+    background: rgba(56,189,248,0.1); color: #cdd6f4;
+    font-size: 12px; cursor: pointer; transition: all 0.2s;
+  }
+
+  .cl-example:hover { background: rgba(56,189,248,0.2); border-color: #38bdf8; }
+
+  .cl-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .cl-stat {
+    padding: 14px 0; position: relative;
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
+  }
+
+  .cl-stat::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+  }
+
+  .cl-stat-label { display: block; margin-bottom: 6px; color: rgba(204,214,244,0.7); font-size: 12px; }
+  .cl-stat-val { color: #38bdf8; font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; }
+
+  .cl-grid-container {
+    padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 260px;
+  }
+
+  .cl-grid { display: grid; gap: 4px; }
+
+  .cl-cell {
+    width: 56px; height: 56px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700;
+    transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+  }
+
+  .cl-cell .cl-edge {
+    position: absolute; background: #fbbf24;
+    transition: all 0.3s ease;
+  }
+
+  .cl-cell .cl-edge.top { top: -2px; left: 4px; right: 4px; height: 3px; border-radius: 2px; }
+  .cl-cell .cl-edge.bottom { bottom: -2px; left: 4px; right: 4px; height: 3px; border-radius: 2px; }
+  .cl-cell .cl-edge.left { left: -2px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; }
+  .cl-cell .cl-edge.right { right: -2px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; }
+
+  .cl-message {
+    margin: 0 14px 14px; padding: 12px 16px; border-radius: 12px;
+    border: 1px solid rgba(56,189,248,0.2); background: rgba(56,189,248,0.08);
+    color: #cdd6f4; font-size: 13px; line-height: 1.5;
+  }
+
+  .cl-log {
+    min-height: 0; max-height: 130px; padding: 14px 16px; overflow: auto;
+    background: rgba(11,10,23,0.8); font-family: ui-monospace, monospace;
+    font-size: 12px; line-height: 1.7; color: rgba(204,214,244,0.8);
+  }
+
+  .cl-log div { padding: 2px 0; }
+  .cl-log div.active { color: #38bdf8; font-weight: 600; }
+
+  .cl-right { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+
+  .cl-code-card {
+    background: rgba(11,10,23,0.8); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; overflow: hidden; flex: 1;
+  }
+
+  .cl-legend {
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+    padding: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .cl-legend-item { display: flex; align-items: center; gap: 10px; }
+  .cl-legend-box { width: 16px; height: 16px; border-radius: 4px; }
+
+  .cl-playback {
+    background: rgba(20,18,38,0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .cl-pb-row { display: flex; gap: 10px; align-items: center; }
+
+  .cl-pb-btn {
+    flex: 1; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(56,189,248,0.1); color: #cdd6f4;
+    cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;
+  }
+
+  .cl-pb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .cl-pb-btn:not(:disabled):hover { background: rgba(56,189,248,0.2); border-color: #38bdf8; transform: translateY(-1px); }
+
+  .cl-pb-btn.play {
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    border: none; color: #fff; box-shadow: 0 4px 15px rgba(56,189,248,0.3);
+  }
+
+  .cl-pb-btn.play:not(:disabled):hover { box-shadow: 0 6px 20px rgba(56,189,248,0.4); }
+
+  .cl-speed-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: rgba(204,214,244,0.7);
+  }
+
+  .cl-speed-row input { flex: 1; accent-color: #38bdf8; }
+
+  .cl-counter {
+    color: rgba(204,214,244,0.6); font-size: 13px;
+    font-family: ui-monospace, monospace; text-align: center;
+  }
+
+  @keyframes cl-flash {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .cl-edge.active { animation: cl-flash 0.5s infinite; }
+</style>
+
+<div class="cl-page">
+  <div class="cl-hero">
+    <div class="cl-title-wrapper">
+      <div class="cl-hero-icon">🌊</div>
+      <div class="cl-hero-text">
+        <h2>海岸线计算</h2>
+        <p>统计所有岛屿的总周长（暴露边的数量）</p>
+      </div>
+    </div>
+    <div class="cl-tip"><strong>算法要点：</strong>遍历每个陆地格子，统计其四条边中暴露（相邻水域或边界）的边数，累加即为总海岸线。时间复杂度 O(R*C)。</div>
+  </div>
+
+  <div class="cl-layout">
+    <div class="cl-main">
+      <div class="cl-card">
+        <div class="cl-controls">
+          <input id="cl-grid-input" class="cl-input" value="1,1,0;0,1,0;1,1,1" title="0=水,1=陆地" />
+          <button id="cl-start" class="cl-btn">计算周长</button>
+          <button class="cl-example" data-grid="1,1,0;0,1,0;1,1,1">示例1</button>
+          <button class="cl-example" data-grid="1,1;1,1">示例2</button>
+          <button class="cl-example" data-grid="1,0,1;0,1,0;1,0,1">示例3</button>
+        </div>
+
+        <div class="cl-stats">
+          <div class="cl-stat"><span class="cl-stat-label">当前格子</span><span class="cl-stat-val" id="cl-cell">-</span></div>
+          <div class="cl-stat"><span class="cl-stat-label">当前边数</span><span class="cl-stat-val" id="cl-cur-edges">0</span></div>
+          <div class="cl-stat"><span class="cl-stat-label">累计周长</span><span class="cl-stat-val" id="cl-perimeter">0</span></div>
+          <div class="cl-stat"><span class="cl-stat-label">陆地总数</span><span class="cl-stat-val" id="cl-land-count">0</span></div>
+        </div>
+
+        <div class="cl-grid-container" id="cl-grid"></div>
+
+        <div class="cl-message" id="step-message">输入网格，点击「计算周长」查看海岸线逐边统计过程。</div>
+
+        <div class="cl-log" id="cl-log"></div>
+      </div>
+    </div>
+
+    <div class="cl-right">
+      <div data-code-panel class="cl-code-card"></div>
+      <div class="cl-legend">
+        <div class="cl-legend-item"><span class="cl-legend-box" style="background:rgba(56,189,248,0.5)"></span>陆地(1)</div>
+        <div class="cl-legend-item"><span class="cl-legend-box" style="background:rgba(56,189,248,0.08)"></span>水域(0)</div>
+        <div class="cl-legend-item"><span class="cl-legend-box" style="background:#fbbf24;width:20px;height:3px;border-radius:2px"></span>海岸线</div>
+      </div>
+      <div class="cl-playback">
+        <div class="cl-pb-row">
+          <button id="step-reset" class="cl-pb-btn">重置</button>
+          <button id="step-prev" class="cl-pb-btn">上一步</button>
+          <button id="step-play" class="cl-pb-btn play">播放</button>
+          <button id="step-next" class="cl-pb-btn">下一步</button>
+        </div>
+        <div class="cl-speed-row">
+          <span>速度</span>
+          <input id="cl-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="cl-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="cl-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

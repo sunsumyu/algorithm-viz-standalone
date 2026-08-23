@@ -1,0 +1,260 @@
+<style>
+  :root {
+    --md-accent-a: #22d3ee;
+    --md-accent-b: #3b82f6;
+  }
+  .monotone-viz-container {
+    width: 100%; height: 100%; color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(34, 211, 238, 0.5), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, 0.55), transparent 55%),
+      linear-gradient(135deg, #07121a, #0a1426, #0b1020);
+    display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+  }
+  .monotone-viz-container .sw-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  .monotone-viz-container .sw-header {
+    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
+  }
+  .monotone-viz-container .sw-head-left { display: flex; align-items: center; gap: 14px; }
+  .monotone-viz-container .sw-icon-badge {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--md-accent-a), var(--md-accent-b));
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+    box-shadow: 0 8px 24px rgba(34, 211, 238, 0.4);
+  }
+  .monotone-viz-container h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
+  .monotone-viz-container .sw-desc { margin: 4px 0 0; color: #a6adc8; font-size: 13px; line-height: 1.4; }
+  .monotone-viz-container .sw-tip {
+    max-width: 420px; padding: 11px 14px; border-radius: 12px;
+    background: rgba(34, 211, 238, 0.12); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(34, 211, 238, 0.25); color: #bac2de; font-size: 13px; line-height: 1.55;
+  }
+  .monotone-viz-container .sw-tip strong { color: var(--md-accent-a); }
+  .monotone-viz-container .sw-main {
+    flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px;
+    gap: 16px; padding: 0 16px 16px; overflow: hidden;
+  }
+  .monotone-viz-container .sw-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  .monotone-viz-container .sw-card {
+    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  .monotone-viz-container .sw-card-title {
+    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
+  }
+  .monotone-viz-container .sw-input-row {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  .monotone-viz-container input[type="text"] {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none; font-size: 13px;
+  }
+  .monotone-viz-container input[type="text"]:focus {
+    border-color: var(--md-accent-a); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+  }
+  .monotone-viz-container .sw-start-btn {
+    padding: 10px 18px; border-radius: 10px; border: 1px solid transparent;
+    background: linear-gradient(135deg, var(--md-accent-a), var(--md-accent-b)); color: #fff;
+    font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px;
+  }
+  .monotone-viz-container .sw-start-btn:hover { box-shadow: 0 0 20px rgba(34, 211, 238, 0.45); }
+  .monotone-viz-container .sw-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .monotone-viz-container .sw-stat {
+    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
+  }
+  .monotone-viz-container .sw-stat::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--md-accent-a), var(--md-accent-b));
+  }
+  .monotone-viz-container .sw-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
+  .monotone-viz-container .sw-stat span {
+    color: var(--md-accent-a); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .monotone-viz-container .sw-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
+  .monotone-viz-container .sw-digit-area {
+    flex: 1; min-height: 0; padding: 26px 18px; overflow: auto;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  }
+  .monotone-viz-container .digit-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
+  }
+  .monotone-viz-container .digit-label {
+    font-size: 13px; color: #7c839c; width: 56px; text-align: right; font-family: Consolas, monospace;
+  }
+  .monotone-viz-container .digit-cell {
+    width: 60px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 18, 38, 0.5); position: relative;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    will-change: transform;
+  }
+  .monotone-viz-container .digit-cell .value {
+    font-family: Consolas, monospace; font-size: 24px; font-weight: 800; color: #e6e9f5;
+  }
+  .monotone-viz-container .digit-cell .index { font-size: 10px; color: #7c839c; }
+  .monotone-viz-container .digit-cell.current {
+    background: rgba(34, 211, 238, 0.22); border-color: var(--md-accent-a);
+    transform: scale(1.12) translateY(-3px);
+    animation: pulse-md 1.2s infinite, pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 5;
+  }
+  .monotone-viz-container .digit-cell.current .value { color: #fff; }
+  .monotone-viz-container .digit-cell.violation {
+    background: rgba(248, 113, 113, 0.18); border-color: #f87171;
+    animation: shake 0.4s ease-in-out;
+  }
+  .monotone-viz-container .digit-cell.decreased {
+    background: rgba(251, 146, 60, 0.18); border-color: #fb923c;
+    animation: burst 0.45s ease-out;
+  }
+  .monotone-viz-container .digit-cell.to-nine {
+    background: rgba(52, 211, 153, 0.18); border-color: #34d399;
+    animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .monotone-viz-container .digit-cell.final {
+    background: rgba(34, 211, 238, 0.12); border-color: rgba(34, 211, 238, 0.5);
+    animation: burst 0.5s ease-out;
+  }
+  .monotone-viz-container .sw-result-box {
+    margin-top: 4px; padding: 14px 20px; border-radius: 12px;
+    background: rgba(20, 18, 38, 0.5); border: 1px solid rgba(255, 255, 255, 0.08); text-align: center;
+  }
+  .monotone-viz-container .sw-result-box .result-label { font-size: 12px; color: #7c839c; margin-bottom: 6px; letter-spacing: 0.05em; }
+  .monotone-viz-container .sw-result-box .result-number {
+    font-family: Consolas, monospace; font-size: 32px; font-weight: 800; color: var(--md-accent-a);
+    font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(34, 211, 238, 0.4);
+  }
+  .monotone-viz-container .sw-result-banner {
+    margin: 0 16px 16px; padding: 12px 16px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5; transition: all 0.3s;
+  }
+  .monotone-viz-container .sw-result-banner.success {
+    background: rgba(52, 211, 153, 0.14); border-color: #34d399; color: #86efac;
+  }
+  .monotone-viz-container .sw-result-banner .badge { margin-right: 8px; }
+  .monotone-viz-container .sw-code {
+    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .monotone-viz-container .sw-code [data-code-panel] { flex: 1; min-width: 0; }
+  .monotone-viz-container .sw-controls {
+    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+  }
+  .monotone-viz-container .sw-btn {
+    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
+    font-size: 14px; font-weight: 500;
+  }
+  .monotone-viz-container .sw-btn:hover:not(:disabled) { border-color: var(--md-accent-a); color: #fff; }
+  .monotone-viz-container .sw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .monotone-viz-container .sw-play-btn {
+    border: 1px solid transparent; background: linear-gradient(135deg, var(--md-accent-a), var(--md-accent-b));
+    color: #fff; font-weight: 600;
+  }
+  .monotone-viz-container .sw-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(34, 211, 238, 0.45); }
+  .monotone-viz-container .sw-counter { color: #a6adc8; font-size: 13px; min-width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
+  .monotone-viz-container .sw-slider-container { display: flex; align-items: center; gap: 8px; }
+  .monotone-viz-container .sw-slider-container input[type=range] {
+    width: 110px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
+    outline: none; -webkit-appearance: none;
+  }
+  .monotone-viz-container .sw-slider-container input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--md-accent-a);
+    cursor: pointer; box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  }
+  .monotone-viz-container .sw-slider-container span { color: #a6adc8; font-size: 13px; min-width: 40px; font-variant-numeric: tabular-nums; }
+
+  @keyframes pulse-md {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5); }
+    50% { box-shadow: 0 0 0 9px rgba(34, 211, 238, 0); }
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes burst {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); filter: brightness(1.3); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  @media (max-width: 1100px) {
+    .monotone-viz-container .sw-main { grid-template-columns: 1fr; overflow: auto; }
+    .monotone-viz-container .sw-code { min-height: 340px; }
+    .monotone-viz-container .sw-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .monotone-viz-container .sw-tip { max-width: 100%; }
+    .monotone-viz-container .sw-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="monotone-viz-container">
+  <div class="sw-page">
+    <div class="sw-header">
+      <div class="sw-head-left">
+        <div class="sw-icon-badge">🔢</div>
+        <div>
+          <h1>单调递增的数字（贪心）</h1>
+          <p class="sw-desc">LeetCode 738：从右向左扫描，发现递减则前位减1、后续置9</p>
+        </div>
+      </div>
+      <div class="sw-tip"><strong>贪心策略：</strong>从右向左找首个违反递增的位置，将其减1并把其后所有位设为 9。</div>
+    </div>
+    <div class="sw-main">
+      <div class="sw-left">
+        <section class="sw-card">
+          <div class="sw-card-title">输入</div>
+          <div class="sw-input-row">
+            <input type="text" id="monotone-input" value="332" placeholder="如: 332">
+            <button id="monotone-start" class="sw-start-btn">开始计算</button>
+          </div>
+        </section>
+        <div class="sw-stats">
+          <div class="sw-stat"><label>检查位置</label><span id="check-pos">-</span></div>
+          <div class="sw-stat"><label>状态</label><span id="scan-status">等待开始</span></div>
+          <div class="sw-stat"><label>扫描方向</label><span>右→左</span></div>
+          <div class="sw-stat"><label>置 9 起始</label><span>marker</span></div>
+        </div>
+        <section class="sw-card sw-visual">
+          <div class="sw-card-title">数字位可视化</div>
+          <div class="sw-digit-area">
+            <div class="digit-row" id="original-digits">
+              <span class="digit-label">原始:</span>
+            </div>
+            <div class="digit-row" id="current-digits">
+              <span class="digit-label">当前:</span>
+            </div>
+            <div class="sw-result-box">
+              <div class="result-label">结果</div>
+              <div class="result-number" id="result-number">-</div>
+            </div>
+          </div>
+          <div class="sw-result-banner" id="monotone-status"><span class="badge">💡</span>输入数字后点击开始计算</div>
+        </section>
+      </div>
+      <aside class="sw-code"><div data-code-panel></div></aside>
+    </div>
+    <div class="sw-controls">
+      <button id="monotone-reset" class="sw-btn">⏮重置</button>
+      <button id="monotone-prev" class="sw-btn">◀上一步</button>
+      <button id="monotone-play" class="sw-btn sw-play-btn">▶播放</button>
+      <button id="monotone-next" class="sw-btn">下一步▶</button>
+      <span id="step-counter" class="sw-counter">步骤: 0 / 0</span>
+      <div class="sw-slider-container">
+        <input id="monotone-speed" type="range" min="200" max="2000" step="100" value="800">
+        <span id="monotone-speed-label">0.8s</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,470 @@
+<!-- 二叉树前中后序遍历 LeetCode 144/94/145 -->
+<style>
+  #algo-tree-traversal-view {
+    padding: 1.5rem;
+    color: #cdd6f4;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  @keyframes tt-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
+  }
+
+  @keyframes tt-pop-in {
+    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes tt-glow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4)); }
+    50% { filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.8)); }
+  }
+
+  .tt-theme {
+    --accent-a: rgb(52, 211, 153);
+    --accent-b: rgb(251, 191, 36);
+    --bg-start: 20, 18, 38;
+    --bg-mid: 25, 23, 50;
+    --bg-end: 35, 32, 60;
+  }
+
+  .tt-container {
+    position: relative;
+    min-height: calc(100vh - 3rem);
+  }
+
+  .tt-root {
+    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.18), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.18), transparent 55%),
+                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
+    min-height: 100%;
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .tt-header {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .tt-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .tt-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  }
+
+  .tt-title {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+  }
+
+  .tt-desc {
+    color: #9399b2;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .tt-tip {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--accent-b);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tt-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1rem;
+  }
+
+  @media (max-width: 1100px) {
+    .tt-layout { grid-template-columns: 1fr; }
+  }
+
+  .tt-main {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .tt-controls {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .tt-btn {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  }
+
+  .tt-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
+  }
+
+  .tt-mode {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .tt-mode-btn {
+    background: rgba(49, 50, 68, 0.6);
+    color: #cdd6f4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.2s;
+  }
+
+  .tt-mode-btn:hover {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .tt-mode-btn.active {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    font-weight: 600;
+    border-color: transparent;
+  }
+
+  .tt-example {
+    background: rgba(255, 255, 255, 0.05);
+    color: #cdd6f4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .tt-example:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .tt-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .tt-stat-wrapper {
+    position: relative;
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 10px;
+    padding: 0.6rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .tt-stat-wrapper::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    bottom: 2px;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+    border-radius: 3px;
+  }
+
+  .tt-stat-label {
+    font-size: 0.7rem;
+    color: #6c7086;
+    margin-bottom: 0.25rem;
+  }
+
+  .tt-stat-val {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-a);
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+
+  .tt-tree {
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 10px;
+    padding: 1rem;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .tt-result {
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+    min-height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .tt-result-label {
+    color: #6c7086;
+    font-size: 0.8rem;
+    margin-right: 0.4rem;
+  }
+
+  .tt-result-val {
+    background: rgba(49, 50, 68, 0.6);
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .tt-result-val.current {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    animation: tt-glow 1.5s ease-in-out infinite;
+  }
+
+  .tt-message {
+    background: rgba(15, 14, 26, 0.5);
+    border-left: 3px solid var(--accent-a);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .tt-log {
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 140px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.78rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .tt-log div { padding: 2px 0; color: #9399b2; }
+
+  .tt-log div.active {
+    color: #cdd6f4;
+    font-weight: 600;
+    background: rgba(52, 211, 153, 0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .tt-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .tt-playback {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1rem;
+  }
+
+  .tt-pb-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .tt-pb-btn {
+    flex: 1;
+    background: rgba(49, 50, 68, 0.6);
+    color: #cdd6f4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .tt-pb-btn:hover:not(:disabled) {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .tt-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .tt-pb-btn.play {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  }
+
+  .tt-pb-btn.play:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
+  }
+
+  .tt-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #6c7086;
+    margin-bottom: 0.5rem;
+  }
+
+  .tt-speed-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent-a);
+  }
+
+  .tt-speed-row span {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tt-counter {
+    color: #6c7086;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  /* Tree node animations */
+  svg circle.current-node {
+    animation: tt-pulse 1.2s infinite;
+    stroke: var(--accent-a);
+    stroke-width: 3;
+  }
+
+  svg circle.visited-node {
+    animation: tt-pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  svg line {
+    transition: stroke 0.3s, stroke-width 0.3s;
+  }
+</style>
+
+<div class="tt-container">
+  <div class="tt-root">
+    <div class="tt-header">
+      <div class="tt-header-content">
+        <div class="tt-icon-badge">🌳</div>
+        <div>
+          <h1 class="tt-title">二叉树前中后序遍历</h1>
+          <div class="tt-desc">LeetCode 144/94/145 · 递归遍历：前序「根左右」、中序「左根右」、后序「左右根」。点击切换模式查看不同访问顺序。</div>
+        </div>
+      </div>
+      <div class="tt-tip">💡 核心动画：进入节点→按模式访问→递归左右→离开节点，对比三种顺序差异</div>
+    </div>
+
+    <div class="tt-layout">
+      <div class="tt-main">
+        <div class="tt-controls">
+          <div class="tt-mode">
+            <button class="tt-mode-btn active" data-mode="pre">前序</button>
+            <button class="tt-mode-btn" data-mode="in">中序</button>
+            <button class="tt-mode-btn" data-mode="post">后序</button>
+          </div>
+          <button id="tt-start" class="tt-btn">开始遍历</button>
+          <button class="tt-example" data-id="1">示例树1</button>
+          <button class="tt-example" data-id="2">示例树2</button>
+        </div>
+
+        <div class="tt-stats">
+          <div class="tt-stat-wrapper"><div class="tt-stat-label">当前节点</div><div class="tt-stat-val" id="tt-cur">-</div></div>
+          <div class="tt-stat-wrapper"><div class="tt-stat-label">递归深度</div><div class="tt-stat-val" id="tt-depth">0</div></div>
+          <div class="tt-stat-wrapper"><div class="tt-stat-label">已访问</div><div class="tt-stat-val" id="tt-visited">0</div></div>
+          <div class="tt-stat-wrapper"><div class="tt-stat-label">结果长度</div><div class="tt-stat-val" id="tt-len">0</div></div>
+        </div>
+
+        <div class="tt-tree" id="tt-tree"></div>
+
+        <div class="tt-result">
+          <span class="tt-result-label">访问序列：</span>
+          <div id="tt-result"></div>
+        </div>
+
+        <div class="tt-message" id="step-message">选择遍历模式后点击「开始遍历」。</div>
+
+        <div class="tt-log" id="tt-log"></div>
+      </div>
+
+      <div class="tt-right">
+        <div data-code-panel></div>
+        <div class="tt-playback">
+          <div class="tt-pb-row">
+            <button id="step-reset" class="tt-pb-btn">⏮重置</button>
+            <button id="step-prev" class="tt-pb-btn">◀上一步</button>
+            <button id="step-play" class="tt-pb-btn play">▶播放</button>
+            <button id="step-next" class="tt-pb-btn">下一步▶</button>
+          </div>
+          <div class="tt-speed-row">
+            <span>速度</span>
+            <input id="step-speed" type="range" min="200" max="2000" step="100" value="800" />
+            <span id="step-speed-label">0.8s</span>
+          </div>
+          <div class="tt-counter" id="step-counter">步骤: 1 / 1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

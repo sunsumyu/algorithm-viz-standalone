@@ -1,0 +1,308 @@
+<style>
+  #algo-phone-letters-view {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(59, 130, 246, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(34, 211, 238, .22), transparent 55%),
+      linear-gradient(135deg, #0c1929 0%, #1e3a5f 50%, #0c1929 100%);
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+  #algo-phone-letters-view .phone-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+  }
+  #algo-phone-letters-view .phone-hero {
+    padding: 12px 20px 8px;
+    display: flex; gap: 16px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-phone-letters-view .phone-hero-left { display: flex; align-items: center; gap: 12px; }
+  #algo-phone-letters-view .phone-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+    color: #06121f; box-shadow: 0 6px 20px rgba(59, 130, 246, .35);
+  }
+  #algo-phone-letters-view h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-phone-letters-view .phone-sub { color: #94a3b8; font-size: 11.5px; margin-top: 2px; }
+  #algo-phone-letters-view .phone-tip {
+    max-width: 520px; padding: 6px 10px; border-radius: 8px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(34, 211, 238, .08));
+    border: 1px solid rgba(59, 130, 246, .3);
+    color: #cbd5e1; font-size: 11.5px; line-height: 1.5;
+  }
+  #algo-phone-letters-view .phone-tip strong { color: #60a5fa; }
+
+  /* Main Grid */
+  #algo-phone-letters-view .phone-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; padding: 12px; overflow: hidden;
+  }
+  #algo-phone-letters-view .phone-left {
+    min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+  }
+  #algo-phone-letters-view .phone-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-phone-letters-view .phone-card-title {
+    padding: 8px 14px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 12.5px;
+  }
+  #algo-phone-letters-view .phone-tag {
+    font-size: 10.5px; color: #22d3ee; background: rgba(34, 211, 238, .14);
+    border: 1px solid rgba(34, 211, 238, .3); padding: 2px 8px; border-radius: 999px;
+  }
+
+  /* Integrated Control & State Bar with Compact 3x3 Keypad */
+  #algo-phone-letters-view .phone-control-bar {
+    padding: 8px 12px; display: flex; gap: 14px; align-items: center; justify-content: space-between;
+  }
+  #algo-phone-letters-view .phone-input-group {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  #algo-phone-letters-view .phone-input-row {
+    display: flex; gap: 6px; align-items: center;
+  }
+  #algo-phone-letters-view input {
+    width: 120px; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-phone-letters-view input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
+  #algo-phone-letters-view button {
+    padding: 6px 12px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 8px; background: rgba(255, 255, 255, .05);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 12px;
+    transition: all .2s;
+  }
+  #algo-phone-letters-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+  }
+
+  /* Compact 3x3 Phone Keypad Grid */
+  #algo-phone-letters-view .phone-keypad-3x3 {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    gap: 4px;
+    padding: 5px;
+    background: rgba(8, 8, 24, .5);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 10px;
+  }
+  #algo-phone-letters-view .phone-key {
+    width: 44px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #cbd5e1;
+    transition: all .25s;
+    user-select: none;
+    cursor: pointer;
+  }
+  #algo-phone-letters-view .phone-key:hover {
+    background: rgba(59, 130, 246, .2);
+    border-color: rgba(59, 130, 246, .4);
+  }
+  #algo-phone-letters-view .phone-key .letters {
+    font-size: 8px;
+    color: #64748b;
+    font-weight: 500;
+    letter-spacing: .2px;
+  }
+  #algo-phone-letters-view .phone-key.current {
+    background: linear-gradient(135deg, rgba(59, 130, 246, .45), rgba(34, 211, 238, .35));
+    border-color: #3b82f6;
+    box-shadow: 0 0 14px rgba(59, 130, 246, .6);
+    color: #ffffff;
+    transform: scale(1.06);
+  }
+  #algo-phone-letters-view .phone-key.current .letters {
+    color: #bfdbfe; font-weight: 700;
+  }
+
+  /* Compact Stat Chips */
+  #algo-phone-letters-view .phone-stat-chips {
+    display: flex; flex-direction: column; gap: 5px; min-width: 170px;
+  }
+  #algo-phone-letters-view .phone-chip {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 9px; border-radius: 6px;
+    background: rgba(8, 8, 24, .5); border: 1px solid rgba(255, 255, 255, .08);
+    font-size: 11px;
+  }
+  #algo-phone-letters-view .phone-chip-label { color: #94a3b8; font-weight: 600; }
+  #algo-phone-letters-view .phone-chip-val { font-family: 'JetBrains Mono', monospace; font-weight: 800; }
+
+  /* Visualizer Stage */
+  #algo-phone-letters-view .phone-tree-card {
+    flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  }
+  #algo-phone-letters-view #phone-tree-display {
+    flex: 1; min-height: 0; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  #algo-phone-letters-view #phone-tree-display svg {
+    width: 100%; height: 100%; display: block;
+  }
+
+  /* Compact Result Banner */
+  #algo-phone-letters-view .phone-result-banner {
+    margin: 0 10px 8px; padding: 6px 10px; border-radius: 8px;
+    display: flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(34, 211, 238, .06));
+    border: 1px solid rgba(59, 130, 246, .28);
+    font-size: 12px; color: #fef3c7; flex-shrink: 0;
+  }
+
+  /* Log Drawer */
+  #algo-phone-letters-view .phone-log {
+    height: 70px; padding: 6px 10px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px;
+    line-height: 1.55; color: #94a3b8;
+  }
+
+  /* Code Panel */
+  #algo-phone-letters-view .phone-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-phone-letters-view .phone-code [data-code-panel] { flex: 1; min-width: 0; }
+
+  /* Controls Footer */
+  #algo-phone-letters-view .phone-controls {
+    padding: 8px 14px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  #algo-phone-letters-view .phone-controls .phone-ctrl-btn { min-width: 58px; }
+  #algo-phone-letters-view .phone-controls .phone-ctrl-primary {
+    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+    color: #06121f; border-color: transparent;
+  }
+  #algo-phone-letters-view .phone-counter {
+    color: #94a3b8; font-size: 12px; font-weight: 600;
+    min-width: 95px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  #algo-phone-letters-view .phone-speed-wrap {
+    display: flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 11.5px;
+  }
+  #algo-phone-letters-view #phone-speed { width: 110px; accent-color: #3b82f6; }
+  @media (max-width: 1100px) {
+    #algo-phone-letters-view .phone-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-phone-letters-view .phone-code { min-height: 320px; }
+  }
+</style>
+<style id="cs-tree-style"></style>
+
+<div class="phone-shell">
+  <!-- Top Hero Header -->
+  <div class="phone-hero">
+    <div class="phone-hero-left">
+      <span class="phone-icon">&#x1F4DE;</span>
+      <div>
+        <h1>电话号码字母组合（回溯决策树）</h1>
+        <div class="phone-sub">LeetCode 17 · 给定数字串，返回所有可能的字母组合</div>
+      </div>
+    </div>
+    <div class="phone-tip"><strong>回溯核心：</strong>橙色节点表示当前递归状态，每个层级对应输入数字串中指定位置的字母分支选择。</div>
+  </div>
+
+  <!-- Main Canvas Section -->
+  <div class="phone-main">
+    <div class="phone-left">
+      <!-- Integrated Top Control & State Bar with Mini 3x3 Dialer Keypad -->
+      <section class="phone-card">
+        <div class="phone-control-bar">
+          <!-- Input Controls -->
+          <div class="phone-input-group">
+            <div style="font-size:11px;color:#94a3b8;font-weight:600;">输入数字串 (点击按键可直接按键):</div>
+            <div class="phone-input-row">
+              <input id="phone-input" type="text" value="23" placeholder="2-9数字" maxlength="6">
+              <button id="phone-start">生成决策树</button>
+            </div>
+          </div>
+
+          <!-- Compact 3x3 Phone Keypad Grid -->
+          <div class="phone-keypad-3x3" id="phone-keypad">
+            <div class="phone-key" data-digit="2"><span>2</span><span class="letters">ABC</span></div>
+            <div class="phone-key" data-digit="3"><span>3</span><span class="letters">DEF</span></div>
+            <div class="phone-key" data-digit="4"><span>4</span><span class="letters">GHI</span></div>
+            <div class="phone-key" data-digit="5"><span>5</span><span class="letters">JKL</span></div>
+            <div class="phone-key" data-digit="6"><span>6</span><span class="letters">MNO</span></div>
+            <div class="phone-key" data-digit="7"><span>7</span><span class="letters">PQRS</span></div>
+            <div class="phone-key" data-digit="8"><span>8</span><span class="letters">TUV</span></div>
+            <div class="phone-key" data-digit="9"><span>9</span><span class="letters">WXYZ</span></div>
+          </div>
+
+          <!-- State Stat Chips -->
+          <div class="phone-stat-chips">
+            <div class="phone-chip"><span class="phone-chip-label">路径:</span><span class="phone-chip-val" id="phone-path-val" style="color:#60a5fa;">""</span></div>
+            <div class="phone-chip"><span class="phone-chip-label">当前处理:</span><span class="phone-chip-val" id="phone-digit-val" style="color:#6ee7b7;">-</span> <span class="phone-chip-val" id="phone-avail-val" style="color:#a6e3a1;">(-)</span></div>
+            <div class="phone-chip"><span class="phone-chip-label">已收集组合:</span><span class="phone-chip-val" id="phone-collected" style="color:#fde68a;">0</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SVG Decision Tree Canvas (Dominant Viewport) -->
+      <section class="phone-card phone-tree-card">
+        <div class="phone-card-title">回溯决策树画板 <span class="phone-tag">全高清 SVG</span></div>
+        <div id="phone-tree-display"></div>
+        <div class="phone-result-banner" id="step-message">
+          <span style="font-size:15px;">&#x1F4DE;</span>
+          <div>输入数字后点击「生成决策树」观察完整的回溯展开过程</div>
+        </div>
+      </section>
+
+      <!-- Execution Log Drawer -->
+      <section class="phone-card">
+        <div class="phone-card-title">执行日志 <button id="phone-log-clear" style="padding:2px 8px;font-size:10px;border-radius:999px;">清空</button></div>
+        <div class="phone-log" id="phone-log"></div>
+      </section>
+    </div>
+
+    <!-- Code Panel Sidebar -->
+    <aside class="phone-code"><div data-code-panel></div></aside>
+  </div>
+
+  <!-- Bottom Playback Controls -->
+  <div class="phone-controls">
+    <button id="phone-reset" class="phone-ctrl-btn">&#x23EE; 重置</button>
+    <button id="phone-prev" class="phone-ctrl-btn">&#x25C0; 上一步</button>
+    <button id="phone-play" class="phone-ctrl-btn phone-ctrl-primary">&#x25B6; 播放</button>
+    <button id="phone-next" class="phone-ctrl-btn">下一步 &#x25B6;</button>
+    <span id="phone-counter" class="phone-counter">步骤: 0 / 0</span>
+    <div class="phone-speed-wrap">
+      <span>速度</span>
+      <input id="phone-speed" type="range" min="200" max="2500" step="100" value="700">
+      <span id="phone-speed-label" style="min-width:35px;">0.7s</span>
+    </div>
+  </div>
+</div>

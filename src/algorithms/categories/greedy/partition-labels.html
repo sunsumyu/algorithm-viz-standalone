@@ -1,0 +1,367 @@
+<style>
+  /* === 划分字母区间 · 玻璃感 + 连线追踪 + 切割 drop-in === */
+  #algo-partition-labels-view {
+    --accent-a: #ec4899;
+    --accent-b: #8b5cf6;
+    --accent-glow: rgba(139, 92, 246, .45);
+    --current-color: #fbbf24;
+    --end-color: #34d399;
+    --cut-color: #f87171;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 5% 5%, rgba(236, 72, 153, .26), transparent 55%),
+      radial-gradient(ellipse at 95% 90%, rgba(139, 92, 246, .26), transparent 55%),
+      linear-gradient(135deg, #1a0518 0%, #1d1030 50%, #201640 100%);
+    overflow: hidden;
+  }
+  #algo-partition-labels-view .pl-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-partition-labels-view .pl-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-partition-labels-view .pl-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-partition-labels-view .pl-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-partition-labels-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-partition-labels-view .pl-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-partition-labels-view .pl-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .08));
+    border: 1px solid rgba(139, 92, 246, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-partition-labels-view .pl-tip strong { color: #c4b5fd; }
+  #algo-partition-labels-view .pl-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-partition-labels-view .pl-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-partition-labels-view .pl-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-partition-labels-view .pl-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-partition-labels-view .pl-tag {
+    font-size: 11px; color: #c4b5fd; background: rgba(139, 92, 246, .14);
+    border: 1px solid rgba(139, 92, 246, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-partition-labels-view .pl-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-partition-labels-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-partition-labels-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(139, 92, 246, .15); }
+  #algo-partition-labels-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-partition-labels-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-partition-labels-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-partition-labels-view .pl-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-partition-labels-view .pl-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(236, 72, 153, .12); border: 1px solid rgba(236, 72, 153, .28);
+    color: #f9a8d4; cursor: pointer; transition: all .2s;
+  }
+  #algo-partition-labels-view .pl-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  #algo-partition-labels-view .pl-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  #algo-partition-labels-view .pl-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-partition-labels-view .pl-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-partition-labels-view .pl-stat--idx::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-partition-labels-view .pl-stat--idx .pl-stat-val { color: #fde68a; }
+  #algo-partition-labels-view .pl-stat--end::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-partition-labels-view .pl-stat--end .pl-stat-val { color: #6ee7b7; }
+  #algo-partition-labels-view .pl-stat--size::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+  #algo-partition-labels-view .pl-stat--size .pl-stat-val { color: #fca5a5; }
+  #algo-partition-labels-view .pl-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-partition-labels-view .pl-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* canvas: string chars + last occurrence track */
+  #algo-partition-labels-view .pl-chart-card { flex: 1; min-height: 320px; display: flex; flex-direction: column; }
+  #algo-partition-labels-view .pl-canvas {
+    flex: 1; min-height: 280px; padding: 32px 18px 20px;
+    position: relative; overflow: auto;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  #algo-partition-labels-view .pl-track {
+    position: relative; display: flex; gap: 8px; flex-wrap: nowrap;
+    justify-content: center; align-items: center;
+  }
+  #algo-partition-labels-view .pl-char {
+    position: relative; width: 36px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px; font-weight: 800; color: #cbd5e1;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-partition-labels-view .pl-char .pl-idx {
+    position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; color: #64748b; font-weight: 600;
+  }
+  #algo-partition-labels-view .pl-char.pl-char--current {
+    transform: translateY(-8px) scale(1.12);
+    border-color: var(--current-color);
+    background: linear-gradient(180deg, rgba(251, 191, 36, .35), rgba(245, 158, 11, .15));
+    color: #fef3c7;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 8px 22px rgba(251, 191, 36, .4);
+    animation: pl-char-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pl-char-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 8px 22px rgba(251, 191, 36, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, .15), 0 10px 28px rgba(251, 191, 36, .55); }
+  }
+  #algo-partition-labels-view .pl-char.pl-char--end {
+    border-color: var(--end-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .28), rgba(16, 185, 129, .08));
+    color: #d1fae5;
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, .2);
+    animation: pl-end-glow 1.2s ease-in-out infinite;
+  }
+  @keyframes pl-end-glow {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(52, 211, 153, .2); }
+    50% { box-shadow: 0 0 0 5px rgba(52, 211, 153, .12), 0 0 20px rgba(52, 211, 153, .4); }
+  }
+  #algo-partition-labels-view .pl-char.pl-char--in-partition {
+    border-color: rgba(236, 72, 153, .45);
+    background: linear-gradient(180deg, rgba(236, 72, 153, .22), rgba(139, 92, 246, .08));
+    color: #f9a8d4;
+  }
+  #algo-partition-labels-view .pl-char.pl-char--partitioned {
+    opacity: .4; filter: grayscale(.4);
+  }
+  #algo-partition-labels-view .pl-cut {
+    position: absolute; top: -18px; bottom: -18px; width: 2px;
+    background: var(--cut-color);
+    box-shadow: 0 0 8px rgba(248, 113, 113, .6);
+    animation: pl-cut-drop .55s cubic-bezier(.34, 1.56, .64, 1);
+    transform-origin: top;
+  }
+  @keyframes pl-cut-drop {
+    0% { transform: scaleY(0); opacity: 0; }
+    60% { transform: scaleY(1.2); opacity: 1; }
+    100% { transform: scaleY(1); opacity: 1; }
+  }
+  #algo-partition-labels-view .pl-cut::after {
+    content: '✂'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+    color: var(--cut-color); font-size: 14px;
+  }
+  /* last occurrence map */
+  #algo-partition-labels-view .pl-occ-track {
+    display: flex; gap: 8px; flex-wrap: nowrap; justify-content: center; padding-top: 28px;
+  }
+  #algo-partition-labels-view .pl-occ-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    min-width: 36px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+  #algo-partition-labels-view .pl-occ-char {
+    padding: 4px 6px; border-radius: 6px;
+    background: rgba(148, 163, 184, .12);
+    color: #94a3b8; font-weight: 700;
+  }
+  #algo-partition-labels-view .pl-occ-pos {
+    color: #c4b5fd; font-weight: 700;
+  }
+  #algo-partition-labels-view .pl-occ-item.pl-occ--highlight .pl-occ-pos {
+    color: #fbbf24;
+    animation: pl-occ-flash .6s ease-in-out;
+  }
+  @keyframes pl-occ-flash {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.4); color: #fef3c7; }
+    100% { transform: scale(1); }
+  }
+  /* result */
+  #algo-partition-labels-view .pl-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .06));
+    border: 1px solid rgba(139, 92, 246, .28);
+    line-height: 1.55; font-size: 14px; color: #e9d5ff;
+  }
+  #algo-partition-labels-view .pl-result .pl-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  #algo-partition-labels-view .pl-result.pl-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-partition-labels-view .pl-result.pl-result--done .pl-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-partition-labels-view .pl-result.pl-result--cut {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .18), rgba(239, 68, 68, .06));
+    border-color: rgba(248, 113, 113, .4); color: #fecaca;
+  }
+  #algo-partition-labels-view .pl-result.pl-result--cut .pl-emoji {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+    color: #fff;
+  }
+  #algo-partition-labels-view .pl-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-partition-labels-view .pl-log-line { display: flex; gap: 8px; }
+  #algo-partition-labels-view .pl-log-line .pl-log-num { color: #475569; flex-shrink: 0; }
+  #algo-partition-labels-view .pl-log-line.pl-log-active { color: #c4b5fd; font-weight: 600; }
+  #algo-partition-labels-view .pl-log-line.pl-log-active .pl-log-num { color: var(--accent-b); }
+  #algo-partition-labels-view .pl-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-partition-labels-view .pl-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-partition-labels-view .pl-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-partition-labels-view .pl-controls .pl-ctrl-btn { min-width: 64px; }
+  #algo-partition-labels-view .pl-controls .pl-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-partition-labels-view .pl-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-partition-labels-view .pl-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-partition-labels-view #pl-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-partition-labels-view .pl-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-partition-labels-view .pl-code { min-height: 360px; }
+  }
+</style>
+
+<div class="pl-shell">
+  <div class="pl-hero">
+    <div class="pl-hero-left">
+      <span class="pl-icon">🔤</span>
+      <div>
+        <h1>划分字母区间（贪心）</h1>
+        <div class="pl-sub">LeetCode 763 · 将字符串划分为尽可能多的片段</div>
+      </div>
+    </div>
+    <div class="pl-tip"><strong>核心动画：</strong>字符从左到右扫描；每个字符<span style="color:#fef3c7">黄色脉冲</span>高亮并显示它的<span style="color:#6ee7b7">最后出现位置</span>；区间推进到终点时<span style="color:#fca5a5">切割线 drop-in</span> 落下，划分新片段。</div>
+  </div>
+  <div class="pl-main">
+    <div class="pl-left">
+      <section class="pl-card">
+        <div class="pl-card-title">输入 <span class="pl-tag">字符串</span></div>
+        <div class="pl-input-row">
+          <input id="partition-input" value="ababcbacadefegdehijhklij">
+          <button id="partition-start">开始划分</button>
+        </div>
+        <div class="pl-examples">
+          <button class="pl-chip" data-val="ababcbacadefegdehijhklij">经典示例</button>
+          <button class="pl-chip" data-val="ababcb">3 段</button>
+          <button class="pl-chip" data-val="aaaaaaa">全相同</button>
+          <button class="pl-chip" data-val="abcdef">全部唯一</button>
+          <button class="pl-chip" data-val="abcadef">首重复</button>
+        </div>
+      </section>
+
+      <div class="pl-stats">
+        <div class="pl-stat pl-stat--idx"><div class="pl-stat-label">当前 idx</div><div class="pl-stat-val" id="current-index">-</div></div>
+        <div class="pl-stat pl-stat--end"><div class="pl-stat-label">区间终点</div><div class="pl-stat-val" id="current-end">-</div></div>
+        <div class="pl-stat pl-stat--size"><div class="pl-stat-label">当前长度</div><div class="pl-stat-val" id="partition-size">-</div></div>
+        <div class="pl-stat"><div class="pl-stat-label">片段数</div><div class="pl-stat-val" id="partition-count">0</div></div>
+      </div>
+
+      <section class="pl-card pl-chart-card">
+        <div class="pl-card-title">字符扫描与区间切割 <span class="pl-tag">追踪最后出现位置</span></div>
+        <div class="pl-canvas" id="pl-canvas"></div>
+        <div class="pl-result" id="pl-result">
+          <span class="pl-emoji">🔤</span>
+          <div id="step-message">点击「开始划分」观察字符扫描 + 区间追踪 + 切割动画</div>
+        </div>
+      </section>
+
+      <section class="pl-card">
+        <div class="pl-card-title">执行日志 <button id="pl-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="pl-log" id="pl-log"></div>
+      </section>
+    </div>
+    <aside class="pl-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="pl-controls">
+    <button id="step-reset" class="pl-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="pl-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="pl-ctrl-btn pl-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="pl-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="pl-counter">步骤: 0 / 0</span>
+    <div class="pl-speed-wrap">
+      <span>速度</span>
+      <input id="pl-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="pl-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

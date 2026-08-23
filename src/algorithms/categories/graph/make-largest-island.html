@@ -1,0 +1,294 @@
+<style>
+  #algo-make-largest-island-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-make-largest-island-view::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #14b8a655, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #0d948855, transparent 55%),
+                linear-gradient(135deg, #0a1a18 0%, #134e4a 25%, #0a1a18 50%, #064e3b 75%, #0a1a18 100%);
+    z-index: -2;
+  }
+
+  #algo-make-largest-island-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(10, 26, 24, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  .mli-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+  .mli-hero {
+    padding: 16px 24px;
+    background: rgba(20,18,38,0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  }
+
+  .mli-hero .mli-title-wrapper { display: flex; align-items: center; gap: 12px; }
+
+  .mli-hero-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; box-shadow: 0 4px 15px rgba(20,184,166,0.3);
+  }
+
+  .mli-hero-text h2 {
+    margin: 0 0 4px; font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .mli-hero-text p { margin: 0; color: rgba(204,214,244,0.8); font-size: 13px; }
+
+  .mli-tip {
+    max-width: 480px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(20,184,166,0.08); border: 1px solid rgba(20,184,166,0.2);
+    color: rgba(204,214,244,0.9); font-size: 13px; line-height: 1.55;
+  }
+
+  .mli-tip strong { color: #14b8a6; font-weight: 600; }
+
+  #algo-make-largest-island-view .mli-layout {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: 1fr 380px;
+    gap: 16px; padding: 16px; overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-make-largest-island-view .mli-layout { grid-template-columns: 1fr; overflow: auto; }
+  }
+
+  .mli-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; }
+
+  .mli-card {
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+
+  .mli-controls {
+    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+
+  .mli-input {
+    flex: 1; min-width: 140px; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(11,10,23,0.8); color: #cdd6f4;
+    font-family: ui-monospace, monospace; font-size: 13px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .mli-input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,0.15); }
+
+  .mli-btn {
+    padding: 10px 18px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
+    transition: all 0.2s; box-shadow: 0 4px 15px rgba(20,184,166,0.3);
+  }
+
+  .mli-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(20,184,166,0.4); }
+
+  .mli-example {
+    padding: 8px 14px; border-radius: 999px;
+    border: 1px solid rgba(20,184,166,0.3);
+    background: rgba(20,184,166,0.1); color: #cdd6f4;
+    font-size: 12px; cursor: pointer; transition: all 0.2s;
+  }
+
+  .mli-example:hover { background: rgba(20,184,166,0.2); border-color: #14b8a6; }
+
+  .mli-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .mli-stat {
+    padding: 14px 0; position: relative;
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
+  }
+
+  .mli-stat::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #14b8a6, #0d9488);
+  }
+
+  .mli-stat-label { display: block; margin-bottom: 6px; color: rgba(204,214,244,0.7); font-size: 12px; }
+  .mli-stat-val { color: #14b8a6; font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; }
+
+  .mli-grid-container {
+    padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 260px;
+  }
+
+  .mli-grid { display: grid; gap: 4px; }
+
+  .mli-cell {
+    width: 56px; height: 56px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700;
+    transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .mli-message {
+    margin: 0 14px 14px; padding: 12px 16px; border-radius: 12px;
+    border: 1px solid rgba(20,184,166,0.2); background: rgba(20,184,166,0.08);
+    color: #cdd6f4; font-size: 13px; line-height: 1.5;
+  }
+
+  .mli-log {
+    min-height: 0; max-height: 130px; padding: 14px 16px; overflow: auto;
+    background: rgba(11,10,23,0.8); font-family: ui-monospace, monospace;
+    font-size: 12px; line-height: 1.7; color: rgba(204,214,244,0.8);
+  }
+
+  .mli-log div { padding: 2px 0; }
+  .mli-log div.active { color: #14b8a6; font-weight: 600; }
+
+  .mli-right { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+
+  .mli-code-card {
+    background: rgba(11,10,23,0.8); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; overflow: hidden; flex: 1;
+  }
+
+  .mli-legend {
+    background: rgba(20,18,38,0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+    padding: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .mli-legend-item { display: flex; align-items: center; gap: 10px; }
+  .mli-legend-box { width: 16px; height: 16px; border-radius: 4px; }
+
+  .mli-playback {
+    background: rgba(20,18,38,0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .mli-pb-row { display: flex; gap: 10px; align-items: center; }
+
+  .mli-pb-btn {
+    flex: 1; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(20,184,166,0.1); color: #cdd6f4;
+    cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;
+  }
+
+  .mli-pb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .mli-pb-btn:not(:disabled):hover { background: rgba(20,184,166,0.2); border-color: #14b8a6; transform: translateY(-1px); }
+
+  .mli-pb-btn.play {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    border: none; color: #fff; box-shadow: 0 4px 15px rgba(20,184,166,0.3);
+  }
+
+  .mli-pb-btn.play:not(:disabled):hover { box-shadow: 0 6px 20px rgba(20,184,166,0.4); }
+
+  .mli-speed-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: rgba(204,214,244,0.7);
+  }
+
+  .mli-speed-row input { flex: 1; accent-color: #14b8a6; }
+
+  .mli-counter {
+    color: rgba(204,214,244,0.6); font-size: 13px;
+    font-family: ui-monospace, monospace; text-align: center;
+  }
+
+  @keyframes mli-pop {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes mli-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(20,184,166,0.4); }
+    50% { box-shadow: 0 0 18px rgba(20,184,166,0.7); }
+  }
+
+  .mli-cell.candidate { animation: mli-pulse 0.8s infinite; }
+</style>
+
+<div class="mli-page">
+  <div class="mli-hero">
+    <div class="mli-title-wrapper">
+      <div class="mli-hero-icon">🏝️</div>
+      <div class="mli-hero-text">
+        <h2>建造最大人工岛</h2>
+        <p>改变一个水域(0)为陆地(1)，使岛屿面积最大</p>
+      </div>
+    </div>
+    <div class="mli-tip"><strong>算法要点：</strong>先用并查集/BFS 标记所有岛屿并给 ID。对每个水域格子，统计其相邻的不同岛屿 ID，求和+1。取最大值。</div>
+  </div>
+
+  <div class="mli-layout">
+    <div class="mli-main">
+      <div class="mli-card">
+        <div class="mli-controls">
+          <input id="mli-grid-input" class="mli-input" value="1,0,1;0,0,0;1,0,1" title="0=水,1=陆地，行用分号分隔" />
+          <button id="mli-start" class="mli-btn">计算面积</button>
+          <button class="mli-example" data-grid="1,0,1;0,0,0;1,0,1">示例1</button>
+          <button class="mli-example" data-grid="1,1,0;0,1,0;0,0,1">示例2</button>
+          <button class="mli-example" data-grid="1,0;0,1">示例3</button>
+        </div>
+
+        <div class="mli-stats">
+          <div class="mli-stat"><span class="mli-stat-label">当前尝试</span><span class="mli-stat-val" id="mli-try">-</span></div>
+          <div class="mli-stat"><span class="mli-stat-label">岛屿数</span><span class="mli-stat-val" id="mli-islands">0</span></div>
+          <div class="mli-stat"><span class="mli-stat-label">尝试面积</span><span class="mli-stat-val" id="mli-try-area">0</span></div>
+          <div class="mli-stat"><span class="mli-stat-label">最大面积</span><span class="mli-stat-val" id="mli-max-area">0</span></div>
+        </div>
+
+        <div class="mli-grid-container" id="mli-grid"></div>
+
+        <div class="mli-message" id="step-message">输入网格，点击「计算面积」查看最大人工岛构建过程。</div>
+
+        <div class="mli-log" id="mli-log"></div>
+      </div>
+    </div>
+
+    <div class="mli-right">
+      <div data-code-panel class="mli-code-card"></div>
+      <div class="mli-legend">
+        <div class="mli-legend-item"><span class="mli-legend-box" style="background:rgba(20,184,166,0.5)"></span>陆地(1)</div>
+        <div class="mli-legend-item"><span class="mli-legend-box" style="background:rgba(20,184,166,0.08)"></span>水域(0)</div>
+        <div class="mli-legend-item"><span class="mli-legend-box" style="background:#f59e0b;border:2px solid #fbbf24"></span>尝试位置</div>
+      </div>
+      <div class="mli-playback">
+        <div class="mli-pb-row">
+          <button id="step-reset" class="mli-pb-btn">重置</button>
+          <button id="step-prev" class="mli-pb-btn">上一步</button>
+          <button id="step-play" class="mli-pb-btn play">播放</button>
+          <button id="step-next" class="mli-pb-btn">下一步</button>
+        </div>
+        <div class="mli-speed-row">
+          <span>速度</span>
+          <input id="mli-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="mli-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="mli-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

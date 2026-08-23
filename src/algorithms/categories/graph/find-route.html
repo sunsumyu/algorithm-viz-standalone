@@ -1,0 +1,535 @@
+<style>
+  #algo-find-route-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-find-route-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #818cf855, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #6366f155, transparent 55%),
+                linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #1e1b4b 50%, #3730a3 75%, #1e1b4b 100%);
+    z-index: -2;
+  }
+
+  #algo-find-route-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(30, 27, 75, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-find-route-view .fr-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .fr-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .fr-hero .fr-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .fr-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #818cf8, #6366f1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  }
+
+  .fr-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #818cf8, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .fr-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .fr-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .fr-tip strong {
+    color: #818cf8;
+    font-weight: 600;
+  }
+
+  #algo-find-route-view .fr-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-find-route-view .fr-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .fr-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .fr-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .fr-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .fr-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #818cf8, #6366f1);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  }
+
+  .fr-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  }
+
+  .fr-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .fr-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .fr-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #818cf8, #6366f1);
+  }
+
+  .fr-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .fr-stat-val {
+    color: #818cf8;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .fr-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 260px;
+  }
+
+  .fr-graph-container svg {
+    width: 100%;
+    max-width: 480px;
+    height: 260px;
+  }
+
+  .fr-queue-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .fr-queue-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .fr-queue {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .fr-queue-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #818cf8;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .fr-queue-item.front {
+    background: linear-gradient(135deg, #818cf8, #6366f1);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+  }
+
+  .fr-path-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .fr-path-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .fr-path {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .fr-path-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #10b981;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .fr-path-item.dest {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+  }
+
+  .fr-path-arrow {
+    color: rgba(204, 214, 244, 0.4);
+    font-size: 16px;
+  }
+
+  .fr-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: rgba(99, 102, 241, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .fr-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .fr-log div {
+    padding: 2px 0;
+  }
+
+  .fr-log div.active {
+    color: #818cf8;
+    font-weight: 600;
+  }
+
+  .fr-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .fr-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .fr-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .fr-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .fr-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+
+  .fr-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .fr-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .fr-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(99, 102, 241, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .fr-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .fr-pb-btn:not(:disabled):hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #818cf8;
+    transform: translateY(-1px);
+  }
+
+  .fr-pb-btn.play {
+    background: linear-gradient(135deg, #818cf8, #6366f1);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  }
+
+  .fr-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  }
+
+  .fr-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .fr-speed-row input {
+    flex: 1;
+    accent-color: #818cf8;
+  }
+
+  .fr-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pathPulse {
+    0%, 100% { stroke-opacity: 1; }
+    50% { stroke-opacity: 0.4; }
+  }
+
+  .fr-node {
+    transition: all 0.3s ease;
+  }
+
+  .fr-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="fr-page">
+  <div class="fr-hero">
+    <div class="fr-title-wrapper">
+      <div class="fr-hero-icon">🛤️</div>
+      <div class="fr-hero-text">
+        <h2>寻找存在的路线</h2>
+        <p>判断图中两个节点之间是否存在路径：BFS/DFS 搜索可视化</p>
+      </div>
+    </div>
+    <div class="fr-tip"><strong>核心思路：</strong>从源节点开始 BFS/DFS 遍历，如果能到达目标节点则路线存在。使用 visited 集合避免重复访问。</div>
+  </div>
+
+  <div class="fr-layout">
+    <div class="fr-main">
+      <div class="fr-card">
+        <div class="fr-controls">
+          <button id="fr-start" class="fr-btn">开始寻路</button>
+        </div>
+
+        <div class="fr-stats">
+          <div class="fr-stat"><span class="fr-stat-label">当前节点</span><span class="fr-stat-val" id="fr-current">-</span></div>
+          <div class="fr-stat"><span class="fr-stat-label">源→目标</span><span class="fr-stat-val" id="fr-range">0→4</span></div>
+          <div class="fr-stat"><span class="fr-stat-label">已访问</span><span class="fr-stat-val" id="fr-visited">0</span></div>
+          <div class="fr-stat"><span class="fr-stat-label">结果</span><span class="fr-stat-val" id="fr-result">-</span></div>
+        </div>
+
+        <div class="fr-graph-container" id="fr-graph"></div>
+
+        <div class="fr-queue-container">
+          <div class="fr-queue-title">队列 (Queue) - BFS 搜索</div>
+          <div class="fr-queue" id="fr-queue"></div>
+        </div>
+
+        <div class="fr-path-container">
+          <div class="fr-path-title">路径回溯</div>
+          <div class="fr-path" id="fr-path"></div>
+        </div>
+
+        <div class="fr-message" id="step-message">点击「开始寻路」查找从节点 0 到节点 4 是否存在路径。</div>
+
+        <div class="fr-log" id="fr-log"></div>
+      </div>
+    </div>
+
+    <div class="fr-right">
+      <div data-code-panel class="fr-code-card"></div>
+      <div class="fr-legend">
+        <div class="fr-legend-item"><span class="fr-legend-box" style="background:rgba(99,102,241,0.2);border:2px solid #818cf8"></span>未访问</div>
+        <div class="fr-legend-item"><span class="fr-legend-box" style="background:#f59e0b"></span>当前探索</div>
+        <div class="fr-legend-item"><span class="fr-legend-box" style="background:#10b981"></span>已访问</div>
+        <div class="fr-legend-item"><span class="fr-legend-box" style="background:#ef4444;border:2px solid #ef4444"></span>源/目标</div>
+      </div>
+      <div class="fr-playback">
+        <div class="fr-pb-row">
+          <button id="step-reset" class="fr-pb-btn">重置</button>
+          <button id="step-prev" class="fr-pb-btn">上一步</button>
+          <button id="step-play" class="fr-pb-btn play">播放</button>
+          <button id="step-next" class="fr-pb-btn">下一步</button>
+        </div>
+        <div class="fr-speed-row">
+          <span>速度</span>
+          <input id="fr-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="fr-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="fr-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

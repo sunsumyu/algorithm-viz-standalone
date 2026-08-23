@@ -1,0 +1,424 @@
+<!-- 最近公共祖先 (LCA) LeetCode 236 -->
+<style>
+  #algo-lca-view {
+    padding: 1.5rem;
+    color: #cdd6f4;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(10, 185, 129, 0); }
+  }
+
+  @keyframes pop-in {
+    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes glow-scale {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6)); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 16px rgba(16, 185, 129, 1)); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+
+  .lca-theme {
+    --accent-a: rgb(10, 185, 129);
+    --accent-b: rgb(34, 211, 238);
+    --bg-start: 20, 18, 38;
+    --bg-mid: 25, 23, 50;
+    --bg-end: 35, 32, 60;
+  }
+
+  .lca-viz-container {
+    position: relative;
+    min-height: calc(100vh - 3rem);
+  }
+
+  .lca-root {
+    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.3), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.3), transparent 55%),
+                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
+    min-height: 100%;
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .lca-header {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .lca-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .lca-back-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: #cdd6f4;
+  }
+
+  .lca-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .lca-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .lca-main-content {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: 1rem;
+  }
+
+  .lca-col-canvas {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .lca-col-controls {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .lca-col-code {
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .lca-panel {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .lca-panel-header {
+    background: rgba(25, 24, 42, 0.6);
+    padding: 0.6rem 0.9rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-a);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .lca-canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: rgba(15, 14, 26, 0.5);
+    min-height: 300px;
+  }
+
+  .lca-canvas-container canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .lca-controls-panel {
+    padding: 0.8rem;
+  }
+
+  .lca-control-section {
+    margin-bottom: 1rem;
+  }
+
+  .lca-control-section h3 {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c7086;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .lca-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .lca-input-group label {
+    font-size: 0.8rem;
+    color: #9399b2;
+  }
+
+  .lca-input-num {
+    background: rgba(49, 50, 68, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    color: #cdd6f4;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.85rem;
+    width: 70px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .lca-input-num:focus {
+    border-color: var(--accent-a);
+  }
+
+  .lca-btn-start {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(10, 185, 129, 0.3);
+    transition: all 0.2s;
+  }
+
+  .lca-btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(10, 185, 129, 0.4);
+  }
+
+  .lca-btn-group {
+    display: flex;
+    gap: 0.3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .lca-btn-icon {
+    background: rgba(49, 50, 68, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+  }
+
+  .lca-btn-icon:hover:not(:disabled) {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .lca-btn-icon:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .lca-btn-play {
+    flex: 1;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(10, 185, 129, 0.3);
+  }
+
+  .lca-btn-play:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  .lca-status-bar {
+    padding: 0.75rem;
+    text-align: center;
+    background: rgba(15, 14, 26, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .lca-status-bar.success {
+    color: var(--accent-a);
+  }
+
+  .lca-status-bar.error {
+    color: #f38ba8;
+  }
+
+  .lca-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.8rem;
+  }
+
+  .lca-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    color: #9399b2;
+  }
+
+  .lca-legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-color-regular { background: rgba(49, 50, 68, 0.8); }
+  .legend-color-current { background: var(--accent-a); }
+  .legend-color-target { background: #f9e2af; }
+  .legend-color-path { background: #cba6f7; }
+  .legend-color-lca { background: var(--accent-b); }
+
+  /* Tree node highlight classes */
+  .tree-node {
+    cursor: pointer;
+    transition: transform 0.2s, filter 0.2s;
+  }
+
+  .tree-node.current-node {
+    animation: pulse 1.2s infinite;
+  }
+
+  .tree-node.path-node {
+    animation: glow-scale 1.5s ease-in-out infinite;
+  }
+
+  .tree-node.lca-node {
+    animation: glow-scale 1s ease-in-out infinite alternate;
+  }
+
+  .tree-node.invalid-node {
+    animation: shake 0.4s ease-in-out;
+  }
+
+  canvas {
+    display: block;
+  }
+</style>
+
+<div class="lca-viz-container">
+  <div class="lca-root">
+    <div class="lca-header">
+      <div class="lca-header-left">
+        <button id="btn-back" class="lca-back-btn" title="返回">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 class="lca-title">最近的公共祖先 (LCA)</h1>
+      </div>
+    </div>
+
+    <div class="lca-main-content">
+      <div class="lca-col-canvas">
+        <div class="lca-canvas-container">
+          <canvas id="lca-tree-canvas"></canvas>
+        </div>
+        <div id="lca-status-message" class="lca-status-bar">输入节点值后点击开始</div>
+      </div>
+      <div class="lca-col-code">
+        <div class="lca-panel code-panel">
+          <div class="lca-panel-header">代码</div>
+          <div data-code-panel style="flex:1;overflow:hidden;"></div>
+        </div>
+      </div>
+      <div class="lca-col-controls">
+        <div class="lca-panel controls-panel">
+          <div class="lca-controls-panel">
+            <div class="lca-control-section">
+              <h3>目标节点</h3>
+              <div class="lca-input-group">
+                <label>节点 P:</label>
+                <input type="number" id="lca-input-p" value="0">
+              </div>
+              <div class="lca-input-group">
+                <label>节点 Q:</label>
+                <input type="number" id="lca-input-q" value="5">
+              </div>
+              <button id="lca-btn-start" class="lca-btn-start">开始查找</button>
+            </div>
+
+            <div class="lca-control-section">
+              <h3>控制</h3>
+              <div class="lca-btn-group">
+                <button id="lca-btn-reset" class="lca-btn-icon" title="重置">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                </button>
+                <button id="lca-btn-prev" class="lca-btn-icon" title="上一步">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
+                </button>
+                <button id="lca-btn-play" class="lca-btn-play">播放</button>
+                <button id="lca-btn-next" class="lca-btn-icon" title="下一步">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
+                </button>
+              </div>
+              <div class="lca-btn-group" style="justify-content: center;">
+                <span style="font-size: 0.8rem; color: #6c7086;">
+                  步骤 <span id="lca-current-step" style="color: var(--accent-a); font-weight: 600;">0</span> / <span id="lca-total-steps">0</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lca-panel">
+          <div class="lca-panel-header">图例</div>
+          <div class="lca-legend">
+            <div class="lca-legend-item"><div class="lca-legend-color legend-color-regular"></div> 普通节点</div>
+            <div class="lca-legend-item"><div class="lca-legend-color legend-color-current"></div> 当前访问</div>
+            <div class="lca-legend-item"><div class="lca-legend-color legend-color-target"></div> 目标节点</div>
+            <div class="lca-legend-item"><div class="lca-legend-color legend-color-path"></div> 路径节点</div>
+            <div class="lca-legend-item"><div class="lca-legend-color legend-color-lca"></div> LCA 结果</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

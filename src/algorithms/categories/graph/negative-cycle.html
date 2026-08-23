@@ -1,0 +1,529 @@
+<style>
+  #algo-negative-cycle-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-negative-cycle-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #ef444455, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #dc262655, transparent 55%),
+                linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 25%, #1a0a0a 50%, #3b1212 75%, #1a0a0a 100%);
+    z-index: -2;
+  }
+
+  #algo-negative-cycle-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(26, 10, 10, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-negative-cycle-view .nc-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .nc-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .nc-hero .nc-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nc-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+
+  .nc-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .nc-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .nc-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .nc-tip strong {
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  #algo-negative-cycle-view .nc-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-negative-cycle-view .nc-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .nc-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .nc-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .nc-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .nc-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+
+  .nc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  .nc-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .nc-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .nc-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+  }
+
+  .nc-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .nc-stat-val {
+    color: #ef4444;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .nc-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 280px;
+  }
+
+  .nc-graph-container svg {
+    width: 100%;
+    max-width: 500px;
+    height: 280px;
+  }
+
+  .nc-dist-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .nc-dist-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .nc-dist-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 40px;
+    align-items: center;
+  }
+
+  .nc-dist-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 44px;
+    text-align: center;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .nc-dist-item .nc-idx {
+    display: block;
+    font-size: 9px;
+    color: rgba(204, 214, 244, 0.5);
+    margin-bottom: 2px;
+  }
+
+  .nc-dist-item.changed {
+    background: rgba(239, 68, 68, 0.35);
+    border-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  }
+
+  .nc-result {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .nc-result.found {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+    animation: shakeIn 0.6s ease;
+  }
+
+  .nc-result.none {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+  }
+
+  .nc-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .nc-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .nc-log div {
+    padding: 2px 0;
+  }
+
+  .nc-log div.active {
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .nc-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .nc-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .nc-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nc-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nc-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .nc-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nc-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .nc-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(239, 68, 68, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .nc-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .nc-pb-btn:not(:disabled):hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    transform: translateY(-1px);
+  }
+
+  .nc-pb-btn.play {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+
+  .nc-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  .nc-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .nc-speed-row input {
+    flex: 1;
+    accent-color: #ef4444;
+  }
+
+  .nc-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pathPulse {
+    0%, 100% { stroke-opacity: 1; }
+    50% { stroke-opacity: 0.5; }
+  }
+
+  @keyframes shakeIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    30% { transform: scale(1.1) rotate(2deg); }
+    50% { transform: scale(0.95) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  @keyframes cyclePulse {
+    0%, 100% { stroke-opacity: 1; stroke-width: 4; }
+    50% { stroke-opacity: 0.5; stroke-width: 6; }
+  }
+
+  .nc-node {
+    transition: all 0.3s ease;
+  }
+
+  .nc-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="nc-page">
+  <div class="nc-hero">
+    <div class="nc-title-wrapper">
+      <div class="nc-hero-icon">⚠️</div>
+      <div class="nc-hero-text">
+        <h2>Bellman-Ford之判断负权回路</h2>
+        <p>通过 V-1 轮松弛后检查第 V 轮是否还能更新来判断负权环的存在</p>
+      </div>
+    </div>
+    <div class="nc-tip"><strong>Bellman-Ford 判负环：</strong>对每条边做 V-1 轮松弛操作。如果第 V 轮仍能松弛某条边，说明图中存在负权回路——最短路径不存在。</div>
+  </div>
+
+  <div class="nc-layout">
+    <div class="nc-main">
+      <div class="nc-card">
+        <div class="nc-controls">
+          <button id="nc-start" class="nc-btn">检测负环</button>
+        </div>
+
+        <div class="nc-stats">
+          <div class="nc-stat"><span class="nc-stat-label">节点数 V</span><span class="nc-stat-val" id="nc-nodes">5</span></div>
+          <div class="nc-stat"><span class="nc-stat-label">当前轮次</span><span class="nc-stat-val" id="nc-round">0</span></div>
+          <div class="nc-stat"><span class="nc-stat-label">松弛次数</span><span class="nc-stat-val" id="nc-relax-count">0</span></div>
+          <div class="nc-stat"><span class="nc-stat-label">负环?</span><span class="nc-stat-val" id="nc-cycle-found">检测中</span></div>
+        </div>
+
+        <div class="nc-graph-container" id="nc-graph"></div>
+
+        <div class="nc-dist-container">
+          <div class="nc-dist-title">距离数组 dist[]（源点为 0）</div>
+          <div class="nc-dist-row" id="nc-dist"></div>
+        </div>
+
+        <div class="nc-result" id="nc-result" style="display:none;"></div>
+
+        <div class="nc-message" id="step-message">点击「检测负环」运行 Bellman-Ford 判断负权回路。</div>
+
+        <div class="nc-log" id="nc-log"></div>
+      </div>
+    </div>
+
+    <div class="nc-right">
+      <div data-code-panel class="nc-code-card"></div>
+      <div class="nc-legend">
+        <div class="nc-legend-item"><span class="nc-legend-box" style="background:rgba(239,68,68,0.2);border:2px solid #ef4444"></span>普通节点</div>
+        <div class="nc-legend-item"><span class="nc-legend-box" style="background:#f59e0b"></span>当前松弛边</div>
+        <div class="nc-legend-item"><span class="nc-legend-box" style="background:rgba(239,68,68,0.6);border:2px solid #ef4444"></span>负环边</div>
+        <div class="nc-legend-item"><span class="nc-legend-box" style="background:rgba(239,68,68,0.3);border:1px dashed #ef4444"></span>负权边</div>
+      </div>
+      <div class="nc-playback">
+        <div class="nc-pb-row">
+          <button id="step-reset" class="nc-pb-btn">重置</button>
+          <button id="step-prev" class="nc-pb-btn">上一步</button>
+          <button id="step-play" class="nc-pb-btn play">播放</button>
+          <button id="step-next" class="nc-pb-btn">下一步</button>
+        </div>
+        <div class="nc-speed-row">
+          <span>速度</span>
+          <input id="nc-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="nc-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="nc-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

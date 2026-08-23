@@ -1,0 +1,545 @@
+<style>
+  #algo-linked-list-cycle-ii-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-linked-list-cycle-ii-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 8% 6%, #22d3eeee, transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #3b82f6ee, transparent 55%),
+                linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #1e1b4b 50%, #3730a3 75%, #1e1b4b 100%);
+    z-index: -2;
+  }
+
+  #algo-linked-list-cycle-ii-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(30, 27, 75, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .lc-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .lc-hero .lc-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lc-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+  }
+
+  .lc-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .lc-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .lc-tip {
+    max-width: 500px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(34, 211, 238, 0.08);
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .lc-tip strong {
+    color: #22d3ee;
+    font-weight: 600;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-linked-list-cycle-ii-view .lc-main {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .lc-left {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .lc-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .lc-card-title {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #cdd6f4;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .lc-input-row {
+    display: grid;
+    grid-template-columns: 1fr 100px auto;
+    gap: 10px;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .lc-input-row input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    color: #cdd6f4;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .lc-input-row input:focus {
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+  }
+
+  .lc-input-row button {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+    color: #0f172a;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+  }
+
+  .lc-input-row button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4);
+  }
+
+  .lc-input-row button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .lc-examples {
+    padding: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .lc-example-btn {
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(110, 231, 183, 0.3);
+    background: rgba(34, 211, 238, 0.1);
+    color: #cdd6f4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .lc-example-btn:hover {
+    background: rgba(34, 211, 238, 0.2);
+    border-color: #22d3ee;
+  }
+
+  .lc-examples .lc-example-btn:last-child {
+    border-color: rgba(92, 211, 255, 0.3);
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .lc-examples .lc-example-btn:last-child:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-stat {
+    padding: 16px;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #22d3ee, #3b82f6);
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-stat label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-stat span {
+    color: #22d3ee;
+    font-family: Consolas, monospace;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-visual {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-canvas-wrap {
+    flex: 1;
+    min-height: 0;
+    padding: 20px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-canvas {
+    width: 100%;
+    height: 100%;
+    min-height: 240px;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-message {
+    margin: 0 16px 16px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    background: rgba(34, 211, 238, 0.08);
+    color: #cdd6f4;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-log {
+    min-height: 0;
+    max-height: 140px;
+    padding: 14px 18px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-log .active {
+    color: #22d3ee;
+    font-weight: 600;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-code {
+    min-height: 0;
+    display: flex;
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-code [data-code-panel] {
+    flex: 1;
+    min-width: 0;
+  }
+
+  #algo-linked-list-cycle-ii-view .lc-controls {
+    padding: 16px 20px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .lc-playback-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .lc-playback-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .lc-playback-btn:not(:disabled):hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+  }
+
+  .lc-playback-btn#step-play:not(:disabled) {
+    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+    border: none;
+    color: #0f172a;
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+  }
+
+  .lc-playback-btn#step-play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .lc-counter {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 13px;
+    font-family: Consolas, monospace;
+  }
+
+  #algo-linked-list-cycle-ii-view #step-speed {
+    accent-color: #22d3ee;
+  }
+
+  /* Animations */
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0) rotate(-10deg);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes burst {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    20%, 60% {
+      transform: translateX(-5px);
+    }
+    40%, 80% {
+      transform: translateX(5px);
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      transform: scaleY(0);
+      opacity: 0;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  .lc-stat.active {
+    animation: pulse 1.2s infinite;
+  }
+
+  .lc-stat.new {
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .lc-stat.success {
+    animation: burst 0.4s ease;
+  }
+
+  .lc-stat.fail {
+    animation: shake 0.4s ease;
+  }
+</style>
+
+<div class="lc-page">
+  <div class="lc-hero">
+    <div class="lc-title-wrapper">
+      <div class="lc-hero-icon">🔄</div>
+      <div class="lc-hero-text">
+        <h2>环形链表 II（快慢指针）</h2>
+        <p>LeetCode 142：找到链表入环的第一个节点，无环返回 null。</p>
+      </div>
+    </div>
+    <div class="lc-tip"><strong>两阶段：</strong>① fast 走2步、slow 走1步，相遇则有环；② 让一个指针从 head 出发、另一个留在相遇点，同速前进，再次相遇点即入环口。</div>
+  </div>
+
+  <div class="lc-main">
+    <div class="lc-left">
+      <section class="lc-card">
+        <div class="lc-card-title">输入</div>
+        <div class="lc-input-row">
+          <input id="lc-input" value="3,2,0,-4">
+          <input id="lc-pos-input" type="number" min="-1" max="9" value="1">
+          <button id="lc-start">开始检测</button>
+        </div>
+        <div class="lc-examples">
+          <button class="lc-example-btn" data-val="3,2,0,-4" data-pos="1">入环下标1</button>
+          <button class="lc-example-btn" data-val="1,2" data-pos="0">入环下标0</button>
+          <button class="lc-example-btn" data-val="1" data-pos="-1">无环</button>
+        </div>
+      </section>
+
+      <div class="lc-stats">
+        <div class="lc-stat"><label>fast 位置</label><span id="lc-fast">head</span></div>
+        <div class="lc-stat"><label>slow 位置</label><span id="lc-slow">head</span></div>
+        <div class="lc-stat"><label>阶段</label><span id="lc-phase">就绪</span></div>
+        <div class="lc-stat"><label>入环口</label><span id="lc-entry">-</span></div>
+      </div>
+
+      <section class="lc-card lc-visual">
+        <div class="lc-card-title">链表与环（Canvas）</div>
+        <div class="lc-canvas-wrap"><canvas id="lc-canvas" class="lc-canvas"></canvas></div>
+        <div class="lc-message" id="step-message">点击开始检测</div>
+      </section>
+
+      <section class="lc-card">
+        <div class="lc-card-title">执行日志</div>
+        <div class="lc-log" id="lc-log"></div>
+      </section>
+    </div>
+    <aside class="lc-code"><div data-code-panel></div></aside>
+  </div>
+
+  <div class="lc-controls">
+    <button id="step-reset" class="lc-playback-btn">重置</button>
+    <button id="step-prev" class="lc-playback-btn">上一步</button>
+    <button id="step-play" class="lc-playback-btn">播放</button>
+    <button id="step-next" class="lc-playback-btn">下一步</button>
+    <span id="step-counter" class="lc-counter">步骤: 0 / 0</span>
+    <input id="step-speed" type="range" min="400" max="2500" step="100" value="900" style="accent-color:#22d3ee">
+    <span id="step-speed-label" class="lc-counter">0.9s</span>
+  </div>
+</div>

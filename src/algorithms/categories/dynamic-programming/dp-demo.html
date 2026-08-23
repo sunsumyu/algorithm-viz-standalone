@@ -1,0 +1,999 @@
+<style>
+  /* === 动态规划演示 · 顶级生产级心流看板 (Dual-Stage Zero-Scroll 100vh) === */
+  .dp-demo-page {
+    --accent-a: #10b981;
+    --accent-b: #f59e0b;
+    --accent-glow: rgba(16, 185, 129, 0.4);
+    width: 100%; height: 100vh; max-height: 100vh;
+    color: #e2e8f0; box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 10% 8%, rgba(16, 185, 129, 0.18), transparent 55%),
+      radial-gradient(ellipse at 90% 92%, rgba(245, 158, 11, 0.18), transparent 55%),
+      linear-gradient(135deg, #09120e 0%, #0d130a 50%, #120e06 100%);
+    overflow: hidden;
+    padding: 10px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .dp-demo-page .dp-shell {
+    width: 100%; height: 100%; display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+  }
+
+  /* === 1. 紧凑一体化顶栏 (Top Bar) === */
+  .dp-demo-page .dp-top-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 5px 12px; min-height: 42px;
+    background: rgba(12, 16, 28, 0.7);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    flex-shrink: 0;
+  }
+  .dp-demo-page .dp-brand {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  .dp-demo-page .dp-icon-badge {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 15px; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06140e; box-shadow: 0 2px 10px var(--accent-glow);
+  }
+  .dp-demo-page .dp-title {
+    margin: 0; font-size: 14.5px; font-weight: 800; color: #f1f5f9; white-space: nowrap;
+  }
+  
+  /* 顶栏控制区 */
+  .dp-demo-page .dp-controls {
+    display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;
+  }
+  .dp-demo-page .dp-label { color: #94a3b8; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .dp-demo-page .dp-input {
+    background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 7px; color: #e2e8f0; padding: 3px 8px; width: 85px;
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11.5px;
+    outline: none; transition: all 0.2s;
+  }
+  .dp-demo-page .dp-input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25); }
+  .dp-demo-page .dp-btn {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06140e; border: none; border-radius: 7px;
+    padding: 4px 11px; font-weight: 800; font-size: 11.5px; cursor: pointer;
+    box-shadow: 0 2px 10px var(--accent-glow); white-space: nowrap;
+    transition: transform 0.2s;
+  }
+  .dp-demo-page .dp-btn:hover { transform: translateY(-1px); }
+  .dp-demo-page .dp-example {
+    background: rgba(255, 255, 255, 0.04); color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px;
+    padding: 3px 8px; cursor: pointer; font-size: 11px; white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .dp-demo-page .dp-example:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06140e; border-color: transparent;
+  }
+
+  /* 4 阶段算法演化选择器 (4-Stage DP Evolution Selector) */
+  .dp-demo-page .dp-evolution-selector {
+    display: flex; gap: 4px; background: rgba(0, 0, 0, 0.55); padding: 3px;
+    border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+  .dp-demo-page .dp-evo-btn {
+    background: transparent; border: 1px solid transparent;
+    color: #94a3b8; padding: 4px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .dp-demo-page .dp-evo-btn:hover {
+    color: #f8fafc; background: rgba(255, 255, 255, 0.06);
+  }
+  .dp-demo-page .dp-evo-btn.is-active {
+    background: linear-gradient(135deg, #60a5fa, #c084fc) !important;
+    color: #06121f !important; font-weight: 800 !important;
+    box-shadow: 0 2px 14px rgba(96, 165, 250, 0.5) !important;
+  }
+  .dp-demo-page .dp-evo-btn .dp-evo-badge {
+    font-size: 9.5px; padding: 1px 5px; border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3); font-family: ui-monospace, monospace;
+    font-weight: 700; color: #cbd5e1;
+  }
+  .dp-demo-page .dp-evo-btn.is-active .dp-evo-badge {
+    background: rgba(0, 0, 0, 0.25); color: #06121f;
+  }
+
+  /* 顶栏教学视口切换药丸栏 */
+  .dp-demo-page .dp-view-pills {
+    display: flex; gap: 3px; background: rgba(0, 0, 0, 0.45); padding: 2px;
+    border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0;
+  }
+  .dp-demo-page .dp-view-btn {
+    background: transparent; border: 1px solid transparent;
+    color: #8592a6; padding: 4px 8px; border-radius: 6px;
+    font-size: 11.5px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .dp-demo-page .dp-view-btn:hover { color: #f8fafc; }
+  .dp-demo-page .dp-view-btn.is-active {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    color: #ffffff !important; font-weight: 800 !important;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.45) !important;
+  }
+
+  /* 顶栏微指标卡片 (动态实时更新) */
+  .dp-demo-page .dp-metrics {
+    display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: wrap;
+  }
+  .dp-demo-page .dp-stat {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+    background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .dp-demo-page .dp-stat:hover {
+    border-color: rgba(56, 189, 248, 0.6);
+    background: rgba(15, 23, 42, 0.95);
+  }
+  .dp-demo-page .dp-stat-label { color: #94a3b8; font-weight: 700; font-size: 11.5px; }
+  .dp-demo-page .dp-stat-val {
+    color: #38bdf8; font-weight: 800; font-size: 13px; font-family: ui-monospace, 'JetBrains Mono', monospace;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  }
+
+  /* 递归树专属展示视口 */
+  .dp-demo-page .dp-tree-container {
+    width: 100%; min-height: 220px; flex: 1;
+    overflow: auto; display: flex; justify-content: center; align-items: flex-start;
+    padding: 10px; background: rgba(5, 7, 18, 0.4); border-radius: 10px;
+  }
+  .dp-demo-page .dp-tree-container svg {
+    min-width: 100%; min-height: 100%;
+  }
+
+  /* 空间压缩滚动变量专属卡片视口 */
+  .dp-demo-page .dp-rolling-vars-container {
+    width: 100%; flex: 1; min-height: 160px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 14px; background: rgba(5, 7, 18, 0.4); border-radius: 10px;
+  }
+  .dp-demo-page .dp-rolling-cards-row {
+    display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap;
+  }
+  .dp-demo-page .dp-rolling-card {
+    width: 125px; height: 90px; background: rgba(15, 23, 42, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .dp-demo-page .dp-rolling-card.is-active {
+    border-color: #60a5fa; background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(15, 23, 42, 0.85));
+    transform: translateY(-3px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+  }
+  .dp-demo-page .dp-rolling-card.is-highlight {
+    border-color: #34d399; background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(15, 23, 42, 0.85));
+  }
+  .dp-demo-page .dp-rolling-card-label {
+    font-size: 11.5px; color: #94a3b8; font-weight: 700;
+  }
+  .dp-demo-page .dp-rolling-card-val {
+    font-size: 22px; font-weight: 900; color: #6ee7b7; font-family: ui-monospace, 'JetBrains Mono', monospace;
+  }
+  .dp-demo-page .dp-rolling-operator {
+    font-size: 20px; font-weight: 900; color: #94a3b8;
+  }
+  .dp-demo-page .dp-rolling-rule-bar {
+    display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #94a3b8;
+    background: rgba(0, 0, 0, 0.35); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .dp-demo-page .dp-rolling-rule-bar code {
+    color: #6ee7b7; font-family: ui-monospace, monospace; font-weight: bold;
+  }
+
+  /* === 2. 主分栏布局 (Left 58% / Right 42%) === */
+  .dp-demo-page .dp-layout {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: minmax(0, 1.38fr) minmax(370px, 1fr); gap: 10px;
+    overflow: hidden;
+  }
+  @media (max-width: 1150px) {
+    .dp-demo-page .dp-layout { grid-template-columns: 1fr; }
+  }
+
+  /* 左侧主舞台：采用 上下双舞台 (上：动态教学视图，下：2D DP 状态矩阵) */
+  .dp-demo-page .dp-main {
+    height: 100%; display: flex; flex-direction: column; gap: 8px;
+    background: rgba(14, 16, 28, 0.6); backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
+    padding: 10px; overflow: hidden; min-height: 0;
+  }
+
+  /* 上半部：动态教学舞台区 (Workshop / Story / Backtrack) */
+  .dp-demo-page .dp-top-stage-container {
+    flex: 0 0 auto; min-height: 100px;
+    overflow-y: auto; overflow-x: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* 下半部：经典 DP 表格矩阵区 (常驻直观展示，填满剩余空间) */
+  .dp-demo-page .dp-bottom-stage-container {
+    flex: 1; min-height: 0; overflow: auto;
+    display: flex; flex-direction: column; gap: 6px;
+    background: rgba(8, 10, 20, 0.45); border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px; padding: 8px 10px;
+  }
+
+  /* 视口显隐规则 */
+  .dp-demo-page .dp-view-workshop,
+  .dp-demo-page .dp-view-story,
+  .dp-demo-page .dp-view-backtrack,
+  .dp-demo-page .dp-view-staircase,
+  .dp-demo-page .dp-view-thematic {
+    display: none !important;
+  }
+
+  .dp-demo-page[data-viewport-mode="thematic"] .dp-view-thematic,
+  [data-viewport-mode="thematic"] .dp-demo-page .dp-view-thematic {
+    display: block !important;
+  }
+
+  .dp-demo-page[data-viewport-mode="staircase"] .dp-view-staircase,
+  [data-viewport-mode="staircase"] .dp-demo-page .dp-view-staircase {
+    display: block !important;
+  }
+
+  .dp-demo-page[data-viewport-mode="workshop"] .dp-view-workshop,
+  [data-viewport-mode="workshop"] .dp-demo-page .dp-view-workshop {
+    display: block !important;
+  }
+
+  .dp-demo-page[data-viewport-mode="story"] .dp-view-story,
+  [data-viewport-mode="story"] .dp-demo-page .dp-view-story {
+    display: block !important;
+  }
+
+  .dp-demo-page[data-viewport-mode="backtrack"] .dp-view-backtrack,
+  [data-viewport-mode="backtrack"] .dp-demo-page .dp-view-backtrack {
+    display: block !important;
+  }
+
+  /* 纯矩阵全屏模式 */
+  .dp-demo-page[data-viewport-mode="matrix"] .dp-top-stage-container,
+  [data-viewport-mode="matrix"] .dp-demo-page .dp-top-stage-container {
+    display: none !important;
+  }
+  .dp-demo-page[data-viewport-mode="matrix"] .dp-bottom-stage-container,
+  [data-viewport-mode="matrix"] .dp-demo-page .dp-bottom-stage-container {
+    flex: 1 !important; max-height: 100% !important;
+  }
+
+  /* 视口 1: 🎭 实体卡片变形工作台 */
+  .dp-demo-page .dp-workshop-stage {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 10px 14px; background: rgba(8, 10, 24, 0.5);
+    border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08);
+    perspective: 1000px;
+  }
+  .dp-demo-page .dp-stage-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .dp-demo-page .dp-stage-row-label {
+    font-size: 11.5px; font-weight: 700; color: #94a3b8; min-width: 95px;
+  }
+  .dp-demo-page .dp-stage-card-rack {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .dp-demo-page .dp-stage-card {
+    position: relative; width: 38px; height: 42px;
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px; font-family: ui-monospace, 'JetBrains Mono', monospace;
+    font-size: 15px; font-weight: 800; color: #f8fafc;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .dp-demo-page .dp-stage-card .dp-card-idx {
+    position: absolute; bottom: 2px; font-size: 8px; color: #64748b; font-weight: 600;
+  }
+  .dp-demo-page .dp-stage-card.is-active-focus {
+    border-color: #38bdf8; color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3), 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.08) translateY(-2px);
+  }
+  .dp-demo-page .dp-stage-card.is-matched {
+    border-color: #10b981; color: #6ee7b7;
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.25), rgba(6, 78, 59, 0.4));
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+    animation: card-match-pulse 1.6s ease-in-out infinite;
+  }
+  .dp-demo-page .dp-stage-card.is-deleted {
+    border-color: #ef4444; color: #fca5a5;
+    animation: card-fly-up-fade 1.2s ease-in-out forwards;
+  }
+  .dp-demo-page .dp-stage-card.is-inserted {
+    border-color: #3b82f6; color: #93c5fd;
+    animation: card-spring-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .dp-demo-page .dp-stage-card.is-replaced {
+    border-color: #f59e0b; color: #fde68a;
+    animation: card-3d-flip 0.8s ease-in-out forwards;
+  }
+  .dp-demo-page .dp-stage-action-hud {
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px 12px; background: rgba(15, 23, 42, 0.65);
+    border: 1px dashed rgba(255, 255, 255, 0.14); border-radius: 8px;
+    margin: 2px 0;
+  }
+  .dp-demo-page .dp-hud-badge {
+    font-size: 12.5px; font-weight: 700; color: #e2e8f0;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* 视口 2: 📖 白话图解剧场 */
+  .dp-demo-page .dp-story-theatre { display: flex; flex-direction: column; gap: 6px; }
+  .dp-demo-page .dp-story-goal-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(139, 92, 246, 0.08));
+    border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 6px 10px;
+  }
+  .dp-demo-page .dp-story-goal-title { font-size: 11px; font-weight: 800; color: #a5b4fc; margin-bottom: 2px; }
+  .dp-demo-page .dp-story-goal-content { font-size: 12px; color: #f8fafc; font-weight: 600; line-height: 1.35; }
+  .dp-demo-page .dp-story-branch-title { font-size: 11px; font-weight: 700; color: #94a3b8; margin-top: 1px; }
+  .dp-demo-page .dp-story-branches {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;
+  }
+  .dp-demo-page .dp-story-branch-card {
+    position: relative; background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;
+    padding: 6px 8px; display: flex; flex-direction: column; gap: 3px;
+    transition: all 0.2s ease;
+  }
+  .dp-demo-page .dp-story-branch-card.is-chosen {
+    border-color: #10b981; background: rgba(16, 185, 129, 0.14);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25); transform: translateY(-1px);
+  }
+  .dp-demo-page .dp-story-branch-name {
+    font-size: 11.5px; font-weight: 800; color: #e2e8f0; display: flex; justify-content: space-between;
+  }
+  .dp-demo-page .dp-story-branch-cost {
+    font-size: 11px; font-weight: 700; color: #fbbf24; font-family: ui-monospace, monospace;
+  }
+  .dp-demo-page .dp-story-branch-desc { font-size: 10.5px; color: #94a3b8; line-height: 1.3; }
+  .dp-demo-page .dp-story-conclusion-card {
+    background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 7px; padding: 5px 9px; font-size: 11.5px; color: #6ee7b7; font-weight: 600;
+  }
+
+  /* 视口 3: 🎮 路径回溯 */
+  .dp-demo-page .dp-backtrack-container { display: flex; flex-direction: column; gap: 6px; }
+  .dp-demo-page .dp-backtrack-summary-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px 10px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.08));
+    border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px;
+    font-size: 11.5px; font-weight: 700; color: #fbbf24;
+  }
+  .dp-demo-page .dp-backtrack-timeline {
+    display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto; padding-right: 4px;
+  }
+  .dp-demo-page .dp-timeline-step {
+    display: flex; align-items: center; gap: 8px; padding: 5px 9px;
+    background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px; font-size: 11px; color: #cbd5e1;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .dp-demo-page .dp-timeline-step:hover {
+    border-color: #38bdf8; background: rgba(56, 189, 248, 0.15);
+    transform: translateX(3px);
+  }
+  .dp-demo-page .dp-timeline-step.is-active {
+    border-color: #38bdf8; background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-weight: 700;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+  }
+  .dp-demo-page .dp-timeline-badge {
+    font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px;
+    font-family: ui-monospace, monospace;
+  }
+  .dp-demo-page .dp-timeline-badge.match { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+  .dp-demo-page .dp-timeline-badge.delete { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+  .dp-demo-page .dp-timeline-badge.insert { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+  .dp-demo-page .dp-timeline-badge.replace { background: rgba(245, 158, 11, 0.2); color: #fde68a; }
+
+  /* 2D DP 表格样式 */
+  .dp-demo-page .dp-panel-title {
+    color: #94a3b8; font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .dp-demo-page .dp-source { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .dp-demo-page .dp-array { display: flex; gap: 5px; align-items: flex-start; flex-wrap: wrap; }
+  .dp-demo-page .dp-chip,
+  .dp-demo-page .dp-cell,
+  .dp-demo-page .dp-table-cell,
+  .dp-demo-page .dp-table-header {
+    display: inline-flex; min-width: 34px; min-height: 28px; align-items: center; justify-content: center;
+    border-radius: 6px; padding: 2px 6px;
+    font-family: ui-monospace, 'JetBrains Mono', monospace; font-size: 12px;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1; transition: all 0.2s ease;
+  }
+  .dp-demo-page .dp-chip.current,
+  .dp-demo-page .dp-cell.current,
+  .dp-demo-page .dp-table-cell.current {
+    border-color: #10b981; background: rgba(16, 185, 129, 0.3); color: #6ee7b7;
+    font-weight: 800; transform: scale(1.06); box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+  }
+  .dp-demo-page .dp-cell.dependency,
+  .dp-demo-page .dp-table-cell.dependency {
+    border-color: #f59e0b; background: rgba(245, 158, 11, 0.25); color: #fde68a;
+    font-weight: 700; box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+  }
+  .dp-demo-page .dp-table-cell.in-backtrack-path {
+    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(245, 158, 11, 0.12);
+    color: #fde68a;
+  }
+  .dp-demo-page[data-viewport-mode="backtrack"] .dp-table-cell.in-backtrack-path,
+  [data-viewport-mode="backtrack"] .dp-demo-page .dp-table-cell.in-backtrack-path {
+    border-color: #fbbf24 !important;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(16, 185, 129, 0.22)) !important;
+    color: #fff !important;
+    font-weight: 800;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5) !important;
+  }
+  .dp-demo-page .dp-table-cell.hover-highlight {
+    border-color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.35) !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.7) !important;
+    transform: scale(1.15);
+    z-index: 10;
+  }
+  .dp-demo-page .dp-table { display: grid; gap: 3px; width: max-content; margin: 0 auto; }
+  .dp-demo-page .dp-table-header {
+    color: #b4befe; background: rgba(20, 18, 38, 0.7); font-weight: 800;
+  }
+  .dp-demo-page .dp-table-header.is-active-header {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+  }
+
+  /* 底部紧凑 HUD (公式 + 解释说明) */
+  .dp-demo-page .dp-hud-bar {
+    display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+  }
+  .dp-demo-page .dp-formula {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.06));
+    border: 1px solid rgba(245, 158, 11, 0.25); border-left: 3px solid var(--accent-b);
+    border-radius: 8px; padding: 5px 10px; color: #fcd34d;
+    font-family: ui-monospace, 'JetBrains Mono', monospace; font-size: 11.5px;
+    display: flex; align-items: center; min-height: 20px;
+  }
+  .dp-demo-page .dp-message {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(245, 158, 11, 0.05));
+    border: 1px solid rgba(16, 185, 129, 0.25); border-left: 3px solid var(--accent-a);
+    border-radius: 8px; padding: 5px 10px; color: #cbd5e1;
+    font-size: 11.5px; line-height: 1.45; min-height: 20px;
+  }
+
+  /* === 3. 右侧代码与控制终端 (Right Column) === */
+  .dp-demo-page .dp-right {
+    height: 100%; display: flex; flex-direction: column; gap: 8px; overflow: hidden; min-height: 0;
+  }
+  .dp-demo-page .dp-code-wrapper {
+    flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .dp-demo-page .dp-playback {
+    background: rgba(16, 16, 32, 0.55); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px;
+    padding: 7px 12px; flex-shrink: 0; display: flex; flex-direction: column; gap: 5px;
+  }
+  .dp-demo-page .dp-pb-row { display: flex; gap: 6px; align-items: center; }
+  .dp-demo-page .dp-pb-btn {
+    flex: 1; padding: 5px 8px; font-size: 11.5px; font-weight: 600;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .dp-demo-page .dp-pb-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06140e; border-color: transparent;
+  }
+  .dp-demo-page .dp-pb-btn.play {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06140e; font-weight: 800; box-shadow: 0 4px 12px var(--accent-glow);
+  }
+  .dp-demo-page .dp-speed-mode-row {
+    display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 11px; color: #94a3b8;
+  }
+  .dp-demo-page .dp-speed-ctrl { display: flex; gap: 6px; align-items: center; flex: 1; }
+  .dp-demo-page #step-speed { flex: 1; accent-color: var(--accent-a); height: 4px; }
+  .dp-demo-page #step-speed-label { color: #6ee7b7; font-weight: 700; font-family: ui-monospace, monospace; min-width: 28px; }
+  .dp-demo-page .dp-mode-pills {
+    display: flex; gap: 2px; background: rgba(0, 0, 0, 0.5); padding: 2px;
+    border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .dp-demo-page .dp-mode-btn {
+    border: 1px solid transparent; background: transparent; color: #8592a6;
+    font-size: 10.5px; font-weight: 600; padding: 2px 5px; border-radius: 5px;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .dp-demo-page .dp-mode-btn.is-active {
+    background: linear-gradient(135deg, #10b981, #f59e0b) !important;
+    color: #04130c !important; font-weight: 800 !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+  }
+  .dp-demo-page #step-counter {
+    color: #94a3b8; font-size: 11px; text-align: center; font-weight: 600;
+    padding: 2px 6px; background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px;
+  }
+
+  /* 3D 动作动画 Keyframes */
+  @keyframes card-fly-up-fade {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    50% { transform: translateY(-16px) scale(1.08); opacity: 0.8; filter: drop-shadow(0 0 8px #ef4444); }
+    100% { transform: translateY(-24px) scale(0.85); opacity: 0.3; }
+  }
+  @keyframes card-spring-in {
+    0% { transform: translateY(-24px) scale(0.6); opacity: 0; }
+    60% { transform: translateY(3px) scale(1.06); opacity: 1; filter: drop-shadow(0 0 8px #3b82f6); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes card-3d-flip {
+    0% { transform: rotateY(0deg); }
+    50% { transform: rotateY(90deg) scale(1.1); filter: drop-shadow(0 0 10px #f59e0b); }
+    100% { transform: rotateY(0deg) scale(1); }
+  }
+  @keyframes card-match-pulse {
+    0%, 100% { transform: scale(1.03); filter: drop-shadow(0 0 6px #10b981); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 12px #34d399); }
+  }
+
+  /* 状态转移箭头 SVG overlay */
+  .dp-demo-page .dp-transition-overlay {
+    position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5;
+  }
+  @keyframes dp-draw-arrow {
+    from { stroke-dashoffset: var(--len, 200); }
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* === 教学级算法导师解说台 (Pedagogical Lecture HUD) === */
+  .dp-demo-page .dp-lecture-hud {
+    flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 6px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(9, 14, 26, 0.98));
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 12px; padding: 10px 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .dp-demo-page .dp-lecture-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  }
+  .dp-demo-page .dp-lecture-badge-group {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .dp-demo-page .dp-lecture-phase-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 800;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.3));
+    color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4);
+  }
+  .dp-demo-page .dp-lecture-coords-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700;
+    background: rgba(0, 0, 0, 0.4); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: ui-monospace, 'JetBrains Mono', monospace;
+  }
+  .dp-demo-page .dp-lecture-handbook-btn {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #ffffff; border: none; border-radius: 6px;
+    padding: 3px 10px; font-size: 11px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .dp-demo-page .dp-lecture-handbook-btn:hover {
+    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.6);
+  }
+  .dp-demo-page .dp-lecture-body {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .dp-demo-page .dp-lecture-comment {
+    font-size: 12.5px; color: #f1f5f9; line-height: 1.5; font-weight: 500;
+  }
+  .dp-demo-page .dp-lecture-comment strong {
+    color: #38bdf8;
+  }
+  .dp-demo-page .dp-lecture-formula-box {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 5px 10px; background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px;
+    font-size: 12px; font-family: ui-monospace, 'JetBrains Mono', monospace;
+  }
+  .dp-demo-page .dp-formula-label {
+    color: #94a3b8; font-size: 11px; font-weight: 700;
+  }
+  .dp-demo-page .dp-formula-sub {
+    color: #fbbf24; font-weight: 700;
+  }
+  .dp-demo-page .dp-formula-raw {
+    color: #94a3b8; font-size: 11px; margin-left: auto;
+  }
+
+  /* 专门的核心变量监视槽 (Dedicated Live Variable Monitor HUD) */
+  .dp-demo-page .dp-lecture-vars-box {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 6px 10px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6));
+    border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px;
+    font-size: 12px;
+  }
+  .dp-demo-page .dp-lecture-vars-label {
+    color: #38bdf8; font-size: 11px; font-weight: 800; white-space: nowrap;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .dp-demo-page .dp-lecture-vars-list {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1;
+  }
+  .dp-demo-page .dp-var-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px; padding: 2.5px 8px; font-size: 12px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    transition: all 0.2s ease;
+  }
+  .dp-demo-page .dp-var-badge:hover {
+    border-color: #38bdf8; background: rgba(30, 41, 59, 1);
+  }
+  .dp-demo-page .dp-var-badge.is-changed {
+    animation: dp-badge-flash 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes dp-badge-flash {
+    0% { background: rgba(245, 158, 11, 0.65); border-color: #fbbf24; transform: scale(1.06); box-shadow: 0 0 12px rgba(245,158,11,0.7); }
+    100% { background: rgba(15, 23, 42, 0.85); border-color: rgba(255, 255, 255, 0.12); transform: scale(1); box-shadow: none; }
+  }
+  .dp-demo-page .dp-var-tag {
+    font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px;
+    background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3);
+  }
+  .dp-demo-page .dp-var-name {
+    color: #94a3b8; font-size: 11px; font-weight: 600;
+  }
+  .dp-demo-page .dp-var-val {
+    color: #34d399; font-weight: 800; font-size: 12.5px;
+  }
+  .dp-demo-page .dp-var-val[data-type="scale"] { color: #f8fafc; }
+  .dp-demo-page .dp-var-val[data-type="input"] { color: #fbbf24; }
+  .dp-demo-page .dp-var-val[data-type="branch"] { color: #38bdf8; }
+  .dp-demo-page .dp-var-val[data-type="result"] { color: #34d399; }
+  .dp-demo-page .dp-var-val[data-type="memo"] { color: #c084fc; }
+
+  /* 教学精解手册弹窗 Modal */
+  .dp-demo-page .dp-handbook-modal-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .dp-demo-page .dp-handbook-modal {
+    width: 92%; max-width: 980px; max-height: 88vh;
+    background: #0f172a; border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 16px; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+  }
+  .dp-demo-page .dp-handbook-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .dp-demo-page .dp-handbook-title {
+    display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #f8fafc;
+  }
+  .dp-demo-page .dp-handbook-close-btn {
+    background: transparent; border: none; color: #94a3b8; font-size: 22px; cursor: pointer;
+    line-height: 1; padding: 2px 6px; border-radius: 6px; transition: all 0.2s;
+  }
+  .dp-demo-page .dp-handbook-close-btn:hover {
+    color: #f8fafc; background: rgba(255, 255, 255, 0.1);
+  }
+  .dp-demo-page .dp-handbook-body {
+    flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px;
+    font-size: 13px; color: #cbd5e1; line-height: 1.6;
+  }
+  .dp-demo-page .dp-handbook-section {
+    background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .dp-demo-page .dp-handbook-sec-title {
+    font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;
+  }
+  .dp-demo-page .dp-handbook-table {
+    width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px;
+  }
+  .dp-demo-page .dp-handbook-table th, .dp-demo-page .dp-handbook-table td {
+    padding: 8px 10px; border: 1px solid rgba(255, 255, 255, 0.08); text-align: left;
+  }
+  .dp-demo-page .dp-handbook-table th {
+    background: rgba(30, 41, 59, 0.8); color: #94a3b8; font-weight: 700;
+  }
+  .dp-demo-page .dp-handbook-table td {
+    background: rgba(15, 23, 42, 0.4); color: #cbd5e1;
+  }
+
+  /* Universal Splitter & Code Aside Resize Styles */
+  .dp-demo-page .algo-splitter {
+    user-select: none;
+    touch-action: none;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 35;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  .dp-demo-page .algo-splitter-horizontal {
+    width: 8px;
+    margin: 0 -2px;
+    cursor: col-resize;
+    align-self: stretch;
+    height: 100%;
+  }
+
+  .dp-demo-page .algo-splitter-vertical {
+    height: 8px;
+    margin: -2px 0;
+    width: 100%;
+    cursor: row-resize;
+  }
+
+  .dp-demo-page .algo-splitter-bar {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  .dp-demo-page .algo-splitter-horizontal .algo-splitter-bar {
+    width: 3.5px;
+    height: 42px;
+  }
+
+  .dp-demo-page .algo-splitter-vertical .algo-splitter-bar {
+    height: 3.5px;
+    width: 48px;
+  }
+
+  .dp-demo-page .algo-splitter:hover,
+  .dp-demo-page .algo-splitter.is-dragging {
+    background: rgba(56, 189, 248, 0.15);
+  }
+
+  .dp-demo-page .algo-splitter-horizontal:hover .algo-splitter-bar,
+  .dp-demo-page .algo-splitter-horizontal.is-dragging .algo-splitter-bar {
+    background: linear-gradient(180deg, #38bdf8, #818cf8);
+    width: 4.5px;
+    height: 60px;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.8);
+  }
+
+  .dp-demo-page .algo-splitter-vertical:hover .algo-splitter-bar,
+  .dp-demo-page .algo-splitter-vertical.is-dragging .algo-splitter-bar {
+    background: linear-gradient(90deg, #38bdf8, #818cf8);
+    height: 4.5px;
+    width: 68px;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.8);
+  }
+
+  /* scrollbar */
+  .dp-demo-page ::-webkit-scrollbar { width: 5px; height: 5px; }
+  .dp-demo-page ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 4px; }
+</style>
+
+<div class="dp-demo-page">
+  <div class="dp-shell">
+    <!-- 1. 紧凑一体化顶栏 -->
+    <header class="dp-top-bar">
+      <div class="dp-brand">
+        <div class="dp-icon-badge">🧮</div>
+        <div id="dp-title" class="dp-title">动态规划演示</div>
+      </div>
+      <div id="dp-controls" class="dp-controls"></div>
+      
+      <!-- 4 阶段算法演化选择器 (Evolution Stage Selector) -->
+      <div id="dp-evolution-selector" class="dp-evolution-selector">
+        <button class="dp-evo-btn" data-stage="naive-recursive" title="1. 朴素递归 (自顶向下分治，指数级 O(2ⁿ))">
+          <span>1. 朴素递归</span>
+          <span class="dp-evo-badge">O(2ⁿ)</span>
+        </button>
+        <button class="dp-evo-btn" data-stage="memo-topdown" title="2. 记忆化搜索 (自顶向下备忘录查表剪枝，线性 O(n))">
+          <span>2. 记忆化搜索</span>
+          <span class="dp-evo-badge">O(n)</span>
+        </button>
+        <button class="dp-evo-btn is-active" data-stage="tabulation-bottomup" title="3. 递推填表法 (自底向上迭代填表，经典DP)">
+          <span>3. 递推填表</span>
+          <span class="dp-evo-badge">O(n)</span>
+        </button>
+        <button class="dp-evo-btn" data-stage="space-optimized" title="4. 空间状态压缩 (滚动变量优化，常数空间 O(1))">
+          <span>4. 空间压缩</span>
+          <span class="dp-evo-badge">O(1)</span>
+        </button>
+      </div>
+
+      <!-- 教学视口切换药丸 (辅助进阶模式) -->
+      <div class="dp-view-pills" id="dp-viewport-selector" style="display: none;">
+        <button class="dp-view-btn is-active" data-view="workshop" title="字符实体卡片 3D 物理微动作">🎭 变形工作台</button>
+        <button class="dp-view-btn" data-view="story" title="通俗大白话情景卡片与三路分支对比">📖 白话图解</button>
+        <button class="dp-view-btn" data-view="backtrack" title="最优路径逆向穿梭与步骤时间轴">🎮 路径回溯</button>
+        <button class="dp-view-btn" data-view="matrix" title="纯 2D DP 表格全屏专注模式">📊 纯矩阵模式</button>
+      </div>
+
+      <!-- 实时微指标卡片 -->
+      <div id="dp-metrics" class="dp-metrics"></div>
+
+      <!-- 顶栏醒目的教学手册按钮 -->
+      <button class="dp-lecture-handbook-btn" id="dp-top-btn-open-handbook" style="margin-left: 4px; padding: 5px 12px; font-size: 11.5px; border-radius: 7px;">📚 教学精解手册</button>
+    </header>
+
+    <div id="dp-faq" class="dp-faq-panel" style="display:none"></div>
+
+    <!-- 2. 主分栏布局 -->
+    <div class="dp-layout">
+      <!-- 左侧主舞台：上下双舞台结构 -->
+      <div class="dp-main">
+        <!-- 上半舞台：动态交互教学卡片 (随顶栏药丸切换) -->
+        <div class="dp-top-stage-container">
+          <!-- 视口 1: 🎭 实体变形工作台 -->
+          <div id="dp-workshop-panel" class="dp-view-workshop">
+            <div id="dp-workshop-stage" class="dp-workshop-stage">
+              <div class="dp-stage-row dp-stage-source-row">
+                <span class="dp-stage-row-label">源字符串 (S)：</span>
+                <div id="dp-workshop-source" class="dp-stage-card-rack"></div>
+              </div>
+              <div id="dp-workshop-action-hud" class="dp-stage-action-hud">
+                <div class="dp-hud-badge">🎯 等待操作指令...</div>
+              </div>
+              <div class="dp-stage-row dp-stage-target-row">
+                <span class="dp-stage-row-label">目标字符串 (T)：</span>
+                <div id="dp-workshop-target" class="dp-stage-card-rack"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 视口 2: 📖 白话图解剧场 -->
+          <div id="dp-story-panel" class="dp-view-story">
+            <div id="dp-story-theatre" class="dp-story-theatre">
+              <div id="dp-story-goal" class="dp-story-goal-card">
+                <div class="dp-story-goal-title">🎯 当前小目标</div>
+                <div class="dp-story-goal-content">点击播放开始推导...</div>
+              </div>
+              <div class="dp-story-branch-title">⚔️ 三路决策对比（比武招亲）：</div>
+              <div id="dp-story-branches" class="dp-story-branches"></div>
+              <div id="dp-story-conclusion" class="dp-story-conclusion-card"></div>
+            </div>
+          </div>
+
+          <!-- 视口 3: 🎮 路径回溯探索 -->
+          <div id="dp-backtrack-panel" class="dp-view-backtrack">
+            <div id="dp-backtrack-container" class="dp-backtrack-container">
+              <div id="dp-backtrack-summary" class="dp-backtrack-summary-bar"></div>
+              <div id="dp-backtrack-timeline" class="dp-backtrack-timeline"></div>
+            </div>
+          </div>
+
+          <!-- 视口 4: 🪜 立体台阶与跳跃轨迹视口 -->
+          <div id="dp-staircase-panel" class="dp-view-staircase" style="width:100%; height:100%; min-height:250px; position:relative; overflow:hidden;">
+            <div id="dp-staircase" class="dp-staircase-container" style="width:100%; height:100%; min-height:250px; position:relative; overflow:hidden;"></div>
+          </div>
+
+          <!-- 视口 5: 🌟 全专题物理实景动画视口 (背包/零钱/网格/打家劫舍/股票/切割) -->
+          <div id="dp-thematic-stage-panel" class="dp-view-thematic" style="width:100%; height:100%; min-height:250px; position:relative; overflow:hidden;">
+            <div id="dp-thematic-stage" class="dp-thematic-stage-container" style="width:100%; height:100%; min-height:250px; position:relative; overflow:hidden;"></div>
+          </div>
+        </div>
+
+        <!-- 下半舞台：经典 DP 状态矩阵 (表格/数组常驻，告别大片空白) -->
+        <div class="dp-bottom-stage-container">
+          <div class="dp-panel-title">📊 动态规划推导状态 (DP Array & Decision Tree)</div>
+          <div id="dp-source" class="dp-source" style="display:none"></div>
+          <div id="dp-tree" class="dp-tree-container" style="display:none"></div>
+          <div id="dp-rolling-stage" class="dp-rolling-vars-container" style="display:none">
+            <div class="dp-rolling-cards-row">
+              <div id="dp-card-prev2" class="dp-rolling-card">
+                <span class="dp-rolling-card-label">prev2 (dp[i-2])</span>
+                <span id="dp-val-prev2" class="dp-rolling-card-val">0</span>
+              </div>
+              <span class="dp-rolling-operator">+</span>
+              <div id="dp-card-prev1" class="dp-rolling-card">
+                <span class="dp-rolling-card-label">prev1 (dp[i-1])</span>
+                <span id="dp-val-prev1" class="dp-rolling-card-val">0</span>
+              </div>
+              <span class="dp-rolling-operator">=</span>
+              <div id="dp-card-curr" class="dp-rolling-card is-active">
+                <span class="dp-rolling-card-label">curr (当前计算项)</span>
+                <span id="dp-val-curr" class="dp-rolling-card-val">-</span>
+              </div>
+            </div>
+            <div class="dp-rolling-rule-bar">
+              <span>🔄 状态滚动规则：</span>
+              <code id="dp-rolling-rule-code">prev2 = prev1; prev1 = curr;</code>
+            </div>
+          </div>
+          <div id="dp-1d" class="dp-array" style="display:none"></div>
+          <div id="dp-2d" style="position: relative; width: 100%; display: flex; justify-content: center;"></div>
+        </div>
+
+        <!-- 👨‍🏫 算法导师·实时教学解说台 (Pedagogical Lecture HUD) -->
+        <div class="dp-lecture-hud" id="dp-lecture-hud">
+          <div class="dp-lecture-header">
+            <div class="dp-lecture-badge-group">
+              <div class="dp-lecture-phase-badge" id="dp-lecture-phase">🎬 阶段：准备就绪</div>
+              <div class="dp-lecture-coords-badge" id="dp-lecture-coords">光标：i=-, j=-</div>
+            </div>
+          </div>
+          <div class="dp-lecture-body">
+            <div class="dp-lecture-comment" id="step-message">输入数据后点击「开始计算」进入保姆级动态规划推导教学。</div>
+            <div class="dp-lecture-formula-box" id="dp-formula-box">
+              <span class="dp-formula-label">📐 状态转移推导：</span>
+              <div id="dp-formula" style="display:inline-flex; align-items:center; gap:8px;">等待状态转移...</div>
+            </div>
+            <!-- 📌 专门的核心变量监视槽 (Dedicated Live Variable Monitor HUD) -->
+            <div class="dp-lecture-vars-box" id="dp-lecture-vars-box">
+              <span class="dp-lecture-vars-label">📌 核心变量监视：</span>
+              <div class="dp-lecture-vars-list" id="dp-lecture-vars-list">
+                <span class="dp-var-badge"><span class="dp-var-name">i</span><span class="dp-var-val">-</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：代码联动面板 + 紧凑控制栏 -->
+      <div class="dp-right">
+        <div class="dp-code-wrapper" data-code-panel></div>
+        <div class="dp-playback">
+          <div class="dp-pb-row">
+            <button id="step-reset" class="dp-pb-btn">⏮ 重置</button>
+            <button id="step-prev" class="dp-pb-btn">◀ 上一步</button>
+            <button id="step-play" class="dp-pb-btn play">▶ 播放</button>
+            <button id="step-next" class="dp-pb-btn">下一步 ▶</button>
+          </div>
+          <div class="dp-speed-mode-row">
+            <div class="dp-speed-ctrl">
+              <span>速度</span>
+              <input id="step-speed" type="range" min="200" max="2000" step="100" value="650" />
+              <span id="step-speed-label">0.7s</span>
+            </div>
+            <div class="dp-mode-pills" id="step-mode-selector">
+              <button class="dp-mode-btn is-active" data-mode="two-phase" title="两阶段">🎯 两阶段</button>
+              <button class="dp-mode-btn" data-mode="compact" title="快速">⏩ 快速</button>
+              <button class="dp-mode-btn" data-mode="line-by-line" title="逐行">🔍 逐行</button>
+            </div>
+          </div>
+          <div id="step-counter">步骤: 1 / 1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📚 教学精解手册弹窗 (Handbook Modal) -->
+  <div id="dp-handbook-modal" class="dp-handbook-modal-overlay" style="display:none">
+    <div class="dp-handbook-modal">
+      <div class="dp-handbook-header">
+        <div class="dp-handbook-title">
+          <span>📚</span>
+          <span id="dp-handbook-title-text">动态规划教学精解手册</span>
+        </div>
+        <button id="dp-handbook-close" class="dp-handbook-close-btn" title="关闭 (Esc)">×</button>
+      </div>
+      <div class="dp-handbook-body" id="dp-handbook-content">
+        <!-- 动态生成教学精解手册内容 -->
+      </div>
+    </div>
+  </div>
+</div>

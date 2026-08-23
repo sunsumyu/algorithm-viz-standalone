@@ -1,0 +1,393 @@
+<style>
+  /* === 下一个更大元素I · 玻璃感 + 柱状图 + 栈 + 映射可视化 === */
+  #algo-next-greater-element-i-view {
+    --accent-a: #818cf8;
+    --accent-b: #6366f1;
+    --accent-glow: rgba(129, 140, 248, .4);
+    --stack-color: #fbbf24;
+    --resolve-color: #34d399;
+    --query-color: #38bdf8;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(129, 140, 248, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(99, 102, 241, .22), transparent 55%),
+      linear-gradient(135deg, #0a0520 0%, #150a2e 50%, #1a1035 100%);
+    overflow: hidden;
+  }
+  #algo-next-greater-element-i-view .nge1-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  #algo-next-greater-element-i-view .nge1-header {
+    padding: 18px 24px 12px;
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; gap: 18px; align-items: center;
+  }
+  #algo-next-greater-element-i-view .nge1-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-next-greater-element-i-view .nge1-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-next-greater-element-i-view h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-next-greater-element-i-view .nge1-desc { margin: 4px 0 0; color: #94a3b8; font-size: 12.5px; line-height: 1.5; }
+  #algo-next-greater-element-i-view .nge1-tip {
+    max-width: 460px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(129, 140, 248, .12), rgba(99, 102, 241, .08));
+    border: 1px solid rgba(129, 140, 248, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-next-greater-element-i-view .nge1-tip strong { color: #a5b4fc; }
+  #algo-next-greater-element-i-view .nge1-main {
+    flex: 1; min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-next-greater-element-i-view .nge1-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-next-greater-element-i-view .nge1-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-next-greater-element-i-view .nge1-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-next-greater-element-i-view .nge1-tag {
+    font-size: 11px; color: #a5b4fc; background: rgba(129, 140, 248, .14);
+    border: 1px solid rgba(129, 140, 248, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-next-greater-element-i-view .nge1-input-row {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-next-greater-element-i-view .nge1-input-group { display: flex; flex-direction: column; gap: 4px; }
+  #algo-next-greater-element-i-view .nge1-input-label { color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-next-greater-element-i-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-next-greater-element-i-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(129, 140, 248, .15); }
+  #algo-next-greater-element-i-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-next-greater-element-i-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-next-greater-element-i-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-next-greater-element-i-view .nge1-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-next-greater-element-i-view .nge1-example-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(99, 102, 241, .12); border: 1px solid rgba(99, 102, 241, .28);
+    color: #a5b4fc; cursor: pointer; transition: all .2s;
+  }
+  #algo-next-greater-element-i-view .nge1-example-btn:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* 统计 */
+  #algo-next-greater-element-i-view .nge1-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #algo-next-greater-element-i-view .nge1-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-next-greater-element-i-view .nge1-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-next-greater-element-i-view .nge1-stat--j::before { background: linear-gradient(180deg, #818cf8, #6366f1); }
+  #algo-next-greater-element-i-view .nge1-stat--j span { color: #a5b4fc; }
+  #algo-next-greater-element-i-view .nge1-stat--cur::before { background: linear-gradient(180deg, #c084fc, #a855f7); }
+  #algo-next-greater-element-i-view .nge1-stat--cur span { color: #d8b4fe; }
+  #algo-next-greater-element-i-view .nge1-stat--top::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-next-greater-element-i-view .nge1-stat--top span { color: #fde68a; }
+  #algo-next-greater-element-i-view .nge1-stat--map::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-next-greater-element-i-view .nge1-stat--map span { color: #6ee7b7; }
+  #algo-next-greater-element-i-view .nge1-stat label {
+    display: block; margin-bottom: 4px; color: #94a3b8;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  }
+  #algo-next-greater-element-i-view .nge1-stat span {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  /* 柱状图 */
+  #algo-next-greater-element-i-view .nge1-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+  #algo-next-greater-element-i-view .nge1-bars {
+    flex: 1; min-height: 220px; padding: 24px 18px;
+    overflow: auto; display: flex; align-items: flex-end; gap: 10px;
+  }
+  #algo-next-greater-element-i-view .nge1-bar-col {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; min-width: 32px;
+  }
+  #algo-next-greater-element-i-view .nge1-bar {
+    width: 100%; border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+    display: flex; align-items: flex-start; justify-content: center;
+    color: #cbd5e1; font-weight: 800; font-size: 14px; padding-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-next-greater-element-i-view .nge1-bar.current {
+    background: linear-gradient(180deg, rgba(129, 140, 248, .45), rgba(99, 102, 241, .15));
+    border-color: var(--accent-a);
+    color: #c7d2fe;
+    transform: translateY(-6px) scale(1.05);
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, .25), 0 8px 22px rgba(129, 140, 248, .4);
+    animation: nge1-bar-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes nge1-bar-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(129, 140, 248, .25), 0 8px 22px rgba(129, 140, 248, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(129, 140, 248, .12), 0 10px 28px rgba(129, 140, 248, .55); }
+  }
+  #algo-next-greater-element-i-view .nge1-bar.instack {
+    background: linear-gradient(180deg, rgba(251, 191, 36, .3), rgba(245, 158, 11, .1));
+    border-color: rgba(251, 191, 36, .5);
+    color: #fde68a;
+  }
+  #algo-next-greater-element-i-view .nge1-bar.popping {
+    animation: nge1-pop-shake .5s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes nge1-pop-shake {
+    0% { transform: translateX(0) scale(1); }
+    30% { transform: translateX(-4px) scale(1.08); }
+    60% { transform: translateX(4px) scale(1.05); }
+    100% { transform: translateX(0) scale(1); }
+  }
+  #algo-next-greater-element-i-view .nge1-bar.resolved {
+    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
+    border-color: rgba(52, 211, 153, .5);
+    color: #6ee7b7;
+    animation: nge1-resolve-pop .5s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes nge1-resolve-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); box-shadow: 0 0 16px rgba(52, 211, 153, .5); }
+    100% { transform: scale(1); }
+  }
+  #algo-next-greater-element-i-view .nge1-bar.querying {
+    background: linear-gradient(180deg, rgba(56, 189, 248, .35), rgba(14, 165, 233, .1));
+    border-color: rgba(56, 189, 248, .6);
+    color: #7dd3fc;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, .2), 0 4px 16px rgba(56, 189, 248, .3);
+  }
+  #algo-next-greater-element-i-view .nge1-ans {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    color: #64748b;
+    padding: 4px 8px; border-radius: 6px;
+    background: rgba(255, 255, 255, .04);
+  }
+  #algo-next-greater-element-i-view .nge1-ans.filled {
+    color: #6ee7b7;
+    background: rgba(52, 211, 153, .12);
+  }
+  /* 栈区 */
+  #algo-next-greater-element-i-view .nge1-stack-area {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+  }
+  #algo-next-greater-element-i-view .nge1-stack-title {
+    color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 10px;
+    letter-spacing: .03em;
+  }
+  #algo-next-greater-element-i-view .nge1-stack-items {
+    display: flex; gap: 8px; flex-wrap: wrap-reverse; flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+  #algo-next-greater-element-i-view .nge1-stack-item {
+    padding: 6px 12px; border-radius: 8px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, .25), rgba(245, 158, 11, .1));
+    border: 1px solid rgba(251, 191, 36, .5);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+    color: #fde68a;
+    animation: nge1-stack-push .4s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes nge1-stack-push {
+    0% { transform: translateX(-20px) scale(.6); opacity: 0; }
+    60% { transform: translateX(2px) scale(1.1); opacity: 1; }
+    100% { transform: translateX(0) scale(1); opacity: 1; }
+  }
+  #algo-next-greater-element-i-view .nge1-stack-item.nge1-stack-top {
+    border-color: var(--accent-a);
+    background: linear-gradient(135deg, rgba(129, 140, 248, .3), rgba(99, 102, 241, .12));
+    color: #c7d2fe;
+  }
+  /* 结果 */
+  #algo-next-greater-element-i-view .nge1-message {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(129, 140, 248, .12), rgba(99, 102, 241, .06));
+    border: 1px solid rgba(129, 140, 248, .28);
+    line-height: 1.55; font-size: 14px; color: #c7d2fe;
+  }
+  #algo-next-greater-element-i-view .nge1-message .nge1-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow); flex-shrink: 0;
+  }
+  #algo-next-greater-element-i-view .nge1-message.nge1-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-next-greater-element-i-view .nge1-message.nge1-result--done .nge1-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  /* 映射表区 */
+  #algo-next-greater-element-i-view .nge1-map-area {
+    padding: 10px 18px 14px;
+    background: rgba(8, 8, 24, .4);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+  }
+  #algo-next-greater-element-i-view .nge1-map-title {
+    color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 8px;
+    letter-spacing: .03em;
+  }
+  #algo-next-greater-element-i-view .nge1-map-items {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  #algo-next-greater-element-i-view .nge1-map-item {
+    padding: 4px 10px; border-radius: 6px;
+    background: rgba(52, 211, 153, .1);
+    border: 1px solid rgba(52, 211, 153, .3);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+    color: #6ee7b7;
+    animation: nge1-map-pop .3s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes nge1-map-pop {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  #algo-next-greater-element-i-view .nge1-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-next-greater-element-i-view .nge1-log div { padding: 1px 0; color: #94a3b8; }
+  #algo-next-greater-element-i-view .nge1-log div.active { color: #a5b4fc; font-weight: 600; }
+  #algo-next-greater-element-i-view .nge1-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-next-greater-element-i-view .nge1-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-next-greater-element-i-view .nge1-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-next-greater-element-i-view .nge1-controls .nge1-ctrl-btn { min-width: 64px; }
+  #algo-next-greater-element-i-view .nge1-controls .nge1-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-next-greater-element-i-view .nge1-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  #algo-next-greater-element-i-view .nge1-speed-wrap { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px; }
+  #algo-next-greater-element-i-view #nge1-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-next-greater-element-i-view .nge1-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-next-greater-element-i-view .nge1-code { min-height: 360px; }
+  }
+</style>
+
+<div class="nge1-page">
+  <div class="nge1-header">
+    <div class="nge1-hero-left">
+      <span class="nge1-icon">🔍</span>
+      <div>
+        <h2>下一个更大元素I（单调栈）</h2>
+        <div class="nge1-desc">LeetCode 496 · 用单调栈在 nums2 中找每个元素的下一个更大值</div>
+      </div>
+    </div>
+    <div class="nge1-tip"><strong>核心动画：</strong>当前柱<span style="color:#c7d2fe">靛蓝脉冲</span>；栈内柱<span style="color:#fde68a">金色高亮</span>；弹栈时<span style="color:#fca5a5">shake</span>；建映射时<span style="color:#6ee7b7">绿色 pop</span>；查询时<span style="color:#7dd3fc">蓝色高亮</span>。</div>
+  </div>
+  <div class="nge1-main">
+    <div class="nge1-left">
+      <section class="nge1-card">
+        <div class="nge1-card-title">输入数组 <span class="nge1-tag">nums1 &amp; nums2</span></div>
+        <div class="nge1-input-row">
+          <div class="nge1-input-group">
+            <span class="nge1-input-label">nums1（查询）</span>
+            <input id="nge1-input1" value="4,1,2">
+          </div>
+          <div class="nge1-input-group">
+            <span class="nge1-input-label">nums2（全集）</span>
+            <input id="nge1-input2" value="1,3,4,2">
+          </div>
+          <button id="nge1-start">开始查找</button>
+        </div>
+        <div class="nge1-examples">
+          <button class="nge1-example-btn" data-nums1="4,1,2" data-nums2="1,3,4,2">经典示例</button>
+          <button class="nge1-example-btn" data-nums1="2,4" data-nums2="1,2,3,4">简单</button>
+          <button class="nge1-example-btn" data-nums1="1,3,5" data-nums2="1,2,3,4,5,6">全有</button>
+        </div>
+      </section>
+
+      <div class="nge1-stats">
+        <div class="nge1-stat nge1-stat--j"><label>当前 j</label><span id="nge1-j">0</span></div>
+        <div class="nge1-stat nge1-stat--cur"><label>当前元素</label><span id="nge1-cur">-</span></div>
+        <div class="nge1-stat nge1-stat--top"><label>栈顶</label><span id="nge1-top">-</span></div>
+        <div class="nge1-stat nge1-stat--map"><label>已建映射数</label><span id="nge1-mapcount">0</span></div>
+      </div>
+
+      <section class="nge1-card nge1-visual">
+        <div class="nge1-card-title">nums2 柱状图 <span class="nge1-tag">单调栈</span></div>
+        <div class="nge1-bars" id="nge1-bars"></div>
+        <div class="nge1-stack-area">
+          <div class="nge1-stack-title">📦 单调递减栈（存下标，值递减）</div>
+          <div class="nge1-stack-items" id="nge1-stack"></div>
+        </div>
+        <div class="nge1-map-area">
+          <div class="nge1-map-title">🗺️ nextGreater 映射表</div>
+          <div class="nge1-map-items" id="nge1-map"></div>
+        </div>
+        <div class="nge1-message" id="nge1-result">
+          <span class="nge1-emoji">🔍</span>
+          <div id="step-message">点击「开始查找」观看单调栈建映射 + 查询动画</div>
+        </div>
+      </section>
+
+      <section class="nge1-card">
+        <div class="nge1-card-title">执行日志</div>
+        <div class="nge1-log" id="nge1-log"></div>
+      </section>
+    </div>
+    <aside class="nge1-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="nge1-controls">
+    <button id="step-reset" class="nge1-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="nge1-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="nge1-ctrl-btn nge1-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="nge1-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="nge1-counter">步骤: 0 / 0</span>
+    <div class="nge1-speed-wrap">
+      <span>速度</span>
+      <input id="nge1-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="nge1-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,379 @@
+<style>
+  /* === Selection Sort: Green glassmorphism === */
+  #algo-selection-sort-view {
+    --accent-a: #059669;
+    --accent-b: #10b981;
+    --accent-glow: rgba(16, 185, 129, .45);
+    --sorted-a: #06b6d4;
+    --sorted-b: #3b82f6;
+    --min-color: #f59e0b;
+    --scan-color: #60a5fa;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 10% 5%, rgba(5, 150, 105, .32), transparent 55%),
+      radial-gradient(ellipse at 90% 95%, rgba(16, 185, 129, .28), transparent 55%),
+      linear-gradient(135deg, #0c1a14 0%, #142a1e 50%, #1a3a2a 100%);
+    overflow: hidden;
+  }
+  #algo-selection-sort-view .is-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  /* hero */
+  #algo-selection-sort-view .is-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-selection-sort-view .is-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-selection-sort-view .is-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-selection-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-selection-sort-view .is-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-selection-sort-view .is-tip {
+    max-width: 480px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(5, 150, 105, .12), rgba(16, 185, 129, .08));
+    border: 1px solid rgba(16, 185, 129, .28);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-selection-sort-view .is-tip strong { color: #6ee7b7; }
+  /* main grid */
+  #algo-selection-sort-view .is-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-selection-sort-view .is-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-selection-sort-view .is-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-selection-sort-view .is-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-selection-sort-view .is-tag {
+    font-size: 11px; color: #6ee7b7; background: rgba(16, 185, 129, .14);
+    border: 1px solid rgba(16, 185, 129, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* input */
+  #algo-selection-sort-view .is-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-selection-sort-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-selection-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(16, 185, 129, .15); }
+  #algo-selection-sort-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-selection-sort-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #fdf4ff; transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-selection-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-selection-sort-view .is-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-selection-sort-view .is-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(16, 185, 129, .12); border: 1px solid rgba(16, 185, 129, .28);
+    color: #6ee7b7; cursor: pointer; transition: all .2s;
+  }
+  #algo-selection-sort-view .is-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; border-color: transparent; transform: translateY(-1px);
+  }
+  /* stats */
+  #algo-selection-sort-view .is-stats {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  }
+  #algo-selection-sort-view .is-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-selection-sort-view .is-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-selection-sort-view .is-stat.is-stat--sorted::before { background: linear-gradient(180deg, var(--sorted-a), var(--sorted-b)); }
+  #algo-selection-sort-view .is-stat.is-stat--min::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-selection-sort-view .is-stat.is-stat--scan::before { background: linear-gradient(180deg, #93c5fd, #60a5fa); }
+  #algo-selection-sort-view .is-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-selection-sort-view .is-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-selection-sort-view .is-stat--sorted .is-stat-val { color: #67e8f9; }
+  #algo-selection-sort-view .is-stat--min .is-stat-val { color: #fcd34d; }
+  #algo-selection-sort-view .is-stat--scan .is-stat-val { color: #93c5fd; }
+  /* visual */
+  #algo-selection-sort-view .is-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+  #algo-selection-sort-view .is-canvas {
+    flex: 1; min-height: 0; padding: 36px 18px 20px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  #algo-selection-sort-view .is-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 100%, rgba(16, 185, 129, .12), transparent 60%);
+    pointer-events: none;
+  }
+  #algo-selection-sort-view .is-bars {
+    position: relative; display: flex; align-items: flex-end;
+    gap: 6px; height: 220px; padding-bottom: 28px;
+  }
+  #algo-selection-sort-view .is-bar-wrap {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    width: 48px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-selection-sort-view .is-bar {
+    width: 100%; border-radius: 10px 10px 4px 4px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
+    border: 1.5px solid rgba(255, 255, 255, .14);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 6px; color: #e2e8f0;
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13px; font-weight: 800;
+    transition: height .45s cubic-bezier(.4, 0, .2, 1),
+                background .35s, border-color .35s, box-shadow .35s, color .35s, transform .35s;
+  }
+  #algo-selection-sort-view .is-bar.is-sorted {
+    background: linear-gradient(180deg, rgba(6, 182, 212, .5), rgba(59, 130, 246, .25));
+    border-color: rgba(6, 182, 212, .8);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(6, 182, 212, .25);
+  }
+  /* scanning element (currently being compared) */
+  #algo-selection-sort-view .is-bar.is-scanning {
+    background: linear-gradient(180deg, rgba(96, 165, 250, .55), rgba(59, 130, 246, .25));
+    border-color: #60a5fa;
+    color: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, .25);
+    animation: is-pulse .6s ease-in-out infinite;
+  }
+  @keyframes is-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(96, 165, 250, .25); }
+    50% { box-shadow: 0 0 0 6px rgba(96, 165, 250, .15); }
+  }
+  /* current minimum found so far */
+  #algo-selection-sort-view .is-bar.is-min-found {
+    background: linear-gradient(180deg, rgba(245, 158, 11, .55), rgba(217, 119, 6, .25));
+    border-color: var(--min-color);
+    color: #fff7ed;
+    box-shadow: 0 4px 18px rgba(245, 158, 11, .45);
+    animation: is-glow 1.2s ease-in-out infinite;
+  }
+  @keyframes is-glow {
+    0%, 100% { box-shadow: 0 4px 18px rgba(245, 158, 11, .45); }
+    50% { box-shadow: 0 4px 24px rgba(245, 158, 11, .7); }
+  }
+  /* swap animation */
+  #algo-selection-sort-view .is-bar.is-swapping {
+    animation: is-swap .55s cubic-bezier(.4, 0, .2, 1);
+    border-color: #34d399;
+    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .35);
+  }
+  @keyframes is-swap {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.12); }
+    60% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  #algo-selection-sort-view .is-bar.is-done {
+    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
+    border-color: var(--success, #34d399);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
+  }
+  #algo-selection-sort-view .is-idx {
+    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+    color: #64748b; font-size: 11px; font-weight: 600;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+  }
+  #algo-selection-sort-view .is-marker {
+    position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; font-weight: 800;
+    padding: 2px 8px; border-radius: 6px;
+    animation: is-float 1.6s ease-in-out infinite;
+  }
+  @keyframes is-float {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, -4px); }
+  }
+  #algo-selection-sort-view .is-marker--min {
+    color: var(--min-color);
+    background: rgba(245, 158, 11, .15); border: 1px solid var(--min-color);
+  }
+  #algo-selection-sort-view .is-marker--scan {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, .15); border: 1px solid #60a5fa;
+  }
+  /* sorted area overlay */
+  #algo-selection-sort-view .is-sorted-overlay {
+    position: absolute; left: 0; bottom: 0; height: 4px;
+    background: linear-gradient(90deg, var(--sorted-a), var(--sorted-b));
+    border-radius: 4px;
+    transition: width .5s cubic-bezier(.4, 0, .2, 1), opacity .35s;
+    box-shadow: 0 0 12px var(--sorted-a);
+  }
+  /* result banner */
+  #algo-selection-sort-view .is-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(5, 150, 105, .12), rgba(16, 185, 129, .06));
+    border: 1px solid rgba(16, 185, 129, .28);
+    line-height: 1.55; font-size: 14px; color: #d1fae5;
+  }
+  #algo-selection-sort-view .is-result .is-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  #algo-selection-sort-view .is-result.is-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-selection-sort-view .is-result.is-result--done .is-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  /* log */
+  #algo-selection-sort-view .is-log {
+    min-height: 90px; max-height: 140px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-selection-sort-view .is-log-line { display: flex; gap: 8px; }
+  #algo-selection-sort-view .is-log-line .is-log-num { color: #475569; flex-shrink: 0; }
+  #algo-selection-sort-view .is-log-line.is-log-active { color: #6ee7b7; font-weight: 600; }
+  #algo-selection-sort-view .is-log-line.is-log-active .is-log-num { color: var(--accent-b); }
+  /* code panel */
+  #algo-selection-sort-view .is-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-selection-sort-view .is-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* controls */
+  #algo-selection-sort-view .is-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-selection-sort-view .is-controls .is-ctrl-btn { min-width: 64px; }
+  #algo-selection-sort-view .is-controls .is-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; border-color: transparent;
+  }
+  #algo-selection-sort-view .is-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-selection-sort-view .is-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-selection-sort-view #is-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-selection-sort-view .is-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-selection-sort-view .is-code { min-height: 360px; }
+  }
+</style>
+
+<div class="is-shell">
+  <div class="is-hero">
+    <div class="is-hero-left">
+      <span class="is-icon">🎯</span>
+      <div>
+        <h1>选择排序</h1>
+        <div class="is-sub">每轮从未排序部分选出最小值，放到已排序区末尾 · 不稳定 · O(n²)</div>
+      </div>
+    </div>
+    <div class="is-tip"><strong>核心动画：</strong>蓝色高亮正在扫描比较的元素 → 黄色高亮标记当前轮次的最小值 → 找到后绿色闪烁交换到已排序区边界。</div>
+  </div>
+  <div class="is-main">
+    <div class="is-left">
+      <section class="is-card">
+        <div class="is-card-title">输入 <span class="is-tag">数组</span></div>
+        <div class="is-input-row">
+          <input id="is-array" value="5,2,9,1,5,6">
+          <button id="is-start">开始排序</button>
+        </div>
+        <div class="is-examples">
+          <button class="is-chip" data-arr="5,2,9,1,5,6">默认 6 元素</button>
+          <button class="is-chip" data-arr="3,1,4,1,5,9,2,6">8 元素</button>
+          <button class="is-chip" data-arr="5,4,3,2,1">完全逆序</button>
+          <button class="is-chip" data-arr="1,2,3,4,5">已排序</button>
+          <button class="is-chip" data-arr="2,2,2,1">含重复</button>
+        </div>
+      </section>
+
+      <div class="is-stats">
+        <div class="is-stat is-stat--sorted"><div class="is-stat-label">已排序区间</div><div class="is-stat-val" id="is-stat-sorted">0</div></div>
+        <div class="is-stat"><div class="is-stat-label">轮数</div><div class="is-stat-val" id="is-stat-round">-</div></div>
+        <div class="is-stat is-stat--min"><div class="is-stat-label">当前最小</div><div class="is-stat-val" id="is-stat-min">-</div></div>
+        <div class="is-stat is-stat--scan"><div class="is-stat-label">比较次数</div><div class="is-stat-val" id="is-stat-cmp">0</div></div>
+        <div class="is-stat"><div class="is-stat-label">交换次数</div><div class="is-stat-val" id="is-stat-swap">0</div></div>
+      </div>
+
+      <section class="is-card is-visual">
+        <div class="is-card-title">排序过程</div>
+        <div class="is-canvas">
+          <div class="is-bars" id="is-bars"></div>
+        </div>
+        <div class="is-result" id="is-result">
+          <span class="is-emoji">🎯</span>
+          <div id="step-message">点击「开始排序」查看选择排序逐步过程</div>
+        </div>
+      </section>
+
+      <section class="is-card">
+        <div class="is-card-title">执行日志 <button id="is-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="is-log" id="is-log"></div>
+      </section>
+    </div>
+    <aside class="is-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="is-controls">
+    <button id="step-reset" class="is-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="is-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="is-ctrl-btn is-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="is-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="is-counter">步骤: 0 / 0</span>
+    <div class="is-speed-wrap">
+      <span>速度</span>
+      <input id="is-speed" type="range" min="200" max="2500" step="100" value="700">
+      <span id="is-speed-label" style="min-width:42px;">0.7s</span>
+    </div>
+  </div>
+</div>

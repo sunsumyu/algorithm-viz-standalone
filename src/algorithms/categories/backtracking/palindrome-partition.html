@@ -1,0 +1,329 @@
+<style>
+  #algo-palindrome-partition-view {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(167, 139, 250, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(236, 72, 153, .22), transparent 55%),
+      linear-gradient(135deg, #1e1b4b 0%, #4c0519 50%, #1e1b4b 100%);
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+  #algo-palindrome-partition-view .pal-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #algo-palindrome-partition-view .pal-header {
+    padding: 18px 24px 12px;
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-palindrome-partition-view h1 {
+    margin: 0 0 5px;
+    color: #c4b5fd;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+  #algo-palindrome-partition-view .pal-desc {
+    color: #a78bfa;
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  #algo-palindrome-partition-view .pal-tip {
+    max-width: 540px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(236, 72, 153, .08));
+    border: 1px solid rgba(167, 139, 250, .3);
+    color: #cbd5e1;
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+  #algo-palindrome-partition-view .pal-tip strong { color: #e879f9; }
+  #algo-palindrome-partition-view .pal-main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+  #algo-palindrome-partition-view .pal-left {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow: hidden;
+  }
+  #algo-palindrome-partition-view .pal-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-palindrome-partition-view .pal-card-title {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex;
+    justify-content: space-between;
+    color: #cbd5e1;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  #algo-palindrome-partition-view .pal-tag {
+    font-size: 11px;
+    color: #e879f9;
+    background: rgba(167, 139, 250, .14);
+    border: 1px solid rgba(167, 139, 250, .3);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  #algo-palindrome-partition-view .pal-input-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 16px;
+  }
+  #algo-palindrome-partition-view .pal-examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  #algo-palindrome-partition-view .pal-btn,
+  #algo-palindrome-partition-view .pal-example-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(167, 139, 250, .12); border: 1px solid rgba(167, 139, 250, .28);
+    color: #e9d5ff; cursor: pointer; transition: all .2s;
+  }
+  #algo-palindrome-partition-view .pal-btn:hover,
+  #algo-palindrome-partition-view .pal-example-btn:hover {
+    background: linear-gradient(135deg, #a78bfa, #ec4899);
+    border-color: transparent;
+    color: #06121f;
+    transform: translateY(-1px);
+  }
+  #algo-palindrome-partition-view input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: all .2s;
+  }
+  #algo-palindrome-partition-view input:focus {
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, .15);
+  }
+  #algo-palindrome-partition-view button {
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .04);
+    color: #e2e8f0;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all .25s;
+  }
+  #algo-palindrome-partition-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #a78bfa, #ec4899);
+    border-color: transparent;
+    color: #06121f;
+  }
+  #algo-palindrome-partition-view button:disabled { opacity: .4; cursor: not-allowed; }
+  /* Stats */
+  #algo-palindrome-partition-view .pal-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  #algo-palindrome-partition-view .pal-stat {
+    position: relative;
+    padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  #algo-palindrome-partition-view .pal-stat::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: 4px;
+  }
+  #algo-palindrome-partition-view .pal-stat--start::before { background: linear-gradient(180deg, #a78bfa, #e879f9); }
+  #algo-palindrome-partition-view .pal-stat--start .pal-stat-val { color: #e9d5ff; }
+  #algo-palindrome-partition-view .pal-stat--path::before { background: linear-gradient(180deg, #ec4899, #db2777); }
+  #algo-palindrome-partition-view .pal-stat--path .pal-stat-val { color: #f9a8d4; }
+  #algo-palindrome-partition-view .pal-stat--depth::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-palindrome-partition-view .pal-stat--depth .pal-stat-val { color: #6ee7b7; }
+  #algo-palindrome-partition-view .pal-stat--count::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-palindrome-partition-view .pal-stat--count .pal-stat-val { color: #fde68a; }
+  #algo-palindrome-partition-view .pal-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-palindrome-partition-view .pal-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px;
+    font-weight: 800;
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Tree display */
+  #algo-palindrome-partition-view .pal-tree-card {
+    flex: 1; min-height: 220px; display: flex; flex-direction: column;
+  }
+  #algo-palindrome-partition-view #pal-tree-display {
+    flex: 1; min-height: 180px; padding: 12px 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: auto;
+  }
+  #algo-palindrome-partition-view #pal-tree-display svg {
+    max-width: 100%; max-height: 100%;
+  }
+  /* Message */
+  #algo-palindrome-partition-view .pal-message {
+    margin: 0 16px 16px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(167, 139, 250, .22);
+    background: rgba(167, 139, 250, .08);
+    line-height: 1.55;
+    font-size: 14px;
+    color: #f1f5f9;
+    text-align: center;
+  }
+  #algo-palindrome-partition-view .pal-message.pal-result {
+    border-color: rgba(236, 72, 153, .4);
+    background: rgba(236, 72, 153, .12);
+    color: #d1fae5;
+  }
+  /* Log */
+  #algo-palindrome-partition-view .pal-log {
+    min-height: 80px;
+    max-height: 130px;
+    padding: 10px 14px;
+    overflow: auto;
+    background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    color: #94a3b8;
+  }
+  /* Code panel */
+  #algo-palindrome-partition-view .pal-code {
+    min-height: 0;
+    display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  #algo-palindrome-partition-view .pal-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* Controls */
+  #algo-palindrome-partition-view .pal-controls {
+    padding: 14px 16px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  #algo-palindrome-partition-view .pal-controls .pal-counter {
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-palindrome-partition-view .pal-controls button.pal-play {
+    background: linear-gradient(135deg, #a78bfa, #ec4899);
+    border: none;
+    color: #06121f;
+  }
+  @media (max-width: 1100px) {
+    #algo-palindrome-partition-view .pal-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-palindrome-partition-view .pal-code { min-height: 360px; }
+  }
+  /* Shared tree CSS injected at runtime */
+</style>
+<style id="cs-tree-style"></style>
+
+<div class="pal-page">
+  <div class="pal-header">
+    <div>
+      <h1>分割回文串（回溯决策树）</h1>
+      <p class="pal-desc">LeetCode 131 · 把字符串分割成若干子串，要求每个子串都是回文串，枚举所有可能方案</p>
+    </div>
+    <div class="pal-tip"><strong>核心动画：</strong>橙色<span style="color:#fb923c">脉冲</span>为当前节点，紫色为已访问节点，绿色为找到的方案，灰色虚线为非回文剪枝。观察回文分割回溯决策树。</div>
+  </div>
+
+  <div class="pal-main">
+    <div class="pal-left">
+      <section class="pal-card">
+        <div class="pal-card-title">输入字符串 <span class="pal-tag">回文测试</span></div>
+        <div class="pal-input-row">
+          <input id="pal-input" type="text" value="aab" maxlength="8" placeholder="输入字符串">
+          <button id="pal-start">生成分割</button>
+          <div class="pal-examples">
+            <button class="pal-example-btn" data-value="aab">aab</button>
+            <button class="pal-example-btn" data-value="efe">efe</button>
+            <button class="pal-example-btn" data-value="abba">abba</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="pal-stats">
+        <div class="pal-stat pal-stat--start"><label>startIndex</label><span id="pal-start-index" class="pal-stat-val">0</span></div>
+        <div class="pal-stat pal-stat--path"><label>path 长度</label><span id="pal-path-size" class="pal-stat-val">0</span></div>
+        <div class="pal-stat pal-stat--depth"><label>递归深度</label><span id="pal-depth" class="pal-stat-val">0</span></div>
+        <div class="pal-stat pal-stat--count"><label>结果数量</label><span id="pal-result-size" class="pal-stat-val">0</span></div>
+      </div>
+
+      <section class="pal-card pal-tree-card">
+        <div class="pal-card-title">回溯决策树 <span class="pal-tag">SVG</span></div>
+        <div id="pal-tree-display"></div>
+        <div class="pal-message" id="pal-message">点击「生成分割」观看回溯切割过程</div>
+      </section>
+
+      <section class="pal-card">
+        <div class="pal-card-title">执行日志 <button id="pal-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="pal-log" id="pal-log"></div>
+      </section>
+    </div>
+
+    <aside class="pal-code">
+      <div data-code-panel></div>
+    </aside>
+  </div>
+
+  <div class="pal-controls">
+    <button id="pal-reset">&#x23EE; 重置</button>
+    <button id="pal-prev">&#x25C0; 上一步</button>
+    <button id="pal-play" class="pal-play">&#x25B6; 播放</button>
+    <button id="pal-next">下一步 &#x25B6;</button>
+    <span id="pal-counter" class="pal-counter">步骤: 0 / 0</span>
+  </div>
+</div>

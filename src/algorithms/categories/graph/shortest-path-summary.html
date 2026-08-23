@@ -1,0 +1,544 @@
+<style>
+  #algo-shortest-path-summary-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-shortest-path-summary-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #3b82f655, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #2563eb55, transparent 55%),
+                linear-gradient(135deg, #0a1628 0%, #0f2240 25%, #0a1628 50%, #112d55 75%, #0a1628 100%);
+    z-index: -2;
+  }
+
+  #algo-shortest-path-summary-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(10, 22, 40, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-shortest-path-summary-view .sps-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sps-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .sps-hero .sps-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .sps-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .sps-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .sps-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  #algo-shortest-path-summary-view .sps-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-shortest-path-summary-view .sps-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .sps-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: auto;
+    flex: 1;
+  }
+
+  .sps-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .sps-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .sps-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .sps-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .sps-section-title {
+    padding: 14px 20px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .sps-table-wrap {
+    padding: 16px 20px;
+    overflow-x: auto;
+  }
+
+  .sps-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .sps-table th {
+    padding: 10px 12px;
+    text-align: left;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .sps-table td {
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(204, 214, 244, 0.85);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+  }
+
+  .sps-table tr:hover td {
+    background: rgba(59, 130, 246, 0.05);
+  }
+
+  .sps-table .sps-algo-name {
+    font-weight: 700;
+    color: #3b82f6;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  .sps-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+    padding: 16px 20px;
+  }
+
+  .sps-algo-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sps-algo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+  }
+
+  .sps-algo-card:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+  }
+
+  .sps-algo-card.active {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+  }
+
+  .sps-algo-card-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .sps-algo-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #3b82f6;
+    margin-bottom: 6px;
+  }
+
+  .sps-algo-card-desc {
+    font-size: 12px;
+    color: rgba(204, 214, 244, 0.7);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .sps-algo-card-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sps-tag {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: ui-monospace, monospace;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+  }
+
+  .sps-tag.green {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+  }
+
+  .sps-tag.yellow {
+    background: rgba(234, 179, 8, 0.15);
+    border-color: rgba(234, 179, 8, 0.3);
+    color: #eab308;
+  }
+
+  .sps-detail {
+    margin: 0 20px 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+  }
+
+  .sps-detail-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #3b82f6;
+    margin-bottom: 8px;
+  }
+
+  .sps-detail-content {
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.85);
+    line-height: 1.7;
+  }
+
+  .sps-detail-content ul {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+
+  .sps-detail-content li {
+    margin-bottom: 4px;
+  }
+
+  .sps-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .sps-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .sps-log div {
+    padding: 2px 0;
+  }
+
+  .sps-log div.active {
+    color: #3b82f6;
+    font-weight: 600;
+  }
+
+  .sps-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .sps-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .sps-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sps-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .sps-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .sps-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .sps-pb-btn:not(:disabled):hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+  }
+
+  .sps-pb-btn.play {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .sps-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .sps-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .sps-speed-row input {
+    flex: 1;
+    accent-color: #3b82f6;
+  }
+
+  .sps-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes sps-popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes sps-fadeIn {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div class="sps-page">
+  <div class="sps-hero">
+    <div class="sps-title-wrapper">
+      <div class="sps-hero-icon">📊</div>
+      <div class="sps-hero-text">
+        <h2>最短路问题总结篇</h2>
+        <p>对比 Dijkstra、Bellman-Ford、SPFA、Floyd、A* 五大最短路算法</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sps-layout">
+    <div class="sps-main">
+      <div class="sps-card">
+        <div class="sps-controls">
+          <button id="sps-start" class="sps-btn">开始总览</button>
+        </div>
+
+        <div class="sps-section-title">五大最短路算法对比表</div>
+
+        <div class="sps-table-wrap">
+          <table class="sps-table">
+            <thead>
+              <tr>
+                <th>算法</th>
+                <th>类型</th>
+                <th>时间复杂度</th>
+                <th>负权?</th>
+                <th>适用场景</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="sps-algo-name">Dijkstra</td>
+                <td>单源</td>
+                <td>O((V+E)logV)</td>
+                <td style="color:#ef4444;">不支持</td>
+                <td>非负权图最短路</td>
+              </tr>
+              <tr>
+                <td class="sps-algo-name">Bellman-Ford</td>
+                <td>单源</td>
+                <td>O(VE)</td>
+                <td style="color:#22c55e;">支持</td>
+                <td>负权图 / 判负环</td>
+              </tr>
+              <tr>
+                <td class="sps-algo-name">SPFA</td>
+                <td>单源</td>
+                <td>O(kE) 平均</td>
+                <td style="color:#22c55e;">支持</td>
+                <td>稀疏图 / 负权</td>
+              </tr>
+              <tr>
+                <td class="sps-algo-name">Floyd</td>
+                <td>全源</td>
+                <td>O(V&sup3;)</td>
+                <td style="color:#22c55e;">支持</td>
+                <td>全源最短路 / 小规模</td>
+              </tr>
+              <tr>
+                <td class="sps-algo-name">A*</td>
+                <td>单源</td>
+                <td>O(b^d)</td>
+                <td style="color:#ef4444;">不支持</td>
+                <td>路径搜索 / 有启发</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sps-section-title">点击算法卡片查看详情</div>
+
+        <div class="sps-cards-grid" id="sps-cards"></div>
+
+        <div class="sps-detail" id="sps-detail" style="display:none;"></div>
+
+        <div class="sps-message" id="step-message">点击上方算法卡片查看详细说明，或点击「开始总览」自动浏览。</div>
+
+        <div class="sps-log" id="sps-log"></div>
+      </div>
+    </div>
+
+    <div class="sps-right">
+      <div data-code-panel class="sps-code-card"></div>
+      <div class="sps-playback">
+        <div class="sps-pb-row">
+          <button id="step-reset" class="sps-pb-btn">重置</button>
+          <button id="step-prev" class="sps-pb-btn">上一步</button>
+          <button id="step-play" class="sps-pb-btn play">播放</button>
+          <button id="step-next" class="sps-pb-btn">下一步</button>
+        </div>
+        <div class="sps-speed-row">
+          <span>速度</span>
+          <input id="sps-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="sps-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="sps-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

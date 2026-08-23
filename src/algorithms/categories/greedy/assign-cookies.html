@@ -1,0 +1,347 @@
+<style>
+  /* === 分发饼干 · 玻璃感 + 双指针扫描 + 匹配脉冲 === */
+  #algo-assign-cookies-view {
+    --accent-a: #fb923c;
+    --accent-b: #f472b6;
+    --accent-glow: rgba(251, 146, 60, .45);
+    --child-color: #fb923c;
+    --cookie-color: #f472b6;
+    --match-color: #34d399;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 8%, rgba(251, 146, 60, .25), transparent 55%),
+      radial-gradient(ellipse at 92% 92%, rgba(244, 114, 182, .25), transparent 55%),
+      linear-gradient(135deg, #1a0f05 0%, #2a0f1d 50%, #2a1a30 100%);
+    overflow: hidden;
+  }
+  #algo-assign-cookies-view .ac-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-assign-cookies-view .ac-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-assign-cookies-view .ac-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-assign-cookies-view .ac-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-assign-cookies-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-assign-cookies-view .ac-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-assign-cookies-view .ac-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(244, 114, 182, .08));
+    border: 1px solid rgba(251, 146, 60, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-assign-cookies-view .ac-tip strong { color: #fdba74; }
+  #algo-assign-cookies-view .ac-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-assign-cookies-view .ac-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-assign-cookies-view .ac-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-assign-cookies-view .ac-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-assign-cookies-view .ac-tag {
+    font-size: 11px; color: #fdba74; background: rgba(251, 146, 60, .14);
+    border: 1px solid rgba(251, 146, 60, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-assign-cookies-view .ac-input-row {
+    display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-assign-cookies-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-assign-cookies-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, .15); }
+  #algo-assign-cookies-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-assign-cookies-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-assign-cookies-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-assign-cookies-view .ac-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-assign-cookies-view .ac-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(244, 114, 182, .12); border: 1px solid rgba(244, 114, 182, .28);
+    color: #f9a8d4; cursor: pointer; transition: all .2s;
+  }
+  #algo-assign-cookies-view .ac-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* 统计 */
+  #algo-assign-cookies-view .ac-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+  #algo-assign-cookies-view .ac-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-assign-cookies-view .ac-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-assign-cookies-view .ac-stat--child::before { background: linear-gradient(180deg, #fb923c, #f97316); }
+  #algo-assign-cookies-view .ac-stat--child .ac-stat-val { color: #fdba74; }
+  #algo-assign-cookies-view .ac-stat--cookie::before { background: linear-gradient(180deg, #f472b6, #ec4899); }
+  #algo-assign-cookies-view .ac-stat--cookie .ac-stat-val { color: #f9a8d4; }
+  #algo-assign-cookies-view .ac-stat--count::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-assign-cookies-view .ac-stat--count .ac-stat-val { color: #6ee7b7; }
+  #algo-assign-cookies-view .ac-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-assign-cookies-view .ac-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 双数组可视化 */
+  #algo-assign-cookies-view .ac-arrays-card { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+  #algo-assign-cookies-view .ac-arrays {
+    flex: 1; min-height: 240px; padding: 24px 18px;
+    display: flex; flex-direction: column; gap: 32px; overflow: auto;
+    justify-content: center;
+  }
+  #algo-assign-cookies-view .ac-row {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    position: relative;
+  }
+  #algo-assign-cookies-view .ac-row-label {
+    min-width: 56px; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
+  }
+  #algo-assign-cookies-view .ac-row-label--child { color: #fdba74; }
+  #algo-assign-cookies-view .ac-row-label--cookie { color: #f9a8d4; }
+  #algo-assign-cookies-view .ac-cell {
+    position: relative; width: 52px; height: 60px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-assign-cookies-view .ac-cell .ac-cell-val { font-size: 18px; font-weight: 800; color: #cbd5e1; }
+  #algo-assign-cookies-view .ac-cell .ac-cell-idx { font-size: 10px; color: #64748b; margin-top: 2px; }
+  #algo-assign-cookies-view .ac-cell--current-child {
+    border-color: var(--child-color);
+    background: linear-gradient(180deg, rgba(251, 146, 60, .35), rgba(249, 115, 22, .12));
+    transform: translateY(-6px) scale(1.08);
+    box-shadow: 0 0 0 3px rgba(251, 146, 60, .25), 0 8px 22px rgba(251, 146, 60, .4);
+    animation: ac-pulse-child 1.2s ease-in-out infinite;
+  }
+  @keyframes ac-pulse-child {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 146, 60, .25), 0 8px 22px rgba(251, 146, 60, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(251, 146, 60, .12), 0 10px 28px rgba(251, 146, 60, .55); }
+  }
+  #algo-assign-cookies-view .ac-cell--current-child .ac-cell-val { color: #fed7aa; }
+  #algo-assign-cookies-view .ac-cell--current-cookie {
+    border-color: var(--cookie-color);
+    background: linear-gradient(180deg, rgba(244, 114, 182, .35), rgba(236, 72, 153, .12));
+    transform: translateY(6px) scale(1.08);
+    box-shadow: 0 0 0 3px rgba(244, 114, 182, .25), 0 8px 22px rgba(244, 114, 182, .4);
+    animation: ac-pulse-cookie 1.2s ease-in-out infinite;
+  }
+  @keyframes ac-pulse-cookie {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(244, 114, 182, .25), 0 8px 22px rgba(244, 114, 182, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(244, 114, 182, .12), 0 10px 28px rgba(244, 114, 182, .55); }
+  }
+  #algo-assign-cookies-view .ac-cell--current-cookie .ac-cell-val { color: #fbcfe8; }
+  #algo-assign-cookies-view .ac-cell--satisfied {
+    border-color: var(--match-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
+    animation: ac-match-burst .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes ac-match-burst {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 24px rgba(52, 211, 153, .6); }
+    100% { transform: scale(1); }
+  }
+  #algo-assign-cookies-view .ac-cell--satisfied .ac-cell-val { color: #a7f3d0; }
+  #algo-assign-cookies-view .ac-cell--matched-cookie {
+    border-color: var(--match-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
+    animation: ac-match-burst .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #algo-assign-cookies-view .ac-cell--matched-cookie .ac-cell-val { color: #a7f3d0; }
+  #algo-assign-cookies-view .ac-cell--skipped {
+    opacity: .35; filter: grayscale(.4); transform: scale(.92);
+  }
+  #algo-assign-cookies-view .ac-cell--used {
+    opacity: .55; filter: grayscale(.2);
+  }
+  /* 匹配连线 */
+  #algo-assign-cookies-view .ac-link {
+    position: absolute; left: 0; right: 0; top: 60px; height: 60px;
+    pointer-events: none;
+  }
+  /* 结果 */
+  #algo-assign-cookies-view .ac-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(244, 114, 182, .06));
+    border: 1px solid rgba(251, 146, 60, .28);
+    line-height: 1.55; font-size: 14px; color: #fed7aa;
+  }
+  #algo-assign-cookies-view .ac-result .ac-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  #algo-assign-cookies-view .ac-result.ac-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-assign-cookies-view .ac-result.ac-result--done .ac-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-assign-cookies-view .ac-result.ac-result--match {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(251, 146, 60, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-assign-cookies-view .ac-result.ac-result--skip {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(244, 114, 182, .06));
+    border-color: rgba(248, 113, 113, .35); color: #fecaca;
+  }
+  #algo-assign-cookies-view .ac-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-assign-cookies-view .ac-log-line { display: flex; gap: 8px; }
+  #algo-assign-cookies-view .ac-log-line .ac-log-num { color: #475569; flex-shrink: 0; }
+  #algo-assign-cookies-view .ac-log-line.ac-log-active { color: #fdba74; font-weight: 600; }
+  #algo-assign-cookies-view .ac-log-line.ac-log-active .ac-log-num { color: var(--accent-a); }
+  #algo-assign-cookies-view .ac-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-assign-cookies-view .ac-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-assign-cookies-view .ac-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-assign-cookies-view .ac-controls .ac-ctrl-btn { min-width: 64px; }
+  #algo-assign-cookies-view .ac-controls .ac-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-assign-cookies-view .ac-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-assign-cookies-view .ac-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-assign-cookies-view #ac-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-assign-cookies-view .ac-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-assign-cookies-view .ac-code { min-height: 360px; }
+  }
+</style>
+
+<div class="ac-shell">
+  <div class="ac-hero">
+    <div class="ac-hero-left">
+      <span class="ac-icon">🍪</span>
+      <div>
+        <h1>分发饼干（贪心）</h1>
+        <div class="ac-sub">LeetCode 455 · 排序后双指针，分配饼干满足尽可能多的孩子</div>
+      </div>
+    </div>
+    <div class="ac-tip"><strong>核心动画：</strong>孩子与饼干双行<span style="color:#fdba74">脉冲高亮</span>对齐；匹配时<span style="color:#6ee7b7">绿色 burst</span>爆发；饼干过小则<span style="color:#fca5a5">灰色缩放跳过</span>。</div>
+  </div>
+  <div class="ac-main">
+    <div class="ac-left">
+      <section class="ac-card">
+        <div class="ac-card-title">输入 <span class="ac-tag">孩子需求 / 饼干大小</span></div>
+        <div class="ac-input-row">
+          <input id="children-input" value="1,2,3" placeholder="孩子需求 g">
+          <input id="cookies-input" value="1,1" placeholder="饼干大小 s">
+          <button id="assign-start">开始分配</button>
+        </div>
+        <div class="ac-examples">
+          <button class="ac-chip" data-children="1,2,3" data-cookies="1,1">经典示例</button>
+          <button class="ac-chip" data-children="1,2" data-cookies="1,2,3">饼干充足</button>
+          <button class="ac-chip" data-children="10,9,8,7" data-cookies="5,6,7,8">多跳过</button>
+          <button class="ac-chip" data-children="1,2,3" data-cookies="3">单饼干</button>
+        </div>
+      </section>
+
+      <div class="ac-stats">
+        <div class="ac-stat ac-stat--child"><div class="ac-stat-label">孩子指针</div><div class="ac-stat-val" id="child-index">0</div></div>
+        <div class="ac-stat ac-stat--cookie"><div class="ac-stat-label">饼干指针</div><div class="ac-stat-val" id="cookie-index">0</div></div>
+        <div class="ac-stat ac-stat--count"><div class="ac-stat-label">已满足</div><div class="ac-stat-val" id="satisfied-count">0</div></div>
+      </div>
+
+      <section class="ac-card ac-arrays-card">
+        <div class="ac-card-title">双指针扫描 <span class="ac-tag">排序后从最小开始匹配</span></div>
+        <div class="ac-arrays" id="ac-arrays"></div>
+        <div class="ac-result" id="ac-result">
+          <span class="ac-emoji">🍪</span>
+          <div id="step-message">点击「开始分配」观看双指针扫描 + 匹配爆发动画</div>
+        </div>
+      </section>
+
+      <section class="ac-card">
+        <div class="ac-card-title">执行日志 <button id="ac-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="ac-log" id="ac-log"></div>
+      </section>
+    </div>
+    <aside class="ac-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="ac-controls">
+    <button id="step-reset" class="ac-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="ac-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="ac-ctrl-btn ac-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="ac-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="ac-counter">步骤: 0 / 0</span>
+    <div class="ac-speed-wrap">
+      <span>速度</span>
+      <input id="ac-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="ac-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

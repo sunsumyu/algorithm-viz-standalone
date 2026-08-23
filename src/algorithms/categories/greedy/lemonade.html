@@ -1,0 +1,359 @@
+<style>
+  /* === 柠檬水找零 · 玻璃感 + 钞票流动 + 收银台弹跳 === */
+  #algo-lemonade-view {
+    --accent-a: #facc15;
+    --accent-b: #34d399;
+    --accent-glow: rgba(250, 204, 21, .45);
+    --five-color: #34d399;
+    --ten-color: #fbbf24;
+    --twenty-color: #f87171;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 10%, rgba(250, 204, 21, .25), transparent 55%),
+      radial-gradient(ellipse at 92% 88%, rgba(52, 211, 153, .25), transparent 55%),
+      linear-gradient(135deg, #1a1405 0%, #15301d 50%, #082a14 100%);
+    overflow: hidden;
+  }
+  #algo-lemonade-view .lm-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-lemonade-view .lm-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-lemonade-view .lm-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-lemonade-view .lm-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-lemonade-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-lemonade-view .lm-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-lemonade-view .lm-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(250, 204, 21, .12), rgba(52, 211, 153, .08));
+    border: 1px solid rgba(250, 204, 21, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-lemonade-view .lm-tip strong { color: #fde68a; }
+  #algo-lemonade-view .lm-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-lemonade-view .lm-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-lemonade-view .lm-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-lemonade-view .lm-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-lemonade-view .lm-tag {
+    font-size: 11px; color: #fde68a; background: rgba(250, 204, 21, .14);
+    border: 1px solid rgba(250, 204, 21, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-lemonade-view .lm-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-lemonade-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-lemonade-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(250, 204, 21, .15); }
+  #algo-lemonade-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-lemonade-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-lemonade-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-lemonade-view .lm-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-lemonade-view .lm-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(52, 211, 153, .12); border: 1px solid rgba(52, 211, 153, .28);
+    color: #6ee7b7; cursor: pointer; transition: all .2s;
+  }
+  #algo-lemonade-view .lm-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* 收银台统计 */
+  #algo-lemonade-view .lm-cashier {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+  #algo-lemonade-view .lm-stat {
+    position: relative; padding: 14px 16px 14px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-lemonade-view .lm-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-lemonade-view .lm-stat--five::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-lemonade-view .lm-stat--five .lm-stat-val { color: #6ee7b7; }
+  #algo-lemonade-view .lm-stat--ten::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-lemonade-view .lm-stat--ten .lm-stat-val { color: #fde68a; }
+  #algo-lemonade-view .lm-stat--twenty::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+  #algo-lemonade-view .lm-stat--twenty .lm-stat-val { color: #fca5a5; }
+  #algo-lemonade-view .lm-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-lemonade-view .lm-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 26px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+    display: inline-block; transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #algo-lemonade-view .lm-stat-val.lm-bump { animation: lm-bump .5s cubic-bezier(.34, 1.56, .64, 1); }
+  @keyframes lm-bump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+  /* 钞票视觉 */
+  #algo-lemonade-view .lm-bills-card { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+  #algo-lemonade-view .lm-bills-stage {
+    flex: 1; min-height: 240px; padding: 18px; overflow: auto;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #algo-lemonade-view .lm-tx-row {
+    display: grid; grid-template-columns: 32px 90px 1fr;
+    gap: 12px; align-items: center; padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .02);
+    border: 1px solid rgba(255, 255, 255, .04);
+    transition: all .3s;
+  }
+  #algo-lemonade-view .lm-tx-row.lm-tx--current {
+    background: linear-gradient(90deg, rgba(250, 204, 21, .14), rgba(52, 211, 153, .06));
+    border-color: rgba(250, 204, 21, .35);
+    box-shadow: 0 4px 16px rgba(250, 204, 21, .15);
+    transform: translateX(4px);
+  }
+  #algo-lemonade-view .lm-tx-row.lm-tx--success {
+    background: rgba(52, 211, 153, .06);
+    border-color: rgba(52, 211, 153, .15);
+  }
+  #algo-lemonade-view .lm-tx-row.lm-tx--fail {
+    background: rgba(248, 113, 113, .1);
+    border-color: rgba(248, 113, 113, .35);
+    animation: lm-shake .4s;
+  }
+  @keyframes lm-shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+  #algo-lemonade-view .lm-tx-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: #64748b; font-weight: 700;
+  }
+  #algo-lemonade-view .lm-bill {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 80px; height: 30px; border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 800;
+    font-size: 13px;
+    border: 1.5px solid;
+    transition: all .3s;
+  }
+  #algo-lemonade-view .lm-bill--5 {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .35), rgba(16, 185, 129, .15));
+    border-color: rgba(52, 211, 153, .6); color: #6ee7b7;
+  }
+  #algo-lemonade-view .lm-bill--10 {
+    background: linear-gradient(135deg, rgba(251, 191, 36, .35), rgba(245, 158, 11, .15));
+    border-color: rgba(251, 191, 36, .6); color: #fde68a;
+  }
+  #algo-lemonade-view .lm-bill--20 {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .35), rgba(239, 68, 68, .15));
+    border-color: rgba(248, 113, 113, .6); color: #fca5a5;
+  }
+  #algo-lemonade-view .lm-tx--current .lm-bill { animation: lm-bill-fly .6s cubic-bezier(.34, 1.56, .64, 1); }
+  @keyframes lm-bill-fly {
+    0% { transform: translateY(-30px) rotate(-12deg) scale(.6); opacity: 0; }
+    60% { transform: translateY(4px) rotate(2deg) scale(1.08); opacity: 1; }
+    100% { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
+  }
+  #algo-lemonade-view .lm-change {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 12px; color: #94a3b8;
+  }
+  #algo-lemonade-view .lm-change-bill {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 36px; height: 24px; padding: 0 6px; border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
+    border: 1px solid;
+    animation: lm-change-pop .5s cubic-bezier(.34, 1.56, .64, 1) backwards;
+  }
+  @keyframes lm-change-pop {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(4deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  #algo-lemonade-view .lm-change-bill--5 {
+    background: rgba(52, 211, 153, .25); border-color: rgba(52, 211, 153, .5); color: #6ee7b7;
+  }
+  #algo-lemonade-view .lm-change-bill--10 {
+    background: rgba(251, 191, 36, .25); border-color: rgba(251, 191, 36, .5); color: #fde68a;
+  }
+  /* 结果 */
+  #algo-lemonade-view .lm-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(250, 204, 21, .12), rgba(52, 211, 153, .06));
+    border: 1px solid rgba(250, 204, 21, .28);
+    line-height: 1.55; font-size: 14px; color: #fef3c7;
+  }
+  #algo-lemonade-view .lm-result .lm-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  #algo-lemonade-view .lm-result.lm-result--success {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-lemonade-view .lm-result.lm-result--success .lm-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-lemonade-view .lm-result.lm-result--fail {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .18), rgba(239, 68, 68, .06));
+    border-color: rgba(248, 113, 113, .4); color: #fecaca;
+  }
+  #algo-lemonade-view .lm-result.lm-result--fail .lm-emoji {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+  }
+  #algo-lemonade-view .lm-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-lemonade-view .lm-log-line { display: flex; gap: 8px; }
+  #algo-lemonade-view .lm-log-line .lm-log-num { color: #475569; flex-shrink: 0; }
+  #algo-lemonade-view .lm-log-line.lm-log-active { color: #fde68a; font-weight: 600; }
+  #algo-lemonade-view .lm-log-line.lm-log-active .lm-log-num { color: var(--accent-a); }
+  #algo-lemonade-view .lm-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-lemonade-view .lm-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-lemonade-view .lm-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-lemonade-view .lm-controls .lm-ctrl-btn { min-width: 64px; }
+  #algo-lemonade-view .lm-controls .lm-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-lemonade-view .lm-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-lemonade-view .lm-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-lemonade-view #lm-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-lemonade-view .lm-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-lemonade-view .lm-code { min-height: 360px; }
+  }
+</style>
+
+<div class="lm-shell">
+  <div class="lm-hero">
+    <div class="lm-hero-left">
+      <span class="lm-icon">🍋</span>
+      <div>
+        <h1>柠檬水找零（贪心）</h1>
+        <div class="lm-sub">LeetCode 860 · 每杯 $5，顾客用 $5/$10/$20 购买，判断能否成功找零</div>
+      </div>
+    </div>
+    <div class="lm-tip"><strong>核心动画：</strong>钞票从上方<span style="color:#fde68a">飞入</span>收银台；$10/$20 时<span style="color:#6ee7b7">找零钞票 pop-out</span>；计数器<span style="color:#fca5a5">bump</span> 变化；找零失败时整行<span style="color:#fca5a5">shake</span>。</div>
+  </div>
+  <div class="lm-main">
+    <div class="lm-left">
+      <section class="lm-card">
+        <div class="lm-card-title">顾客账单序列 <span class="lm-tag">输入</span></div>
+        <div class="lm-input-row">
+          <input id="lemonade-input" value="5,5,5,10,20">
+          <button id="lemonade-start">开始找零</button>
+        </div>
+        <div class="lm-examples">
+          <button class="lm-chip" data-val="5,5,5,10,20">经典示例</button>
+          <button class="lm-chip" data-val="5,5,10,10,20">无 $5 失败</button>
+          <button class="lm-chip" data-val="5,5,5,10,20,5,5,10,20,20">长序列</button>
+          <button class="lm-chip" data-val="10">首位 $10</button>
+        </div>
+      </section>
+
+      <div class="lm-cashier">
+        <div class="lm-stat lm-stat--five"><div class="lm-stat-label">$5 钞票</div><div class="lm-stat-val" id="five-count">0</div></div>
+        <div class="lm-stat lm-stat--ten"><div class="lm-stat-label">$10 钞票</div><div class="lm-stat-val" id="ten-count">0</div></div>
+        <div class="lm-stat lm-stat--twenty"><div class="lm-stat-label">$20 钞票</div><div class="lm-stat-val" id="twenty-count">0</div></div>
+      </div>
+
+      <section class="lm-card lm-bills-card">
+        <div class="lm-card-title">交易流水 <span class="lm-tag">钞票飞入 / 找零弹出</span></div>
+        <div class="lm-bills-stage" id="lemonade-transactions"></div>
+        <div class="lm-result" id="lm-result">
+          <span class="lm-emoji">🍋</span>
+          <div id="step-message">点击「开始找零」观看钞票飞入与找零弹出动画</div>
+        </div>
+      </section>
+
+      <section class="lm-card">
+        <div class="lm-card-title">执行日志 <button id="lm-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="lm-log" id="lm-log"></div>
+      </section>
+    </div>
+    <aside class="lm-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="lm-controls">
+    <button id="step-reset" class="lm-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="lm-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="lm-ctrl-btn lm-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="lm-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="lm-counter">步骤: 0 / 0</span>
+    <div class="lm-speed-wrap">
+      <span>速度</span>
+      <input id="lm-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="lm-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

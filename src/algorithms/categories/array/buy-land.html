@@ -1,0 +1,274 @@
+<style>
+  :root {
+    --accent-a: #34d399;
+    --accent-b: #10b981;
+    --accent-rgb: 52, 211, 153;
+  }
+  #algo-buy-land-view {
+    width: 100%; height: 100%; color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-rgb), 0.18), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, rgba(16, 185, 129, 0.15), transparent 55%),
+                linear-gradient(135deg, #181825, #1e1e2e, #11111b);
+  }
+  #algo-buy-land-view .bl-page {
+    height: 100%; display: flex; flex-direction: column; overflow: hidden;
+  }
+  #algo-buy-land-view .bl-header {
+    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
+  }
+  #algo-buy-land-view .bl-icon-badge {
+    width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  #algo-buy-land-view h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
+  #algo-buy-land-view .bl-desc { margin: 5px 0 0; color: #a6adc8; font-size: 14px; line-height: 1.4; }
+  #algo-buy-land-view .bl-tip {
+    max-width: 420px; padding: 11px 14px; border-radius: 12px;
+    background: rgba(52, 211, 153, 0.10); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(52, 211, 153, 0.22); color: #bac2de; font-size: 13px; line-height: 1.55;
+  }
+  #algo-buy-land-view .bl-tip strong { color: var(--accent-a); }
+  #algo-buy-land-view .bl-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden; }
+  #algo-buy-land-view .bl-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  #algo-buy-land-view .bl-card {
+    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  #algo-buy-land-view .bl-card-title {
+    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
+  }
+  #algo-buy-land-view .bl-input-row {
+    display: grid; grid-template-columns: 1fr 120px auto; gap: 10px; align-items: center; padding: 16px;
+  }
+  #algo-buy-land-view input[type="text"],
+  #algo-buy-land-view input[type="number"] {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none;
+  }
+  #algo-buy-land-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2); }
+  #algo-buy-land-view button {
+    padding: 9px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
+  }
+  #algo-buy-land-view button:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); border-color: transparent; color: #fff; }
+  #algo-buy-land-view button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #algo-buy-land-view .bl-examples { padding: 0 16px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-buy-land-view .bl-example-btn {
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(20, 18, 38, 0.4); color: #a6adc8; cursor: pointer; transition: all 0.2s;
+  }
+  #algo-buy-land-view .bl-example-btn:hover { border-color: var(--accent-a); color: #fff; }
+  #algo-buy-land-view .bl-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  #algo-buy-land-view .bl-stat {
+    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
+  }
+  #algo-buy-land-view .bl-stat::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-buy-land-view .bl-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
+  #algo-buy-land-view .bl-stat span {
+    color: var(--accent-a); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
+  }
+  #algo-buy-land-view .bl-visual { flex: 1; min-height: 230px; display: flex; flex-direction: column; }
+  #algo-buy-land-view .bl-grid-area {
+    flex: 1; min-height: 0; padding: 18px; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  #algo-buy-land-view .bl-grid-wrap { display: inline-flex; flex-direction: column; gap: 2px; position: relative; }
+  #algo-buy-land-view .bl-grid-row { display: flex; gap: 2px; }
+  #algo-buy-land-view .bl-cell {
+    width: 56px; height: 56px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 18, 38, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+  }
+  #algo-buy-land-view .bl-cell .val { color: #cdd6f4; font-weight: 800; font-size: 18px; }
+  #algo-buy-land-view .bl-cell .coord { color: #6c7086; font-size: 9px; }
+  #algo-buy-land-view .bl-cell.current {
+    border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25);
+  }
+  #algo-buy-land-view .bl-cell.in-rect {
+    border-color: rgba(52, 211, 153, 0.5); background: rgba(52, 211, 153, 0.12);
+  }
+  #algo-buy-land-view .bl-cell.over-budget {
+    border-color: #f87171; box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.25);
+    background: rgba(248, 113, 113, 0.1);
+  }
+  #algo-buy-land-view .bl-cell.best {
+    border-color: #f9e2af; box-shadow: 0 0 0 3px rgba(249, 226, 175, 0.3);
+    background: rgba(249, 226, 175, 0.1);
+  }
+  #algo-buy-land-view .bl-cell.prefix-cell {
+    background: rgba(52, 211, 153, 0.08);
+  }
+  #algo-buy-land-view .bl-cell.prefix-current {
+    border-color: var(--accent-a); background: rgba(52, 211, 153, 0.2);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.3);
+  }
+  /* 覆盖层：整体平移滑动的矩形/扫描指针 */
+  #algo-buy-land-view .bl-overlay {
+    position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 8px;
+    pointer-events: none; box-sizing: border-box; z-index: 5;
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), width 0.32s cubic-bezier(0.4, 0, 0.2, 1), height 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  /* 扫描阶段：预算内矩形（绿框） */
+  #algo-buy-land-view .bl-overlay.bl-overlay-rect {
+    border: 2px solid var(--accent-a);
+    background: rgba(52, 211, 153, 0.12);
+    box-shadow: 0 0 16px rgba(52, 211, 153, 0.25);
+  }
+  /* 扫描阶段：超出预算矩形（红框） */
+  #algo-buy-land-view .bl-overlay.bl-overlay-over {
+    border: 2px solid #f87171;
+    background: rgba(248, 113, 113, 0.12);
+    box-shadow: 0 0 16px rgba(248, 113, 113, 0.3);
+  }
+  /* 前缀阶段：单格扫描指针 */
+  #algo-buy-land-view .bl-overlay.bl-overlay-scan {
+    border: 2px solid var(--accent-a);
+    background: rgba(52, 211, 153, 0.05);
+    box-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
+  }
+  #algo-buy-land-view .bl-phase-label {
+    font-size: 13px; color: #a6adc8; font-weight: 600;
+  }
+  #algo-buy-land-view .bl-prefix-grid { display: inline-flex; flex-direction: column; gap: 2px; }
+  #algo-buy-land-view .bl-prefix-row { display: flex; gap: 2px; }
+  #algo-buy-land-view .bl-result-banner {
+    margin: 0 16px 16px; padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.5); backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5;
+    transform: scale(1); transition: all 0.3s;
+  }
+  #algo-buy-land-view .bl-result-banner.success { background: rgba(52, 211, 153, 0.12); border-color: var(--accent-a); color: #86efac; }
+  #algo-buy-land-view .bl-result-banner.fail { background: rgba(248, 113, 113, 0.12); border-color: #f87171; color: #fca5a5; }
+  #algo-buy-land-view .bl-result-banner .badge { margin-right: 8px; }
+  #algo-buy-land-view .bl-log {
+    min-height: 90px; max-height: 120px; padding: 12px 16px; overflow: auto;
+    background: rgba(20, 18, 38, 0.4); border-radius: 12px; font-family: Consolas, monospace; font-size: 12px; line-height: 1.7; color: #a6adc8;
+  }
+  #algo-buy-land-view .bl-log .active { color: var(--accent-a); background: rgba(52, 211, 153, 0.1); border-left: 2px solid var(--accent-a); padding-left: 8px; }
+  #algo-buy-land-view .bl-code {
+    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
+  }
+  #algo-buy-land-view .bl-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-buy-land-view .bl-controls {
+    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  #algo-buy-land-view .bl-btn {
+    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
+    font-size: 14px; font-weight: 500;
+  }
+  #algo-buy-land-view .bl-btn:hover:not(:disabled) { border-color: var(--accent-a); color: #fff; }
+  #algo-buy-land-view .bl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #algo-buy-land-view .bl-play-btn {
+    border: 1px solid transparent; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fff; font-weight: 600;
+  }
+  #algo-buy-land-view .bl-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(52, 211, 153, 0.4); border-color: transparent; }
+  #algo-buy-land-view .bl-counter { color: #a6adc8; font-size: 13px; min-width: 100px; text-align: center; }
+  #algo-buy-land-view .bl-slider-container { display: flex; align-items: center; gap: 8px; }
+  #algo-buy-land-view .bl-slider-container input[type=range] {
+    width: 100px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
+    outline: none; -webkit-appearance: none;
+  }
+  #algo-buy-land-view .bl-slider-container input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-a);
+    cursor: pointer; box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+  }
+  #algo-buy-land-view .bl-slider-container span {
+    color: #a6adc8; font-size: 13px; min-width: 40px;
+  }
+
+  @keyframes pulse-glow-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes burst {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); filter: brightness(1.2); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  #algo-buy-land-view .bl-cell.new { animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  #algo-buy-land-view .bl-cell.scanning { animation: pulse-glow-green 1.2s infinite; }
+  #algo-buy-land-view .bl-cell.success { animation: burst 0.5s ease-out; }
+  #algo-buy-land-view .bl-cell.conflict { animation: shake 0.3s ease-in-out; }
+
+  @media (max-width: 1100px) {
+    #algo-buy-land-view .bl-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-buy-land-view .bl-code { min-height: 360px; }
+    #algo-buy-land-view .bl-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    #algo-buy-land-view .bl-tip { max-width: 100%; }
+  }
+</style>
+
+<div class="bl-page">
+  <div class="bl-header">
+    <div>
+      <div class="bl-icon-badge">🏞️</div>
+      <h1>开发商购买土地（二维前缀和）</h1>
+      <p class="bl-desc">综合题 · 在矩阵中寻找最优连续区域</p>
+    </div>
+    <div class="bl-tip"><strong>二维前缀和：</strong>预处理 prefix[i][j] 表示从 (0,0) 到 (i-1,j-1) 的子矩阵之和，然后 O(1) 计算任意子矩阵的和，枚举所有矩形区域。</div>
+  </div>
+
+  <div class="bl-main">
+    <div class="bl-left">
+      <section class="bl-card">
+        <div class="bl-card-title">输入</div>
+        <div class="bl-input-row">
+          <input id="bl-grid-input" type="text" value="1,2,3;4,5,6;7,8,9" placeholder="矩阵（行用 ; 分隔，值用 , 分隔）">
+          <input id="bl-budget-input" type="number" value="20" placeholder="预算">
+          <button id="bl-start">开始计算</button>
+        </div>
+        <div class="bl-examples">
+          <button class="bl-example-btn" data-grid="1,2,3;4,5,6;7,8,9" data-budget="20">预算=20</button>
+          <button class="bl-example-btn" data-grid="2,2,2;2,2,2;2,2,2" data-budget="10">全相同 / 预算=10</button>
+          <button class="bl-example-btn" data-grid="1,0,1;0,1,0;1,0,1" data-budget="2">0-1矩阵 / 预算=2</button>
+        </div>
+      </section>
+
+      <div class="bl-stats">
+        <div class="bl-stat"><label>当前 r1,c1</label><span id="bl-rc1">-</span></div>
+        <div class="bl-stat"><label>当前 r2,c2</label><span id="bl-rc2">-</span></div>
+        <div class="bl-stat"><label>当前区域和</label><span id="bl-sum">-</span></div>
+        <div class="bl-stat"><label>最大面积</label><span id="bl-best">0</span></div>
+      </div>
+
+      <section class="bl-card bl-visual">
+        <div class="bl-card-title"><span id="bl-phase-label">矩阵可视化</span><span id="bl-max-label" style="color: var(--accent-a); font-size:13px;"></span></div>
+        <div class="bl-grid-area" id="bl-grid-area"></div>
+        <div class="bl-result-banner" id="step-message"><span class="badge">💡</span>点击开始计算</div>
+      </section>
+
+      <section class="bl-card">
+        <div class="bl-card-title">执行日志</div>
+        <div class="bl-log" id="bl-log"></div>
+      </section>
+    </div>
+    <aside class="bl-code"><div data-code-panel></div></aside>
+  </div>
+
+  <div class="bl-controls">
+    <button id="step-reset" class="bl-btn">⏮重置</button>
+    <button id="step-prev" class="bl-btn">◀上一步</button>
+    <button id="step-play" class="bl-btn bl-play-btn">▶播放</button>
+    <button id="step-next" class="bl-btn">下一步▶</button>
+    <span id="step-counter" class="bl-counter">步骤: 0 / 0</span>
+    <div class="bl-slider-container">
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" class="bl-counter">0.9s</span>
+    </div>
+  </div>
+</div>

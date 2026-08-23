@@ -1,0 +1,366 @@
+<style>
+  /* === 分发糖果 · 玻璃感 + 糖果堆叠 + 将要增加动画 === */
+  #algo-candy-view {
+    --accent-a: #f472b6;
+    --accent-b: #a78bfa;
+    --accent-glow: rgba(167, 139, 250, .45);
+    --grade-up: #34d399;
+    --grade-down: #f87171;
+    --check-pass: #60a5fa;
+    --checking: #fbbf24;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 5% 5%, rgba(244, 114, 182, .26), transparent 55%),
+      radial-gradient(ellipse at 95% 90%, rgba(167, 139, 250, .28), transparent 55%),
+      linear-gradient(135deg, #1a0f14 0%, #1e1530 50%, #2a1f35 100%);
+    overflow: hidden;
+  }
+  #algo-candy-view .candy-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  /* hero */
+  #algo-candy-view .candy-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 17px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-candy-view .candy-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-candy-view .candy-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #140211; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-candy-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-candy-view .candy-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-candy-view .candy-tip {
+    max-width: 520px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(244, 114, 182, .12), rgba(167, 139, 250, .08));
+    border: 1px solid rgba(167, 139, 250, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-candy-view .candy-tip strong { color: #f0abfc; }
+  /* main */
+  #algo-candy-view .candy-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px; gap: 14px; padding: 14px; overflow: hidden;
+  }
+  #algo-candy-view .candy-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  #algo-candy-view .candy-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-candy-view .candy-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-candy-view .candy-tag {
+    font-size: 11px; color: #f0abfc; background: rgba(244, 114, 182, .14);
+    border: 1px solid rgba(244, 114, 182, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* input */
+  #algo-candy-view .candy-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-candy-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-candy-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(167, 139, 250, .15); }
+  #algo-candy-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-candy-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #140211; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-candy-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-candy-view .candy-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-candy-view .candy-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(244, 114, 182, .12); border: 1px solid rgba(244, 114, 182, .28);
+    color: #f0abfc; cursor: pointer; transition: all .2s;
+  }
+  #algo-candy-view .candy-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #140211; border-color: transparent; transform: translateY(-1px);
+  }
+  /* stats */
+  #algo-candy-view .candy-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  #algo-candy-view .candy-stat {
+    position: relative; padding: 11px 12px 11px 14px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-candy-view .candy-stat::before {
+    content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-candy-view .candy-stat--phase::before { background: linear-gradient(180deg, #f0abfc, #e879f9); }
+  #algo-candy-view .candy-stat--scan::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-candy-view .candy-stat--update::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-candy-view .candy-stat--total::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
+  #algo-candy-view .candy-stat-label { color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-candy-view .candy-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 20px; font-weight: 700; margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* canvas */
+  #algo-candy-view .candy-canvas {
+    padding: 18px; flex: 1; min-height: 180px;
+    position: relative; overflow-x: auto; overflow-y: hidden;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  #algo-candy-view .candy-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(244, 114, 182, .1), transparent 65%);
+    pointer-events: none;
+  }
+  #algo-candy-view .candy-direction {
+    position: absolute; top: 10px; left: 16px;
+    display: flex; align-items: center; gap: 8px;
+    color: #94a3b8; font-size: 12px; font-weight: 600;
+    background: rgba(8, 8, 24, .6); padding: 6px 10px;
+    border-radius: 8px; border: 1px solid rgba(255, 255, 255, .08);
+  }
+  #algo-candy-view .candy-arrow {
+    font-size: 18px; color: var(--accent-b);
+    animation: candy-arrow-bounce 1.2s ease-in-out infinite;
+  }
+  @keyframes candy-arrow-bounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(4px); }
+  }
+  #algo-candy-view .candy-children-row {
+    display: flex; align-items: flex-end; gap: 16px; padding-bottom: 36px;
+  }
+  #algo-candy-view .candy-child {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    min-width: 52px; transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-candy-view .candy-rating {
+    position: relative; width: 52px; height: 38px;
+    border: 2px solid rgba(255, 255, 255, .12);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 14px; font-weight: 800;
+    color: #e2e8f0;
+    transition: all .35s;
+  }
+  #algo-candy-view .candy-rating--current {
+    border-color: var(--checking);
+    background: linear-gradient(180deg, rgba(251, 191, 36, .28), rgba(245, 158, 11, .08));
+    color: #fef3c7;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 6px 18px rgba(251, 191, 36, .35);
+  }
+  #algo-candy-view .candy-rating--adjacent-left {
+    border-color: var(--checking);
+    background: linear-gradient(180deg, rgba(251, 191, 36, .15), rgba(245, 158, 11, .04));
+  }
+  #algo-candy-view .candy-rating--adjacent-right {
+    border-color: var(--checking);
+    background: linear-gradient(180deg, rgba(251, 191, 36, .15), rgba(245, 158, 11, .04));
+  }
+  #algo-candy-view .candy-candy-stack {
+    position: relative; width: 48px; min-height: 20px;
+    display: flex; flex-direction: column-reverse; align-items: center; gap: -12px;
+    overflow: visible;
+  }
+  #algo-candy-view .candy-layer {
+    position: relative; width: 100%; height: 14px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(244, 114, 182, .25), 0 0 0 1px rgba(255, 255, 255, .08);
+    transition: all .4s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #algo-candy-view .candy-layer--new {
+    animation: candy-drop-in .6s cubic-bezier(.34, 1.56, .64, 1) forwards;
+  }
+  @keyframes candy-drop-in {
+    0% { transform: translateY(-30px) scale(.6); opacity: 0; }
+    60% { transform: translateY(4px) scale(1.1); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  #algo-candy-view .candy-layer--updated {
+    border-color: var(--grade-up);
+    background: linear-gradient(135deg, var(--grade-up), var(--check-pass));
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .25), 0 6px 18px rgba(52, 211, 153, .35);
+  }
+  #algo-candy-view .candy-layer--no-change {
+    opacity: .4; filter: grayscale(.6);
+  }
+  #algo-candy-view .candy-label {
+    position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; color: #94a3b8; font-weight: 600;
+    background: rgba(148, 163, 184, .15); padding: 2px 6px;
+    border-radius: 4px;
+  }
+  #algo-candy-view .candy-label--update {
+    color: #34d399;
+    background: rgba(52, 211, 153, .2);
+  }
+  /* result */
+  #algo-candy-view .candy-result {
+    margin: 0 16px 16px; padding: 12px 16px; border-radius: 10px;
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, rgba(244, 114, 182, .1), rgba(167, 139, 250, .05));
+    border: 1px solid rgba(167, 139, 250, .25);
+    line-height: 1.5; font-size: 13px; color: #d8b4fe;
+  }
+  #algo-candy-view .candy-result .candy-emoji {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #140211; box-shadow: 0 4px 12px var(--accent-glow);
+  }
+  #algo-candy-view .candy-result.candy-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-candy-view .candy-result.candy-result--done .candy-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, .5);
+  }
+  /* log */
+  #algo-candy-view .candy-log {
+    min-height: 80px; max-height: 120px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-candy-view .candy-log-line { display: flex; gap: 8px; }
+  #algo-candy-view .candy-log-line .candy-log-num { color: #475569; flex-shrink: 0; }
+  #algo-candy-view .candy-log-line.candy-log-active { color: #f0abfc; font-weight: 600; }
+  #algo-candy-view .candy-log-line.candy-log-active .candy-log-num { color: var(--accent-b); }
+  /* code */
+  #algo-candy-view .candy-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-candy-view .candy-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* controls */
+  #algo-candy-view .candy-controls {
+    padding: 12px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  #algo-candy-view .candy-controls .candy-ctrl-btn { min-width: 58px; }
+  #algo-candy-view .candy-controls .candy-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #140211; border-color: transparent;
+  }
+  #algo-candy-view .candy-counter {
+    color: #94a3b8; font-size: 12px; font-weight: 600;
+    min-width: 100px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-candy-view .candy-speed-wrap {
+    display: flex; align-items: center; gap: 7px; color: #94a3b8; font-size: 11px;
+  }
+  #algo-candy-view #candy-speed { width: 120px; accent-color: var(--accent-b); }
+  @media (max-width: 900px) {
+    #algo-candy-view .candy-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-candy-view .candy-code { min-height: 300px; }
+  }
+</style>
+
+<div class="candy-shell">
+  <div class="candy-hero">
+    <div class="candy-hero-left">
+      <span class="candy-icon">🍬</span>
+      <div>
+        <h1>分发糖果（贪心）</h1>
+        <div class="candy-sub">LeetCode 135 · 两遍扫描：左→右保证右侧更高、右→左保证左侧更高</div>
+      </div>
+    </div>
+    <div class="candy-tip"><strong>核心动画：</strong><span style="color:#fef3c7">梯度上升的孩子</span>（绿色增加）→ 梯度下降重新评估（蓝色更新）；糖罐有<span style="color:#fbbf24">弹跳气泡</span>效果，新增加一层糖果时<span style="color:#34d399">从顶部 drop-in</span> 弹性落下。</div>
+  </div>
+  <div class="candy-main">
+    <div class="candy-left">
+      <section class="candy-card">
+        <div class="candy-card-title">输入 <span class="candy-tag">ratings = [1,2,3...]</span></div>
+        <div class="candy-input-row">
+          <input id="candy-input" value="1,2,2">
+          <button id="candy-start">开始分配</button>
+        </div>
+        <div class="candy-examples">
+          <button class="candy-chip" data-val="1,2,2">默认 3 人</button>
+          <button class="candy-chip" data-val="1,0,2">严格递增</button>
+          <button class="candy-chip" data-val="2,0,1">严格递减</button>
+          <button class="candy-chip" data-val="1,2,2,1">平地上升</button>
+          <button class="candy-chip" data-val="1,3,4,5,2,1">山峰</button>
+        </div>
+      </section>
+
+      <div class="candy-stats">
+        <div class="candy-stat candy-stat--phase"><div class="candy-stat-label">阶段</div><div class="candy-stat-val" id="candy-stat-phase" style="font-size:14px;">准备中</div></div>
+        <div class="candy-stat candy-stat--scan"><div class="candy-stat-label">扫描位置</div><div class="candy-stat-val" id="candy-stat-scan">-</div></div>
+        <div class="candy-stat candy-stat--total"><div class="candy-stat-label">总糖果</div><div class="candy-stat-val" id="candy-stat-total">-</div></div>
+      </div>
+
+      <section class="candy-card">
+        <div class="candy-card-title">评分与糖果堆叠 <span class="candy-tag">左→右扫描</span></div>
+        <div class="candy-canvas" id="candy-canvas">
+          <div class="candy-direction">
+            <span class="candy-arrow">→</span>
+            <span>从左到右遍历</span>
+          </div>
+          <div class="candy-children-row" id="candy-children-row"></div>
+        </div>
+        <div class="candy-result" id="candy-result">
+          <span class="candy-emoji">🍬</span>
+          <div id="step-message">点击「开始分配」观察两遍扫描 + 糖果增加动画</div>
+        </div>
+      </section>
+
+      <section class="candy-card">
+        <div class="candy-card-title">执行日志 <button id="candy-log-clear" style="padding:3px 8px;font-size:10px;border-radius:999px;">清空</button></div>
+        <div class="candy-log" id="candy-log"></div>
+      </section>
+    </div>
+    <aside class="candy-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="candy-controls">
+    <button id="step-reset" class="candy-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="candy-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="candy-ctrl-btn candy-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="candy-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="candy-counter">步骤: 0 / 0</span>
+    <div class="candy-speed-wrap">
+      <span>速度</span>
+      <input id="candy-speed" type="range" min="200" max="2000" step="100" value="900">
+      <span id="candy-speed-label" style="min-width:35px;">0.9s</span>
+    </div>
+  </div>
+</div>

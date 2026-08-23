@@ -1,0 +1,43 @@
+<style>
+  .cnv { padding:1.5rem; color:#cdd6f4; max-width:1400px; margin:0 auto; font-family:system-ui,sans-serif }
+  .cnroot { background:radial-gradient(ellipse at 8% 6%,rgba(137,180,250,.3),transparent 55%),radial-gradient(ellipse at 92% 94%,rgba(166,227,161,.3),transparent 55%),linear-gradient(135deg,rgb(20,18,38),rgb(25,23,50),rgb(35,32,60)); min-height:100%; padding:1.5rem; border-radius:20px }
+  .cnh { background:rgba(20,18,38,.55); backdrop-filter:blur(18px); border-radius:16px; padding:1.25rem 1.5rem; margin-bottom:1rem; box-shadow:0 8px 32px rgba(0,0,0,.2); display:flex; justify-content:space-between; align-items:center }
+  .cntitle { font-size:22px; font-weight:800; margin:0; background:linear-gradient(135deg,rgb(137,180,250),rgb(166,227,161)); -webkit-background-clip:text; -webkit-text-fill-color:transparent }
+  .cnsub { font-size:.78rem; color:#6c7086 }
+  .cntip { background:rgba(137,180,250,.1); border:1px solid rgba(137,180,250,.25); border-radius:10px; padding:.6rem .9rem; font-size:.78rem; color:rgb(137,180,250); max-width:280px }
+  .cnmain { display:grid; grid-template-columns:1fr 320px; gap:1rem }
+  .cnpanel { background:rgba(20,18,38,.55); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08); border-radius:16px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.35) }
+  .cnph { background:rgba(25,24,42,.6); padding:.6rem .9rem; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:rgb(137,180,250); border-bottom:1px solid rgba(255,255,255,.05) }
+  .cntree { padding:1rem; min-height:260px; display:flex; align-items:center; justify-content:center }
+  .cnstats { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; padding:.8rem }
+  .cnstats div { text-align:center }
+  .cnsv { font-size:1.2rem; font-weight:800; color:rgb(137,180,250) }
+  .cnsl { font-size:.65rem; color:#6c7086; text-transform:uppercase; letter-spacing:.05em }
+  .cnctrls { display:flex; gap:.3rem; padding:.8rem; flex-wrap:wrap }
+  .cnbtn { background:rgba(49,50,68,.6); border:1px solid rgba(255,255,255,.1); color:#cdd6f4; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:8px; flex-shrink:0 }
+  .cnbtn:hover:not(:disabled) { background:rgba(49,50,68,.8) }
+  .cnbtn:disabled { opacity:.4; cursor:not-allowed }
+  .cnplay { flex:1; background:linear-gradient(135deg,rgb(137,180,250),rgb(166,227,161)); color:#111; font-weight:600; min-width:70px }
+  .cnmsg { text-align:center; padding:.65rem; font-size:.88rem; color:#9399b2; border-top:1px solid rgba(255,255,255,.05) }
+  .cnmsg.success { color:rgb(166,227,161); font-weight:600 }
+  .cnmsg.error { color:#f38ba8; font-weight:600 }
+  .cnlog { padding:.6rem .8rem; max-height:150px; overflow-y:auto; font-family:ui-monospace,monospace; font-size:.75rem; line-height:1.6 }
+  .cnlog div { color:#6c7086 }
+  .cnlog div.active { color:rgb(137,180,250); font-weight:600 }
+  .cnex { display:flex; gap:.4rem; padding:.8rem; flex-wrap:wrap }
+  .cnex-btn { background:rgba(49,50,68,.5); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:.3rem .7rem; font-size:.72rem; color:#cdd6f4; cursor:pointer; transition:all .2s }
+  .cnex-btn:hover { background:rgba(49,50,68,.8); border-color:rgb(137,180,250) }
+  @media (max-width:1100px){.cnmain{grid-template-columns:1fr}}
+</style>
+<div style="position:relative;min-height:calc(100vh - 3rem)"><div class="cnroot">
+<div class="cnh"><div style="display:flex;align-items:center;gap:1rem"><button id="btn-back" style="background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:8px;cursor:pointer;width:36px;height:36px;color:#cdd6f4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><div><h1 class="cntitle">🔢 完全二叉树节点个数</h1><div class="cnsub">LeetCode 222</div></div></div><div class="cntip">💡 递归计数，每个子树返回左+右+1</div></div>
+<div class="cnmain"><div style="display:flex;flex-direction:column;gap:.75rem">
+<div class="cnpanel"><div class="cnph">🌳 二叉树</div><div id="cntree" class="cntree"></div><div id="cnmsg" class="cnmsg">点击演示查看过程</div></div>
+<div class="cnpanel"><div class="cnph">📊 状态</div><div class="cnstats"><div><div class="cnsv" id="cncur">-</div><div class="cnsl">当前</div></div><div><div class="cnsv" id="cndepth">0</div><div class="cnsl">深度</div></div><div><div class="cnsv" id="cnaux">-</div><div class="cnsl">辅助</div></div><div><div class="cnsv" id="cnresult">?</div><div class="cnsl">结果</div></div></div></div>
+<div class="cnpanel"><div class="cnph">📋 日志</div><div id="cnlog" class="cnlog"></div></div>
+</div><div style="display:flex;flex-direction:column">
+<div class="cnpanel" style="flex:1"><div class="cnph">代码</div><div data-code-panel style="flex:1;min-height:260px;overflow:hidden"></div></div>
+<div class="cnpanel" style="margin-top:.75rem"><div class="cnph">⚙️ 控制</div><div class="cnctrls"><button id="step-reset" class="cnbtn" title="重置"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button id="step-prev" class="cnbtn" title="上一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button><button id="step-play" class="cnbtn cnplay">播放</button><button id="step-next" class="cnbtn" title="下一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></button></div>
+<div style="padding:0 .8rem .6rem"><span style="font-size:.78rem;color:#6c7086" id="step-counter">步骤: 0 / 0</span><input type="range" id="step-speed" min="200" max="2000" value="900" step="100" style="width:100%;margin-top:.4rem;accent-color:rgb(137,180,250)"><div style="text-align:center;font-size:.72rem;color:#585b70">速度: <span id="step-speed-label">0.9s</span></div></div></div>
+<div class="cnpanel" style="margin-top:.75rem"><div class="cnph">📌 示例</div><div class="cnex"><button class="cn-ex-btn" data-id="1">[1,2,3,4,5,6]</button><button class="cn-ex-btn" data-id="2">[]</button><button class="cn-ex-btn" data-id="3">[1]</button></div></div>
+</div></div></div></div>

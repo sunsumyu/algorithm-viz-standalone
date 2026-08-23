@@ -1,0 +1,132 @@
+<style>
+  :root {
+    --ps-accent-a: #c084fc;
+    --ps-accent-b: #a78bfa;
+  }
+  .greedy-article {
+    height: 100%; overflow: auto;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(192, 132, 252, 0.45), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(167, 139, 250, 0.45), transparent 55%),
+      linear-gradient(135deg, #1a1422, #1f1720, #150f19);
+    color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 1.6rem; box-sizing: border-box;
+  }
+  .greedy-article .sw-page { max-width: 1120px; margin: 0 auto; }
+  .greedy-article .sw-hero {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem;
+  }
+  .greedy-article .sw-icon-badge {
+    width: 54px; height: 54px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--ps-accent-a), var(--ps-accent-b));
+    display: flex; align-items: center; justify-content: center; font-size: 26px;
+    box-shadow: 0 10px 28px rgba(167, 139, 250, 0.4); flex-shrink: 0;
+  }
+  .greedy-article h1 { margin: 0; font-size: 28px; font-weight: 900; color: #e0d9f6; line-height: 1.3; }
+  .greedy-article .sw-eyebrow {
+    color: var(--ps-accent-a); font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 0.7rem; font-weight: 700;
+  }
+  .greedy-article .sw-lead {
+    color: #bac2de; line-height: 1.85; max-width: 780px; margin-bottom: 0.8rem; font-size: 15px;
+  }
+  .greedy-article .btn-back {
+    border: 1px solid rgba(192, 132, 252, 0.4); background: rgba(20, 18, 38, 0.6);
+    backdrop-filter: blur(18px) saturate(160%); color: #e0d9f6; border-radius: 11px;
+    padding: 10px 14px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: 600;
+    transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+  }
+  .greedy-article .btn-back:hover {
+    background: rgba(192, 132, 252, 0.12); border-color: var(--ps-accent-a); color: #fff; transform: translateY(-1px);
+  }
+  .greedy-article .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin-bottom: 1.6rem;
+  }
+  .greedy-article .sw-card {
+    background: rgba(20, 18, 38, 0.5); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 18px;
+    padding: 1.4rem 1.6rem; transition: all 0.25s; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  }
+  .greedy-article .sw-card:hover {
+    transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    border-color: rgba(167, 139, 250, 0.25);
+  }
+  .greedy-article .sw-card h2, .greedy-article .sw-card h3 {
+    color: var(--ps-accent-a); margin-bottom: 0.8rem; font-size: 18px; font-weight: 700; line-height: 1.4;
+  }
+  .greedy-article .sw-card h3 { font-size: 16px; color: #d8bfff; }
+  .greedy-article .sw-card p, .greedy-article .sw-card li {
+    color: #bac2de; line-height: 1.8; font-size: 14px; margin-bottom: 0.7rem;
+  }
+  .greedy-article .sw-card li { list-style-type: circle; padding-left: 1.2rem; }
+  .greedy-article .note {
+    border-left: 5px solid var(--ps-accent-b);
+    background: rgba(167, 139, 250, 0.1); backdrop-filter: blur(18px);
+    border-radius: 12px; padding: 1.2rem 1.6rem; margin: 1.6rem 0;
+  }
+  .greedy-article .note p {
+    color: #e0d9f6; line-height: 1.85; font-size: 14px; margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .greedy-article .sw-hero { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .greedy-article .grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="greedy-article">
+  <div class="sw-page">
+    <header class="sw-hero">
+      <div>
+        <div class="sw-eyebrow">Greedy / Final Review</div>
+        <h1>贪心算法总结篇</h1>
+        <p class="sw-lead">贪心专题的最终复盘：贪心题通常代码短，但策略选择和正确性证明更重要。本页把常用套路浓缩成可复用的检查清单。</p>
+      </div>
+      <button class="btn-back" data-back-selector>← 返回算法列表</button>
+    </header>
+
+    <section class="grid">
+      <div class="sw-card">
+        <h2>一、看是否能排序</h2>
+        <p>如果题目涉及区间、身高、饼干大小、气球直径，优先考虑排序后把"未来不确定性"变成从左到右决策。</p>
+      </div>
+      <div class="sw-card">
+        <h2>二、看是否能收集贡献</h2>
+        <p>股票 II、最大子序和等题，本质是只保留正贡献或丢弃负贡献。</p>
+      </div>
+      <div class="sw-card">
+        <h2>三、看是否能维护覆盖</h2>
+        <p>跳跃游戏、划分字母区间都在维护当前覆盖范围，到边界时确认一次决策。</p>
+      </div>
+      <div class="sw-card">
+        <h2>四、看是否有局部约束</h2>
+        <p>分发糖果这类题可能需要两遍扫描，每一遍只负责一个方向的局部约束。</p>
+      </div>
+    </section>
+
+    <section class="card sw-card">
+      <h2>常见坑点</h2>
+      <ol>
+        <li><strong>贪心策略写反</strong>：区间问题到底按左端点还是右端点排序，要结合目标判断。</li>
+        <li><strong>没有处理相等情况</strong>：如身高相同按 <kbd>k</kbd> 升序，气球边界相等仍可一箭引爆。</li>
+        <li><strong>局部最优不成立</strong>：如果局部选择会影响后续多个维度，可能需要动态规划或回溯。</li>
+        <li><strong>边界状态错误</strong>：跳跃游戏 II 的循环通常只到 <code>n - 2</code>，避免到终点后再多跳。</li>
+      </ol>
+    </section>
+
+    <section class="card sw-card">
+      <h2>最终记忆口诀</h2>
+      <ul>
+        <li>能排序，先排序；看清按左还是按右。</li>
+        <li>能覆盖，记边界；到边界再做选择。</li>
+        <li>能贡献，收正的；负贡献及时丢弃。</li>
+        <li>多约束，分方向；两遍扫描常见。</li>
+      </ul>
+    </section>
+
+    <div class="note">
+      <p>如果一道题看起来可以贪心，先写策略，再尝试证明；证明不了就主动找反例，这是比背题更稳定的训练方式。</p>
+    </div>
+  </div>
+</div>

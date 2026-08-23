@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>算法可视化系统架构深度评审报告 (Architecture Review)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            },
+            dark: {
+              900: '#0f172a',
+              800: '#1e293b',
+              700: '#334155',
+              600: '#475569',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #0b0f19; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-card:hover { border-color: rgba(34, 197, 94, 0.4); }
+    .mermaid { background: transparent !important; }
+  </style>
+</head>
+<body class="p-6 md:p-12 max-w-7xl mx-auto">
+  <!-- Header -->
+  <header class="mb-10 pb-6 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-semibold uppercase tracking-wider mb-3">
+        ⚡ 架构深化扫描报告
+      </div>
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+        <span>代码库架构深度评估 (Codebase Architecture Review)</span>
+      </h1>
+      <p class="text-slate-400 text-sm mt-2">
+        基于深度模块（Deep Modules）、狭窄接口（Narrow Interface）、缝隙纪律（Seam Discipline）与局部性（Locality）设计准则。
+      </p>
+    </div>
+    <div class="text-right">
+      <div class="text-xs text-slate-500">评估时间</div>
+      <div class="text-sm font-mono text-slate-300">2026-08-21 21:15</div>
+      <div class="mt-2 text-xs px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono inline-block">TypeScript 5.x / Vitest 3.x</div>
+    </div>
+  </header>
+
+  <!-- Summary Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">已提取声明式 Spec 模块</div>
+      <div class="text-3xl font-bold text-green-400 mt-2">34 个</div>
+      <div class="text-xs text-slate-500 mt-1">覆盖线性、网格、背包、序列、股票全题型</div>
+    </div>
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">全域测试通过率</div>
+      <div class="text-3xl font-bold text-blue-400 mt-2">100%</div>
+      <div class="text-xs text-slate-500 mt-1">15 Suites / 146 Tests 全绿</div>
+    </div>
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">单体大文件瘦身潜力</div>
+      <div class="text-3xl font-bold text-amber-400 mt-2">~4,500 行</div>
+      <div class="text-xs text-slate-500 mt-1">可消除残留旧推导逻辑与单体堆叠</div>
+    </div>
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">架构健康等级</div>
+      <div class="text-3xl font-bold text-emerald-400 mt-2">A-</div>
+      <div class="text-xs text-slate-500 mt-1">已完成核心 Spec 化，亟待解耦视图单体</div>
+    </div>
+  </div>
+
+  <!-- Candidates Section -->
+  <div class="space-y-10">
+
+    <!-- Candidate 1 -->
+    <section class="glass-card rounded-2xl p-6 md:p-8 border border-slate-700/60 transition-all">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-green-500/20 text-green-400 font-bold">1</span>
+          <h2 class="text-2xl font-bold text-white">彻底净化 3,100 行单体中枢：全面淘汰 dp-generated-renderers.ts 残留推导旧逻辑</h2>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">强烈推荐 (Strong)</span>
+      </div>
+
+      <div class="text-sm text-slate-400 mb-6 flex flex-wrap gap-2">
+        <span class="text-slate-500">涉及文件:</span>
+        <code class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-xs">src/algorithms/categories/dynamic-programming/dp-generated-renderers.ts (3,126 行)</code>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h3 class="text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">现状问题 (Architectural Friction)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed mb-4">
+            尽管我们已经创建了 34 个完备的 <code class="text-emerald-400">AlgorithmSpec</code> 声明式模块，但 <code class="text-slate-200">dp-generated-renderers.ts</code> 中依然残留了 2,500+ 行旧的命令式生成函数（如 <code class="text-slate-300">stringDpSteps</code>, <code class="text-slate-300">knapsackSteps</code>, <code class="text-slate-300">arrayLinearSteps</code>, <code class="text-slate-300">STOCK_DP_CODES</code>）。存在逻辑双轨并存的风险，导致代码维护者和 AI 在阅读时依然面临巨大的单体心智负担。
+          </p>
+          <h3 class="text-sm font-semibold text-green-400 uppercase tracking-wider mb-2">重构方案 (Deepening Solution)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            将 <code class="text-slate-200">dp-generated-renderers.ts</code> 的 <code class="text-emerald-400">DemoDef.build</code> 全部重定向到极简的 <code class="text-emerald-400">(root) => DpStepEngine.generateSteps(id, parseInputs(root))</code>，并彻底删除内部数千行的旧实现代码。将该文件纯化为只有 ~120 行的「路由与元数据装配器」。
+          </p>
+        </div>
+
+        <div class="bg-slate-900/80 rounded-xl p-5 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">收益评估 (Benefits & Leverage)</div>
+            <ul class="space-y-2 text-sm text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>单向数据流极致局部性 (Locality)</strong>：所有算法的数据生成与规则 100% 收敛至 <code class="text-emerald-300">specs/</code>，无隐藏分支。</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>消灭 2,500+ 行死代码</strong>：删除测试已不再直接依赖的遗留命令式推导，通过<strong>删除测试 (Deletion Test)</strong>。</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>AI 导航效率提升 10 倍</strong>：AI 上下文不再被 3,000 行巨型混合文件污染。</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+            <span>接口狭窄度: <span class="text-green-400 font-mono">1 方法 (generateSteps)</span></span>
+            <span>实现隐藏度: <span class="text-green-400 font-mono">34 个深模块</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Before / After Diagram -->
+      <div class="bg-slate-950/80 rounded-xl p-4 border border-slate-800">
+        <div class="text-xs font-semibold text-slate-400 mb-3">架构流转图 (Before vs After)</div>
+        <pre class="mermaid">
+graph LR
+    subgraph "Before: 双轨单体混合 (3,126 行)"
+      A[UI 视图] --> B[dp-generated-renderers.ts]
+      B --> C[旧 stringDpSteps]
+      B --> D[旧 knapsackSteps]
+      B --> E[DpStepEngine]
+      E --> F[specs/*.spec.ts]
+    end
+
+    subgraph "After: 纯粹门面 + 深度 Spec 引擎 (~150 行)"
+      A2[UI 视图] --> B2[dp-generated-renderers.ts]
+      B2 --> E2[DpStepEngine.generateSteps]
+      E2 --> F2[34x AlgorithmSpec 独立深模块]
+    end
+        </pre>
+      </div>
+    </section>
+
+    <!-- Candidate 2 -->
+    <section class="glass-card rounded-2xl p-6 md:p-8 border border-slate-700/60 transition-all">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 font-bold">2</span>
+          <h2 class="text-2xl font-bold text-white">拆解 1,950 行巨型视图类 DpDemoVisualizer：按 Stage 领域分治深模块</h2>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-semibold">强烈推荐 (Strong)</span>
+      </div>
+
+      <div class="text-sm text-slate-400 mb-6 flex flex-wrap gap-2">
+        <span class="text-slate-500">涉及文件:</span>
+        <code class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-xs">src/algorithms/categories/dynamic-programming/dp-demo-visualizer.ts (1,956 行)</code>
+        <code class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-xs">src/algorithms/categories/dynamic-programming/views/ (待建)</code>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h3 class="text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">现状问题 (Architectural Friction)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed mb-4">
+            <code class="text-slate-200">DpDemoVisualizer</code> 是一个庞大的上帝类（God Class），把 1D 爬楼梯小人动画、2D 动态规划矩阵、决策树、回溯工作台、滚动变量三卡片、动态变量监视表、公式与代码行同步全部混合在近 2,000 行的同一个类内。每修改一次特定视图逻辑（如台阶 badge 高度），就会触碰这个巨大单体。
+          </p>
+          <h3 class="text-sm font-semibold text-green-400 uppercase tracking-wider mb-2">重构方案 (Deepening Solution)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            定义极其干净的 <code class="text-emerald-400">DpStageRenderer</code> 深度接口（仅一个 <code class="text-emerald-400">render(container, step, prevStep)</code> 核心方法），将 StaircaseStage、Matrix2dStage、DecisionTreeStage、BacktrackWorkshopStage 独立为子深模块，主 Visualizer 仅保留步进调度与装配。
+          </p>
+        </div>
+
+        <div class="bg-slate-900/80 rounded-xl p-5 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">收益评估 (Benefits & Leverage)</div>
+            <ul class="space-y-2 text-sm text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>缝隙清晰 (Seam Discipline)</strong>：视觉组件与步进引擎在 <code class="text-emerald-300">render(step)</code> 处无缝解耦。</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>独立可测性 (Testability)</strong>：每个子 Stage 可以脱离完整主控制器进行 DOM 单元测试。</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>单文件体积降低 75%</strong>：主控制器缩减至 400 行以内。</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+            <span>接口方法数: <span class="text-green-400 font-mono">1 方法</span></span>
+            <span>复用收益: <span class="text-green-400 font-mono">高 (跨算法自由组合)</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Before / After Diagram -->
+      <div class="bg-slate-950/80 rounded-xl p-4 border border-slate-800">
+        <div class="text-xs font-semibold text-slate-400 mb-3">视图解耦流转图 (Before vs After)</div>
+        <pre class="mermaid">
+graph LR
+    subgraph "Before: 2,000行上帝类"
+      V[DpDemoVisualizer] --- S1[Staircase DOM]
+      V --- S2[2D Matrix SVG]
+      V --- S3[Tree SVG]
+      V --- S4[Backtrack Workshop]
+      V --- S5[Rolling Stage]
+    end
+
+    subgraph "After: 统一 StageRenderer 接口"
+      V2[DpDemoVisualizer 调度器] --> I[StageRenderer 接口]
+      I --> R1[StaircaseStageRenderer]
+      I --> R2[MatrixStageRenderer]
+      I --> R3[TreeStageRenderer]
+      I --> R4[WorkshopStageRenderer]
+    end
+        </pre>
+      </div>
+    </section>
+
+    <!-- Candidate 3 -->
+    <section class="glass-card rounded-2xl p-6 md:p-8 border border-slate-700/60 transition-all">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 font-bold">3</span>
+          <h2 class="text-2xl font-bold text-white">4 阶段演化引擎架构深化：消除 dp-universal-evolution.ts 中的瀑布 if/else 分支</h2>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs font-semibold">值得探索 (Worth exploring)</span>
+      </div>
+
+      <div class="text-sm text-slate-400 mb-6 flex flex-wrap gap-2">
+        <span class="text-slate-500">涉及文件:</span>
+        <code class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-xs">src/algorithms/categories/dynamic-programming/dp-universal-evolution.ts (1,642 行)</code>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h3 class="text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">现状问题 (Architectural Friction)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed mb-4">
+            <code class="text-slate-200">dp-universal-evolution.ts</code> 内部通过字符串包含匹配（如 <code class="text-slate-300">algoTitle.includes('爬楼梯') || algoTitle.includes('花费')</code>）来决定 1. 朴素递归、2. 记忆化搜索、4. 空间压缩 的代码和执行步进。这种硬编码分支破坏了开闭原则，扩展新题型演化逻辑时容易漏改。
+          </p>
+          <h3 class="text-sm font-semibold text-green-400 uppercase tracking-wider mb-2">重构方案 (Deepening Solution)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            在 <code class="text-emerald-400">AlgorithmSpec</code> 扩展可选的 <code class="text-emerald-400">evolution?: Record&lt;EvolutionModeId, EvolutionSpec&gt;</code> 声明。若 Spec 声明了空间压缩或记忆化版本，演化引擎直接消费；未声明的则使用通用模板策略（Strategy Pattern）。
+          </p>
+        </div>
+
+        <div class="bg-slate-900/80 rounded-xl p-5 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">收益评估 (Benefits & Leverage)</div>
+            <ul class="space-y-2 text-sm text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>消除字符串模式猜测</strong>：从脆弱的 <code class="text-slate-300">algoTitle.includes</code> 彻底转向精准的 Spec 声明。</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-green-400">✓</span>
+                <span><strong>演化引擎成为通用深模块</strong>：仅负责 4 阶段时间轴协调与生命周期切换。</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Top Recommendation -->
+  <div class="mt-12 p-8 rounded-2xl bg-gradient-to-r from-green-950/40 via-emerald-950/20 to-slate-900 border border-green-500/30">
+    <div class="flex items-center gap-3 mb-3">
+      <span class="text-2xl">🎯</span>
+      <h3 class="text-xl font-bold text-white">首席架构师首选推荐 (Top Recommendation)</h3>
+    </div>
+    <p class="text-slate-300 text-sm leading-relaxed mb-4">
+      建议首先执行 <strong>候选方案 1（彻底清理 dp-generated-renderers.ts 内部残留的 2,500 行旧命令式代码）</strong>，将 34 个 DP 算法的推导完全收敛到 <code class="text-green-400 font-mono">DpStepEngine.generateSteps()</code>。这一步风险最低、见效最快，能立刻把 3,100 行单体大文件削减至 ~150 行，彻底完成架构闭环！随后再进行 <strong>候选方案 2（视图层 Stage 子渲染器解耦）</strong>。
+    </p>
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+</body>
+</html>

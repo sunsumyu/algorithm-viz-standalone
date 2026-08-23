@@ -1,0 +1,243 @@
+<style>
+  #algo-permutations-view {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(45, 212, 191, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(244, 114, 182, .22), transparent 55%),
+      linear-gradient(135deg, #0f172a 0%, #be185d 50%, #0f172a 100%);
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+  .perm-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; color: #23d3c0; }
+  .perm-desc { color: #a78ba9; margin-bottom: 1rem; font-size: 0.92rem; }
+  .perm-layout {
+    height: calc(100vh - 80px);
+    display: grid; grid-template-columns: 1fr 360px; gap: 1rem; overflow: hidden;
+  }
+  @media (max-width: 1100px) {
+    .perm-layout { grid-template-columns: 1fr; }
+  }
+  .perm-main {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .perm-controls {
+    display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem;
+    padding: 14px 16px; background: rgba(8, 8, 24, .35); backdrop-filter: blur(14px);
+  }
+  .perm-btn {
+    background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 10px; padding: 0.45rem 0.9rem; font-weight: 600; cursor: pointer;
+    font-size: 0.9rem; transition: all .2s;
+  }
+  .perm-btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, .08); }
+  .perm-btn.play {
+    background: linear-gradient(135deg, #2dd4bf, #f472b6); border: none; color: #06121f;
+  }
+  .perm-input {
+    background: rgba(8, 8, 24, .6); border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 10px; padding: 0.4rem 0.6rem; color: #e2e8f0; font-size: 0.85rem;
+    outline: none; min-width: 150px;
+  }
+  .perm-input:focus { border-color: #2dd4bf; box-shadow: 0 0 0 3px rgba(45, 212, 191, .15); }
+  .perm-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 0.75rem;
+  }
+  .perm-stat {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 12px; padding: 12px;
+    text-align: center;
+  }
+  .perm-stat-label { color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .perm-stat-val { color: #2dd4bf; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .perm-tree-card {
+    flex: 1; min-height: 220px; display: flex; flex-direction: column;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  .perm-tree-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  .perm-tree-tag {
+    font-size: 11px; color: #5eead4; background: rgba(45, 212, 191, .14);
+    border: 1px solid rgba(45, 212, 191, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #permutations-tree-display {
+    flex: 1; min-height: 200px; padding: 12px 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: auto;
+  }
+  #permutations-tree-display svg { max-width: 100%; max-height: 100%; }
+  /* Used array state strip */
+  #perm2-used-bar {
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .45);
+  }
+  .perm2-used-label {
+    color: #94a3b8; font-size: 12px; font-weight: 700;
+    font-family: 'JetBrains Mono', Consolas, monospace; flex-shrink: 0;
+  }
+  .perm2-used-chip {
+    display: inline-flex; min-width: 44px; height: 30px;
+    align-items: center; justify-content: center;
+    border-radius: 8px; padding: 0 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    border: 1.5px solid rgba(255, 255, 255, .12);
+    transition: all .3s cubic-bezier(.4, 0, .2, 1);
+  }
+  .perm2-used-on {
+    border-color: rgba(52, 211, 153, .55);
+    background: linear-gradient(135deg, rgba(52, 211, 153, .28), rgba(16, 185, 129, .1));
+    color: #6ee7b7;
+  }
+  .perm2-used-off {
+    border-color: rgba(94, 234, 212, .25);
+    background: rgba(45, 212, 191, .06);
+    color: #5eead4;
+    opacity: .55;
+  }
+  /* SVG tree styles (auto-injected by shared module; mirrored here as fallback) */
+  .perm2-edge { stroke: rgba(255,255,255,0.1); stroke-width: 1.5; transition: all .3s; }
+  .perm2-edge-active { stroke: #2dd4bf; stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(45,212,191,.5)); }
+  .perm2-edge-found { stroke: #34d399; stroke-width: 2; }
+  .perm2-edge-pruned { stroke: rgba(255,255,255,0.06); stroke-dasharray: 4 3; }
+  .perm2-edge-dim { stroke: rgba(255,255,255,0.05); }
+  .perm2-edge-label { fill: #94a3b8; font-family: 'JetBrains Mono', monospace; }
+  .perm2-node-circle { fill: #1e1e2e; stroke: #45475a; stroke-width: 2; transition: all .3s; }
+  .perm2-node-current { fill: rgba(45,212,191,0.3); stroke: #2dd4bf; stroke-width: 3; animation: perm2-tree-pulse 1.2s infinite; }
+  .perm2-node-found { fill: rgba(52,211,153,0.3); stroke: #34d399; stroke-width: 2.5; animation: perm2-tree-found .5s cubic-bezier(.34,1.56,.64,1); }
+  .perm2-node-visited { fill: rgba(244,114,182,0.2); stroke: rgba(244,114,182,0.5); stroke-width: 2; }
+  .perm2-node-pruned { fill: rgba(100,100,120,0.15); stroke: rgba(100,100,120,0.3); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .perm2-node-label { fill: #cdd6f4; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  .perm2-node-check { fill: #34d399; font-size: 14px; font-weight: 900; animation: perm2-tree-check .4s cubic-bezier(.34,1.56,.64,1); }
+  .perm2-node-pruned-mark { fill: #f87171; font-size: 12px; font-weight: 900; }
+  .perm2-log-line { display: flex; gap: 8px; padding: 1px 0; color: #94a3b8; font-size: 12px; line-height: 1.65; }
+  .perm2-log-line .perm2-log-num { color: #64748b; flex-shrink: 0; }
+  .perm2-log-line.perm2-log-active { color: #5eead4; font-weight: 600; }
+  .perm2-log-line.perm2-log-active .perm2-log-num { color: #2dd4bf; }
+  @keyframes perm2-tree-pulse {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(45,212,191,.6)); }
+    50% { filter: drop-shadow(0 0 8px rgba(45,212,191,.8)); }
+  }
+  @keyframes perm2-tree-found {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes perm2-tree-check {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+  .perm-message {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(45, 212, 191, .12), rgba(244, 114, 182, .06));
+    border: 1px solid rgba(45, 212, 191, .28);
+    line-height: 1.55; font-size: 14px; color: #ccfbf1;
+  }
+  .perm-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  .perm-right {
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .perm-playback {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+  .perm-pb-row { display: flex; gap: 0.5rem; align-items: center; }
+  .perm-pb-btn {
+    flex: 1; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 10px; padding: 0.5rem; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all .2s;
+  }
+  .perm-pb-btn:hover { background: rgba(255, 255, 255, .08); }
+  .perm-pb-btn.play { background: linear-gradient(135deg, #2dd4bf, #f472b6); border: none; color: #06121f; }
+  .perm-pb-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .perm-speed-row { display: flex; align-items: center; gap: 0.5rem; font-size: 12px; }
+  .perm-speed-row span.cyan { color: #2dd4bf; font-weight: 600; }
+  #step-speed { flex: 1; accent-color: #2dd4bf; }
+  #step-counter { color: #cbd5e1; font-size: 13px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+  .perm-code-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35); overflow: hidden;
+  }
+  .perm-code-card [data-code-panel] { min-height: 360px; }
+</style>
+
+<div>
+  <div class="perm-title">🔢 全排列·used数组</div>
+  <div class="perm-desc">LeetCode 46 · 使用 used 标记已选元素，枚举所有可能的排列组合</div>
+
+  <div class="perm-layout">
+    <div class="perm-main">
+      <div class="perm-controls">
+        <input id="perm-input" class="perm-input" value="1,2,3" />
+        <button id="perm-start" class="perm-btn">生成排列</button>
+        <button class="perm-btn perm-example" data-val="1,2,3">示例1</button>
+        <button class="perm-btn perm-example" data-val="1,2">示例2</button>
+      </div>
+
+      <div class="perm-stats">
+        <div class="perm-stat"><div class="perm-stat-label">当前路径</div><div class="perm-stat-val" id="perm-path">[]</div></div>
+        <div class="perm-stat"><div class="perm-stat-label">剩余可选</div><div class="perm-stat-val" id="perm-avail">-</div></div>
+        <div class="perm-stat"><div class="perm-stat-label">已收集</div><div class="perm-stat-val" id="perm-collected">0</div></div>
+        <div class="perm-stat"><div class="perm-stat-label">递归深度</div><div class="perm-stat-val" id="perm-depth">0</div></div>
+      </div>
+
+      <section class="perm-tree-card">
+        <div class="perm-tree-card-title">回溯决策树 <span class="perm-tree-tag">SVG · used 剪枝视角</span></div>
+        <div id="permutations-tree-display"></div>
+        <div id="perm2-used-bar"></div>
+        <div class="perm-message" id="step-message">点击「生成排列」观看回溯生成全排列的决策树，used 数组状态条同步反映剪枝</div>
+      </section>
+
+      <section class="perm-tree-card" style="flex:0 0 auto;">
+        <div class="perm-tree-card-title">执行日志</div>
+        <div class="perm-log" id="perm2-log"></div>
+      </section>
+    </div>
+
+    <aside class="perm-right">
+      <div class="perm-code-card"><div data-code-panel></div></div>
+      <div class="perm-playback">
+        <div class="perm-pb-row">
+          <button id="step-reset" class="perm-pb-btn">⏮ 重置</button>
+          <button id="step-prev" class="perm-pb-btn">◀ 上一步</button>
+          <button id="step-play" class="perm-pb-btn play">▶ 播放</button>
+          <button id="step-next" class="perm-pb-btn">下一步 ▶</button>
+        </div>
+        <div class="perm-speed-row">
+          <span class="cyan">速度</span>
+          <input id="step-speed" type="range" min="200" max="2000" step="100" value="800" />
+          <span id="step-speed-label" style="min-width:50px;color:#cbd5e1;">0.8s</span>
+        </div>
+        <div id="step-counter">步骤: 0 / 0</div>
+      </div>
+    </aside>
+  </div>
+</div>

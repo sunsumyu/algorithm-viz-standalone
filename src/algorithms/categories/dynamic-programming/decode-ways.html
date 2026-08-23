@@ -1,0 +1,760 @@
+<style>
+  #algo-decode-ways-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-decode-ways-view::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 10% 8%, #7c3aed55, transparent 55%),
+                radial-gradient(ellipse at 90% 92%, #2563eb55, transparent 55%),
+                linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #1e1b4b 55%, #3730a3 80%, #1e1b4b 100%);
+    z-index: -2;
+  }
+
+  #algo-decode-ways-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(30, 27, 75, 0.45), transparent 70%);
+    z-index: -1;
+  }
+
+  .dw-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── 顶部一体化：标题 + 输入 + 示例 + 模式 Tab + 统计 ── */
+  .dw-hero {
+    padding: 12px 20px;
+    background: rgba(17, 15, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .dw-hero-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .dw-hero-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #818cf8, #c084fc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 15px rgba(129, 140, 248, 0.35);
+    flex-shrink: 0;
+  }
+
+  .dw-hero-text {
+    min-width: 0;
+  }
+
+  .dw-hero-text h2 {
+    margin: 0 0 2px;
+    font-size: 19px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a5b4fc, #f0abfc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    white-space: nowrap;
+  }
+
+  .dw-hero-text p {
+    margin: 0;
+    color: rgba(205, 214, 244, 0.7);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .dw-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .dw-input-group input {
+    width: 150px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 255, 0.35);
+    background: rgba(10, 10, 30, 0.6);
+    color: #e2e8f0;
+    font-size: 14px;
+    font-family: ui-monospace, monospace;
+    letter-spacing: 1px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .dw-input-group input:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+  }
+
+  .dw-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .dw-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45); }
+  .dw-btn:active { transform: translateY(0); }
+
+  .dw-error {
+    color: #fda4af;
+    font-size: 12px;
+    min-height: 16px;
+    align-self: center;
+  }
+
+  .dw-chip {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 255, 0.35);
+    background: rgba(99, 102, 241, 0.12);
+    color: #c7d2fe;
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .dw-chip:hover { background: rgba(99, 102, 241, 0.3); border-color: #818cf8; }
+
+  /* 模式 Tab */
+  .dw-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 12px;
+    background: rgba(10, 10, 30, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dw-tab {
+    padding: 6px 18px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: rgba(205, 214, 244, 0.65);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .dw-tab.is-active {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+  }
+
+  /* 统计徽章（单一来源） */
+  .dw-stats {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .dw-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 9px;
+    background: rgba(10, 10, 30, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+  }
+
+  .dw-stat-label { color: rgba(205, 214, 244, 0.65); }
+  .dw-stat-value { color: #a5b4fc; font-weight: 700; font-family: ui-monospace, monospace; }
+
+  .dw-stat.is-answer {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(129, 140, 248, 0.18));
+    border-color: rgba(52, 211, 153, 0.45);
+  }
+
+  .dw-stat.is-answer .dw-stat-value { color: #6ee7b7; font-size: 14px; }
+
+  .is-hidden { display: none !important; }
+
+  /* ── 主体：主画布（60-70%）+ 侧栏 ── */
+  .dw-main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: 14px;
+    padding: 14px 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-decode-ways-view .dw-main {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .dw-left {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  .dw-card {
+    background: rgba(17, 15, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* 画布区 */
+  .dw-canvas-card {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  #dw-tree-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  #dw-tree-wrap:active { cursor: grabbing; }
+
+  .dw-tree-svg { width: 100%; height: 100%; display: block; }
+
+  /* SVG 悬浮视图控件 */
+  .dw-view-controls {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 5;
+  }
+
+  .dw-view-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 255, 0.35);
+    background: rgba(17, 15, 38, 0.8);
+    backdrop-filter: blur(10px);
+    color: #c7d2fe;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .dw-view-btn:hover { background: rgba(99, 102, 241, 0.35); border-color: #818cf8; }
+
+  .dw-view-hint {
+    position: absolute;
+    left: 12px;
+    bottom: 10px;
+    font-size: 11px;
+    color: rgba(205, 214, 244, 0.45);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* 树节点样式 */
+  .dw-node circle {
+    fill: rgba(99, 102, 241, 0.14);
+    stroke: #818cf8;
+    stroke-width: 2;
+    transition: fill 0.25s;
+  }
+
+  .dw-node .dw-node-label {
+    fill: #c7d2fe;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: ui-monospace, monospace;
+    pointer-events: none;
+  }
+
+  .dw-node .dw-node-value {
+    fill: #6ee7b7;
+    font-size: 13px;
+    font-weight: 800;
+    font-family: ui-monospace, monospace;
+    pointer-events: none;
+  }
+
+  .dw-node.is-repeated circle {
+    stroke: #fbbf24;
+    stroke-dasharray: 4 3;
+  }
+
+  .dw-node.is-repeated .dw-node-label { fill: #fcd34d; }
+
+  .dw-node.is-returned circle { fill: rgba(52, 211, 153, 0.22); stroke: #34d399; }
+  .dw-node.is-base circle { fill: rgba(167, 243, 208, 0.28); stroke: #6ee7b7; }
+  .dw-node.is-dead circle { fill: rgba(244, 63, 94, 0.25); stroke: #fb7185; }
+  .dw-node.is-dead .dw-node-label { fill: #fda4af; }
+
+  .dw-node.is-active circle {
+    stroke: #f0abfc;
+    stroke-width: 3;
+    animation: dw-pulse 1s infinite;
+  }
+
+  @keyframes dw-pulse {
+    0%, 100% { fill: rgba(240, 171, 252, 0.18); }
+    50% { fill: rgba(240, 171, 252, 0.4); }
+  }
+
+  .dw-edge line { stroke: rgba(148, 163, 255, 0.45); stroke-width: 1.8; }
+
+  .dw-edge .dw-edge-label {
+    fill: #a5b4fc;
+    font-size: 10.5px;
+    font-family: ui-monospace, monospace;
+    paint-order: stroke;
+    stroke: rgba(17, 15, 38, 0.9);
+    stroke-width: 3px;
+    pointer-events: none;
+  }
+
+  .dw-edge.is-dead line { stroke: rgba(251, 113, 133, 0.55); stroke-dasharray: 5 4; }
+  .dw-edge.is-dead .dw-edge-label { fill: #fda4af; }
+
+  /* DP 模式 */
+  #dw-dp-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+    overflow: auto;
+  }
+
+  .dp-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(205, 214, 244, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 8px;
+  }
+
+  .dw-dp-table {
+    position: relative;
+  }
+
+  #dw-dp-chars, #dw-dp-cells {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(52px, 1fr);
+    gap: 6px;
+  }
+
+  #dw-dp-chars { margin-bottom: 6px; }
+
+  .dw-char-cell {
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.14);
+    border: 1px solid rgba(148, 163, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: ui-monospace, monospace;
+    font-size: 17px;
+    font-weight: 800;
+    color: #c7d2fe;
+    transition: all 0.2s;
+  }
+
+  .dw-char-cell.is-zero {
+    background: rgba(244, 63, 94, 0.18);
+    border-color: rgba(251, 113, 133, 0.6);
+    color: #fda4af;
+  }
+
+  .dw-char-cell.is-boundary {
+    background: rgba(52, 211, 153, 0.12);
+    border-color: rgba(52, 211, 153, 0.4);
+    color: #6ee7b7;
+    font-size: 13px;
+  }
+
+  .dw-char-cell.is-current {
+    border-color: #f0abfc;
+    box-shadow: 0 0 0 3px rgba(240, 171, 252, 0.2);
+  }
+
+  .dw-dp-cell {
+    height: 62px;
+    border-radius: 10px;
+    background: rgba(10, 10, 30, 0.5);
+    border: 1px solid rgba(148, 163, 255, 0.22);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.2s;
+  }
+
+  .dw-dp-idx {
+    font-size: 10px;
+    color: rgba(205, 214, 244, 0.5);
+    font-family: ui-monospace, monospace;
+  }
+
+  .dw-dp-val {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: ui-monospace, monospace;
+    color: #a5b4fc;
+    min-height: 22px;
+  }
+
+  .dw-dp-cell.is-current {
+    border-color: #f0abfc;
+    background: rgba(240, 171, 252, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(240, 171, 252, 0.25);
+  }
+
+  .dw-dp-cell.is-dep { border-color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+  .dw-dp-cell.is-dep .dw-dp-val { color: #fcd34d; }
+  .dw-dp-cell.is-zero .dw-dp-val { color: #fb7185; }
+  .dw-dp-cell.is-answer {
+    border-color: #34d399;
+    background: rgba(52, 211, 153, 0.15);
+    box-shadow: 0 0 16px rgba(52, 211, 153, 0.3);
+  }
+
+  .dw-dp-cells-wrap {
+    position: relative;
+  }
+
+  #dw-dp-arrows {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .dw-dp-arrow {
+    fill: none;
+    stroke: #fbbf24;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    marker-end: url(#dw-arrow-head);
+  }
+
+  .dw-dp-arrow.is-two { stroke: #f0abfc; }
+
+  #dw-dp-formula {
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: rgba(10, 10, 30, 0.55);
+    border: 1px solid rgba(148, 163, 255, 0.25);
+    font-family: ui-monospace, monospace;
+    font-size: 14px;
+    color: #a5b4fc;
+    min-height: 20px;
+  }
+
+  /* 决策拆解卡片：三分支 */
+  #dw-dp-breakdown {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .dw-bd-branch {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(148, 163, 255, 0.25);
+    transition: opacity 0.2s;
+  }
+
+  .dw-bd-branch.is-grey { opacity: 0.4; filter: grayscale(0.8); }
+
+  .dw-bd-title { font-size: 12px; color: #c7d2fe; margin-bottom: 4px; }
+  .dw-bd-formula { font-size: 13px; font-family: ui-monospace, monospace; color: #6ee7b7; }
+  .dw-bd-reason { font-size: 12px; color: #fda4af; font-family: ui-monospace, monospace; }
+
+  .dw-bd-conclusion {
+    grid-column: 1 / -1;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    font-size: 14px;
+    font-family: ui-monospace, monospace;
+    color: #a7f3d0;
+    text-align: center;
+  }
+
+  .dw-bd-conclusion strong { color: #6ee7b7; font-size: 16px; }
+
+  /* 消息条 + 播放控制 */
+  #step-message {
+    padding: 10px 16px;
+    font-size: 13.5px;
+    color: #e2e8f0;
+    background: rgba(10, 10, 30, 0.45);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0 0 16px 16px;
+    min-height: 40px;
+  }
+
+  .dw-playback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(17, 15, 38, 0.65);
+    backdrop-filter: blur(18px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-wrap: wrap;
+  }
+
+  .dw-pb-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 255, 0.3);
+    background: rgba(99, 102, 241, 0.15);
+    color: #c7d2fe;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .dw-pb-btn:hover:not(:disabled) { background: rgba(99, 102, 241, 0.35); }
+  .dw-pb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .dw-pb-btn.is-play {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    min-width: 88px;
+  }
+
+  #dw-speed { width: 130px; accent-color: #818cf8; }
+
+  #dw-speed-label, #step-counter {
+    font-size: 12px;
+    color: rgba(205, 214, 244, 0.7);
+    font-family: ui-monospace, monospace;
+  }
+
+  /* 侧栏：代码 + 日志 */
+  .dw-aside {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  .dw-code-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dw-code-card [data-code-panel] {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dw-log-card {
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dw-log-head {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(205, 214, 244, 0.65);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  #dw-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 14px;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: rgba(205, 214, 244, 0.8);
+    line-height: 1.7;
+  }
+
+  #dw-log div.active { color: #f0abfc; font-weight: 700; }
+</style>
+
+<div id="algo-decode-ways-view">
+  <div class="dw-page">
+
+    <!-- 顶部一体化：标题 + 输入 + 示例 + Tab + 统计 -->
+    <div class="dw-hero">
+      <div class="dw-hero-top">
+        <div class="dw-hero-icon">🔓</div>
+        <div class="dw-hero-text">
+          <h2>数字串翻译方案数（解码方法）</h2>
+          <p>LeetCode 91 · f(s, i)：取 1 位 / 取 2 位（≤26）· 递归树 vs DP 填表</p>
+        </div>
+        <div class="dw-input-group">
+          <input id="dw-input" type="text" value="226" placeholder="1~10 位数字串" spellcheck="false" />
+          <button id="dw-start" class="dw-btn" type="button">开始</button>
+          <span id="dw-error" class="dw-error"></span>
+        </div>
+      </div>
+
+      <div class="dw-hero-top">
+        <div class="dw-tabs">
+          <button id="dw-tab-rec" class="dw-tab is-active" type="button">🌲 递归树</button>
+          <button id="dw-tab-dp" class="dw-tab" type="button">📊 DP 迭代</button>
+        </div>
+        <div>
+          <button class="dw-chip" type="button" data-s="226">226</button>
+          <button class="dw-chip" type="button" data-s="11106">11106</button>
+          <button class="dw-chip" type="button" data-s="06">06</button>
+          <button class="dw-chip" type="button" data-s="10">10</button>
+          <button class="dw-chip" type="button" data-s="2126">2126</button>
+        </div>
+        <div class="dw-stats" style="margin-left: auto;">
+          <div id="dw-stats-rec" class="dw-stats">
+            <div class="dw-stat"><span class="dw-stat-label">调用</span><span class="dw-stat-value" id="dw-stat-calls">0</span></div>
+            <div class="dw-stat"><span class="dw-stat-label">重复子问题</span><span class="dw-stat-value" id="dw-stat-repeats">0</span></div>
+            <div class="dw-stat"><span class="dw-stat-label">两位命中</span><span class="dw-stat-value" id="dw-stat-two">0</span></div>
+          </div>
+          <div id="dw-stats-dp" class="dw-stats is-hidden">
+            <div class="dw-stat"><span class="dw-stat-label">已填格</span><span class="dw-stat-value" id="dw-stat-filled">0</span></div>
+          </div>
+          <div class="dw-stat is-answer"><span class="dw-stat-label">方案总数</span><span class="dw-stat-value" id="dw-answer">-</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主体 -->
+    <div class="dw-main">
+      <div class="dw-left">
+        <div class="dw-card dw-canvas-card">
+          <!-- 递归树画布 -->
+          <div id="dw-tree-wrap">
+            <div class="dw-view-controls">
+              <button id="dw-zoom-in" class="dw-view-btn" type="button" title="放大">＋</button>
+              <button id="dw-zoom-out" class="dw-view-btn" type="button" title="缩小">－</button>
+              <button id="dw-view-focus" class="dw-view-btn" type="button" title="聚焦当前节点">📍</button>
+              <button id="dw-view-reset" class="dw-view-btn" type="button" title="重置视图">🎯</button>
+            </div>
+            <div class="dw-view-hint">拖拽平移 · 滚轮缩放 · 虚线圈=重复子问题</div>
+          </div>
+
+          <!-- DP 画布 -->
+          <div id="dw-dp-wrap" class="is-hidden">
+            <div class="dw-dp-table">
+              <p class="dp-section-title">数字串（红色 = '0' 不可单独翻译）</p>
+              <div id="dw-dp-chars"></div>
+              <p class="dp-section-title" style="margin-top: 10px;">dp 表（从右往左填）</p>
+              <div class="dw-dp-cells-wrap">
+                <div id="dw-dp-cells"></div>
+                <svg id="dw-dp-arrows" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <marker id="dw-arrow-head" viewBox="0 0 10 10" refX="8" refY="5"
+                            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#fbbf24" />
+                    </marker>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+            <div>
+              <p class="dp-section-title">数值代入</p>
+              <div id="dw-dp-formula"></div>
+            </div>
+            <div>
+              <p class="dp-section-title">决策拆解</p>
+              <div id="dw-dp-breakdown"></div>
+            </div>
+          </div>
+        </div>
+        <div id="step-message"></div>
+      </div>
+
+      <!-- 侧栏：代码 + 日志 -->
+      <aside class="dw-aside">
+        <div class="dw-card dw-code-card">
+          <div data-code-panel></div>
+        </div>
+        <div class="dw-card dw-log-card">
+          <div class="dw-log-head">执行日志</div>
+          <div id="dw-log"></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 播放控制 -->
+    <div class="dw-playback">
+      <button id="step-reset" class="dw-pb-btn" type="button">重置</button>
+      <button id="step-prev" class="dw-pb-btn" type="button">上一步</button>
+      <button id="step-play" class="dw-pb-btn is-play" type="button">播放</button>
+      <button id="step-next" class="dw-pb-btn" type="button">下一步</button>
+      <input id="dw-speed" type="range" min="100" max="2000" step="100" value="900" />
+      <span id="dw-speed-label">0.9s</span>
+      <span id="step-counter">步骤: 0 / 0</span>
+    </div>
+
+  </div>
+</div>

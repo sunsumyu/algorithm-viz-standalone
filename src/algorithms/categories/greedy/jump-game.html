@@ -1,0 +1,364 @@
+<style>
+  /* === 跳跃游戏 II · 玻璃感 + 跳跃弧 + 边界脉冲 === */
+  #algo-jump-game-view {
+    --accent-a: #10b981;
+    --accent-b: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, .45);
+    --current-color: #fbbf24;
+    --range-color: #60a5fa;
+    --destination-color: #34d399;
+    --visited-color: #64748b;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 5% 5%, rgba(16, 185, 129, .26), transparent 55%),
+      radial-gradient(ellipse at 95% 90%, rgba(59, 130, 246, .26), transparent 55%),
+      linear-gradient(135deg, #0a1410 0%, #101a30 50%, #152040 100%);
+    overflow: hidden;
+  }
+  #algo-jump-game-view .jg-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-jump-game-view .jg-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-jump-game-view .jg-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-jump-game-view .jg-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-jump-game-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-jump-game-view .jg-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-jump-game-view .jg-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, .12), rgba(59, 130, 246, .08));
+    border: 1px solid rgba(59, 130, 246, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-jump-game-view .jg-tip strong { color: #93c5fd; }
+  #algo-jump-game-view .jg-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-jump-game-view .jg-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-jump-game-view .jg-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-jump-game-view .jg-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-jump-game-view .jg-tag {
+    font-size: 11px; color: #93c5fd; background: rgba(59, 130, 246, .14);
+    border: 1px solid rgba(59, 130, 246, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-jump-game-view .jg-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-jump-game-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-jump-game-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
+  #algo-jump-game-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-jump-game-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-jump-game-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-jump-game-view .jg-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-jump-game-view .jg-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(16, 185, 129, .12); border: 1px solid rgba(16, 185, 129, .28);
+    color: #6ee7b7; cursor: pointer; transition: all .2s;
+  }
+  #algo-jump-game-view .jg-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  #algo-jump-game-view .jg-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  #algo-jump-game-view .jg-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-jump-game-view .jg-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-jump-game-view .jg-stat--jumps::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-jump-game-view .jg-stat--jumps .jg-stat-val { color: #fde68a; }
+  #algo-jump-game-view .jg-stat--boundary::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
+  #algo-jump-game-view .jg-stat--boundary .jg-stat-val { color: #93c5fd; }
+  #algo-jump-game-view .jg-stat--farthest::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-jump-game-view .jg-stat--farthest .jg-stat-val { color: #6ee7b7; }
+  #algo-jump-game-view .jg-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-jump-game-view .jg-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* canvas */
+  #algo-jump-game-view .jg-chart-card { flex: 1; min-height: 260px; display: flex; flex-direction: column; }
+  #algo-jump-game-view .jg-canvas {
+    flex: 1; min-height: 220px; padding: 20px 18px 28px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #algo-jump-game-view .jg-cells {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    position: relative;
+  }
+  #algo-jump-game-view .jg-cell {
+    position: relative; width: 64px; height: 84px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    border-radius: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-jump-game-view .jg-cell .jg-val { font-size: 22px; font-weight: 800; color: #e2e8f0; }
+  #algo-jump-game-view .jg-cell .jg-idx {
+    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+    color: #64748b; font-size: 11px; font-weight: 600;
+  }
+  #algo-jump-game-view .jg-cell.jg-cell--current {
+    transform: translateY(-14px) scale(1.08);
+    border-color: var(--current-color);
+    background: linear-gradient(180deg, rgba(251, 191, 36, .35), rgba(245, 158, 11, .15));
+    color: #fef3c7;
+    box-shadow: 0 10px 30px rgba(251, 191, 36, .55);
+    animation: jg-cell-bounce 1.2s ease-in-out infinite;
+  }
+  @keyframes jg-cell-bounce {
+    0%, 100% { transform: translateY(-14px) scale(1.08); }
+    50% { transform: translateY(-20px) scale(1.12); }
+  }
+  #algo-jump-game-view .jg-cell.jg-cell--range {
+    border-color: var(--range-color);
+    background: linear-gradient(180deg, rgba(96, 165, 250, .25), rgba(59, 130, 246, .08));
+    color: #dbeafe;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, .18);
+  }
+  #algo-jump-game-view .jg-cell.jg-cell--destination {
+    border-color: var(--destination-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .28), rgba(16, 185, 129, .1));
+    color: #d1fae5;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .25), 0 6px 18px rgba(52, 211, 153, .35);
+    animation: jg-dest-glow 1.2s ease-in-out infinite;
+  }
+  @keyframes jg-dest-glow {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, .25), 0 6px 18px rgba(52, 211, 153, .35); }
+    50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, .15), 0 8px 22px rgba(52, 211, 153, .5); }
+  }
+  #algo-jump-game-view .jg-cell.jg-cell--visited {
+    opacity: .45;
+    transform: scale(.92);
+    filter: grayscale(.4);
+  }
+  #algo-jump-game-view .jg-cell.jg-cell--jump {
+    animation: jg-cell-jump .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes jg-cell-jump {
+    0% { transform: translateY(0); }
+    40% { transform: translateY(-30px) scale(1.1); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  /* jump arc SVG */
+  #algo-jump-game-view .jg-arc {
+    position: absolute; inset: 0; pointer-events: none;
+    overflow: visible;
+  }
+  #algo-jump-game-view .jg-arc-path {
+    fill: none; stroke: var(--current-color); stroke-width: 2.5;
+    stroke-dasharray: 4 3;
+    animation: jg-arc-draw .6s ease-out forwards;
+  }
+  @keyframes jg-arc-draw {
+    from { stroke-dashoffset: 200; opacity: 0; }
+    to { stroke-dashoffset: 0; opacity: 1; }
+  }
+  #algo-jump-game-view .jg-arc-tip {
+    position: absolute; padding: 3px 8px; border-radius: 6px;
+    background: rgba(251, 191, 36, .15); border: 1px solid rgba(251, 191, 36, .5);
+    color: #fef3c7; font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    transform: translate(-50%, -50%);
+    animation: jg-arc-tip-in .4s ease-out .2s both;
+  }
+  @keyframes jg-arc-tip-in {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(.5); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  /* result */
+  #algo-jump-game-view .jg-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, .12), rgba(59, 130, 246, .06));
+    border: 1px solid rgba(59, 130, 246, .28);
+    line-height: 1.55; font-size: 14px; color: #bfdbfe;
+  }
+  #algo-jump-game-view .jg-result .jg-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  #algo-jump-game-view .jg-result.jg-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-jump-game-view .jg-result.jg-result--done .jg-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-jump-game-view .jg-result.jg-result--jump {
+    background: linear-gradient(135deg, rgba(251, 191, 36, .18), rgba(245, 158, 11, .08));
+    border-color: rgba(251, 191, 36, .4); color: #fde68a;
+  }
+  #algo-jump-game-view .jg-result.jg-result--jump .jg-emoji {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    box-shadow: 0 4px 14px rgba(251, 191, 36, .55);
+    color: #140211;
+  }
+  #algo-jump-game-view .jg-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-jump-game-view .jg-log-line { display: flex; gap: 8px; }
+  #algo-jump-game-view .jg-log-line .jg-log-num { color: #475569; flex-shrink: 0; }
+  #algo-jump-game-view .jg-log-line.jg-log-active { color: #93c5fd; font-weight: 600; }
+  #algo-jump-game-view .jg-log-line.jg-log-active .jg-log-num { color: var(--accent-b); }
+  #algo-jump-game-view .jg-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-jump-game-view .jg-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-jump-game-view .jg-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-jump-game-view .jg-controls .jg-ctrl-btn { min-width: 64px; }
+  #algo-jump-game-view .jg-controls .jg-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-jump-game-view .jg-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-jump-game-view .jg-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-jump-game-view #jg-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-jump-game-view .jg-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-jump-game-view .jg-code { min-height: 360px; }
+  }
+</style>
+
+<div class="jg-shell">
+  <div class="jg-hero">
+    <div class="jg-hero-left">
+      <span class="jg-icon">🦘</span>
+      <div>
+        <h1>跳跃游戏 II（贪心）</h1>
+        <div class="jg-sub">LeetCode 45 · 最少跳跃次数到达数组末尾</div>
+      </div>
+    </div>
+    <div class="jg-tip"><strong>核心动画：</strong><span style="color:#fef3c7">当前格</span>弹跳高亮，<span style="color:#93c5fd">可达范围</span>蓝色扩散；到达边界时<strong>跳跃弧线</strong> SVG 路径绘制；<span style="color:#6ee7b7">最远可达</span>绿色发光。</div>
+  </div>
+  <div class="jg-main">
+    <div class="jg-left">
+      <section class="jg-card">
+        <div class="jg-card-title">输入 <span class="jg-tag">nums = [2,3,1,1,4]</span></div>
+        <div class="jg-input-row">
+          <input id="jump-input" value="2,3,1,1,4">
+          <button id="jump-start">开始跳跃</button>
+        </div>
+        <div class="jg-examples">
+          <button class="jg-chip" data-val="2,3,1,1,4">经典 5 个</button>
+          <button class="jg-chip" data-val="2,1">最小示例</button>
+          <button class="jg-chip" data-val="1,2,3">步长递增</button>
+          <button class="jg-chip" data-val="3,2,1,0,1">能跳 0 步</button>
+          <button class="jg-chip" data-val="1,1,1,1,1,1">步长为 1</button>
+        </div>
+      </section>
+
+      <div class="jg-stats">
+        <div class="jg-stat jg-stat--jumps"><div class="jg-stat-label">跳跃次数</div><div class="jg-stat-val" id="jump-count">0</div></div>
+        <div class="jg-stat jg-stat--boundary"><div class="jg-stat-label">当前边界</div><div class="jg-stat-val" id="current-boundary">0</div></div>
+        <div class="jg-stat jg-stat--farthest"><div class="jg-stat-label">最远可达</div><div class="jg-stat-val" id="next-boundary">0</div></div>
+        <div class="jg-stat"><div class="jg-stat-label">当前位置</div><div class="jg-stat-val" id="jg-idx" style="font-size:16px;">-</div></div>
+      </div>
+
+      <section class="jg-card jg-chart-card">
+        <div class="jg-card-title">跳跃轨迹 <span class="jg-tag">弧线可视化</span></div>
+        <div class="jg-canvas">
+          <div class="jg-cells" id="jg-cells"></div>
+        </div>
+        <div class="jg-result" id="jg-result">
+          <span class="jg-emoji">🦘</span>
+          <div id="step-message">点击「开始跳跃」观察跳跃弧 + 边界推进</div>
+        </div>
+      </section>
+
+      <section class="jg-card">
+        <div class="jg-card-title">执行日志 <button id="jg-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="jg-log" id="jg-log"></div>
+      </section>
+    </div>
+    <aside class="jg-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="jg-controls">
+    <button id="step-reset" class="jg-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="jg-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="jg-ctrl-btn jg-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="jg-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="jg-counter">步骤: 0 / 0</span>
+    <div class="jg-speed-wrap">
+      <span>速度</span>
+      <input id="jg-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="jg-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

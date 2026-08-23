@@ -1,0 +1,320 @@
+<style>
+  /* === 加油站 · 玻璃感 + 站点脉冲 + 油箱动画 === */
+  #algo-gas-station-view {
+    --accent-a: #22c55e;
+    --accent-b: #3b82f6;
+    --accent-glow: rgba(34, 197, 94, .4);
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(34, 197, 94, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, .22), transparent 55%),
+      linear-gradient(135deg, #0a1a0e 0%, #1a0e2a 50%, #1a1a30 100%);
+    overflow: hidden;
+  }
+  #algo-gas-station-view .gas-page { width: 100%; height: 100%; display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+  #algo-gas-station-view .gas-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-gas-station-view .gas-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-gas-station-view .gas-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-gas-station-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-gas-station-view .gas-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-gas-station-view .gas-tip {
+    max-width: 520px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, .12), rgba(59, 130, 246, .08));
+    border: 1px solid rgba(34, 197, 94, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-gas-station-view .gas-tip strong { color: #86efac; }
+  #algo-gas-station-view .gas-shell {
+    min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-gas-station-view .gas-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-gas-station-view .gas-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-gas-station-view .gas-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-gas-station-view .gas-tag {
+    font-size: 11px; color: #86efac; background: rgba(34, 197, 94, .14);
+    border: 1px solid rgba(34, 197, 94, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-gas-station-view .gas-input-row {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-gas-station-view input[type="text"] {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-gas-station-view input[type="text"]:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(34, 197, 94, .15); }
+  #algo-gas-station-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-gas-station-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-gas-station-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-gas-station-view .gas-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-gas-station-view .gas-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(59, 130, 246, .12); border: 1px solid rgba(59, 130, 246, .28);
+    color: #93c5fd; cursor: pointer; transition: all .2s;
+  }
+  #algo-gas-station-view .gas-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* 统计 */
+  #algo-gas-station-view .gas-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #algo-gas-station-view .gas-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-gas-station-view .gas-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-gas-station-view .gas-stat--pos::before { background: linear-gradient(180deg, #22c55e, #16a34a); }
+  #algo-gas-station-view .gas-stat--pos .gas-stat-val { color: #86efac; }
+  #algo-gas-station-view .gas-stat--start::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-gas-station-view .gas-stat--start .gas-stat-val { color: #fde68a; }
+  #algo-gas-station-view .gas-stat--tank::before { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+  #algo-gas-station-view .gas-stat--tank .gas-stat-val { color: #93c5fd; }
+  #algo-gas-station-view .gas-stat--total::before { background: linear-gradient(180deg, #a855f7, #9333ea); }
+  #algo-gas-station-view .gas-stat--total .gas-stat-val { color: #e9d5ff; }
+  #algo-gas-station-view .gas-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-gas-station-view .gas-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 站点轨道 */
+  #algo-gas-station-view .gas-track-card { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+  #algo-gas-station-view .gas-track-body {
+    flex: 1; min-height: 240px; padding: 24px 18px;
+    overflow: auto; display: flex; align-items: flex-end; gap: 14px;
+  }
+  #algo-gas-station-view .gas-station-box {
+    position: relative;
+    min-width: 96px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, .03);
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-gas-station-view .gas-station-box::after {
+    content: '→';
+    position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
+    color: #64748b; font-weight: 900; font-size: 18px;
+  }
+  #algo-gas-station-view .gas-station-box:last-child::after {
+    content: '↺';
+    color: var(--accent-a);
+  }
+  #algo-gas-station-view .gas-station-box.current {
+    z-index: 2;
+    border-color: var(--accent-a);
+    background: linear-gradient(135deg, rgba(34, 197, 94, .3), rgba(16, 185, 129, .12));
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .25), 0 12px 22px rgba(34, 197, 94, .4);
+    transform: translateY(-10px) scale(1.05);
+    animation: gas-station-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes gas-station-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(34, 197, 94, .25), 0 12px 22px rgba(34, 197, 94, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, .12), 0 14px 28px rgba(34, 197, 94, .55); }
+  }
+  #algo-gas-station-view .gas-station-box.start {
+    border-color: #fbbf24;
+    background: linear-gradient(135deg, rgba(251, 191, 36, .2), rgba(245, 158, 11, .08));
+    box-shadow: 0 0 12px rgba(251, 191, 36, .3);
+  }
+  #algo-gas-station-view .gas-station-box.failed {
+    border-color: rgba(248, 113, 113, .5);
+    background: rgba(248, 113, 113, .08);
+    opacity: .6;
+    animation: gas-fail-shake .4s;
+  }
+  @keyframes gas-fail-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  #algo-gas-station-view .gas-station-head {
+    padding: 4px 8px; border-radius: 6px;
+    background: rgba(255, 255, 255, .06);
+    color: #cbd5e1; font-size: 12px; font-weight: 700;
+  }
+  #algo-gas-station-view .gas-station-row {
+    display: flex; justify-content: space-between; width: 100%;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  }
+  #algo-gas-station-view .gas-station-row .gas-label { color: #94a3b8; }
+  #algo-gas-station-view .gas-station-row .gas-val { color: #e2e8f0; }
+  #algo-gas-station-view .gas-net {
+    padding: 4px 10px; border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800;
+    text-align: center; width: 100%;
+  }
+  #algo-gas-station-view .gas-net.positive { background: rgba(34, 197, 94, .15); color: #86efac; }
+  #algo-gas-station-view .gas-net.negative { background: rgba(248, 113, 113, .15); color: #fca5a5; }
+  #algo-gas-station-view .gas-net.zero { background: rgba(251, 191, 36, .15); color: #fde68a; }
+  #algo-gas-station-view .gas-start-marker {
+    padding: 4px 8px; border-radius: 6px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, .3), rgba(245, 158, 11, .12));
+    color: #fde68a; font-size: 11px; font-weight: 700;
+    text-align: center; width: 100%;
+  }
+  /* 结果 */
+  #algo-gas-station-view .gas-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(34, 197, 94, .12), rgba(59, 130, 246, .06));
+    border: 1px solid rgba(34, 197, 94, .28);
+    line-height: 1.55; font-size: 14px; color: #86efac;
+  }
+  #algo-gas-station-view .gas-result .gas-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow); flex-shrink: 0;
+  }
+  #algo-gas-station-view .gas-result.gas-result--success {
+    background: linear-gradient(135deg, rgba(34, 197, 94, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(34, 197, 94, .4); color: #d1fae5;
+  }
+  #algo-gas-station-view .gas-result.gas-result--success .gas-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-gas-station-view .gas-result.gas-result--fail {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(239, 68, 68, .06));
+    border-color: rgba(248, 113, 113, .35); color: #fecaca;
+  }
+  #algo-gas-station-view .gas-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-gas-station-view .gas-log-line { padding: 1px 0; color: #94a3b8; }
+  #algo-gas-station-view .gas-log-line.active { color: #86efac; font-weight: 600; }
+  #algo-gas-station-view .gas-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-gas-station-view .gas-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-gas-station-view .gas-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-gas-station-view .gas-controls .gas-ctrl-btn { min-width: 64px; }
+  #algo-gas-station-view .gas-controls .gas-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-gas-station-view .gas-counter { color: #94a3b8; font-size: 13px; font-weight: 600; min-width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
+  #algo-gas-station-view .gas-speed-wrap { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px; }
+  #algo-gas-station-view #gas-station-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-gas-station-view .gas-shell { grid-template-columns: 1fr; overflow: auto; }
+    #algo-gas-station-view .gas-code { min-height: 360px; }
+  }
+</style>
+
+<div class="gas-page">
+  <div class="gas-hero">
+    <div class="gas-hero-left">
+      <span class="gas-icon">⛽</span>
+      <div>
+        <h1>加油站（贪心）</h1>
+        <div class="gas-sub">LeetCode 134 · 从某个加油站出发，绕环路一圈返回起点</div>
+      </div>
+    </div>
+    <div class="gas-tip"><strong>核心动画：</strong>当前站<span style="color:#86efac">绿色脉冲</span>；候选起点<span style="color:#fde68a">金色高亮</span>；失败区间<span style="color:#fca5a5">红色 shake</span>；成功时整圈点亮。</div>
+  </div>
+  <div class="gas-shell">
+    <div class="gas-left">
+      <section class="gas-card">
+        <div class="gas-card-title">输入 <span class="gas-tag">gas / cost</span></div>
+        <div class="gas-input-row">
+          <input type="text" id="gas-input" value="1,2,3,4,5" placeholder="加油量 gas">
+          <input type="text" id="cost-input" value="3,4,5,1,2" placeholder="消耗量 cost">
+          <button id="gas-station-reset">初始化</button>
+        </div>
+        <div class="gas-examples">
+          <button class="gas-chip gas-example" data-gas="1,2,3,4,5" data-cost="3,4,5,1,2">示例 1（解: 3）</button>
+          <button class="gas-chip gas-example" data-gas="2,3,4" data-cost="3,4,3">示例 2（解: -1）</button>
+        </div>
+      </section>
+
+      <div class="gas-stats">
+        <div class="gas-stat gas-stat--pos"><div class="gas-stat-label">当前位置</div><div class="gas-stat-val" id="current-station">初始化</div></div>
+        <div class="gas-stat gas-stat--start"><div class="gas-stat-label">候选起点</div><div class="gas-stat-val" id="start-station">0</div></div>
+        <div class="gas-stat gas-stat--tank"><div class="gas-stat-label">循环验证油量</div><div class="gas-stat-val" id="current-tank">0</div></div>
+        <div class="gas-stat gas-stat--total"><div class="gas-stat-label">总净油量</div><div class="gas-stat-val" id="total-tank">0</div></div>
+      </div>
+
+      <section class="gas-card gas-track-card">
+        <div class="gas-card-title">站点轨道 <span class="gas-tag">站点 / 净油 / 起点</span></div>
+        <div class="gas-track-body" id="gas-station-track"></div>
+        <div class="gas-result" id="gas-result-banner">
+          <span class="gas-emoji">⛽</span>
+          <div id="gas-station-message">点击「初始化」观看站点扫描 + 油箱变化动画</div>
+        </div>
+      </section>
+
+      <section class="gas-card">
+        <div class="gas-card-title">执行日志 <button id="gas-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="gas-log" id="gas-station-log"></div>
+      </section>
+    </div>
+    <aside class="gas-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="gas-controls">
+    <button id="gas-station-prev" class="gas-ctrl-btn">⏮ 上一步</button>
+    <button id="gas-station-play" class="gas-ctrl-btn gas-ctrl-primary">▶ 自动播放</button>
+    <button id="gas-station-next" class="gas-ctrl-btn">下一步 ▶</button>
+    <span id="gas-station-step-counter" class="gas-counter">步骤: 0 / 0</span>
+    <div class="gas-speed-wrap">
+      <span>速度</span>
+      <input type="range" id="gas-station-speed" min="400" max="2200" step="100" value="900">
+      <span id="gas-station-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

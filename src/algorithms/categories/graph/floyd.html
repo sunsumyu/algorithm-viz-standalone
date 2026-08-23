@@ -1,0 +1,524 @@
+<style>
+  #algo-floyd-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-floyd-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #a855f755, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #9333ea55, transparent 55%),
+                linear-gradient(135deg, #0f0520 0%, #1a0838 25%, #0f0520 50%, #1e0a42 75%, #0f0520 100%);
+    z-index: -2;
+  }
+
+  #algo-floyd-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(15, 5, 32, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-floyd-view .floyd-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .floyd-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .floyd-hero .floyd-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .floyd-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #a855f7, #9333ea);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+  }
+
+  .floyd-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a855f7, #9333ea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .floyd-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .floyd-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .floyd-tip strong {
+    color: #a855f7;
+    font-weight: 600;
+  }
+
+  #algo-floyd-view .floyd-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-floyd-view .floyd-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .floyd-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .floyd-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .floyd-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .floyd-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #a855f7, #9333ea);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+  }
+
+  .floyd-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+  }
+
+  .floyd-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .floyd-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .floyd-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #a855f7, #9333ea);
+  }
+
+  .floyd-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .floyd-stat-val {
+    color: #a855f7;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .floyd-matrix-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .floyd-matrix-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    align-self: flex-start;
+    margin-bottom: 4px;
+  }
+
+  .floyd-matrix {
+    display: grid;
+    gap: 3px;
+    background: rgba(11, 10, 23, 0.6);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .floyd-cell {
+    width: 48px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: ui-monospace, monospace;
+    transition: all 0.25s ease;
+    position: relative;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .floyd-cell.header {
+    background: rgba(168, 85, 247, 0.2);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    color: #a855f7;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .floyd-cell.neutral {
+    background: rgba(20, 18, 38, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .floyd-cell.updated {
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    color: #22c55e;
+    animation: floyd-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .floyd-cell.current-row {
+    border-color: rgba(168, 85, 247, 0.6);
+    background: rgba(168, 85, 247, 0.1);
+  }
+
+  .floyd-cell.k-col {
+    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(245, 158, 11, 0.1);
+  }
+
+  .floyd-cell.pivot {
+    background: rgba(245, 158, 11, 0.3);
+    border: 1px solid #f59e0b;
+    color: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  }
+
+  .floyd-old-val {
+    font-size: 9px;
+    color: rgba(204, 214, 244, 0.4);
+    text-decoration: line-through;
+  }
+
+  .floyd-update-info {
+    padding: 12px 16px;
+    margin: 0 16px 12px;
+    border-radius: 12px;
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    color: #cdd6f4;
+    text-align: center;
+  }
+
+  .floyd-update-info .floyd-formula {
+    color: #a855f7;
+    font-weight: 700;
+  }
+
+  .floyd-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    background: rgba(168, 85, 247, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .floyd-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .floyd-log div {
+    padding: 2px 0;
+  }
+
+  .floyd-log div.active {
+    color: #a855f7;
+    font-weight: 600;
+  }
+
+  .floyd-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .floyd-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .floyd-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .floyd-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .floyd-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .floyd-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .floyd-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .floyd-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(168, 85, 247, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .floyd-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .floyd-pb-btn:not(:disabled):hover {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: #a855f7;
+    transform: translateY(-1px);
+  }
+
+  .floyd-pb-btn.play {
+    background: linear-gradient(135deg, #a855f7, #9333ea);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+  }
+
+  .floyd-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+  }
+
+  .floyd-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .floyd-speed-row input {
+    flex: 1;
+    accent-color: #a855f7;
+  }
+
+  .floyd-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes floyd-popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes floyd-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.3); }
+    50% { box-shadow: 0 0 12px 4px rgba(168, 85, 247, 0.3); }
+  }
+</style>
+
+<div class="floyd-page">
+  <div class="floyd-hero">
+    <div class="floyd-title-wrapper">
+      <div class="floyd-hero-icon">🔮</div>
+      <div class="floyd-hero-text">
+        <h2>Floyd算法</h2>
+        <p>动态规划求解所有节点对之间的最短路径</p>
+      </div>
+    </div>
+    <div class="floyd-tip"><strong>Floyd 核心：</strong>三重循环。外层枚举中间点 k，内层枚举所有节点对 (i, j)。如果经过 k 中转更短，就更新 d[i][j] = min(d[i][j], d[i][k] + d[k][j])。</div>
+  </div>
+
+  <div class="floyd-layout">
+    <div class="floyd-main">
+      <div class="floyd-card">
+        <div class="floyd-controls">
+          <button id="floyd-start" class="floyd-btn">开始寻路</button>
+        </div>
+
+        <div class="floyd-stats">
+          <div class="floyd-stat"><span class="floyd-stat-label">节点数</span><span class="floyd-stat-val" id="floyd-nodes">4</span></div>
+          <div class="floyd-stat"><span class="floyd-stat-label">当前 k</span><span class="floyd-stat-val" id="floyd-k">-</span></div>
+          <div class="floyd-stat"><span class="floyd-stat-label">更新次数</span><span class="floyd-stat-val" id="floyd-updates">0</span></div>
+          <div class="floyd-stat"><span class="floyd-stat-label">进度</span><span class="floyd-stat-val" id="floyd-progress">0%</span></div>
+        </div>
+
+        <div class="floyd-matrix-container">
+          <div class="floyd-matrix-title">距离矩阵 d[i][j]</div>
+          <div class="floyd-matrix" id="floyd-matrix"></div>
+        </div>
+
+        <div class="floyd-update-info" id="floyd-update-info" style="display:none;"></div>
+
+        <div class="floyd-message" id="step-message">点击「开始寻路」运行 Floyd-Warshall 求所有点对最短路。</div>
+
+        <div class="floyd-log" id="floyd-log"></div>
+      </div>
+    </div>
+
+    <div class="floyd-right">
+      <div data-code-panel class="floyd-code-card"></div>
+      <div class="floyd-legend">
+        <div class="floyd-legend-item"><span class="floyd-legend-box" style="background:rgba(168,85,247,0.2);border:2px solid #a855f7"></span>普通单元格</div>
+        <div class="floyd-legend-item"><span class="floyd-legend-box" style="background:rgba(34,197,94,0.2);border:2px solid #22c55e"></span>被更新的单元格</div>
+        <div class="floyd-legend-item"><span class="floyd-legend-box" style="background:rgba(245,158,11,0.3);border:2px solid #f59e0b"></span>当前 k 的行列</div>
+        <div class="floyd-legend-item"><span class="floyd-legend-box" style="background:rgba(20,18,38,0.6);border:1px solid rgba(255,255,255,0.2)"></span>INF = 不可达</div>
+      </div>
+      <div class="floyd-playback">
+        <div class="floyd-pb-row">
+          <button id="step-reset" class="floyd-pb-btn">重置</button>
+          <button id="step-prev" class="floyd-pb-btn">上一步</button>
+          <button id="step-play" class="floyd-pb-btn play">播放</button>
+          <button id="step-next" class="floyd-pb-btn">下一步</button>
+        </div>
+        <div class="floyd-speed-row">
+          <span>速度</span>
+          <input id="floyd-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="floyd-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="floyd-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

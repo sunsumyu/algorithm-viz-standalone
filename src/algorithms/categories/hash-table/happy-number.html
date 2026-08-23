@@ -1,0 +1,405 @@
+<style>
+  /* === 快乐数 · 玻璃感 + 哈希集合判环 + 平方和链 === */
+  #algo-happy-number-view {
+    --accent-a: #f59e0b;
+    --accent-b: #d97706;
+    --accent-glow: rgba(245, 158, 11, .45);
+    --happy-color: #34d399;
+    --cycle-color: #f87171;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(245, 158, 11, .25), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(217, 119, 6, .25), transparent 55%),
+      linear-gradient(135deg, #1a100a 0%, #1f1408 50%, #1a0f1a 100%);
+    overflow: hidden;
+  }
+  #algo-happy-number-view .hn-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-happy-number-view .hn-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-happy-number-view .hn-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-happy-number-view .hn-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1a100a; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-happy-number-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-happy-number-view .hn-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-happy-number-view .hn-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, .12), rgba(217, 119, 6, .08));
+    border: 1px solid rgba(245, 158, 11, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-happy-number-view .hn-tip strong { color: #fcd34d; }
+  #algo-happy-number-view .hn-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-happy-number-view .hn-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-happy-number-view .hn-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-happy-number-view .hn-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-happy-number-view .hn-tag {
+    font-size: 11px; color: #fcd34d; background: rgba(245, 158, 11, .14);
+    border: 1px solid rgba(245, 158, 11, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-happy-number-view .hn-input-row {
+    display: grid; grid-template-columns: 1fr auto auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-happy-number-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-happy-number-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(245, 158, 11, .15); }
+  #algo-happy-number-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-happy-number-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #1a100a; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-happy-number-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-happy-number-view .hn-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-happy-number-view .hn-example-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(217, 119, 6, .12); border: 1px solid rgba(217, 119, 6, .28);
+    color: #fbbf24; cursor: pointer; transition: all .2s;
+  }
+  #algo-happy-number-view .hn-example-btn:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1a100a; border-color: transparent; transform: translateY(-1px);
+  }
+  /* 统计 */
+  #algo-happy-number-view .hn-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  #algo-happy-number-view .hn-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-happy-number-view .hn-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-happy-number-view .hn-stat--n::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+  #algo-happy-number-view .hn-stat--n .hn-stat-val { color: #fcd34d; }
+  #algo-happy-number-view .hn-stat--iter::before { background: linear-gradient(180deg, #fb923c, #ea580c); }
+  #algo-happy-number-view .hn-stat--iter .hn-stat-val { color: #fdba74; }
+  #algo-happy-number-view .hn-stat--seen::before { background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+  #algo-happy-number-view .hn-stat--seen .hn-stat-val { color: #c4b5fd; }
+  #algo-happy-number-view .hn-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-happy-number-view .hn-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 20px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 可视化区域 */
+  #algo-happy-number-view .hn-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
+  #algo-happy-number-view .hn-area {
+    flex: 1; min-height: 0; padding: 18px; overflow: auto;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  /* 当前数字 */
+  #algo-happy-number-view .hn-current-number {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px; font-weight: 900; color: #fcd34d;
+    text-shadow: 0 0 30px rgba(245, 158, 11, .5);
+    transition: all .3s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-happy-number-view .hn-current-number.hn-happy {
+    color: var(--happy-color);
+    text-shadow: 0 0 30px rgba(52, 211, 153, .6);
+    animation: hn-burst .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #algo-happy-number-view .hn-current-number.hn-cycle {
+    color: var(--cycle-color);
+    text-shadow: 0 0 30px rgba(248, 113, 113, .6);
+    animation: hn-shake .5s ease-in-out;
+  }
+  @keyframes hn-burst {
+    0% { transform: scale(.6); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+  @keyframes hn-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  /* 分解区域 */
+  #algo-happy-number-view .hn-decompose {
+    padding: 14px 16px; border-radius: 12px;
+    background: rgba(8, 8, 24, .45);
+    border: 1px solid rgba(255, 255, 255, .06);
+  }
+  #algo-happy-number-view .hn-decompose-label {
+    color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  #algo-happy-number-view .hn-digits { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  #algo-happy-number-view .hn-digit-box {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 8px 10px; border-radius: 10px;
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+    animation: hn-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes hn-slide-in {
+    0% { transform: translateY(8px) scale(.85); opacity: 0; }
+    60% { transform: translateY(-2px) scale(1.08); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  #algo-happy-number-view .hn-digit-box .hn-digit { font-size: 22px; font-weight: 800; color: #fcd34d; }
+  #algo-happy-number-view .hn-digit-box .hn-op { font-size: 14px; color: #64748b; }
+  #algo-happy-number-view .hn-digit-box .hn-sq { font-size: 16px; font-weight: 700; color: #fdba74; }
+  #algo-happy-number-view .hn-digit-sep {
+    font-size: 20px; font-weight: 700; color: #64748b;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  /* 求和结果 */
+  #algo-happy-number-view .hn-sum-row {
+    display: flex; align-items: center; gap: 10px; justify-content: center;
+    padding: 10px 0;
+  }
+  #algo-happy-number-view .hn-sum-label { color: #94a3b8; font-size: 14px; font-weight: 600; }
+  #algo-happy-number-view .hn-sum-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px; font-weight: 900; color: #fb923c;
+    text-shadow: 0 0 20px rgba(251, 146, 60, .4);
+  }
+  /* 已见集合 */
+  #algo-happy-number-view .hn-seen-wrap {
+    padding: 12px 16px; border-radius: 12px;
+    background: rgba(8, 8, 24, .45);
+    border: 1px solid rgba(255, 255, 255, .06);
+  }
+  #algo-happy-number-view .hn-seen-title { color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  #algo-happy-number-view .hn-seen-items { display: flex; flex-wrap: wrap; gap: 8px; }
+  #algo-happy-number-view .hn-seen-chip {
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(167, 139, 250, .14); border: 1px solid rgba(167, 139, 250, .3);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #c4b5fd;
+    animation: hn-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #algo-happy-number-view .hn-seen-chip.hn-seen-hit {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    color: #1a0a0a; border-color: transparent;
+    animation: hn-hit-pop .5s cubic-bezier(.34, 1.56, .64, 1);
+    box-shadow: 0 0 18px rgba(248, 113, 113, .55);
+  }
+  @keyframes hn-hit-pop {
+    0% { transform: scale(.6); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+  #algo-happy-number-view .hn-seen-chip.hn-seen-latest {
+    border-color: var(--accent-a);
+    background: rgba(245, 158, 11, .2);
+    color: #fcd34d;
+  }
+  /* 序列链 */
+  #algo-happy-number-view .hn-chain-wrap {
+    padding: 12px 16px; border-radius: 12px;
+    background: rgba(8, 8, 24, .45);
+    border: 1px solid rgba(255, 255, 255, .06);
+  }
+  #algo-happy-number-view .hn-chain-title { color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  #algo-happy-number-view .hn-chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  #algo-happy-number-view .hn-chain-node {
+    padding: 5px 10px; border-radius: 8px;
+    background: rgba(245, 158, 11, .1); border: 1px solid rgba(245, 158, 11, .25);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+    color: #fcd34d; transition: all .3s;
+    animation: hn-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #algo-happy-number-view .hn-chain-node.hn-chain-current {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1a100a; border-color: transparent;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  #algo-happy-number-view .hn-chain-node.hn-chain-happy {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    color: #0a1a12; border-color: transparent;
+    box-shadow: 0 0 12px rgba(52, 211, 153, .5);
+  }
+  #algo-happy-number-view .hn-chain-arrow { color: #64748b; font-size: 14px; font-weight: 700; }
+  /* 结果横幅 */
+  #algo-happy-number-view .hn-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(245, 158, 11, .12), rgba(217, 119, 6, .06));
+    border: 1px solid rgba(245, 158, 11, .28);
+    line-height: 1.55; font-size: 14px; color: #fcd34d;
+  }
+  #algo-happy-number-view .hn-result .hn-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1a100a; box-shadow: 0 4px 14px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  #algo-happy-number-view .hn-result.hn-result--happy {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+    animation: hn-burst-banner .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #algo-happy-number-view .hn-result.hn-result--happy .hn-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  @keyframes hn-burst-banner {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 28px rgba(52, 211, 153, .5); }
+    100% { transform: scale(1); }
+  }
+  #algo-happy-number-view .hn-result.hn-result--cycle {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(217, 119, 6, .06));
+    border-color: rgba(248, 113, 113, .35); color: #fecaca;
+    animation: hn-shake .5s ease-in-out;
+  }
+  #algo-happy-number-view .hn-result.hn-result--cycle .hn-emoji {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+  }
+  /* 日志 */
+  #algo-happy-number-view .hn-log {
+    min-height: 80px; max-height: 120px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-happy-number-view .hn-log .active { color: #fcd34d; font-weight: 600; }
+  /* 代码 */
+  #algo-happy-number-view .hn-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-happy-number-view .hn-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* 控制栏 */
+  #algo-happy-number-view .hn-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-happy-number-view .hn-controls .hn-ctrl-btn { min-width: 64px; }
+  #algo-happy-number-view .hn-controls .hn-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1a100a; border-color: transparent;
+  }
+  #algo-happy-number-view .hn-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-happy-number-view .hn-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-happy-number-view #step-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-happy-number-view .hn-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-happy-number-view .hn-code { min-height: 360px; }
+  }
+</style>
+
+<div class="hn-shell">
+  <div class="hn-hero">
+    <div class="hn-hero-left">
+      <span class="hn-icon">😊</span>
+      <div>
+        <h1>快乐数（哈希集合判环）</h1>
+        <div class="hn-sub">LeetCode 202 · 用哈希集合检测平方和循环</div>
+      </div>
+    </div>
+    <div class="hn-tip"><strong>核心动画：</strong>当前数字<span style="color:#fcd34d">琥珀脉冲</span>；数字分解<span style="color:#fdba74">弹入</span>；平方求和<span style="color:#fb923c">高亮</span>；seen 集合<span style="color:#c4b5fd">滑入</span>；发现环时<span style="color:#fca5a5">红色 burst</span>，快乐数时<span style="color:#6ee7b7">绿色爆发</span>。</div>
+  </div>
+  <div class="hn-main">
+    <div class="hn-left">
+      <section class="hn-card">
+        <div class="hn-card-title">输入 <span class="hn-tag">正整数 n</span></div>
+        <div class="hn-input-row">
+          <input id="hn-number-input" value="19" placeholder="正整数 n">
+          <button id="hn-start">开始判断</button>
+        </div>
+        <div class="hn-examples">
+          <button class="hn-example-btn" data-num="19">19（快乐数）</button>
+          <button class="hn-example-btn" data-num="2">2（循环）</button>
+          <button class="hn-example-btn" data-num="7">7（快乐数）</button>
+          <button class="hn-example-btn" data-num="20">20（循环）</button>
+        </div>
+      </section>
+
+      <div class="hn-stats">
+        <div class="hn-stat hn-stat--n"><div class="hn-stat-label">当前数字</div><div class="hn-stat-val" id="hn-cur-num">-</div></div>
+        <div class="hn-stat hn-stat--iter"><div class="hn-stat-label">迭代次数</div><div class="hn-stat-val" id="hn-iteration">0</div></div>
+        <div class="hn-stat hn-stat--seen"><div class="hn-stat-label">已见集合</div><div class="hn-stat-val" id="hn-seen-size">0</div></div>
+      </div>
+
+      <section class="hn-card hn-visual">
+        <div class="hn-card-title">平方和分解与判环 <span class="hn-tag">Set 检测循环</span></div>
+        <div class="hn-area" id="hn-area"></div>
+        <div class="hn-result" id="step-message-banner">
+          <span class="hn-emoji">😊</span>
+          <div id="step-message">点击「开始判断」观看数字分解与集合判环动画</div>
+        </div>
+      </section>
+
+      <section class="hn-card">
+        <div class="hn-card-title">执行日志</div>
+        <div class="hn-log" id="hn-log"></div>
+      </section>
+    </div>
+    <aside class="hn-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="hn-controls">
+    <button id="step-reset" class="hn-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="hn-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="hn-ctrl-btn hn-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="hn-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="hn-counter">步骤: 0 / 0</span>
+    <div class="hn-speed-wrap">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

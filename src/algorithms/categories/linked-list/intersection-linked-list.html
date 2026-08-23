@@ -1,0 +1,351 @@
+<style>
+  /* === 相交链表 · 玻璃感 + 渐变 + 双指针同步走线 + 交汇脉冲 === */
+  #algo-intersection-linked-list-view {
+    --accent-a: #ec4899;
+    --accent-b: #8b5cf6;
+    --accent-glow: rgba(139, 92, 246, .45);
+    --list-a-color: #34d399;
+    --list-b-color: #60a5fa;
+    --meet-color: #fbbf24;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 10% 5%, rgba(236, 72, 153, .28), transparent 55%),
+      radial-gradient(ellipse at 90% 90%, rgba(139, 92, 246, .3), transparent 55%),
+      linear-gradient(135deg, #0a0a1f 0%, #1a1442 50%, #241b4d 100%);
+    overflow: hidden;
+  }
+  #algo-intersection-linked-list-view .ill-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  /* hero */
+  #algo-intersection-linked-list-view .ill-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-intersection-linked-list-view .ill-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-intersection-linked-list-view .ill-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-intersection-linked-list-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-intersection-linked-list-view .ill-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-intersection-linked-list-view .ill-tip {
+    max-width: 500px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .08));
+    border: 1px solid rgba(236, 72, 153, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-intersection-linked-list-view .ill-tip strong { color: #f0abfc; }
+  /* main */
+  #algo-intersection-linked-list-view .ill-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-intersection-linked-list-view .ill-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-intersection-linked-list-view .ill-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-intersection-linked-list-view .ill-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-intersection-linked-list-view .ill-tag {
+    font-size: 11px; color: #f0abfc; background: rgba(236, 72, 153, .14);
+    border: 1px solid rgba(236, 72, 153, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* input */
+  #algo-intersection-linked-list-view .ill-input-row {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 14px 16px;
+  }
+  #algo-intersection-linked-list-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-intersection-linked-list-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #fdf4ff; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-intersection-linked-list-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-intersection-linked-list-view .ill-chip {
+    padding: 6px 12px; border-radius: 999px; font-size: 12.5px;
+    background: rgba(236, 72, 153, .12); border: 1px solid rgba(236, 72, 153, .28);
+    color: #f0abfc; cursor: pointer; transition: all .2s;
+  }
+  #algo-intersection-linked-list-view .ill-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; border-color: transparent; transform: translateY(-1px);
+  }
+  /* stats */
+  #algo-intersection-linked-list-view .ill-stats {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  }
+  #algo-intersection-linked-list-view .ill-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-intersection-linked-list-view .ill-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-intersection-linked-list-view .ill-stat--a::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-intersection-linked-list-view .ill-stat--a .ill-stat-val { color: #6ee7b7; }
+  #algo-intersection-linked-list-view .ill-stat--b::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
+  #algo-intersection-linked-list-view .ill-stat--b .ill-stat-val { color: #93c5fd; }
+  #algo-intersection-linked-list-view .ill-stat--meet::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-intersection-linked-list-view .ill-stat--meet .ill-stat-val { color: #fcd34d; }
+  #algo-intersection-linked-list-view .ill-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-intersection-linked-list-view .ill-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* canvas */
+  #algo-intersection-linked-list-view .ill-visual { flex: 1; min-height: 320px; display: flex; flex-direction: column; }
+  #algo-intersection-linked-list-view .ill-canvas {
+    flex: 1; min-height: 0; padding: 28px 18px;
+    position: relative; overflow: auto;
+  }
+  #algo-intersection-linked-list-view .ill-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(236, 72, 153, .12), transparent 60%);
+    pointer-events: none;
+  }
+  #algo-intersection-linked-list-view .ill-list-row {
+    position: relative; display: flex; align-items: center; gap: 0; flex-wrap: wrap;
+    padding: 24px 0; min-height: 90px;
+  }
+  #algo-intersection-linked-list-view .ill-list-label {
+    position: absolute; left: 8px; top: 4px;
+    font-size: 11px; font-weight: 700; color: #94a3b8;
+    padding: 2px 8px; border-radius: 6px;
+    background: rgba(8, 8, 24, .6);
+  }
+  #algo-intersection-linked-list-view .ill-list-label--a { color: #6ee7b7; border: 1px solid rgba(52, 211, 153, .35); }
+  #algo-intersection-linked-list-view .ill-list-label--b { color: #93c5fd; border: 1px solid rgba(96, 165, 250, .35); }
+  #algo-intersection-linked-list-view .ill-node-wrap {
+    position: relative; display: flex; align-items: center;
+    margin-left: 64px;
+    transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-intersection-linked-list-view .ill-node {
+    position: relative; width: 56px; height: 56px;
+    border-radius: 14px;
+    border: 2px solid rgba(255, 255, 255, .14);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 18px; font-weight: 800; color: #e2e8f0;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-intersection-linked-list-view .ill-node.ill-list-a { border-color: rgba(52, 211, 153, .4); }
+  #algo-intersection-linked-list-view .ill-node.ill-list-b { border-color: rgba(96, 165, 250, .4); }
+  #algo-intersection-linked-list-view .ill-node.ill-list-shared {
+    background: linear-gradient(180deg, rgba(251, 191, 36, .3), rgba(245, 158, 11, .1));
+    border-color: var(--meet-color);
+    color: #fef3c7;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, .3);
+  }
+  #algo-intersection-linked-list-view .ill-node.ill-meeting {
+    animation: ill-meet-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes ill-meet-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, .5), 0 0 0 0 rgba(251, 191, 36, .6);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(251, 191, 36, 0), 0 0 24px rgba(251, 191, 36, .7);
+      transform: scale(1.12);
+    }
+  }
+  #algo-intersection-linked-list-view .ill-arrow {
+    color: #64748b; font-size: 22px; padding: 0 8px;
+    display: inline-flex; align-items: center;
+  }
+  #algo-intersection-linked-list-view .ill-pointer {
+    position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; font-weight: 800;
+    padding: 2px 8px; border-radius: 6px;
+    background: rgba(8, 8, 24, .8);
+    border: 1.5px solid;
+    animation: ill-pointer-bounce 1s ease-in-out infinite;
+  }
+  @keyframes ill-pointer-bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-3px); }
+  }
+  #algo-intersection-linked-list-view .ill-pointer--a {
+    color: #6ee7b7; border-color: #34d399;
+    box-shadow: 0 0 12px rgba(52, 211, 153, .45);
+  }
+  #algo-intersection-linked-list-view .ill-pointer--b {
+    color: #93c5fd; border-color: #60a5fa;
+    box-shadow: 0 0 12px rgba(96, 165, 250, .45);
+  }
+  /* connection line when ptr moves across (pA→B / pB→A) */
+  #algo-intersection-linked-list-view .ill-track {
+    position: relative; min-height: 14px; padding: 4px 0;
+  }
+  #algo-intersection-linked-list-view .ill-track-line {
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, .5) 50%, transparent 100%);
+    border-radius: 2px;
+  }
+  /* result banner */
+  #algo-intersection-linked-list-view .ill-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .06));
+    border: 1px solid rgba(236, 72, 153, .28);
+    line-height: 1.55; font-size: 14px; color: #fae8ff;
+  }
+  #algo-intersection-linked-list-view .ill-result .ill-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  #algo-intersection-linked-list-view .ill-result.ill-result--meet {
+    background: linear-gradient(135deg, rgba(251, 191, 36, .2), rgba(245, 158, 11, .08));
+    border-color: rgba(251, 191, 36, .45); color: #fef3c7;
+  }
+  #algo-intersection-linked-list-view .ill-result.ill-result--meet .ill-emoji {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #1e1b4b; box-shadow: 0 4px 14px rgba(251, 191, 36, .55);
+  }
+  #algo-intersection-linked-list-view .ill-result.ill-result--miss {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .15), rgba(239, 68, 68, .06));
+    border-color: rgba(248, 113, 113, .4); color: #fecaca;
+  }
+  #algo-intersection-linked-list-view .ill-result.ill-result--miss .ill-emoji {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+  }
+  /* log */
+  #algo-intersection-linked-list-view .ill-log {
+    min-height: 90px; max-height: 140px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-intersection-linked-list-view .ill-log-line { display: flex; gap: 8px; }
+  #algo-intersection-linked-list-view .ill-log-line .ill-log-num { color: #475569; flex-shrink: 0; }
+  #algo-intersection-linked-list-view .ill-log-line.ill-log-active { color: #f0abfc; font-weight: 600; }
+  #algo-intersection-linked-list-view .ill-log-line.ill-log-active .ill-log-num { color: var(--accent-a); }
+  /* code */
+  #algo-intersection-linked-list-view .ill-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-intersection-linked-list-view .ill-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* controls */
+  #algo-intersection-linked-list-view .ill-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-intersection-linked-list-view .ill-controls .ill-ctrl-btn { min-width: 64px; }
+  #algo-intersection-linked-list-view .ill-controls .ill-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fdf4ff; border-color: transparent;
+  }
+  #algo-intersection-linked-list-view .ill-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-intersection-linked-list-view .ill-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-intersection-linked-list-view #ill-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-intersection-linked-list-view .ill-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-intersection-linked-list-view .ill-code { min-height: 360px; }
+  }
+</style>
+
+<div class="ill-shell">
+  <div class="ill-hero">
+    <div class="ill-hero-left">
+      <span class="ill-icon">✂️</span>
+      <div>
+        <h1>相交链表（双指针）</h1>
+        <div class="ill-sub">LeetCode 160 · pA 走 A+B、pB 走 B+A，相交时必在交点相遇</div>
+      </div>
+    </div>
+    <div class="ill-tip"><strong>核心动画：</strong><span style="color:#6ee7b7">pA</span>（绿）和 <span style="color:#93c5fd">pB</span>（蓝）以对称节拍同步推进；<strong>到达链表末尾时无缝切换到对方链表</strong>继续前进；命中交点后金色脉冲 + 振动。</div>
+  </div>
+  <div class="ill-main">
+    <div class="ill-left">
+      <section class="ill-card">
+        <div class="ill-card-title">输入 <span class="ill-tag">两种示例</span></div>
+        <div class="ill-input-row">
+          <button id="ill-start">开始查找</button>
+          <button class="ill-chip" data-mode="meet">相交示例 A=[4,1,8,4,5], B=[5,6,1,8,4,5]</button>
+          <button class="ill-chip" data-mode="miss">不相交示例 A=[2,6,4], B=[1,5]</button>
+        </div>
+      </section>
+
+      <div class="ill-stats">
+        <div class="ill-stat ill-stat--a"><div class="ill-stat-label">pA 位置</div><div class="ill-stat-val" id="ill-stat-pa" style="font-size:16px;">A[0]</div></div>
+        <div class="ill-stat ill-stat--b"><div class="ill-stat-label">pB 位置</div><div class="ill-stat-val" id="ill-stat-pb" style="font-size:16px;">B[0]</div></div>
+        <div class="ill-stat"><div class="ill-stat-label">len(A) + len(B)</div><div class="ill-stat-val" id="ill-stat-len">0</div></div>
+        <div class="ill-stat"><div class="ill-stat-label">步数</div><div class="ill-stat-val" id="ill-stat-step">0</div></div>
+        <div class="ill-stat ill-stat--meet"><div class="ill-stat-label">交点</div><div class="ill-stat-val" id="ill-stat-meet" style="font-size:16px;">-</div></div>
+      </div>
+
+      <section class="ill-card ill-visual">
+        <div class="ill-card-title">两条链表 + 双指针</div>
+        <div class="ill-canvas" id="ill-canvas"></div>
+        <div class="ill-result" id="ill-result">
+          <span class="ill-emoji">✂️</span>
+          <div id="step-message">点击「开始查找」观察双指针寻找交点</div>
+        </div>
+      </section>
+
+      <section class="ill-card">
+        <div class="ill-card-title">执行日志 <button id="ill-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="ill-log" id="ill-log"></div>
+      </section>
+    </div>
+    <aside class="ill-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="ill-controls">
+    <button id="step-reset" class="ill-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="ill-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="ill-ctrl-btn ill-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="ill-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="ill-counter">步骤: 0 / 0</span>
+    <div class="ill-speed-wrap">
+      <span>速度</span>
+      <input id="ill-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="ill-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,402 @@
+<style>
+  /* === 设计链表 · 玻璃感 + 节点飞入/抖动/消失 === */
+  #algo-design-linked-list-view {
+    --accent-a: #22d3ee;
+    --accent-b: #a78bfa;
+    --accent-glow: rgba(167, 139, 250, .4);
+    --head-color: #22d3ee;
+    --add-color: #34d399;
+    --del-color: #f87171;
+    --get-color: #fbbf24;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 10% 5%, rgba(34, 211, 238, .26), transparent 55%),
+      radial-gradient(ellipse at 90% 90%, rgba(167, 139, 250, .28), transparent 55%),
+      linear-gradient(135deg, #0a0a22 0%, #14143a 50%, #1d1245 100%);
+    overflow: hidden;
+  }
+  #algo-design-linked-list-view .dll-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  /* hero */
+  #algo-design-linked-list-view .dll-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-design-linked-list-view .dll-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-design-linked-list-view .dll-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-design-linked-list-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-design-linked-list-view .dll-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-design-linked-list-view .dll-tip {
+    max-width: 500px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(34, 211, 238, .12), rgba(167, 139, 250, .08));
+    border: 1px solid rgba(167, 139, 250, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-design-linked-list-view .dll-tip strong { color: #c4b5fd; }
+  /* main */
+  #algo-design-linked-list-view .dll-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-design-linked-list-view .dll-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-design-linked-list-view .dll-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-design-linked-list-view .dll-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-design-linked-list-view .dll-tag {
+    font-size: 11px; color: #c4b5fd; background: rgba(167, 139, 250, .14);
+    border: 1px solid rgba(167, 139, 250, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* op buttons */
+  #algo-design-linked-list-view .dll-op-row {
+    padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  #algo-design-linked-list-view .dll-op-group {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px; border-radius: 10px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+  }
+  #algo-design-linked-list-view .dll-op-group label {
+    font-size: 11.5px; color: #94a3b8; font-weight: 600;
+  }
+  #algo-design-linked-list-view input {
+    width: 70px; padding: 6px 8px; border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 12.5px; outline: none; transition: all .2s;
+  }
+  #algo-design-linked-list-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(167, 139, 250, .15); }
+  #algo-design-linked-list-view button {
+    padding: 6px 12px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 8px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 12.5px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-design-linked-list-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-design-linked-list-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-design-linked-list-view .dll-btn-reset {
+    background: rgba(248, 113, 113, .15) !important;
+    border-color: rgba(248, 113, 113, .35) !important;
+    color: #fca5a5 !important;
+  }
+  #algo-design-linked-list-view .dll-btn-reset:hover { background: linear-gradient(135deg, #f87171, #ef4444) !important; color: #fff !important; }
+  /* stats */
+  #algo-design-linked-list-view .dll-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  #algo-design-linked-list-view .dll-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-design-linked-list-view .dll-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-design-linked-list-view .dll-stat--head::before { background: linear-gradient(180deg, #22d3ee, #06b6d4); }
+  #algo-design-linked-list-view .dll-stat--head .dll-stat-val { color: #67e8f9; }
+  #algo-design-linked-list-view .dll-stat--op-add::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-design-linked-list-view .dll-stat--op-add .dll-stat-val { color: #6ee7b7; }
+  #algo-design-linked-list-view .dll-stat--op-del::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+  #algo-design-linked-list-view .dll-stat--op-del .dll-stat-val { color: #fca5a5; }
+  #algo-design-linked-list-view .dll-stat--op-get::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-design-linked-list-view .dll-stat--op-get .dll-stat-val { color: #fcd34d; }
+  #algo-design-linked-list-view .dll-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-design-linked-list-view .dll-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* visual */
+  #algo-design-linked-list-view .dll-visual { flex: 1; min-height: 200px; display: flex; flex-direction: column; }
+  #algo-design-linked-list-view .dll-canvas {
+    flex: 1; min-height: 0; padding: 28px 18px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: auto; gap: 0;
+    position: relative;
+  }
+  #algo-design-linked-list-view .dll-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, .12), transparent 70%);
+    pointer-events: none;
+  }
+  #algo-design-linked-list-view .dll-list-empty {
+    color: #64748b; font-size: 14px;
+    padding: 24px 32px; border: 1.5px dashed rgba(100, 116, 139, .35);
+    border-radius: 14px;
+  }
+  #algo-design-linked-list-view .dll-list {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+  }
+  #algo-design-linked-list-view .dll-node {
+    display: flex; align-items: center;
+    transition: transform .4s cubic-bezier(.4, 0, .2, 1), opacity .35s;
+  }
+  #algo-design-linked-list-view .dll-box {
+    position: relative; min-width: 64px; height: 60px;
+    border: 2px solid rgba(255, 255, 255, .14);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    color: #e2e8f0;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-design-linked-list-view .dll-box-idx {
+    font-size: 10.5px; color: #64748b; font-weight: 600;
+  }
+  #algo-design-linked-list-view .dll-box-val {
+    font-size: 20px; font-weight: 800;
+  }
+  #algo-design-linked-list-view .dll-box.dll-head {
+    border-color: var(--head-color);
+    background: linear-gradient(180deg, rgba(34, 211, 238, .3), rgba(6, 182, 212, .08));
+    color: #cffafe;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, .25), 0 6px 20px rgba(34, 211, 238, .2);
+  }
+  #algo-design-linked-list-view .dll-box.dll-head .dll-tag-head {
+    position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+    font-size: 10.5px; color: #67e8f9; font-weight: 700;
+    background: rgba(34, 211, 238, .15); border: 1px solid var(--head-color);
+    padding: 2px 8px; border-radius: 6px;
+  }
+  #algo-design-linked-list-view .dll-box.dll-target-add {
+    animation: dll-pop-in .55s cubic-bezier(.34, 1.56, .64, 1);
+    border-color: var(--add-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .35), rgba(16, 185, 129, .1));
+    color: #d1fae5;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .25), 0 8px 24px rgba(52, 211, 153, .35);
+  }
+  @keyframes dll-pop-in {
+    0% { transform: scale(0) translateY(-30px); opacity: 0; }
+    60% { transform: scale(1.18) translateY(0); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  #algo-design-linked-list-view .dll-box.dll-target-del {
+    animation: dll-shake-out .7s ease-in-out forwards;
+  }
+  @keyframes dll-shake-out {
+    0% { transform: translateX(0) scale(1); opacity: 1; }
+    20% { transform: translateX(-6px) scale(1.05); }
+    40% { transform: translateX(6px) scale(1.05); }
+    60% { transform: translateX(-4px) scale(.95); }
+    80% { transform: translateX(4px) scale(.5); opacity: .3; }
+    100% { transform: translateX(0) scale(0); opacity: 0; }
+  }
+  #algo-design-linked-list-view .dll-box.dll-target-get {
+    border-color: var(--get-color);
+    background: linear-gradient(180deg, rgba(251, 191, 36, .35), rgba(245, 158, 11, .1));
+    color: #fef3c7;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 6px 20px rgba(251, 191, 36, .3);
+    animation: dll-get-pulse 1s ease-in-out;
+  }
+  @keyframes dll-get-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 6px 20px rgba(251, 191, 36, .3); }
+    50% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0), 0 10px 28px rgba(251, 191, 36, .55); }
+  }
+  #algo-design-linked-list-view .dll-arrow {
+    color: #64748b; font-size: 22px; padding: 0 8px;
+  }
+  #algo-design-linked-list-view .dll-arrow.dll-arrow-new {
+    color: var(--add-color);
+    animation: dll-arrow-pulse 1s ease-in-out;
+  }
+  @keyframes dll-arrow-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+  }
+  #algo-design-linked-list-view .dll-null {
+    color: #64748b; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 14px; padding: 6px 14px; margin-left: 6px;
+    border: 1.5px dashed rgba(100, 116, 139, .35); border-radius: 999px;
+  }
+  /* result banner */
+  #algo-design-linked-list-view .dll-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(34, 211, 238, .12), rgba(167, 139, 250, .06));
+    border: 1px solid rgba(167, 139, 250, .28);
+    line-height: 1.55; font-size: 14px; color: #e0f2fe;
+  }
+  #algo-design-linked-list-view .dll-result .dll-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  #algo-design-linked-list-view .dll-result.dll-result--add {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-design-linked-list-view .dll-result.dll-result--add .dll-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-design-linked-list-view .dll-result.dll-result--del {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .15), rgba(239, 68, 68, .06));
+    border-color: rgba(248, 113, 113, .4); color: #fecaca;
+  }
+  #algo-design-linked-list-view .dll-result.dll-result--del .dll-emoji {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+  }
+  /* log */
+  #algo-design-linked-list-view .dll-log {
+    min-height: 90px; max-height: 140px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-design-linked-list-view .dll-log-line { display: flex; gap: 8px; }
+  #algo-design-linked-list-view .dll-log-line .dll-log-num { color: #475569; flex-shrink: 0; }
+  #algo-design-linked-list-view .dll-log-line.dll-log-active { color: #c4b5fd; font-weight: 600; }
+  #algo-design-linked-list-view .dll-log-line.dll-log-active .dll-log-num { color: var(--accent-b); }
+  /* code */
+  #algo-design-linked-list-view .dll-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-design-linked-list-view .dll-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* controls */
+  #algo-design-linked-list-view .dll-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-design-linked-list-view .dll-controls .dll-ctrl-btn { min-width: 64px; }
+  #algo-design-linked-list-view .dll-controls .dll-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-design-linked-list-view .dll-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-design-linked-list-view .dll-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-design-linked-list-view #dll-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-design-linked-list-view .dll-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-design-linked-list-view .dll-code { min-height: 360px; }
+  }
+</style>
+
+<div class="dll-shell">
+  <div class="dll-hero">
+    <div class="dll-hero-left">
+      <span class="dll-icon">🔗</span>
+      <div>
+        <h1>设计链表（MyLinkedList）</h1>
+        <div class="dll-sub">LeetCode 707 · 亲手实现单链表五种基本操作</div>
+      </div>
+    </div>
+    <div class="dll-tip"><strong>核心动画：</strong><span style="color:#67e8f9">add</span> 节点 <code>scale 0→1</code> 飞入；<span style="color:#fca5a5">delete</span> 节点先左右 <code>shake</code> 再 <code>scale 0</code> 消失；<span style="color:#fcd34d">get</span> 命中后金色 ripple 脉冲。</div>
+  </div>
+  <div class="dll-main">
+    <div class="dll-left">
+      <section class="dll-card">
+        <div class="dll-card-title">操作面板 <span class="dll-tag">5 种操作</span></div>
+        <div class="dll-op-row">
+          <div class="dll-op-group">
+            <label>addAtHead</label>
+            <input id="dll-val-head" type="number" value="10">
+            <button id="dll-add-head">头部插入</button>
+          </div>
+          <div class="dll-op-group">
+            <label>addAtTail</label>
+            <input id="dll-val-tail" type="number" value="20">
+            <button id="dll-add-tail">尾部插入</button>
+          </div>
+          <div class="dll-op-group">
+            <label>addAtIndex</label>
+            <input id="dll-idx-add" type="number" value="1">
+            <input id="dll-val-add" type="number" value="15">
+            <button id="dll-add-index">插入</button>
+          </div>
+          <div class="dll-op-group">
+            <label>deleteAtIndex</label>
+            <input id="dll-idx-del" type="number" value="0">
+            <button id="dll-delete">删除</button>
+          </div>
+          <div class="dll-op-group">
+            <label>get</label>
+            <input id="dll-idx-get" type="number" value="0">
+            <button id="dll-get">取值</button>
+          </div>
+          <button id="dll-reset" class="dll-btn-reset">重置</button>
+        </div>
+      </section>
+
+      <div class="dll-stats">
+        <div class="dll-stat dll-stat--head"><div class="dll-stat-label">长度</div><div class="dll-stat-val" id="dll-stat-len">0</div></div>
+        <div class="dll-stat"><div class="dll-stat-label">本次操作</div><div class="dll-stat-val" id="dll-stat-op" style="font-size:16px;">-</div></div>
+        <div class="dll-stat"><div class="dll-stat-label">返回值</div><div class="dll-stat-val" id="dll-stat-ret" style="font-size:16px;">-</div></div>
+        <div class="dll-stat"><div class="dll-stat-label">操作次数</div><div class="dll-stat-val" id="dll-stat-cnt">0</div></div>
+      </div>
+
+      <section class="dll-card dll-visual">
+        <div class="dll-card-title">链表状态</div>
+        <div class="dll-canvas" id="dll-canvas"></div>
+        <div class="dll-result" id="dll-result">
+          <span class="dll-emoji">🔗</span>
+          <div id="step-message">点击上方按钮执行链表操作，查看飞入/抖动/脉冲动画</div>
+        </div>
+      </section>
+
+      <section class="dll-card">
+        <div class="dll-card-title">执行日志 <button id="dll-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="dll-log" id="dll-log"></div>
+      </section>
+    </div>
+    <aside class="dll-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="dll-controls">
+    <button id="step-reset" class="dll-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="dll-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="dll-ctrl-btn dll-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="dll-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="dll-counter">步骤: 0 / 0</span>
+    <div class="dll-speed-wrap">
+      <span>速度</span>
+      <input id="dll-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="dll-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

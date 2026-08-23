@@ -1,0 +1,262 @@
+<style>
+  :root {
+    --accent-a: #fb923c;
+    --accent-b: #f87171;
+    --accent-rgb: 251, 146, 60;
+  }
+  #algo-remove-element-view {
+    width: 100%; height: 100%; color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: radial-gradient(ellipse at 8% 6%, var(--accent-rgb), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #f87171, transparent 55%),
+                linear-gradient(135deg, #181825, #1e1e2e, #11111b);
+  }
+  #algo-remove-element-view .rm-page {
+    height: 100%; display: flex; flex-direction: column; overflow: hidden;
+  }
+  #algo-remove-element-view .rm-header {
+    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
+  }
+  #algo-remove-element-view .rm-icon-badge {
+    width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  #algo-remove-element-view h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
+  #algo-remove-element-view .rm-desc { margin: 5px 0 0; color: #a6adc8; font-size: 14px; line-height: 1.4; }
+  #algo-remove-element-view .rm-tip {
+    max-width: 420px; padding: 11px 14px; border-radius: 12px;
+    background: rgba(251, 146, 60, 0.12); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(251, 146, 60, 0.25); color: #bac2de; font-size: 13px; line-height: 1.55;
+  }
+  #algo-remove-element-view .rm-tip strong { color: var(--accent-a); }
+  #algo-remove-element-view .rm-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden; }
+  #algo-remove-element-view .rm-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  #algo-remove-element-view .rm-card {
+    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  #algo-remove-element-view .rm-card-title {
+    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
+  }
+  #algo-remove-element-view .rm-input-row {
+    display: grid; grid-template-columns: 1fr 120px auto; gap: 10px; align-items: center; padding: 16px;
+  }
+  #algo-remove-element-view input {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none;
+  }
+  #algo-remove-element-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2); }
+  #algo-remove-element-view button {
+    padding: 9px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
+  }
+  #algo-remove-element-view button:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); border-color: transparent; color: #fff; }
+  #algo-remove-element-view button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #algo-remove-element-view .rm-examples { padding: 0 16px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-remove-element-view .rm-example-btn {
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(20, 18, 38, 0.4); color: #a6adc8; cursor: pointer; transition: all 0.2s;
+  }
+  #algo-remove-element-view .rm-example-btn:hover { border-color: var(--accent-a); color: #fff; }
+  #algo-remove-element-view .rm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  #algo-remove-element-view .rm-stat {
+    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
+  }
+  #algo-remove-element-view .rm-stat::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-remove-element-view .rm-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
+  #algo-remove-element-view .rm-stat span {
+    color: var(--accent-a); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
+  }
+  #algo-remove-element-view .rm-visual { flex: 1; min-height: 230px; display: flex; flex-direction: column; }
+  #algo-remove-element-view .rm-track {
+    flex: 1; min-height: 0; padding: 18px; overflow: auto; display: flex; align-items: center; gap: 10px;
+  }
+  #algo-remove-element-view .rm-cell {
+    min-width: 54px; height: 60px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 18, 38, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+  }
+  #algo-remove-element-view .rm-cell .idx { color: #6c7086; font-size: 11px; }
+  #algo-remove-element-view .rm-cell .val { color: #cdd6f4; font-weight: 800; font-size: 20px; }
+  #algo-remove-element-view .rm-cell.slow {
+    border-color: #f9e2af; box-shadow: 0 0 0 3px rgba(249, 226, 175, 0.2);
+  }
+  #algo-remove-element-view .rm-cell.fast {
+    border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2); transform: translateY(-6px);
+    animation: pulse-glow 1.2s infinite;
+  }
+  #algo-remove-element-view .rm-cell.target {
+    background: rgba(248, 113, 113, 0.18); border-color: var(--accent-b);
+  }
+  #algo-remove-element-view .rm-cell.kept {
+    background: rgba(166, 227, 161, 0.12); border-color: #a6e3a1;
+  }
+  #algo-remove-element-view .rm-ptr {
+    position: absolute; top: -18px; font-size: 11px; font-weight: 700;
+  }
+  #algo-remove-element-view .rm-ptr.slow { color: #f9e2af; }
+  #algo-remove-element-view .rm-ptr.fast { color: var(--accent-a); }
+  #algo-remove-element-view .rm-result-banner {
+    margin: 0 16px 16px; padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.5); backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5;
+    transform: scale(1); transition: all 0.3s;
+  }
+  #algo-remove-element-view .rm-result-banner.success { background: rgba(34, 197, 94, 0.12); border-color: #22c55e; color: #86efac; }
+  #algo-remove-element-view .rm-result-banner.fail { background: rgba(248, 113, 113, 0.12); border-color: var(--accent-b); color: #fca5a5; }
+  #algo-remove-element-view .rm-result-banner .badge { margin-right: 8px; }
+  #algo-remove-element-view .rm-log {
+    min-height: 90px; max-height: 120px; padding: 12px 16px; overflow: auto;
+    background: rgba(20, 18, 38, 0.4); border-radius: 12px; font-family: Consolas, monospace; font-size: 12px; line-height: 1.7; color: #a6adc8;
+  }
+  #algo-remove-element-view .rm-log .active { color: var(--accent-a); background: rgba(251, 146, 60, 0.1); border-left: 2px solid var(--accent-a); padding-left: 8px; }
+  #algo-remove-element-view .rm-code {
+    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
+  }
+  #algo-remove-element-view .rm-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-remove-element-view .rm-controls {
+    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  #algo-remove-element-view .rm-btn {
+    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
+    font-size: 14px; font-weight: 500;
+  }
+  #algo-remove-element-view .rm-btn:hover:not(:disabled) { border-color: var(--accent-a); color: #fff; }
+  #algo-remove-element-view .rm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #algo-remove-element-view .rm-play-btn {
+    border: 1px solid transparent; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #fff; font-weight: 600;
+  }
+  #algo-remove-element-view .rm-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(251, 146, 60, 0.4); border-color: transparent; }
+  #algo-remove-element-view .rm-counter { color: #a6adc8; font-size: 13px; min-width: 100px; text-align: center; }
+  #algo-remove-element-view .rm-slider-container { display: flex; align-items: center; gap: 8px; }
+  #algo-remove-element-view .rm-slider-container input[type=range] {
+    width: 100px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
+    outline: none; -webkit-appearance: none;
+  }
+  #algo-remove-element-view .rm-slider-container input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-a);
+    cursor: pointer; box-shadow: 0 0 10px rgba(251, 146, 60, 0.4);
+  }
+  #algo-remove-element-view .rm-slider-container span {
+    color: #a6adc8; font-size: 13px; min-width: 40px;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(251, 146, 60, 0); }
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes burst {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); filter: brightness(1.2); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  /* 元素被移除：淡出 + 缩小 + 抖动 */
+  @keyframes rm-removing {
+    0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+    25% { transform: scale(1.18) rotate(-3deg); filter: brightness(1.4); }
+    60% { transform: scale(0.85) rotate(2deg); opacity: 0.5; filter: brightness(0.9); }
+    100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  }
+  /* 元素被复制覆盖：原值淡出/新值高亮脉冲 */
+  @keyframes rm-overwriting {
+    0% { box-shadow: 0 0 0 0 rgba(249, 226, 175, 0.6); transform: translateY(0); }
+    35% { box-shadow: 0 0 26px 4px rgba(249, 226, 175, 0.7); transform: translateY(-6px) scale(1.06); border-color: #f9e2af; }
+    100% { box-shadow: 0 0 0 0 rgba(249, 226, 175, 0); transform: translateY(0) scale(1); }
+  }
+  #algo-remove-element-view .rm-cell.new { animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  #algo-remove-element-view .rm-cell.current { animation: pulse-glow 1.2s infinite; }
+  #algo-remove-element-view .rm-cell.success { animation: burst 0.5s ease-out; }
+  #algo-remove-element-view .rm-cell.conflict { animation: shake 0.3s ease-in-out; }
+  /* 移除/覆盖动画 class（新增） */
+  #algo-remove-element-view .rm-cell.removing {
+    animation: rm-removing 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(248, 113, 113, 0.35);
+    border-color: var(--accent-b);
+  }
+  #algo-remove-element-view .rm-cell.overwriting {
+    animation: rm-overwriting 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-remove-element-view .rm-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-remove-element-view .rm-code { min-height: 360px; }
+    #algo-remove-element-view .rm-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    #algo-remove-element-view .rm-tip { max-width: 100%; }
+  }
+</style>
+
+<div class="rm-page">
+  <div class="rm-header">
+    <div>
+      <div class="rm-icon-badge">🧹</div>
+      <h1>移除元素（双指针）</h1>
+      <p class="rm-desc">LeetCode 27：原地移除数组中所有值为 val 的元素，返回新长度</p>
+    </div>
+    <div class="rm-tip"><strong>快慢指针：</strong>快指针 fast 遍历每个元素，遇到不等于 val 的就复制到 slow 位置，slow 前进一格。</div>
+  </div>
+
+  <div class="rm-main">
+    <div class="rm-left">
+      <section class="rm-card">
+        <div class="rm-card-title">输入</div>
+        <div class="rm-input-row">
+          <input id="rm-array-input" value="3,2,2,3,4,3,5">
+          <input id="rm-val-input" value="3">
+          <button id="rm-start">开始移除</button>
+        </div>
+        <div class="rm-examples">
+          <button class="rm-example-btn" data-arr="3,2,2,3" data-val="3">3,2,2,3 / val=3</button>
+          <button class="rm-example-btn" data-arr="0,1,2,2,3,0,4,2" data-val="2">含 0 示例</button>
+          <button class="rm-example-btn" data-arr="1,1,1,1" data-val="1">全为 val</button>
+        </div>
+      </section>
+
+      <div class="rm-stats">
+        <div class="rm-stat"><label>fast 指针</label><span id="rm-fast">0</span></div>
+        <div class="rm-stat"><label>slow 指针</label><span id="rm-slow">0</span></div>
+        <div class="rm-stat"><label>当前值</label><span id="rm-cur">-</span></div>
+        <div class="rm-stat"><label>新长度</label><span id="rm-len">0</span></div>
+      </div>
+
+      <section class="rm-card rm-visual">
+        <div class="rm-card-title">数组可视化</div>
+        <div class="rm-track" id="rm-track"></div>
+        <div class="rm-result-banner" id="step-message"><span class="badge">💡</span>点击开始移除</div>
+      </section>
+
+      <section class="rm-card">
+        <div class="rm-card-title">执行日志</div>
+        <div class="rm-log" id="rm-log"></div>
+      </section>
+    </div>
+    <aside class="rm-code"><div data-code-panel></div></aside>
+  </div>
+
+  <div class="rm-controls">
+    <button id="step-reset" class="rm-btn">⏮重置</button>
+    <button id="step-prev" class="rm-btn">◀上一步</button>
+    <button id="step-play" class="rm-btn rm-play-btn">▶播放</button>
+    <button id="step-next" class="rm-btn">下一步▶</button>
+    <span id="step-counter" class="rm-counter">步骤: 0 / 0</span>
+    <div class="rm-slider-container">
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" class="rm-counter">0.9s</span>
+    </div>
+  </div>
+</div>

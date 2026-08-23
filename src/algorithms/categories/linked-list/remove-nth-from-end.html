@@ -1,0 +1,386 @@
+<style>
+  /* === 删除倒数第 N 节点 · 玻璃感 + fast 冲刺 + 删除抖动 === */
+  #algo-remove-nth-from-end-view {
+    --accent-a: #06b6d4;
+    --accent-b: #6366f1;
+    --accent-glow: rgba(99, 102, 241, .45);
+    --fast-color: #60a5fa;
+    --slow-color: #22d3ee;
+    --del-color: #f87171;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 10% 5%, rgba(6, 182, 212, .28), transparent 55%),
+      radial-gradient(ellipse at 90% 90%, rgba(99, 102, 241, .3), transparent 55%),
+      linear-gradient(135deg, #0a0a22 0%, #14143a 50%, #1d1245 100%);
+    overflow: hidden;
+  }
+  #algo-remove-nth-from-end-view .rn-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  /* hero */
+  #algo-remove-nth-from-end-view .rn-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-remove-nth-from-end-view .rn-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-remove-nth-from-end-view .rn-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-remove-nth-from-end-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-remove-nth-from-end-view .rn-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-remove-nth-from-end-view .rn-tip {
+    max-width: 500px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(99, 102, 241, .08));
+    border: 1px solid rgba(99, 102, 241, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-remove-nth-from-end-view .rn-tip strong { color: #a5b4fc; }
+  /* main */
+  #algo-remove-nth-from-end-view .rn-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-remove-nth-from-end-view .rn-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-remove-nth-from-end-view .rn-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-remove-nth-from-end-view .rn-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-remove-nth-from-end-view .rn-tag {
+    font-size: 11px; color: #a5b4fc; background: rgba(99, 102, 241, .14);
+    border: 1px solid rgba(99, 102, 241, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* input */
+  #algo-remove-nth-from-end-view .rn-input-row {
+    display: grid; grid-template-columns: 1fr 110px auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-remove-nth-from-end-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-remove-nth-from-end-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(99, 102, 241, .15); }
+  #algo-remove-nth-from-end-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-remove-nth-from-end-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-remove-nth-from-end-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-remove-nth-from-end-view .rn-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-remove-nth-from-end-view .rn-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(99, 102, 241, .12); border: 1px solid rgba(99, 102, 241, .28);
+    color: #a5b4fc; cursor: pointer; transition: all .2s;
+  }
+  #algo-remove-nth-from-end-view .rn-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* stats */
+  #algo-remove-nth-from-end-view .rn-stats {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  }
+  #algo-remove-nth-from-end-view .rn-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-remove-nth-from-end-view .rn-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-remove-nth-from-end-view .rn-stat--fast::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
+  #algo-remove-nth-from-end-view .rn-stat--fast .rn-stat-val { color: #93c5fd; }
+  #algo-remove-nth-from-end-view .rn-stat--slow::before { background: linear-gradient(180deg, #22d3ee, #06b6d4); }
+  #algo-remove-nth-from-end-view .rn-stat--slow .rn-stat-val { color: #67e8f9; }
+  #algo-remove-nth-from-end-view .rn-stat--target::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+  #algo-remove-nth-from-end-view .rn-stat--target .rn-stat-val { color: #fca5a5; }
+  #algo-remove-nth-from-end-view .rn-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-remove-nth-from-end-view .rn-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* visual */
+  #algo-remove-nth-from-end-view .rn-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
+  #algo-remove-nth-from-end-view .rn-canvas {
+    flex: 1; min-height: 0; padding: 40px 18px 24px;
+    position: relative; overflow: auto;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #algo-remove-nth-from-end-view .rn-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, .14), transparent 60%);
+    pointer-events: none;
+  }
+  #algo-remove-nth-from-end-view .rn-list {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+  }
+  #algo-remove-nth-from-end-view .rn-node-wrap {
+    position: relative; display: flex; align-items: center;
+  }
+  #algo-remove-nth-from-end-view .rn-box {
+    position: relative; min-width: 60px; height: 58px;
+    border: 2px solid rgba(255, 255, 255, .14);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    color: #e2e8f0;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1), transform .4s;
+  }
+  #algo-remove-nth-from-end-view .rn-box-idx {
+    font-size: 10.5px; color: #64748b; font-weight: 600;
+  }
+  #algo-remove-nth-from-end-view .rn-box-val {
+    font-size: 20px; font-weight: 800;
+  }
+  #algo-remove-nth-from-end-view .rn-box.rn-dummy {
+    background: linear-gradient(180deg, rgba(100, 116, 139, .25), rgba(71, 85, 105, .1));
+    border-color: rgba(100, 116, 139, .5);
+    color: #cbd5e1;
+  }
+  #algo-remove-nth-from-end-view .rn-box.rn-dummy .rn-tag-dummy {
+    position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+    font-size: 10.5px; color: #94a3b8; font-weight: 700;
+    background: rgba(100, 116, 139, .2); border: 1px solid rgba(100, 116, 139, .5);
+    padding: 2px 8px; border-radius: 6px;
+  }
+  #algo-remove-nth-from-end-view .rn-box.rn-fast {
+    border-color: var(--fast-color);
+    background: linear-gradient(180deg, rgba(96, 165, 250, .3), rgba(59, 130, 246, .1));
+    color: #dbeafe;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, .25), 0 6px 18px rgba(96, 165, 250, .3);
+  }
+  #algo-remove-nth-from-end-view .rn-box.rn-fast.rn-sprint {
+    animation: rn-fast-sprint .5s ease-in-out;
+  }
+  @keyframes rn-fast-sprint {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(96, 165, 250, .6), 0 0 24px rgba(96, 165, 250, .55); }
+    50% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(96, 165, 250, 0), 0 0 30px rgba(96, 165, 250, .7); }
+    100% { transform: scale(1); box-shadow: 0 0 0 3px rgba(96, 165, 250, .25), 0 6px 18px rgba(96, 165, 250, .3); }
+  }
+  #algo-remove-nth-from-end-view .rn-box.rn-slow {
+    border-color: var(--slow-color);
+    background: linear-gradient(180deg, rgba(34, 211, 238, .3), rgba(6, 182, 212, .1));
+    color: #cffafe;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, .22), 0 6px 18px rgba(34, 211, 238, .25);
+  }
+  #algo-remove-nth-from-end-view .rn-box.rn-target {
+    border-color: var(--del-color);
+    background: linear-gradient(180deg, rgba(248, 113, 113, .3), rgba(239, 68, 68, .08));
+    color: #fee2e2;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, .25), 0 6px 18px rgba(248, 113, 113, .3);
+    animation: rn-shake .6s ease-in-out;
+  }
+  @keyframes rn-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px) rotate(-1deg); }
+    40% { transform: translateX(5px) rotate(1deg); }
+    60% { transform: translateX(-3px) rotate(-0.5deg); }
+    80% { transform: translateX(3px) rotate(0.5deg); }
+  }
+  #algo-remove-nth-from-end-view .rn-box.rn-removed {
+    animation: rn-vanish .55s ease-in forwards;
+  }
+  @keyframes rn-vanish {
+    0% { transform: scale(1) rotate(0); opacity: 1; }
+    50% { transform: scale(.4) rotate(8deg); opacity: .3; }
+    100% { transform: scale(0) rotate(15deg); opacity: 0; }
+  }
+  #algo-remove-nth-from-end-view .rn-pointer {
+    position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; font-weight: 800;
+    padding: 2px 8px; border-radius: 6px;
+    background: rgba(8, 8, 24, .8);
+    border: 1.5px solid;
+    animation: rn-pointer-bounce 1s ease-in-out infinite;
+  }
+  @keyframes rn-pointer-bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-3px); }
+  }
+  #algo-remove-nth-from-end-view .rn-pointer--fast { color: #93c5fd; border-color: #60a5fa; box-shadow: 0 0 12px rgba(96, 165, 250, .45); }
+  #algo-remove-nth-from-end-view .rn-pointer--slow { color: #67e8f9; border-color: #22d3ee; box-shadow: 0 0 12px rgba(34, 211, 238, .45); }
+  #algo-remove-nth-from-end-view .rn-arrow {
+    color: #64748b; font-size: 22px; padding: 0 8px;
+    transition: color .35s, opacity .35s;
+  }
+  #algo-remove-nth-from-end-view .rn-arrow.rn-arrow-cancel {
+    animation: rn-arrow-cancel .55s ease-in forwards;
+  }
+  @keyframes rn-arrow-cancel {
+    0% { opacity: 1; color: #f87171; transform: scale(1); }
+    50% { opacity: .5; color: #f87171; transform: scale(1.4); }
+    100% { opacity: 0; color: #f87171; transform: scale(0); }
+  }
+  #algo-remove-nth-from-end-view .rn-null {
+    color: #64748b; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; padding: 6px 14px; margin-left: 8px;
+    border: 1.5px dashed rgba(100, 116, 139, .35); border-radius: 999px;
+  }
+  /* result banner */
+  #algo-remove-nth-from-end-view .rn-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(99, 102, 241, .06));
+    border: 1px solid rgba(99, 102, 241, .28);
+    line-height: 1.55; font-size: 14px; color: #e0e7ff;
+  }
+  #algo-remove-nth-from-end-view .rn-result .rn-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  #algo-remove-nth-from-end-view .rn-result.rn-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-remove-nth-from-end-view .rn-result.rn-result--done .rn-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  /* log */
+  #algo-remove-nth-from-end-view .rn-log {
+    min-height: 90px; max-height: 140px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-remove-nth-from-end-view .rn-log-line { display: flex; gap: 8px; }
+  #algo-remove-nth-from-end-view .rn-log-line .rn-log-num { color: #475569; flex-shrink: 0; }
+  #algo-remove-nth-from-end-view .rn-log-line.rn-log-active { color: #a5b4fc; font-weight: 600; }
+  #algo-remove-nth-from-end-view .rn-log-line.rn-log-active .rn-log-num { color: var(--accent-b); }
+  /* code */
+  #algo-remove-nth-from-end-view .rn-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-remove-nth-from-end-view .rn-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* controls */
+  #algo-remove-nth-from-end-view .rn-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-remove-nth-from-end-view .rn-controls .rn-ctrl-btn { min-width: 64px; }
+  #algo-remove-nth-from-end-view .rn-controls .rn-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-remove-nth-from-end-view .rn-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-remove-nth-from-end-view .rn-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-remove-nth-from-end-view #rn-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-remove-nth-from-end-view .rn-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-remove-nth-from-end-view .rn-code { min-height: 360px; }
+  }
+</style>
+
+<div class="rn-shell">
+  <div class="rn-hero">
+    <div class="rn-hero-left">
+      <span class="rn-icon">🗑️</span>
+      <div>
+        <h1>删除链表的倒数第 N 个节点（快慢指针）</h1>
+        <div class="rn-sub">LeetCode 19 · 一次遍历 + dummy 节点完成删除</div>
+      </div>
+    </div>
+    <div class="rn-tip"><strong>核心动画：</strong><span style="color:#93c5fd">fast</span>（蓝）先 <code>sprint</code> 冲刺 n 步 → 然后与 <span style="color:#67e8f9">slow</span>（青）锁步前进；fast 抵达末尾时 slow 恰好停在待删节点前驱；目标节点先 <code>shake</code> 再 <code>vanish</code> 消失，相邻箭头同步坍缩。</div>
+  </div>
+  <div class="rn-main">
+    <div class="rn-left">
+      <section class="rn-card">
+        <div class="rn-card-title">输入 <span class="rn-tag">链表 + n</span></div>
+        <div class="rn-input-row">
+          <input id="rn-array" value="1,2,3,4,5">
+          <input id="rn-n" type="number" min="1" max="9" value="2">
+          <button id="rn-start">开始移除</button>
+        </div>
+        <div class="rn-examples">
+          <button class="rn-chip" data-val="1,2,3,4,5" data-n="2">删倒数第 2</button>
+          <button class="rn-chip" data-val="1,2,3,4,5" data-n="5">删头节点</button>
+          <button class="rn-chip" data-val="1,2,3,4,5" data-n="1">删尾节点</button>
+          <button class="rn-chip" data-val="1" data-n="1">单节点</button>
+          <button class="rn-chip" data-val="7,7,7,7" data-n="2">重复值</button>
+        </div>
+      </section>
+
+      <div class="rn-stats">
+        <div class="rn-stat rn-stat--fast"><div class="rn-stat-label">fast 位置</div><div class="rn-stat-val" id="rn-stat-fast" style="font-size:16px;">dummy</div></div>
+        <div class="rn-stat rn-stat--slow"><div class="rn-stat-label">slow 位置</div><div class="rn-stat-val" id="rn-stat-slow" style="font-size:16px;">dummy</div></div>
+        <div class="rn-stat"><div class="rn-stat-label">已走步数</div><div class="rn-stat-val" id="rn-stat-steps">0</div></div>
+        <div class="rn-stat rn-stat--target"><div class="rn-stat-label">待删节点</div><div class="rn-stat-val" id="rn-stat-target" style="font-size:16px;">-</div></div>
+        <div class="rn-stat"><div class="rn-stat-label">链表长度</div><div class="rn-stat-val" id="rn-stat-len">0</div></div>
+      </div>
+
+      <section class="rn-card rn-visual">
+        <div class="rn-card-title">链表与快慢指针</div>
+        <div class="rn-canvas" id="rn-canvas"></div>
+        <div class="rn-result" id="rn-result">
+          <span class="rn-emoji">🗑️</span>
+          <div id="step-message">点击「开始移除」观察 fast 冲刺 + 删除动画</div>
+        </div>
+      </section>
+
+      <section class="rn-card">
+        <div class="rn-card-title">执行日志 <button id="rn-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="rn-log" id="rn-log"></div>
+      </section>
+    </div>
+    <aside class="rn-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="rn-controls">
+    <button id="step-reset" class="rn-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="rn-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="rn-ctrl-btn rn-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="rn-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="rn-counter">步骤: 0 / 0</span>
+    <div class="rn-speed-wrap">
+      <span>速度</span>
+      <input id="rn-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="rn-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

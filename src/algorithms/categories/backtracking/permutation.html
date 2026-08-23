@@ -1,0 +1,291 @@
+<style>
+  #algo-permutation-view {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(34, 211, 238, .22), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(167, 139, 250, .22), transparent 55%),
+      linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+  #algo-permutation-view .perm-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-permutation-view .perm-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-permutation-view .perm-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-permutation-view .perm-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    color: #06121f; box-shadow: 0 6px 20px rgba(34, 211, 238, .35);
+  }
+  #algo-permutation-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-permutation-view .perm-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-permutation-view .perm-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(34, 211, 238, .12), rgba(167, 139, 250, .08));
+    border: 1px solid rgba(34, 211, 238, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-permutation-view .perm-tip strong { color: #67e8f9; }
+  #algo-permutation-view .perm-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-permutation-view .perm-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-permutation-view .perm-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-permutation-view .perm-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-permutation-view .perm-tag {
+    font-size: 11px; color: #67e8f9; background: rgba(34, 211, 238, .14);
+    border: 1px solid rgba(34, 211, 238, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-permutation-view .perm-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-permutation-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-permutation-view input:focus { border-color: #22d3ee; box-shadow: 0 0 0 3px rgba(34, 211, 238, .15); }
+  #algo-permutation-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-permutation-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(34, 211, 238, .35);
+  }
+  #algo-permutation-view button:disabled { opacity: .4; cursor: not-allowed; }
+  /* 统计 */
+  #algo-permutation-view .perm-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  #algo-permutation-view .perm-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-permutation-view .perm-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-permutation-view .perm-stat--path::before { background: linear-gradient(180deg, #22d3ee, #67e8f9); }
+  #algo-permutation-view .perm-stat--path .perm-stat-val { color: #67e8f9; }
+  #algo-permutation-view .perm-stat--used::before { background: linear-gradient(180deg, #a78bfa, #c084fc); }
+  #algo-permutation-view .perm-stat--used .perm-stat-val { color: #e9d5ff; }
+  #algo-permutation-view .perm-stat--depth::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-permutation-view .perm-stat--depth .perm-stat-val { color: #6ee7b7; }
+  #algo-permutation-view .perm-stat--count::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-permutation-view .perm-stat--count .perm-stat-val { color: #fde68a; }
+  #algo-permutation-view .perm-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-permutation-view .perm-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 路径可视化 */
+  #algo-permutation-view .perm-tree-card { flex: 1; min-height: 220px; display: flex; flex-direction: column; }
+  #algo-permutation-view .perm-tree {
+    flex: 1; min-height: 180px; padding: 24px 18px;
+    display: flex; flex-direction: column; gap: 24px; overflow: auto;
+    justify-content: center;
+  }
+  #algo-permutation-view .perm-tree-row {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  #algo-permutation-view .perm-tree-label {
+    min-width: 72px; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
+  }
+  #algo-permutation-view .perm-tree-label--source { color: #22d3ee; }
+  #algo-permutation-view .perm-tree-label--path { color: #67e8f9; }
+  #algo-permutation-view .perm-val {
+    position: relative; padding: 6px 12px 6px 10px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 700; color: #cbd5e1;
+    transition: all .3s;
+  }
+  #algo-permutation-view .perm-val.perm-val--current {
+    background: rgba(34, 211, 238, .25);
+    border-color: #22d3ee;
+    color: #67e8f9;
+    animation: perm-current-pulse 1.2s infinite;
+  }
+  @keyframes perm-current-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, .6); }
+    50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0); }
+  }
+  #algo-permutation-view .perm-val.perm-val--in-tree {
+    background: rgba(167, 139, 250, .2);
+    border-color: rgba(167, 139, 250, .5);
+    color: #e9d5ff;
+    animation: perm-pop-in .4s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes perm-pop-in {
+    0% { transform: scale(0) rotate(-8deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  #algo-permutation-view .perm-val.perm-val--pruned {
+    opacity: .3; filter: grayscale(.6); transform: scale(.85);
+  }
+  #algo-permutation-view .perm-val.perm-val--result {
+    background: linear-gradient(135deg, rgba(251, 191, 36, .25), rgba(244, 114, 182, .25));
+    border-color: rgba(251, 191, 36, .7);
+    color: #fef9c3;
+    animation: perm-result-burst .4s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes perm-result-burst {
+    0% { transform: scale(0); opacity: 0; }
+    40% { transform: scale(1.25); }
+    60% { transform: scale(.95); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  /* 结果 */
+  #algo-permutation-view .perm-result-banner {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(34, 211, 238, .12), rgba(167, 139, 250, .06));
+    border: 1px solid rgba(34, 211, 238, .28);
+    line-height: 1.55; font-size: 14px; color: #fef3c7;
+  }
+  #algo-permutation-view .perm-result-banner .perm-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    color: #06121f; box-shadow: 0 4px 14px rgba(34, 211, 238, .35);
+    flex-shrink: 0;
+  }
+  #algo-permutation-view .perm-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-permutation-view .perm-log-line { display: flex; gap: 8px; }
+  #algo-permutation-view .perm-log-line .perm-log-num { color: #64748b; flex-shrink: 0; }
+  #algo-permutation-view .perm-log-line.perm-log-active { color: #67e8f9; font-weight: 600; }
+  #algo-permutation-view .perm-log-line.perm-log-active .perm-log-num { color: #22d3ee; }
+  #algo-permutation-view .perm-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-permutation-view .perm-code [data-code-panel] { flex: 1; min-width: 0; }
+  #algo-permutation-view .perm-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-permutation-view .perm-controls .perm-ctrl-btn { min-width: 64px; }
+  #algo-permutation-view .perm-controls .perm-ctrl-primary {
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    color: #06121f; border-color: transparent;
+  }
+  #algo-permutation-view .perm-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-permutation-view .perm-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-permutation-view #perm-speed { width: 130px; accent-color: #22d3ee; }
+  @media (max-width: 1100px) {
+    #algo-permutation-view .perm-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-permutation-view .perm-code { min-height: 360px; }
+  }
+</style>
+
+<div class="perm-shell">
+  <div class="perm-hero">
+    <div class="perm-hero-left">
+      <span class="perm-icon">🔀</span>
+      <div>
+        <h1>全排列·决策树</h1>
+        <div class="perm-sub">LeetCode 46 · 枚举数组所有可能的排列组合</div>
+      </div>
+    </div>
+    <div class="perm-tip"><strong>核心动画：</strong>蓝色已选择；青色当前遍历；紫色可用成员；结果收集时<span style="color:#fef3c7">pop-out 爆炸式入场</span>。</div>
+  </div>
+  <div class="perm-main">
+    <div class="perm-left">
+      <section class="perm-card">
+        <div class="perm-card-title">输入数组 <span class="perm-tag">数字列表</span></div>
+        <div class="perm-input-row">
+          <input id="permutation-input" type="text" value="1,2,3" placeholder="逗号分隔数字">
+          <button id="permutation-start">生成排列</button>
+        </div>
+      </section>
+
+      <div class="perm-stats">
+        <div class="perm-stat perm-stat--path"><div class="perm-stat-label">当前路径</div><div class="perm-stat-val" id="permutation-path">[]</div></div>
+        <div class="perm-stat perm-stat--used"><div class="perm-stat-label">已用元素</div><div class="perm-stat-val" id="permutation-used">-</div></div>
+        <div class="perm-stat perm-stat--depth"><div class="perm-stat-label">递归深度</div><div class="perm-stat-val" id="permutation-depth">0</div></div>
+        <div class="perm-stat perm-stat--count"><div class="perm-stat-label">已收集</div><div class="perm-stat-val" id="permutation-collected">0</div></div>
+      </div>
+
+      <section class="perm-card perm-tree-card">
+        <div class="perm-card-title">排列树 <span class="perm-tag">搜索状态</span></div>
+        <div class="perm-tree" id="permutation-tree-display"></div>
+        <div class="perm-result-banner" id="permutation-results-banner">
+          <span class="perm-emoji">🔀</span>
+          <div id="step-message">点击「生成排列」观看回溯生成全排列的搜索树</div>
+        </div>
+      </section>
+
+      <section class="perm-card">
+        <div class="perm-card-title">执行日志 <button id="perm-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="perm-log" id="perm-log"></div>
+      </section>
+    </div>
+    <aside class="perm-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="perm-controls">
+    <button id="step-reset" class="perm-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="perm-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="perm-ctrl-btn perm-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="perm-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="perm-counter">步骤: 0 / 0</span>
+    <div class="perm-speed-wrap">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="200" max="2500" step="100" value="800">
+      <span id="step-speed-label" style="min-width:42px;">0.8s</span>
+    </div>
+  </div>
+</div>

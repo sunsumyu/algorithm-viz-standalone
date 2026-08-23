@@ -1,0 +1,443 @@
+<!-- 验证二叉搜索树 LeetCode 98 -->
+<style>
+  #algo-valid-bst-view {
+    padding: 1.5rem;
+    color: #cdd6f4;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  @keyframes vb-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
+  }
+
+  @keyframes vb-pop-in {
+    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes vb-shake-red {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+  }
+
+  @keyframes vb-invalid-glow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(243, 139, 168, 0.6)); }
+    50% { filter: drop-shadow(0 0 16px rgba(243, 139, 168, 1)); }
+  }
+
+  @keyframes vb-valid-glow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.4)); }
+    50% { filter: drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
+  }
+
+  .vb-theme {
+    --accent-a: rgb(52, 211, 153);
+    --accent-b: rgb(167, 139, 250);
+    --bg-start: 20, 18, 38;
+    --bg-mid: 25, 23, 50;
+    --bg-end: 35, 32, 60;
+    --invalid: rgb(243, 139, 168);
+  }
+
+  .vb-container {
+    position: relative;
+    min-height: calc(100vh - 3rem);
+  }
+
+  .vb-root {
+    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.18), transparent 55%),
+                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.18), transparent 55%),
+                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
+    min-height: 100%;
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .vb-header {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .vb-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .vb-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  }
+
+  .vb-title {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+  }
+
+  .vb-desc {
+    color: #9399b2;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .vb-tip {
+    background: rgba(167, 139, 250, 0.1);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--accent-b);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .vb-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1rem;
+  }
+
+  @media (max-width: 1100px) {
+    .vb-layout { grid-template-columns: 1fr; }
+  }
+
+  .vb-main {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .vb-controls {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .vb-btn {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  }
+
+  .vb-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
+  }
+
+  .vb-example {
+    background: rgba(255, 255, 255, 0.05);
+    color: #cdd6f4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .vb-example:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .vb-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .vb-stat-wrapper {
+    position: relative;
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 10px;
+    padding: 0.6rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .vb-stat-wrapper::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    bottom: 2px;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+    border-radius: 3px;
+  }
+
+  .vb-stat-label {
+    font-size: 0.7rem;
+    color: #6c7086;
+    margin-bottom: 0.25rem;
+  }
+
+  .vb-stat-val {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-a);
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+
+  .vb-stat-wrapper.invalid {
+    background: rgba(243, 139, 168, 0.1);
+  }
+
+  .vb-stat-wrapper.invalid::before {
+    background: linear-gradient(180deg, var(--invalid), #ff6b6b);
+  }
+
+  .vb-stat-wrapper.invalid .vb-stat-val {
+    color: var(--invalid);
+  }
+
+  .vb-tree {
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 10px;
+    padding: 1rem;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .vb-message {
+    background: rgba(15, 14, 26, 0.5);
+    border-left: 3px solid var(--accent-a);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .vb-message.success {
+    border-left-color: var(--accent-a);
+    background: rgba(52, 211, 153, 0.08);
+  }
+
+  .vb-message.fail {
+    border-left-color: var(--invalid);
+    background: rgba(243, 139, 168, 0.08);
+  }
+
+  .vb-log {
+    background: rgba(15, 14, 26, 0.5);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 140px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.78rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .vb-log div { padding: 2px 0; color: #9399b2; }
+
+  .vb-log div.active {
+    color: #cdd6f4;
+    font-weight: 600;
+    background: rgba(52, 211, 153, 0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .vb-log div.invalid-line {
+    color: var(--invalid);
+    background: rgba(243, 139, 168, 0.12);
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .vb-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .vb-playback {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1rem;
+  }
+
+  .vb-pb-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .vb-pb-btn {
+    flex: 1;
+    background: rgba(49, 50, 68, 0.6);
+    color: #cdd6f4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .vb-pb-btn:hover:not(:disabled) {
+    background: rgba(49, 50, 68, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .vb-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .vb-pb-btn.play {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #111;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  }
+
+  .vb-pb-btn.play:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
+  }
+
+  .vb-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #6c7086;
+    margin-bottom: 0.5rem;
+  }
+
+  .vb-speed-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent-a);
+  }
+
+  .vb-speed-row span {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vb-counter {
+    color: #6c7086;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  /* Tree node animations */
+  svg circle.current-node {
+    animation: vb-pulse 1.2s infinite;
+    stroke: var(--accent-a);
+    stroke-width: 3;
+  }
+
+  svg circle.new-visited {
+    animation: vb-pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  svg circle.invalid-node {
+    animation: vb-shake-red 0.5s ease-in-out, vb-invalid-glow 1s ease-in-out infinite;
+  }
+
+  svg circle.valid-node {
+    animation: vb-valid-glow 2s ease-in-out infinite;
+  }
+
+  svg line {
+    transition: stroke 0.3s, stroke-width 0.3s;
+  }
+</style>
+
+<div class="vb-container">
+  <div class="vb-root">
+    <div class="vb-header">
+      <div class="vb-header-content">
+        <div class="vb-icon-badge">🔍</div>
+        <div>
+          <h1 class="vb-title">验证二叉搜索树</h1>
+          <div class="vb-desc">LeetCode 98 · 中序遍历须严格递增；或递归传递 (min, max) 区间，节点值必须在区间内。</div>
+        </div>
+      </div>
+      <div class="vb-tip">💡 核心动画：中序遍历→检查递增性→非法节点抖动变红→最终判定合法/非法</div>
+    </div>
+
+    <div class="vb-layout">
+      <div class="vb-main">
+        <div class="vb-controls">
+          <button id="vb-start" class="vb-btn">开始校验</button>
+          <button class="vb-example" data-id="1">合法BST</button>
+          <button class="vb-example" data-id="2">非法BST</button>
+          <button class="vb-example" data-id="3">单节点</button>
+        </div>
+        <div class="vb-stats">
+          <div class="vb-stat-wrapper"><div class="vb-stat-label">当前节点</div><div class="vb-stat-val" id="vb-cur">-</div></div>
+          <div class="vb-stat-wrapper"><div class="vb-stat-label">区间 (min,max)</div><div class="vb-stat-val" id="vb-range">-</div></div>
+          <div class="vb-stat-wrapper"><div class="vb-stat-label">前驱值</div><div class="vb-stat-val" id="vb-prev">-∞</div></div>
+          <div class="vb-stat-wrapper"><div class="vb-stat-label">是否合法</div><div class="vb-stat-val" id="vb-valid">-</div></div>
+        </div>
+        <div class="vb-tree" id="vb-tree"></div>
+        <div class="vb-message" id="step-message">点击「开始校验」查看中序递增验证。</div>
+        <div class="vb-log" id="vb-log"></div>
+      </div>
+      <div class="vb-right">
+        <div data-code-panel></div>
+        <div class="vb-playback">
+          <div class="vb-pb-row">
+            <button id="step-reset" class="vb-pb-btn">⏮重置</button>
+            <button id="step-prev" class="vb-pb-btn">◀上一步</button>
+            <button id="step-play" class="vb-pb-btn play">▶播放</button>
+            <button id="step-next" class="vb-pb-btn">下一步▶</button>
+          </div>
+          <div class="vb-speed-row">
+            <span>速度</span>
+            <input id="step-speed" type="range" min="200" max="2000" step="100" value="800" />
+            <span id="step-speed-label">0.8s</span>
+          </div>
+          <div class="vb-counter" id="step-counter">步骤: 1 / 1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,130 @@
+<style>
+  .bt-article { padding: 1.6rem; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  .bt-article .article-shell { max-width: 1120px; margin: 0 auto; }
+
+  .bt-article .hero {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1.25rem;
+    margin-bottom: 1.6rem; padding: 1.2rem 1.4rem;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  .bt-article .hero-left { display: flex; align-items: flex-start; gap: 16px; }
+  .bt-article .icon-badge {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, #2dd4bf, #c084fc);
+    color: #08141a;
+    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.45);
+  }
+  .bt-article .eyebrow {
+    color: #2dd4bf; font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 700;
+  }
+  .bt-article h1 { margin: 0 0 0.55rem; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; line-height: 1.3; }
+  .bt-article .lead { color: #c7cbe0; line-height: 1.85; max-width: 900px; font-size: 14.5px; }
+
+  .bt-article .btn-back {
+    border: 1px solid rgba(192, 132, 252, 0.4); background: rgba(20, 18, 38, 0.6);
+    backdrop-filter: blur(18px) saturate(160%); color: #f0abfc; border-radius: 11px;
+    padding: 10px 14px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: 600;
+    transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+  }
+  .bt-article .btn-back:hover {
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(192, 132, 252, 0.2));
+    border-color: #c084fc; color: #fff; transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(45, 212, 191, 0.3);
+  }
+
+  .bt-article .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px; margin: 1.4rem 0;
+  }
+
+  .bt-article .card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; padding: 1.4rem 1.6rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), border-color 0.3s, box-shadow 0.3s;
+    animation: bws2-pop-in 0.55s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .bt-article .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(45, 212, 191, 0.3);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(192, 132, 252, 0.12);
+  }
+
+  .bt-article .card h2 { color: #5eead4; margin: 0 0 0.8rem; font-size: 16.5px; font-weight: 700; line-height: 1.4; }
+  .bt-article .card h3 { color: #99f6e4; margin: 0 0 0.6rem; font-size: 14px; font-weight: 700; line-height: 1.4; }
+
+  .bt-article code {
+    color: #f5d0fe; background: rgba(8, 8, 24, 0.6); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 0.05rem 0.4rem; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.88em;
+  }
+
+  .bt-article pre {
+    background: rgba(8, 8, 24, 0.62); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 1rem 1.2rem; overflow: auto;
+    color: #5eead4; line-height: 1.6; font-size: 13px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    margin: 0.5rem 0;
+  }
+
+  .bt-article p, .bt-article li { color: #c7cbe0; line-height: 1.75; font-size: 14px; margin: 0.3rem 0; }
+  .bt-article ul, .bt-article ol { padding-left: 1.3rem; margin: 0.3rem 0; }
+  .bt-article li { margin-bottom: 0.5rem; list-style-type: circle; }
+  .bt-article strong { color: #f0abfc; }
+
+  @keyframes bws2-pop-in {
+    0% { opacity: 0; transform: translateY(14px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 1100px) {
+    .bt-article .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .bt-article .hero { flex-direction: column; align-items: flex-start; }
+    .bt-article .hero-left { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+</style>
+
+<article class="bt-article">
+  <div class="article-shell">
+    <header class="hero">
+      <div class="hero-left">
+        <div class="icon-badge">🧩</div>
+        <div>
+          <div class="eyebrow">Backtracking / Week Summary II</div>
+          <h1>回溯周末总结（二）</h1>
+          <p class="lead">切割、子集与同层去重的阶段性总结</p>
+        </div>
+      </div>
+      <button class="btn-back" data-back-selector>← 返回算法列表</button>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>切割问题</h2>
+        <p>切割问题把字符串的每个切割点看作选择。<code>startIndex</code> 表示下一段从哪里开始，终止条件通常是 <code>startIndex</code> 到达字符串末尾。</p>
+      </div>
+      <div class="card">
+        <h2>子集问题</h2>
+        <p>子集问题不是只在叶子节点收集答案，而是进入每个节点都收集当前 <code>path</code>。</p>
+      </div>
+      <div class="card">
+        <h2>同层去重</h2>
+        <pre><code>nums.sort((a, b) => a - b);
+for (let i = start; i < nums.length; i++) {
+  if (i > start && nums[i] === nums[i - 1]) continue;
+}</code></pre>
+      </div>
+    </section>
+  </div>
+</article>

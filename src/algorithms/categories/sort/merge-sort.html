@@ -1,0 +1,435 @@
+<style>
+  /* === 归并排序 · 玻璃拟态 + 青色渐变 === */
+  #algo-merge-sort-view {
+    --accent-a: #0891b2;
+    --accent-b: #06b6d4;
+    --accent-glow: rgba(6, 182, 212, .45);
+    --sorted-a: #10b981;
+    --sorted-b: #34d399;
+    --merge-a: #6366f1;
+    --merge-b: #8b5cf6;
+    --key-color: #f59e0b;
+    --split-color: #ec4899;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(8, 145, 178, .30), transparent 55%),
+      radial-gradient(ellipse at 85% 90%, rgba(99, 102, 241, .22), transparent 55%),
+      linear-gradient(135deg, #0a1628 0%, #0c1f2e 50%, #0f172a 100%);
+    overflow: hidden;
+  }
+  #algo-merge-sort-view .ms-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  /* hero */
+  #algo-merge-sort-view .ms-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 18, 28, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-merge-sort-view .ms-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-merge-sort-view .ms-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--merge-b));
+    color: #ecfeff; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-merge-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-merge-sort-view .ms-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-merge-sort-view .ms-tip {
+    max-width: 520px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(99, 102, 241, .08));
+    border: 1px solid rgba(6, 182, 212, .28);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-merge-sort-view .ms-tip strong { color: #67e8f9; }
+  /* main grid */
+  #algo-merge-sort-view .ms-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-merge-sort-view .ms-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-merge-sort-view .ms-card {
+    background: rgba(12, 24, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-merge-sort-view .ms-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-merge-sort-view .ms-tag {
+    font-size: 11px; color: #67e8f9; background: rgba(6, 182, 212, .14);
+    border: 1px solid rgba(6, 182, 212, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* input */
+  #algo-merge-sort-view .ms-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-merge-sort-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 14, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-merge-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(6, 182, 212, .15); }
+  #algo-merge-sort-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-merge-sort-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #ecfeff; transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-merge-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-merge-sort-view .ms-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-merge-sort-view .ms-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(6, 182, 212, .12); border: 1px solid rgba(6, 182, 212, .28);
+    color: #67e8f9; cursor: pointer; transition: all .2s;
+  }
+  #algo-merge-sort-view .ms-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #ecfeff; border-color: transparent; transform: translateY(-1px);
+  }
+  /* stats */
+  #algo-merge-sort-view .ms-stats {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  }
+  #algo-merge-sort-view .ms-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(12, 24, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-merge-sort-view .ms-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-merge-sort-view .ms-stat.ms-stat--depth::before { background: linear-gradient(180deg, #6366f1, #8b5cf6); }
+  #algo-merge-sort-view .ms-stat.ms-stat--sorted::before { background: linear-gradient(180deg, #10b981, #34d399); }
+  #algo-merge-sort-view .ms-stat.ms-stat--range::before { background: linear-gradient(180deg, #ec4899, #f43f5e); }
+  #algo-merge-sort-view .ms-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-merge-sort-view .ms-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-merge-sort-view .ms-stat--depth .ms-stat-val { color: #a5b4fc; }
+  #algo-merge-sort-view .ms-stat--sorted .ms-stat-val { color: #6ee7b7; }
+  #algo-merge-sort-view .ms-stat--range .ms-stat-val { color: #fda4af; }
+  /* visual */
+  #algo-merge-sort-view .ms-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+  #algo-merge-sort-view .ms-canvas {
+    flex: 1; min-height: 0; padding: 16px 18px 10px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  #algo-merge-sort-view .ms-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 80%, rgba(6, 182, 212, .10), transparent 60%);
+    pointer-events: none;
+  }
+  /* main bars row */
+  #algo-merge-sort-view .ms-bars {
+    position: relative; display: flex; align-items: flex-end;
+    gap: 6px; height: 160px; padding-bottom: 24px;
+  }
+  #algo-merge-sort-view .ms-bar-wrap {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    width: 44px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-merge-sort-view .ms-bar {
+    width: 100%; border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
+    border: 1.5px solid rgba(255, 255, 255, .14);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 5px; color: #e2e8f0;
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; font-weight: 800;
+    transition: height .4s cubic-bezier(.4, 0, .2, 1),
+                background .35s, border-color .35s, box-shadow .35s, color .35s, transform .35s;
+  }
+  #algo-merge-sort-view .ms-bar.ms-in-range {
+    background: linear-gradient(180deg, rgba(6, 182, 212, .35), rgba(99, 102, 241, .20));
+    border-color: rgba(6, 182, 212, .6);
+    color: #ecfeff;
+  }
+  #algo-merge-sort-view .ms-bar.ms-split {
+    border-color: var(--split-color);
+    background: linear-gradient(180deg, rgba(236, 72, 153, .35), rgba(219, 39, 119, .15));
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, .2);
+  }
+  #algo-merge-sort-view .ms-bar.ms-merge-compare {
+    border-color: var(--key-color);
+    background: linear-gradient(180deg, rgba(245, 158, 11, .45), rgba(217, 119, 6, .2));
+    color: #fff7ed;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, .25);
+    animation: ms-pulse .6s ease-in-out infinite alternate;
+  }
+  @keyframes ms-pulse {
+    from { box-shadow: 0 0 0 3px rgba(245, 158, 11, .25); }
+    to   { box-shadow: 0 0 0 5px rgba(245, 158, 11, .45); }
+  }
+  #algo-merge-sort-view .ms-bar.ms-merge-picked {
+    background: linear-gradient(180deg, rgba(6, 182, 212, .55), rgba(99, 102, 241, .30));
+    border-color: rgba(6, 182, 212, .8);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(6, 182, 212, .3);
+  }
+  #algo-merge-sort-view .ms-bar.ms-sorted {
+    background: linear-gradient(180deg, rgba(16, 185, 129, .50), rgba(52, 211, 153, .22));
+    border-color: rgba(16, 185, 129, .7);
+    color: #ecfdf5;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, .2);
+  }
+  #algo-merge-sort-view .ms-bar.ms-done {
+    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .28));
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
+  }
+  #algo-merge-sort-view .ms-idx {
+    position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+    color: #64748b; font-size: 10px; font-weight: 600;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+  }
+  /* merge area */
+  #algo-merge-sort-view .ms-merge-area {
+    display: flex; gap: 12px; align-items: center; justify-content: center;
+    padding: 6px 0;
+    min-height: 48px;
+  }
+  #algo-merge-sort-view .ms-merge-group {
+    display: flex; gap: 4px; align-items: center;
+    padding: 6px 10px; border-radius: 10px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px dashed rgba(255, 255, 255, .15);
+    position: relative;
+  }
+  #algo-merge-sort-view .ms-merge-group-label {
+    position: absolute; top: -10px; left: 8px;
+    font-size: 10px; font-weight: 700; padding: 0 4px;
+    background: rgba(8, 18, 28, .9); border-radius: 4px;
+  }
+  #algo-merge-sort-view .ms-merge-group-label.ms-label-left { color: #67e8f9; }
+  #algo-merge-sort-view .ms-merge-group-label.ms-label-right { color: #a5b4fc; }
+  #algo-merge-sort-view .ms-merge-group-label.ms-label-result { color: #6ee7b7; }
+  #algo-merge-sort-view .ms-merge-item {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; font-weight: 800;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-merge-sort-view .ms-merge-item.ms-item-left {
+    background: rgba(6, 182, 212, .18); border: 1px solid rgba(6, 182, 212, .4); color: #67e8f9;
+  }
+  #algo-merge-sort-view .ms-merge-item.ms-item-right {
+    background: rgba(99, 102, 241, .18); border: 1px solid rgba(99, 102, 241, .4); color: #a5b4fc;
+  }
+  #algo-merge-sort-view .ms-merge-item.ms-item-result {
+    background: rgba(16, 185, 129, .18); border: 1px solid rgba(16, 185, 129, .4); color: #6ee7b7;
+  }
+  #algo-merge-sort-view .ms-merge-item.ms-item-exhausted {
+    opacity: .3;
+  }
+  #algo-merge-sort-view .ms-merge-item.ms-item-ptr {
+    box-shadow: 0 0 0 2px var(--key-color);
+    transform: scale(1.1);
+  }
+  #algo-merge-sort-view .ms-merge-arrow {
+    color: #64748b; font-size: 20px; font-weight: 800;
+    display: flex; align-items: center;
+  }
+  /* range markers */
+  #algo-merge-sort-view .ms-range-marker {
+    position: absolute; bottom: -2px; height: 4px; border-radius: 4px;
+    transition: width .4s, left .4s;
+  }
+  #algo-merge-sort-view .ms-range-marker.ms-range-current {
+    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+    box-shadow: 0 0 8px var(--accent-a);
+  }
+  /* tree panel */
+  #algo-merge-sort-view .ms-tree {
+    padding: 12px 16px; min-height: 60px; max-height: 100px; overflow: auto;
+  }
+  #algo-merge-sort-view .ms-tree-row {
+    display: flex; gap: 4px; align-items: center; margin-bottom: 4px;
+  }
+  #algo-merge-sort-view .ms-tree-node {
+    padding: 2px 8px; border-radius: 6px; font-size: 11px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, .1);
+    transition: all .3s;
+  }
+  #algo-merge-sort-view .ms-tree-node.ms-node-active {
+    background: rgba(6, 182, 212, .2); border-color: rgba(6, 182, 212, .5); color: #67e8f9;
+  }
+  #algo-merge-sort-view .ms-tree-node.ms-node-merged {
+    background: rgba(16, 185, 129, .2); border-color: rgba(16, 185, 129, .5); color: #6ee7b7;
+  }
+  #algo-merge-sort-view .ms-tree-node.ms-node-pending {
+    color: #475569;
+  }
+  /* result banner */
+  #algo-merge-sort-view .ms-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(99, 102, 241, .06));
+    border: 1px solid rgba(6, 182, 212, .28);
+    line-height: 1.55; font-size: 14px; color: #cffafe;
+  }
+  #algo-merge-sort-view .ms-result .ms-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #ecfeff; box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  #algo-merge-sort-view .ms-result.ms-result--done {
+    background: linear-gradient(135deg, rgba(16, 185, 129, .18), rgba(52, 211, 153, .08));
+    border-color: rgba(16, 185, 129, .4); color: #d1fae5;
+  }
+  #algo-merge-sort-view .ms-result.ms-result--done .ms-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  /* log */
+  #algo-merge-sort-view .ms-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 14, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-merge-sort-view .ms-log-line { display: flex; gap: 8px; }
+  #algo-merge-sort-view .ms-log-line .ms-log-num { color: #475569; flex-shrink: 0; }
+  #algo-merge-sort-view .ms-log-line.ms-log-active { color: #67e8f9; font-weight: 600; }
+  #algo-merge-sort-view .ms-log-line.ms-log-active .ms-log-num { color: var(--accent-b); }
+  /* code panel */
+  #algo-merge-sort-view .ms-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 14, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-merge-sort-view .ms-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* controls */
+  #algo-merge-sort-view .ms-controls {
+    padding: 14px 18px;
+    background: rgba(8, 14, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-merge-sort-view .ms-controls .ms-ctrl-btn { min-width: 64px; }
+  #algo-merge-sort-view .ms-controls .ms-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #ecfeff; border-color: transparent;
+  }
+  #algo-merge-sort-view .ms-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-merge-sort-view .ms-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-merge-sort-view #ms-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-merge-sort-view .ms-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-merge-sort-view .ms-code { min-height: 360px; }
+  }
+</style>
+
+<div class="ms-shell">
+  <div class="ms-hero">
+    <div class="ms-hero-left">
+      <span class="ms-icon">🌿</span>
+      <div>
+        <h1>归并排序</h1>
+        <div class="ms-sub">分治思想 · 递归拆分 · 有序合并 · O(n log n) · 稳定</div>
+      </div>
+    </div>
+    <div class="ms-tip"><strong>核心动画：</strong>数组被反复一分为二（青色高亮当前区间）→ 到达叶子后开始两两合并 → 合并时用两个指针逐个比较左右子数组，较小元素归入结果（金色闪烁）→ 合并完毕覆盖回原数组。</div>
+  </div>
+  <div class="ms-main">
+    <div class="ms-left">
+      <section class="ms-card">
+        <div class="ms-card-title">输入 <span class="ms-tag">数组</span></div>
+        <div class="ms-input-row">
+          <input id="ms-array" value="38,27,43,3,9,82,10">
+          <button id="ms-start">开始排序</button>
+        </div>
+        <div class="ms-examples">
+          <button class="ms-chip" data-arr="38,27,43,3,9,82,10">经典 7 元素</button>
+          <button class="ms-chip" data-arr="5,3,8,1,7,2,6,4">8 元素</button>
+          <button class="ms-chip" data-arr="10,9,8,7,6,5">完全逆序</button>
+          <button class="ms-chip" data-arr="1,2,3,4,5">已排序</button>
+          <button class="ms-chip" data-arr="3,3,1,1,2,2">含重复</button>
+        </div>
+      </section>
+
+      <div class="ms-stats">
+        <div class="ms-stat ms-stat--depth"><div class="ms-stat-label">递归深度</div><div class="ms-stat-val" id="ms-stat-depth">0</div></div>
+        <div class="ms-stat ms-stat--range"><div class="ms-stat-label">当前区间</div><div class="ms-stat-val" id="ms-stat-range">-</div></div>
+        <div class="ms-stat"><div class="ms-stat-label">比较次数</div><div class="ms-stat-val" id="ms-stat-cmp">0</div></div>
+        <div class="ms-stat"><div class="ms-stat-label">移动次数</div><div class="ms-stat-val" id="ms-stat-mv">0</div></div>
+        <div class="ms-stat ms-stat--sorted"><div class="ms-stat-label">状态</div><div class="ms-stat-val" id="ms-stat-phase">就绪</div></div>
+      </div>
+
+      <section class="ms-card ms-visual">
+        <div class="ms-card-title">
+          排序过程
+          <span class="ms-tag" id="ms-step-tag">初始化</span>
+        </div>
+        <div class="ms-canvas">
+          <div class="ms-bars" id="ms-bars"></div>
+          <div class="ms-merge-area" id="ms-merge-area"></div>
+        </div>
+        <div class="ms-result" id="ms-result">
+          <span class="ms-emoji">🌿</span>
+          <div id="step-message">点击「开始排序」查看归并排序分治过程</div>
+        </div>
+      </section>
+
+      <section class="ms-card">
+        <div class="ms-card-title">分治树 <span class="ms-tag" id="ms-tree-tag">递归结构</span></div>
+        <div class="ms-tree" id="ms-tree"></div>
+      </section>
+
+      <section class="ms-card">
+        <div class="ms-card-title">执行日志 <button id="ms-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="ms-log" id="ms-log"></div>
+      </section>
+    </div>
+    <aside class="ms-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="ms-controls">
+    <button id="step-reset" class="ms-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="ms-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="ms-ctrl-btn ms-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="ms-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="ms-counter">步骤: 0 / 0</span>
+    <div class="ms-speed-wrap">
+      <span>速度</span>
+      <input id="ms-speed" type="range" min="200" max="2500" step="100" value="700">
+      <span id="ms-speed-label" style="min-width:42px;">0.7s</span>
+    </div>
+  </div>
+</div>

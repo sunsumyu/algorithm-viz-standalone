@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>算法动画演示</title>
+  <style>
+    /* ========== Reset & Base ========== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: #1e1e2e;
+      color: #cdd6f4;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ========== Tauri Titlebar ========== */
+    .app-titlebar {
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #11111b;
+      border-bottom: 1px solid #313244;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .app-titlebar-drag-region {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0 0.85rem;
+    }
+
+    .app-titlebar-icon {
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+    .app-titlebar-title {
+      color: #cdd6f4;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .app-window-controls {
+      height: 100%;
+      display: flex;
+      align-items: stretch;
+      flex-shrink: 0;
+    }
+
+    .app-window-button {
+      width: 46px;
+      height: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+      color: #cdd6f4;
+      font-size: 0.92rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .app-window-button:hover {
+      background: #313244;
+    }
+
+    .app-window-button.close:hover {
+      background: #f38ba8;
+      color: #1e1e2e;
+    }
+
+    /* ========== Main Layout: Sidebar + Content ========== */
+    .app-main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+      position: relative;
+    }
+
+    /* ========== Sidebar ========== */
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      background: #181825;
+      border-right: 1px solid #313244;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 1rem 1.15rem 0.75rem;
+      border-bottom: 1px solid #313244;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #cdd6f4;
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ========== Search Box ========== */
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 34px;
+      padding: 0 0.7rem 0 2.2rem;
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 0.45rem;
+      color: #cdd6f4;
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-box input::placeholder {
+      color: #585b70;
+    }
+
+    .search-box input:focus {
+      border-color: #89b4fa;
+      box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.15);
+    }
+
+    .search-box .search-icon {
+      position: absolute;
+      left: 0.65rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      color: #585b70;
+      pointer-events: none;
+    }
+
+    .search-box .search-clear {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6c7086;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: none;
+      padding: 2px 4px;
+      border-radius: 3px;
+      line-height: 1;
+    }
+
+    .search-box .search-clear:hover {
+      color: #cdd6f4;
+      background: #313244;
+    }
+
+    .search-box .search-clear.visible {
+      display: block;
+    }
+
+    /* ========== Search History Dropdown ========== */
+    .search-history-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: rgba(24, 24, 37, 0.96);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 0.6rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      z-index: 1000;
+      padding: 0.5rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      animation: search-history-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes search-history-pop {
+      from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .search-history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.2rem 0.3rem 0.4rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .search-history-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #a6adc8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .search-history-clear-all {
+      background: none;
+      border: none;
+      font-size: 0.72rem;
+      color: #f38ba8;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background 0.15s ease, opacity 0.15s ease;
+      opacity: 0.85;
+    }
+
+    .search-history-clear-all:hover {
+      background: rgba(243, 139, 168, 0.15);
+      opacity: 1;
+    }
+
+    .search-history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .search-history-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.42rem 0.55rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      color: #cdd6f4;
+      font-size: 0.8rem;
+      transition: all 0.15s ease;
+    }
+
+    .search-history-item:hover {
+      background: rgba(137, 180, 250, 0.14);
+      color: #89b4fa;
+      transform: translateX(2px);
+    }
+
+    .search-history-icon {
+      font-size: 0.75rem;
+      color: #6c7086;
+    }
+
+    .search-history-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .search-history-delete {
+      background: none;
+      border: none;
+      color: #6c7086;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 3px;
+      line-height: 1;
+      opacity: 0;
+      transition: all 0.15s ease;
+    }
+
+    .search-history-item:hover .search-history-delete {
+      opacity: 1;
+    }
+
+    .search-history-delete:hover {
+      color: #f38ba8;
+      background: rgba(243, 139, 168, 0.2);
+    }
+
+    .search-history-empty {
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+      color: #6c7086;
+      font-size: 0.78rem;
+    }
+
+    /* ========== Category List ========== */
+    .sidebar-categories {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0.5rem 0.6rem;
+    }
+
+    .category-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.18s ease;
+      margin-bottom: 2px;
+    }
+
+    .category-item:hover {
+      background: rgba(137, 180, 250, 0.08);
+    }
+
+    .category-item.active {
+      background: rgba(137, 180, 250, 0.14);
+    }
+
+    .category-item .cat-icon {
+      font-size: 1.15rem;
+      width: 24px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .category-item .cat-name {
+      flex: 1;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #cdd6f4;
+    }
+
+    .category-item .cat-count {
+      font-size: 0.7rem;
+      color: #6c7086;
+      background: rgba(69, 71, 90, 0.4);
+      padding: 0.1rem 0.45rem;
+      border-radius: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .category-item.active .cat-name {
+      font-weight: 600;
+    }
+
+    .category-item.search-active {
+      background: rgba(249, 226, 175, 0.1);
+    }
+
+    .category-item.search-active .cat-name {
+      color: #f9e2af;
+    }
+
+    /* ========== Content Area ========== */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .content-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.5rem;
+      border-bottom: 1px solid #313244;
+      background: #181825;
+      flex-shrink: 0;
+    }
+
+    .content-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #cdd6f4;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .content-header .result-count {
+      font-size: 0.78rem;
+      color: #6c7086;
+      font-weight: 400;
+      margin-left: 0.3rem;
+    }
+
+    /* ========== Algorithm Cards Grid ========== */
+    .cards-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      overflow-x: hidden;
+      align-content: start;
+    }
+
+    /* ========== Algorithm Card ========== */
+    .algo-card {
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 0.75rem;
+      padding: 1.3rem;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      user-select: none;
+    }
+
+    .algo-card:hover {
+      border-color: #89b4fa;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(137, 180, 250, 0.12);
+    }
+
+    .algo-card:active {
+      transform: translateY(0);
+    }
+
+    .algo-card .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .algo-card .card-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .algo-card .card-icon.stack { background: rgba(137, 180, 250, 0.15); color: #89b4fa; }
+    .algo-card .card-icon.tree { background: rgba(166, 227, 161, 0.15); color: #a6e3a1; }
+    .algo-card .card-icon.sort { background: rgba(249, 226, 175, 0.15); color: #f9e2af; }
+    .algo-card .card-icon.search { background: rgba(203, 166, 247, 0.15); color: #cba6f7; }
+    .algo-card .card-icon.greedy { background: rgba(250, 179, 135, 0.15); color: #fab387; }
+    .algo-card .card-icon.backtracking { background: rgba(136, 57, 239, 0.15); color: #b4befe; }
+    .algo-card .card-icon.dynamic-programming { background: rgba(137, 180, 250, 0.15); color: #89b4fa; }
+    .algo-card .card-icon.array { background: rgba(137, 180, 250, 0.15); color: #89b4fa; }
+    .algo-card .card-icon.linked-list { background: rgba(148, 226, 213, 0.15); color: #94e2d5; }
+    .algo-card .card-icon.hash-table { background: rgba(245, 194, 231, 0.15); color: #f5c2e7; }
+    .algo-card .card-icon.string { background: rgba(250, 179, 135, 0.15); color: #fab387; }
+    .algo-card .card-icon.two-pointers { background: rgba(137, 220, 235, 0.15); color: #89dceb; }
+    .algo-card .card-icon.monotonic-stack { background: rgba(203, 166, 247, 0.15); color: #cba6f7; }
+    .algo-card .card-icon.graph { background: rgba(166, 227, 161, 0.15); color: #a6e3a1; }
+
+    .algo-card .card-name {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: #cdd6f4;
+    }
+
+    .algo-card .card-description {
+      font-size: 0.78rem;
+      color: #6c7086;
+      line-height: 1.5;
+    }
+
+    .algo-card .card-category {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #585b70;
+      padding: 0.18rem 0.45rem;
+      background: rgba(69, 71, 90, 0.3);
+      border-radius: 0.3rem;
+      align-self: flex-start;
+    }
+
+    /* ========== Empty State ========== */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 0.75rem;
+      color: #585b70;
+      padding: 3rem;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      opacity: 0.5;
+    }
+
+    .empty-state .empty-text {
+      font-size: 0.95rem;
+    }
+
+    .empty-state .empty-hint {
+      font-size: 0.8rem;
+      color: #45475a;
+    }
+
+    /* ========== Search No Results ========== */
+    .no-results {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 0.75rem;
+      padding: 3rem;
+    }
+
+    .no-results .no-results-icon {
+      font-size: 2.5rem;
+      opacity: 0.4;
+    }
+
+    .no-results .no-results-text {
+      font-size: 0.9rem;
+      color: #6c7086;
+    }
+
+    .no-results .no-results-hint {
+      font-size: 0.8rem;
+      color: #45475a;
+    }
+
+    /* ========== Highlight Search Match ========== */
+    .search-highlight {
+      background: rgba(249, 226, 175, 0.25);
+      color: #f9e2af;
+      padding: 0 0.15em;
+      border-radius: 2px;
+    }
+
+    /* ========== View Container System ========== */
+    .view-container {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      background: #1e1e2e;
+      transition: left 0.22s cubic-bezier(0.16, 1, 0.3, 1), width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .view-container.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 当目录展开时，视图容器自适应右移，保留全部可视区域不被遮挡 */
+    #app.has-catalog-drawer-open .view-container.active,
+    #app:has(#algo-catalog-drawer.is-open) .view-container.active {
+      left: 320px;
+      width: calc(100% - 320px);
+    }
+
+    /* ========== Top Integrated Navigation Bar ========== */
+    .algo-global-nav {
+      position: fixed;
+      top: 4px;
+      left: 10px;
+      height: 28px;
+      z-index: 10000;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    .algo-nav-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(17, 17, 27, 0.94);
+      padding: 2px 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .algo-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 22px;
+      padding: 0 8px;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: #cdd6f4;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+    }
+
+    .algo-nav-btn:hover {
+      background: rgba(137, 180, 250, 0.18);
+      color: #89b4fa;
+    }
+
+    .algo-nav-btn:active {
+      transform: scale(0.96);
+    }
+
+    .algo-nav-btn.is-active {
+      background: rgba(137, 180, 250, 0.25);
+      color: #89b4fa;
+      box-shadow: inset 0 0 0 1px rgba(137, 180, 250, 0.4);
+    }
+
+    .algo-nav-btn.is-disabled, .algo-nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .algo-nav-back {
+      color: #89b4fa;
+      font-weight: 700;
+    }
+
+    .algo-nav-back:hover {
+      background: rgba(137, 180, 250, 0.22);
+      color: #b4befe;
+    }
+
+    .algo-nav-catalog .nav-progress-badge {
+      background: rgba(137, 180, 250, 0.18);
+      color: #89b4fa;
+      padding: 0 5px;
+      border-radius: 8px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .algo-nav-divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .algo-nav-stepper .algo-nav-btn {
+      padding: 0 7px;
+    }
+
+    .algo-nav-stepper .nav-step-icon {
+      font-size: 0.68rem;
+      opacity: 0.85;
+    }
+
+    .algo-nav-info-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(24, 24, 37, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(10px);
+      font-size: 0.74rem;
+      max-width: 380px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-info-cat {
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .nav-info-divider {
+      color: #585b70;
+      font-size: 0.7rem;
+    }
+
+    .nav-info-name {
+      color: #cdd6f4;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-info-diff {
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* 标题栏右移避让 */
+    #app:has(.view-container.active) .app-titlebar-drag-region {
+      padding-left: 450px;
+      transition: padding-left 0.2s ease;
+    }
+
+    @media (max-width: 900px) {
+      .algo-nav-info-pill {
+        display: none;
+      }
+      #app:has(.view-container.active) .app-titlebar-drag-region {
+        padding-left: 280px;
+      }
+    }
+
+    /* ========== Left Floating Tab (拉手) ========== */
+    .algo-catalog-float-tab {
+      position: fixed;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%) translateX(0);
+      z-index: 9990;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 7px 8px 5px;
+      background: rgba(24, 24, 37, 0.94);
+      border: 1px solid rgba(137, 180, 250, 0.35);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      color: #89b4fa;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 2px 4px 16px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      writing-mode: vertical-lr;
+      letter-spacing: 2px;
+    }
+
+    .algo-catalog-float-tab:hover {
+      background: rgba(30, 30, 46, 0.98);
+      border-color: #89b4fa;
+      color: #ffffff;
+      box-shadow: 4px 6px 20px rgba(137, 180, 250, 0.25);
+      transform: translateY(-50%) translateX(3px);
+    }
+
+    .algo-catalog-float-tab.drawer-active {
+      transform: translateY(-50%) translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ========== Catalog Drawer Backdrop (非模态边栏模式，不阻挡右侧主视图交互) ========== */
+    .algo-catalog-backdrop {
+      display: none;
+      pointer-events: none;
+    }
+
+    /* ========== Left Catalog Drawer ========== */
+    .algo-catalog-drawer {
+      position: fixed;
+      top: 36px;
+      bottom: 0;
+      left: 0;
+      width: 340px;
+      max-width: 85vw;
+      background: rgba(24, 24, 37, 0.98);
+      border-right: 1px solid #313244;
+      box-shadow: 10px 0 35px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 9998;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .algo-catalog-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    /* Drawer Header */
+    .drawer-header {
+      padding: 0.9rem 1rem 0.75rem;
+      border-bottom: 1px solid #313244;
+      background: rgba(17, 17, 27, 0.7);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .drawer-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .drawer-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #cdd6f4;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .drawer-count-badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #89b4fa;
+      background: rgba(137, 180, 250, 0.15);
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .drawer-close-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      color: #6c7086;
+      font-size: 0.85rem;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .drawer-close-btn:hover {
+      background: rgba(243, 139, 168, 0.15);
+      border-color: rgba(243, 139, 168, 0.4);
+      color: #f38ba8;
+    }
+
+    /* Drawer Search Bar */
+    .drawer-search-bar {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .drawer-search-icon {
+      position: absolute;
+      left: 0.65rem;
+      font-size: 0.78rem;
+      color: #585b70;
+      pointer-events: none;
+    }
+
+    .drawer-search-input {
+      width: 100%;
+      height: 32px;
+      padding: 0 2rem 0 2rem;
+      background: #11111b;
+      border: 1px solid #313244;
+      border-radius: 0.45rem;
+      color: #cdd6f4;
+      font-size: 0.78rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .drawer-search-input:focus {
+      border-color: #89b4fa;
+      box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.18);
+      background: #181825;
+    }
+
+    .drawer-search-input::placeholder {
+      color: #585b70;
+    }
+
+    .drawer-search-clear {
+      position: absolute;
+      right: 0.45rem;
+      background: none;
+      border: none;
+      color: #6c7086;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    .drawer-search-clear:hover {
+      color: #f38ba8;
+    }
+
+    /* Drawer Quick Prev / Next */
+    .drawer-quick-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .drawer-quick-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      padding: 0.35rem 0.55rem;
+      background: rgba(30, 30, 46, 0.8);
+      border: 1px solid #313244;
+      border-radius: 0.4rem;
+      color: #cdd6f4;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+
+    .drawer-quick-btn:hover {
+      background: rgba(137, 180, 250, 0.12);
+      border-color: #89b4fa;
+      color: #89b4fa;
+    }
+
+    .drawer-quick-btn.is-disabled, .drawer-quick-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .drawer-quick-sub {
+      font-size: 0.65rem;
+      color: #a6adc8;
+      font-weight: 400;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    /* Drawer List */
+    .drawer-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* Drawer Recent Section */
+    .drawer-recent-section {
+      flex-shrink: 0;
+      background: rgba(137, 180, 250, 0.05);
+      border: 1px solid rgba(137, 180, 250, 0.22);
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.65rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .drawer-recent-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .drawer-recent-title {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #89b4fa;
+    }
+
+    .drawer-recent-badge {
+      font-size: 0.64rem;
+      background: rgba(137, 180, 250, 0.2);
+      color: #89b4fa;
+      padding: 0 5px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    .drawer-recent-clear-btn {
+      background: none;
+      border: none;
+      font-size: 0.68rem;
+      color: #f38ba8;
+      cursor: pointer;
+      opacity: 0.8;
+      padding: 1px 5px;
+      border-radius: 3px;
+      transition: all 0.15s ease;
+    }
+
+    .drawer-recent-clear-btn:hover {
+      opacity: 1;
+      background: rgba(243, 139, 168, 0.15);
+    }
+
+    .drawer-recent-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .drawer-recent-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: rgba(30, 30, 46, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      color: #cdd6f4;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      max-width: 100%;
+    }
+
+    .drawer-recent-chip:hover {
+      background: rgba(137, 180, 250, 0.2);
+      border-color: #89b4fa;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .drawer-recent-chip.is-active {
+      background: rgba(137, 180, 250, 0.28);
+      border-color: #89b4fa;
+      color: #89b4fa;
+      font-weight: 700;
+      box-shadow: 0 0 8px rgba(137, 180, 250, 0.25);
+    }
+
+    .drawer-recent-chip .chip-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 130px;
+    }
+
+    .drawer-recent-chip .chip-diff-dot {
+      font-size: 0.6rem;
+    }
+
+    /* Drawer Category Group */
+    .drawer-group {
+      flex-shrink: 0;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: rgba(30, 30, 46, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+    }
+
+    .drawer-group.is-current-cat {
+      border-color: rgba(137, 180, 250, 0.35);
+      background: rgba(137, 180, 250, 0.05);
+      box-shadow: 0 0 12px rgba(137, 180, 250, 0.08);
+    }
+
+    .drawer-group-header {
+      flex-shrink: 0;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      background: transparent;
+    }
+
+    .drawer-group-header:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .drawer-group-header:active {
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .drawer-group-icon {
+      font-size: 1rem;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .drawer-group-name {
+      flex: 1;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #cdd6f4;
+    }
+
+    .drawer-group-count {
+      font-size: 0.68rem;
+      color: #a6adc8;
+      background: rgba(69, 71, 90, 0.5);
+      padding: 1px 6px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      font-weight: 500;
+    }
+
+    .drawer-group-chevron {
+      font-size: 0.75rem;
+      color: #6c7086;
+      transition: transform 0.2s ease, color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .drawer-group-header:hover .drawer-group-chevron {
+      color: #89b4fa;
+    }
+
+    /* Drawer Items List */
+    .drawer-items {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 4px 6px 6px;
+      gap: 2px;
+      background: rgba(17, 17, 27, 0.5);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .drawer-item {
+      flex-shrink: 0;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.42rem 0.6rem;
+      border-radius: 0.35rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.78rem;
+      color: #a6adc8;
+      border-left: 2px solid transparent;
+    }
+
+    .drawer-item:hover {
+      background: rgba(137, 180, 250, 0.1);
+      color: #cdd6f4;
+      transform: translateX(2px);
+    }
+
+    .drawer-item.is-active {
+      background: linear-gradient(90deg, rgba(137, 180, 250, 0.22), rgba(137, 180, 250, 0.06));
+      border-left-color: #89b4fa;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px rgba(137, 180, 250, 0.2);
+    }
+
+    .drawer-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .drawer-item-dot {
+      font-size: 0.65rem;
+      flex-shrink: 0;
+    }
+
+    .drawer-item-num {
+      font-size: 0.68rem;
+      color: #6c7086;
+      font-variant-numeric: tabular-nums;
+      width: 14px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .drawer-item.is-active .drawer-item-num {
+      color: #89b4fa;
+      font-weight: 700;
+    }
+
+    .drawer-item-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .drawer-item-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .drawer-item-active-tag {
+      font-size: 0.62rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: #89b4fa;
+      color: #11111b;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .drawer-item-diff-badge {
+      font-size: 0.62rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .drawer-highlight {
+      background: rgba(249, 226, 175, 0.3);
+      color: #f9e2af;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    .drawer-empty-state {
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: #6c7086;
+      text-align: center;
+      font-size: 0.78rem;
+    }
+
+    .drawer-empty-icon {
+      font-size: 1.8rem;
+      opacity: 0.5;
+    }
+
+    /* ========== Shared Code Panel ========== */
+    .algo-code-panel {
+      height: 100%;
+      max-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #11111b;
+      border: 1px solid #313244;
+      border-radius: 0.7rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .algo-code-header {
+      flex-shrink: 0;
+      padding: 0.65rem 0.85rem;
+      background: #181825;
+      border-bottom: 1px solid #313244;
+      color: #b4befe;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .algo-code-title {
+      white-space: nowrap;
+    }
+
+    /* 代码 / 要点 顶层切换 Tab */
+    .algo-code-view-tabs {
+      display: inline-flex;
+      background: #11111b;
+      padding: 2px;
+      border-radius: 0.45rem;
+      border: 1px solid #313244;
+      gap: 2px;
+    }
+
+    .algo-code-view-tab {
+      padding: 0.18rem 0.55rem;
+      border: none;
+      border-radius: 0.35rem;
+      background: transparent;
+      color: #6c7086;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .algo-code-view-tab:hover {
+      color: #cdd6f4;
+    }
+
+    .algo-code-view-tab.is-active {
+      background: #313244;
+      color: #89b4fa;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .algo-code-tabs {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .algo-code-tab {
+      padding: 0.2rem 0.55rem;
+      border: 1px solid #313244;
+      border-radius: 0.35rem;
+      background: transparent;
+      color: #6c7086;
+      font-size: 0.68rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .algo-code-tab:hover {
+      color: #cdd6f4;
+      border-color: #45475a;
+    }
+
+    .algo-code-tab.is-active {
+      background: #313244;
+      color: #b4befe;
+      border-color: #45475a;
+    }
+
+    /* 实时代码教学精解卡片 (Live Line Teaching Card) */
+    .algo-code-explanation {
+      flex-shrink: 0;
+      border-top: 1px solid #313244;
+      background: linear-gradient(180deg, rgba(24, 24, 37, 0.98), rgba(17, 17, 27, 0.99));
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      color: #cdd6f4;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .algo-code-exp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .algo-code-exp-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 800;
+      color: #f9e2af;
+      font-size: 0.78rem;
+    }
+
+    .algo-code-exp-tag strong {
+      color: #89b4fa;
+      background: rgba(137, 180, 250, 0.18);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(137, 180, 250, 0.3);
+    }
+
+    .algo-code-exp-hint {
+      font-size: 0.68rem;
+      color: #6c7086;
+    }
+
+    .algo-code-exp-body {
+      color: #bac2de;
+      line-height: 1.55;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      word-break: break-word;
+      font-size: 0.78rem;
+    }
+
+    .algo-code-exp-body strong {
+      color: #f5c2e7;
+    }
+
+    .algo-code-exp-body code {
+      font-family: ui-monospace, monospace;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #89dceb;
+      font-size: 0.74rem;
+    }
+
+    /* 逐行全景精讲视图 (Walkthrough View) */
+    .algo-code-walkthrough-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      background: #11111b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .algo-walkthrough-banner {
+      padding: 0.65rem 0.85rem;
+      background: linear-gradient(135deg, rgba(137, 180, 250, 0.15), rgba(203, 166, 247, 0.1));
+      border: 1px solid rgba(137, 180, 250, 0.3);
+      border-radius: 0.55rem;
+    }
+
+    .algo-walkthrough-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.65rem 0.75rem;
+      background: rgba(24, 24, 37, 0.85);
+      border: 1px solid #313244;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .algo-walkthrough-card:hover {
+      border-color: #89b4fa;
+      background: rgba(30, 30, 46, 0.95);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .algo-walkthrough-code-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.78rem;
+    }
+
+    .algo-walkthrough-badge {
+      flex-shrink: 0;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #313244;
+      color: #89b4fa;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+
+    .algo-walkthrough-code-text {
+      color: #cdd6f4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .algo-walkthrough-exp-body {
+      font-size: 0.76rem;
+      color: #a6adc8;
+      line-height: 1.5;
+      padding-top: 2px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    }
+
+    .algo-walkthrough-exp-body strong {
+      color: #f9e2af;
+    }
+
+    .algo-walkthrough-exp-body code {
+      font-family: ui-monospace, monospace;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #89dceb;
+      font-size: 0.72rem;
+    }
+
+    /* 核心要点讲解视图 (Key Points View) */
+    .algo-code-keypoints-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      background: #11111b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .algo-keypoint-summary-card {
+      padding: 0.65rem 0.85rem;
+      background: linear-gradient(135deg, rgba(137, 180, 250, 0.12), rgba(166, 227, 161, 0.08));
+      border: 1px solid rgba(137, 180, 250, 0.25);
+      border-radius: 0.55rem;
+      color: #cdd6f4;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .algo-keypoint-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      padding: 0.6rem 0.75rem;
+      background: rgba(24, 24, 37, 0.8);
+      border: 1px solid #313244;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .algo-keypoint-card:hover {
+      border-color: rgba(137, 180, 250, 0.4);
+      background: rgba(30, 30, 46, 0.9);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .algo-keypoint-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #f9e2af;
+    }
+
+    .algo-keypoint-desc {
+      font-size: 0.75rem;
+      color: #a6adc8;
+      line-height: 1.5;
+    }
+
+    .algo-keypoint-desc code {
+      font-family: ui-monospace, monospace;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #89dceb;
+      font-size: 0.72rem;
+    }
+
+    .algo-code-content {
+      flex: 1;
+      overflow: auto;
+      padding: 0.55rem 0;
+    }
+
+    .algo-code-line {
+      display: grid;
+      grid-template-columns: 3rem minmax(0, 1fr);
+      gap: 0.7rem;
+      align-items: start;
+      min-height: 1.55rem;
+      padding: 0.12rem 0.75rem 0.12rem 0;
+      border-left: 3px solid transparent;
+      color: #cdd6f4;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .algo-code-line-number {
+      color: #585b70;
+      text-align: right;
+      user-select: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .algo-code-line-text {
+      min-width: 0;
+    }
+
+    .algo-code-line.is-active {
+      background: linear-gradient(90deg, rgba(137, 180, 250, 0.28), rgba(137, 180, 250, 0.08));
+      border-left-color: #89b4fa;
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(137, 180, 250, 0.15);
+    }
+
+    .algo-code-line.is-active .algo-code-line-number {
+      color: #89b4fa;
+      font-weight: 800;
+    }
+
+    /* 重新执行/脉冲呼吸动效：同一行多次触发时播放 */
+    .algo-code-line.is-flashing {
+      animation: algo-line-pulse 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes algo-line-pulse {
+      0% {
+        background: linear-gradient(90deg, rgba(166, 227, 161, 0.55), rgba(137, 180, 250, 0.25));
+        border-left-color: #a6e3a1;
+        box-shadow: 0 0 12px rgba(166, 227, 161, 0.4);
+      }
+      50% {
+        background: linear-gradient(90deg, rgba(166, 227, 161, 0.4), rgba(137, 180, 250, 0.18));
+      }
+      100% {
+        background: linear-gradient(90deg, rgba(137, 180, 250, 0.28), rgba(137, 180, 250, 0.08));
+        border-left-color: #89b4fa;
+        box-shadow: inset 0 0 0 1px rgba(137, 180, 250, 0.15);
+      }
+    }
+
+    /* 辅助/上下文高亮（如外层 for 循环，浅浅的亮条） */
+    .algo-code-line.is-context {
+      background: linear-gradient(90deg, rgba(203, 166, 247, 0.12), rgba(137, 180, 250, 0.03));
+      border-left-color: rgba(203, 166, 247, 0.5);
+      color: #cdd6f4;
+    }
+
+    .algo-code-line.is-context .algo-code-line-number {
+      color: rgba(203, 166, 247, 0.85);
+      font-weight: 600;
+    }
+
+    /* ========== Universal Splitter Engine Styles ========== */
+    .algo-splitter {
+      user-select: none;
+      touch-action: none;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 35;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease;
+    }
+
+    .algo-splitter-horizontal {
+      width: 10px;
+      margin: 0 -5px;
+      cursor: col-resize;
+      align-self: stretch;
+    }
+
+    .algo-splitter-vertical {
+      height: 10px;
+      margin: -5px 0;
+      width: 100%;
+      cursor: row-resize;
+    }
+
+    .algo-splitter-bar {
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.14);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .algo-splitter-horizontal .algo-splitter-bar {
+      width: 3px;
+      height: 36px;
+    }
+
+    .algo-splitter-vertical .algo-splitter-bar {
+      height: 3px;
+      width: 50px;
+    }
+
+    .algo-splitter:hover .algo-splitter-bar,
+    .algo-splitter.is-dragging .algo-splitter-bar {
+      opacity: 1;
+    }
+
+    .algo-splitter-horizontal:hover .algo-splitter-bar,
+    .algo-splitter-horizontal.is-dragging .algo-splitter-bar {
+      background: linear-gradient(180deg, #89b4fa, #cba6f7);
+      width: 4px;
+      height: 56px;
+      box-shadow: 0 0 12px rgba(137, 180, 250, 0.6);
+    }
+
+    .algo-splitter-vertical:hover .algo-splitter-bar,
+    .algo-splitter-vertical.is-dragging .algo-splitter-bar {
+      background: linear-gradient(90deg, #10b981, #f59e0b);
+      height: 4px;
+      width: 80px;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+    }
+
+    .algo-splitter.is-resetting .algo-splitter-bar {
+      animation: splitter-pulse 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes splitter-pulse {
+      0% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.6); filter: brightness(1.8); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    /* 旧版代码面板宽度拖拽手柄兼容 */
+    .algo-code-splitter {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 12px;
+      cursor: col-resize;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    .algo-code-splitter::after {
+      content: '';
+      width: 3px;
+      height: 40px;
+      border-radius: 3px;
+      background: #45475a;
+      opacity: 0.7;
+      transition: background 0.2s, height 0.2s, opacity 0.2s;
+    }
+
+    .algo-code-splitter:hover::after,
+    .algo-code-splitter.is-dragging::after {
+      background: #89b4fa;
+      opacity: 1;
+      height: 64px;
+      box-shadow: 0 0 8px rgba(137, 180, 250, 0.5);
+    }
+
+    .algo-code-token-keyword { color: #cba6f7; font-weight: 700; }
+    .algo-code-token-string { color: #a6e3a1; }
+    .algo-code-token-comment { color: #6c7086; font-style: italic; }
+    .algo-code-token-number { color: #fab387; }
+    .algo-code-token-annotation { color: #f9e2af; }
+    .algo-code-token-type { color: #89dceb; }
+
+    /* ========== Variable Watch Panel ========== */
+    .algo-code-vars {
+      flex-shrink: 0;
+      border-top: 1px solid #313244;
+      background: rgba(17, 17, 27, 0.85);
+      max-height: 220px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(.4,0,.2,1);
+    }
+
+    .algo-code-vars.is-collapsed {
+      max-height: 32px;
+    }
+
+    .algo-code-vars-header {
+      flex-shrink: 0;
+      padding: 0.45rem 0.85rem;
+      background: #181825;
+      border-bottom: 1px solid rgba(49, 50, 68, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .algo-code-vars-header:hover {
+      background: #1e1e2e;
+    }
+
+    .algo-code-vars-title {
+      color: #38bdf8;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .algo-code-vars-title::before {
+      content: '📋';
+      font-size: 0.85rem;
+    }
+
+    .algo-code-vars-toggle {
+      color: #94a3b8;
+      font-size: 0.75rem;
+      transition: transform 0.3s;
+    }
+
+    .algo-code-vars.is-collapsed .algo-code-vars-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .algo-code-vars-body {
+      flex: 1;
+      overflow: auto;
+      padding: 0.4rem 0;
+    }
+
+    .algo-code-vars.is-collapsed .algo-code-vars-body {
+      display: none;
+    }
+
+    .algo-code-var-row {
+      display: grid;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.35rem 0.85rem;
+      min-height: 1.6rem;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      transition: all 0.25s;
+      border-left: 3px solid transparent;
+    }
+
+    .algo-code-var-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .algo-code-var-row.is-changed {
+      background: rgba(56, 189, 248, 0.15);
+      border-left-color: #38bdf8;
+      animation: algo-var-flash 1.2s ease-out;
+    }
+
+    .algo-code-var-name {
+      color: #93c5fd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .algo-code-var-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* value type colors */
+    .algo-code-var-value[data-type="number"] { color: #34d399; }
+    .algo-code-var-value[data-type="array"]  { color: #38bdf8; }
+    .algo-code-var-value[data-type="string"] { color: #fde047; }
+    .algo-code-var-value[data-type="boolean"]{ color: #c084fc; }
+    .algo-code-var-value:not([data-type])    { color: #f1f5f9; }
+
+    @keyframes algo-var-flash {
+      0%   { background: rgba(56, 189, 248, 0.35); }
+      100% { background: rgba(56, 189, 248, 0.08); }
+    }
+
+    /* ========== Custom Scrollbar ========== */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #45475a;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #585b70;
+    }
+
+    .sidebar-categories::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    /* ========== Keyboard Shortcut Hint ========== */
+    .search-shortcut-hint {
+      position: absolute;
+      right: 0.7rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.68rem;
+      color: #45475a;
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 0.25rem;
+      padding: 0.15rem 0.35rem;
+      pointer-events: none;
+    }
+
+    .search-box.has-value .search-shortcut-hint {
+      display: none;
+    }
+
+    /* ========== Sidebar Category Group (关卡链) ========== */
+    .sidebar-category-group {
+      margin-bottom: 2px;
+      border-radius: 0.5rem;
+    }
+
+    .sidebar-category-header {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.18s ease;
+      position: relative;
+    }
+
+    .sidebar-category-header:hover {
+      background: rgba(137, 180, 250, 0.08);
+    }
+
+    .sidebar-category-header.active {
+      background: rgba(137, 180, 250, 0.14);
+    }
+
+    .sidebar-category-header.active .cat-name {
+      font-weight: 600;
+    }
+
+    .sidebar-category-header .cat-icon {
+      font-size: 1.15rem;
+      width: 24px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-category-header .cat-name {
+      flex: 1;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #cdd6f4;
+    }
+
+    .sidebar-category-header .cat-count {
+      font-size: 0.68rem;
+      color: #6c7086;
+      background: rgba(69, 71, 90, 0.4);
+      padding: 0.1rem 0.45rem;
+      border-radius: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-category-header .category-chevron {
+      font-size: 0.75rem;
+      color: #585b70;
+      flex-shrink: 0;
+      transition: color 0.18s ease;
+      min-width: 0.9em;
+    }
+
+    .sidebar-category-header:hover .category-chevron {
+      color: #89b4fa;
+    }
+
+    /* ========== Sidebar Level Items ========== */
+    .sidebar-levels {
+      padding: 2px 0 6px 1.55rem;
+      border-left: 2px solid rgba(69, 71, 90, 0.3);
+      margin-left: 1.45rem;
+      margin-top: 2px;
+    }
+
+    .sidebar-level-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.32rem 0.6rem;
+      border-radius: 0.35rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease;
+      font-size: 0.78rem;
+    }
+
+    .sidebar-level-item:hover {
+      background: rgba(137, 180, 250, 0.08);
+    }
+
+    .sidebar-level-item .level-dot {
+      font-size: 0.6rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .sidebar-level-item .level-number {
+      font-size: 0.68rem;
+      color: #585b70;
+      font-weight: 600;
+      min-width: 1.3em;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .sidebar-level-item .level-name {
+      color: #cdd6f4;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ========== Difficulty Badge (卡片右下角) ========== */
+    .difficulty-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.14rem 0.5rem;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+    }
+
+    .difficulty-badge::first-letter {
+      font-size: 0.6rem;
+    }
+
+    /* ========== Card Footer ========== */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: auto;
+    }
+
+    .card-footer .card-category {
+      margin-left: auto;
+    }
+
+    /* ========== Card Learning Goal ========== */
+    .card-learning-goal {
+      font-size: 0.73rem;
+      color: #a6adc8;
+      line-height: 1.55;
+      padding: 0.35rem 0.55rem;
+      background: rgba(137, 180, 250, 0.06);
+      border-left: 2px solid rgba(137, 180, 250, 0.35);
+      border-radius: 0 0.35rem 0.35rem 0;
+      margin-top: 0.15rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="app-titlebar">
+      <div class="app-titlebar-drag-region" data-tauri-drag-region>
+        <span class="app-titlebar-icon" data-tauri-drag-region></span>
+        <span class="app-titlebar-title" data-tauri-drag-region>算法动画演示</span>
+      </div>
+      <div class="app-window-controls">
+        <button id="window-minimize" class="app-window-button" type="button" aria-label="最小化">─</button>
+        <button id="window-toggle-maximize" class="app-window-button" type="button" aria-label="最大化">□</button>
+        <button id="window-close" class="app-window-button close" type="button" aria-label="关闭">×</button>
+      </div>
+    </header>
+
+    <div class="app-main" id="main-layout">
+      <!-- ===== Sidebar ===== -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1> 算法动画演示</h1>
+          <div class="search-box" id="search-box">
+            <span class="search-icon"></span>
+            <input type="text" id="search-input" placeholder="搜索算法名称或描述..." autocomplete="off" spellcheck="false" />
+            <button class="search-clear" id="search-clear" type="button" aria-label="清除搜索">✕</button>
+            <span class="search-shortcut-hint">Ctrl+K</span>
+            <div class="search-history-dropdown" id="search-history-dropdown" style="display: none;">
+              <div class="search-history-header">
+                <span class="search-history-title">🕒 搜索历史</span>
+                <button class="search-history-clear-all" id="search-history-clear-all" type="button">清空</button>
+              </div>
+              <div class="search-history-list" id="search-history-list"></div>
+            </div>
+          </div>
+        </div>
+        <nav class="sidebar-categories" id="sidebar-categories">
+          <!-- Category items injected by plugin -->
+        </nav>
+      </aside>
+
+      <!-- ===== Content Area ===== -->
+      <div class="content-area">
+        <div class="content-header" id="content-header">
+          <h2 id="content-title">📊 数组 <span class="result-count" id="result-count"></span></h2>
+        </div>
+        <div class="cards-grid" id="cards-grid">
+          <!-- Cards injected by plugin -->
+        </div>
+      </div>
+
+      <!-- ===== Algorithm Views (overlay when active) ===== -->
+      <div id="algo-bracket-view" class="view-container"></div>
+      <div id="algo-stack-queue-theory-view" class="view-container"></div>
+      <div id="algo-my-queue-view" class="view-container"></div>
+      <div id="algo-my-stack-view" class="view-container"></div>
+      <div id="algo-remove-duplicates-view" class="view-container"></div>
+      <div id="algo-eval-rpn-view" class="view-container"></div>
+      <div id="algo-sliding-window-max-view" class="view-container"></div>
+      <div id="algo-top-k-frequent-view" class="view-container"></div>
+      <div id="algo-lca-view" class="view-container"></div>
+      <div id="algo-tree-invert-view" class="view-container"></div>
+      <div id="algo-insertion-sort-view" class="view-container"></div>
+      <div id="algo-binary-search-view" class="view-container"></div>
+      <div id="algo-jump-game-view" class="view-container"></div>
+      <div id="algo-candy-view" class="view-container"></div>
+      <div id="algo-lemonade-view" class="view-container"></div>
+      <div id="algo-gas-station-view" class="view-container"></div>
+      <div id="algo-interval-view" class="view-container"></div>
+      <div id="algo-fibonacci-view" class="view-container"></div>
+      <div id="algo-merge-intervals-view" class="view-container"></div>
+      <div id="algo-climb-stairs-view" class="view-container"></div>
+
+      <!-- Batch 1 -->
+      <div id="algo-remove-element-view" class="view-container"></div>
+      <div id="algo-min-subarray-len-view" class="view-container"></div>
+      <div id="algo-spiral-matrix-ii-view" class="view-container"></div>
+      <div id="algo-array-theory-view" class="view-container"></div>
+      <div id="algo-sorted-squares-view" class="view-container"></div>
+      <div id="algo-range-sum-view" class="view-container"></div>
+      <div id="algo-buy-land-view" class="view-container"></div>
+      <div id="algo-array-summary-view" class="view-container"></div>
+      <div id="algo-reverse-linked-list-view" class="view-container"></div>
+      <div id="algo-remove-nth-from-end-view" class="view-container"></div>
+      <div id="algo-linked-list-cycle-ii-view" class="view-container"></div>
+      <div id="algo-two-sum-view" class="view-container"></div>
+      <div id="algo-three-sum-view" class="view-container"></div>
+      <div id="algo-four-sum-view" class="view-container"></div>
+      <div id="algo-four-sum-ii-view" class="view-container"></div>
+      <div id="algo-anagram-view" class="view-container"></div>
+      <div id="algo-hash-table-theory-view" class="view-container"></div>
+      <div id="algo-intersection-arrays-view" class="view-container"></div>
+      <div id="algo-happy-number-view" class="view-container"></div>
+      <div id="algo-ransom-note-view" class="view-container"></div>
+      <div id="algo-reverse-string-view" class="view-container"></div>
+      <div id="algo-reverse-words-view" class="view-container"></div>
+      <div id="algo-replace-digits-view" class="view-container"></div>
+      <div id="algo-reverse-string-ii-view" class="view-container"></div>
+      <div id="algo-right-rotate-view" class="view-container"></div>
+      <div id="algo-str-str-view" class="view-container"></div>
+      <div id="algo-repeated-substring-view" class="view-container"></div>
+      <div id="algo-daily-temperatures-view" class="view-container"></div>
+      <div id="algo-next-greater-element-i-view" class="view-container"></div>
+      <div id="algo-next-greater-element-ii-view" class="view-container"></div>
+      <div id="algo-trapping-rain-water-view" class="view-container"></div>
+      <div id="algo-largest-rectangle-histogram-view" class="view-container"></div>
+      <div id="algo-islands-view" class="view-container"></div>
+      <div id="algo-islands-bfs-view" class="view-container"></div>
+      <div id="algo-max-island-area-view" class="view-container"></div>
+      <div id="algo-total-island-area-view" class="view-container"></div>
+      <div id="algo-sink-islands-view" class="view-container"></div>
+      <div id="algo-water-flow-view" class="view-container"></div>
+      <div id="algo-make-largest-island-view" class="view-container"></div>
+      <div id="algo-coastline-view" class="view-container"></div>
+      <div id="algo-string-migration-view" class="view-container"></div>
+      <div id="algo-strongly-connected-view" class="view-container"></div>
+      <div id="algo-graph-theory-view" class="view-container"></div>
+      <div id="algo-dfs-theory-view" class="view-container"></div>
+      <div id="algo-bfs-theory-view" class="view-container"></div>
+      <div id="algo-reachable-paths-view" class="view-container"></div>
+      <div id="algo-union-find-theory-view" class="view-container"></div>
+      <div id="algo-find-route-view" class="view-container"></div>
+      <div id="algo-redundant-edge-view" class="view-container"></div>
+      <div id="algo-redundant-edge-ii-view" class="view-container"></div>
+      <div id="algo-mst-prim-view" class="view-container"></div>
+      <div id="algo-mst-kruskal-view" class="view-container"></div>
+      <div id="algo-topological-sort-view" class="view-container"></div>
+      <div id="algo-dijkstra-basic-view" class="view-container"></div>
+      <div id="algo-dijkstra-heap-view" class="view-container"></div>
+      <div id="algo-bellman-ford-view" class="view-container"></div>
+      <div id="algo-spfa-view" class="view-container"></div>
+      <div id="algo-negative-cycle-view" class="view-container"></div>
+      <div id="algo-floyd-view" class="view-container"></div>
+      <div id="algo-a-star-view" class="view-container"></div>
+      <div id="algo-limited-shortest-path-view" class="view-container"></div>
+      <div id="algo-shortest-path-summary-view" class="view-container"></div>
+      <div id="algo-graph-summary-view" class="view-container"></div>
+
+      <!-- Batch 2 -->
+      <div id="algo-design-linked-list-view" class="view-container"></div>
+      <div id="algo-intersection-linked-list-view" class="view-container"></div>
+      <div id="algo-merge-sorted-array-view" class="view-container"></div>
+      <div id="algo-binary-tree-level-view" class="view-container"></div>
+      <div id="algo-permutations-view" class="view-container"></div>
+      <div id="algo-longest-common-prefix-view" class="view-container"></div>
+      <div id="algo-move-zeroes-view" class="view-container"></div>
+
+      <!-- Batch 3 -->
+      <div id="algo-tree-traversal-view" class="view-container"></div>
+      <div id="algo-tree-depth-view" class="view-container"></div>
+      <div id="algo-valid-bst-view" class="view-container"></div>
+
+      <!-- Batch 7: New Tree Algorithms -->
+      <div id="algo-tree-symmetric-view" class="view-container"></div>
+      <div id="algo-path-sum-view" class="view-container"></div>
+      <div id="algo-build-tree-view" class="view-container"></div>
+      <div id="algo-bst-search-view" class="view-container"></div>
+
+      <!-- Batch 8: Tree Algorithms Part 2 -->
+      <div id="algo-min-depth-view" class="view-container"></div>
+      <div id="algo-balanced-view" class="view-container"></div>
+      <div id="algo-left-leaves-view" class="view-container"></div>
+      <div id="algo-all-paths-view" class="view-container"></div>
+      <div id="algo-count-nodes-view" class="view-container"></div>
+      <div id="algo-bottom-left-view" class="view-container"></div>
+      <div id="algo-max-tree-view" class="view-container"></div>
+      <div id="algo-merge-trees-view" class="view-container"></div>
+      <div id="algo-build-tree-2-view" class="view-container"></div>
+      <div id="algo-bst-lca-view" class="view-container"></div>
+      <div id="algo-bst-insert-view" class="view-container"></div>
+      <div id="algo-bst-min-diff-view" class="view-container"></div>
+      <div id="algo-bst-modes-view" class="view-container"></div>
+      <div id="algo-bst-delete-view" class="view-container"></div>
+      <div id="algo-bst-trim-view" class="view-container"></div>
+      <div id="algo-sorted-array-to-bst-view" class="view-container"></div>
+      <div id="algo-bst-to-gst-view" class="view-container"></div>
+
+      <!-- Batch 5: Greedy Algorithms -->
+      <div id="algo-greedy-theory-view" class="view-container"></div>
+      <div id="algo-assign-cookies-view" class="view-container"></div>
+      <div id="algo-wiggle-subsequence-view" class="view-container"></div>
+      <div id="algo-max-subarray-view" class="view-container"></div>
+      <div id="algo-best-time-stock-view" class="view-container"></div>
+      <div id="algo-can-jump-view" class="view-container"></div>
+      <div id="algo-greedy-week-summary-2-view" class="view-container"></div>
+      <div id="algo-maximize-sum-k-view" class="view-container"></div>
+      <div id="algo-reconstruct-queue-view" class="view-container"></div>
+      <div id="algo-queue-vector-explained-view" class="view-container"></div>
+      <div id="algo-min-arrows-view" class="view-container"></div>
+      <div id="algo-non-overlapping-view" class="view-container"></div>
+      <div id="algo-partition-labels-view" class="view-container"></div>
+      <div id="algo-greedy-week-summary-3-view" class="view-container"></div>
+      <div id="algo-greedy-week-summary-view" class="view-container"></div>
+      <div id="algo-monotone-digits-view" class="view-container"></div>
+      <div id="algo-tree-cameras-view" class="view-container"></div>
+      <div id="algo-greedy-week-summary-4-view" class="view-container"></div>
+      <div id="algo-greedy-final-summary-view" class="view-container"></div>
+
+      <!-- Backtracking Algorithms (ordered topic) -->
+      <div id="algo-backtracking-theory-view" class="view-container"></div>
+      <div id="algo-combination-view" class="view-container"></div>
+      <div id="algo-combination-optimized-view" class="view-container"></div>
+      <div id="algo-combination-sum-iii-view" class="view-container"></div>
+      <div id="algo-phone-letters-view" class="view-container"></div>
+      <div id="algo-backtracking-week-summary-1-view" class="view-container"></div>
+      <div id="algo-combination-sum-view" class="view-container"></div>
+      <div id="algo-combination-sum-ii-view" class="view-container"></div>
+      <div id="algo-palindrome-partition-view" class="view-container"></div>
+      <div id="algo-restore-ip-view" class="view-container"></div>
+      <div id="algo-subset-view" class="view-container"></div>
+      <div id="algo-backtracking-week-summary-2-view" class="view-container"></div>
+      <div id="algo-subsets-ii-view" class="view-container"></div>
+      <div id="algo-increasing-subsequences-view" class="view-container"></div>
+      <div id="algo-permutation-view" class="view-container"></div>
+      <div id="algo-permutation-ii-view" class="view-container"></div>
+      <div id="algo-backtracking-week-summary-3-view" class="view-container"></div>
+      <div id="algo-backtracking-dedup-alt-view" class="view-container"></div>
+      <div id="algo-nqueen-view" class="view-container"></div>
+      <div id="algo-sudoku-view" class="view-container"></div>
+      <div id="algo-backtracking-final-summary-view" class="view-container"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

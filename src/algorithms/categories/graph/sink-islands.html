@@ -1,0 +1,583 @@
+<style>
+  #algo-sink-islands-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-sink-islands-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 8% 6%, #f43f5e55, transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #e11d4855, transparent 55%),
+                linear-gradient(135deg, #4c0519 0%, #881337 25%, #4c0519 50%, #9f1239 75%, #4c0519 100%);
+    z-index: -2;
+  }
+
+  #algo-sink-islands-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(76, 5, 25, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-sink-islands-view .si-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .si-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .si-hero .si-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .si-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+  }
+
+  .si-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .si-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .si-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(244, 63, 94, 0.08);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .si-tip strong {
+    color: #f43f5e;
+    font-weight: 600;
+  }
+
+  #algo-sink-islands-view .si-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-sink-islands-view .si-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .si-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .si-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .si-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .si-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    color: #cdd6f4;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .si-input:focus {
+    border-color: #f43f5e;
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
+  }
+
+  .si-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    color: #4c0519;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+  }
+
+  .si-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+  }
+
+  .si-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .si-example {
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(244, 63, 94, 0.3);
+    background: rgba(244, 63, 94, 0.1);
+    color: #cdd6f4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .si-example:hover {
+    background: rgba(244, 63, 94, 0.2);
+    border-color: #f43f5e;
+  }
+
+  .si-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .si-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .si-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f43f5e, #e11d48);
+  }
+
+  .si-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .si-stat-val {
+    color: #f43f5e;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .si-grid {
+    display: grid;
+    gap: 3px;
+    background: rgba(11, 10, 23, 0.8);
+    border-radius: 12px;
+    padding: 12px;
+    justify-content: center;
+    align-content: center;
+    margin: 16px auto;
+  }
+
+  .si-cell {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.35s ease;
+    position: relative;
+  }
+
+  .si-cell.water {
+    background: rgba(28, 27, 50, 0.4);
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .si-cell.land {
+    background: rgba(45, 55, 72, 0.5);
+    color: #cdd6f4;
+  }
+
+  .si-cell.sinking {
+    background: rgba(244, 63, 94, 0.7);
+    color: #4c0519;
+    transform: scale(1.1);
+    animation: si-sink 0.5s ease forwards;
+  }
+
+  .si-cell.sunk {
+    background: rgba(28, 27, 50, 0.4);
+    color: rgba(255, 255, 255, 0.3);
+    animation: si-sunk 0.4s ease;
+  }
+
+  .si-cell.current {
+    background: rgba(244, 63, 94, 0.9);
+    color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.4);
+    animation: si-pulse 1s infinite;
+  }
+
+  .si-cell.visited {
+    background: rgba(244, 63, 94, 0.35);
+    color: #cdd6f4;
+    animation: si-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .si-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    background: rgba(244, 63, 94, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .si-log {
+    min-height: 0;
+    max-height: 130px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .si-log div {
+    padding: 2px 0;
+  }
+
+  .si-log div.active {
+    color: #f43f5e;
+    font-weight: 600;
+  }
+
+  .si-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .si-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .si-sink-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  .si-sink-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .si-sink-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 30px;
+  }
+
+  .si-sink-item {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(244, 63, 94, 0.15);
+    border: 1px solid rgba(244, 63, 94, 0.3);
+    color: #f43f5e;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    animation: si-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .si-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .si-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .si-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .si-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .si-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .si-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(244, 63, 94, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .si-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .si-pb-btn:not(:disabled):hover {
+    background: rgba(244, 63, 94, 0.2);
+    border-color: #f43f5e;
+    transform: translateY(-1px);
+  }
+
+  .si-pb-btn.play {
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    border: none;
+    color: #4c0519;
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+  }
+
+  .si-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+  }
+
+  .si-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .si-speed-row input {
+    flex: 1;
+    accent-color: #f43f5e;
+  }
+
+  .si-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @keyframes si-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+  }
+
+  @keyframes si-popIn {
+    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  @keyframes si-sink {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; background: rgba(244, 63, 94, 0.8); }
+    100% { transform: scale(0.8); opacity: 0.5; }
+  }
+
+  @keyframes si-sunk {
+    0% { transform: scale(0.9); opacity: 0.6; background: rgba(244, 63, 94, 0.4); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .si-cell.sinking { animation: si-sink 0.5s ease forwards; }
+  .si-cell.sunk { animation: si-sunk 0.4s ease; }
+  .si-cell.visited { animation: si-popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  @media (max-width: 1100px) {
+    .si-main { overflow: visible; }
+  }
+</style>
+
+<div class="si-page">
+  <div class="si-hero">
+    <div class="si-title-wrapper">
+      <div class="si-hero-icon">🌊</div>
+      <div class="si-hero-text">
+        <h2>沉没孤岛（全部置零）</h2>
+        <p>找到所有岛屿并逐一"沉没"——将陆地变为水域，观察沉没全过程。</p>
+      </div>
+    </div>
+    <div class="si-tip"><strong>沉没过程：</strong>DFS/BFS 遍历每座岛屿，将陆地逐一置为水（1→0），感受连通分量的消除。</div>
+  </div>
+
+  <div class="si-layout">
+    <div class="si-main">
+      <div class="si-card">
+        <div class="si-controls">
+          <input id="si-input" class="si-input" value="1,1,0,0;1,0,0,0;0,0,1,0;0,0,0,1" />
+          <button id="si-start" class="si-btn">开始搜索</button>
+          <button class="si-example" data-val="1,1,0,0;1,0,0,0;0,0,1,0;0,0,0,1">示例1</button>
+          <button class="si-example" data-val="1,0,1;0,1,0;1,0,1">示例2</button>
+          <button class="si-example" data-val="1,1,1;1,1,1;1,1,1">示例3</button>
+        </div>
+
+        <div class="si-stats">
+          <div class="si-stat"><span class="si-stat-label">已沉没格数</span><span class="si-stat-val" id="si-sunk-count">0</span></div>
+          <div class="si-stat"><span class="si-stat-label">岛屿总数</span><span class="si-stat-val" id="si-island-count">0</span></div>
+          <div class="si-stat"><span class="si-stat-label">当前岛屿</span><span class="si-stat-val" id="si-current-island">-</span></div>
+          <div class="si-stat"><span class="si-stat-label">剩余陆地</span><span class="si-stat-val" id="si-remaining">0</span></div>
+        </div>
+
+        <div class="si-grid" id="si-grid"></div>
+
+        <div class="si-message" id="step-message">点击「开始搜索」观察所有岛屿逐一沉没的过程。</div>
+
+        <div class="si-log" id="si-log"></div>
+      </div>
+    </div>
+
+    <div class="si-right">
+      <div data-code-panel class="si-code-card"></div>
+      <div class="si-sink-card">
+        <div class="si-sink-title">沉没记录</div>
+        <div class="si-sink-items" id="si-sink-vis"></div>
+      </div>
+      <div class="si-legend">
+        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(28,27,50,0.4)"></span>水域（'0'）</div>
+        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(45,55,72,0.5)"></span>陆地（'1'）</div>
+        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(244,63,94,0.9)"></span>当前沉没</div>
+        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(244,63,94,0.35)"></span>待沉没</div>
+      </div>
+      <div class="si-playback">
+        <div class="si-pb-row">
+          <button id="step-reset" class="si-pb-btn">重置</button>
+          <button id="step-prev" class="si-pb-btn">上一步</button>
+          <button id="step-play" class="si-pb-btn play">播放</button>
+          <button id="step-next" class="si-pb-btn">下一步</button>
+        </div>
+        <div class="si-speed-row">
+          <span>速度</span>
+          <input id="si-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="si-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="si-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,514 @@
+<style>
+  #algo-right-rotate-view {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(45, 212, 191, 0.18), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(52, 211, 153, 0.18), transparent 55%),
+      linear-gradient(135deg, #181229, #1a162c, #11131d);
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #algo-right-rotate-view .rr-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #algo-right-rotate-view .rr-header {
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    flex-shrink: 0;
+  }
+  #algo-right-rotate-view .rr-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  #algo-right-rotate-view .rr-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  #algo-right-rotate-view h2 {
+    margin: 0 0 5px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  #algo-right-rotate-view .rr-desc {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  #algo-right-rotate-view .rr-tip {
+    max-width: 420px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: rgba(45, 212, 191, 0.1);
+    border: 1px solid rgba(45, 212, 191, 0.24);
+    color: #99f6e4;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  #algo-right-rotate-view .rr-tip strong { color: #2dd4bf; }
+  #algo-right-rotate-view .rr-main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: 14px;
+    padding: 14px;
+    overflow: hidden;
+  }
+  #algo-right-rotate-view .rr-left {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  /* Glass cards */
+  #algo-right-rotate-view .glass-card,
+  #algo-right-rotate-view .rr-card {
+    backdrop-filter: blur(18px) saturate(160%);
+    background: rgba(20, 18, 38, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+  #algo-right-rotate-view .rr-card-title {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: space-between;
+    color: #e2e8f0;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  #algo-right-rotate-view .rr-input-row {
+    display: grid;
+    grid-template-columns: 1fr 80px auto;
+    gap: 10px;
+    align-items: center;
+    padding: 14px;
+  }
+  #algo-right-rotate-view input {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 10px;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    background: rgba(17, 17, 27, 0.7);
+    color: #e2e8f0;
+    font-family: Consolas, monospace;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #algo-right-rotate-view input:focus {
+    border-color: rgba(45, 212, 191, 0.5);
+  }
+  #algo-right-rotate-view .rr-k-label {
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  #algo-right-rotate-view button {
+    padding: 8px 14px;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 10px;
+    background: rgba(100, 116, 139, 0.2);
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+  }
+  #algo-right-rotate-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    border-color: transparent;
+    color: #1e1e2e;
+  }
+  #algo-right-rotate-view button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  #algo-right-rotate-view .rr-examples {
+    padding: 0 14px 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  #algo-right-rotate-view .rr-example-btn {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+  /* Stat panel */
+  #algo-right-rotate-view .rr-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  #algo-right-rotate-view .rr-stat {
+    position: relative;
+    overflow: hidden;
+    padding: 12px 12px 12px 18px;
+    backdrop-filter: blur(18px) saturate(160%);
+    background: rgba(20, 18, 38, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  #algo-right-rotate-view .rr-stat::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #2dd4bf, #34d399);
+    border-radius: 2px 0 0 2px;
+  }
+  #algo-right-rotate-view .rr-stat label {
+    display: block;
+    margin-bottom: 6px;
+    color: #94a3b8;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  #algo-right-rotate-view .rr-stat span {
+    color: #2dd4bf;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 20px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-right-rotate-view .rr-visual {
+    flex: 1;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Phase indicator */
+  #algo-right-rotate-view .rr-phase-bar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    align-items: center;
+  }
+  #algo-right-rotate-view .rr-phase-tag {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    color: #64748b;
+    transition: all 0.3s;
+  }
+  #algo-right-rotate-view .rr-phase-tag.active-1 {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+  }
+  #algo-right-rotate-view .rr-phase-tag.active-2 {
+    background: rgba(244, 114, 182, 0.18);
+    border-color: rgba(244, 114, 182, 0.4);
+    color: #f9a8d4;
+  }
+  #algo-right-rotate-view .rr-phase-tag.active-3 {
+    background: rgba(45, 212, 191, 0.18);
+    border-color: rgba(45, 212, 191, 0.4);
+    color: #99f6e4;
+  }
+  #algo-right-rotate-view .rr-track {
+    flex: 1;
+    min-height: 0;
+    padding: 28px 18px 18px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  #algo-right-rotate-view .rr-cell {
+    width: 46px;
+    height: 54px;
+    border-radius: 12px;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    background: rgba(17, 17, 27, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    transition: all 0.25s ease;
+    position: relative;
+    transform-origin: center bottom;
+  }
+  #algo-right-rotate-view .rr-cell .idx {
+    color: #64748b;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  #algo-right-rotate-view .rr-cell .val {
+    color: #e2e8f0;
+    font-weight: 800;
+    font-size: 19px;
+  }
+  /* In-range highlight per phase */
+  #algo-right-rotate-view .rr-cell.phase1 {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(99, 102, 241, 0.1);
+  }
+  #algo-right-rotate-view .rr-cell.phase2 {
+    border-color: rgba(244, 114, 182, 0.5);
+    background: rgba(244, 114, 182, 0.1);
+  }
+  #algo-right-rotate-view .rr-cell.phase3 {
+    border-color: rgba(45, 212, 191, 0.5);
+    background: rgba(45, 212, 191, 0.1);
+  }
+  #algo-right-rotate-view .rr-cell.left {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    animation: rrPulseLeft 1.2s infinite;
+  }
+  #algo-right-rotate-view .rr-cell.right {
+    border-color: #f472b6;
+    box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.18);
+    animation: rrPulseRight 1.2s infinite;
+  }
+  #algo-right-rotate-view .rr-cell.swapped {
+    animation: rrSwapArc 0.6s ease;
+  }
+  #algo-right-rotate-view .rr-cell.swapped.phase1 { background: rgba(99, 102, 241, 0.2); }
+  #algo-right-rotate-view .rr-cell.swapped.phase2 { background: rgba(244, 114, 182, 0.2); }
+  #algo-right-rotate-view .rr-cell.swapped.phase3 { background: rgba(45, 212, 191, 0.2); }
+  #algo-right-rotate-view .rr-ptr {
+    position: absolute;
+    top: -18px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  #algo-right-rotate-view .rr-ptr.left { color: #6366f1; }
+  #algo-right-rotate-view .rr-ptr.right { color: #f472b6; }
+  #algo-right-rotate-view .rr-message {
+    margin: 0 16px 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(45, 212, 191, 0.22);
+    background: rgba(45, 212, 191, 0.08);
+    line-height: 1.5;
+    font-size: 14px;
+    color: #99f6e4;
+  }
+  #algo-right-rotate-view .rr-log {
+    min-height: 80px;
+    max-height: 110px;
+    padding: 10px 14px;
+    overflow: auto;
+    background: rgba(17, 17, 27, 0.7);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #94a3b8;
+  }
+  #algo-right-rotate-view .rr-log .active {
+    color: #2dd4bf;
+    background: rgba(45, 212, 191, 0.05);
+    font-weight: 600;
+  }
+  #algo-right-rotate-view .rr-code {
+    min-height: 0;
+    display: flex;
+    background: rgba(17, 17, 27, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(18px) saturate(160%);
+  }
+  #algo-right-rotate-view .rr-code [data-code-panel] {
+    flex: 1;
+    min-width: 0;
+  }
+  /* Unified controls bar */
+  #algo-right-rotate-view .rr-controls {
+    padding: 12px 16px;
+    background: rgba(24, 24, 37, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  #algo-right-rotate-view .rr-controls button {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #algo-right-rotate-view .rr-controls #step-play {
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    border: none;
+    color: #1e1e2e;
+  }
+  #algo-right-rotate-view .rr-controls button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(45, 212, 191, 0.2);
+  }
+  #algo-right-rotate-view .rr-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+  #algo-right-rotate-view .rr-counter {
+    color: #94a3b8;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  #algo-right-rotate-view .control-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  #algo-right-rotate-view #step-speed {
+    accent-color: #2dd4bf;
+    width: 100px;
+  }
+  /* Keyframe animations */
+  @keyframes rrPulseLeft {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+  }
+  @keyframes rrPulseRight {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(244, 114, 182, 0); }
+  }
+  @keyframes rrSwapArc {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(8deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+  }
+  @media (max-width: 1100px) {
+    #algo-right-rotate-view .rr-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-right-rotate-view .rr-code { min-height: 360px; }
+  }
+</style>
+
+<div class="rr-page">
+  <div class="rr-header">
+    <div class="rr-header-left">
+      <div class="rr-icon-badge">🔄</div>
+      <div>
+        <h2>右旋转字符串（三次反转）</h2>
+        <p class="rr-desc">经典算法 · 通过三次反转实现字符串右旋转 k 位</p>
+      </div>
+    </div>
+    <div class="rr-tip"><strong>核心思想：</strong>先反转整个字符串，再分别反转前 k 个字符和后 n-k 个字符，即可实现右旋转。</div>
+  </div>
+  <div class="rr-main">
+    <div class="rr-left">
+      <section class="rr-card">
+        <div class="rr-card-title">输入参数</div>
+        <div class="rr-input-row">
+          <input id="rr-input-s" value="abcdefg">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span class="rr-k-label">k =</span>
+            <input id="rr-input-k" value="2" style="width:56px;">
+          </div>
+          <button id="rr-start">开始旋转</button>
+        </div>
+        <div class="rr-examples">
+          <button class="rr-example-btn" data-s="abcdefg" data-k="2">abcdefg, k=2</button>
+          <button class="rr-example-btn" data-s="abcdef" data-k="2">abcdef, k=2</button>
+          <button class="rr-example-btn" data-s="hello" data-k="3">hello, k=3</button>
+        </div>
+      </section>
+      <div class="rr-stats">
+        <div class="rr-stat"><label>当前阶段</label><span id="rr-phase">-</span></div>
+        <div class="rr-stat"><label>Left</label><span id="rr-left">0</span></div>
+        <div class="rr-stat"><label>Right</label><span id="rr-right">0</span></div>
+        <div class="rr-stat"><label>交换次数</label><span id="rr-swap">0</span></div>
+      </div>
+      <section class="rr-card rr-visual">
+        <div class="rr-card-title">
+          <span>字符数组</span>
+          <div class="rr-phase-bar">
+            <span class="rr-phase-tag" id="rr-tag-1">1 反转整体</span>
+            <span class="rr-phase-tag" id="rr-tag-2">2 反转前k</span>
+            <span class="rr-phase-tag" id="rr-tag-3">3 反转后n-k</span>
+          </div>
+        </div>
+        <div class="rr-track" id="rr-track"></div>
+        <div class="rr-message" id="step-message">点击开始旋转</div>
+      </section>
+      <section class="rr-card">
+        <div class="rr-card-title">执行日志</div>
+        <div class="rr-log" id="rr-log"></div>
+      </section>
+    </div>
+    <aside class="rr-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="rr-controls">
+    <button id="step-reset">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+      重置
+    </button>
+    <button id="step-prev">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+      上一步
+    </button>
+    <button id="step-play">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 3l14 9-14 9V3z" />
+      </svg>
+      播放
+    </button>
+    <button id="step-next">
+      下一步
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="m9 18 6-6-6-6" />
+      </svg>
+    </button>
+    <div class="control-divider"></div>
+    <span id="step-counter" class="rr-counter">步骤: 0 / 0</span>
+    <div style="display:flex; align-items:center; gap:0.5rem;">
+      <span class="rr-counter">速度</span>
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" class="rr-counter">0.9s</span>
+    </div>
+  </div>
+</div>

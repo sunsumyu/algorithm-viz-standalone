@@ -1,0 +1,357 @@
+<style>
+  /* === 用最少数量的箭引爆气球 · 玻璃感 + 坐标轴气球 + 箭飞入 + burst 爆裂 === */
+  #algo-min-arrows-view {
+    --accent-a: #f97316;
+    --accent-b: #ef4444;
+    --accent-glow: rgba(239, 68, 68, .45);
+    --current-color: #fbbf24;
+    --hit-color: #34d399;
+    --skip-color: #94a3b8;
+    --arrow-color: #f87171;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 5% 5%, rgba(249, 115, 22, .26), transparent 55%),
+      radial-gradient(ellipse at 95% 90%, rgba(239, 68, 68, .26), transparent 55%),
+      linear-gradient(135deg, #1a0a06 0%, #1e0f14 50%, #2a0a0a 100%);
+    overflow: hidden;
+  }
+  #algo-min-arrows-view .ma-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  /* hero */
+  #algo-min-arrows-view .ma-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-min-arrows-view .ma-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-min-arrows-view .ma-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-min-arrows-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-min-arrows-view .ma-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-min-arrows-view .ma-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, .12), rgba(239, 68, 68, .08));
+    border: 1px solid rgba(239, 68, 68, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-min-arrows-view .ma-tip strong { color: #fca5a5; }
+  /* main */
+  #algo-min-arrows-view .ma-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-min-arrows-view .ma-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-min-arrows-view .ma-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-min-arrows-view .ma-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-min-arrows-view .ma-tag {
+    font-size: 11px; color: #fca5a5; background: rgba(239, 68, 68, .14);
+    border: 1px solid rgba(239, 68, 68, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* input */
+  #algo-min-arrows-view .ma-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-min-arrows-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-min-arrows-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(239, 68, 68, .15); }
+  #algo-min-arrows-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-min-arrows-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-min-arrows-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-min-arrows-view .ma-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-min-arrows-view .ma-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(249, 115, 22, .12); border: 1px solid rgba(249, 115, 22, .28);
+    color: #fdba74; cursor: pointer; transition: all .2s;
+  }
+  #algo-min-arrows-view .ma-chip:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  /* stats */
+  #algo-min-arrows-view .ma-stats {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  }
+  #algo-min-arrows-view .ma-stat {
+    position: relative; padding: 12px 14px 12px 16px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-min-arrows-view .ma-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+  }
+  #algo-min-arrows-view .ma-stat--arrows::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+  #algo-min-arrows-view .ma-stat--arrows .ma-stat-val { color: #fca5a5; }
+  #algo-min-arrows-view .ma-stat--end::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+  #algo-min-arrows-view .ma-stat--end .ma-stat-val { color: #fde68a; }
+  #algo-min-arrows-view .ma-stat--hit::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-min-arrows-view .ma-stat--hit .ma-stat-val { color: #6ee7b7; }
+  #algo-min-arrows-view .ma-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-min-arrows-view .ma-stat-val {
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 22px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* canvas: x-axis + balloons */
+  #algo-min-arrows-view .ma-chart-card { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+  #algo-min-arrows-view .ma-canvas {
+    flex: 1; min-height: 220px; padding: 16px;
+    position: relative; overflow: auto;
+  }
+  #algo-min-arrows-view .ma-axis {
+    position: relative; min-width: 600px; height: 100%; min-height: 200px;
+    padding: 30px 20px 40px;
+    background: rgba(8, 8, 24, .55);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px;
+  }
+  #algo-min-arrows-view .ma-axis::before {
+    content: ''; position: absolute; left: 20px; right: 20px; bottom: 40px; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, .4), transparent);
+  }
+  /* balloon: positioned absolutely on axis */
+  #algo-min-arrows-view .ma-balloon {
+    position: absolute;
+    height: 36px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(96, 165, 250, .4), rgba(59, 130, 246, .15));
+    border: 2px solid rgba(96, 165, 250, .5);
+    color: #dbeafe;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    transition: all .4s cubic-bezier(.4, 0, .2, 1);
+    box-shadow: 0 4px 12px rgba(96, 165, 250, .25);
+    bottom: 42px;
+  }
+  #algo-min-arrows-view .ma-balloon.ma-balloon--current {
+    border-color: var(--current-color);
+    background: linear-gradient(180deg, rgba(251, 191, 36, .55), rgba(245, 158, 11, .2));
+    color: #fef3c7;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 6px 18px rgba(251, 191, 36, .4);
+    transform: translateY(-6px);
+    animation: ma-balloon-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes ma-balloon-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 6px 18px rgba(251, 191, 36, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, .15), 0 8px 22px rgba(251, 191, 36, .55); }
+  }
+  #algo-min-arrows-view .ma-balloon.ma-balloon--skipped {
+    background: linear-gradient(180deg, rgba(52, 211, 153, .35), rgba(16, 185, 129, .12));
+    border-color: rgba(52, 211, 153, .5);
+    color: #d1fae5;
+  }
+  #algo-min-arrows-view .ma-balloon.ma-balloon--hit {
+    animation: ma-balloon-burst .6s ease-out forwards;
+  }
+  @keyframes ma-balloon-burst {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 0 8px rgba(248, 113, 113, .3), 0 0 30px rgba(248, 113, 113, .6); }
+    100% { transform: scale(.3) rotate(20deg); opacity: 0; }
+  }
+  /* arrow shooting down from top */
+  #algo-min-arrows-view .ma-arrow {
+    position: absolute;
+    color: var(--arrow-color);
+    font-size: 22px;
+    bottom: 42px;
+    animation: ma-arrow-shoot .55s cubic-bezier(.4, 0, .2, 1) forwards;
+    text-shadow: 0 0 12px rgba(248, 113, 113, .6);
+  }
+  @keyframes ma-arrow-shoot {
+    0% { transform: translateY(-160px); opacity: 0; }
+    60% { transform: translateY(10px); opacity: 1; }
+    80% { transform: translateY(-4px); opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  #algo-min-arrows-view .ma-axis-label {
+    position: absolute; bottom: 8px;
+    font-size: 10px; color: #64748b; font-family: 'JetBrains Mono', monospace;
+    transform: translateX(-50%);
+  }
+  #algo-min-arrows-view .ma-end-marker {
+    position: absolute; bottom: 42px;
+    width: 2px; height: 50px;
+    background: linear-gradient(180deg, transparent, var(--current-color));
+    transform: translateX(-50%);
+  }
+  #algo-min-arrows-view .ma-end-marker::after {
+    content: '↓ end'; position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; color: var(--current-color); font-weight: 700;
+    white-space: nowrap;
+  }
+  /* result */
+  #algo-min-arrows-view .ma-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, .12), rgba(239, 68, 68, .06));
+    border: 1px solid rgba(239, 68, 68, .28);
+    line-height: 1.55; font-size: 14px; color: #fca5a5;
+  }
+  #algo-min-arrows-view .ma-result .ma-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  #algo-min-arrows-view .ma-result.ma-result--done {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-min-arrows-view .ma-result.ma-result--done .ma-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  /* log */
+  #algo-min-arrows-view .ma-log {
+    min-height: 80px; max-height: 130px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.65; color: #94a3b8;
+  }
+  #algo-min-arrows-view .ma-log-line { display: flex; gap: 8px; }
+  #algo-min-arrows-view .ma-log-line .ma-log-num { color: #475569; flex-shrink: 0; }
+  #algo-min-arrows-view .ma-log-line.ma-log-active { color: #fca5a5; font-weight: 600; }
+  #algo-min-arrows-view .ma-log-line.ma-log-active .ma-log-num { color: var(--accent-b); }
+  /* code */
+  #algo-min-arrows-view .ma-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-min-arrows-view .ma-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* controls */
+  #algo-min-arrows-view .ma-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-min-arrows-view .ma-controls .ma-ctrl-btn { min-width: 64px; }
+  #algo-min-arrows-view .ma-controls .ma-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-min-arrows-view .ma-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-min-arrows-view .ma-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-min-arrows-view #ma-speed { width: 130px; accent-color: var(--accent-b); }
+  @media (max-width: 1100px) {
+    #algo-min-arrows-view .ma-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-min-arrows-view .ma-code { min-height: 360px; }
+  }
+</style>
+
+<div class="ma-shell">
+  <div class="ma-hero">
+    <div class="ma-hero-left">
+      <span class="ma-icon">🎯</span>
+      <div>
+        <h1>用最少数量的箭引爆气球（贪心）</h1>
+        <div class="ma-sub">LeetCode 452 · 按终点排序，每支箭射穿所有可重叠的气球</div>
+      </div>
+    </div>
+    <div class="ma-tip"><strong>核心动画：</strong>气球按终点排序后在坐标轴上排列；<span style="color:#fde68a">当前气球</span>脉冲上浮；需要新箭时<span style="color:#fca5a5">箭从上方飞入</span>，命中气球 <span style="color:#fca5a5">burst 爆裂</span>消失；重叠气球绿色保留。</div>
+  </div>
+  <div class="ma-main">
+    <div class="ma-left">
+      <section class="ma-card">
+        <div class="ma-card-title">输入 <span class="ma-tag">points = [[s,e]...]</span></div>
+        <div class="ma-input-row">
+          <input id="arrow-input" value="[[10,16],[2,8],[1,6],[7,12]]">
+          <button id="arrow-start">开始射气球</button>
+        </div>
+        <div class="ma-examples">
+          <button class="ma-chip" data-val="[[10,16],[2,8],[1,6],[7,12]]">经典示例</button>
+          <button class="ma-chip" data-val="[[1,2],[3,4],[5,6],[7,8]]">互不重叠</button>
+          <button class="ma-chip" data-val="[[1,6],[2,8],[7,12],[10,16]]">部分重叠</button>
+          <button class="ma-chip" data-val="[[1,2],[2,3],[3,4],[4,5]]">端点相接</button>
+          <button class="ma-chip" data-val="[[1,10],[2,9],[3,8],[4,7]]">全部重叠</button>
+        </div>
+      </section>
+
+      <div class="ma-stats">
+        <div class="ma-stat ma-stat--arrows"><div class="ma-stat-label">已射箭数</div><div class="ma-stat-val" id="arrow-count">0</div></div>
+        <div class="ma-stat ma-stat--end"><div class="ma-stat-label">当前箭位</div><div class="ma-stat-val" id="current-end">-</div></div>
+        <div class="ma-stat ma-stat--hit"><div class="ma-stat-label">已爆气球</div><div class="ma-stat-val" id="hit-count">0</div></div>
+        <div class="ma-stat"><div class="ma-stat-label">进度</div><div class="ma-stat-val" id="progress" style="font-size:16px;">0/0</div></div>
+        <div class="ma-stat"><div class="ma-stat-label">状态</div><div class="ma-stat-val" id="ma-status" style="font-size:14px;">-</div></div>
+      </div>
+
+      <section class="ma-card ma-chart-card">
+        <div class="ma-card-title">坐标轴与气球 <span class="ma-tag">按终点排序</span></div>
+        <div class="ma-canvas">
+          <div class="ma-axis" id="ma-axis"></div>
+        </div>
+        <div class="ma-result" id="ma-result">
+          <span class="ma-emoji">🎯</span>
+          <div id="step-message">点击「开始射气球」观察气球排序 + 箭飞入 + burst 爆裂</div>
+        </div>
+      </section>
+
+      <section class="ma-card">
+        <div class="ma-card-title">执行日志 <button id="ma-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
+        <div class="ma-log" id="ma-log"></div>
+      </section>
+    </div>
+    <aside class="ma-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="ma-controls">
+    <button id="step-reset" class="ma-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="ma-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="ma-ctrl-btn ma-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="ma-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="ma-counter">步骤: 0 / 0</span>
+    <div class="ma-speed-wrap">
+      <span>速度</span>
+      <input id="ma-speed" type="range" min="200" max="2500" step="100" value="900">
+      <span id="ma-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

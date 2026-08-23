@@ -1,0 +1,506 @@
+<style>
+  /* === 数组理论基础 · 玻璃感 + 蓝色主题 === */
+  #algo-array-theory-view {
+    --accent-a: #3b82f6;
+    --accent-b: #2563eb;
+    --accent-glow: rgba(59, 130, 246, .45);
+    --match-color: #34d399;
+    --conflict-color: #f87171;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(59, 130, 246, .25), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(37, 99, 235, .25), transparent 55%),
+      linear-gradient(135deg, #06121f 0%, #0e1a30 50%, #0a1428 100%);
+    overflow: hidden;
+  }
+  #algo-array-theory-view .at-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-array-theory-view .at-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-array-theory-view .at-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-array-theory-view .at-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-array-theory-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-array-theory-view .at-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-array-theory-view .at-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(37, 99, 235, .08));
+    border: 1px solid rgba(59, 130, 246, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-array-theory-view .at-tip strong { color: #93c5fd; }
+  #algo-array-theory-view .at-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-array-theory-view .at-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-array-theory-view .at-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-array-theory-view .at-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-array-theory-view .at-tag {
+    font-size: 11px; color: #93c5fd; background: rgba(59, 130, 246, .14);
+    border: 1px solid rgba(59, 130, 246, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  /* 理论内容区（可滚动） */
+  #algo-array-theory-view .at-scroll {
+    flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 14px;
+    padding-right: 2px;
+  }
+  #algo-array-theory-view .at-scroll::-webkit-scrollbar { width: 6px; }
+  #algo-array-theory-view .at-scroll::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, .3); border-radius: 3px; }
+  #algo-array-theory-view .at-body {
+    padding: 16px 18px; color: #cbd5e1; font-size: 13px; line-height: 1.75;
+  }
+  #algo-array-theory-view .at-body h3 {
+    margin: 0 0 8px; font-size: 14px; color: #bfdbfe; font-weight: 800; letter-spacing: .02em;
+  }
+  #algo-array-theory-view .at-body p { margin: 0 0 10px; }
+  #algo-array-theory-view .at-body code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    padding: 2px 6px; border-radius: 6px;
+    background: rgba(59, 130, 246, .14); color: #93c5fd; font-size: 12px;
+  }
+  /* 内存布局示意图 */
+  #algo-array-theory-view .at-mem-diagram {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 16px 8px; margin: 8px 0;
+    background: rgba(8, 8, 24, .45); border-radius: 12px;
+    border: 1px dashed rgba(59, 130, 246, .3);
+  }
+  #algo-array-theory-view .at-mem-blocks {
+    display: flex; gap: 4px;
+  }
+  #algo-array-theory-view .at-mem-block {
+    width: 52px; height: 44px; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 1px solid rgba(59, 130, 246, .35);
+    background: linear-gradient(180deg, rgba(59, 130, 246, .2), rgba(37, 99, 235, .08));
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .25s;
+  }
+  #algo-array-theory-view .at-mem-block .at-mem-addr { font-size: 9px; color: #64748b; }
+  #algo-array-theory-view .at-mem-block .at-mem-val { font-size: 14px; color: #93c5fd; font-weight: 700; }
+  #algo-array-theory-view .at-mem-label { font-size: 11px; color: #94a3b8; margin-bottom: 6px; text-align: center; }
+  #algo-array-theory-view .at-mem-formula {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, .15), rgba(37, 99, 235, .08));
+    border: 1px solid rgba(59, 130, 246, .3);
+    color: #93c5fd; font-weight: 600; font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  /* 常用技巧卡片 */
+  #algo-array-theory-view .at-techniques {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    padding: 0 18px 16px;
+  }
+  #algo-array-theory-view .at-tech-card {
+    padding: 12px 14px; border-radius: 12px;
+    background: rgba(8, 8, 24, .45);
+    border: 1px solid rgba(255, 255, 255, .08);
+    transition: all .25s;
+  }
+  #algo-array-theory-view .at-tech-card:hover {
+    border-color: rgba(59, 130, 246, .4); transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(59, 130, 246, .2);
+  }
+  #algo-array-theory-view .at-tech-card h5 {
+    margin: 0 0 4px; font-size: 13px; color: #bfdbfe; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-array-theory-view .at-tech-card p { margin: 0; font-size: 11.5px; line-height: 1.55; color: #94a3b8; }
+  /* 复杂度表 */
+  #algo-array-theory-view .at-table-wrap { padding: 0 18px 16px; }
+  #algo-array-theory-view table.at-table {
+    width: 100%; border-collapse: collapse; font-size: 12.5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-array-theory-view table.at-table th, #algo-array-theory-view table.at-table td {
+    padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+  }
+  #algo-array-theory-view table.at-table th {
+    color: #93c5fd; font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em;
+    background: rgba(59, 130, 246, .08);
+  }
+  #algo-array-theory-view table.at-table td { color: #cbd5e1; }
+  #algo-array-theory-view table.at-table tr:last-child td { border-bottom: none; }
+  #algo-array-theory-view .at-good { color: #6ee7b7; font-weight: 700; }
+  #algo-array-theory-view .at-bad { color: #fca5a5; font-weight: 700; }
+  /* JS 类型卡片 */
+  #algo-array-theory-view .at-js-card {
+    margin: 0 18px 16px; padding: 14px 16px; border-radius: 12px;
+    background: rgba(8, 8, 24, .45);
+    border: 1px solid rgba(255, 255, 255, .08);
+  }
+  #algo-array-theory-view .at-js-card h5 {
+    margin: 0 0 6px; font-size: 13px; color: #bfdbfe; font-weight: 700;
+  }
+  #algo-array-theory-view .at-js-card p { margin: 0; font-size: 12px; line-height: 1.65; color: #94a3b8; }
+  #algo-array-theory-view .at-js-card code { font-size: 11px; }
+  /* 交互可视化 */
+  #algo-array-theory-view .at-visual { min-height: 200px; display: flex; flex-direction: column; }
+  #algo-array-theory-view .at-input-row {
+    display: flex; gap: 10px; align-items: center; padding: 14px 16px; flex-wrap: wrap;
+  }
+  #algo-array-theory-view .at-input-group {
+    display: flex; align-items: center; gap: 6px;
+  }
+  #algo-array-theory-view .at-input-group label {
+    font-size: 12px; color: #94a3b8; white-space: nowrap;
+  }
+  #algo-array-theory-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-array-theory-view .at-input-group input { width: 80px; }
+  #algo-array-theory-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
+  #algo-array-theory-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-array-theory-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #06121f; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-array-theory-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-array-theory-view .at-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-array-theory-view .at-example-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(37, 99, 235, .12); border: 1px solid rgba(37, 99, 235, .28);
+    color: #93c5fd; cursor: pointer; transition: all .2s;
+  }
+  #algo-array-theory-view .at-example-btn:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent; transform: translateY(-1px);
+  }
+  #algo-array-theory-view .at-track {
+    flex: 1; min-height: 140px; padding: 20px 18px;
+    overflow: auto; display: flex; align-items: center; gap: 10px;
+    justify-content: center;
+  }
+  #algo-array-theory-view .at-cell {
+    position: relative; min-width: 58px; height: 68px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-array-theory-view .at-cell .idx { color: #64748b; font-size: 11px; }
+  #algo-array-theory-view .at-cell .val { color: #cbd5e1; font-weight: 800; font-size: 18px; }
+  #algo-array-theory-view .at-cell.active {
+    border-color: var(--accent-a);
+    background: linear-gradient(180deg, rgba(59, 130, 246, .35), rgba(37, 99, 235, .12));
+    transform: translateY(-6px) scale(1.08);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .25), 0 8px 22px rgba(59, 130, 246, .4);
+    animation: at-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes at-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, .25), 0 8px 22px rgba(59, 130, 246, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, .12), 0 10px 28px rgba(59, 130, 246, .55); }
+  }
+  #algo-array-theory-view .at-cell.active .val { color: #bfdbfe; }
+  #algo-array-theory-view .at-cell.scanning {
+    border-color: var(--accent-a);
+    background: linear-gradient(180deg, rgba(59, 130, 246, .2), rgba(37, 99, 235, .06));
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, .15);
+  }
+  #algo-array-theory-view .at-cell.scanning .val { color: #93c5fd; }
+  #algo-array-theory-view .at-cell.shifting {
+    border-color: #f59e0b;
+    background: linear-gradient(180deg, rgba(245, 158, 11, .2), rgba(217, 119, 6, .06));
+    transform: translateY(-3px);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, .2);
+  }
+  #algo-array-theory-view .at-cell.shifting .val { color: #fcd34d; }
+  #algo-array-theory-view .at-cell.found {
+    border-color: var(--match-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
+    animation: at-match-burst .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes at-match-burst {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 24px rgba(52, 211, 153, .6); }
+    100% { transform: scale(1); }
+  }
+  #algo-array-theory-view .at-cell.found .val { color: #a7f3d0; }
+  #algo-array-theory-view .at-cell.not-found {
+    border-color: var(--conflict-color);
+    background: linear-gradient(180deg, rgba(248, 113, 113, .2), rgba(239, 68, 68, .05));
+    animation: at-shake .5s ease-in-out;
+  }
+  @keyframes at-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
+  #algo-array-theory-view .at-cell.not-found .val { color: #fca5a5; }
+  #algo-array-theory-view .at-cell.empty {
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, .06);
+    background: rgba(255, 255, 255, .02);
+  }
+  #algo-array-theory-view .at-cell.empty .val { color: #475569; }
+  /* 结果横幅 */
+  #algo-array-theory-view .at-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(37, 99, 235, .06));
+    border: 1px solid rgba(59, 130, 246, .28);
+    line-height: 1.55; font-size: 14px; color: #bfdbfe;
+  }
+  #algo-array-theory-view .at-result .at-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  /* 日志 */
+  #algo-array-theory-view .at-log {
+    min-height: 80px; max-height: 120px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-array-theory-view .at-log .active { color: #93c5fd; font-weight: 600; }
+  /* 代码 */
+  #algo-array-theory-view .at-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-array-theory-view .at-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* 控制栏 */
+  #algo-array-theory-view .at-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-array-theory-view .at-controls .at-ctrl-btn { min-width: 64px; }
+  #algo-array-theory-view .at-controls .at-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #06121f; border-color: transparent;
+  }
+  #algo-array-theory-view .at-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-array-theory-view .at-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-array-theory-view #step-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-array-theory-view .at-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-array-theory-view .at-code { min-height: 360px; }
+  }
+</style>
+
+<div class="at-shell">
+  <div class="at-hero">
+    <div class="at-hero-left">
+      <span class="at-icon">📖</span>
+      <div>
+        <h1>数组理论基础</h1>
+        <div class="at-sub">理解数组的内存布局、操作与时间复杂度</div>
+      </div>
+    </div>
+    <div class="at-tip"><strong>核心动画：</strong>演示数组在内存中的连续存储特性，以及 <code style="color:#93c5fd">访问</code>、<code style="color:#93c5fd">搜索</code>、<code style="color:#93c5fd">插入</code>、<code style="color:#93c5fd">删除</code> 四大基本操作的内存移位过程。</div>
+  </div>
+  <div class="at-main">
+    <div class="at-left">
+      <div class="at-scroll">
+        <!-- 1. 什么是数组 -->
+        <section class="at-card">
+          <div class="at-card-title">1. 什么是数组 <span class="at-tag">Array Basics</span></div>
+          <div class="at-body">
+            <p>数组（Array）是最基础的数据结构之一，它将<strong style="color:#bfdbfe">同类型元素</strong>存储在<strong style="color:#bfdbfe">连续的内存空间</strong>中。数组的每一个元素都可以通过下标（index）在 <code>O(1)</code> 时间内直接访问。</p>
+            <p>数组的特点：<br>
+              &bull; <strong style="color:#bfdbfe">连续存储</strong> —— 元素在内存中首尾相连<br>
+              &bull; <strong style="color:#bfdbfe">固定大小</strong>（静态数组）—— 声明后容量不变<br>
+              &bull; <strong style="color:#bfdbfe">随机访问</strong> —— 通过下标 O(1) 直达目标
+            </p>
+          </div>
+        </section>
+
+        <!-- 2. 内存布局 -->
+        <section class="at-card">
+          <div class="at-card-title">2. 内存布局 <span class="at-tag">Memory Layout</span></div>
+          <div class="at-body">
+            <p>数组在内存中占据一段<strong style="color:#bfdbfe">连续的地址空间</strong>。假设数组首地址为 <code>base</code>，每个元素占 <code>size</code> 字节，则第 <code>i</code> 个元素的地址为：</p>
+            <p style="text-align:center; font-family:'JetBrains Mono',monospace; color:#93c5fd; font-size:15px; margin:8px 0;"><code>addr(i) = base + i &times; size</code></p>
+            <div class="at-mem-diagram">
+              <div>
+                <div class="at-mem-label">内存中的数组 arr = [3, 5, 7, 11, 15]</div>
+                <div class="at-mem-blocks">
+                  <div class="at-mem-block"><span class="at-mem-addr">0x00</span><span class="at-mem-val">3</span></div>
+                  <div class="at-mem-block"><span class="at-mem-addr">0x04</span><span class="at-mem-val">5</span></div>
+                  <div class="at-mem-block"><span class="at-mem-addr">0x08</span><span class="at-mem-val">7</span></div>
+                  <div class="at-mem-block"><span class="at-mem-addr">0x0C</span><span class="at-mem-val">11</span></div>
+                  <div class="at-mem-block"><span class="at-mem-addr">0x10</span><span class="at-mem-val">15</span></div>
+                </div>
+              </div>
+              <div class="at-mem-formula">
+                <div>addr(3) = 0x00 + 3 &times; 4</div>
+                <div style="font-size:16px; color:#bfdbfe;">= 0x0C</div>
+              </div>
+            </div>
+            <p>正因为地址可以<strong style="color:#bfdbfe">直接计算</strong>，所以无需遍历就能访问任意元素，这就是 <code>O(1)</code> 随机访问的本质。</p>
+          </div>
+        </section>
+
+        <!-- 3. 下标访问 -->
+        <section class="at-card">
+          <div class="at-card-title">3. 下标访问 <span class="at-tag">O(1) Access</span></div>
+          <div class="at-body">
+            <p>数组最强大的操作是<strong style="color:#bfdbfe">随机访问</strong>：给定下标 <code>i</code>，通过硬件级的地址计算，CPU 可以在常数时间内读取或写入该位置。</p>
+            <p><code>arr[i]</code> 的执行过程：<br>
+              &bull; 取数组首地址 <code>base</code><br>
+              &bull; 计算偏移量 <code>i &times; size</code><br>
+              &bull; 从地址 <code>base + i * size</code> 读取数据
+            </p>
+            <p>这也是为什么数组下标从 <strong style="color:#bfdbfe">0</strong> 开始：当 <code>i = 0</code> 时，偏移量为 <code>0</code>，直接指向首元素。</p>
+          </div>
+        </section>
+
+        <!-- 4. 基本操作复杂度 -->
+        <section class="at-card">
+          <div class="at-card-title">4. 基本操作复杂度 <span class="at-tag">Complexity</span></div>
+          <div class="at-body" style="padding-bottom: 6px;">
+            <p>数组的不同操作有着截然不同的时间代价。访问是 <strong style="color:#6ee7b7">O(1)</strong>，而搜索、插入和删除通常需要 <strong style="color:#fca5a5">O(n)</strong>。</p>
+          </div>
+          <div class="at-table-wrap">
+            <table class="at-table">
+              <thead>
+                <tr><th>操作</th><th>时间复杂度</th><th>说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>访问 arr[i]</td><td class="at-good">O(1)</td><td>地址计算直达</td></tr>
+                <tr><td>搜索 target</td><td class="at-bad">O(n)</td><td>线性扫描逐个比较</td></tr>
+                <tr><td>插入（中间）</td><td class="at-bad">O(n)</td><td>后续元素依次右移</td></tr>
+                <tr><td>删除（中间）</td><td class="at-bad">O(n)</td><td>后续元素依次左移</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 5. 常用技巧 -->
+        <section class="at-card">
+          <div class="at-card-title">5. 常用技巧 <span class="at-tag">Techniques</span></div>
+          <div class="at-techniques">
+            <div class="at-tech-card">
+              <h5>双指针</h5>
+              <p>用两个指针从不同方向逼近，解决有序数组求和、原地移除等经典问题。时间 O(n)。</p>
+            </div>
+            <div class="at-tech-card">
+              <h5>滑动窗口</h5>
+              <p>维护一个动态区间 <code style="font-size:11px">[left, right]</code>，用于连续子数组/子串问题。</p>
+            </div>
+            <div class="at-tech-card">
+              <h5>前缀和</h5>
+              <p>预处理 <code style="font-size:11px">prefix[i] = sum(arr[0..i-1])</code>，将区间求和从 O(n) 降到 O(1)。</p>
+            </div>
+            <div class="at-tech-card">
+              <h5>二分查找</h5>
+              <p>在有序数组中每次排除一半，<code style="font-size:11px">O(log n)</code> 定位目标值。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. JS 中的数组 -->
+        <section class="at-card">
+          <div class="at-card-title">6. JS 中的数组 <span class="at-tag">JavaScript Array</span></div>
+          <div class="at-js-card">
+            <h5>Array 是动态数组</h5>
+            <p>JavaScript 的 <code>Array</code> 本质上是<strong style="color:#bfdbfe">动态数组</strong>（Dynamic Array），容量不够时自动扩容（通常翻倍）。这使得 <code>push/pop</code> 尾部操作均摊 <code>O(1)</code>，但 <code>unshift/shift</code> 或中间插入删除仍为 <code>O(n)</code>，因为需要移动元素。</p>
+          </div>
+        </section>
+
+        <!-- 7. 交互演示 -->
+        <section class="at-card at-visual">
+          <div class="at-card-title">交互演示 <span class="at-tag">Array Operations</span></div>
+          <div class="at-input-row">
+            <div class="at-input-group">
+              <label>下标:</label>
+              <input id="at-index-input" type="number" min="0" max="9" value="2" style="width:70px;">
+            </div>
+            <div class="at-input-group">
+              <label>值:</label>
+              <input id="at-value-input" type="number" value="9" style="width:70px;">
+            </div>
+            <button id="at-start">重新演示</button>
+          </div>
+          <div class="at-examples">
+            <button class="at-example-btn" data-action="default">默认演示</button>
+            <button class="at-example-btn" data-action="access">仅访问</button>
+            <button class="at-example-btn" data-action="insert">仅插入</button>
+            <button class="at-example-btn" data-action="delete">仅删除</button>
+          </div>
+          <div class="at-track" id="at-track"></div>
+          <div class="at-result" id="step-message-banner">
+            <span class="at-emoji">📖</span>
+            <div id="step-message">点击「重新演示」观看数组的访问、搜索、插入和删除过程</div>
+          </div>
+        </section>
+
+        <!-- 8. 日志 -->
+        <section class="at-card">
+          <div class="at-card-title">执行日志</div>
+          <div class="at-log" id="at-log"></div>
+        </section>
+      </div>
+    </div>
+    <aside class="at-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="at-controls">
+    <button id="step-reset" class="at-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="at-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="at-ctrl-btn at-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="at-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="at-counter">步骤: 0 / 0</span>
+    <div class="at-speed-wrap">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

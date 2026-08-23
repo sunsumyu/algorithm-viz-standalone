@@ -1,0 +1,200 @@
+<style>
+  :root {
+    --tc-accent-a: #10b981;
+    --tc-accent-b: #2dd4bf;
+  }
+  .treecame-viz-container {
+    width: 100%; height: 100%; color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(16, 185, 129, 0.5), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(45, 212, 191, 0.55), transparent 55%),
+      linear-gradient(135deg, #061b13, #0a2d22, #042518);
+    display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+  }
+  .treecame-viz-container .sw-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  .treecame-viz-container .sw-header {
+    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
+  }
+  .treecame-viz-container .sw-head-left { display: flex; align-items: center; gap: 14px; }
+  .treecame-viz-container .sw-icon-badge {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--tc-accent-a), var(--tc-accent-b));
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.4);
+  }
+  .treecame-viz-container h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
+  .treecame-viz-container .sw-desc { margin: 4px 0 0; color: #a6adc8; font-size: 13px; line-height: 1.4; }
+  .treecame-viz-container .sw-main {
+    flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px;
+    gap: 16px; padding: 0 16px 16px; overflow: hidden;
+  }
+  .treecame-viz-container .sw-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  .treecame-viz-container .sw-card {
+    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+  .treecame-viz-container .sw-card-title {
+    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
+  }
+  .treecame-viz-container .sw-input-row {
+    display: grid; grid-template-columns: repeat(3, auto); gap: 8px; align-items: center; padding: 12px 16px;
+  }
+  .treecame-viz-container button {
+    padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; cursor: pointer; transition: all 0.2s; font-size: 12px; font-weight: 600;
+  }
+  .treecame-viz-container button:hover { border-color: var(--tc-accent-a); color: #fff; opacity: 0.85; }
+  .treecame-viz-container .sw-start-btn {
+    padding: 9px 16px; border-radius: 10px; border: 1px solid transparent;
+    background: linear-gradient(135deg, var(--tc-accent-a), var(--tc-accent-b)); color: #061b13;
+    font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 13px;
+  }
+  .treecame-viz-container .sw-start-btn:hover { box-shadow: 0 0 20px rgba(45, 212, 191, 0.45); }
+  .treecame-viz-container .sw-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .treecame-viz-container .sw-stat {
+    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
+  }
+  .treecame-viz-container .sw-stat::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--tc-accent-a), var(--tc-accent-b));
+  }
+  .treecame-viz-container .sw-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
+  .treecame-viz-container .sw-stat span {
+    color: var(--tc-accent-b); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .treecame-viz-container .sw-visual { flex: 1; min-height: 260px; display: flex; flex-direction: column; }
+  .treecame-viz-container .sw-plot {
+    flex: 1; min-height: 0; padding: 20px 18px; overflow: auto;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .treecame-viz-container canvas {
+    background: radial-gradient(ellipse at center, rgba(20, 33, 31, 0.4), rgba(0,0,0,0));
+    border-radius: 14px; max-width: 100%; max-height: 100%;
+  }
+  .treecame-viz-container .sw-result-banner {
+    margin: 0 16px 16px; padding: 12px 16px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5; transition: all 0.3s;
+  }
+  .treecame-viz-container .sw-result-banner.success {
+    background: rgba(16, 185, 129, 0.14); border-color: var(--tc-accent-a); color: #6ee7b7;
+  }
+  .treecame-viz-container .sw-result-banner .badge { margin-right: 8px; }
+  .treecame-viz-container .sw-code {
+    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .treecame-viz-container .sw-code [data-code-panel] { flex: 1; min-width: 0; }
+  .treecame-viz-container .sw-controls {
+    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+  }
+  .treecame-viz-container .sw-btn {
+    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
+    font-size: 14px; font-weight: 500;
+  }
+  .treecame-viz-container .sw-btn:hover:not(:disabled) { border-color: var(--tc-accent-a); color: #fff; }
+  .treecame-viz-container .sw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .treecame-viz-container .sw-play-btn {
+    border: 1px solid transparent; background: linear-gradient(135deg, var(--tc-accent-a), var(--tc-accent-b));
+    color: #061b13; font-weight: 700;
+  }
+  .treecame-viz-container .sw-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(45, 212, 191, 0.45); }
+  .treecame-viz-container .sw-counter { color: #a6adc8; font-size: 13px; min-width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
+  .treecame-viz-container .sw-slider-container { display: flex; align-items: center; gap: 8px; }
+  .treecame-viz-container .sw-slider-container input[type=range] {
+    width: 110px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
+    outline: none; -webkit-appearance: none;
+  }
+  .treecame-viz-container .sw-slider-container input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--tc-accent-a);
+    cursor: pointer; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  }
+  .treecame-viz-container .sw-slider-container span { color: #a6adc8; font-size: 13px; min-width: 40px; font-variant-numeric: tabular-nums; }
+
+  @keyframes pulse-tc {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.5); }
+    50% { box-shadow: 0 0 0 9px rgba(45, 212, 191, 0); }
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes burst {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); filter: brightness(1.3); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  @media (max-width: 1100px) {
+    .treecame-viz-container .sw-main { grid-template-columns: 1fr; overflow: auto; }
+    .treecame-viz-container .sw-code { min-height: 340px; }
+    .treecame-viz-container .sw-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .treecame-viz-container .sw-input-row { grid-template-columns: repeat(2, 1fr); }
+    .treecame-viz-container .sw-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="treecame-viz-container">
+  <div class="sw-page">
+    <div class="sw-header">
+      <div class="sw-head-left">
+        <div class="sw-icon-badge">📹</div>
+        <div>
+          <h1>监控二叉树（贪心）</h1>
+          <p class="sw-desc">LeetCode 968：贪心从叶节点向上放置摄像头，覆盖所有节点</p>
+        </div>
+      </div>
+      <div class="sw-tip"><strong>贪心策略：</strong>空节点返回已覆盖(2)，子节点有摄像头则被覆盖再递归，否则在子节点为无效父节点时放置摄像头(1)。</div>
+    </div>
+    <div class="sw-main">
+      <div class="sw-left">
+        <section class="sw-card">
+          <div class="sw-card-title">示例数据</div>
+          <div class="sw-input-row">
+            <button data-id="example1">例1</button>
+            <button data-id="example2">例2</button>
+            <button data-id="example3">例3</button>
+            <button id="treecame-start" class="sw-start-btn">开始布置</button>
+          </div>
+        </section>
+        <div class="sw-stats">
+          <div class="sw-stat"><label>已放置摄像头</label><span id="camera-count">0</span></div>
+          <div class="sw-stat"><label>当前节点</label><span id="current-node">-</span></div>
+          <div class="sw-stat"><label>节点总数</label><span>5</span></div>
+          <div class="sw-stat"><label>策略</label><span>逆向贪心</span></div>
+        </div>
+        <section class="sw-card sw-visual">
+          <div class="sw-card-title">树可视化</div>
+          <div class="sw-plot">
+            <canvas id="tree-canvas" width="480" height="340"></canvas>
+          </div>
+          <div class="sw-result-banner" id="treecame-status"><span class="badge">💡</span>点击开始布置</div>
+        </section>
+      </div>
+      <aside class="sw-code"><div data-code-panel></div></aside>
+    </div>
+    <div class="sw-controls">
+      <button id="treecame-reset" class="sw-btn">⏮重置</button>
+      <button id="treecame-prev" class="sw-btn">◀上一步</button>
+      <button id="treecame-play" class="sw-btn sw-play-btn">▶播放</button>
+      <button id="treecame-next" class="sw-btn">下一步▶</button>
+      <span id="step-counter" class="sw-counter">步骤: 0 / 0</span>
+      <div class="sw-slider-container">
+        <input id="treecame-speed" type="range" min="200" max="2000" step="100" value="800">
+        <span id="treecame-speed-label">0.8s</span>
+      </div>
+    </div>
+  </div>
+</div>

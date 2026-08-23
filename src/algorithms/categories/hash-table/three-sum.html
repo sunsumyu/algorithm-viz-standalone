@@ -1,0 +1,361 @@
+<style>
+  /* === 三数之和 · 玻璃感 + 双指针扫描 + 命中爆发 === */
+  #algo-three-sum-view {
+    --accent-a: #a78bfa;
+    --accent-b: #6366f1;
+    --accent-glow: rgba(167, 139, 250, .45);
+    --match-color: #34d399;
+    --i-color: #a78bfa;
+    --l-color: #34d399;
+    --r-color: #f9e2af;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(167, 139, 250, .25), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(99, 102, 241, .25), transparent 55%),
+      linear-gradient(135deg, #120a22 0%, #161038 50%, #1a1230 100%);
+    overflow: hidden;
+  }
+  #algo-three-sum-view .th-shell {
+    width: 100%; height: 100%;
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+  }
+  #algo-three-sum-view .th-hero {
+    padding: 18px 24px 12px;
+    display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35);
+    backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-three-sum-view .th-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-three-sum-view .th-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1e1230; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-three-sum-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-three-sum-view .th-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-three-sum-view .th-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(99, 102, 241, .08));
+    border: 1px solid rgba(167, 139, 250, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-three-sum-view .th-tip strong { color: #c4b5fd; }
+  #algo-three-sum-view .th-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-three-sum-view .th-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-three-sum-view .th-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+  }
+  #algo-three-sum-view .th-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-three-sum-view .th-tag {
+    font-size: 11px; color: #c4b5fd; background: rgba(167, 139, 250, .14);
+    border: 1px solid rgba(167, 139, 250, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-three-sum-view .th-input-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: center; padding: 14px 16px;
+  }
+  #algo-three-sum-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6);
+    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-three-sum-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(167, 139, 250, .15); }
+  #algo-three-sum-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-three-sum-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #1e1230; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-three-sum-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-three-sum-view .th-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-three-sum-view .th-example-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(99, 102, 241, .12); border: 1px solid rgba(99, 102, 241, .28);
+    color: #a5b4fc; cursor: pointer; transition: all .2s;
+  }
+  #algo-three-sum-view .th-example-btn:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1e1230; border-color: transparent; transform: translateY(-1px);
+  }
+  /* 统计 */
+  #algo-three-sum-view .th-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #algo-three-sum-view .th-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px; overflow: hidden;
+  }
+  #algo-three-sum-view .th-stat::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
+  }
+  #algo-three-sum-view .th-stat--i::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
+  #algo-three-sum-view .th-stat--i .th-stat-val { color: #c4b5fd; }
+  #algo-three-sum-view .th-stat--lr::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-three-sum-view .th-stat--lr .th-stat-val { color: #6ee7b7; }
+  #algo-three-sum-view .th-stat--sum::before { background: linear-gradient(180deg, #6366f1, #4f46e5); }
+  #algo-three-sum-view .th-stat--sum .th-stat-val { color: #a5b4fc; }
+  #algo-three-sum-view .th-stat--count::before { background: linear-gradient(180deg, #f9e2af, #fbbf24); }
+  #algo-three-sum-view .th-stat--count .th-stat-val { color: #fde68a; }
+  #algo-three-sum-view .th-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-three-sum-view .th-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 18px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 数组可视化 */
+  #algo-three-sum-view .th-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
+  #algo-three-sum-view .th-track {
+    flex: 1; min-height: 0; padding: 28px 18px 24px;
+    overflow: auto; display: flex; align-items: center; gap: 10px;
+    justify-content: center;
+  }
+  #algo-three-sum-view .th-cell {
+    position: relative; min-width: 50px; height: 60px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-three-sum-view .th-cell .idx { color: #64748b; font-size: 11px; }
+  #algo-three-sum-view .th-cell .val { color: #cbd5e1; font-weight: 800; font-size: 18px; }
+  #algo-three-sum-view .th-ptr { position: absolute; top: -18px; font-size: 11px; font-weight: 800; }
+  #algo-three-sum-view .th-cell.i {
+    border-color: var(--i-color);
+    background: linear-gradient(180deg, rgba(167, 139, 250, .35), rgba(139, 92, 246, .12));
+    transform: translateY(-6px) scale(1.08);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, .25), 0 8px 22px rgba(167, 139, 250, .4);
+    animation: th-pulse-i 1.2s ease-in-out infinite;
+  }
+  @keyframes th-pulse-i {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(167, 139, 250, .25), 0 8px 22px rgba(167, 139, 250, .4); }
+    50% { box-shadow: 0 0 0 6px rgba(167, 139, 250, .12), 0 10px 28px rgba(167, 139, 250, .55); }
+  }
+  #algo-three-sum-view .th-cell.i .val { color: #ddd6fe; }
+  #algo-three-sum-view .th-cell.left {
+    border-color: var(--l-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
+    transform: translateY(-4px) scale(1.05);
+    animation: th-pulse-l 1.2s ease-in-out infinite;
+  }
+  @keyframes th-pulse-l {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, .22), 0 6px 18px rgba(52, 211, 153, .35); }
+    50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, .1), 0 8px 24px rgba(52, 211, 153, .5); }
+  }
+  #algo-three-sum-view .th-cell.left .val { color: #a7f3d0; }
+  #algo-three-sum-view .th-cell.right {
+    border-color: var(--r-color);
+    background: linear-gradient(180deg, rgba(249, 226, 175, .3), rgba(251, 191, 36, .1));
+    transform: translateY(-4px) scale(1.05);
+    animation: th-pulse-r 1.2s ease-in-out infinite;
+  }
+  @keyframes th-pulse-r {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(249, 226, 175, .22), 0 6px 18px rgba(249, 226, 175, .35); }
+    50% { box-shadow: 0 0 0 6px rgba(249, 226, 175, .1), 0 8px 24px rgba(249, 226, 175, .5); }
+  }
+  #algo-three-sum-view .th-cell.right .val { color: #fde68a; }
+  #algo-three-sum-view .th-cell.triplet {
+    border-color: var(--match-color);
+    background: linear-gradient(180deg, rgba(52, 211, 153, .4), rgba(16, 185, 129, .15));
+    animation: th-match-burst .65s cubic-bezier(.34, 1.56, .64, 1);
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, .25), 0 0 26px rgba(52, 211, 153, .55);
+  }
+  @keyframes th-match-burst {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.28); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 28px rgba(52, 211, 153, .65); }
+    100% { transform: scale(1); }
+  }
+  #algo-three-sum-view .th-cell.triplet .val { color: #a7f3d0; }
+  /* 结果列表 */
+  #algo-three-sum-view .th-results {
+    padding: 12px 16px; background: rgba(8, 8, 24, .45); border-top: 1px solid rgba(255, 255, 255, .06);
+    max-height: 90px; overflow: auto;
+  }
+  #algo-three-sum-view .th-results-title { color: #94a3b8; font-size: 12px; margin-bottom: 6px; }
+  #algo-three-sum-view .th-result-chip {
+    display: inline-block; padding: 5px 10px; margin: 0 6px 6px 0; border-radius: 8px;
+    background: rgba(52, 211, 153, .15); border: 1px solid rgba(52, 211, 153, .35);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6ee7b7;
+    animation: th-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  @keyframes th-slide-in {
+    0% { transform: translateY(8px) scale(.85); opacity: 0; }
+    60% { transform: translateY(-2px) scale(1.08); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  /* 结果横幅 */
+  #algo-three-sum-view .th-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(99, 102, 241, .06));
+    border: 1px solid rgba(167, 139, 250, .28);
+    line-height: 1.55; font-size: 14px; color: #ddd6fe;
+  }
+  #algo-three-sum-view .th-result .th-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1e1230; box-shadow: 0 4px 14px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  #algo-three-sum-view .th-result.th-result--success {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-three-sum-view .th-result.th-result--success .th-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-three-sum-view .th-result.th-result--fail {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(99, 102, 241, .06));
+    border-color: rgba(248, 113, 113, .35); color: #fecaca;
+    animation: th-shake .5s ease-in-out;
+  }
+  #algo-three-sum-view .th-result.th-result--fail .th-emoji {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+  }
+  @keyframes th-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  /* 日志 */
+  #algo-three-sum-view .th-log {
+    min-height: 80px; max-height: 120px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-three-sum-view .th-log .active { color: #c4b5fd; font-weight: 600; }
+  /* 代码 */
+  #algo-three-sum-view .th-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; overflow: hidden;
+  }
+  #algo-three-sum-view .th-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* 控制栏 */
+  #algo-three-sum-view .th-controls {
+    padding: 14px 18px;
+    background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-three-sum-view .th-controls .th-ctrl-btn { min-width: 64px; }
+  #algo-three-sum-view .th-controls .th-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #1e1230; border-color: transparent;
+  }
+  #algo-three-sum-view .th-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  #algo-three-sum-view .th-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-three-sum-view #step-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-three-sum-view .th-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-three-sum-view .th-code { min-height: 360px; }
+  }
+</style>
+
+<div class="th-shell">
+  <div class="th-hero">
+    <div class="th-hero-left">
+      <span class="th-icon">🎯</span>
+      <div>
+        <h1>三数之和（排序 + 双指针）</h1>
+        <div class="th-sub">LeetCode 15 · 排序后固定 i，left/right 双指针逼近 -nums[i]，去重收集三元组</div>
+      </div>
+    </div>
+    <div class="th-tip"><strong>核心动画：</strong>i 指 <span style="color:#c4b5fd">紫色脉冲</span>，L/R 双指针<span style="color:#6ee7b7">绿</span>/<span style="color:#fde68a">黄</span>色脉动；命中三元组时<span style="color:#6ee7b7">绿色 burst 爆发</span>；结果 chip 滑入。</div>
+  </div>
+  <div class="th-main">
+    <div class="th-left">
+      <section class="th-card">
+        <div class="th-card-title">输入数组 <span class="th-tag">未排序</span></div>
+        <div class="th-input-row">
+          <input id="th-input" value="-1,0,1,2,-1,-4" placeholder="nums">
+          <button id="th-start">开始查找</button>
+        </div>
+        <div class="th-examples">
+          <button class="th-example-btn" data-val="-1,0,1,2,-1,-4">示例</button>
+          <button class="th-example-btn" data-val="0,0,0,0">全零</button>
+          <button class="th-example-btn" data-val="-2,0,1,1,2">多组</button>
+        </div>
+      </section>
+
+      <div class="th-stats">
+        <div class="th-stat th-stat--i"><div class="th-stat-label">i</div><div class="th-stat-val" id="th-i">0</div></div>
+        <div class="th-stat th-stat--lr"><div class="th-stat-label">left / right</div><div class="th-stat-val" id="th-lr">-</div></div>
+        <div class="th-stat th-stat--sum"><div class="th-stat-label">三数和</div><div class="th-stat-val" id="th-sum">-</div></div>
+        <div class="th-stat th-stat--count"><div class="th-stat-label">结果组数</div><div class="th-stat-val" id="th-count">0</div></div>
+      </div>
+
+      <section class="th-card th-visual">
+        <div class="th-card-title">数组与双指针 <span class="th-tag">i / L / R</span></div>
+        <div class="th-track" id="th-track"></div>
+        <div class="th-results">
+          <div class="th-results-title">已找到的三元组</div>
+          <div id="th-results-list"></div>
+        </div>
+        <div class="th-result" id="step-message-banner">
+          <span class="th-emoji">🎯</span>
+          <div id="step-message">点击「开始查找」观看排序 + 双指针扫描 + 命中爆发动画</div>
+        </div>
+      </section>
+
+      <section class="th-card">
+        <div class="th-card-title">执行日志</div>
+        <div class="th-log" id="th-log"></div>
+      </section>
+    </div>
+    <aside class="th-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="th-controls">
+    <button id="step-reset" class="th-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="th-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="th-ctrl-btn th-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="th-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="th-counter">步骤: 0 / 0</span>
+    <div class="th-speed-wrap">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

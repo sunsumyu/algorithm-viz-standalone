@@ -1,0 +1,597 @@
+<style>
+  #algo-climb-stairs-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-climb-stairs-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 8% 6%, #34d39955, transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #fbbf2455, transparent 55%),
+                linear-gradient(135deg, #064e3b 0%, #065f46 25%, #064e3b 50%, #047857 75%, #064e3b 100%);
+    z-index: -2;
+  }
+
+  #algo-climb-stairs-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(6, 78, 59, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-climb-stairs-view .stairs-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .stairs-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .stairs-hero .stairs-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stairs-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #34d399, #fbbf24);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(52, 211, 153, 0.3);
+  }
+
+  .stairs-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #34d399, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stairs-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .stairs-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(52, 211, 153, 0.08);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .stairs-tip strong {
+    color: #34d399;
+    font-weight: 600;
+  }
+
+  #algo-climb-stairs-view .stairs-main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-climb-stairs-view .stairs-main {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .stairs-left {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .stairs-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .stairs-card-title {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #cdd6f4;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .stairs-input-row {
+    display: grid;
+    grid-template-columns: 150px auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .stairs-input-row input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    color: #cdd6f4;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .stairs-input-row input:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+  }
+
+  .stairs-input-row button {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #34d399, #10b981);
+    color: #064e3b;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(52, 211, 153, 0.3);
+  }
+
+  .stairs-input-row button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4);
+  }
+
+  .stairs-input-row button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .stairs-examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stairs-example-btn {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(132, 204, 146, 0.3);
+    background: rgba(52, 211, 153, 0.1);
+    color: #cdd6f4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .stairs-example-btn:hover {
+    background: rgba(52, 211, 153, 0.2);
+    border-color: #34d399;
+    transform: translateY(-1px);
+  }
+
+  .stairs-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .stairs-stat {
+    padding: 14px 16px;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .stairs-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #34d399, #fbbf24);
+  }
+
+  .stairs-stat label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .stairs-stat span {
+    color: #34d399;
+    font-family: Consolas, monospace;
+    font-size: 19px;
+    font-weight: 700;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stairs-visual {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .stairs-track {
+    flex: 1;
+    min-height: 0;
+    padding: 18px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stairs-step {
+    min-width: 82px;
+    height: 86px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .stairs-step.active {
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+    transform: translateY(-8px);
+  }
+
+  .stairs-step.source {
+    border-color: #fbbf24;
+    background: rgba(251, 191, 36, 0.08);
+  }
+
+  .stairs-step.new {
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .stairs-step.done {
+    animation: burst 0.4s ease;
+  }
+
+  .stairs-step.computing {
+    border-color: #34d399;
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.28), 0 0 22px rgba(52, 211, 153, 0.5);
+    animation: stairs-compute-glow 0.5s ease-in-out;
+  }
+  @keyframes stairs-compute-glow {
+    0% { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.5), 0 0 30px rgba(52, 211, 153, 0.7); transform: translateY(-8px) scale(1.06); }
+    100% { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.28), 0 0 22px rgba(52, 211, 153, 0.5); transform: translateY(-8px) scale(1); }
+  }
+
+  .stairs-step-index {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 12px;
+  }
+
+  .stairs-step-value {
+    color: #cdd6f4;
+    font-size: 20px;
+    font-weight: 800;
+    font-family: Consolas, monospace;
+  }
+
+  .stairs-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    background: rgba(52, 211, 153, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .stairs-formula {
+    padding: 12px 14px;
+    background: rgba(11, 10, 23, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #34d399;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .stairs-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .stairs-log .active {
+    color: #34d399;
+    font-weight: 600;
+  }
+
+  .stairs-code {
+    min-height: 0;
+    display: flex;
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .stairs-code [data-code-panel] {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .stairs-controls {
+    padding: 16px 20px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .stairs-playback-btn {
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .stairs-playback-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .stairs-playback-btn:not(:disabled):hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+  }
+
+  .stairs-playback-btn#step-play {
+    background: linear-gradient(135deg, #34d399, #fbbf24);
+    border: none;
+    color: #064e3b;
+    box-shadow: 0 4px 15px rgba(52, 211, 153, 0.3);
+  }
+
+  .stairs-playback-btn#step-play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4);
+  }
+
+  .stairs-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #algo-climb-stairs-view #step-speed {
+    accent-color: #34d399;
+  }
+
+  /* Animations */
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0) rotate(-10deg);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes burst {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    20%, 60% {
+      transform: translateX(-5px);
+    }
+    40%, 80% {
+      transform: translateX(5px);
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .stairs-pb-btn#play.play {
+    animation: pulse 1.2s infinite;
+  }
+
+  .stairs-step.new {
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .stairs-step.done {
+    animation: burst 0.4s ease;
+  }
+
+  /* 状态转移箭头 overlay */
+  .stairs-transition-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 5;
+  }
+  @keyframes stairs-draw-arrow {
+    from { stroke-dashoffset: var(--len, 300); }
+    to { stroke-dashoffset: 0; }
+  }
+
+  @media (max-width: 1100px) {
+    .stairs-main {
+      overflow: visible;
+    }
+  }
+</style>
+
+<div class="stairs-page">
+  <div class="stairs-hero">
+    <div class="stairs-title-wrapper">
+      <div class="stairs-hero-icon">🪜</div>
+      <div class="stairs-hero-text">
+        <h2>爬楼梯（动态规划）</h2>
+        <p>每次可以爬 1 或 2 个台阶，求爬到第 n 阶一共有多少种不同方法。</p>
+      </div>
+    </div>
+    <div class="stairs-tip"><strong>状态转移：</strong>到达第 i 阶只可能来自 i-1 或 i-2，所以 dp[i] = dp[i-1] + dp[i-2]。</div>
+  </div>
+
+  <div class="stairs-main">
+    <div class="stairs-left">
+      <section class="stairs-card">
+        <div class="stairs-card-title">输入台阶数</div>
+        <div class="stairs-input-row">
+          <input id="stairs-input" type="number" min="1" max="12" value="8">
+          <button id="stairs-start">开始计算</button>
+          <div class="stairs-examples">
+            <button class="stairs-example-btn" data-value="5">n=5</button>
+            <button class="stairs-example-btn" data-value="8">n=8</button>
+            <button class="stairs-example-btn" data-value="10">n=10</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="stairs-stats">
+        <div class="stairs-stat"><label>当前 i</label><span id="stairs-current">-</span></div>
+        <div class="stairs-stat"><label>dp[i-1]</label><span id="stairs-prev1">-</span></div>
+        <div class="stairs-stat"><label>dp[i-2]</label><span id="stairs-prev2">-</span></div>
+        <div class="stairs-stat"><label>答案</label><span id="stairs-answer">-</span></div>
+      </div>
+
+      <section class="stairs-card stairs-visual">
+        <div class="stairs-card-title">DP 数组可视化</div>
+        <div class="stairs-track" id="stairs-track"></div>
+        <div id="step-message">点击开始计算状态转移</div>
+        <div class="stairs-formula" id="stairs-formula">dp[i] = dp[i-1] + dp[i-2]</div>
+      </section>
+
+      <section class="stairs-card">
+        <div class="stairs-card-title">执行日志</div>
+        <div class="stairs-log" id="stairs-log"></div>
+      </section>
+    </div>
+
+    <aside class="stairs-code">
+      <div data-code-panel></div>
+    </aside>
+  </div>
+
+  <div class="stairs-controls">
+    <button id="step-reset" class="stairs-playback-btn">重置</button>
+    <button id="step-prev" class="stairs-playback-btn">上一步</button>
+    <button id="step-play" class="stairs-playback-btn play">播放</button>
+    <button id="step-next" class="stairs-playback-btn">下一步</button>
+    <span id="step-counter" class="stairs-counter">步骤: 0 / 0</span>
+    <span style="font-size:12px;color:rgba(204,214,244,0.6);margin-left:4px;">速度</span>
+    <input id="step-speed" type="range" min="200" max="2000" step="100" value="900">
+    <span id="step-speed-label" style="font-size:12px;color:rgba(204,214,244,0.6);width:40px;text-align:right;margin-left:4px;font-family:ui-monospace,monospace;">0.9s</span>
+  </div>
+</div>

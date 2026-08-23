@@ -1,0 +1,561 @@
+<style>
+  #algo-graph-theory-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-graph-theory-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #10b98155, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #05966955, transparent 55%),
+                linear-gradient(135deg, #022c22 0%, #064e3b 25%, #022c22 50%, #065f46 75%, #022c22 100%);
+    z-index: -2;
+  }
+
+  #algo-graph-theory-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(2, 44, 34, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-graph-theory-view .gt-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .gt-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .gt-hero .gt-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .gt-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .gt-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #10b981, #059669);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gt-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .gt-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .gt-tip strong {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  #algo-graph-theory-view .gt-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-graph-theory-view .gt-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .gt-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .gt-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .gt-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .gt-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(16, 185, 129, 0.1);
+    color: #cdd6f4;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .gt-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    transform: translateY(-1px);
+  }
+
+  .gt-btn.active {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: #022c22;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .gt-btn.action {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: #022c22;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .gt-btn.action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .gt-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 280px;
+    position: relative;
+  }
+
+  .gt-graph-container svg {
+    width: 100%;
+    max-width: 500px;
+    height: 260px;
+  }
+
+  .gt-matrix-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .gt-matrix {
+    display: grid;
+    gap: 2px;
+    background: rgba(11, 10, 23, 0.8);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .gt-matrix-cell {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: ui-monospace, monospace;
+    transition: all 0.25s ease;
+  }
+
+  .gt-matrix-cell.header {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+  }
+
+  .gt-matrix-cell.zero {
+    background: rgba(28, 27, 50, 0.4);
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .gt-matrix-cell.one {
+    background: rgba(16, 185, 129, 0.6);
+    color: #022c22;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .gt-list-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .gt-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: rgba(11, 10, 23, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    animation: slideIn 0.3s ease;
+  }
+
+  .gt-list-node {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #022c22;
+    font-size: 14px;
+  }
+
+  .gt-list-edges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .gt-list-edge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+  }
+
+  .gt-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .gt-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .gt-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #10b981, #059669);
+  }
+
+  .gt-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .gt-stat-val {
+    color: #10b981;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .gt-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .gt-log {
+    min-height: 0;
+    max-height: 130px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .gt-log div {
+    padding: 2px 0;
+  }
+
+  .gt-log div.active {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  .gt-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .gt-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .gt-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .gt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .gt-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .gt-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .gt-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .gt-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(16, 185, 129, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .gt-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .gt-pb-btn:not(:disabled):hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    transform: translateY(-1px);
+  }
+
+  .gt-pb-btn.play {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: #022c22;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .gt-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .gt-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .gt-speed-row input {
+    flex: 1;
+    accent-color: #10b981;
+  }
+
+  .gt-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes slideIn {
+    0% { transform: translateX(-20px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  .gt-node circle {
+    transition: all 0.3s ease;
+  }
+
+  .gt-node text {
+    transition: all 0.3s ease;
+  }
+
+  .gt-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="gt-page">
+  <div class="gt-hero">
+    <div class="gt-title-wrapper">
+      <div class="gt-hero-icon">🕸️</div>
+      <div class="gt-hero-text">
+        <h2>图论理论基础</h2>
+        <p>图的表示方法：邻接矩阵 vs 邻接表，有向图 vs 无向图，加权图 vs 无权图</p>
+      </div>
+    </div>
+    <div class="gt-tip"><strong>图的表示：</strong>邻接矩阵适合稠密图（空间 O(V²)），邻接表适合稀疏图（空间 O(V+E)）。</div>
+  </div>
+
+  <div class="gt-layout">
+    <div class="gt-main">
+      <div class="gt-card">
+        <div class="gt-controls">
+          <button id="gt-view-matrix" class="gt-btn active">邻接矩阵</button>
+          <button id="gt-view-list" class="gt-btn">邻接表</button>
+          <button id="gt-add-edge" class="gt-btn action">添加边</button>
+          <button id="gt-remove-edge" class="gt-btn action">删除边</button>
+        </div>
+
+        <div class="gt-stats">
+          <div class="gt-stat"><span class="gt-stat-label">节点数 V</span><span class="gt-stat-val" id="gt-v-count">5</span></div>
+          <div class="gt-stat"><span class="gt-stat-label">边数 E</span><span class="gt-stat-val" id="gt-e-count">6</span></div>
+          <div class="gt-stat"><span class="gt-stat-label">图类型</span><span class="gt-stat-val" id="gt-type">无向无权</span></div>
+        </div>
+
+        <div id="gt-graph-view" class="gt-graph-container"></div>
+        <div id="gt-matrix-view" class="gt-matrix-container" style="display:none;"></div>
+        <div id="gt-list-view" class="gt-list-container" style="display:none;"></div>
+
+        <div class="gt-message" id="step-message">点击「邻接矩阵」或「邻接表」切换图的表示方式。点击「添加边」或「删除边」修改图结构。</div>
+
+        <div class="gt-log" id="gt-log"></div>
+      </div>
+    </div>
+
+    <div class="gt-right">
+      <div data-code-panel class="gt-code-card"></div>
+      <div class="gt-legend">
+        <div class="gt-legend-item"><span class="gt-legend-box" style="background:rgba(16,185,129,0.6)"></span>节点/边</div>
+        <div class="gt-legend-item"><span class="gt-legend-box" style="background:rgba(251,191,36,0.6)"></span>当前操作</div>
+        <div class="gt-legend-item"><span class="gt-legend-box" style="background:rgba(239,68,68,0.6)"></span>删除操作</div>
+      </div>
+      <div class="gt-playback">
+        <div class="gt-pb-row">
+          <button id="step-reset" class="gt-pb-btn">重置</button>
+          <button id="step-prev" class="gt-pb-btn">上一步</button>
+          <button id="step-play" class="gt-pb-btn play">播放</button>
+          <button id="step-next" class="gt-pb-btn">下一步</button>
+        </div>
+        <div class="gt-speed-row">
+          <span>速度</span>
+          <input id="gt-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="gt-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="gt-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

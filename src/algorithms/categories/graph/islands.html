@@ -1,0 +1,597 @@
+<style>
+  #algo-islands-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-islands-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 8% 6%, #2dd4bf55, transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #34d39955, transparent 55%),
+                linear-gradient(135deg, #022c22 0%, #064e3b 25%, #022c22 50%, #065f46 75%, #022c22 100%);
+    z-index: -2;
+  }
+
+  #algo-islands-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(2, 44, 34, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-islands-view .isl-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .isl-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .isl-hero .isl-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .isl-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+  }
+
+  .isl-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .isl-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .isl-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(45, 212, 191, 0.08);
+    border: 1px solid rgba(45, 212, 191, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .isl-tip strong {
+    color: #2dd4bf;
+    font-weight: 600;
+  }
+
+  #algo-islands-view .isl-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-islands-view .isl-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .isl-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .isl-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .isl-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .isl-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    color: #cdd6f4;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .isl-input:focus {
+    border-color: #2dd4bf;
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+  }
+
+  .isl-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    color: #022c22;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+  }
+
+  .isl-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4);
+  }
+
+  .isl-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .isl-example {
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(110, 203, 192, 0.3);
+    background: rgba(45, 212, 191, 0.1);
+    color: #cdd6f4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .isl-example:hover {
+    background: rgba(45, 212, 191, 0.2);
+    border-color: #2dd4bf;
+  }
+
+  .isl-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .isl-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .isl-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #2dd4bf, #34d399);
+  }
+
+  .isl-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .isl-stat-val {
+    color: #2dd4bf;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .isl-grid {
+    display: grid;
+    gap: 3px;
+    background: rgba(11, 10, 23, 0.8);
+    border-radius: 12px;
+    padding: 12px;
+    justify-content: center;
+    align-content: center;
+    margin: 16px auto;
+  }
+
+  .isl-cell {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .isl-cell.water {
+    background: rgba(28, 27, 50, 0.4);
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .isl-cell.land {
+    background: rgba(45, 55, 72, 0.5);
+    color: #cdd6f4;
+  }
+
+  .isl-cell.current {
+    background: rgba(251, 146, 60, 0.7);
+    color: #0f172a;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.3);
+    animation: pulse 1s infinite;
+  }
+
+  .isl-cell.visited {
+    background: rgba(45, 212, 191, 0.6);
+    color: #022c22;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .isl-cell.stack {
+    background: rgba(251, 191, 36, 0.6);
+    color: #0f172a;
+    animation: pulse 0.8s infinite;
+  }
+
+  .isl-cell.new {
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .isl-cell.done {
+    background: rgba(132, 204, 146, 0.6);
+    color: #022c22;
+    box-shadow: 0 0 0 3px rgba(132, 204, 146, 0.3);
+    animation: burst 0.4s ease;
+  }
+
+  .isl-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(45, 212, 191, 0.2);
+    background: rgba(45, 212, 191, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .isl-log {
+    min-height: 0;
+    max-height: 130px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .isl-log div {
+    padding: 2px 0;
+  }
+
+  .isl-log div.active {
+    color: #2dd4bf;
+    font-weight: 600;
+  }
+
+  .isl-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .isl-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .isl-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .isl-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .isl-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .isl-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .isl-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .isl-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .isl-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .isl-pb-btn:not(:disabled):hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+  }
+
+  .isl-pb-btn.play {
+    background: linear-gradient(135deg, #2dd4bf, #34d399);
+    border: none;
+    color: #022c22;
+    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+  }
+
+  .isl-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4);
+  }
+
+  .isl-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .isl-speed-row input {
+    flex: 1;
+    accent-color: #2dd4bf;
+  }
+
+  .isl-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Animations */
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(45, 212, 191, 0);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0) rotate(-10deg);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes burst {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    20%, 60% {
+      transform: translateX(-5px);
+    }
+    40%, 80% {
+      transform: translateX(5px);
+    }
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.7);
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+      box-shadow: 0 0 0 12px rgba(45, 212, 191, 0);
+    }
+  }
+
+  .isl-pb-btn.play {
+    animation: pulse 1.2s infinite;
+  }
+
+  .isl-cell.current {
+    animation: ripple 0.6s ease-out;
+  }
+
+  .isl-cell.visited {
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @media (max-width: 1100px) {
+    .isl-main {
+      overflow: visible;
+    }
+  }
+</style>
+
+<div class="isl-page">
+  <div class="isl-hero">
+    <div class="isl-title-wrapper">
+      <div class="isl-hero-icon">🏝️</div>
+      <div class="isl-hero-text">
+        <h2>岛屿数量（DFS 网格搜索）</h2>
+        <p>LeetCode 200 · 遍历网格，遇到 '1' 即为岛屿起点，计数 +1 并用 DFS 将整个连通陆地标为已访问。</p>
+      </div>
+    </div>
+    <div class="isl-tip"><strong>DFS 递归：</strong>从'1'引导起，向上下左右四个方向递归探索，将连通的陆地全部标记为已访问。</div>
+  </div>
+
+  <div class="isl-layout">
+    <div class="isl-main">
+      <div class="isl-card">
+        <div class="isl-controls">
+          <input id="isl-input" class="isl-input" value="111;101;111" />
+          <button id="isl-start" class="isl-btn">开始搜索</button>
+          <button class="isl-example" data-val="111;101;111">示例1</button>
+          <button class="isl-example" data-val="11110;11010;11000;00000">示例2</button>
+          <button class="isl-example" data-val="11000;11000;00100;00011">示例3</button>
+        </div>
+
+        <div class="isl-stats">
+          <div class="isl-stat"><div class="isl-stat-label">当前扫描</div><div class="isl-stat-val" id="isl-scan">-</div></div>
+          <div class="isl-stat"><div class="isl-stat-label">DFS 栈深度</div><div class="isl-stat-val" id="isl-depth">0</div></div>
+          <div class="isl-stat"><div class="isl-stat-label">已访问陆地</div><div class="isl-stat-val" id="isl-visited">0</div></div>
+          <div class="isl-stat"><div class="isl-stat-label">岛屿数</div><div class="isl-stat-val" id="isl-count">0</div></div>
+        </div>
+
+        <div class="isl-grid" id="isl-grid"></div>
+
+        <div class="isl-message" id="step-message">点击「开始搜索」查看 DFS 标记岛屿的过程。</div>
+
+        <div class="isl-log" id="isl-log"></div>
+      </div>
+    </div>
+
+    <div class="isl-right">
+      <div data-code-panel class="isl-code-card"></div>
+      <div class="isl-legend">
+        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(28,27,50,0.4)"></span>水（'0'）</div>
+        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(45,55,72,0.5)"></span>未访问陆地（'1'）</div>
+        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(251,191,36,0.6)"></span>DFS 栈中</div>
+        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(251,146,60,0.7)"></span>当前访问</div>
+        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(45,212,191,0.6)"></span>已访问</div>
+      </div>
+      <div class="isl-playback">
+        <div class="isl-pb-row">
+          <button id="step-reset" class="isl-pb-btn">重置</button>
+          <button id="step-prev" class="isl-pb-btn">上一步</button>
+          <button id="step-play" class="isl-pb-btn play">播放</button>
+          <button id="step-next" class="isl-pb-btn">下一步</button>
+        </div>
+        <div class="isl-speed-row">
+          <span>速度</span>
+          <input id="step-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="step-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="isl-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

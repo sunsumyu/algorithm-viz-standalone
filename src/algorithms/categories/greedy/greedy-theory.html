@@ -1,0 +1,208 @@
+<style>
+  .greedy-article {
+    height: 100%;
+    overflow: auto;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(99, 102, 241, 0.42), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(167, 139, 250, 0.42), transparent 55%),
+      linear-gradient(135deg, #140f1f 0%, #1a1430 50%, #110d22 100%);
+    padding: 1.6rem;
+    box-sizing: border-box;
+  }
+
+  .greedy-article .article-shell { max-width: 1120px; margin: 0 auto; }
+
+  .greedy-article .article-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1.25rem; margin-bottom: 1.6rem;
+  }
+  .greedy-article .hero-left { display: flex; align-items: flex-start; gap: 16px; }
+  .greedy-article .icon-badge {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, #6366f1, #a78bfa);
+    color: #0b0820;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45);
+  }
+  .greedy-article .eyebrow {
+    color: #a78bfa; font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 700;
+  }
+  .greedy-article h1 {
+    margin: 0 0 0.55rem; font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    color: #f1f5f9; line-height: 1.3;
+  }
+  .greedy-article .lead { color: #c7cbe0; line-height: 1.85; max-width: 760px; font-size: 14.5px; }
+
+  .greedy-article .btn-back {
+    border: 1px solid rgba(167, 139, 250, 0.4); background: rgba(20, 18, 38, 0.6);
+    backdrop-filter: blur(18px) saturate(160%); color: #e0d9f6; border-radius: 11px;
+    padding: 10px 14px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: 600;
+    transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+  }
+  .greedy-article .btn-back:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(167, 139, 250, 0.2));
+    border-color: #a78bfa; color: #fff; transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(99, 102, 241, 0.3);
+  }
+
+  .greedy-article .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px; margin: 1.4rem 0;
+  }
+
+  .greedy-article .card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; padding: 1.4rem 1.6rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), border-color 0.3s, box-shadow 0.3s;
+    animation: gt-pop-in 0.55s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .greedy-article .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(167, 139, 250, 0.3);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(167, 139, 250, 0.12);
+  }
+  .greedy-article .card:nth-child(2) { animation-delay: 0.06s; }
+  .greedy-article .card:nth-child(3) { animation-delay: 0.12s; }
+
+  .greedy-article .card h2,
+  .greedy-article .card h3 {
+    color: #a78bfa; margin: 0 0 0.7rem; font-size: 16.5px; font-weight: 700; line-height: 1.4;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .greedy-article .card h3 { font-size: 15px; color: #c4b5fd; }
+
+  .greedy-article p,
+  .greedy-article li { color: #c7cbe0; line-height: 1.8; font-size: 14px; }
+  .greedy-article ul, .greedy-article ol { padding-left: 1.3rem; margin: 0.3rem 0; }
+  .greedy-article li { margin-bottom: 0.5rem; list-style-type: circle; }
+  .greedy-article ol li { list-style-type: decimal; }
+  .greedy-article strong { color: #e0d9f6; }
+
+  .greedy-article code {
+    color: #a5f3fc; background: rgba(8, 8, 24, 0.6); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 0.05rem 0.4rem; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.88em;
+  }
+
+  .greedy-article pre {
+    background: rgba(8, 8, 24, 0.62); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 1rem 1.2rem; overflow: auto;
+    color: #a5b4fc; line-height: 1.6; font-size: 13px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .greedy-article .note {
+    border-left: 4px solid #a78bfa;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(167, 139, 250, 0.08));
+    backdrop-filter: blur(18px);
+    border-radius: 12px; padding: 1.1rem 1.4rem; margin: 1.4rem 0;
+    color: #e0d9f6; line-height: 1.8; font-size: 14px;
+  }
+
+  .greedy-article .pill-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+  .greedy-article .pill {
+    color: #0b0820; background: linear-gradient(135deg, #6366f1, #a78bfa);
+    border-radius: 999px; padding: 0.3rem 0.7rem; font-size: 0.76rem; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    transition: transform 0.2s;
+  }
+  .greedy-article .pill:hover { transform: translateY(-1px) scale(1.04); }
+
+  @keyframes gt-pop-in {
+    0% { opacity: 0; transform: translateY(14px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 1100px) {
+    .greedy-article .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .greedy-article .article-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<div class="greedy-article">
+  <div class="article-shell">
+    <header class="article-header">
+      <div class="hero-left">
+        <div class="icon-badge">📘</div>
+        <div>
+          <div class="eyebrow">Greedy / Foundation</div>
+          <h1>贪心算法理论基础</h1>
+          <p class="lead">贪心算法每一步都做当前看起来最优的选择，并期望这些局部最优最终能组合成全局最优。它不像动态规划那样枚举所有状态，而是依赖问题本身的结构证明。</p>
+        </div>
+      </div>
+      <button class="btn-back" data-back-selector>← 返回算法列表</button>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>核心判断</h2>
+        <ul>
+          <li>能否明确当前阶段的局部最优选择？</li>
+          <li>局部最优做完后，后续问题是否仍保持同样结构？</li>
+          <li>局部最优是否可以通过交换论证或反证法推出全局最优？</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>常见证明方式</h2>
+        <ul>
+          <li><strong>交换论证</strong>：把任意最优解逐步替换成贪心选择，答案不变差。</li>
+          <li><strong>反证法</strong>：假设不选贪心选择更优，推出矛盾。</li>
+          <li><strong>排序后决策</strong>：先建立顺序，再从左到右作不可回退选择。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>适用题型</h2>
+        <div class="pill-row">
+          <span class="pill">分配问题</span>
+          <span class="pill">区间问题</span>
+          <span class="pill">序列问题</span>
+          <span class="pill">买卖收益</span>
+          <span class="pill">覆盖范围</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>通用解题流程</h2>
+      <ol>
+        <li><strong>拆分阶段</strong>：把问题转化为一系列可逐步决策的小阶段。</li>
+        <li><strong>设计贪心策略</strong>：说明每个阶段选什么，例如"优先选终点最小的区间"。</li>
+        <li><strong>模拟样例</strong>：用反例意识验证策略是否稳定。</li>
+        <li><strong>证明正确性</strong>：用交换论证说明选择不会让答案变差。</li>
+        <li><strong>实现细节</strong>：常见操作是排序、双指针、维护最大覆盖范围或累计正贡献。</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>代码骨架</h2>
+      <pre><code>function greedy(input) {
+  // 1. 预处理：排序 / 统计 / 转换结构
+  prepare(input);
+
+  // 2. 维护当前阶段的信息
+  let answer = initialValue;
+
+  // 3. 从左到右做局部最优选择
+  for (const state of input) {
+    if (canTake(state)) {
+      take(state);
+      update(answer);
+    }
+  }
+
+  return answer;
+}</code></pre>
+    </section>
+
+    <div class="note">提示：贪心的难点通常不在代码，而在"为什么这么贪一定对"。如果找不到证明，优先尝试构造反例。</div>
+  </div>
+</div>

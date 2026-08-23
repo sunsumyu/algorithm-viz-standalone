@@ -1,0 +1,493 @@
+<style>
+  #algo-union-find-theory-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-union-find-theory-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 10% 5%, #10b98155, transparent 55%),
+                radial-gradient(ellipse at 90% 95%, #05966955, transparent 55%),
+                linear-gradient(135deg, #022c22 0%, #064e3b 25%, #022c22 50%, #065f46 75%, #022c22 100%);
+    z-index: -2;
+  }
+
+  #algo-union-find-theory-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(2, 44, 34, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-union-find-theory-view .uft-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .uft-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .uft-hero .uft-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .uft-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .uft-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #10b981, #059669);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .uft-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .uft-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .uft-tip strong {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  #algo-union-find-theory-view .uft-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-union-find-theory-view .uft-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .uft-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .uft-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .uft-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .uft-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .uft-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .uft-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .uft-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .uft-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #10b981, #059669);
+  }
+
+  .uft-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .uft-stat-val {
+    color: #10b981;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .uft-graph-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 220px;
+  }
+
+  .uft-graph-container svg {
+    width: 100%;
+    max-width: 480px;
+    height: 220px;
+  }
+
+  .uft-array-container {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .uft-array-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .uft-array-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .uft-array-item {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    min-width: 32px;
+    text-align: center;
+  }
+
+  .uft-array-item .uft-idx {
+    display: block;
+    font-size: 9px;
+    color: rgba(204, 214, 244, 0.5);
+    margin-bottom: 2px;
+  }
+
+  .uft-array-item.changed {
+    background: rgba(16, 185, 129, 0.4);
+    border-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  }
+
+  .uft-log {
+    min-height: 0;
+    max-height: 120px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .uft-log div {
+    padding: 2px 0;
+  }
+
+  .uft-log div.active {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  .uft-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .uft-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .uft-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .uft-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .uft-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .uft-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+
+  .uft-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .uft-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .uft-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(16, 185, 129, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .uft-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .uft-pb-btn:not(:disabled):hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    transform: translateY(-1px);
+  }
+
+  .uft-pb-btn.play {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .uft-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .uft-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .uft-speed-row input {
+    flex: 1;
+    accent-color: #10b981;
+  }
+
+  .uft-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .uft-node {
+    transition: all 0.3s ease;
+  }
+
+  .uft-edge {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="uft-page">
+  <div class="uft-hero">
+    <div class="uft-title-wrapper">
+      <div class="uft-hero-icon">🔗</div>
+      <div class="uft-hero-text">
+        <h2>并查集理论基础</h2>
+        <p>Union-Find：路径压缩 + 按秩合并，高效处理集合合并与查询</p>
+      </div>
+    </div>
+    <div class="uft-tip"><strong>并查集核心：</strong>用于处理动态连通性问题。通过 find 查找集合代表（含路径压缩优化），union 合并两个集合（含按秩合并优化），时间接近 O(α(n))。</div>
+  </div>
+
+  <div class="uft-layout">
+    <div class="uft-main">
+      <div class="uft-card">
+        <div class="uft-controls">
+          <button id="uft-start" class="uft-btn">开始合并</button>
+        </div>
+
+        <div class="uft-stats">
+          <div class="uft-stat"><span class="uft-stat-label">当前操作</span><span class="uft-stat-val" id="uft-op">-</span></div>
+          <div class="uft-stat"><span class="uft-stat-label">集合数</span><span class="uft-stat-val" id="uft-sets">-</span></div>
+          <div class="uft-stat"><span class="uft-stat-label">节点数</span><span class="uft-stat-val" id="uft-nodes">-</span></div>
+          <div class="uft-stat"><span class="uft-stat-label">合并次数</span><span class="uft-stat-val" id="uft-merges">0</span></div>
+        </div>
+
+        <div class="uft-graph-container" id="uft-graph"></div>
+
+        <div class="uft-array-container">
+          <div class="uft-array-title">parent 数组（父节点指针）</div>
+          <div class="uft-array-row" id="uft-parent"></div>
+          <div class="uft-array-title" style="margin-top:8px;">rank 数组（秩/树高估计）</div>
+          <div class="uft-array-row" id="uft-rank"></div>
+        </div>
+
+        <div class="uft-message" id="step-message">点击「开始合并」观看并查集的操作过程。</div>
+
+        <div class="uft-log" id="uft-log"></div>
+      </div>
+    </div>
+
+    <div class="uft-right">
+      <div data-code-panel class="uft-code-card"></div>
+      <div class="uft-legend">
+        <div class="uft-legend-item"><span class="uft-legend-box" style="background:rgba(16,185,129,0.2);border:2px solid #10b981"></span>独立节点</div>
+        <div class="uft-legend-item"><span class="uft-legend-box" style="background:#f59e0b"></span>当前操作节点</div>
+        <div class="uft-legend-item"><span class="uft-legend-box" style="background:rgba(52,211,153,0.5);border:2px solid #34d399"></span>已合并节点</div>
+      </div>
+      <div class="uft-playback">
+        <div class="uft-pb-row">
+          <button id="step-reset" class="uft-pb-btn">重置</button>
+          <button id="step-prev" class="uft-pb-btn">上一步</button>
+          <button id="step-play" class="uft-pb-btn play">播放</button>
+          <button id="step-next" class="uft-pb-btn">下一步</button>
+        </div>
+        <div class="uft-speed-row">
+          <span>速度</span>
+          <input id="uft-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="uft-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="uft-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>

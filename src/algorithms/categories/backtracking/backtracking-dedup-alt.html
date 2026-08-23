@@ -1,0 +1,88 @@
+<style>
+  .bt-article {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    line-height: 1.7;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  .bt-hero {
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.15), rgba(99, 102, 241, 0.1));
+    border-radius: 24px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(192, 132, 252, .3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .3);
+  }
+  .bt-article h1 {
+    margin: 0 0 0.5rem 0;
+    color: #d8b4fe;
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+  .bt-article p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 1.1rem;
+  }
+  .bt-section .bt-card {
+    background: rgba(20, 18, 38, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .bt-article h2 {
+    color: #c4b5fd;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(192, 132, 252, .2);
+  }
+  .bt-article p { color: #cbd5e1; margin: 0.75rem 0; }
+  .bt-pre {
+    background: rgba(8, 8, 24, .7);
+    border-radius: 12px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    border: 1px solid rgba(255, 255, 255, .06);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #a6e3a1;
+  }
+</style>
+
+<article class="bt-article">
+  <div class="bt-hero">
+    <h1>回溯算法去重问题的另一种写法</h1>
+    <p>从 used 数组与本层集合两个角度理解回溯去重</p>
+  </div>
+
+  <section class="bt-section">
+    <div class="bt-card">
+      <h2>树层去重</h2>
+      <p>排序后相同元素如果在同一层被重复选择，会产生重复答案，所以要跳过后一个相同值。</p>
+      <div class="bt-pre"><code>if (i > start && nums[i] === nums[i - 1]) continue;</code></div>
+    </div>
+
+    <div class="bt-card">
+      <h2>排列去重</h2>
+      <p>排列题常用 used 数组判断前一个相同元素是否已经在当前路径中。</p>
+      <div class="bt-pre"><code>if (i > 0 && nums[i] === nums[i - 1] && !used[i - 1]) continue;</code></div>
+    </div>
+
+    <div class="bt-card">
+      <h2>不排序去重</h2>
+      <p>递增子序列这类必须保留原顺序的问题，使用每层 Set。</p>
+      <div class="bt-pre"><code>const usedThisLevel = new Set();
+if (usedThisLevel.has(nums[i])) continue;
+usedThisLevel.add(nums[i]);</code></div>
+    </div>
+  </section>
+</article>

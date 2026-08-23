@@ -1,0 +1,199 @@
+<style>
+  .greedy-article {
+    height: 100%;
+    overflow: auto;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(192, 132, 252, 0.42), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(236, 72, 153, 0.42), transparent 55%),
+      linear-gradient(135deg, #1a1020 0%, #22152a 50%, #180d1f 100%);
+    padding: 1.6rem;
+    box-sizing: border-box;
+  }
+
+  .greedy-article .article-shell { max-width: 1120px; margin: 0 auto; }
+
+  .greedy-article .article-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1.25rem; margin-bottom: 1.6rem;
+  }
+  .greedy-article .hero-left { display: flex; align-items: flex-start; gap: 16px; }
+  .greedy-article .icon-badge {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, #c084fc, #ec4899);
+    color: #1a0814;
+    box-shadow: 0 8px 24px rgba(192, 132, 252, 0.45);
+  }
+  .greedy-article .eyebrow {
+    color: #ec4899; font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 700;
+  }
+  .greedy-article h1 {
+    margin: 0 0 0.55rem; font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    color: #f1f5f9; line-height: 1.3;
+  }
+  .greedy-article .lead { color: #c7cbe0; line-height: 1.85; max-width: 780px; font-size: 14.5px; }
+
+  .greedy-article .btn-back {
+    border: 1px solid rgba(236, 72, 153, 0.4); background: rgba(20, 18, 38, 0.6);
+    backdrop-filter: blur(18px) saturate(160%); color: #fbcfe8; border-radius: 11px;
+    padding: 10px 14px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: 600;
+    transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+  }
+  .greedy-article .btn-back:hover {
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.2), rgba(236, 72, 153, 0.2));
+    border-color: #ec4899; color: #fff; transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(236, 72, 153, 0.3);
+  }
+
+  .greedy-article .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+    gap: 16px; margin: 1.4rem 0;
+  }
+
+  .greedy-article .card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; padding: 1.4rem 1.6rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), border-color 0.3s, box-shadow 0.3s;
+    animation: gws-pop-in 0.55s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .greedy-article .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(236, 72, 153, 0.3);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(192, 132, 252, 0.12);
+  }
+  .greedy-article .card:nth-child(2) { animation-delay: 0.06s; }
+  .greedy-article .card:nth-child(3) { animation-delay: 0.12s; }
+  .greedy-article .card:nth-child(4) { animation-delay: 0.18s; }
+
+  .greedy-article .card.wide { grid-column: 1 / -1; }
+
+  .greedy-article .card h2,
+  .greedy-article .card h3 {
+    color: #f0abfc; margin: 0 0 0.7rem; font-size: 16.5px; font-weight: 700; line-height: 1.4;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .greedy-article .card h3 { font-size: 15px; color: #f5d0fe; }
+
+  .greedy-article p,
+  .greedy-article li { color: #c7cbe0; line-height: 1.8; font-size: 14px; }
+  .greedy-article ul, .greedy-article ol { padding-left: 1.3rem; margin: 0.3rem 0; }
+  .greedy-article li { margin-bottom: 0.5rem; list-style-type: circle; }
+  .greedy-article ol li { list-style-type: decimal; }
+  .greedy-article strong { color: #fbcfe8; }
+
+  .greedy-article table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    overflow: hidden; border-radius: 10px;
+    background: rgba(8, 8, 24, 0.4);
+    margin-top: 0.6rem; font-size: 13.5px;
+  }
+  .greedy-article th, .greedy-article td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.65rem 0.8rem; text-align: left; color: #c7cbe0; vertical-align: top;
+  }
+  .greedy-article thead th {
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.22), rgba(236, 72, 153, 0.16));
+    color: #f0abfc; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .greedy-article tbody tr:hover td { background: rgba(236, 72, 153, 0.06); }
+  .greedy-article tbody tr:last-child td { border-bottom: none; }
+
+  .greedy-article code {
+    color: #f9a8d4; background: rgba(8, 8, 24, 0.6); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 0.05rem 0.4rem; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.88em;
+  }
+
+  .greedy-article .note {
+    border-left: 4px solid #ec4899;
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.12), rgba(236, 72, 153, 0.08));
+    backdrop-filter: blur(18px);
+    border-radius: 12px; padding: 1.1rem 1.4rem; margin: 1.4rem 0;
+    color: #fbcfe8; line-height: 1.8; font-size: 14px;
+  }
+
+  @keyframes gws-pop-in {
+    0% { opacity: 0; transform: translateY(14px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 1100px) {
+    .greedy-article .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .greedy-article .article-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<div class="greedy-article">
+  <div class="article-shell">
+    <header class="article-header">
+      <div class="hero-left">
+        <div class="icon-badge">🧭</div>
+        <div>
+          <div class="eyebrow">Greedy / Summary</div>
+          <h1>贪心周总结</h1>
+          <p class="lead">这一组题可以按"分配、序列、覆盖、区间、树形贪心"来归类。把题目放到正确模型里，通常就能快速定位贪心策略。</p>
+        </div>
+      </div>
+      <button class="btn-back" data-back-selector>← 返回算法列表</button>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>分配类</h2>
+        <ul>
+          <li>分发饼干：小饼干优先满足胃口小的孩子。</li>
+          <li>分发糖果：从左到右、从右到左分别满足局部约束。</li>
+          <li>柠檬水找零：优先保留更灵活的 5 元零钱。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>序列类</h2>
+        <ul>
+          <li>摆动序列：只在坡度方向变化时计数。</li>
+          <li>最大子序和：当前和为负就丢弃前缀。</li>
+          <li>单调递增数字：从右向左修正下降位。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>覆盖类</h2>
+        <ul>
+          <li>跳跃游戏：维护当前能到达的最远位置。</li>
+          <li>跳跃游戏 II：按层扩展覆盖范围，到边界就增加步数。</li>
+          <li>加油站：总油量可行时，当前累积为负就换起点。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>区间类</h2>
+        <ul>
+          <li>最少箭：按右边界排序，尽量复用同一支箭。</li>
+          <li>无重叠区间：保留结束早的区间。</li>
+          <li>合并区间：按左边界排序，持续维护当前合并段。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card wide">
+      <h2>速查表</h2>
+      <table>
+        <thead><tr><th>题型</th><th>关键局部最优</th><th>常用变量</th></tr></thead>
+        <tbody>
+          <tr><td>股票 II</td><td>只要今天到明天上涨，就收集这段正利润</td><td><code>profit += max(0, diff)</code></td></tr>
+          <tr><td>K 次取反</td><td>先翻绝对值大的负数；若剩奇数次，翻绝对值最小值</td><td><code>k</code>、<code>minAbs</code></td></tr>
+          <tr><td>身高队列</td><td>先放高个，高个位置确定后不受矮个影响</td><td><code>sort</code>、<code>splice</code></td></tr>
+          <tr><td>划分字母区间</td><td>当前片段必须覆盖所有已出现字符的最后位置</td><td><code>end</code>、<code>lastIndex</code></td></tr>
+          <tr><td>二叉树摄像头</td><td>叶子不放摄像头，在父节点放最划算</td><td><code>state</code> 后序遍历</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="note">做题时先写出"我每一步贪什么"，再用一两个极端样例检验。若策略依赖未来信息，往往需要排序或改用动态规划。</div>
+  </div>
+</div>

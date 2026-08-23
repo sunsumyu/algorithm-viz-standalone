@@ -1,0 +1,399 @@
+<style>
+  /* === 四数相加II · 玻璃感 + 哈希表分组 + 两阶段扫描 + 命中爆发 === */
+  #algo-four-sum-ii-view {
+    --accent-a: #06b6d4;
+    --accent-b: #0891b2;
+    --accent-glow: rgba(6, 182, 212, .45);
+    --match-color: #34d399;
+    --conflict-color: #f87171;
+    --build-color: #06b6d4;
+    --lookup-color: #a78bfa;
+    --row-a: #22d3ee;
+    --row-b: #0891b2;
+    --row-c: #a78bfa;
+    --row-d: #818cf8;
+    width: 100%; height: 100%;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(ellipse at 8% 6%, rgba(6, 182, 212, .28), transparent 55%),
+      radial-gradient(ellipse at 92% 94%, rgba(8, 145, 178, .28), transparent 55%),
+      linear-gradient(135deg, #041820 0%, #0a1e2e 50%, #0c1a28 100%);
+    overflow: hidden;
+  }
+  #algo-four-sum-ii-view .fsii-shell { width: 100%; height: 100%; display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+  #algo-four-sum-ii-view .fsii-hero {
+    padding: 18px 24px 12px; display: flex; gap: 18px; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(8, 8, 24, .35); backdrop-filter: blur(14px) saturate(150%);
+  }
+  #algo-four-sum-ii-view .fsii-hero-left { display: flex; align-items: center; gap: 14px; }
+  #algo-four-sum-ii-view .fsii-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 24px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #041820; box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  #algo-four-sum-ii-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+  #algo-four-sum-ii-view .fsii-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
+  #algo-four-sum-ii-view .fsii-tip {
+    max-width: 540px; padding: 10px 14px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(8, 145, 178, .08));
+    border: 1px solid rgba(6, 182, 212, .3);
+    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+  }
+  #algo-four-sum-ii-view .fsii-tip strong { color: #67e8f9; }
+  #algo-four-sum-ii-view .fsii-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+  }
+  #algo-four-sum-ii-view .fsii-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  #algo-four-sum-ii-view .fsii-card {
+    background: rgba(20, 18, 38, .55); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35); overflow: hidden;
+  }
+  #algo-four-sum-ii-view .fsii-card-title {
+    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
+    display: flex; justify-content: space-between; align-items: center;
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  }
+  #algo-four-sum-ii-view .fsii-tag {
+    font-size: 11px; color: #67e8f9; background: rgba(6, 182, 212, .14);
+    border: 1px solid rgba(6, 182, 212, .3); padding: 2px 8px; border-radius: 999px;
+  }
+  #algo-four-sum-ii-view .fsii-input-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px 16px 0;
+  }
+  #algo-four-sum-ii-view .fsii-input-cell {
+    display: flex; align-items: center; gap: 8px;
+  }
+  #algo-four-sum-ii-view .fsii-input-cell label {
+    font-weight: 800; font-size: 14px; min-width: 20px; text-align: center;
+  }
+  #algo-four-sum-ii-view .fsii-input-cell.label-a label { color: var(--row-a); }
+  #algo-four-sum-ii-view .fsii-input-cell.label-b label { color: var(--row-b); }
+  #algo-four-sum-ii-view .fsii-input-cell.label-c label { color: var(--row-c); }
+  #algo-four-sum-ii-view .fsii-input-cell.label-d label { color: var(--row-d); }
+  #algo-four-sum-ii-view input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(8, 8, 24, .6); color: #e2e8f0;
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13px; outline: none; transition: all .2s;
+  }
+  #algo-four-sum-ii-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(6, 182, 212, .15); }
+  #algo-four-sum-ii-view .fsii-start-row {
+    display: flex; gap: 10px; align-items: center; justify-content: center;
+    padding: 10px 16px 10px;
+  }
+  #algo-four-sum-ii-view button {
+    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px; background: rgba(255, 255, 255, .04);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-four-sum-ii-view button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    border-color: transparent; color: #041820; transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  #algo-four-sum-ii-view button:disabled { opacity: .4; cursor: not-allowed; }
+  #algo-four-sum-ii-view .fsii-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  #algo-four-sum-ii-view .fsii-example-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    background: rgba(8, 145, 178, .12); border: 1px solid rgba(8, 145, 178, .28);
+    color: #67e8f9; cursor: pointer; transition: all .2s;
+  }
+  #algo-four-sum-ii-view .fsii-example-btn:hover {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #041820; border-color: transparent; transform: translateY(-1px);
+  }
+  /* 统计 */
+  #algo-four-sum-ii-view .fsii-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #algo-four-sum-ii-view .fsii-stat {
+    position: relative; padding: 12px 14px 12px 18px;
+    background: rgba(20, 18, 38, .55); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08); border-radius: 14px; overflow: hidden;
+  }
+  #algo-four-sum-ii-view .fsii-stat::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px; }
+  #algo-four-sum-ii-view .fsii-stat--phase::before { background: linear-gradient(180deg, #06b6d4, #0891b2); }
+  #algo-four-sum-ii-view .fsii-stat--phase .fsii-stat-val { color: #67e8f9; }
+  #algo-four-sum-ii-view .fsii-stat--sum::before { background: linear-gradient(180deg, #22d3ee, #06b6d4); }
+  #algo-four-sum-ii-view .fsii-stat--sum .fsii-stat-val { color: #a5f3fc; }
+  #algo-four-sum-ii-view .fsii-stat--map::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
+  #algo-four-sum-ii-view .fsii-stat--map .fsii-stat-val { color: #c4b5fd; }
+  #algo-four-sum-ii-view .fsii-stat--count::before { background: linear-gradient(180deg, #34d399, #10b981); }
+  #algo-four-sum-ii-view .fsii-stat--count .fsii-stat-val { color: #6ee7b7; }
+  #algo-four-sum-ii-view .fsii-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  #algo-four-sum-ii-view .fsii-stat-val {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 18px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums;
+  }
+  /* 数组可视化 */
+  #algo-four-sum-ii-view .fsii-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
+  #algo-four-sum-ii-view .fsii-rows {
+    flex: 1; min-height: 0; padding: 18px;
+    overflow: auto; display: flex; flex-direction: column; gap: 10px;
+  }
+  #algo-four-sum-ii-view .fsii-array-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  #algo-four-sum-ii-view .fsii-array-label {
+    font-weight: 800; font-size: 15px; min-width: 22px; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-four-sum-ii-view .fsii-row-a .fsii-array-label { color: var(--row-a); }
+  #algo-four-sum-ii-view .fsii-row-b .fsii-array-label { color: var(--row-b); }
+  #algo-four-sum-ii-view .fsii-row-c .fsii-array-label { color: var(--row-c); }
+  #algo-four-sum-ii-view .fsii-row-d .fsii-array-label { color: var(--row-d); }
+  #algo-four-sum-ii-view .fsii-array-cells { display: flex; gap: 6px; flex-wrap: wrap; }
+  #algo-four-sum-ii-view .fsii-cell {
+    position: relative; min-width: 44px; height: 48px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border: 1.5px solid rgba(255, 255, 255, .1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+    border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+  }
+  #algo-four-sum-ii-view .fsii-cell .idx { color: #64748b; font-size: 10px; }
+  #algo-four-sum-ii-view .fsii-cell .val { color: #cbd5e1; font-weight: 800; font-size: 16px; }
+  #algo-four-sum-ii-view .fsii-cell.active {
+    transform: translateY(-5px) scale(1.08);
+    animation: fsii-pulse 1.2s ease-in-out infinite;
+  }
+  #algo-four-sum-ii-view .fsii-cell.active .val { color: #fff; }
+  #algo-four-sum-ii-view .fsii-row-a .fsii-cell.active {
+    border-color: var(--row-a);
+    background: linear-gradient(180deg, rgba(34, 211, 238, .35), rgba(6, 182, 212, .12));
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, .25), 0 6px 18px rgba(34, 211, 238, .4);
+  }
+  #algo-four-sum-ii-view .fsii-row-b .fsii-cell.active {
+    border-color: var(--row-b);
+    background: linear-gradient(180deg, rgba(8, 145, 178, .35), rgba(8, 145, 178, .12));
+    box-shadow: 0 0 0 3px rgba(8, 145, 178, .25), 0 6px 18px rgba(8, 145, 178, .4);
+  }
+  #algo-four-sum-ii-view .fsii-row-c .fsii-cell.active {
+    border-color: var(--row-c);
+    background: linear-gradient(180deg, rgba(167, 139, 250, .35), rgba(139, 92, 246, .12));
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, .25), 0 6px 18px rgba(167, 139, 250, .4);
+  }
+  #algo-four-sum-ii-view .fsii-row-d .fsii-cell.active {
+    border-color: var(--row-d);
+    background: linear-gradient(180deg, rgba(129, 140, 248, .35), rgba(129, 140, 248, .12));
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, .25), 0 6px 18px rgba(129, 140, 248, .4);
+  }
+  @keyframes fsii-pulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+  }
+  /* 哈希表 */
+  #algo-four-sum-ii-view .fsii-map {
+    padding: 14px 16px; background: rgba(8, 8, 24, .45); border-top: 1px solid rgba(255, 255, 255, .06);
+    min-height: 80px;
+  }
+  #algo-four-sum-ii-view .fsii-map-title { color: #94a3b8; font-size: 12px; margin-bottom: 8px; }
+  #algo-four-sum-ii-view .fsii-map-title .fsii-phase-tag {
+    display: inline-block; padding: 1px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; margin-left: 6px;
+  }
+  #algo-four-sum-ii-view .fsii-map-title .fsii-phase-tag.build {
+    background: rgba(6, 182, 212, .2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, .4);
+  }
+  #algo-four-sum-ii-view .fsii-map-title .fsii-phase-tag.lookup {
+    background: rgba(167, 139, 250, .2); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, .4);
+  }
+  #algo-four-sum-ii-view .fsii-map-items { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow: auto; }
+  #algo-four-sum-ii-view .fsii-map-entry {
+    padding: 5px 10px; border-radius: 8px;
+    background: rgba(6, 182, 212, .12); border: 1px solid rgba(6, 182, 212, .28);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a5f3fc;
+    animation: fsii-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
+    display: flex; align-items: center; gap: 4px;
+  }
+  #algo-four-sum-ii-view .fsii-map-entry .fsii-entry-key { color: #67e8f9; font-weight: 700; }
+  #algo-four-sum-ii-view .fsii-map-entry .fsii-entry-sep { color: #475569; }
+  #algo-four-sum-ii-view .fsii-map-entry .fsii-entry-val { color: #c4b5fd; font-weight: 700; }
+  @keyframes fsii-slide-in {
+    0% { transform: translateY(8px) scale(.85); opacity: 0; }
+    60% { transform: translateY(-2px) scale(1.08); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  #algo-four-sum-ii-view .fsii-map-entry.lookup-hit {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .25), rgba(16, 185, 129, .1));
+    border-color: rgba(52, 211, 153, .5);
+    animation: fsii-hit-pop .5s cubic-bezier(.34, 1.56, .64, 1);
+    box-shadow: 0 0 14px rgba(52, 211, 153, .4);
+  }
+  #algo-four-sum-ii-view .fsii-map-entry.lookup-hit .fsii-entry-key { color: #6ee7b7; }
+  #algo-four-sum-ii-view .fsii-map-entry.lookup-hit .fsii-entry-val { color: #a7f3d0; }
+  #algo-four-sum-ii-view .fsii-map-entry.lookup-miss {
+    background: rgba(248, 113, 113, .1); border-color: rgba(248, 113, 113, .3);
+  }
+  #algo-four-sum-ii-view .fsii-map-entry.lookup-miss .fsii-entry-key { color: #fca5a5; }
+  @keyframes fsii-hit-pop {
+    0% { transform: scale(.6); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  #algo-four-sum-ii-view .fsii-map-empty { color: #6c7086; font-size: 12px; }
+  /* 结果横幅 */
+  #algo-four-sum-ii-view .fsii-result {
+    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(8, 145, 178, .06));
+    border: 1px solid rgba(6, 182, 212, .28);
+    line-height: 1.55; font-size: 14px; color: #a5f3fc;
+  }
+  #algo-four-sum-ii-view .fsii-result .fsii-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #041820; box-shadow: 0 4px 14px var(--accent-glow); flex-shrink: 0;
+  }
+  #algo-four-sum-ii-view .fsii-result.fsii-result--success {
+    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
+    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  }
+  #algo-four-sum-ii-view .fsii-result.fsii-result--success .fsii-emoji {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+  }
+  #algo-four-sum-ii-view .fsii-result.fsii-result--fail {
+    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(8, 145, 178, .06));
+    border-color: rgba(248, 113, 113, .35); color: #fecaca;
+    animation: fsii-shake .5s ease-in-out;
+  }
+  #algo-four-sum-ii-view .fsii-result.fsii-result--fail .fsii-emoji {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+  }
+  @keyframes fsii-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  /* 日志 */
+  #algo-four-sum-ii-view .fsii-log {
+    min-height: 80px; max-height: 120px; padding: 10px 14px;
+    overflow: auto; background: rgba(8, 8, 24, .55);
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
+    line-height: 1.7; color: #94a3b8;
+  }
+  #algo-four-sum-ii-view .fsii-log .active { color: #67e8f9; font-weight: 600; }
+  /* 代码 */
+  #algo-four-sum-ii-view .fsii-code {
+    min-height: 0; display: flex;
+    background: rgba(8, 8, 24, .55); backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .08); border-radius: 16px; overflow: hidden;
+  }
+  #algo-four-sum-ii-view .fsii-code [data-code-panel] { flex: 1; min-width: 0; }
+  /* 控制栏 */
+  #algo-four-sum-ii-view .fsii-controls {
+    padding: 14px 18px; background: rgba(8, 8, 24, .55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  #algo-four-sum-ii-view .fsii-controls .fsii-ctrl-btn { min-width: 64px; }
+  #algo-four-sum-ii-view .fsii-controls .fsii-ctrl-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #041820; border-color: transparent;
+  }
+  #algo-four-sum-ii-view .fsii-counter {
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    min-width: 110px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  #algo-four-sum-ii-view .fsii-speed-wrap {
+    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  }
+  #algo-four-sum-ii-view #step-speed { width: 130px; accent-color: var(--accent-a); }
+  @media (max-width: 1100px) {
+    #algo-four-sum-ii-view .fsii-main { grid-template-columns: 1fr; overflow: auto; }
+    #algo-four-sum-ii-view .fsii-code { min-height: 360px; }
+  }
+</style>
+
+<div class="fsii-shell">
+  <div class="fsii-hero">
+    <div class="fsii-hero-left">
+      <span class="fsii-icon">🧮</span>
+      <div>
+        <h1>四数相加II（哈希表分组）</h1>
+        <div class="fsii-sub">LeetCode 454 · A+B 和 C+D 分组哈希</div>
+      </div>
+    </div>
+    <div class="fsii-tip"><strong>核心动画：</strong>四数组<span style="color:#67e8f9">青</span>/<span style="color:#0891b2">深青</span>/<span style="color:#c4b5fd">紫</span>/<span style="color:#a5b4fc">蓝紫</span>分色；<span style="color:#67e8f9">构建阶段</span>枚举 A+B 对写入哈希表；<span style="color:#c4b5fd">查找阶段</span>枚举 C+D 对查互补值；命中时<span style="color:#6ee7b7">绿色 burst 爆发</span>。</div>
+  </div>
+  <div class="fsii-main">
+    <div class="fsii-left">
+      <section class="fsii-card">
+        <div class="fsii-card-title">四个数组 <span class="fsii-tag">A / B / C / D</span></div>
+        <div class="fsii-input-grid">
+          <div class="fsii-input-cell label-a">
+            <label>A</label>
+            <input id="fsii-input-a" value="1,2" placeholder="数组 A">
+          </div>
+          <div class="fsii-input-cell label-b">
+            <label>B</label>
+            <input id="fsii-input-b" value="-2,-1" placeholder="数组 B">
+          </div>
+          <div class="fsii-input-cell label-c">
+            <label>C</label>
+            <input id="fsii-input-c" value="-1,2" placeholder="数组 C">
+          </div>
+          <div class="fsii-input-cell label-d">
+            <label>D</label>
+            <input id="fsii-input-d" value="0,2" placeholder="数组 D">
+          </div>
+        </div>
+        <div class="fsii-start-row">
+          <button id="fsii-start">开始统计</button>
+        </div>
+        <div class="fsii-examples">
+          <button class="fsii-example-btn" data-a="1,2" data-b="-2,-1" data-c="-1,2" data-d="0,2">示例1 → 2</button>
+          <button class="fsii-example-btn" data-a="0" data-b="0" data-c="0" data-d="0">全零 → 1</button>
+        </div>
+      </section>
+
+      <div class="fsii-stats">
+        <div class="fsii-stat fsii-stat--phase"><div class="fsii-stat-label">阶段</div><div class="fsii-stat-val" id="fsii-phase">-</div></div>
+        <div class="fsii-stat fsii-stat--sum"><div class="fsii-stat-label">当前对和</div><div class="fsii-stat-val" id="fsii-pair-sum">-</div></div>
+        <div class="fsii-stat fsii-stat--map"><div class="fsii-stat-label">Map 大小</div><div class="fsii-stat-val" id="fsii-map-size">0</div></div>
+        <div class="fsii-stat fsii-stat--count"><div class="fsii-stat-label">元组数</div><div class="fsii-stat-val" id="fsii-count">0</div></div>
+      </div>
+
+      <section class="fsii-card fsii-visual">
+        <div class="fsii-card-title">四数组 & 哈希表 <span class="fsii-tag" id="fsii-visual-tag">构建中</span></div>
+        <div class="fsii-rows" id="fsii-rows"></div>
+        <div class="fsii-map">
+          <div class="fsii-map-title">哈希表 sum → count <span class="fsii-phase-tag build" id="fsii-phase-tag">构建</span></div>
+          <div class="fsii-map-items" id="fsii-map-items"></div>
+        </div>
+        <div class="fsii-result" id="step-message-banner">
+          <span class="fsii-emoji">🧮</span>
+          <div id="step-message">点击「开始统计」观看分组哈希 + 两阶段扫描动画</div>
+        </div>
+      </section>
+
+      <section class="fsii-card">
+        <div class="fsii-card-title">执行日志</div>
+        <div class="fsii-log" id="fsii-log"></div>
+      </section>
+    </div>
+    <aside class="fsii-code"><div data-code-panel></div></aside>
+  </div>
+  <div class="fsii-controls">
+    <button id="step-reset" class="fsii-ctrl-btn">⏮ 重置</button>
+    <button id="step-prev" class="fsii-ctrl-btn">◀ 上一步</button>
+    <button id="step-play" class="fsii-ctrl-btn fsii-ctrl-primary">▶ 播放</button>
+    <button id="step-next" class="fsii-ctrl-btn">下一步 ▶</button>
+    <span id="step-counter" class="fsii-counter">步骤: 0 / 0</span>
+    <div class="fsii-speed-wrap">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
+      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    </div>
+  </div>
+</div>

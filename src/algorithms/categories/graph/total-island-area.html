@@ -1,0 +1,580 @@
+<style>
+  #algo-total-island-area-view {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #algo-total-island-area-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 8% 6%, #f59e0b55, transparent 55%),
+                radial-gradient(ellipse at 92% 94%, #d9770655, transparent 55%),
+                linear-gradient(135deg, #451a03 0%, #78350f 25%, #451a03 50%, #92400e 75%, #451a03 100%);
+    z-index: -2;
+  }
+
+  #algo-total-island-area-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(69, 26, 3, 0.4), transparent 70%);
+    z-index: -1;
+  }
+
+  #algo-total-island-area-view .tia-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .tia-hero {
+    padding: 16px 24px;
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .tia-hero .tia-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tia-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .tia-hero-text h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tia-hero-text p {
+    margin: 0;
+    color: rgba(204, 214, 244, 0.8);
+    font-size: 13px;
+  }
+
+  .tia-tip {
+    max-width: 480px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: rgba(204, 214, 244, 0.9);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .tia-tip strong {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  #algo-total-island-area-view .tia-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    #algo-total-island-area-view .tia-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+  }
+
+  .tia-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .tia-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .tia-controls {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .tia-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 10, 23, 0.8);
+    color: #cdd6f4;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .tia-input:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  }
+
+  .tia-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #451a03;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .tia-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .tia-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .tia-example {
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.1);
+    color: #cdd6f4;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tia-example:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+  }
+
+  .tia-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .tia-stat {
+    padding: 14px 0;
+    position: relative;
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .tia-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+  }
+
+  .tia-stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+  }
+
+  .tia-stat-val {
+    color: #f59e0b;
+    font-family: ui-monospace, monospace;
+    font-size: 19px;
+    font-weight: 700;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tia-grid {
+    display: grid;
+    gap: 3px;
+    background: rgba(11, 10, 23, 0.8);
+    border-radius: 12px;
+    padding: 12px;
+    justify-content: center;
+    align-content: center;
+    margin: 16px auto;
+  }
+
+  .tia-cell {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .tia-cell.water {
+    background: rgba(28, 27, 50, 0.4);
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .tia-cell.land {
+    background: rgba(45, 55, 72, 0.5);
+    color: #cdd6f4;
+  }
+
+  .tia-cell.current {
+    background: rgba(245, 158, 11, 0.7);
+    color: #451a03;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+    animation: tia-ripple 0.6s ease-out;
+  }
+
+  .tia-cell.visited {
+    background: rgba(245, 158, 11, 0.35);
+    color: #cdd6f4;
+    animation: tia-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .tia-cell.explored {
+    background: rgba(245, 158, 11, 0.2);
+    color: rgba(204, 214, 244, 0.6);
+  }
+
+  .tia-message {
+    margin: 0 14px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.08);
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .tia-log {
+    min-height: 0;
+    max-height: 130px;
+    padding: 14px 16px;
+    overflow: auto;
+    background: rgba(11, 10, 23, 0.8);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(204, 214, 244, 0.8);
+  }
+
+  .tia-log div {
+    padding: 2px 0;
+  }
+
+  .tia-log div.active {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  .tia-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .tia-code-card {
+    background: rgba(11, 10, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .tia-area-card {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  .tia-area-title {
+    color: rgba(204, 214, 244, 0.7);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .tia-area-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 30px;
+    align-items: center;
+  }
+
+  .tia-area-item {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    animation: tia-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .tia-area-total {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #451a03;
+    font-family: ui-monospace, monospace;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .tia-legend {
+    background: rgba(20, 18, 38, 0.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tia-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tia-legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .tia-playback {
+    background: rgba(20, 18, 38, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tia-pb-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .tia-pb-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(245, 158, 11, 0.1);
+    color: #cdd6f4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .tia-pb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .tia-pb-btn:not(:disabled):hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    transform: translateY(-1px);
+  }
+
+  .tia-pb-btn.play {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: #451a03;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+
+  .tia-pb-btn.play:not(:disabled):hover {
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .tia-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(204, 214, 244, 0.7);
+  }
+
+  .tia-speed-row input {
+    flex: 1;
+    accent-color: #f59e0b;
+  }
+
+  .tia-counter {
+    color: rgba(204, 214, 244, 0.6);
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    text-align: center;
+    -webkit-font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @keyframes tia-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+  }
+
+  @keyframes tia-popIn {
+    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  @keyframes tia-ripple {
+    0% { transform: scale(0.8); opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+    100% { transform: scale(1.5); opacity: 0; box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+  }
+
+  .tia-cell.current { animation: tia-ripple 0.6s ease-out; }
+  .tia-cell.visited { animation: tia-popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  @media (max-width: 1100px) {
+    .tia-main { overflow: visible; }
+  }
+</style>
+
+<div class="tia-page">
+  <div class="tia-hero">
+    <div class="tia-title-wrapper">
+      <div class="tia-hero-icon">📊</div>
+      <div class="tia-hero-text">
+        <h2>孤岛总面积（DFS/BFS）</h2>
+        <p>遍历所有岛屿，累计每座岛屿面积，求所有岛屿的总面积。</p>
+      </div>
+    </div>
+    <div class="tia-tip"><strong>面积累加：</strong>DFS/BFS 找出每座岛屿，计算其面积后加入总面积。观察面积逐步累加的过程。</div>
+  </div>
+
+  <div class="tia-layout">
+    <div class="tia-main">
+      <div class="tia-card">
+        <div class="tia-controls">
+          <input id="tia-input" class="tia-input" value="1,1,0,0,0;1,0,0,0,0;0,0,1,0,0;0,0,0,1,1" />
+          <button id="tia-start" class="tia-btn">计算面积</button>
+          <button class="tia-example" data-val="1,1,0,0,0;1,0,0,0,0;0,0,1,0,0;0,0,0,1,1">示例1</button>
+          <button class="tia-example" data-val="0,0,0;0,0,0;0,0,0">示例2</button>
+          <button class="tia-example" data-val="1,1,1;1,1,1;1,1,1">示例3</button>
+        </div>
+
+        <div class="tia-stats">
+          <div class="tia-stat"><span class="tia-stat-label">当前岛屿面积</span><span class="tia-stat-val" id="tia-current-area">0</span></div>
+          <div class="tia-stat"><span class="tia-stat-label">总面积</span><span class="tia-stat-val" id="tia-total-area">0</span></div>
+          <div class="tia-stat"><span class="tia-stat-label">岛屿数</span><span class="tia-stat-val" id="tia-island-count">0</span></div>
+          <div class="tia-stat"><span class="tia-stat-label">当前扫描</span><span class="tia-stat-val" id="tia-scan">-</span></div>
+        </div>
+
+        <div class="tia-grid" id="tia-grid"></div>
+
+        <div class="tia-message" id="step-message">点击「计算面积」查看各岛屿面积累计过程。</div>
+
+        <div class="tia-log" id="tia-log"></div>
+      </div>
+    </div>
+
+    <div class="tia-right">
+      <div data-code-panel class="tia-code-card"></div>
+      <div class="tia-area-card">
+        <div class="tia-area-title">各岛屿面积</div>
+        <div class="tia-area-items" id="tia-area-vis"></div>
+      </div>
+      <div class="tia-legend">
+        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(28,27,50,0.4)"></span>水（'0'）</div>
+        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(45,55,72,0.5)"></span>未访问陆地（'1'）</div>
+        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(245,158,11,0.7)"></span>当前访问</div>
+        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(245,158,11,0.35)"></span>当前岛屿已访问</div>
+        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(245,158,11,0.2)"></span>已探索岛屿</div>
+      </div>
+      <div class="tia-playback">
+        <div class="tia-pb-row">
+          <button id="step-reset" class="tia-pb-btn">重置</button>
+          <button id="step-prev" class="tia-pb-btn">上一步</button>
+          <button id="step-play" class="tia-pb-btn play">播放</button>
+          <button id="step-next" class="tia-pb-btn">下一步</button>
+        </div>
+        <div class="tia-speed-row">
+          <span>速度</span>
+          <input id="tia-speed" type="range" min="150" max="1500" step="100" value="700" />
+          <span id="tia-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        </div>
+        <div id="step-counter" class="tia-counter">步骤: 1 / 1</div>
+      </div>
+    </div>
+  </div>
+</div>
