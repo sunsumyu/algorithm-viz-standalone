@@ -308,6 +308,73 @@ function renderSidebarCategories(): void {
 
     container.appendChild(group);
   });
+
+  // 渲染侧边栏最底部的最近访问 3 个算法快捷卡片
+  renderSidebarRecentFooter();
+}
+
+// ========== Render Sidebar Recent Footer (最底部的最近访问 3 个算法) ==========
+function renderSidebarRecentFooter(): void {
+  const container = $('sidebar-recent-footer');
+  if (!container) return;
+
+  const recentIds = getRecentAlgorithmIds();
+  const top3Ids = recentIds.slice(0, 3);
+  const top3Algos = top3Ids
+    .map(id => allAlgorithms.find(a => a.id === id))
+    .filter((a): a is AlgorithmConfig => Boolean(a));
+
+  if (top3Algos.length === 0) {
+    container.innerHTML = `
+      <div class="sidebar-recent-header">
+        <span class="sidebar-recent-title">🕒 最近访问</span>
+      </div>
+      <div class="sidebar-recent-empty">暂无访问记录</div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="sidebar-recent-header">
+      <span class="sidebar-recent-title">🕒 最近访问</span>
+      <button class="sidebar-recent-more-btn" id="btn-sidebar-recent-more" type="button" title="查看全部最近访问记录">全部 ${recentIds.length} 个 →</button>
+    </div>
+    <div class="sidebar-recent-list" id="sidebar-recent-list"></div>
+  `;
+
+  const moreBtn = $('btn-sidebar-recent-more');
+  moreBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectCategory('recent');
+  });
+
+  const listEl = $('sidebar-recent-list');
+  if (!listEl) return;
+
+  top3Algos.forEach(algo => {
+    const diff = getDifficultyConfig(algo.difficulty);
+    const catConfig = CATEGORY_CONFIG[algo.category] || { name: algo.category || '算法', icon: '✨', color: '#6366f1' };
+    const icon = algo.icon || ALGORITHM_ICONS[algo.id] || catConfig.icon || '✨';
+
+    const itemEl = document.createElement('div');
+    itemEl.className = 'sidebar-recent-item';
+    itemEl.dataset.algoId = algo.id;
+    itemEl.title = `${algo.name} (${catConfig.name}) - 点击直接进入演示`;
+    itemEl.innerHTML = `
+      <span class="sidebar-recent-icon">${icon}</span>
+      <div class="sidebar-recent-info">
+        <span class="sidebar-recent-name">${escapeHtml(algo.name)}</span>
+        <span class="sidebar-recent-cat" style="color: ${catConfig.color}">${catConfig.name}</span>
+      </div>
+      <span class="sidebar-recent-dot" style="color: ${diff.color}" title="${diff.name}">${diff.dot}</span>
+    `;
+
+    itemEl.addEventListener('click', () => {
+      algorithmManager.showAlgorithm(algo.id);
+    });
+
+    listEl.appendChild(itemEl);
+  });
 }
 
 // ========== Select Category ==========
@@ -710,6 +777,9 @@ function setupSidebarSplitter(): void {
   });
 }
 
+let _recentUpdatedHandler: (() => void) | null = null;
+let _selectorShownHandler: (() => void) | null = null;
+
 // ========== Plugin Export ==========
 export const algorithmVizPlugin: Plugin = {
   id: 'algorithm-viz',
@@ -728,7 +798,7 @@ export const algorithmVizPlugin: Plugin = {
     allAlgorithms = algorithmManager.getAllAlgorithms();
     console.log(`[AlgorithmVizPlugin] Loaded ${allAlgorithms.length} algorithms`);
 
-    // 渲染侧边栏关卡链
+    // 渲染侧边栏关卡链与底部最近访问
     renderSidebarCategories();
 
     // 渲染卡片
@@ -740,6 +810,19 @@ export const algorithmVizPlugin: Plugin = {
 
     // 设置侧边栏可拖拽分栏
     setupSidebarSplitter();
+
+    // 监听最近访问更新与返回选择器事件，即时同步刷新侧边栏
+    if (typeof window !== 'undefined') {
+      _recentUpdatedHandler = () => {
+        renderSidebarRecentFooter();
+      };
+      _selectorShownHandler = () => {
+        renderSidebarCategories();
+        renderSidebarRecentFooter();
+      };
+      window.addEventListener('algo:recent-updated', _recentUpdatedHandler);
+      window.addEventListener('algo:selector-shown', _selectorShownHandler);
+    }
 
     console.log('[AlgorithmVizPlugin] Initialized successfully');
   },
@@ -753,6 +836,14 @@ export const algorithmVizPlugin: Plugin = {
     if (_searchDocClickHandler) {
       document.removeEventListener('click', _searchDocClickHandler);
       _searchDocClickHandler = null;
+    }
+    if (_recentUpdatedHandler && typeof window !== 'undefined') {
+      window.removeEventListener('algo:recent-updated', _recentUpdatedHandler);
+      _recentUpdatedHandler = null;
+    }
+    if (_selectorShownHandler && typeof window !== 'undefined') {
+      window.removeEventListener('algo:selector-shown', _selectorShownHandler);
+      _selectorShownHandler = null;
     }
     if (_sidebarSplitter) {
       _sidebarSplitter.destroy();

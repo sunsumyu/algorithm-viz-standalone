@@ -949,21 +949,20 @@ function ensureCodePanelStyles(): void {
       flex-direction: column;
       height: 100%;
       width: 100%;
-      background: rgba(14, 18, 32, 0.85);
-      backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
       overflow: hidden;
       position: relative;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
     }
     .algo-code-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 7px 12px;
-      background: rgba(24, 32, 54, 0.92);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
       flex-shrink: 0;
       gap: 8px;
       flex-wrap: wrap;
@@ -972,15 +971,15 @@ function ensureCodePanelStyles(): void {
       display: flex;
       align-items: center;
       gap: 3px;
-      background: rgba(10, 14, 26, 0.7);
+      background: #ffffff;
       padding: 2px 4px;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid #e2e8f0;
     }
     .algo-code-view-tab {
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: #64748b;
       font-size: 11px;
       font-weight: 600;
       padding: 3.5px 9px;
@@ -992,13 +991,14 @@ function ensureCodePanelStyles(): void {
       gap: 4px;
     }
     .algo-code-view-tab:hover {
-      color: #f8fafc;
-      background: rgba(255, 255, 255, 0.08);
+      color: #0f172a;
+      background: #f1f5f9;
     }
     .algo-code-view-tab.is-active {
-      background: linear-gradient(135deg, #3b82f6, #6366f1);
-      color: #ffffff;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15);
     }
     .algo-code-tabs {
       display: flex;
@@ -1006,9 +1006,9 @@ function ensureCodePanelStyles(): void {
       gap: 4px;
     }
     .algo-code-tab {
-      background: rgba(15, 23, 42, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
       font-size: 11px;
       font-weight: 600;
       padding: 3px 8px;
@@ -1017,13 +1017,14 @@ function ensureCodePanelStyles(): void {
       transition: all 0.15s ease;
     }
     .algo-code-tab:hover {
-      color: #e2e8f0;
-      border-color: rgba(255, 255, 255, 0.2);
+      color: #0f172a;
+      border-color: #cbd5e1;
+      background: #f8fafc;
     }
     .algo-code-tab.is-active {
-      background: rgba(59, 130, 246, 0.22);
-      color: #60a5fa;
-      border-color: rgba(59, 130, 246, 0.5);
+      background: #eff6ff;
+      color: #2563eb;
+      border-color: #93c5fd;
       font-weight: 700;
     }
     .algo-code-content {
@@ -1035,6 +1036,7 @@ function ensureCodePanelStyles(): void {
       font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 12.5px;
       line-height: 1.6;
+      background: #ffffff;
     }
     .algo-code-line {
       display: flex;
@@ -1042,23 +1044,24 @@ function ensureCodePanelStyles(): void {
       padding: 1px 12px;
       transition: background 0.15s ease, border-color 0.15s ease;
       position: relative;
+      color: #1e293b;
     }
     .algo-code-line:hover {
-      background: rgba(255, 255, 255, 0.035);
+      background: #f8fafc;
     }
     .algo-code-line.is-active {
-      background: linear-gradient(90deg, rgba(245, 158, 11, 0.24), rgba(245, 158, 11, 0.04));
+      background: #fef3c7;
       border-left: 3.5px solid #f59e0b;
-      color: #fffbeb;
+      color: #78350f;
       font-weight: 600;
     }
     .algo-code-line.is-context {
-      background: rgba(59, 130, 246, 0.12);
+      background: #eff6ff;
       border-left: 3px solid #3b82f6;
     }
     .algo-code-line-number {
       width: 32px;
-      color: #475569;
+      color: #94a3b8;
       font-size: 11px;
       text-align: right;
       padding-right: 12px;
@@ -1066,22 +1069,22 @@ function ensureCodePanelStyles(): void {
       flex-shrink: 0;
     }
     .algo-code-line.is-active .algo-code-line-number {
-      color: #fbbf24;
+      color: #d97706;
       font-weight: 700;
     }
     .algo-code-line-text {
       flex: 1;
       white-space: pre-wrap;
       word-break: break-word;
-      color: #cbd5e1;
+      color: #1e293b;
     }
     .algo-code-explanation {
-      background: rgba(10, 15, 28, 0.92);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
       padding: 8px 14px;
       font-size: 12px;
-      color: #cbd5e1;
+      color: #334155;
       flex-shrink: 0;
       max-height: 130px;
       overflow-y: auto;
@@ -1095,25 +1098,25 @@ function ensureCodePanelStyles(): void {
     .algo-code-exp-tag {
       font-size: 11px;
       font-weight: 700;
-      color: #38bdf8;
+      color: #0284c7;
       display: flex;
       align-items: center;
       gap: 4px;
     }
     .algo-code-exp-body {
       line-height: 1.5;
-      color: #e2e8f0;
+      color: #334155;
     }
     .algo-code-vars {
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(8, 12, 22, 0.98));
-      border-top: 1px solid rgba(56, 189, 248, 0.25);
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
       display: flex;
       flex-direction: column;
       height: 190px;
       min-height: 80px;
       overflow: hidden;
       flex-shrink: 0;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
     }
     .algo-code-vars.is-collapsed {
       height: 34px !important;
@@ -1130,17 +1133,17 @@ function ensureCodePanelStyles(): void {
       align-items: center;
       justify-content: space-between;
       padding: 6px 12px;
-      background: rgba(30, 41, 59, 0.75);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
       cursor: pointer;
       user-select: none;
       font-size: 11.5px;
       font-weight: 700;
-      color: #38bdf8;
+      color: #0284c7;
       flex-shrink: 0;
     }
     .algo-code-vars-header:hover {
-      background: rgba(30, 41, 59, 0.95);
+      background: #f1f5f9;
     }
     .algo-code-vars-title {
       display: flex;
@@ -1151,14 +1154,15 @@ function ensureCodePanelStyles(): void {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #38bdf8;
+      color: #0284c7;
     }
     .algo-code-vars-count {
       font-size: 10px;
-      background: rgba(56, 189, 248, 0.2);
-      color: #7dd3fc;
+      background: #e0f2fe;
+      color: #0284c7;
       padding: 1px 6px;
       border-radius: 999px;
+      font-weight: 700;
     }
     .algo-code-vars-toggle {
       font-size: 10px;
@@ -1179,30 +1183,30 @@ function ensureCodePanelStyles(): void {
       align-items: center;
       justify-content: space-between;
       padding: 5px 9px;
-      background: rgba(30, 41, 59, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       border-radius: 7px;
       font-size: 12px;
       gap: 8px;
       transition: all 0.25s ease;
     }
     .algo-code-var-row:hover {
-      background: rgba(51, 65, 85, 0.75);
-      border-color: rgba(56, 189, 248, 0.45);
+      background: #f1f5f9;
+      border-color: #cbd5e1;
     }
     .algo-code-var-row.is-changed {
       animation: algo-var-flash 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes algo-var-flash {
       0% {
-        background: rgba(245, 158, 11, 0.55);
-        border-color: #fbbf24;
-        box-shadow: 0 0 14px rgba(245, 158, 11, 0.85);
+        background: #fef3c7;
+        border-color: #f59e0b;
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
         transform: scale(1.02);
       }
       100% {
-        background: rgba(30, 41, 59, 0.65);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: #ffffff;
+        border-color: #e2e8f0;
         box-shadow: none;
         transform: scale(1);
       }
@@ -1215,7 +1219,7 @@ function ensureCodePanelStyles(): void {
       flex: 1;
     }
     .algo-code-var-name {
-      color: #cbd5e1;
+      color: #475569;
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 11.5px;
       font-weight: 600;
@@ -1227,24 +1231,24 @@ function ensureCodePanelStyles(): void {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-weight: 800;
       font-size: 12.5px;
-      color: #f8fafc;
-      background: rgba(15, 23, 42, 0.8);
+      color: #0f172a;
+      background: #f1f5f9;
       padding: 2px 7px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid #e2e8f0;
       flex-shrink: 0;
     }
     .algo-code-var-value[data-type="number"] {
-      color: #34d399;
+      color: #059669;
     }
     .algo-code-var-value[data-type="boolean"] {
-      color: #f472b6;
+      color: #db2777;
     }
     .algo-code-var-value[data-type="string"] {
-      color: #fbbf24;
+      color: #d97706;
     }
     .algo-code-var-value[data-type="array"] {
-      color: #38bdf8;
+      color: #2563eb;
     }
 
     /* 原始题目描述视图样式 (Problem Statement Styles) */
@@ -1255,24 +1259,25 @@ function ensureCodePanelStyles(): void {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      background: #f8fafc;
     }
     .algo-problem-banner {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
-      border: 1px solid rgba(56, 189, 248, 0.28);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       border-radius: 9px;
       padding: 10px 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
     }
     .algo-problem-card {
-      background: rgba(30, 41, 59, 0.55);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       border-radius: 8px;
       padding: 10px 12px;
     }
     .algo-problem-section-title {
       font-size: 12px;
       font-weight: 800;
-      color: #38bdf8;
+      color: #0284c7;
       margin-bottom: 6px;
       display: flex;
       align-items: center;
@@ -1281,21 +1286,21 @@ function ensureCodePanelStyles(): void {
     .algo-problem-text {
       font-size: 12px;
       line-height: 1.65;
-      color: #cbd5e1;
+      color: #334155;
     }
     .algo-problem-text code,
     .algo-problem-example-row code {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 11.5px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #fbbf24;
+      background: #f1f5f9;
+      color: #d97706;
       padding: 1.5px 5px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid #e2e8f0;
     }
     .algo-problem-example-card {
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 7px;
       padding: 8px 11px;
       font-size: 12px;
@@ -1306,7 +1311,7 @@ function ensureCodePanelStyles(): void {
     .algo-problem-example-title {
       font-size: 11.5px;
       font-weight: 700;
-      color: #a78bfa;
+      color: #7c3aed;
       margin-bottom: 2px;
     }
     .algo-problem-example-row {
@@ -1317,7 +1322,7 @@ function ensureCodePanelStyles(): void {
       line-height: 1.5;
     }
     .algo-problem-label {
-      color: #94a3b8;
+      color: #64748b;
       font-weight: 700;
       flex-shrink: 0;
       font-size: 11px;
@@ -1332,18 +1337,20 @@ function ensureCodePanelStyles(): void {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      background: #f8fafc;
     }
     .algo-walkthrough-banner,
     .algo-keypoint-summary-card {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
-      border: 1px solid rgba(137, 180, 250, 0.3);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       border-radius: 8px;
       padding: 9px 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
     .algo-walkthrough-card,
     .algo-keypoint-card {
-      background: rgba(30, 41, 59, 0.55);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       border-radius: 7px;
       padding: 8px 10px;
       cursor: pointer;
@@ -1351,8 +1358,8 @@ function ensureCodePanelStyles(): void {
     }
     .algo-walkthrough-card:hover,
     .algo-keypoint-card:hover {
-      background: rgba(51, 65, 85, 0.7);
-      border-color: rgba(56, 189, 248, 0.4);
+      background: #f1f5f9;
+      border-color: #3b82f6;
     }
     .algo-walkthrough-code-row {
       display: flex;
@@ -1365,20 +1372,20 @@ function ensureCodePanelStyles(): void {
       font-weight: 700;
       padding: 1px 5px;
       border-radius: 4px;
-      background: rgba(56, 189, 248, 0.2);
-      color: #7dd3fc;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
       font-family: 'JetBrains Mono', ui-monospace, monospace;
     }
     .algo-walkthrough-code-text {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 11.5px;
-      color: #f8fafc;
+      color: #0f172a;
     }
     .algo-walkthrough-exp-body {
       font-size: 11.5px;
       line-height: 1.5;
-      color: #cbd5e1;
+      color: #475569;
     }
     .algo-keypoint-title {
       display: flex;
@@ -1386,7 +1393,7 @@ function ensureCodePanelStyles(): void {
       gap: 6px;
       font-size: 12px;
       font-weight: 700;
-      color: #38bdf8;
+      color: #0284c7;
       margin-bottom: 4px;
     }
     .algo-keypoint-desc {

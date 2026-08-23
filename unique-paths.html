@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeetCode 62. 不同路径 - 算法演化与空间优化交互可视化</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            lc: {
+              amber: '#f59e0b',
+              blue: '#3b82f6',
+              purple: '#8b5cf6',
+              slate: '#0f172a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .font-mono-code {
+      font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Pulse & Highlight Animations */
+    @keyframes cell-pop {
+      0% { transform: scale(0.85); opacity: 0.5; }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: cell-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    .ring-active {
+      animation: pulse-ring 1.8s infinite;
+    }
+
+    /* Code Line Highlighting */
+    .code-line {
+      transition: all 0.15s ease-in-out;
+      border-left: 3px solid transparent;
+    }
+    .code-line.active-line {
+      background-color: #fef3c7;
+      border-left-color: #f59e0b;
+      font-weight: 600;
+    }
+    .code-line.context-line {
+      background-color: #f8fafc;
+    }
+
+    /* 隐藏数字输入框自带的上下箭头，防止遮挡文字 */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col pt-10 selection:bg-amber-100 selection:text-amber-900">
+
+  <!-- ================= 顶部导航与品牌栏 ================= -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/95">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- 品牌信息与题号 -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20 flex-shrink-0">
+          <i class="fa-solid fa-route text-lg"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 truncate">LeetCode 62. 不同路径</h1>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200/60 flex items-center gap-1">
+              <i class="fa-solid fa-signal text-[10px]"></i> 中等
+            </span>
+            <span class="hidden sm:inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              动态规划 · 空间优化
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 truncate hidden sm:block">网格寻路模型 · 二维状态压缩至一维滚动数组</p>
+        </div>
+      </div>
+
+      <!-- 右侧辅助入口 -->
+      <div class="flex items-center gap-2">
+        <button id="btn-switch-lite" class="px-3 py-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-bolt text-blue-600"></i>
+          <span>精简极速版</span>
+        </button>
+        <button id="btn-quick-faq" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-regular fa-lightbulb text-amber-500"></i>
+          <span>核心要点</span>
+        </button>
+        <a href="https://leetcode.cn/problems/unique-paths/" target="_blank" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span class="hidden sm:inline">力扣原题</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 主内容容器 ================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 flex flex-col gap-5 w-full">
+
+    <!-- 1. 算法演化 4 阶段选项卡 (Tab Navigator) -->
+    <section class="bg-white rounded-2xl p-2 sm:p-2.5 border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider pl-2 self-start md:self-center">
+        <i class="fa-solid fa-layer-group text-slate-400"></i>
+        <span>演化递进阶段</span>
+      </div>
+
+      <!-- 4 个演化版本药丸切换按钮 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full md:w-auto" id="stage-tabs-container">
+        <!-- 阶段 1: 朴素递归 -->
+        <button data-stage="stage-1" class="stage-tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center sm:justify-start gap-2 border text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-transparent">
+          <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[11px] flex items-center justify-center font-bold">1</span>
+          <span class="truncate">朴素递归</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 hidden lg:inline">O(2ⁿ)</span>
+        </button>
+
+        <!-- 阶段 2: 记忆化搜索 -->
+        <button data-stage="stage-2" class="stage-tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center sm:justify-start gap-2 border text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-transparent">
+          <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[11px] flex items-center justify-center font-bold">2</span>
+          <span class="truncate">记忆化搜索</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 hidden lg:inline">剪枝</span>
+        </button>
+
+        <!-- 阶段 3: 二维 DP 填表 -->
+        <button data-stage="stage-3" class="stage-tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center sm:justify-start gap-2 border text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-transparent">
+          <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[11px] flex items-center justify-center font-bold">3</span>
+          <span class="truncate">二维 DP 填表</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 hidden lg:inline">O(m·n)</span>
+        </button>
+
+        <!-- 阶段 4: 一维空间压缩 (默认高亮选中) -->
+        <button data-stage="stage-4" class="stage-tab-btn active px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center sm:justify-start gap-2 border bg-amber-500 text-white shadow-sm shadow-amber-500/20 border-amber-500">
+          <span class="w-5 h-5 rounded-full bg-white/20 text-white text-[11px] flex items-center justify-center font-bold">4</span>
+          <span class="truncate">一维空间优化</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-black/20 text-white font-mono">O(n)</span>
+        </button>
+      </div>
+
+      <!-- 顺推 / 逆推 方向切换器 (Direction Switcher) -->
+      <div class="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200" id="dir-tabs-container">
+        <button id="btn-dir-forward" data-dir="forward" class="dir-tab-btn active px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-600 text-white shadow-sm">
+          <i class="fa-solid fa-arrow-down-right-across text-[10px]"></i>
+          <span>顺推正序</span>
+        </button>
+        <button id="btn-dir-reverse" data-dir="reverse" class="dir-tab-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent">
+          <i class="fa-solid fa-arrow-up-left-across text-[10px]"></i>
+          <span>逆推倒序</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. 参数设置与演示控制器 (Control Bar) -->
+    <section class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      
+      <!-- 参数输入与预设 -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+          <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+            <i class="fa-solid fa-table-cells text-slate-400"></i> 网格尺寸:
+          </span>
+          <div class="flex items-center gap-1 font-mono-code text-xs">
+            <label for="input-m" class="text-slate-400">m=</label>
+            <input type="number" id="input-m" min="1" max="8" value="3" class="w-12 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-center font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+            <span class="text-slate-400 mx-0.5">×</span>
+            <label for="input-n" class="text-slate-400">n=</label>
+            <input type="number" id="input-n" min="1" max="8" value="3" class="w-12 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-center font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+          </div>
+          <button id="btn-apply-size" class="px-2.5 py-0.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded transition shadow-sm">
+            确认
+          </button>
+        </div>
+
+        <!-- 快速预设按钮 -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-slate-400">示例:</span>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="3" data-n="3">3 × 3 (推荐)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="3" data-n="7">3 × 7 (例1)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="3" data-n="2">3 × 2 (例2)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="4" data-n="4">4 × 4</button>
+        </div>
+      </div>
+
+      <!-- 播放控制台 -->
+      <div class="flex items-center flex-wrap gap-2.5 justify-end">
+        <!-- 速度调节 -->
+        <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-xs">
+          <i class="fa-solid fa-gauge-high text-slate-400"></i>
+          <span class="text-slate-500 font-medium">速度</span>
+          <select id="select-speed" class="bg-transparent font-medium text-slate-700 focus:outline-none cursor-pointer">
+            <option value="1500">0.5x 慢速</option>
+            <option value="900" selected>1.0x 标准</option>
+            <option value="500">1.5x 快速</option>
+            <option value="250">2.0x 极速</option>
+          </select>
+        </div>
+
+        <!-- 播放主按钮组 -->
+        <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+          <button id="btn-reset" title="重置回到起点" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-white transition">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+          <button id="btn-step-prev" title="上一步" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-white transition">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <button id="btn-play-pause" class="px-3.5 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm shadow-amber-500/20">
+            <i class="fa-solid fa-play" id="icon-play-state"></i>
+            <span id="text-play-state">自动播放</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-white transition">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <!-- 步数指示器 -->
+        <div class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono-code text-slate-600 font-semibold flex items-center gap-1">
+          <span>步数:</span>
+          <span id="current-step-num" class="text-amber-600 font-bold">1</span>
+          <span class="text-slate-400">/</span>
+          <span id="total-steps-num" class="text-slate-500">1</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 核心双栏看板：左侧可视化画布 + 右侧代码与变量追踪 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0">
+
+      <!-- ================= 左侧：算法主视觉画布 (7 栏) ================= -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        
+        <!-- 阶段 4 专属：一维空间压缩核心对比看板 -->
+        <div id="canvas-card" class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col gap-5 relative overflow-hidden flex-1">
+          
+          <!-- 阶段标题与副标题 -->
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <div id="stage-badge-icon" class="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-compress"></i>
+              </div>
+              <div>
+                <h2 id="stage-title-text" class="text-sm font-bold text-slate-900">阶段 4: 一维空间压缩优化 (Space-Optimized DP)</h2>
+                <p id="stage-desc-text" class="text-xs text-slate-500">基于 Java 经典实现，借助 memo[j] 滚动更新消灭二维矩阵空间</p>
+              </div>
+            </div>
+
+            <!-- 图例说明 -->
+            <div class="flex items-center gap-3 text-xs" id="legend-container">
+              <div class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded bg-blue-100 border border-blue-400"></span>
+                <span class="text-slate-600">down (上方旧值)</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded bg-amber-100 border border-amber-400"></span>
+                <span class="text-slate-600">right (左方新值)</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded bg-emerald-500"></span>
+                <span class="text-slate-600">当前更新格</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1D DP 物理数组核心展示栏 (只在阶段 4 重点突出) -->
+          <div id="one-d-array-section" class="bg-slate-50/80 rounded-xl p-4 border border-slate-200 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-microchip text-amber-500"></i> 一维物理滚动数组 <code class="font-mono-code text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">memo[0..n-1]</code>
+              </span>
+              <span class="text-[11px] font-mono-code text-slate-500" id="memo-formula-tip">
+                memo[j] = right + down
+              </span>
+            </div>
+
+            <!-- 1D 数组槽位容器 -->
+            <div class="overflow-x-auto pb-1 pt-2">
+              <div class="flex items-center justify-center gap-2 min-w-max mx-auto" id="one-d-array-slots">
+                <!-- 动态生成 1D 槽位 -->
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+              <span><i class="fa-solid fa-arrow-down text-blue-500 mr-1"></i><strong>down</strong> = memo[j] (读取上一行旧值)</span>
+              <span><i class="fa-solid fa-arrow-right text-amber-500 mr-1"></i><strong>right</strong> = memo[j-1] (读取当前行新值)</span>
+            </div>
+          </div>
+
+          <!-- 二维物理网格可视化区 (2D Grid Canvas) -->
+          <div class="flex-1 flex flex-col items-center justify-center min-h-[260px] bg-slate-50/40 rounded-xl p-4 border border-slate-200/60 relative">
+            
+            <div class="text-xs font-semibold text-slate-400 mb-2 flex items-center gap-1.5 self-start">
+              <i class="fa-solid fa-map-location-dot"></i> 网格坐标与机器人移动状态 (m × n)
+            </div>
+
+            <!-- 2D 网格矩阵 -->
+            <div id="grid-container" class="grid gap-2 transition-all duration-300">
+              <!-- 动态生成网格格子 -->
+            </div>
+
+            <!-- 状态说明悬浮提示 -->
+            <div id="grid-status-badge" class="mt-4 px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-sm text-xs text-slate-700 flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-blue-500"></i>
+              <span id="grid-status-text">准备开始演化推导...</span>
+            </div>
+          </div>
+
+          <!-- 讲师教学要点与步骤深度解读卡片 (Step Explainer Card) -->
+          <div class="bg-gradient-to-r from-amber-50/80 to-orange-50/80 rounded-xl p-4 border border-amber-200/70 flex items-start gap-3.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center text-sm shadow-md shadow-amber-500/20 flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <h4 class="text-xs font-bold text-amber-950 uppercase tracking-wide flex items-center gap-1">
+                  <span>讲师精讲与执行解析</span>
+                </h4>
+                <span id="step-action-tag" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-white border border-amber-300 text-amber-800 shadow-xs">
+                  初始化
+                </span>
+              </div>
+              <p id="step-explainer-content" class="text-xs leading-relaxed text-slate-700">
+                点击上方【下一步】或【自动播放】，跟随动画理解如何将 $O(m \times n)$ 矩阵空间优雅压缩为单行一维数组！
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 右侧：代码联动面板与实时状态监控 (5 栏) ================= -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        
+        <!-- 1. 实时变量监控看板 (Variable Watcher) -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col gap-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <i class="fa-solid fa-terminal text-slate-400"></i> 运行时变量监控 (Live Watch)
+            </span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-500 font-mono-code font-semibold">Scope: uniquePaths()</span>
+          </div>
+
+          <!-- 变量气泡网格 -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono-code" id="live-vars-container">
+            <!-- 变量 i -->
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-slate-400 font-sans">行索引 (i)</span>
+              <span class="font-bold text-slate-800 text-sm" id="var-i">-</span>
+            </div>
+            <!-- 变量 j -->
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-slate-400 font-sans">列索引 (j)</span>
+              <span class="font-bold text-slate-800 text-sm" id="var-j">-</span>
+            </div>
+            <!-- 变量 down -->
+            <div class="p-2 rounded-xl bg-blue-50/70 border border-blue-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-blue-600 font-sans font-medium">down (memo[j])</span>
+              <span class="font-bold text-blue-700 text-sm" id="var-down">-</span>
+            </div>
+            <!-- 变量 right -->
+            <div class="p-2 rounded-xl bg-amber-50/70 border border-amber-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-amber-600 font-sans font-medium">right (memo[j-1])</span>
+              <span class="font-bold text-amber-700 text-sm" id="var-right">-</span>
+            </div>
+            <!-- 当前计算 memo[j] -->
+            <div class="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-emerald-600 font-sans font-medium">memo[j] 结果</span>
+              <span class="font-bold text-emerald-700 text-sm" id="var-memoj">-</span>
+            </div>
+            <!-- 最终返回值 -->
+            <div class="p-2 rounded-xl bg-purple-50/70 border border-purple-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-purple-600 font-sans font-medium">memo[n-1] 终点</span>
+              <span class="font-bold text-purple-700 text-sm" id="var-return">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 代码高亮与执行追踪面板 (Code Panel) -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden flex-1">
+          <!-- 代码面板顶栏 -->
+          <div class="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="flex gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-rose-400"></span>
+                <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+                <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+              </span>
+              <span class="text-xs font-bold text-slate-700 font-mono-code ml-2" id="code-lang-title">Solution.java</span>
+            </div>
+
+            <!-- 阶段 4 专属小变体版本切换器 (v1: 内嵌 if / v2: 外层 for) -->
+            <div id="code-variant-bar" class="flex items-center gap-0.5 bg-slate-200/80 p-0.5 rounded-lg border border-slate-300">
+              <button id="btn-variant-if" data-variant="if" class="variant-btn active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs">
+                内嵌 if 分支
+              </button>
+              <button id="btn-variant-for" data-variant="for" class="variant-btn px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white">
+                外层 for 循环
+              </button>
+            </div>
+
+            <span class="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">Java · 1D DP 空间压缩</span>
+          </div>
+
+          <!-- 代码展示区 (带行号高亮) -->
+          <div class="p-3 bg-white overflow-x-auto text-[12px] font-mono-code leading-relaxed select-text" id="code-display-container">
+            <!-- 动态渲染代码行 -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 4. 底部知识卡片：5 步法系统解析 & 空间优化原理解析 -->
+    <section class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+      <div class="flex items-center gap-2 text-sm font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+        <i class="fa-solid fa-graduation-cap text-amber-500"></i>
+        <span>动态规划系统精讲 · 为什么可以空间压缩？</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <!-- 卡片 1: 空间压缩的核心本质 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2">
+          <div class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center text-[10px]">1</span>
+            <span>为什么只需要一维数组？</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            观察状态转移方程 <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800 font-mono-code">dp[i][j] = dp[i-1][j] + dp[i][j-1]</code>。
+            计算第 <code class="font-mono-code">i</code> 行第 <code class="font-mono-code">j</code> 列时，只依赖<strong>上一行的同列值</strong>与<strong>本行的前一列值</strong>。更早的历史行（如第 <code class="font-mono-code">i-2</code> 行）已完全无用，因此单行数组足以滚动复用！
+          </p>
+        </div>
+
+        <!-- 卡片 2: down 与 right 变量名之美 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2">
+          <div class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="w-5 h-5 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center text-[10px]">2</span>
+            <span>down 与 right 的物理含义</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            • <code class="font-mono-code text-blue-700 bg-blue-50 px-1 py-0.5 rounded font-bold">down = memo[j]</code>：更新前，<code class="font-mono-code">memo[j]</code> 仍保留着<strong>上一行</strong>的值，代表从上方走下来的路径数。<br/>
+            • <code class="font-mono-code text-amber-700 bg-amber-50 px-1 py-0.5 rounded font-bold">right = memo[j-1]</code>：刚刚更新过，代表当前行左边格向右走过来的路径数。
+          </p>
+        </div>
+
+        <!-- 卡片 3: 时空复杂度演化对比 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2">
+          <div class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="w-5 h-5 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">3</span>
+            <span>时空复杂度演化对比</span>
+          </div>
+          <div class="space-y-1.5 text-slate-600">
+            <div class="flex justify-between items-center py-0.5 border-b border-slate-200/60">
+              <span>1. 朴素暴力递归:</span>
+              <span class="font-mono-code font-bold text-rose-600">时间 O(2ᵐ⁺ⁿ) / 空间 O(m+n)</span>
+            </div>
+            <div class="flex justify-between items-center py-0.5 border-b border-slate-200/60">
+              <span>2. 记忆化搜索:</span>
+              <span class="font-mono-code font-bold text-blue-600">时间 O(m·n) / 空间 O(m·n)</span>
+            </div>
+            <div class="flex justify-between items-center py-0.5 border-b border-slate-200/60">
+              <span>3. 二维 DP 表格:</span>
+              <span class="font-mono-code font-bold text-slate-700">时间 O(m·n) / 空间 O(m·n)</span>
+            </div>
+            <div class="flex justify-between items-center py-0.5 font-semibold text-emerald-700">
+              <span>4. 一维空间压缩:</span>
+              <span class="font-mono-code font-bold">时间 O(m·n) / 空间 O(n) ⭐</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= 页脚版权 ================= -->
+  <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-400">
+    LeetCode 62 算法可视化教学单文件 · 空间优化深度剖析
+  </footer>
+
+  <!-- ================= 算法逻辑与交互脚本 ================= -->
+  <script>
+    // ==========================================
+    // 1. 各演化版本的代码定义与解释配置 (顺推正序 / 逆推倒序)
+    // ==========================================
+    const STAGE_CONFIGS = {
+      forward: {
+        'stage-1': {
+          name: '阶段 1: 朴素递归 (Naive Recursion - 顺推)',
+          desc: '从终点 (m-1, n-1) 逆推回起点 (0, 0)，展示分治展开与指数级重叠子问题。',
+          timeComplexity: 'O(2^(m+n))',
+          spaceComplexity: 'O(m+n)',
+          codeTitle: 'NaiveRecursive.java',
+          codeLines: [
+            'class Solution {',
+            '    public int uniquePaths(int m, int n) {',
+            '        return dfs(m - 1, n - 1);',
+            '    }',
+            '    private int dfs(int i, int j) {',
+            '        if (i == 0 || j == 0) {',
+            '            return 1; // 边界只有 1 条直达路径',
+            '        }',
+            '        int left = dfs(i, j - 1); // 向左逆推',
+            '        int up = dfs(i - 1, j);   // 向上逆推',
+            '        return left + up;',
+            '    }',
+            '}'
+          ]
+        },
+        'stage-2': {
+          name: '阶段 2: 记忆化搜索 (Top-Down Memoization - 顺推)',
+          desc: '引入 memo[m][n] 二维数组缓存已计算结果，命中缓存直接 O(1) 返回，彻底斩断重复递归分支。',
+          timeComplexity: 'O(m × n)',
+          spaceComplexity: 'O(m × n)',
+          codeTitle: 'MemoizedSolution.java',
+          codeLines: [
+            'class Solution {',
+            '    private int[][] memo;',
+            '    public int uniquePaths(int m, int n) {',
+            '        memo = new int[m][n];',
+            '        return dfs(m - 1, n - 1);',
+            '    }',
+            '    private int dfs(int i, int j) {',
+            '        if (i == 0 || j == 0) return 1;',
+            '        if (memo[i][j] != 0) return memo[i][j]; // ⚡ 命中缓存 O(1) 剪枝',
+            '        int left = dfs(i, j - 1);',
+            '        int up = dfs(i - 1, j);',
+            '        return memo[i][j] = left + up; // 💾 写入备忘录',
+            '    }',
+            '}'
+          ]
+        },
+        'stage-3': {
+          name: '阶段 3: 经典二维 DP 填表法 (2D Tabulation - 顺推)',
+          desc: '从起点自底向上顺序填充二维矩阵 dp[m][n]，消除递归栈开销。',
+          timeComplexity: 'O(m × n)',
+          spaceComplexity: 'O(m × n)',
+          codeTitle: 'TabulationSolution.java',
+          codeLines: [
+            'class Solution {',
+            '    public int uniquePaths(int m, int n) {',
+            '        int[][] dp = new int[m][n];',
+            '        for (int i = 0; i < m; i++) dp[i][0] = 1; // 第一列初始化为 1',
+            '        for (int j = 0; j < n; j++) dp[0][j] = 1; // 第一行初始化为 1',
+            '        for (int i = 1; i < m; i++) {',
+            '            for (int j = 1; j < n; j++) {',
+            '                dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // 来自上方 + 来自左方',
+            '            }',
+            '        }',
+            '        return dp[m - 1][n - 1];',
+            '    }',
+            '}'
+          ]
+        },
+        'stage-4': {
+          name: '阶段 4: 一维空间压缩优化 (Space-Optimized DP - 顺推)',
+          desc: '借助 memo[j] 滚动更新消灭二维矩阵空间。',
+          timeComplexity: 'O(m × n)',
+          spaceComplexity: 'O(n) ⭐',
+          variants: {
+            'if': {
+              title: 'Solution.java (顺推内嵌 if 版)',
+              codeLines: [
+                'class Solution {',
+                '    private int[] memo;',
+                '    public int uniquePaths(int m, int n) {',
+                '        memo = new int[n];',
+                '        for (int i = 0; i < m ; i++) {',
+                '            for (int j = 0; j < n ; j++) {',
+                '                if (i == 0 || j == 0) {',
+                '                    memo[j] = 1; ',
+                '                } else {',
+                '                    int down = memo[j];',
+                '                    int right = memo[j-1];',
+                '                    memo[j] = right + down;',
+                '                }',
+                '            }',
+                '        }',
+                '        return memo[n-1];',
+                '    }',
+                '}'
+              ]
+            },
+            'for': {
+              title: 'SolutionFor.java (顺推外层 for 版)',
+              codeLines: [
+                'class Solution {',
+                '    private int[] memo;',
+                '    public int uniquePaths(int m, int n) {',
+                '        memo = new int[n];',
+                '        for (int j = 0; j < n; j++) memo[j] = 1; // 外层for初始化第0行',
+                '        for (int i = 1; i < m; i++) {',
+                '            for (int j = 1; j < n; j++) {',
+                '                int down = memo[j];',
+                '                int right = memo[j - 1];',
+                '                memo[j] = right + down;',
+                '            }',
+                '        }',
+                '        return memo[n - 1];',
+                '    }',
+                '}'
+              ]
+            }
+          }
+        }
+      },
+      reverse: {
+        'stage-1': {
+          name: '阶段 1: 朴素递归 (Naive Recursion - 逆推)',
+          desc: '从起点 (0, 0) 开始向右向下分支递归，直至到达终点边界 (m-1, n-1)。',
+          timeComplexity: 'O(2^(m+n))',
+          spaceComplexity: 'O(m+n)',
+          codeTitle: 'NaiveRecursiveReverse.java',
+          codeLines: [
+            'class Solution {',
+            '    public int uniquePaths(int m, int n) {',
+            '        return dfs(0, 0, m, n);',
+            '    }',
+            '    private int dfs(int i, int j, int m, int n) {',
+            '        if (i == m - 1 || j == n - 1) return 1;',
+            '        int down = dfs(i + 1, j, m, n);  // 向下探索',
+            '        int right = dfs(i, j + 1, m, n); // 向右探索',
+            '        return down + right;',
+            '    }',
+            '}'
+          ]
+        },
+        'stage-2': {
+          name: '阶段 2: 记忆化搜索 (Top-Down Memoization - 逆推)',
+          desc: '记录 memo[i][j] 表示从 (i, j) 到终点的路径总数，O(1) 剪枝。',
+          timeComplexity: 'O(m × n)',
+          spaceComplexity: 'O(m × n)',
+          codeTitle: 'MemoizedSolutionReverse.java',
+          codeLines: [
+            'class Solution {',
+            '    private int[][] memo;',
+            '    public int uniquePaths(int m, int n) {',
+            '        memo = new int[m][n];',
+            '        return dfs(0, 0, m, n);',
+            '    }',
+            '    private int dfs(int i, int j, int m, int n) {',
+            '        if (i == m - 1 || j == n - 1) return 1;',
+            '        if (memo[i][j] != 0) return memo[i][j]; // ⚡ 命中剪枝',
+            '        int down = dfs(i + 1, j, m, n);',
+            '        int right = dfs(i, j + 1, m, n);',
+            '        return memo[i][j] = down + right;',
+            '    }',
+            '}'
+          ]
+        },
+        'stage-3': {
+          name: '阶段 3: 经典二维 DP 填表法 (2D Tabulation - 逆推)',
+          desc: '从终点 (m-1, n-1) 逆推回起点 (0, 0)，dp[i][j] = 下方 + 右方。',
+          timeComplexity: 'O(m × n)',
+          spaceComplexity: 'O(m × n)',
+          codeTitle: 'ReverseTabulation.java',
+          codeLines: [
+            'class Solution {',
+            '    public int uniquePaths(int m, int n) {',
+            '        int[][] dp = new int[m][n];',
+            '        for (int i = 0; i < m; i++) dp[i][n - 1] = 1; // 最右列初始化为 1',
+            '        for (int j = 0; j < n; j++) dp[m - 1][j] = 1; // 最底行初始化为 1',
+            '        for (int i = m - 2; i >= 0; i--) {',
+            '            for (int j = n - 2; j >= 0; j--) {',
+            '                dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // 来自下方 + 来自右方',
+            '            }',
+            '        }',
+            '        return dp[0][0];',
+            '    }',
+            '}'
+          ]
+        },
+        'stage-4': {
+          name: '阶段 4: 一维空间压缩优化 (Space-Optimized DP - 逆推)',
+          desc: '从终点 (m-1, n-1) 逆推回起点 (0, 0)，借助 memo[j] 滚动更新消灭二维矩阵空间。',
+          timeComplexity: 'O(m × n)',
+          spaceComplexity: 'O(n) ⭐',
+          variants: {
+            'if': {
+              title: 'SolutionReverse.java (逆推内嵌 if 版)',
+              codeLines: [
+                'class Solution {',
+                '    private int[] memo;',
+                '    public int uniquePaths(int m, int n) {',
+                '        memo = new int[n];',
+                '        for (int i = m - 1; i >= 0; i--) {',
+                '            for (int j = n - 1; j >= 0; j--) {',
+                '                if (i == m - 1 || j == n - 1) {',
+                '                    memo[j] = 1;',
+                '                } else {',
+                '                    int down = memo[j];',
+                '                    int right = memo[j + 1];',
+                '                    memo[j] = right + down;',
+                '                }',
+                '            }',
+                '        }',
+                '        return memo[0];',
+                '    }',
+                '}'
+              ]
+            },
+            'for': {
+              title: 'SolutionReverseFor.java (逆推外层 for 版)',
+              codeLines: [
+                'class Solution {',
+                '    private int[] memo;',
+                '    public int uniquePaths(int m, int n) {',
+                '        memo = new int[n];',
+                '        for (int j = 0; j < n; j++) memo[j] = 1; // 外层for初始化最底行',
+                '        for (int i = m - 2; i >= 0; i--) {',
+                '            for (int j = n - 2; j >= 0; j--) {',
+                '                int down = memo[j];',
+                '                int right = memo[j + 1];',
+                '                memo[j] = right + down;',
+                '            }',
+                '        }',
+                '        return memo[0];',
+                '    }',
+                '}'
+              ]
+            }
+          }
+        }
+      }
+    };
+
+    // ==========================================
+    // 2. 全局状态管理
+    // ==========================================
+    let currentStage = 'stage-4';
+    let currentDirection = 'forward';
+    let currentStageVariant = 'if'; // 'if' | 'for'
+    let currentM = 3;
+    let currentN = 3;
+    let animationSteps = [];
+    let currentStepIndex = 0;
+    let isPlaying = false;
+    let playTimer = null;
+    let playSpeed = 900; // ms
+
+    // ==========================================
+    // 3. 步骤生成引擎 (Step Generator)
+    // ==========================================
+
+    function generateForwardStage4Steps(m, n) {
+      const steps = [];
+      const memo = new Array(n).fill(0);
+
+      steps.push({
+        line: 4,
+        i: null, j: null,
+        down: null, right: null, memoj: null,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: 0, j: 0 },
+        tag: '分配内存',
+        action: 'alloc',
+        msg: `🚀 函数入口：调用 uniquePaths(m = ${m}, n = ${n})。执行 memo = new int[${n}] 分配长度为 ${n} 的一维滚动数组。`
+      });
+
+      for (let i = 0; i < m; i++) {
+        steps.push({
+          line: 5,
+          i, j: null,
+          down: null, right: null, memoj: null,
+          memoSnapshot: [...memo],
+          gridHighlight: { i, j: 0 },
+          tag: '外层行循环',
+          action: 'outer-loop',
+          msg: `🔄 【外层循环】开始处理第 ${i} 行 (i = ${i})。准备自左向右滚动覆盖。`
+        });
+
+        for (let j = 0; j < n; j++) {
+          steps.push({
+            line: 6,
+            i, j,
+            down: null, right: null, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            tag: '定位当前格',
+            action: 'inner-loop',
+            msg: `📍 【定位单元】当前处于网格坐标 (${i}, ${j})。准备计算并更新 memo[${j}]。`
+          });
+
+          if (i === 0 || j === 0) {
+            memo[j] = 1;
+            steps.push({
+              line: 8,
+              i, j,
+              down: null, right: null, memoj: 1,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              activeSlot: j,
+              tag: '边界设值 = 1',
+              action: 'set-boundary',
+              msg: `✅ 执行 memo[${j}] = 1：网格坐标 (${i}, ${j}) 只有 1 条直达路线。`
+            });
+          } else {
+            const downVal = memo[j];
+            steps.push({
+              line: 10,
+              i, j,
+              down: downVal, right: null, memoj: null,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              fromTopCell: { i: i - 1, j },
+              activeSlot: j,
+              slotMode: 'down',
+              tag: '读取上方旧值 (down)',
+              action: 'read-down',
+              msg: `📥 【读取上方旧值 down】int down = memo[${j}] (${downVal})，来自上一行 (${i - 1}, ${j})。`
+            });
+
+            const rightVal = memo[j - 1];
+            steps.push({
+              line: 11,
+              i, j,
+              down: downVal, right: rightVal, memoj: null,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              fromTopCell: { i: i - 1, j },
+              fromLeftCell: { i, j: j - 1 },
+              activeSlot: j - 1,
+              slotMode: 'right',
+              tag: '读取左侧新值 (right)',
+              action: 'read-right',
+              msg: `➡️ 【读取左侧新值 right】int right = memo[${j - 1}] (${rightVal})，来自本行左侧 (${i}, ${j - 1})。`
+            });
+
+            const sumVal = rightVal + downVal;
+            memo[j] = sumVal;
+            steps.push({
+              line: 12,
+              i, j,
+              down: downVal, right: rightVal, memoj: sumVal,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              fromTopCell: { i: i - 1, j },
+              fromLeftCell: { i, j: j - 1 },
+              activeSlot: j,
+              slotMode: 'updated',
+              tag: '状态累加覆盖',
+              action: 'update-memo',
+              msg: `✨ 【累加并原地覆盖】memo[${j}] = right (${rightVal}) + down (${downVal}) = ${sumVal}。`
+            });
+          }
+        }
+      }
+
+      const finalAns = memo[n - 1];
+      steps.push({
+        line: 16,
+        i: m - 1, j: n - 1,
+        down: null, right: null, memoj: finalAns,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: m - 1, j: n - 1 },
+        activeSlot: n - 1,
+        slotMode: 'final',
+        tag: '算法完成 🏆',
+        action: 'return',
+        msg: `🏁 【顺推计算完毕】返回 memo[${n - 1}] = ${finalAns}。`
+      });
+
+      return steps;
+    }
+
+    function generateReverseStage4Steps(m, n) {
+      const steps = [];
+      const memo = new Array(n).fill(0);
+
+      steps.push({
+        line: 4,
+        i: null, j: null,
+        down: null, right: null, memoj: null,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: m - 1, j: n - 1 },
+        tag: '分配内存',
+        action: 'alloc',
+        msg: `🚀 逆推入口：调用 uniquePaths(m = ${m}, n = ${n})。执行 memo = new int[${n}] 分配一维滚动数组 (初始为 0)。`
+      });
+
+      for (let i = m - 1; i >= 0; i--) {
+        steps.push({
+          line: 5,
+          i, j: null,
+          down: null, right: null, memoj: null,
+          memoSnapshot: [...memo],
+          gridHighlight: { i, j: n - 1 },
+          tag: '逆推外层行循环',
+          action: 'outer-loop',
+          msg: `🔄 【逆推行循环】从下往上处理第 ${i} 行 (i = ${i})。`
+        });
+
+        for (let j = n - 1; j >= 0; j--) {
+          steps.push({
+            line: 6,
+            i, j,
+            down: null, right: null, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            tag: '逆推定界当前格',
+            action: 'inner-loop',
+            msg: `📍 【定位单元】当前处于网格坐标 (${i}, ${j})。准备计算并更新 memo[${j}]。`
+          });
+
+          if (i === m - 1 || j === n - 1) {
+            memo[j] = 1;
+            steps.push({
+              line: 8,
+              i, j,
+              down: null, right: null, memoj: 1,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              activeSlot: j,
+              tag: '逆推边界 = 1',
+              action: 'set-boundary',
+              msg: `✅ 命中边界条件 (i=${i} 或 j=${j})，直达终点只有 1 种路径，设 memo[${j}] = 1。`
+            });
+          } else {
+            const downVal = memo[j];
+            steps.push({
+              line: 10,
+              i, j,
+              down: downVal, right: null, memoj: null,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              fromTopCell: { i: i + 1, j },
+              activeSlot: j,
+              slotMode: 'down',
+              tag: '读取下方旧值 (down)',
+              action: 'read-down',
+              msg: `📥 【读取下方旧值 down】int down = memo[${j}] (${downVal})，来自下一行 (${i + 1}, ${j})。`
+            });
+
+            const rightVal = memo[j + 1];
+            steps.push({
+              line: 11,
+              i, j,
+              down: downVal, right: rightVal, memoj: null,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              fromTopCell: { i: i + 1, j },
+              fromLeftCell: { i, j: j + 1 },
+              activeSlot: j + 1,
+              slotMode: 'right',
+              tag: '读取右方新值 (right)',
+              action: 'read-right',
+              msg: `➡️ 【读取右方新值 right】int right = memo[${j + 1}] (${rightVal})，来自本行右侧 (${i}, ${j + 1})。`
+            });
+
+            const sumVal = rightVal + downVal;
+            memo[j] = sumVal;
+            steps.push({
+              line: 12,
+              i, j,
+              down: downVal, right: rightVal, memoj: sumVal,
+              memoSnapshot: [...memo],
+              gridHighlight: { i, j },
+              fromTopCell: { i: i + 1, j },
+              fromLeftCell: { i, j: j + 1 },
+              activeSlot: j,
+              slotMode: 'updated',
+              tag: '逆推累加覆盖',
+              action: 'update-memo',
+              msg: `✨ 【倒序累加覆盖】memo[${j}] = right (${rightVal}) + down (${downVal}) = ${sumVal}。`
+            });
+          }
+        }
+      }
+
+      const finalAns = memo[0];
+      steps.push({
+        line: 16,
+        i: 0, j: 0,
+        down: null, right: null, memoj: finalAns,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: 0, j: 0 },
+        activeSlot: 0,
+        slotMode: 'final',
+        tag: '算法完成 🏆',
+        action: 'return',
+        msg: `🏁 【逆推计算完毕】返回起点 memo[0] = ${finalAns}。`
+      });
+
+      return steps;
+    }
+
+    function generateForwardStage4ForSteps(m, n) {
+      const steps = [];
+      const memo = new Array(n).fill(0);
+
+      steps.push({
+        line: 4,
+        i: null, j: null,
+        down: null, right: null, memoj: null,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: 0, j: 0 },
+        tag: '分配内存',
+        action: 'alloc',
+        msg: `🚀 函数入口：执行 memo = new int[${n}] 分配长度为 ${n} 的一维滚动数组 (初始为 0)。`
+      });
+
+      // 外层 for 循环初始化第 0 行
+      for (let j = 0; j < n; j++) {
+        memo[j] = 1;
+        steps.push({
+          line: 5,
+          i: 0, j,
+          down: null, right: null, memoj: 1,
+          memoSnapshot: [...memo],
+          gridHighlight: { i: 0, j },
+          activeSlot: j,
+          slotMode: 'updated',
+          tag: '外层for初始化第0行',
+          action: 'set-boundary',
+          msg: `✅ 外层 for 循环初始化第 0 行：memo[${j}] = 1 (只有 1 条直达路径)。`
+        });
+      }
+
+      for (let i = 1; i < m; i++) {
+        steps.push({
+          line: 6,
+          i, j: null,
+          down: null, right: null, memoj: null,
+          memoSnapshot: [...memo],
+          gridHighlight: { i, j: 0 },
+          tag: '外层行循环',
+          action: 'outer-loop',
+          msg: `🔄 【外层行循环】开始处理第 ${i} 行 (i = ${i})。准备自左向右滚动覆盖。`
+        });
+
+        for (let j = 1; j < n; j++) {
+          steps.push({
+            line: 7,
+            i, j,
+            down: null, right: null, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            tag: '定位当前格',
+            action: 'inner-loop',
+            msg: `📍 【定位单元】当前处于网格坐标 (${i}, ${j})。准备计算并更新 memo[${j}]。`
+          });
+
+          const downVal = memo[j];
+          steps.push({
+            line: 8,
+            i, j,
+            down: downVal, right: null, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            fromTopCell: { i: i - 1, j },
+            activeSlot: j,
+            slotMode: 'down',
+            tag: '读取上方旧值 (down)',
+            action: 'read-down',
+            msg: `📥 【读取上方旧值 down】int down = memo[${j}] (${downVal})，来自上一行 (${i - 1}, ${j})。`
+          });
+
+          const rightVal = memo[j - 1];
+          steps.push({
+            line: 9,
+            i, j,
+            down: downVal, right: rightVal, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            fromTopCell: { i: i - 1, j },
+            fromLeftCell: { i, j: j - 1 },
+            activeSlot: j - 1,
+            slotMode: 'right',
+            tag: '读取左侧新值 (right)',
+            action: 'read-right',
+            msg: `➡️ 【读取左侧新值 right】int right = memo[${j - 1}] (${rightVal})，来自本行左侧 (${i}, ${j - 1})。`
+          });
+
+          const sumVal = rightVal + downVal;
+          memo[j] = sumVal;
+          steps.push({
+            line: 10,
+            i, j,
+            down: downVal, right: rightVal, memoj: sumVal,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            fromTopCell: { i: i - 1, j },
+            fromLeftCell: { i, j: j - 1 },
+            activeSlot: j,
+            slotMode: 'updated',
+            tag: '状态累加覆盖',
+            action: 'update-memo',
+            msg: `✨ 【累加并原地覆盖】memo[${j}] = right (${rightVal}) + down (${downVal}) = ${sumVal}。`
+          });
+        }
+      }
+
+      const finalAns = memo[n - 1];
+      steps.push({
+        line: 13,
+        i: m - 1, j: n - 1,
+        down: null, right: null, memoj: finalAns,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: m - 1, j: n - 1 },
+        activeSlot: n - 1,
+        slotMode: 'final',
+        tag: '算法完成 🏆',
+        action: 'return',
+        msg: `🏁 【顺推计算完毕】返回 memo[${n - 1}] = ${finalAns}。`
+      });
+
+      return steps;
+    }
+
+    function generateReverseStage4ForSteps(m, n) {
+      const steps = [];
+      const memo = new Array(n).fill(0);
+
+      steps.push({
+        line: 4,
+        i: null, j: null,
+        down: null, right: null, memoj: null,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: m - 1, j: n - 1 },
+        tag: '分配内存',
+        action: 'alloc',
+        msg: `🚀 逆推入口：执行 memo = new int[${n}] 分配一维滚动数组 (初始为 0)。`
+      });
+
+      // 外层 for 循环初始化最底行
+      for (let j = 0; j < n; j++) {
+        memo[j] = 1;
+        steps.push({
+          line: 5,
+          i: m - 1, j,
+          down: null, right: null, memoj: 1,
+          memoSnapshot: [...memo],
+          gridHighlight: { i: m - 1, j },
+          activeSlot: j,
+          slotMode: 'updated',
+          tag: '外层for初始化最底行',
+          action: 'set-boundary',
+          msg: `✅ 外层 for 循环初始化最底行：memo[${j}] = 1 (直达终点唯 1 种路径)。`
+        });
+      }
+
+      for (let i = m - 2; i >= 0; i--) {
+        steps.push({
+          line: 6,
+          i, j: null,
+          down: null, right: null, memoj: null,
+          memoSnapshot: [...memo],
+          gridHighlight: { i, j: n - 1 },
+          tag: '逆推外层行循环',
+          action: 'outer-loop',
+          msg: `🔄 【逆推行循环】从下往上处理第 ${i} 行 (i = ${i})。最右列 (${i}, ${n - 1}) 恒为 1。`
+        });
+
+        for (let j = n - 2; j >= 0; j--) {
+          steps.push({
+            line: 7,
+            i, j,
+            down: null, right: null, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            tag: '逆推定界当前格',
+            action: 'inner-loop',
+            msg: `📍 【定位单元】当前处于网格坐标 (${i}, ${j})。准备计算并更新 memo[${j}]。`
+          });
+
+          const downVal = memo[j];
+          steps.push({
+            line: 8,
+            i, j,
+            down: downVal, right: null, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            fromTopCell: { i: i + 1, j },
+            activeSlot: j,
+            slotMode: 'down',
+            tag: '读取下方旧值 (down)',
+            action: 'read-down',
+            msg: `📥 【读取下方旧值 down】int down = memo[${j}] (${downVal})，来自下一行 (${i + 1}, ${j})。`
+          });
+
+          const rightVal = memo[j + 1];
+          steps.push({
+            line: 9,
+            i, j,
+            down: downVal, right: rightVal, memoj: null,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            fromTopCell: { i: i + 1, j },
+            fromLeftCell: { i, j: j + 1 },
+            activeSlot: j + 1,
+            slotMode: 'right',
+            tag: '读取右方新值 (right)',
+            action: 'read-right',
+            msg: `➡️ 【读取右方新值 right】int right = memo[${j + 1}] (${rightVal})，来自本行右侧 (${i}, ${j + 1})。`
+          });
+
+          const sumVal = rightVal + downVal;
+          memo[j] = sumVal;
+          steps.push({
+            line: 10,
+            i, j,
+            down: downVal, right: rightVal, memoj: sumVal,
+            memoSnapshot: [...memo],
+            gridHighlight: { i, j },
+            fromTopCell: { i: i + 1, j },
+            fromLeftCell: { i, j: j + 1 },
+            activeSlot: j,
+            slotMode: 'updated',
+            tag: '逆推累加覆盖',
+            action: 'update-memo',
+            msg: `✨ 【倒序累加覆盖】memo[${j}] = right (${rightVal}) + down (${downVal}) = ${sumVal}。`
+          });
+        }
+      }
+
+      const finalAns = memo[0];
+      steps.push({
+        line: 13,
+        i: 0, j: 0,
+        down: null, right: null, memoj: finalAns,
+        memoSnapshot: [...memo],
+        gridHighlight: { i: 0, j: 0 },
+        activeSlot: 0,
+        slotMode: 'final',
+        tag: '算法完成 🏆',
+        action: 'return',
+        msg: `🏁 【逆推计算完毕】返回起点 memo[0] = ${finalAns}。`
+      });
+
+      return steps;
+    }
+
+    function generateForwardStage3Steps(m, n) {
+      const steps = [];
+      const dp = Array.from({ length: m }, () => new Array(n).fill(0));
+
+      steps.push({
+        line: 3,
+        i: null, j: null,
+        dpSnapshot: dp.map(row => [...row]),
+        tag: '开辟二维矩阵',
+        msg: `开辟二维数组 dp[${m}][${n}]，全部初始化为 0。`
+      });
+
+      for (let i = 0; i < m; i++) dp[i][0] = 1;
+      for (let j = 0; j < n; j++) dp[0][j] = 1;
+
+      steps.push({
+        line: 4,
+        i: 0, j: 0,
+        dpSnapshot: dp.map(row => [...row]),
+        tag: '边界初始化',
+        msg: `🎬 边界初始化：第一行只能一路向右走（dp[0][j] = 1），第一列只能一路向下走（dp[i][0] = 1）。`
+      });
+
+      for (let i = 1; i < m; i++) {
+        for (let j = 1; j < n; j++) {
+          const topVal = dp[i - 1][j];
+          const leftVal = dp[i][j - 1];
+          const sum = topVal + leftVal;
+          dp[i][j] = sum;
+
+          steps.push({
+            line: 8,
+            i, j,
+            topVal, leftVal,
+            sum,
+            dpSnapshot: dp.map(row => [...row]),
+            tag: '二维状态转移',
+            msg: `⚡ 计算 dp[${i}][${j}] = 上方(${topVal}) + 左方(${leftVal}) = ${sum}。`
+          });
+        }
+      }
+
+      steps.push({
+        line: 11,
+        i: m - 1, j: n - 1,
+        dpSnapshot: dp.map(row => [...row]),
+        tag: '返回结果',
+        msg: `🏁 顺推结束，返回 dp[${m - 1}][${n - 1}] = ${dp[m - 1][n - 1]}。`
+      });
+
+      return steps;
+    }
+
+    function generateReverseStage3Steps(m, n) {
+      const steps = [];
+      const dp = Array.from({ length: m }, () => new Array(n).fill(0));
+
+      steps.push({
+        line: 3,
+        i: null, j: null,
+        dpSnapshot: dp.map(row => [...row]),
+        tag: '开辟二维矩阵',
+        msg: `开辟二维数组 dp[${m}][${n}] 进行逆推填表。`
+      });
+
+      for (let i = 0; i < m; i++) dp[i][n - 1] = 1;
+      for (let j = 0; j < n; j++) dp[m - 1][j] = 1;
+
+      steps.push({
+        line: 4,
+        i: m - 1, j: n - 1,
+        dpSnapshot: dp.map(row => [...row]),
+        tag: '逆推边界初始化',
+        msg: `🎬 边界初始化：最右列直达终点（dp[i][n-1]=1），最底行直达终点（dp[m-1][j]=1）。`
+      });
+
+      for (let i = m - 2; i >= 0; i--) {
+        for (let j = n - 2; j >= 0; j--) {
+          const downVal = dp[i + 1][j];
+          const rightVal = dp[i][j + 1];
+          const sum = downVal + rightVal;
+          dp[i][j] = sum;
+
+          steps.push({
+            line: 8,
+            i, j,
+            topVal: downVal, leftVal: rightVal,
+            sum,
+            dpSnapshot: dp.map(row => [...row]),
+            tag: '逆推状态转移',
+            msg: `⚡ 逆推计算 dp[${i}][${j}] = 下方(${downVal}) + 右方(${rightVal}) = ${sum}。`
+          });
+        }
+      }
+
+      steps.push({
+        line: 11,
+        i: 0, j: 0,
+        dpSnapshot: dp.map(row => [...row]),
+        tag: '返回结果',
+        msg: `🏁 逆推填表完成，返回 dp[0][0] = ${dp[0][0]}。`
+      });
+
+      return steps;
+    }
+
+    function generateForwardStage1or2Steps(m, n, isMemo) {
+      const steps = [];
+      const memo = {};
+      let callCount = 0;
+
+      function dfs(r, c) {
+        callCount++;
+        const key = `${r},${c}`;
+
+        steps.push({
+          line: 5,
+          i: r, j: c,
+          tag: `DFS 调用 #${callCount}`,
+          msg: `📥 进入 dfs(i = ${r}, j = ${c})，顺推分支。`
+        });
+
+        if (r === 0 || c === 0) {
+          steps.push({
+            line: 6,
+            i: r, j: c,
+            tag: 'Base Case',
+            msg: `🎬 到达边界 (i = ${r} 或 j = ${c})，return 1。`
+          });
+          return 1;
+        }
+
+        if (isMemo && memo[key] !== undefined) {
+          steps.push({
+            line: 9,
+            i: r, j: c,
+            tag: '⚡ 备忘录命中',
+            msg: `⚡ 【备忘录命中剪枝】memo[${r}][${c}] 命中缓存 ${memo[key]}！`
+          });
+          return memo[key];
+        }
+
+        const left = dfs(r, c - 1);
+        const up = dfs(r - 1, c);
+        const res = left + up;
+
+        if (isMemo) memo[key] = res;
+
+        steps.push({
+          line: isMemo ? 12 : 11,
+          i: r, j: c,
+          tag: '合并子问题',
+          msg: `✨ 坐标 (${r}, ${c}) 合并：左方 (${left}) + 上方 (${up}) = ${res}${isMemo ? ' [存入缓存]' : ''}。`
+        });
+
+        return res;
+      }
+
+      dfs(m - 1, n - 1);
+      return steps;
+    }
+
+    function generateReverseStage1or2Steps(m, n, isMemo) {
+      const steps = [];
+      const memo = {};
+      let callCount = 0;
+
+      function dfs(r, c) {
+        callCount++;
+        const key = `${r},${c}`;
+
+        steps.push({
+          line: 5,
+          i: r, j: c,
+          tag: `逆推 DFS #${callCount}`,
+          msg: `📥 进入 dfs(i = ${r}, j = ${c})，从起点逆推至终点。`
+        });
+
+        if (r === m - 1 || c === n - 1) {
+          steps.push({
+            line: 6,
+            i: r, j: c,
+            tag: 'Base Case',
+            msg: `🎬 到达终点边界 (i = ${r} 或 j = ${c})，return 1。`
+          });
+          return 1;
+        }
+
+        if (isMemo && memo[key] !== undefined) {
+          steps.push({
+            line: 9,
+            i: r, j: c,
+            tag: '⚡ 备忘录命中',
+            msg: `⚡ 【逆推备忘录剪枝】(${r}, ${c}) 到终点已缓存 ${memo[key]}！直接返回。`
+          });
+          return memo[key];
+        }
+
+        const down = dfs(r + 1, c);
+        const right = dfs(r, c + 1);
+        const res = down + right;
+
+        if (isMemo) memo[key] = res;
+
+        steps.push({
+          line: isMemo ? 12 : 9,
+          i: r, j: c,
+          tag: '逆推合并子问题',
+          msg: `✨ 坐标 (${r}, ${c}) 逆推合并：下方 (${down}) + 右方 (${right}) = ${res}${isMemo ? ' [存入缓存]' : ''}。`
+        });
+
+        return res;
+      }
+
+      dfs(0, 0);
+      return steps;
+    }
+
+    // ==========================================
+    // 4. UI 渲染与视图更新核心函数
+    // ==========================================
+
+    function rebuildLayout(m, n) {
+      const oneDSection = document.getElementById('one-d-array-section');
+      const slotsContainer = document.getElementById('one-d-array-slots');
+      slotsContainer.innerHTML = '';
+
+      if (currentStage === 'stage-4') {
+        oneDSection.classList.remove('hidden');
+        for (let j = 0; j < n; j++) {
+          const slot = document.createElement('div');
+          slot.id = `memo-slot-${j}`;
+          slot.className = 'w-16 sm:w-20 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200';
+          slot.innerHTML = `
+            <span class="text-[10px] font-mono-code font-bold text-slate-400">dp[${j}]</span>
+            <span class="text-base sm:text-lg font-mono-code font-bold text-slate-800 slot-val">0</span>
+            <span class="text-[9px] font-sans px-1 rounded bg-slate-100 text-slate-500 slot-badge">未就绪</span>
+          `;
+          slotsContainer.appendChild(slot);
+        }
+      } else {
+        oneDSection.classList.add('hidden');
+      }
+
+      const gridContainer = document.getElementById('grid-container');
+      gridContainer.innerHTML = '';
+      gridContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+
+      const isReverse = currentDirection === 'reverse';
+
+      for (let r = 0; r < m; r++) {
+        for (let c = 0; c < n; c++) {
+          const cell = document.createElement('div');
+          cell.id = `grid-cell-${r}-${c}`;
+          cell.className = 'w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border-2 border-slate-200 flex flex-col items-center justify-between p-1 relative transition-all duration-200 shadow-xs';
+          
+          let marker = '';
+          if (r === 0 && c === 0) marker = isReverse ? '<span class="absolute -top-2 -left-2 px-1 py-0.2 bg-amber-500 text-white text-[9px] font-bold rounded-full shadow-xs">🏆 Finish</span>' : '<span class="absolute -top-2 -left-2 px-1 py-0.2 bg-emerald-500 text-white text-[9px] font-bold rounded-full shadow-xs">🚩 Start</span>';
+          if (r === m - 1 && c === n - 1) marker = isReverse ? '<span class="absolute -bottom-2 -right-2 px-1 py-0.2 bg-emerald-500 text-white text-[9px] font-bold rounded-full shadow-xs">🚩 Start</span>' : '<span class="absolute -bottom-2 -right-2 px-1 py-0.2 bg-amber-500 text-white text-[9px] font-bold rounded-full shadow-xs">🏆 Finish</span>';
+
+          cell.innerHTML = `
+            ${marker}
+            <span class="text-[10px] font-mono-code text-slate-400">(${r},${c})</span>
+            <span class="text-sm sm:text-base font-mono-code font-bold text-slate-700 cell-val">-</span>
+            <div class="h-1.5 w-6 rounded-full bg-slate-100 cell-indicator"></div>
+          `;
+          gridContainer.appendChild(cell);
+        }
+      }
+    }
+
+    function renderCodePanel() {
+      const dirConfigs = STAGE_CONFIGS[currentDirection] || STAGE_CONFIGS.forward;
+      const config = dirConfigs[currentStage];
+      
+      const variantBar = document.getElementById('code-variant-bar');
+      let codeLines = [];
+      if (currentStage === 'stage-4' && config.variants) {
+        if (variantBar) variantBar.classList.remove('hidden');
+        const variantConfig = config.variants[currentStageVariant] || config.variants['if'];
+        document.getElementById('code-lang-title').textContent = variantConfig.title;
+        codeLines = variantConfig.codeLines;
+      } else {
+        if (variantBar) variantBar.classList.add('hidden');
+        document.getElementById('code-lang-title').textContent = config.codeTitle;
+        codeLines = config.codeLines;
+      }
+      
+      const container = document.getElementById('code-display-container');
+      container.innerHTML = '';
+
+      codeLines.forEach((line, index) => {
+        const lineNum = index + 1;
+        const lineDiv = document.createElement('div');
+        lineDiv.id = `code-line-${lineNum}`;
+        lineDiv.className = 'code-line px-2 py-0.5 rounded flex items-center gap-3 font-mono-code';
+        lineDiv.innerHTML = `
+          <span class="text-slate-400 w-6 text-right select-none text-[11px]">${lineNum}</span>
+          <span class="text-slate-800 flex-1 whitespace-pre">${escapeHtml(line)}</span>
+        `;
+        container.appendChild(lineDiv);
+      });
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderStep(stepIndex) {
+      if (!animationSteps || animationSteps.length === 0) return;
+      const step = animationSteps[stepIndex];
+      if (!step) return;
+
+      document.getElementById('current-step-num').textContent = stepIndex + 1;
+      document.getElementById('total-steps-num').textContent = animationSteps.length;
+
+      document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+      if (step.line) {
+        const activeLineEl = document.getElementById(`code-line-${step.line}`);
+        if (activeLineEl) {
+          activeLineEl.classList.add('active-line');
+          activeLineEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+
+      document.getElementById('step-action-tag').textContent = step.tag || '状态转移';
+      document.getElementById('step-explainer-content').innerHTML = step.msg;
+
+      document.getElementById('var-i').textContent = (step.i !== null && step.i !== undefined) ? step.i : '-';
+      document.getElementById('var-j').textContent = (step.j !== null && step.j !== undefined) ? step.j : '-';
+      document.getElementById('var-down').textContent = (step.down !== null && step.down !== undefined) ? step.down : '-';
+      document.getElementById('var-right').textContent = (step.right !== null && step.right !== undefined) ? step.right : '-';
+      document.getElementById('var-memoj').textContent = (step.memoj !== null && step.memoj !== undefined) ? step.memoj : '-';
+
+      if (currentStage === 'stage-4' && step.memoSnapshot) {
+        step.memoSnapshot.forEach((val, slotIndex) => {
+          const slotEl = document.getElementById(`memo-slot-${slotIndex}`);
+          if (!slotEl) return;
+          const valEl = slotEl.querySelector('.slot-val');
+          const badgeEl = slotEl.querySelector('.slot-badge');
+
+          valEl.textContent = val;
+          slotEl.className = 'w-16 sm:w-20 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200';
+          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-slate-100 text-slate-500 slot-badge';
+          badgeEl.textContent = val > 0 ? `已填 ${val}` : '初始 0';
+
+          if (step.activeSlot === slotIndex) {
+            if (step.slotMode === 'down') {
+              slotEl.className = 'w-16 sm:w-20 h-16 rounded-xl bg-blue-50 border-2 border-blue-500 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 ring-2 ring-blue-300';
+              badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-blue-500 text-white font-bold slot-badge';
+              badgeEl.textContent = 'down (旧值)';
+            } else if (step.slotMode === 'right') {
+              slotEl.className = 'w-16 sm:w-20 h-16 rounded-xl bg-amber-50 border-2 border-amber-500 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 ring-2 ring-amber-300';
+              badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-500 text-white font-bold slot-badge';
+              badgeEl.textContent = 'right (新值)';
+            } else if (step.slotMode === 'updated') {
+              slotEl.className = 'w-16 sm:w-20 h-16 rounded-xl bg-emerald-50 border-2 border-emerald-500 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 animate-pop';
+              badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-emerald-500 text-white font-bold slot-badge';
+              badgeEl.textContent = '累加覆盖 ✨';
+            } else if (step.slotMode === 'final') {
+              slotEl.className = 'w-16 sm:w-20 h-16 rounded-xl bg-purple-50 border-2 border-purple-500 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 animate-pop';
+              badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-purple-600 text-white font-bold slot-badge';
+              badgeEl.textContent = '最终答案 🏆';
+            }
+          }
+        });
+
+        const finalIndex = currentDirection === 'reverse' ? 0 : currentN - 1;
+        const finalSlotVal = step.memoSnapshot[finalIndex];
+        document.getElementById('var-return').textContent = finalSlotVal > 0 ? finalSlotVal : '-';
+      }
+
+      document.querySelectorAll('#grid-container > div').forEach(el => {
+        el.className = 'w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border-2 border-slate-200 flex flex-col items-center justify-between p-1 relative transition-all duration-200 shadow-xs';
+      });
+
+      if (step.gridHighlight && step.gridHighlight.i !== null && step.gridHighlight.j !== null) {
+        const curCell = document.getElementById(`grid-cell-${step.gridHighlight.i}-${step.gridHighlight.j}`);
+        if (curCell) {
+          curCell.className = 'w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-50 border-2 border-amber-500 shadow-md flex flex-col items-center justify-between p-1 relative transition-all duration-200 ring-active';
+          if (step.memoj !== null && step.memoj !== undefined) {
+            curCell.querySelector('.cell-val').textContent = step.memoj;
+            curCell.querySelector('.cell-val').className = 'text-sm sm:text-base font-mono-code font-bold text-amber-600 cell-val';
+          }
+        }
+      }
+
+      if (step.fromTopCell) {
+        const topCell = document.getElementById(`grid-cell-${step.fromTopCell.i}-${step.fromTopCell.j}`);
+        if (topCell) {
+          topCell.className = 'w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-blue-50 border-2 border-blue-400 flex flex-col items-center justify-between p-1 relative transition-all duration-200';
+        }
+      }
+
+      if (step.fromLeftCell) {
+        const leftCell = document.getElementById(`grid-cell-${step.fromLeftCell.i}-${step.fromLeftCell.j}`);
+        if (leftCell) {
+          leftCell.className = 'w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-50 border-2 border-amber-400 flex flex-col items-center justify-between p-1 relative transition-all duration-200';
+        }
+      }
+
+      document.getElementById('grid-status-text').textContent = step.tag ? `[${step.tag}] ${step.action || ''}` : '演化执行中';
+    }
+
+    // ==========================================
+    // 5. 播放控制器逻辑 (Play, Pause, Step)
+    // ==========================================
+
+    function loadAndResetSteps() {
+      pausePlayback();
+      const m = parseInt(document.getElementById('input-m').value) || 3;
+      const n = parseInt(document.getElementById('input-n').value) || 3;
+      currentM = Math.min(Math.max(m, 1), 8);
+      currentN = Math.min(Math.max(n, 1), 8);
+
+      document.getElementById('input-m').value = currentM;
+      document.getElementById('input-n').value = currentN;
+
+      rebuildLayout(currentM, currentN);
+      renderCodePanel();
+
+      if (currentDirection === 'reverse') {
+        if (currentStage === 'stage-4') {
+          animationSteps = currentStageVariant === 'for' ? generateReverseStage4ForSteps(currentM, currentN) : generateReverseStage4Steps(currentM, currentN);
+        } else if (currentStage === 'stage-3') {
+          animationSteps = generateReverseStage3Steps(currentM, currentN);
+        } else if (currentStage === 'stage-2') {
+          animationSteps = generateReverseStage1or2Steps(currentM, currentN, true);
+        } else {
+          animationSteps = generateReverseStage1or2Steps(currentM, currentN, false);
+        }
+      } else {
+        if (currentStage === 'stage-4') {
+          animationSteps = currentStageVariant === 'for' ? generateForwardStage4ForSteps(currentM, currentN) : generateForwardStage4Steps(currentM, currentN);
+        } else if (currentStage === 'stage-3') {
+          animationSteps = generateForwardStage3Steps(currentM, currentN);
+        } else if (currentStage === 'stage-2') {
+          animationSteps = generateForwardStage1or2Steps(currentM, currentN, true);
+        } else {
+          animationSteps = generateForwardStage1or2Steps(currentM, currentN, false);
+        }
+      }
+
+      currentStepIndex = 0;
+      renderStep(currentStepIndex);
+    }
+
+    function stepForward() {
+      if (currentStepIndex < animationSteps.length - 1) {
+        currentStepIndex++;
+        renderStep(currentStepIndex);
+      } else {
+        pausePlayback();
+      }
+    }
+
+    function stepBackward() {
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        renderStep(currentStepIndex);
+      }
+    }
+
+    function togglePlayPause() {
+      if (isPlaying) {
+        pausePlayback();
+      } else {
+        startPlayback();
+      }
+    }
+
+    function startPlayback() {
+      if (currentStepIndex >= animationSteps.length - 1) {
+        currentStepIndex = 0;
+      }
+      isPlaying = true;
+      document.getElementById('text-play-state').textContent = '暂停播放';
+      document.getElementById('icon-play-state').className = 'fa-solid fa-pause';
+      
+      playTimer = setInterval(() => {
+        if (currentStepIndex < animationSteps.length - 1) {
+          stepForward();
+        } else {
+          pausePlayback();
+        }
+      }, playSpeed);
+    }
+
+    function pausePlayback() {
+      isPlaying = false;
+      if (playTimer) {
+        clearInterval(playTimer);
+        playTimer = null;
+      }
+      document.getElementById('text-play-state').textContent = '自动播放';
+      document.getElementById('icon-play-state').className = 'fa-solid fa-play';
+    }
+
+    // ==========================================
+    // 6. 事件监听与初始化绑定
+    // ==========================================
+    function initUniquePathsApp() {
+      // 1. 演化阶段 Tab 切换
+      const stageButtons = document.querySelectorAll('.stage-tab-btn');
+      stageButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          stageButtons.forEach(b => {
+            b.className = 'stage-tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center sm:justify-start gap-2 border text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-transparent';
+            const s1 = b.querySelector('span:first-child');
+            if (s1) s1.className = 'w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[11px] flex items-center justify-center font-bold';
+          });
+          btn.className = 'stage-tab-btn active px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center sm:justify-start gap-2 border bg-amber-500 text-white shadow-sm shadow-amber-500/20 border-amber-500';
+          const s2 = btn.querySelector('span:first-child');
+          if (s2) s2.className = 'w-5 h-5 rounded-full bg-white/20 text-white text-[11px] flex items-center justify-center font-bold';
+
+          currentStage = btn.getAttribute('data-stage') || 'stage-4';
+          const dirConfigs = STAGE_CONFIGS[currentDirection] || STAGE_CONFIGS.forward;
+          const stageConfig = dirConfigs[currentStage];
+          const tText = document.getElementById('stage-title-text');
+          const dText = document.getElementById('stage-desc-text');
+          if (tText) tText.textContent = stageConfig.name;
+          if (dText) dText.textContent = stageConfig.desc;
+
+          loadAndResetSteps();
+        });
+      });
+
+      // 2. 顺推正序 / 逆推倒序 切换
+      const dirButtons = document.querySelectorAll('#dir-tabs-container .dir-tab-btn');
+      dirButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          dirButtons.forEach(b => {
+            b.className = 'dir-tab-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent';
+          });
+          btn.className = 'dir-tab-btn active px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-600 text-white shadow-sm';
+          currentDirection = btn.getAttribute('data-dir') || 'forward';
+          loadAndResetSteps();
+        });
+      });
+
+      // 3. 阶段 4 变体切换 (内嵌 if / 外层 for)
+      const variantButtons = document.querySelectorAll('#code-variant-bar .variant-btn');
+      variantButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          variantButtons.forEach(b => {
+            b.className = 'variant-btn px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white';
+          });
+          btn.className = 'variant-btn active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs';
+          currentStageVariant = btn.getAttribute('data-variant') || 'if';
+          loadAndResetSteps();
+        });
+      });
+
+      // 3. 播放控制器事件
+      const btnPlay = document.getElementById('btn-play-pause');
+      const btnNext = document.getElementById('btn-step-next');
+      const btnPrev = document.getElementById('btn-step-prev');
+      const btnReset = document.getElementById('btn-reset');
+      const selectSpeed = document.getElementById('select-speed');
+      const btnApplySize = document.getElementById('btn-apply-size');
+      const btnFaq = document.getElementById('btn-quick-faq');
+
+      if (btnPlay) btnPlay.addEventListener('click', togglePlayPause);
+      if (btnNext) btnNext.addEventListener('click', () => { pausePlayback(); stepForward(); });
+      if (btnPrev) btnPrev.addEventListener('click', () => { pausePlayback(); stepBackward(); });
+      if (btnReset) btnReset.addEventListener('click', () => { pausePlayback(); currentStepIndex = 0; renderStep(0); });
+
+      // 4. 速度调节
+      if (selectSpeed) {
+        selectSpeed.addEventListener('change', (e) => {
+          playSpeed = parseInt(e.target.value) || 900;
+          if (isPlaying) {
+            pausePlayback();
+            startPlayback();
+          }
+        });
+      }
+
+      // 5. 网格尺寸修改与预设按钮
+      if (btnApplySize) btnApplySize.addEventListener('click', loadAndResetSteps);
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const inputM = document.getElementById('input-m');
+          const inputN = document.getElementById('input-n');
+          if (inputM) inputM.value = btn.getAttribute('data-m') || '3';
+          if (inputN) inputN.value = btn.getAttribute('data-n') || '3';
+          loadAndResetSteps();
+        });
+      });
+
+      // 6. 核心要点快捷滚动
+      if (btnFaq) {
+        btnFaq.addEventListener('click', () => {
+          const faqEl = document.querySelector('footer') || document.body;
+          faqEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      // 7. 切换到精简版
+      const btnSwitchLite = document.getElementById('btn-switch-lite');
+      if (btnSwitchLite) {
+        btnSwitchLite.addEventListener('click', () => {
+          if (window.parent && window.parent.__toggleUniquePathsVersion) {
+            window.parent.__toggleUniquePathsVersion('lite');
+          } else {
+            window.location.href = 'unique-paths-lite.html';
+          }
+        });
+      }
+
+      // 初始加载
+      loadAndResetSteps();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initUniquePathsApp);
+    } else {
+      initUniquePathsApp();
+    }
+  </script>
+</body>
+</html>

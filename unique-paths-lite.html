@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeetCode 62. 不同路径 - 算法可视化演示 (精简版)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Google Fonts: JetBrains Mono & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* 自定义精细滚动条 */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(241, 245, 249, 0.6);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* 代码高亮行效果 - 紧凑行高 */
+    .code-line {
+      display: block;
+      padding: 1px 8px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      line-height: 1.42;
+    }
+    .code-line.active-line {
+      background-color: rgba(59, 130, 246, 0.25);
+      border-left: 3px solid #3b82f6;
+      color: #ffffff !important;
+      font-weight: 700;
+    }
+
+    /* 动物动效 */
+    @keyframes frog-hop {
+      0%, 100% {
+        transform: translateY(0) scale(1, 1);
+      }
+      30% {
+        transform: translateY(-8px) scale(1.08, 0.92);
+      }
+      50% {
+        transform: translateY(-12px) scale(0.95, 1.08);
+      }
+      75% {
+        transform: translateY(0) scale(1.1, 0.88);
+      }
+    }
+    .animal-frog {
+      display: inline-block;
+      animation: frog-hop 0.85s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+      transform-origin: bottom center;
+    }
+
+    @keyframes cat-bounce-wave {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+      }
+      25% {
+        transform: translateY(-4px) rotate(-6deg);
+      }
+      50% {
+        transform: translateY(0) rotate(0deg);
+      }
+      75% {
+        transform: translateY(-4px) rotate(6deg);
+      }
+    }
+    .animal-cat {
+      display: inline-block;
+      animation: cat-bounce-wave 1s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    /* 隐藏数字输入框自带的上下箭头，防止遮挡文字 */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+  </style>
+</head>
+<body class="bg-slate-100/90 text-slate-800 antialiased h-screen overflow-hidden px-3 sm:px-6 pt-11 pb-3 flex flex-col justify-start">
+
+  <div class="max-w-7xl w-full mx-auto flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+
+    <!-- 1. 顶栏标题与演化阶段选项卡卡片 (Header & Control Card) -->
+    <header class="bg-white rounded-2xl px-3 py-2 border border-slate-200 shadow-sm flex items-center justify-between gap-2.5 flex-shrink-0 flex-nowrap overflow-x-auto">
+      
+      <!-- 1. 左侧：品牌与题号信息 (精简紧凑) -->
+      <div class="flex items-center gap-2 flex-shrink-0 min-w-0">
+        <button id="btn-open-selector-quick" title="切换算法" class="w-8 h-8 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 flex items-center justify-center text-sm transition flex-shrink-0 shadow-xs">
+          <i class="fa-solid fa-table-cells-large"></i>
+        </button>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <h1 class="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight flex-shrink-0">62. 不同路径</h1>
+          <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden lg:inline-block max-w-[140px]">阶段 4: 一维空间优化</span>
+          <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold font-mono flex-shrink-0">O(n) ⭐</span>
+        </div>
+      </div>
+
+      <!-- 2. 中间：阶段演化选择器 (Stage Switcher) -->
+      <div class="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200 flex-shrink-0" id="stage-tabs-container">
+        <!-- 阶段 1: 递归 -->
+        <button data-stage="stage-1" class="stage-tab-btn px-2 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-600 text-[10px] flex items-center justify-center font-bold">1</span>
+          <span>递归</span>
+          <span class="text-[9px] px-1 py-0.2 rounded bg-slate-200/70 text-slate-500 font-mono hidden xl:inline">O(2ⁿ)</span>
+        </button>
+
+        <!-- 阶段 2: 记忆化 -->
+        <button data-stage="stage-2" class="stage-tab-btn px-2 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-600 text-[10px] flex items-center justify-center font-bold">2</span>
+          <span>记忆化</span>
+          <span class="text-[9px] px-1 py-0.2 rounded bg-blue-100 text-blue-700 font-bold hidden xl:inline">剪枝</span>
+        </button>
+
+        <!-- 阶段 3: 二维DP -->
+        <button data-stage="stage-3" class="stage-tab-btn px-2 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-600 text-[10px] flex items-center justify-center font-bold">3</span>
+          <span>二维DP</span>
+          <span class="text-[9px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-700 font-mono hidden xl:inline">O(mn)</span>
+        </button>
+
+        <!-- 阶段 4: 一维优化 (默认激活) -->
+        <button data-stage="stage-4" class="stage-tab-btn active px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 bg-amber-500 text-white shadow-sm shadow-amber-500/20 border border-amber-500">
+          <span class="w-4 h-4 rounded-full bg-white/20 text-white text-[10px] flex items-center justify-center font-bold">4</span>
+          <span>一维优化</span>
+          <span class="text-[9px] px-1 py-0.2 rounded bg-black/20 text-white font-mono hidden xl:inline">O(n)</span>
+        </button>
+      </div>
+
+      <!-- 3. 方向切换器 (Direction Switcher) -->
+      <div class="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200 flex-shrink-0" id="dir-tabs-container">
+        <button id="btn-dir-forward" data-dir="forward" class="dir-tab-btn active px-2 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 bg-blue-600 text-white shadow-sm">
+          <i class="fa-solid fa-arrow-down-right-across text-[9px]"></i>
+          <span>顺推</span>
+        </button>
+        <button id="btn-dir-reverse" data-dir="reverse" class="dir-tab-btn px-2 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent">
+          <i class="fa-solid fa-arrow-up-left-across text-[9px]"></i>
+          <span>逆推</span>
+        </button>
+      </div>
+
+      <!-- 4. 右侧：网格尺寸与操作工具组 -->
+      <div class="flex items-center gap-1.5 flex-shrink-0 justify-end">
+        <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-xl border border-slate-200 text-xs font-mono">
+          <span class="text-slate-500 font-semibold">m:</span>
+          <input type="number" id="input-m" min="1" max="8" value="3" class="w-8 h-6 bg-white border border-slate-300 rounded-md text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
+          <span class="text-slate-400 font-bold">×</span>
+          <span class="text-slate-500 font-semibold">n:</span>
+          <input type="number" id="input-n" min="1" max="8" value="4" class="w-8 h-6 bg-white border border-slate-300 rounded-md text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
+        </div>
+
+        <button id="btn-generate" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center gap-1">
+          <i class="fa-solid fa-play text-[9px]"></i> 生成
+        </button>
+
+        <button id="btn-reset" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200">
+          重置
+        </button>
+
+        <button id="btn-switch-full" title="切换到完整精讲版" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-lg transition border border-amber-200 flex items-center gap-1">
+          <i class="fa-solid fa-book-open text-[10px] text-amber-600"></i>
+          <span class="hidden sm:inline">精讲版</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. 主演示区：左侧可视化画布 + 右侧代码与日志 (严格锁定高度，内部滚动，步进绝不扩大) -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 flex-1 min-h-0 overflow-hidden">
+
+      <!-- ================= 左侧：双看板 + 底部进度条 (7 栏，高度固定自适应) ================= -->
+      <section class="lg:col-span-7 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+
+        <!-- 卡片 1: 二维网格 (虚拟地图 m×n, 比例紧凑, 播放控制器位于右下角) -->
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex flex-col gap-2 flex-[0.9] min-h-0 overflow-hidden relative">
+          <div class="flex items-center justify-between flex-shrink-0">
+            <h2 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 m×n)
+            </h2>
+            <div class="flex items-center gap-2.5 text-[11px] text-slate-500 font-medium">
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已走通</span>
+              <span class="flex items-center gap-1">🐸 当前(i,j)</span>
+              <span id="legend-ref" class="flex items-center gap-1">🐱 参考上方/左方</span>
+            </div>
+          </div>
+
+          <!-- 网格居中展示盒 -->
+          <div class="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 flex items-center justify-center flex-1 min-h-0 overflow-auto relative">
+            <div id="grid-container" class="inline-grid gap-1.5 p-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <!-- 动态构建单元格 -->
+            </div>
+
+            <!-- 播放主按钮组 (悬浮于二维网格右下角) -->
+            <div class="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1 p-1 bg-white/95 backdrop-blur-sm rounded-xl border border-slate-200 shadow-md">
+              <button id="btn-step-prev" title="上一步" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+                <i class="fa-solid fa-backward-step text-xs"></i>
+              </button>
+              <button id="btn-play-pause" title="自动播放/暂停" class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition shadow-sm">
+                <i class="fa-solid fa-play text-xs" id="play-icon"></i>
+              </button>
+              <button id="btn-step-next" title="下一步" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+                <i class="fa-solid fa-forward-step text-xs"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 2: 状态展示区 (针对当前演化阶段动态定制, 阶段1/2展示递归树, 高度大幅调高 flex-[1.5]) -->
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex flex-col gap-2 flex-[1.5] min-h-0 overflow-hidden">
+          <div class="flex items-center justify-between flex-shrink-0">
+            <div>
+              <h2 id="card2-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-bars-staggered text-slate-500"></i> 一维状态数组 (int[] memo)
+              </h2>
+              <p id="card2-desc" class="text-[11px] text-slate-500 mt-0.5">空间优化: 只保存当前行的数据，不断滚动覆盖。</p>
+            </div>
+            <span id="badge-memo-len" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">长度: n</span>
+          </div>
+
+          <!-- 槽位 / 递归树 / 状态居中展示盒 -->
+          <div class="bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col items-center justify-center flex-1 min-h-0 overflow-auto">
+            <div id="memo-slots-container" class="w-full h-full flex items-center justify-center">
+              <!-- 动态构建状态槽位或递归树 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 步数进度条 (左侧最底部) -->
+        <div class="bg-white rounded-2xl px-3.5 py-2 border border-slate-200 shadow-sm flex items-center gap-3 flex-shrink-0">
+          <div class="flex-1 flex items-center gap-2">
+            <input type="range" id="slider-progress" min="0" max="0" value="0" class="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none" />
+          </div>
+          <div class="text-xs font-mono-code font-bold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap flex-shrink-0">
+            <span id="step-cur" class="text-blue-600">0</span> / <span id="step-total">0</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= 右侧：代码与日志 (5 栏，比例撑满，步进绝不扩大) ================= -->
+      <section class="lg:col-span-5 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+
+        <!-- 卡片 3: 迭代代码追踪 (Java, 占比 1.3 绝不膨胀) -->
+        <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-sm overflow-hidden flex flex-col flex-[1.3] min-h-0">
+          <div class="px-3 py-2 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="fa-brands fa-java text-amber-400 text-sm flex-shrink-0"></i>
+              <span id="code-file-title" class="text-xs font-bold text-slate-200 truncate">Solution.java</span>
+            </div>
+
+            <!-- 阶段 4 专属小变体版本切换器 (v1: 内嵌 if / v2: 外层 for) -->
+            <div id="code-variant-bar" class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800">
+              <button id="btn-variant-if" data-variant="if" class="variant-btn active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs">
+                内嵌 if 分支
+              </button>
+              <button id="btn-variant-for" data-variant="for" class="variant-btn px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+                外层 for 循环
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span class="w-2 h-2 rounded-full bg-red-500/80"></span>
+              <span class="w-2 h-2 rounded-full bg-yellow-500/80"></span>
+              <span class="w-2 h-2 rounded-full bg-green-500/80"></span>
+            </div>
+          </div>
+
+          <div id="code-container-box" class="p-3 font-mono-code overflow-y-auto text-slate-300 flex-1 min-h-0 scroll-smooth">
+            <pre class="m-0 p-0 leading-tight"><code id="code-content">
+              <!-- 动态装载对应阶段的代码 -->
+            </code></pre>
+          </div>
+        </div>
+
+        <!-- 卡片 4: 执行日志 (Execution Log, 占比 1 内部滚动，绝不膨胀) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+          <div class="px-3.5 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-list-ul text-slate-500 text-xs"></i>
+              <span class="text-xs font-bold text-slate-800">执行日志</span>
+            </div>
+            <span id="log-count" class="text-[11px] font-mono-code text-slate-400">0 条记录</span>
+          </div>
+
+          <div id="log-container" class="flex-1 min-h-0 p-3 overflow-y-auto font-mono-code text-xs space-y-1.5 text-slate-600 scroll-smooth">
+            <!-- 动态填充日志条目 -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- 3. 算法步骤生成引擎与交互控制脚本 -->
+  <script>
+    // 演化阶段配置定义
+    // 演化阶段配置定义 (包含 顺推正序 与 逆推倒序 双向算法实现)
+    const STAGE_CONFIGS = {
+      forward: {
+        'stage-1': {
+          name: '阶段 1: 朴素递归 (顺推分治)',
+          desc: '从终点 (m-1, n-1) 逆推回起点 (0, 0)，展示分治展开与指数级重叠子问题递归树。',
+          timeBadge: 'O(2^(m+n))',
+          badgeBg: 'bg-slate-100 text-slate-700',
+          codeTitle: 'NaiveRecursive.java',
+          codeHtml: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="3">        <span class="text-purple-400">return</span> <span class="text-blue-400">dfs</span>(m - <span class="text-amber-300">1</span>, n - <span class="text-amber-300">1</span>);</span><span class="code-line" data-line="4">    }</span><span class="code-line" data-line="5">    <span class="text-purple-400">private int</span> <span class="text-blue-400">dfs</span>(<span class="text-purple-400">int</span> i, <span class="text-purple-400">int</span> j) {</span><span class="code-line" data-line="6">        <span class="text-purple-400">if</span> (i == <span class="text-amber-300">0</span> || j == <span class="text-amber-300">0</span>) {</span><span class="code-line" data-line="7">            <span class="text-purple-400">return</span> <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="8">        }</span><span class="code-line" data-line="9">        <span class="text-purple-400">int</span> left = <span class="text-blue-400">dfs</span>(i, j - <span class="text-amber-300">1</span>);</span><span class="code-line" data-line="10">        <span class="text-purple-400">int</span> up = <span class="text-blue-400">dfs</span>(i - <span class="text-amber-300">1</span>, j);</span><span class="code-line" data-line="11">        <span class="text-purple-400">return</span> left + up;</span><span class="code-line" data-line="12">    }</span><span class="code-line" data-line="13">}</span>`,
+          card2Title: '顺推递归调用树 (Recursive Call Tree)',
+          card2Desc: '朴素递归无状态缓存，同一子问题分支被反复进入与计算。'
+        },
+        'stage-2': {
+          name: '阶段 2: 记忆化搜索 (顺推 Top-Down)',
+          desc: '引入 memo[m][n] 缓存已计算结果，命中缓存直接 O(1) 剪枝返回。',
+          timeBadge: 'O(m×n) 剪枝',
+          badgeBg: 'bg-blue-100 text-blue-700',
+          codeTitle: 'MemoizedSolution.java',
+          codeHtml: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">private int</span>[][] memo;</span><span class="code-line" data-line="3">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="4">        memo = <span class="text-purple-400">new int</span>[m][n];</span><span class="code-line" data-line="5">        <span class="text-purple-400">return</span> <span class="text-blue-400">dfs</span>(m - <span class="text-amber-300">1</span>, n - <span class="text-amber-300">1</span>);</span><span class="code-line" data-line="6">    }</span><span class="code-line" data-line="7">    <span class="text-purple-400">private int</span> <span class="text-blue-400">dfs</span>(<span class="text-purple-400">int</span> i, <span class="text-purple-400">int</span> j) {</span><span class="code-line" data-line="8">        <span class="text-purple-400">if</span> (i == <span class="text-amber-300">0</span> || j == <span class="text-amber-300">0</span>) <span class="text-purple-400">return</span> <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="9">        <span class="text-purple-400">if</span> (memo[i][j] != <span class="text-amber-300">0</span>) <span class="text-purple-400">return</span> memo[i][j]; <span class="text-slate-500">// ⚡ 命中剪枝</span></span><span class="code-line" data-line="10">        <span class="text-purple-400">int</span> left = <span class="text-blue-400">dfs</span>(i, j - <span class="text-amber-300">1</span>);</span><span class="code-line" data-line="11">        <span class="text-purple-400">int</span> up = <span class="text-blue-400">dfs</span>(i - <span class="text-amber-300">1</span>, j);</span><span class="code-line" data-line="12">        <span class="text-purple-400">return</span> memo[i][j] = left + up;</span><span class="code-line" data-line="13">    }</span><span class="code-line" data-line="14">}</span>`,
+          card2Title: '记忆化剪枝递归树 (Memoized Tree)',
+          card2Desc: '已计算过的坐标直接查表返回，跳过整棵重复子树展开。'
+        },
+        'stage-3': {
+          name: '阶段 3: 经典顺推二维 DP 填表 (2D Tabulation)',
+          desc: '从起点 (0, 0) 自底向上顺序填充二维矩阵 dp[m][n]，消除递归栈开销。',
+          timeBadge: 'O(m×n)',
+          badgeBg: 'bg-emerald-100 text-emerald-700',
+          codeTitle: 'TabulationSolution.java',
+          codeHtml: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="3">        <span class="text-purple-400">int</span>[][] dp = <span class="text-purple-400">new int</span>[m][n];</span><span class="code-line" data-line="4">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = <span class="text-amber-300">0</span>; i &lt; m; i++) dp[i][<span class="text-amber-300">0</span>] = <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="5">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = <span class="text-amber-300">0</span>; j &lt; n; j++) dp[<span class="text-amber-300">0</span>][j] = <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="6">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = <span class="text-amber-300">1</span>; i &lt; m; i++) {</span><span class="code-line" data-line="7">            <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = <span class="text-amber-300">1</span>; j &lt; n; j++) {</span><span class="code-line" data-line="8">                dp[i][j] = dp[i - <span class="text-amber-300">1</span>][j] + dp[i][j - <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="9">            }</span><span class="code-line" data-line="10">        }</span><span class="code-line" data-line="11">        <span class="text-purple-400">return</span> dp[m - <span class="text-amber-300">1</span>][n - <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="12">    }</span><span class="code-line" data-line="13">}</span>`,
+          card2Title: '状态转移方程 (2D DP)',
+          card2Desc: 'dp[i][j] = 上方 dp[i-1][j] + 左方 dp[i][j-1]。'
+        },
+        'stage-4': {
+          name: '阶段 4: 顺推一维空间优化 (Space-Optimized DP)',
+          desc: '基于 int[] memo 滚动覆盖消灭二维矩阵空间。',
+          timeBadge: 'O(n) ⭐',
+          badgeBg: 'bg-amber-100 text-amber-800',
+          variants: {
+            'if': {
+              title: 'Solution.java (内嵌 if 版)',
+              html: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">private int</span>[] memo;</span><span class="code-line" data-line="3">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="4">        memo = <span class="text-purple-400">new int</span>[n];</span><span class="code-line" data-line="5">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = <span class="text-amber-300">0</span>; i &lt; m; i++) {</span><span class="code-line" data-line="6">            <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = <span class="text-amber-300">0</span>; j &lt; n; j++) {</span><span class="code-line" data-line="7">                <span class="text-purple-400">if</span> (i == <span class="text-amber-300">0</span> || j == <span class="text-amber-300">0</span>) {</span><span class="code-line" data-line="8">                    memo[j] = <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="9">                } <span class="text-purple-400">else</span> {</span><span class="code-line" data-line="10">                    <span class="text-purple-400">int</span> down = memo[j];</span><span class="code-line" data-line="11">                    <span class="text-purple-400">int</span> right = memo[j - <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="12">                    memo[j] = right + down;</span><span class="code-line" data-line="13">                }</span><span class="code-line" data-line="14">            }</span><span class="code-line" data-line="15">        }</span><span class="code-line" data-line="16">        <span class="text-purple-400">return</span> memo[n - <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="17">    }</span><span class="code-line" data-line="18">}</span>`
+            },
+            'for': {
+              title: 'SolutionFor.java (外层 for 版)',
+              html: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">private int</span>[] memo;</span><span class="code-line" data-line="3">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="4">        memo = <span class="text-purple-400">new int</span>[n];</span><span class="code-line" data-line="5">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = <span class="text-amber-300">0</span>; j &lt; n; j++) memo[j] = <span class="text-amber-300">1</span>; <span class="text-slate-500">// 外层for初始化第0行</span></span><span class="code-line" data-line="6">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = <span class="text-amber-300">1</span>; i &lt; m; i++) {</span><span class="code-line" data-line="7">            <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = <span class="text-amber-300">1</span>; j &lt; n; j++) {</span><span class="code-line" data-line="8">                <span class="text-purple-400">int</span> down = memo[j];</span><span class="code-line" data-line="9">                <span class="text-purple-400">int</span> right = memo[j - <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="10">                memo[j] = right + down;</span><span class="code-line" data-line="11">            }</span><span class="code-line" data-line="12">        }</span><span class="code-line" data-line="13">        <span class="text-purple-400">return</span> memo[n - <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="14">    }</span><span class="code-line" data-line="15">}</span>`
+            }
+          },
+          card2Title: '一维状态数组 (int[] memo)',
+          card2Desc: '空间优化: 只保存当前行的数据，不断滚动覆盖。'
+        }
+      },
+      reverse: {
+        'stage-1': {
+          name: '阶段 1: 朴素递归 (逆推分支探索)',
+          desc: '从起点 (0, 0) 开始向右向下分支递归，直至到达终点边界 (m-1, n-1)。',
+          timeBadge: 'O(2^(m+n))',
+          badgeBg: 'bg-slate-100 text-slate-700',
+          codeTitle: 'NaiveRecursiveReverse.java',
+          codeHtml: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="3">        <span class="text-purple-400">return</span> <span class="text-blue-400">dfs</span>(<span class="text-amber-300">0</span>, <span class="text-amber-300">0</span>, m, n);</span><span class="code-line" data-line="4">    }</span><span class="code-line" data-line="5">    <span class="text-purple-400">private int</span> <span class="text-blue-400">dfs</span>(<span class="text-purple-400">int</span> i, <span class="text-purple-400">int</span> j, <span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="6">        <span class="text-purple-400">if</span> (i == m - <span class="text-amber-300">1</span> || j == n - <span class="text-amber-300">1</span>) <span class="text-purple-400">return</span> <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="7">        <span class="text-purple-400">int</span> down = <span class="text-blue-400">dfs</span>(i + <span class="text-amber-300">1</span>, j, m, n);  <span class="text-slate-500">// 向下探索</span></span><span class="code-line" data-line="8">        <span class="text-purple-400">int</span> right = <span class="text-blue-400">dfs</span>(i, j + <span class="text-amber-300">1</span>, m, n); <span class="text-slate-500">// 向右探索</span></span><span class="code-line" data-line="9">        <span class="text-purple-400">return</span> down + right;</span><span class="code-line" data-line="10">    }</span><span class="code-line" data-line="11">}</span>`,
+          card2Title: '逆推递归调用树 (Recursive Call Tree)',
+          card2Desc: '从 (0, 0) 分支向下和向右探索，展示倒序搜索的重叠子问题。'
+        },
+        'stage-2': {
+          name: '阶段 2: 记忆化搜索 (逆推备忘录剪枝)',
+          desc: '记录 memo[i][j] 表示从 (i, j) 到终点的路径总数，O(1) 剪枝。',
+          timeBadge: 'O(m×n) 剪枝',
+          badgeBg: 'bg-blue-100 text-blue-700',
+          codeTitle: 'MemoizedSolutionReverse.java',
+          codeHtml: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">private int</span>[][] memo;</span><span class="code-line" data-line="3">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="4">        memo = <span class="text-purple-400">new int</span>[m][n];</span><span class="code-line" data-line="5">        <span class="text-purple-400">return</span> <span class="text-blue-400">dfs</span>(<span class="text-amber-300">0</span>, <span class="text-amber-300">0</span>, m, n);</span><span class="code-line" data-line="6">    }</span><span class="code-line" data-line="7">    <span class="text-purple-400">private int</span> <span class="text-blue-400">dfs</span>(<span class="text-purple-400">int</span> i, <span class="text-purple-400">int</span> j, <span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="8">        <span class="text-purple-400">if</span> (i == m - <span class="text-amber-300">1</span> || j == n - <span class="text-amber-300">1</span>) <span class="text-purple-400">return</span> <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="9">        <span class="text-purple-400">if</span> (memo[i][j] != <span class="text-amber-300">0</span>) <span class="text-purple-400">return</span> memo[i][j]; <span class="text-slate-500">// ⚡ 命中剪枝</span></span><span class="code-line" data-line="10">        <span class="text-purple-400">int</span> down = <span class="text-blue-400">dfs</span>(i + <span class="text-amber-300">1</span>, j, m, n);</span><span class="code-line" data-line="11">        <span class="text-purple-400">int</span> right = <span class="text-blue-400">dfs</span>(i, j + <span class="text-amber-300">1</span>, m, n);</span><span class="code-line" data-line="12">        <span class="text-purple-400">return</span> memo[i][j] = down + right;</span><span class="code-line" data-line="13">    }</span><span class="code-line" data-line="14">}</span>`,
+          card2Title: '逆推记忆化剪枝树 (Memoized Tree)',
+          card2Desc: '已计算过的 (i, j) 到终点路径数直接查表返回，跳过整棵子树。'
+        },
+        'stage-3': {
+          name: '阶段 3: 逆推倒序二维 DP 填表 (Reverse 2D Tabulation)',
+          desc: '从终点 (m-1, n-1) 逆推回起点 (0, 0)，dp[i][j] = 下方 + 右方。',
+          timeBadge: 'O(m×n)',
+          badgeBg: 'bg-emerald-100 text-emerald-700',
+          codeTitle: 'ReverseTabulation.java',
+          codeHtml: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="3">        <span class="text-purple-400">int</span>[][] dp = <span class="text-purple-400">new int</span>[m][n];</span><span class="code-line" data-line="4">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = <span class="text-amber-300">0</span>; i &lt; m; i++) dp[i][n - <span class="text-amber-300">1</span>] = <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="5">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = <span class="text-amber-300">0</span>; j &lt; n; j++) dp[m - <span class="text-amber-300">1</span>][j] = <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="6">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = m - <span class="text-amber-300">2</span>; i &gt;= <span class="text-amber-300">0</span>; i--) {</span><span class="code-line" data-line="7">            <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = n - <span class="text-amber-300">2</span>; j &gt;= <span class="text-amber-300">0</span>; j--) {</span><span class="code-line" data-line="8">                dp[i][j] = dp[i + <span class="text-amber-300">1</span>][j] + dp[i][j + <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="9">            }</span><span class="code-line" data-line="10">        }</span><span class="code-line" data-line="11">        <span class="text-purple-400">return</span> dp[<span class="text-amber-300">0</span>][<span class="text-amber-300">0</span>];</span><span class="code-line" data-line="12">    }</span><span class="code-line" data-line="13">}</span>`,
+          card2Title: '逆推状态转移方程 (Reverse 2D DP)',
+          card2Desc: 'dp[i][j] = 下方 dp[i+1][j] + 右方 dp[i][j+1]。'
+        },
+        'stage-4': {
+          name: '阶段 4: 逆推倒序一维空间优化 (Reverse 1D DP)',
+          desc: '从终点 (m-1, n-1) 逆推回起点 (0, 0)，借助 memo[j] 滚动更新消灭二维矩阵空间。',
+          timeBadge: 'O(n) ⭐',
+          badgeBg: 'bg-amber-100 text-amber-800',
+          variants: {
+            'if': {
+              title: 'SolutionReverse.java (内嵌 if 版)',
+              html: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">private int</span>[] memo;</span><span class="code-line" data-line="3">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="4">        memo = <span class="text-purple-400">new int</span>[n];</span><span class="code-line" data-line="5">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = m - <span class="text-amber-300">1</span>; i &gt;= <span class="text-amber-300">0</span>; i--) {</span><span class="code-line" data-line="6">            <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = n - <span class="text-amber-300">1</span>; j &gt;= <span class="text-amber-300">0</span>; j--) {</span><span class="code-line" data-line="7">                <span class="text-purple-400">if</span> (i == m - <span class="text-amber-300">1</span> || j == n - <span class="text-amber-300">1</span>) {</span><span class="code-line" data-line="8">                    memo[j] = <span class="text-amber-300">1</span>;</span><span class="code-line" data-line="9">                } <span class="text-purple-400">else</span> {</span><span class="code-line" data-line="10">                    <span class="text-purple-400">int</span> down = memo[j];</span><span class="code-line" data-line="11">                    <span class="text-purple-400">int</span> right = memo[j + <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="12">                    memo[j] = right + down;</span><span class="code-line" data-line="13">                }</span><span class="code-line" data-line="14">            }</span><span class="code-line" data-line="15">        }</span><span class="code-line" data-line="16">        <span class="text-purple-400">return</span> memo[<span class="text-amber-300">0</span>];</span><span class="code-line" data-line="17">    }</span><span class="code-line" data-line="18">}</span>`
+            },
+            'for': {
+              title: 'SolutionReverseFor.java (外层 for 版)',
+              html: `<span class="code-line" data-line="1"><span class="text-purple-400">class</span> <span class="text-yellow-300">Solution</span> {</span><span class="code-line" data-line="2">    <span class="text-purple-400">private int</span>[] memo;</span><span class="code-line" data-line="3">    <span class="text-purple-400">public int</span> <span class="text-blue-400">uniquePaths</span>(<span class="text-purple-400">int</span> m, <span class="text-purple-400">int</span> n) {</span><span class="code-line" data-line="4">        memo = <span class="text-purple-400">new int</span>[n];</span><span class="code-line" data-line="5">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = <span class="text-amber-300">0</span>; j &lt; n; j++) memo[j] = <span class="text-amber-300">1</span>; <span class="text-slate-500">// 外层for初始化最底行</span></span><span class="code-line" data-line="6">        <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> i = m - <span class="text-amber-300">2</span>; i &gt;= <span class="text-amber-300">0</span>; i--) {</span><span class="code-line" data-line="7">            <span class="text-purple-400">for</span> (<span class="text-purple-400">int</span> j = n - <span class="text-amber-300">2</span>; j &gt;= <span class="text-amber-300">0</span>; j--) {</span><span class="code-line" data-line="8">                <span class="text-purple-400">int</span> down = memo[j];</span><span class="code-line" data-line="9">                <span class="text-purple-400">int</span> right = memo[j + <span class="text-amber-300">1</span>];</span><span class="code-line" data-line="10">                memo[j] = right + down;</span><span class="code-line" data-line="11">            }</span><span class="code-line" data-line="12">        }</span><span class="code-line" data-line="13">        <span class="text-purple-400">return</span> memo[<span class="text-amber-300">0</span>];</span><span class="code-line" data-line="14">    }</span><span class="code-line" data-line="15">}</span>`
+            }
+          },
+          card2Title: '逆推一维状态数组 (int[] memo)',
+          card2Desc: '倒序滚动: memo[j] = right(memo[j+1]) + down(memo[j])，最终结果汇聚在 memo[0]。'
+        }
+      }
+    };
+
+    // 运行状态变量
+    let currentStage = 'stage-4';
+    let currentDirection = 'forward';
+    let currentStageVariant = 'if'; // 'if' | 'for'
+    let steps = [];
+    let currentStepIndex = 0;
+    let isPlaying = false;
+    let playTimer = null;
+    let playSpeed = 900;
+
+    let m = 3;
+    let n = 4;
+
+    // ==========================================
+    // 阶段 4：生成一维 DP 空间优化全部步骤 (顺推正序)
+    // ==========================================
+    function generateForwardStage4Steps(mVal, nVal) {
+      const generated = [];
+      const memo = new Array(nVal).fill(0);
+      const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+
+      generated.push({
+        type: 'init',
+        i: -1, j: -1,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 4,
+        log: `| 分配一维滚动数组: memo = new int[${nVal}] (初始全部为 0)`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      for (let i = 0; i < mVal; i++) {
+        generated.push({
+          type: 'loop-i',
+          i, j: -1,
+          memo: [...memo],
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: 8,
+          log: `| -- 进入外层循环: i = ${i}`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+
+        for (let j = 0; j < nVal; j++) {
+          generated.push({
+            type: 'enter-cell',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 9,
+            log: `| -- 处理位置: (i=${i}, j=${j})`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1
+          });
+
+          if (i === 0 || j === 0) {
+            memo[j] = 1;
+            gridState[i][j] = 1;
+            generated.push({
+              type: 'boundary',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 11,
+              log: `| 命中边界条件 (i=0 或 j=0), 设 memo[${j}] = 1`,
+              topI: -1, topJ: -1, leftI: -1, leftJ: -1
+            });
+          } else {
+            const down = memo[j];
+            const right = memo[j - 1];
+
+            generated.push({
+              type: 'read-down',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 13,
+              log: `| 读取上方变量: down = memo[${j}] = ${down} (来自网格上方 (${i - 1}, ${j}))`,
+              topI: i - 1, topJ: j, leftI: -1, leftJ: -1
+            });
+
+            generated.push({
+              type: 'read-right',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 14,
+              log: `| 读取左方变量: right = memo[${j - 1}] = ${right} (来自网格左方 (${i}, ${j - 1}))`,
+              topI: i - 1, topJ: j, leftI: i, leftJ: j - 1
+            });
+
+            memo[j] = right + down;
+            gridState[i][j] = memo[j];
+
+            generated.push({
+              type: 'update',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 15,
+              log: `| ✏️ 累加并覆盖: memo[${j}] = right + down = ${right} + ${down} = ${memo[j]} (写入网格 (${i}, ${j}))`,
+              topI: i - 1, topJ: j, leftI: i, leftJ: j - 1
+            });
+          }
+        }
+      }
+
+      generated.push({
+        type: 'return',
+        i: mVal - 1, j: nVal - 1,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 19,
+        log: `| 🏆 最终答案: return memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 阶段 4：生成一维 DP 空间优化全部步骤 (逆推倒序)
+    // ==========================================
+    function generateReverseStage4Steps(mVal, nVal) {
+      const generated = [];
+      const memo = new Array(nVal).fill(0);
+      const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+
+      generated.push({
+        type: 'init',
+        i: -1, j: -1,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 4,
+        log: `| 分配一维滚动数组: memo = new int[${nVal}] (初始全部为 0，网格未就绪)`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      for (let i = mVal - 1; i >= 0; i--) {
+        generated.push({
+          type: 'loop-i',
+          i, j: -1,
+          memo: [...memo],
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: 5,
+          log: `| -- 进入外层逆推循环: i = ${i}`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+
+        for (let j = nVal - 1; j >= 0; j--) {
+          generated.push({
+            type: 'enter-cell',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 6,
+            log: `| -- 逆推处理位置: (i=${i}, j=${j})`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1
+          });
+
+          if (i === mVal - 1 || j === nVal - 1) {
+            memo[j] = 1;
+            gridState[i][j] = 1;
+            generated.push({
+              type: 'boundary',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 8,
+              log: `| 命中边界条件 (i=${i} == ${mVal - 1} 或 j=${j} == ${nVal - 1}), 设 memo[${j}] = 1 (直达终点唯 1 种路径)`,
+              topI: -1, topJ: -1, leftI: -1, leftJ: -1
+            });
+          } else {
+            const down = memo[j];
+            const right = memo[j + 1];
+
+            generated.push({
+              type: 'read-down',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 10,
+              log: `| 读取下方旧值: down = memo[${j}] = ${down} (来自网格下方 (${i + 1}, ${j}))`,
+              topI: i + 1, topJ: j, leftI: -1, leftJ: -1
+            });
+
+            generated.push({
+              type: 'read-right',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 11,
+              log: `| 读取右方新值: right = memo[${j + 1}] = ${right} (来自网格右方 (${i}, ${j + 1}))`,
+              topI: i + 1, topJ: j, leftI: i, leftJ: j + 1
+            });
+
+            memo[j] = right + down;
+            gridState[i][j] = memo[j];
+
+            generated.push({
+              type: 'update',
+              i, j,
+              memo: [...memo],
+              grid: JSON.parse(JSON.stringify(gridState)),
+              line: 12,
+              log: `| ✏️ 倒序累加覆盖: memo[${j}] = right + down = ${right} + ${down} = ${memo[j]} (写入网格 (${i}, ${j}))`,
+              topI: i + 1, topJ: j, leftI: i, leftJ: j + 1
+            });
+          }
+        }
+      }
+
+      generated.push({
+        type: 'return',
+        i: 0, j: 0,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 16,
+        log: `| 🏆 最终答案: return memo[0] = ${memo[0]} (从起点 (0,0) 到终点总路径数)`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 阶段 4 变体 2：顺推外层 for 循环版本步骤生成
+    // ==========================================
+    function generateForwardStage4ForSteps(mVal, nVal) {
+      const generated = [];
+      const memo = new Array(nVal).fill(0);
+      const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+
+      generated.push({
+        type: 'init',
+        i: -1, j: -1,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 4,
+        log: `| 分配一维滚动数组: memo = new int[${nVal}] (初始全部为 0)`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      // 外层 for 循环初始化第 0 行
+      for (let j = 0; j < nVal; j++) {
+        memo[j] = 1;
+        gridState[0][j] = 1;
+        generated.push({
+          type: 'boundary',
+          i: 0, j,
+          memo: [...memo],
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: 5,
+          log: `| 外层 for 循环初始化第 0 行: memo[${j}] = 1 (直达唯 1 路径)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+      }
+
+      // 双重循环递推 (从第 1 行第 1 列开始，无需 if 判断)
+      for (let i = 1; i < mVal; i++) {
+        gridState[i][0] = 1;
+        generated.push({
+          type: 'loop-i',
+          i, j: -1,
+          memo: [...memo],
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: 6,
+          log: `| -- 进入外层行循环: i = ${i} (第 0 列单元格 (${i}, 0) 恒为 1)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+
+        for (let j = 1; j < nVal; j++) {
+          generated.push({
+            type: 'enter-cell',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 7,
+            log: `| -- 递推处理位置: (i=${i}, j=${j})`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1
+          });
+
+          const down = memo[j];
+          const right = memo[j - 1];
+
+          generated.push({
+            type: 'read-down',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 8,
+            log: `| 读取上方变量: down = memo[${j}] = ${down} (来自网格上方 (${i - 1}, ${j}))`,
+            topI: i - 1, topJ: j, leftI: -1, leftJ: -1
+          });
+
+          generated.push({
+            type: 'read-right',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 9,
+            log: `| 读取左方变量: right = memo[${j - 1}] = ${right} (来自网格左方 (${i}, ${j - 1}))`,
+            topI: i - 1, topJ: j, leftI: i, leftJ: j - 1
+          });
+
+          memo[j] = right + down;
+          gridState[i][j] = memo[j];
+
+          generated.push({
+            type: 'update',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 10,
+            log: `| ✏️ 累加并覆盖: memo[${j}] = right + down = ${right} + ${down} = ${memo[j]} (写入网格 (${i}, ${j}))`,
+            topI: i - 1, topJ: j, leftI: i, leftJ: j - 1
+          });
+        }
+      }
+
+      generated.push({
+        type: 'return',
+        i: mVal - 1, j: nVal - 1,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 13,
+        log: `| 🏆 最终答案: return memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 阶段 4 变体 2：逆推外层 for 循环版本步骤生成
+    // ==========================================
+    function generateReverseStage4ForSteps(mVal, nVal) {
+      const generated = [];
+      const memo = new Array(nVal).fill(0);
+      const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+
+      generated.push({
+        type: 'init',
+        i: -1, j: -1,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 4,
+        log: `| 分配一维滚动数组: memo = new int[${nVal}] (初始全部为 0，网格未就绪)`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      // 外层 for 循环初始化最底行
+      for (let j = 0; j < nVal; j++) {
+        memo[j] = 1;
+        gridState[mVal - 1][j] = 1;
+        generated.push({
+          type: 'boundary',
+          i: mVal - 1, j,
+          memo: [...memo],
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: 5,
+          log: `| 外层 for 循环初始化最底行: memo[${j}] = 1 (直达终点唯 1 种路径)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+      }
+
+      // 从 m-2 行、n-2 列开始倒序递推
+      for (let i = mVal - 2; i >= 0; i--) {
+        gridState[i][nVal - 1] = 1; // 最右列直达终点恒为 1
+        generated.push({
+          type: 'loop-i',
+          i, j: -1,
+          memo: [...memo],
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: 6,
+          log: `| -- 进入外层逆推行循环: i = ${i} (最右列 (${i}, ${nVal - 1}) 恒为 1)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+
+        for (let j = nVal - 2; j >= 0; j--) {
+          generated.push({
+            type: 'enter-cell',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 7,
+            log: `| -- 逆推处理位置: (i=${i}, j=${j})`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1
+          });
+
+          const down = memo[j];
+          const right = memo[j + 1];
+
+          generated.push({
+            type: 'read-down',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 8,
+            log: `| 读取下方旧值: down = memo[${j}] = ${down} (来自网格下方 (${i + 1}, ${j}))`,
+            topI: i + 1, topJ: j, leftI: -1, leftJ: -1
+          });
+
+          generated.push({
+            type: 'read-right',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 9,
+            log: `| 读取右方新值: right = memo[${j + 1}] = ${right} (来自网格右方 (${i}, ${j + 1}))`,
+            topI: i + 1, topJ: j, leftI: i, leftJ: j + 1
+          });
+
+          memo[j] = right + down;
+          gridState[i][j] = memo[j];
+
+          generated.push({
+            type: 'update',
+            i, j,
+            memo: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 10,
+            log: `| ✏️ 倒序累加覆盖: memo[${j}] = right + down = ${right} + ${down} = ${memo[j]} (写入网格 (${i}, ${j}))`,
+            topI: i + 1, topJ: j, leftI: i, leftJ: j + 1
+          });
+        }
+      }
+
+      generated.push({
+        type: 'return',
+        i: 0, j: 0,
+        memo: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: 13,
+        log: `| 🏆 最终答案: return memo[0] = ${memo[0]} (从起点 (0,0) 到终点总路径数)`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 阶段 3：生成二维 DP 填表步骤 (顺推正序)
+    // ==========================================
+    function generateForwardStage3Steps(mVal, nVal) {
+      const generated = [];
+      const dp = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+
+      generated.push({
+        type: 'init',
+        i: -1, j: -1,
+        grid: JSON.parse(JSON.stringify(dp)),
+        line: 3,
+        log: `| 初始化二维 DP 矩阵: dp = new int[${mVal}][${nVal}]`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      // 初始化第一列
+      for (let r = 0; r < mVal; r++) {
+        dp[r][0] = 1;
+        generated.push({
+          type: 'boundary',
+          i: r, j: 0,
+          grid: JSON.parse(JSON.stringify(dp)),
+          line: 4,
+          log: `| 边界第一列初始化: dp[${r}][0] = 1 (只有 1 条直达路径)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+      }
+
+      // 初始化第一行
+      for (let c = 1; c < nVal; c++) {
+        dp[0][c] = 1;
+        generated.push({
+          type: 'boundary',
+          i: 0, j: c,
+          grid: JSON.parse(JSON.stringify(dp)),
+          line: 5,
+          log: `| 边界第一行初始化: dp[0][${c}] = 1 (只有 1 条直达路径)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+      }
+
+      // 递推状态转移
+      for (let r = 1; r < mVal; r++) {
+        for (let c = 1; c < nVal; c++) {
+          const topVal = dp[r - 1][c];
+          const leftVal = dp[r][c - 1];
+          const sumVal = topVal + leftVal;
+          dp[r][c] = sumVal;
+
+          generated.push({
+            type: 'update',
+            i: r, j: c,
+            grid: JSON.parse(JSON.stringify(dp)),
+            line: 8,
+            log: `| ⚡ 状态转移: dp[${r}][${c}] = dp[${r-1}][${c}](${topVal}) + dp[${r}][${c-1}](${leftVal}) = ${sumVal}`,
+            topI: r - 1, topJ: c,
+            leftI: r, leftJ: c - 1,
+            sumVal, topVal, leftVal
+          });
+        }
+      }
+
+      generated.push({
+        type: 'return',
+        i: mVal - 1, j: nVal - 1,
+        grid: JSON.parse(JSON.stringify(dp)),
+        line: 11,
+        log: `| 🏁 算法结束，返回 dp[${mVal - 1}][${nVal - 1}] = ${dp[mVal - 1][nVal - 1]}`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 阶段 3：生成二维 DP 填表步骤 (逆推倒序)
+    // ==========================================
+    function generateReverseStage3Steps(mVal, nVal) {
+      const generated = [];
+      const dp = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+
+      generated.push({
+        type: 'init',
+        i: -1, j: -1,
+        grid: JSON.parse(JSON.stringify(dp)),
+        line: 3,
+        log: `| 初始化二维 DP 矩阵: dp = new int[${mVal}][${nVal}]`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      // 初始化最右列
+      for (let r = 0; r < mVal; r++) {
+        dp[r][nVal - 1] = 1;
+        generated.push({
+          type: 'boundary',
+          i: r, j: nVal - 1,
+          grid: JSON.parse(JSON.stringify(dp)),
+          line: 4,
+          log: `| 边界最右列初始化: dp[${r}][${nVal - 1}] = 1 (只能一路向下直达终点)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+      }
+
+      // 初始化最底行
+      for (let c = nVal - 2; c >= 0; c--) {
+        dp[mVal - 1][c] = 1;
+        generated.push({
+          type: 'boundary',
+          i: mVal - 1, j: c,
+          grid: JSON.parse(JSON.stringify(dp)),
+          line: 5,
+          log: `| 边界最底行初始化: dp[${mVal - 1}][${c}] = 1 (只能一路向右直达终点)`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1
+        });
+      }
+
+      // 倒序逆推状态转移
+      for (let r = mVal - 2; r >= 0; r--) {
+        for (let c = nVal - 2; c >= 0; c--) {
+          const downVal = dp[r + 1][c];
+          const rightVal = dp[r][c + 1];
+          const sumVal = downVal + rightVal;
+          dp[r][c] = sumVal;
+
+          generated.push({
+            type: 'update',
+            i: r, j: c,
+            grid: JSON.parse(JSON.stringify(dp)),
+            line: 8,
+            log: `| ⚡ 逆推状态转移: dp[${r}][${c}] = 下方(${downVal}) + 右方(${rightVal}) = ${sumVal}`,
+            topI: r + 1, topJ: c,
+            leftI: r, leftJ: c + 1,
+            sumVal, topVal: downVal, leftVal: rightVal
+          });
+        }
+      }
+
+      generated.push({
+        type: 'return',
+        i: 0, j: 0,
+        grid: JSON.parse(JSON.stringify(dp)),
+        line: 11,
+        log: `| 🏁 逆推填表完成，返回 dp[0][0] = ${dp[0][0]}`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 阶段 1 & 2：生成递归树与单步快照 (顺推正序)
+    // ==========================================
+    function generateForwardStage1or2Steps(mVal, nVal, isMemo) {
+      const generated = [];
+      const memoCache = {};
+      const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+      let callCount = 0;
+      let nodeIdCounter = 0;
+
+      function cloneTree(node) {
+        if (!node) return null;
+        return {
+          id: node.id,
+          r: node.r,
+          c: node.c,
+          val: node.val,
+          status: node.status,
+          tag: node.tag,
+          children: node.children ? node.children.map(cloneTree) : []
+        };
+      }
+
+      const rootNode = {
+        id: `node-${++nodeIdCounter}`,
+        r: mVal - 1,
+        c: nVal - 1,
+        val: `dfs(${mVal - 1},${nVal - 1})`,
+        status: 'current',
+        children: []
+      };
+
+      function dfs(r, c, currentTreeNode) {
+        callCount++;
+        const key = `${r},${c}`;
+        const isRepeated = !isMemo && memoCache[key] !== undefined;
+
+        currentTreeNode.status = 'current';
+        if (isRepeated) {
+          currentTreeNode.tag = '⚠️重复';
+        }
+
+        generated.push({
+          type: 'dfs-call',
+          i: r, j: c,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: isMemo ? 7 : 5,
+          log: `| 📥 进入 dfs(i=${r}, j=${c}) [调用 #${callCount}]`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+          activeNodeId: currentTreeNode.id,
+          treeRoot: cloneTree(rootNode)
+        });
+
+        if (r === 0 || c === 0) {
+          gridState[r][c] = 1;
+          currentTreeNode.status = 'base';
+          currentTreeNode.tag = '= 1';
+
+          generated.push({
+            type: 'boundary',
+            i: r, j: c,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: isMemo ? 8 : 6,
+            log: `| 🎬 边界 Base Case: (i=${r} 或 j=${c})，直达路径 1 条，return 1`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+            activeNodeId: currentTreeNode.id,
+            treeRoot: cloneTree(rootNode)
+          });
+          return 1;
+        }
+
+        if (isMemo && memoCache[key] !== undefined) {
+          currentTreeNode.status = 'pruned';
+          currentTreeNode.tag = `⚡=${memoCache[key]}`;
+
+          generated.push({
+            type: 'cache-hit',
+            i: r, j: c,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 9,
+            log: `| ⚡ 【备忘录命中剪枝】memo[${r}][${c}] 已有缓存 ${memoCache[key]}！直接 O(1) 返回，跳过子树展开`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+            activeNodeId: currentTreeNode.id,
+            treeRoot: cloneTree(rootNode)
+          });
+          return memoCache[key];
+        }
+
+        memoCache[key] = (memoCache[key] || 0) + 1;
+
+        // 向左逆推 dfs(r, c - 1)
+        const leftChildNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: r,
+          c: c - 1,
+          val: `dfs(${r},${c - 1})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(leftChildNode);
+        const left = dfs(r, c - 1, leftChildNode);
+
+        // 向上逆推 dfs(r - 1, c)
+        const upChildNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: r - 1,
+          c: c,
+          val: `dfs(${r - 1},${c})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(upChildNode);
+        const up = dfs(r - 1, c, upChildNode);
+
+        const res = left + up;
+        if (isMemo) memoCache[key] = res;
+        gridState[r][c] = res;
+
+        currentTreeNode.status = 'visited';
+        currentTreeNode.tag = `= ${res}`;
+
+        generated.push({
+          type: 'update',
+          i: r, j: c,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: isMemo ? 12 : 11,
+          log: `| ✨ 子问题合并: (${r}, ${c}) = 左(${left}) + 上(${up}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`,
+          topI: r - 1, topJ: c,
+          leftI: r, leftJ: c - 1,
+          activeNodeId: currentTreeNode.id,
+          treeRoot: cloneTree(rootNode)
+        });
+
+        return res;
+      }
+
+      const total = dfs(mVal - 1, nVal - 1, rootNode);
+
+      generated.push({
+        type: 'return',
+        i: mVal - 1, j: nVal - 1,
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: isMemo ? 5 : 3,
+        log: `| 🏆 最终答案: uniquePaths(${mVal}, ${nVal}) = ${total}`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+        activeNodeId: rootNode.id,
+        treeRoot: cloneTree(rootNode)
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 阶段 1 & 2：生成递归树与单步快照 (逆推倒序)
+    // ==========================================
+    function generateReverseStage1or2Steps(mVal, nVal, isMemo) {
+      const generated = [];
+      const memoCache = {};
+      const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
+      let callCount = 0;
+      let nodeIdCounter = 0;
+
+      function cloneTree(node) {
+        if (!node) return null;
+        return {
+          id: node.id,
+          r: node.r,
+          c: node.c,
+          val: node.val,
+          status: node.status,
+          tag: node.tag,
+          children: node.children ? node.children.map(cloneTree) : []
+        };
+      }
+
+      const rootNode = {
+        id: `node-${++nodeIdCounter}`,
+        r: 0,
+        c: 0,
+        val: `dfs(0,0)`,
+        status: 'current',
+        children: []
+      };
+
+      function dfs(r, c, currentTreeNode) {
+        callCount++;
+        const key = `${r},${c}`;
+        const isRepeated = !isMemo && memoCache[key] !== undefined;
+
+        currentTreeNode.status = 'current';
+        if (isRepeated) {
+          currentTreeNode.tag = '⚠️重复';
+        }
+
+        generated.push({
+          type: 'dfs-call',
+          i: r, j: c,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: isMemo ? 7 : 5,
+          log: `| 📥 进入 dfs(i=${r}, j=${c}) [调用 #${callCount}]`,
+          topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+          activeNodeId: currentTreeNode.id,
+          treeRoot: cloneTree(rootNode)
+        });
+
+        if (r === mVal - 1 || c === nVal - 1) {
+          gridState[r][c] = 1;
+          currentTreeNode.status = 'base';
+          currentTreeNode.tag = '= 1';
+
+          generated.push({
+            type: 'boundary',
+            i: r, j: c,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: isMemo ? 8 : 6,
+            log: `| 🎬 边界 Base Case: (i=${r} 或 j=${c}) 到达终点边界，直达路径 1 条，return 1`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+            activeNodeId: currentTreeNode.id,
+            treeRoot: cloneTree(rootNode)
+          });
+          return 1;
+        }
+
+        if (isMemo && memoCache[key] !== undefined) {
+          currentTreeNode.status = 'pruned';
+          currentTreeNode.tag = `⚡=${memoCache[key]}`;
+
+          generated.push({
+            type: 'cache-hit',
+            i: r, j: c,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            line: 9,
+            log: `| ⚡ 【备忘录命中剪枝】从 (${r}, ${c}) 到终点已有缓存 ${memoCache[key]}！直接 O(1) 返回，跳过子树展开`,
+            topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+            activeNodeId: currentTreeNode.id,
+            treeRoot: cloneTree(rootNode)
+          });
+          return memoCache[key];
+        }
+
+        memoCache[key] = (memoCache[key] || 0) + 1;
+
+        // 向下探索 dfs(r + 1, c)
+        const downChildNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: r + 1,
+          c: c,
+          val: `dfs(${r + 1},${c})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(downChildNode);
+        const down = dfs(r + 1, c, downChildNode);
+
+        // 向右探索 dfs(r, c + 1)
+        const rightChildNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: r,
+          c: c + 1,
+          val: `dfs(${r},${c + 1})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(rightChildNode);
+        const right = dfs(r, c + 1, rightChildNode);
+
+        const res = down + right;
+        if (isMemo) memoCache[key] = res;
+        gridState[r][c] = res;
+
+        currentTreeNode.status = 'visited';
+        currentTreeNode.tag = `= ${res}`;
+
+        generated.push({
+          type: 'update',
+          i: r, j: c,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          line: isMemo ? 12 : 9,
+          log: `| ✨ 逆推合并: (${r}, ${c}) = 下(${down}) + 右(${right}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`,
+          topI: r + 1, topJ: c,
+          leftI: r, leftJ: c + 1,
+          activeNodeId: currentTreeNode.id,
+          treeRoot: cloneTree(rootNode)
+        });
+
+        return res;
+      }
+
+      const total = dfs(0, 0, rootNode);
+
+      generated.push({
+        type: 'return',
+        i: 0, j: 0,
+        grid: JSON.parse(JSON.stringify(gridState)),
+        line: isMemo ? 5 : 3,
+        log: `| 🏆 最终答案: uniquePaths(${mVal}, ${nVal}) = ${total}`,
+        topI: -1, topJ: -1, leftI: -1, leftJ: -1,
+        activeNodeId: rootNode.id,
+        treeRoot: cloneTree(rootNode)
+      });
+
+      return generated;
+    }
+
+    // ==========================================
+    // 递归调用树 SVG 渲染器 (根据节点量自适应动态缩放)
+    // ==========================================
+    function renderRecursionTree(container, root, activeNodeId, isMemo) {
+      if (!root) {
+        container.innerHTML = '<div class="text-xs text-slate-400 py-6">（暂无递归调用树）</div>';
+        return;
+      }
+
+      function countLeaves(n) {
+        if (!n.children || n.children.length === 0) return 1;
+        return n.children.reduce((acc, c) => acc + countLeaves(c), 0);
+      }
+
+      function getDepth(n) {
+        if (!n.children || n.children.length === 0) return 0;
+        return 1 + Math.max(...n.children.map(getDepth));
+      }
+
+      const leafCount = countLeaves(root);
+      const maxDepth = getDepth(root);
+
+      // 根据树的规模自适应尺寸
+      let nodeW = 66;
+      let nodeH = 25;
+      let minGap = 12;
+      let levelH = 50;
+      let fontSize = 10.5;
+      let tagFontSize = 8;
+      const topPad = 26;
+
+      if (leafCount >= 10 || maxDepth >= 4) {
+        nodeW = 44;
+        nodeH = 19;
+        minGap = 6;
+        levelH = 38;
+        fontSize = 8.5;
+        tagFontSize = 7;
+      } else if (leafCount >= 6 || maxDepth >= 3) {
+        nodeW = 54;
+        nodeH = 22;
+        minGap = 9;
+        levelH = 44;
+        fontSize = 9.5;
+        tagFontSize = 7.5;
+      }
+
+      function measure(n) {
+        const ch = n.children || [];
+        if (ch.length === 0) {
+          return { node: n, width: nodeW + minGap, children: [] };
+        }
+        const measuredCh = ch.map(measure);
+        const sumW = measuredCh.reduce((acc, c) => acc + c.width, 0);
+        return { node: n, width: Math.max(nodeW + minGap, sumW), children: measuredCh };
+      }
+
+      function assign(mNode, depth, leftX) {
+        const x = leftX + mNode.width / 2;
+        const y = topPad + depth * levelH;
+        let curL = leftX;
+        const placedCh = [];
+        for (const c of mNode.children) {
+          placedCh.push(assign(c, depth + 1, curL));
+          curL += c.width;
+        }
+        return {
+          id: mNode.node.id,
+          val: mNode.node.val,
+          status: mNode.node.status,
+          tag: mNode.node.tag,
+          x, y,
+          width: mNode.width,
+          children: placedCh
+        };
+      }
+
+      const measured = measure(root);
+      const totalW = Math.max(340, measured.width + 24);
+      const rootPos = assign(measured, 0, (totalW - measured.width) / 2);
+      const totalH = Math.max(160, topPad + maxDepth * levelH + 34);
+
+      const lines = [];
+      const nodes = [];
+      let activeX = null;
+
+      function draw(n) {
+        for (const c of n.children) {
+          const startX = n.x;
+          const startY = n.y + nodeH / 2;
+          const endX = c.x;
+          const endY = c.y - nodeH / 2;
+          const midY = (startY + endY) / 2;
+
+          const isCurrentBranch = (n.id === activeNodeId) || (c.id === activeNodeId);
+          const stroke = isCurrentBranch ? '#3b82f6' : '#cbd5e1';
+          const strokeW = isCurrentBranch ? '2' : '1.3';
+          const strokeDash = c.status === 'pruned' ? '3,3' : 'none';
+
+          lines.push(
+            `<path d="M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}" fill="none" stroke="${stroke}" stroke-width="${strokeW}" stroke-dasharray="${strokeDash}" />`
+          );
+          draw(c);
+        }
+
+        const isCurrent = n.id === activeNodeId;
+        if (isCurrent) activeX = n.x;
+
+        const isBase = n.status === 'base';
+        const isPruned = n.status === 'pruned';
+        const isRepeated = n.tag && n.tag.includes('重复');
+        const isVisited = n.status === 'visited';
+
+        let stroke = '#cbd5e1';
+        let strokeW = '1.2';
+        let fill = '#ffffff';
+        let textColor = '#334155';
+        let filterGlow = '';
+
+        if (isCurrent) {
+          stroke = '#2563eb';
+          strokeW = '2.5';
+          fill = '#eff6ff';
+          textColor = '#1d4ed8';
+          filterGlow = 'filter="drop-shadow(0 0 6px rgba(59, 130, 246, 0.45))"';
+        } else if (isPruned) {
+          stroke = '#9333ea';
+          fill = '#faf5ff';
+          textColor = '#7e22ce';
+        } else if (isRepeated) {
+          stroke = '#d97706';
+          fill = '#fffbeb';
+          textColor = '#b45309';
+        } else if (isBase) {
+          stroke = '#16a34a';
+          fill = '#f0fdf4';
+          textColor = '#15803d';
+        } else if (isVisited) {
+          stroke = '#10b981';
+          fill = '#ffffff';
+          textColor = '#047857';
+        }
+
+        let badgeHtml = '';
+        if (n.tag) {
+          const tagBg = isPruned ? '#9333ea' : isRepeated ? '#d97706' : '#10b981';
+          const badgeW = Math.min(nodeW - 2, Math.max(26, n.tag.length * 6.5 + 4));
+          badgeHtml = `
+            <g transform="translate(0, ${nodeH / 2 + 7})">
+              <rect x="${-badgeW / 2}" y="-5.5" width="${badgeW}" height="11" rx="3" fill="${tagBg}" />
+              <text x="0" y="2.5" text-anchor="middle" fill="#ffffff" font-size="${tagFontSize}" font-weight="700" font-family="JetBrains Mono, monospace">${n.tag}</text>
+            </g>
+          `;
+        }
+
+        // 🐸 青蛙悬浮在节点正上方，绝不遮挡节点文本
+        let animalHtml = '';
+        if (isCurrent) {
+          animalHtml = `
+            <g transform="translate(0, ${-nodeH / 2 - 5})">
+              <text x="0" y="0" text-anchor="middle" font-size="${Math.max(12, fontSize + 3)}" class="animal-frog select-none">🐸</text>
+            </g>
+          `;
+        }
+
+        nodes.push(`
+          <g transform="translate(${n.x}, ${n.y})" ${filterGlow}>
+            <rect x="${-nodeW / 2}" y="${-nodeH / 2}" width="${nodeW}" height="${nodeH}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
+            <text x="0" y="3.5" text-anchor="middle" fill="${textColor}" font-size="${fontSize}" font-weight="700" font-family="JetBrains Mono, monospace">${n.val}</text>
+            ${badgeHtml}
+            ${animalHtml}
+          </g>
+        `);
+      }
+
+      draw(rootPos);
+
+      container.innerHTML = `
+        <div id="tree-scroll-box" class="w-full h-full flex items-center justify-start overflow-auto p-1 scroll-smooth">
+          <svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="min-width: ${totalW}px; min-height: ${totalH}px; display: block; margin: auto;">
+            ${lines.join('')}
+            ${nodes.join('')}
+          </svg>
+        </div>
+      `;
+
+      // 自动平滑滚动对齐当前活动节点
+      if (activeX !== null) {
+        const scrollBox = document.getElementById('tree-scroll-box');
+        if (scrollBox && scrollBox.scrollWidth > scrollBox.clientWidth) {
+          const targetScrollLeft = activeX - scrollBox.clientWidth / 2;
+          scrollBox.scrollTo({ left: Math.max(0, targetScrollLeft), behavior: 'smooth' });
+        }
+      }
+    }
+
+    // 渲染当前步骤
+    function renderStep(index) {
+      if (index < 0 || index >= steps.length) return;
+      const step = steps[index];
+      const isReverse = currentDirection === 'reverse';
+
+      // 1. 步数与滑块更新
+      document.getElementById('step-cur').textContent = index + 1;
+      document.getElementById('step-total').textContent = steps.length;
+      const slider = document.getElementById('slider-progress');
+      if (slider) {
+        slider.max = steps.length - 1;
+        slider.value = index;
+      }
+
+      // 图例同步
+      const legendRefEl = document.getElementById('legend-ref');
+      if (legendRefEl) {
+        legendRefEl.innerHTML = isReverse ? '🐱 参考下方/右方' : '🐱 参考上方/左方';
+      }
+
+      // 2. 渲染二维网格 (虚拟地图 / 2D DP 表)
+      const gridContainer = document.getElementById('grid-container');
+      if (gridContainer) {
+        gridContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+        gridContainer.innerHTML = '';
+
+        for (let r = 0; r < m; r++) {
+          for (let c = 0; c < n; c++) {
+            const cellVal = step.grid[r][c];
+            const isCur = step.i === r && step.j === c;
+            const isTop = step.topI === r && step.topJ === c;
+            const isLeft = step.leftI === r && step.leftJ === c;
+            const isFinish = isReverse ? (r === 0 && c === 0) : (r === m - 1 && c === n - 1);
+
+            const cellEl = document.createElement('div');
+            cellEl.className = 'w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border';
+
+            if (isCur) {
+              cellEl.className += ' bg-blue-100 border-blue-500 text-blue-800 font-bold shadow-md scale-105 z-10';
+              cellEl.innerHTML = `
+                <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-frog">🐸</span></span>
+                <span class="text-[9px] text-blue-500 font-bold absolute top-0.5 left-1">${r},${c}</span>
+                <span class="text-sm font-extrabold mt-2">${cellVal !== null ? cellVal : ''}</span>
+              `;
+            } else if (isTop) {
+              cellEl.className += ' bg-purple-100 border-purple-400 text-purple-800 font-bold shadow-sm';
+              cellEl.innerHTML = `
+                <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
+                <span class="text-[9px] text-purple-500 font-bold absolute top-0.5 left-1">${r},${c}</span>
+                <span class="text-sm font-extrabold mt-2">${cellVal !== null ? cellVal : ''}</span>
+              `;
+            } else if (isLeft) {
+              cellEl.className += ' bg-amber-100 border-amber-400 text-amber-800 font-bold shadow-sm';
+              cellEl.innerHTML = `
+                <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
+                <span class="text-[9px] text-amber-600 font-bold absolute top-0.5 left-1">${r},${c}</span>
+                <span class="text-sm font-extrabold mt-2">${cellVal !== null ? cellVal : ''}</span>
+              `;
+            } else if (cellVal !== null) {
+              cellEl.className += ' bg-emerald-50 border-emerald-300 text-emerald-700 font-bold';
+              cellEl.innerHTML = `
+                <span class="text-[9px] text-emerald-500 absolute top-0.5 left-1">${r},${c}</span>
+                <span class="text-sm font-bold mt-2">${cellVal}</span>
+              `;
+            } else {
+              cellEl.className += ' bg-slate-50 border-slate-200 text-slate-400';
+              cellEl.innerHTML = `
+                <span class="text-[9px] text-slate-300 absolute top-0.5 left-1">${r},${c}</span>
+                ${isFinish ? '<span class="text-xs font-bold text-red-400 mt-2">🏁</span>' : '<span class="text-slate-300 mt-2">-</span>'}
+              `;
+            }
+
+            gridContainer.appendChild(cellEl);
+          }
+        }
+      }
+
+      // 3. 渲染状态区 (Card 2: 阶段 1/2 渲染递归树 SVG，阶段 3 渲染求和卡片，阶段 4 渲染 1D memo)
+      const memoContainer = document.getElementById('memo-slots-container');
+      if (memoContainer) {
+        memoContainer.innerHTML = '';
+
+        if (currentStage === 'stage-4' && step.memo) {
+          for (let j = 0; j < n; j++) {
+            const val = step.memo[j];
+            const isCurCol = step.j === j;
+            const isTopCol = step.topJ === j;
+            const isLeftCol = step.leftJ === j;
+
+            const slotBox = document.createElement('div');
+            slotBox.className = 'flex flex-col items-center gap-1';
+
+            let slotClass = 'w-12 h-12 md:w-14 md:h-14 rounded-xl border flex items-center justify-center font-mono-code text-base font-extrabold transition-all relative';
+            let iconBadge = '';
+
+            if (isCurCol && (step.type === 'boundary' || step.type === 'update' || step.type === 'enter-cell')) {
+              slotClass += ' bg-blue-100 border-blue-500 text-blue-800 shadow-md scale-105 animate-active-slot';
+              iconBadge = '<span class="absolute -top-3 -right-1 text-base"><span class="animal-frog">🐸</span></span>';
+            } else if (isTopCol && (step.type === 'read-down' || step.type === 'read-right' || step.type === 'update')) {
+              slotClass += ' bg-purple-100 border-purple-400 text-purple-800 shadow-sm';
+              iconBadge = '<span class="absolute -top-3 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
+            } else if (isLeftCol && (step.type === 'read-right' || step.type === 'update')) {
+              slotClass += ' bg-amber-100 border-amber-400 text-amber-800 shadow-sm';
+              iconBadge = '<span class="absolute -top-3 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
+            } else if (val > 0) {
+              slotClass += ' bg-emerald-50 border-emerald-300 text-emerald-700';
+            } else {
+              slotClass += ' bg-slate-50 border-slate-200 text-slate-400';
+            }
+
+            slotBox.innerHTML = `
+              <span class="text-[10px] font-mono-code text-slate-400">j=${j}</span>
+              <div class="${slotClass}">
+                ${iconBadge}
+                <span>${val}</span>
+              </div>
+            `;
+            memoContainer.appendChild(slotBox);
+          }
+        } else if (currentStage === 'stage-3') {
+          // 二维 DP 状态转移看板
+          const topTxt = step.topVal !== undefined ? step.topVal : '-';
+          const leftTxt = step.leftVal !== undefined ? step.leftVal : '-';
+          const sumTxt = step.sumVal !== undefined ? step.sumVal : '-';
+          const topLabel = isReverse ? '下方' : '上方';
+          const leftLabel = isReverse ? '右方' : '左方';
+
+          memoContainer.innerHTML = `
+            <div class="flex items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 shadow-sm text-xs font-mono-code">
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200">
+                <span class="animal-cat">🐱</span> ${topLabel}: ${topTxt}
+              </div>
+              <span class="text-slate-400 font-bold text-base">+</span>
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200">
+                <span class="animal-cat">🐱</span> ${leftLabel}: ${leftTxt}
+              </div>
+              <span class="text-slate-400 font-bold text-base">=</span>
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-extrabold border border-blue-200">
+                <span class="animal-frog">🐸</span> 当前单元: ${sumTxt}
+              </div>
+            </div>
+          `;
+        } else if (currentStage === 'stage-1' || currentStage === 'stage-2') {
+          // 渲染递归树 SVG
+          renderRecursionTree(memoContainer, step.treeRoot, step.activeNodeId, currentStage === 'stage-2');
+        }
+      }
+
+      // 4. 代码高亮并自动调整代码框的可视区域 (智能视口平滑联动)
+      document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+      const activeLineEl = document.querySelector(`.code-line[data-line="${step.line}"]`);
+      if (activeLineEl) {
+        activeLineEl.classList.add('active-line');
+
+        const codeBox = document.getElementById('code-container-box');
+        if (codeBox) {
+          if (step.line <= 6) {
+            codeBox.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            const lineOffsetTop = activeLineEl.offsetTop;
+            const lineOffsetHeight = activeLineEl.offsetHeight;
+            const boxHeight = codeBox.clientHeight;
+            const currentScroll = codeBox.scrollTop;
+
+            if (lineOffsetTop < currentScroll + 32) {
+              codeBox.scrollTo({ top: Math.max(0, lineOffsetTop - 40), behavior: 'smooth' });
+            } else if (lineOffsetTop + lineOffsetHeight > currentScroll + boxHeight - 32) {
+              codeBox.scrollTo({ top: lineOffsetTop + lineOffsetHeight - boxHeight + 40, behavior: 'smooth' });
+            }
+          }
+        }
+      }
+
+      // 5. 渲染执行日志
+      const logContainer = document.getElementById('log-container');
+      if (logContainer) {
+        logContainer.innerHTML = '';
+        for (let k = 0; k <= index; k++) {
+          const logStep = steps[k];
+          const isLatest = k === index;
+          const lineEl = document.createElement('div');
+          lineEl.className = isLatest 
+            ? 'text-blue-700 font-bold bg-blue-50/80 px-2 py-1 rounded border-l-2 border-blue-500' 
+            : 'text-slate-600 px-2 py-0.5';
+          lineEl.textContent = logStep.log;
+          logContainer.appendChild(lineEl);
+        }
+        logContainer.scrollTop = logContainer.scrollHeight;
+        document.getElementById('log-count').textContent = `${index + 1} / ${steps.length} 记录`;
+      }
+    }
+
+    // 控制器交互逻辑与步骤装载
+    function loadAndInit() {
+      const inputM = document.getElementById('input-m');
+      const inputN = document.getElementById('input-n');
+      m = parseInt(inputM?.value || '3');
+      n = parseInt(inputN?.value || '4');
+      if (isNaN(m) || m < 1) m = 3;
+      if (isNaN(n) || n < 1) n = 4;
+      if (m > 8) m = 8;
+      if (n > 8) n = 8;
+
+      const dirConfigs = STAGE_CONFIGS[currentDirection] || STAGE_CONFIGS.forward;
+      const stageConfig = dirConfigs[currentStage];
+      
+      // 更新标题、复杂度徽章、卡片 2 标题
+      const titleEl = document.getElementById('header-algo-title');
+      if (titleEl) {
+        titleEl.textContent = stageConfig.name;
+        titleEl.title = stageConfig.desc;
+      }
+      const descEl = document.getElementById('header-algo-desc');
+      if (descEl) descEl.textContent = stageConfig.desc;
+      const complexityBadge = document.getElementById('header-complexity-badge');
+      if (complexityBadge) {
+        complexityBadge.textContent = stageConfig.timeBadge;
+        complexityBadge.className = `px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${stageConfig.badgeBg}`;
+      }
+
+      document.getElementById('card2-title').innerHTML = `<i class="fa-solid fa-bars-staggered text-slate-500"></i> ${stageConfig.card2Title}`;
+      document.getElementById('card2-desc').textContent = stageConfig.card2Desc;
+
+      const variantBar = document.getElementById('code-variant-bar');
+      if (currentStage === 'stage-4' && stageConfig.variants) {
+        if (variantBar) variantBar.classList.remove('hidden');
+        const variantConfig = stageConfig.variants[currentStageVariant] || stageConfig.variants['if'];
+        document.getElementById('code-file-title').textContent = variantConfig.title;
+        document.getElementById('code-content').innerHTML = variantConfig.html;
+      } else {
+        if (variantBar) variantBar.classList.add('hidden');
+        document.getElementById('code-file-title').textContent = stageConfig.codeTitle;
+        document.getElementById('code-content').innerHTML = stageConfig.codeHtml;
+      }
+
+      document.getElementById('badge-memo-len').textContent = currentStage === 'stage-4' ? `长度: ${n}` : `${m} × ${n}`;
+
+      // 重置代码框滚动条至顶部
+      const codeBox = document.getElementById('code-container-box');
+      if (codeBox) codeBox.scrollTop = 0;
+
+      // 生成对应演化阶段的步骤 (根据正序 / 倒序 方向切换 与 阶段 4 变体选择)
+      if (currentDirection === 'reverse') {
+        if (currentStage === 'stage-4') {
+          steps = currentStageVariant === 'for' ? generateReverseStage4ForSteps(m, n) : generateReverseStage4Steps(m, n);
+        } else if (currentStage === 'stage-3') {
+          steps = generateReverseStage3Steps(m, n);
+        } else if (currentStage === 'stage-2') {
+          steps = generateReverseStage1or2Steps(m, n, true);
+        } else {
+          steps = generateReverseStage1or2Steps(m, n, false);
+        }
+      } else {
+        if (currentStage === 'stage-4') {
+          steps = currentStageVariant === 'for' ? generateForwardStage4ForSteps(m, n) : generateForwardStage4Steps(m, n);
+        } else if (currentStage === 'stage-3') {
+          steps = generateForwardStage3Steps(m, n);
+        } else if (currentStage === 'stage-2') {
+          steps = generateForwardStage1or2Steps(m, n, true);
+        } else {
+          steps = generateForwardStage1or2Steps(m, n, false);
+        }
+      }
+
+      currentStepIndex = 0;
+      pausePlayback();
+      renderStep(0);
+    }
+
+    function stepForward() {
+      if (currentStepIndex < steps.length - 1) {
+        currentStepIndex++;
+        renderStep(currentStepIndex);
+      } else {
+        pausePlayback();
+      }
+    }
+
+    function stepBackward() {
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        renderStep(currentStepIndex);
+      }
+    }
+
+    function startPlayback() {
+      isPlaying = true;
+      const playIcon = document.getElementById('play-icon');
+      if (playIcon) playIcon.className = 'fa-solid fa-pause';
+
+      if (playTimer) clearInterval(playTimer);
+      playTimer = setInterval(() => {
+        if (currentStepIndex < steps.length - 1) {
+          stepForward();
+        } else {
+          pausePlayback();
+        }
+      }, playSpeed);
+    }
+
+    function pausePlayback() {
+      isPlaying = false;
+      const playIcon = document.getElementById('play-icon');
+      if (playIcon) playIcon.className = 'fa-solid fa-play';
+      if (playTimer) {
+        clearInterval(playTimer);
+        playTimer = null;
+      }
+    }
+
+    function togglePlayPause() {
+      if (isPlaying) {
+        pausePlayback();
+      } else {
+        if (currentStepIndex >= steps.length - 1) {
+          currentStepIndex = 0;
+          renderStep(0);
+        }
+        startPlayback();
+      }
+    }
+
+    // 初始化事件绑定
+    function initLiteApp() {
+      // 1. 演化阶段选项卡点击切换
+      const stageButtons = document.querySelectorAll('#stage-tabs-container .stage-tab-btn');
+      stageButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          stageButtons.forEach(b => {
+            b.className = 'stage-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent';
+            const s1 = b.querySelector('span:first-child');
+            if (s1) s1.className = 'w-4 h-4 rounded-full bg-slate-200 text-slate-600 text-[10px] flex items-center justify-center font-bold';
+          });
+          btn.className = 'stage-tab-btn active px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm shadow-amber-500/20 border border-amber-500';
+          const s2 = btn.querySelector('span:first-child');
+          if (s2) s2.className = 'w-4 h-4 rounded-full bg-white/20 text-white text-[10px] flex items-center justify-center font-bold';
+
+          currentStage = btn.getAttribute('data-stage') || 'stage-4';
+          loadAndInit();
+        });
+      });
+
+      // 2. 顺推正序 / 逆推倒序 切换
+      const dirButtons = document.querySelectorAll('#dir-tabs-container .dir-tab-btn');
+      dirButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          dirButtons.forEach(b => {
+            b.className = 'dir-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent';
+          });
+          btn.className = 'dir-tab-btn active px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-600 text-white shadow-sm';
+          currentDirection = btn.getAttribute('data-dir') || 'forward';
+          loadAndInit();
+        });
+      });
+
+      // 3. 阶段 4 变体切换 (内嵌 if / 外层 for)
+      const variantButtons = document.querySelectorAll('#code-variant-bar .variant-btn');
+      variantButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          variantButtons.forEach(b => {
+            b.className = 'variant-btn px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800';
+          });
+          btn.className = 'variant-btn active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs';
+          currentStageVariant = btn.getAttribute('data-variant') || 'if';
+          loadAndInit();
+        });
+      });
+
+      // 3. 基础控制事件
+      document.getElementById('btn-generate')?.addEventListener('click', loadAndInit);
+      document.getElementById('btn-reset')?.addEventListener('click', () => {
+        pausePlayback();
+        currentStepIndex = 0;
+        renderStep(0);
+      });
+
+      document.getElementById('btn-play-pause')?.addEventListener('click', togglePlayPause);
+      document.getElementById('btn-step-next')?.addEventListener('click', () => { pausePlayback(); stepForward(); });
+      document.getElementById('btn-step-prev')?.addEventListener('click', () => { pausePlayback(); stepBackward(); });
+
+      const slider = document.getElementById('slider-progress');
+      slider?.addEventListener('input', (e) => {
+        pausePlayback();
+        currentStepIndex = parseInt(e.target.value);
+        renderStep(currentStepIndex);
+      });
+
+      // 4. 切换到完整精讲版
+      document.getElementById('btn-switch-full')?.addEventListener('click', () => {
+        if (window.parent && window.parent.__toggleUniquePathsVersion) {
+          window.parent.__toggleUniquePathsVersion('full');
+        } else {
+          window.location.href = 'unique-paths.html';
+        }
+      });
+
+      loadAndInit();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initLiteApp);
+    } else {
+      initLiteApp();
+    }
+  </script>
+</body>
+</html>

@@ -79,6 +79,9 @@ export class AlgorithmManager {
 
     // 记录到最近访问历史
     addRecentAlgorithm(algorithmId);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('algo:recent-updated', { detail: { algorithmId } }));
+    }
 
     // 同步更新全局导航栏与算法目录状态
     algoNavigation.updateActiveAlgorithm(algorithmId);
@@ -108,6 +111,10 @@ export class AlgorithmManager {
 
     // 显示主布局（侧边栏 + 内容区）
     this.showMainLayout();
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('algo:selector-shown'));
+    }
   }
 
   /**
