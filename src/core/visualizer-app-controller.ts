@@ -525,17 +525,18 @@ export class VisualizerAppController {
       
       const btn = document.createElement('button');
       btn.dataset.stage = stageKey;
+      btn.title = `${stageSpec.name || stageKey} ${timeBadge}`;
       const themeClass = stageKey === 'stage-4' 
         ? (isActive ? 'active bg-amber-500 text-white shadow-sm shadow-amber-500/20 border-amber-500 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold')
         : stageKey === 'stage-3'
         ? (isActive ? 'active bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 border-emerald-600 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold')
         : (isActive ? 'active bg-blue-600 text-white shadow-sm shadow-blue-500/20 border-blue-600 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold');
 
-      btn.className = `stage-tab-btn px-2.5 py-1 sm:px-3.5 sm:py-2 rounded-lg sm:rounded-xl text-xs transition-all flex items-center justify-center sm:justify-start gap-1 sm:gap-2 border ${themeClass}`;
+      btn.className = `stage-tab-btn px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs transition-all flex items-center justify-center gap-1 border ${themeClass}`;
       btn.innerHTML = `
-        <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 sm:bg-slate-100 text-slate-600'} text-[10px] sm:text-[11px] flex items-center justify-center font-bold">${stageNum}</span>
-        <span class="truncate">${shortName}</span>
-        ${timeBadge ? `<span class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200/70 sm:bg-slate-100 text-slate-500'} font-mono hidden lg:inline">${timeBadge}</span>` : ''}
+        <span class="w-4 h-4 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'} text-[10px] flex items-center justify-center font-bold flex-shrink-0">${stageNum}</span>
+        <span class="truncate max-w-[65px] sm:max-w-[85px] lg:max-w-none">${shortName}</span>
+        ${timeBadge ? `<span class="text-[9px] px-1 py-0.2 rounded ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200/70 text-slate-500'} font-mono hidden 2xl:inline flex-shrink-0">${timeBadge}</span>` : ''}
       `;
 
       btn.addEventListener('click', () => {
@@ -561,13 +562,15 @@ export class VisualizerAppController {
       const isActive = dirKey === this.currentDirection;
       const btn = document.createElement('button');
       btn.dataset.dir = dirKey;
+      btn.title = dirSpec.label || dirKey;
       const iconClass = dirKey === 'forward' ? 'fa-arrow-down-right-across' : 'fa-arrow-up-left-across';
-      btn.className = `dir-tab-btn px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 sm:gap-1.5 border ${
+      const label = dirSpec.label ? dirSpec.label.replace(/\(.*\)/, '') : dirKey;
+      btn.className = `dir-tab-btn px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-xs transition-all flex items-center gap-1 border ${
         isActive ? 'active bg-blue-600 text-white shadow-sm font-bold border-blue-600' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold'
       }`;
       btn.innerHTML = `
-        <i class="fa-solid ${iconClass} text-[9px] sm:text-[10px]"></i>
-        <span>${dirSpec.label || dirKey}</span>
+        <i class="fa-solid ${iconClass} text-[9px]"></i>
+        <span class="truncate">${label}</span>
       `;
       btn.addEventListener('click', () => {
         this.currentDirection = dirKey as 'forward' | 'reverse';

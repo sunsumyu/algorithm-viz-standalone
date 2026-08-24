@@ -31,17 +31,17 @@
   <div class="max-w-7xl w-full mx-auto flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden">
 
     <!-- 1. 顶栏标题与演化阶段选项卡卡片 (Header & Control Card) -->
-    <header class="bg-white rounded-2xl px-3 py-1.5 border border-slate-200 shadow-xs flex items-center justify-between gap-2 flex-shrink-0 flex-nowrap overflow-x-auto">
+    <header class="bg-white rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 border border-slate-200 shadow-xs flex items-center justify-between gap-1.5 sm:gap-2 flex-shrink-0">
       
       <!-- 1. 左侧：品牌与题号信息 (精简紧凑) -->
-      <div class="flex items-center gap-2 flex-shrink-0 min-w-0">
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-0">
         <button id="btn-open-selector-quick" title="切换算法" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 flex items-center justify-center text-xs sm:text-sm transition flex-shrink-0 shadow-xs">
           <i class="fa-solid fa-table-cells-large"></i>
         </button>
-        <div class="flex items-center gap-1.5 min-w-0">
+        <div class="flex items-center gap-1 min-w-0">
           <h1 id="header-algo-main-title" class="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight flex-shrink-0">62. 不同路径</h1>
-          <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden lg:inline-block max-w-[140px]">阶段 1: 朴素递归</span>
-          <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold font-mono flex-shrink-0 hidden sm:inline-block">O(2ⁿ)</span>
+          <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden 2xl:inline-block max-w-[140px]">阶段 1: 朴素递归</span>
+          <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold font-mono flex-shrink-0 hidden xl:inline-block">O(2ⁿ)</span>
         </div>
       </div>
 
@@ -53,25 +53,25 @@
 
       <!-- 4. 右侧：网格尺寸与操作工具组 -->
       <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 justify-end">
-        <div class="flex items-center gap-1 bg-slate-50 px-1.5 sm:px-2 py-1 rounded-xl border border-slate-200 text-xs font-mono">
-          <span class="text-slate-500 font-semibold">m:</span>
-          <input type="number" id="input-m" min="1" max="8" value="3" class="w-7 sm:w-8 h-6 bg-white border border-slate-300 rounded-md text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
-          <span class="text-slate-400 font-bold">×</span>
-          <span class="text-slate-500 font-semibold">n:</span>
-          <input type="number" id="input-n" min="1" max="8" value="4" class="w-7 sm:w-8 h-6 bg-white border border-slate-300 rounded-md text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
+        <div class="flex items-center gap-0.5 sm:gap-1 bg-slate-50 px-1.5 py-0.5 rounded-xl border border-slate-200 text-xs font-mono">
+          <span class="text-slate-500 font-semibold text-[11px]">m:</span>
+          <input type="number" id="input-m" min="1" max="8" value="3" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
+          <span class="text-slate-400 font-bold text-[10px]">×</span>
+          <span class="text-slate-500 font-semibold text-[11px]">n:</span>
+          <input type="number" id="input-n" min="1" max="8" value="4" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
         </div>
 
-        <button id="btn-generate" class="px-2 sm:px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center gap-1">
-          <i class="fa-solid fa-play text-[9px]"></i> 生成
+        <button id="btn-generate" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1">
+          <i class="fa-solid fa-play text-[9px]"></i> <span class="hidden sm:inline">生成</span>
         </button>
 
-        <button id="btn-reset" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200">
+        <button id="btn-reset" class="px-1.5 sm:px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200">
           重置
         </button>
 
-        <button id="btn-switch-full" title="切换到完整精讲版" class="px-2 sm:px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-lg transition border border-amber-200 flex items-center gap-1">
+        <button id="btn-switch-full" title="切换到完整精讲版" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-lg transition border border-amber-200 flex items-center gap-1">
           <i class="fa-solid fa-book-open text-[10px] text-amber-600"></i>
-          <span class="hidden sm:inline">精讲版</span>
+          <span class="hidden md:inline">精讲版</span>
         </button>
       </div>
     </header>
