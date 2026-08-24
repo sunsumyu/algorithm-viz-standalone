@@ -11,6 +11,7 @@ export interface VisualizerState {
   m: number;
   n: number;
   step: number;
+  theme?: string;
 }
 
 export class VisualizerStateRouter {
@@ -22,6 +23,7 @@ export class VisualizerStateRouter {
     if (state.stage) params.set('stage', state.stage);
     if (state.dir) params.set('dir', state.dir);
     if (state.variant) params.set('variant', state.variant);
+    if (state.theme) params.set('theme', state.theme);
     if (state.m !== undefined && state.m > 0) params.set('m', String(state.m));
     if (state.n !== undefined && state.n > 0) params.set('n', String(state.n));
     if (state.step !== undefined && state.step >= 0) params.set('step', String(state.step));
@@ -48,6 +50,9 @@ export class VisualizerStateRouter {
 
       const variant = params.get('variant');
       if (variant) result.variant = variant;
+
+      const theme = params.get('theme');
+      if (theme) result.theme = theme;
 
       const m = parseInt(params.get('m') || '');
       if (!isNaN(m) && m > 0) result.m = m;

@@ -105,49 +105,48 @@ export class GridVisualAdapter {
         const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
 
         const cellEl = document.createElement('div');
-        cellEl.className = 'w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border';
 
         if (isObstacle) {
-          cellEl.className += ' bg-slate-200 border-slate-400 text-slate-500 opacity-80';
+          cellEl.className = 'viz-cell is-obstacle w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border';
           cellEl.innerHTML = `
-            <span class="text-[9px] text-slate-500 font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="text-base font-bold mt-2 z-10">🚧</span>
           `;
         } else if (isCur) {
-          cellEl.className += ' bg-blue-100 border-2 border-blue-500 text-blue-800 font-bold shadow-md scale-105 z-20';
+          cellEl.className = 'viz-cell is-cur w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
           cellEl.innerHTML = `
             <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
               ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
             </div>
-            <span class="text-[9px] text-blue-600 font-bold absolute top-0.5 left-1">${r},${c}</span>
-            <span class="text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isTop) {
-          cellEl.className += ' bg-purple-100 border-2 border-purple-400 text-purple-800 font-bold shadow-sm z-10';
+          cellEl.className = 'viz-cell is-top w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
           cellEl.innerHTML = `
             <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
-            <span class="text-[9px] text-purple-500 font-bold absolute top-0.5 left-1">${r},${c}</span>
-            <span class="text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isLeft) {
-          cellEl.className += ' bg-amber-100 border-2 border-amber-400 text-amber-800 font-bold shadow-sm z-10';
+          cellEl.className = 'viz-cell is-left w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
           cellEl.innerHTML = `
             <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
-            <span class="text-[9px] text-amber-600 font-bold absolute top-0.5 left-1">${r},${c}</span>
-            <span class="text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (cellVal !== null) {
-          cellEl.className += ' bg-emerald-50 border-emerald-300 text-emerald-700 font-bold';
+          cellEl.className = 'viz-cell is-done w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
           cellEl.innerHTML = `
-            <span class="text-[9px] text-emerald-500 absolute top-0.5 left-1">${r},${c}</span>
-            <span class="text-sm font-bold mt-2 z-10">${cellVal}</span>
+            <span class="cell-coord text-[9px] absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-bold mt-2 z-10">${cellVal}</span>
           `;
         } else {
-          cellEl.className += ' bg-white border-slate-200 text-slate-400 hover:border-slate-300';
+          cellEl.className = 'viz-cell is-empty w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border';
           cellEl.innerHTML = `
-            <span class="text-[9px] text-slate-300 absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] absolute top-0.5 left-1">${r},${c}</span>
             ${isFinish ? `<span class="text-xs absolute bottom-1 right-1 opacity-70">🏁</span>` : ''}
-            <span class="text-sm font-medium mt-2">-</span>
+            <span class="cell-val text-sm font-medium mt-2">-</span>
           `;
         }
         container.appendChild(cellEl);
@@ -164,7 +163,7 @@ export class GridVisualAdapter {
     for (let j = 0; j < n; j++) {
       const slot = document.createElement('div');
       slot.id = `memo-slot-${j}`;
-      slot.className = 'w-16 sm:w-20 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200';
+      slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200';
       slot.innerHTML = `
         <span class="text-[10px] font-mono-code font-bold text-slate-400">${labelPrefix}[${j}]</span>
         <span class="text-base sm:text-lg font-mono-code font-bold text-slate-800 slot-val">0</span>
@@ -189,26 +188,26 @@ export class GridVisualAdapter {
       const slotBox = document.createElement('div');
       slotBox.className = 'flex flex-col items-center gap-1';
 
-      let slotClass = 'w-10 h-10 md:w-11 md:h-11 rounded-lg flex items-center justify-center font-mono-code text-xs font-bold border transition-all relative';
+      let slotClass = 'viz-memo-slot w-10 h-10 md:w-11 md:h-11 rounded-lg flex items-center justify-center font-mono-code text-xs font-bold border transition-all relative';
       let iconBadge = '';
 
       if (isCur) {
-        slotClass += ' bg-amber-100 border-2 border-amber-500 text-amber-900 shadow-md scale-105 z-10';
+        slotClass += ' is-updated font-extrabold';
         iconBadge = '<span class="absolute -top-3 -right-1 text-base"><span class="animal-frog">🐸</span></span>';
       } else if (isRef) {
-        slotClass += ' bg-amber-50 border-2 border-dashed border-amber-400 text-amber-800';
+        slotClass += ' is-ref-left font-bold';
         iconBadge = '<span class="absolute -top-3 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
       } else if (val > 0) {
-        slotClass += ' bg-emerald-50 border-emerald-300 text-emerald-700';
+        slotClass += ' is-done font-bold';
       } else {
-        slotClass += ' bg-slate-50 border-slate-200 text-slate-400';
+        slotClass += ' is-empty';
       }
 
       slotBox.innerHTML = `
         <span class="text-[10px] font-mono-code text-slate-400">j=${j}</span>
         <div class="${slotClass}">
           ${iconBadge}
-          <span>${val}</span>
+          <span class="slot-val">${val}</span>
         </div>
       `;
       container.appendChild(slotBox);
@@ -234,27 +233,27 @@ export class GridVisualAdapter {
       const isUpdated = step.memoUpdatedIndex === j;
       const isRefLeft = step.memoRefLeftIndex === j;
 
-      slot.className = 'w-16 sm:w-20 h-16 rounded-xl border-2 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200';
+      slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200';
       if (isUpdated) {
-        slot.className += ' bg-amber-50 border-amber-500 shadow-md scale-105 z-10';
+        slot.className += ' is-updated';
         if (badgeEl) {
           badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-500 text-white font-bold';
           badgeEl.textContent = '当前写入 (覆盖)';
         }
       } else if (isRefLeft) {
-        slot.className += ' bg-amber-50/50 border-dashed border-amber-400';
+        slot.className += ' is-ref-left';
         if (badgeEl) {
           badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-100 text-amber-800 font-semibold';
           badgeEl.textContent = '左方新值 (累加)';
         }
       } else if (val > 0) {
-        slot.className += ' bg-slate-50 border-slate-200';
+        slot.className += ' is-done';
         if (badgeEl) {
           badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-emerald-100 text-emerald-700';
           badgeEl.textContent = '上方旧值';
         }
       } else {
-        slot.className += ' bg-white border-slate-200';
+        slot.className += ' is-empty';
         if (badgeEl) {
           badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-slate-100 text-slate-500';
           badgeEl.textContent = '未就绪';

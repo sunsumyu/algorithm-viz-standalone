@@ -1,15 +1,46 @@
 /**
- * 可视化演示器统一主题样式 (Visualizer Theme)
- * 合并 Lite 与 Full 两种布局的共享 CSS，包括：
- * - 字体声明 (Outfit / JetBrains Mono / Inter / Fira Code)
- * - 滚动条主题
- * - 代码高亮行
- * - 动物角色动效 (青蛙、猫咪)
- * - 探险家小人跳跃与欢呼动画
- * - 河流波纹动画
- * - 网格单元格弹出与脉冲动画
- * - 数字输入框箭头隐藏
+ * 可视化演示器统一主题样式 (Visualizer Theme System)
+ * 包含：
+ * 1. CSS 自定义属性（CSS Variables）与 4 套设计令牌声明
+ * 2. 语义化单元格样式体系 (.viz-cell, .viz-memo-slot 等)
+ * 3. 字体声明、全局滚动条
+ * 4. 代码高亮行自适应主题
+ * 5. 动物角色动效 (青蛙、猫咪) 与探险家小人动画
  */
+
+/* ===== 全局 CSS 变量与默认 Light 主题 ===== */
+:root {
+  --viz-app-bg: #f8fafc;
+  --viz-card-bg: #ffffff;
+  --viz-card-border: #e2e8f0;
+  --viz-card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  --viz-text-main: #0f172a;
+  --viz-text-muted: #64748b;
+  --viz-primary: #3b82f6;
+  --viz-primary-light: #eff6ff;
+  --viz-cell-bg: #ffffff;
+  --viz-cell-border: #e2e8f0;
+  --viz-cell-text: #94a3b8;
+  --viz-cell-active-bg: #dbeafe;
+  --viz-cell-active-border: #3b82f6;
+  --viz-cell-active-text: #1e40af;
+  --viz-cell-active-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.25);
+  --viz-cell-top-bg: #f3e8ff;
+  --viz-cell-top-border: #c084fc;
+  --viz-cell-top-text: #6b21a8;
+  --viz-cell-left-bg: #fef3c7;
+  --viz-cell-left-border: #fbbf24;
+  --viz-cell-left-text: #92400e;
+  --viz-cell-done-bg: #ecfdf5;
+  --viz-cell-done-border: #6ee7b7;
+  --viz-cell-done-text: #047857;
+  --viz-cell-obstacle-bg: #e2e8f0;
+  --viz-cell-obstacle-border: #94a3b8;
+  --viz-code-bg: #0f172a;
+  --viz-code-text: #f8fafc;
+  --viz-code-active-line: rgba(59, 130, 246, 0.25);
+  --viz-code-active-border: #3b82f6;
+}
 
 /* ===== 滚动条主题 ===== */
 ::-webkit-scrollbar {
@@ -28,7 +59,93 @@
   background: #94a3b8;
 }
 
-/* ===== 代码高亮行 (Lite 风格 - 蓝色) ===== */
+/* ===== 语义化单元格样式体系 (Semantic Grid Cells) ===== */
+.viz-cell {
+  background-color: var(--viz-cell-bg, #ffffff);
+  border-color: var(--viz-cell-border, #e2e8f0);
+  color: var(--viz-cell-text, #94a3b8);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.viz-cell .cell-val {
+  color: var(--viz-text-main, #0f172a);
+}
+
+.viz-cell.is-cur {
+  background-color: var(--viz-cell-active-bg, #dbeafe) !important;
+  border-color: var(--viz-cell-active-border, #3b82f6) !important;
+  color: var(--viz-cell-active-text, #1e40af) !important;
+  box-shadow: var(--viz-cell-active-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.3)) !important;
+  transform: scale(1.06);
+  z-index: 20;
+}
+
+.viz-cell.is-cur .cell-indicator {
+  background-color: var(--viz-cell-active-border, #3b82f6) !important;
+  width: 2rem !important;
+}
+
+.viz-cell.is-top {
+  background-color: var(--viz-cell-top-bg, #f3e8ff) !important;
+  border-color: var(--viz-cell-top-border, #c084fc) !important;
+  color: var(--viz-cell-top-text, #6b21a8) !important;
+  z-index: 10;
+}
+
+.viz-cell.is-top .cell-indicator {
+  background-color: var(--viz-cell-top-border, #c084fc) !important;
+}
+
+.viz-cell.is-left {
+  background-color: var(--viz-cell-left-bg, #fef3c7) !important;
+  border-color: var(--viz-cell-left-border, #fbbf24) !important;
+  color: var(--viz-cell-left-text, #92400e) !important;
+  z-index: 10;
+}
+
+.viz-cell.is-left .cell-indicator {
+  background-color: var(--viz-cell-left-border, #fbbf24) !important;
+}
+
+.viz-cell.is-done {
+  background-color: var(--viz-cell-done-bg, #ecfdf5);
+  border-color: var(--viz-cell-done-border, #6ee7b7);
+  color: var(--viz-cell-done-text, #047857);
+}
+
+.viz-cell.is-done .cell-indicator {
+  background-color: var(--viz-cell-done-border, #6ee7b7);
+}
+
+.viz-cell.is-obstacle {
+  background-color: var(--viz-cell-obstacle-bg, #e2e8f0);
+  border-color: var(--viz-cell-obstacle-border, #94a3b8);
+  opacity: 0.85;
+}
+
+/* ===== 一维 Memo 槽位样式 ===== */
+.viz-memo-slot {
+  background-color: var(--viz-cell-bg, #ffffff);
+  border-color: var(--viz-cell-border, #e2e8f0);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.viz-memo-slot.is-updated {
+  background-color: var(--viz-cell-active-bg, #dbeafe) !important;
+  border-color: var(--viz-cell-active-border, #3b82f6) !important;
+  box-shadow: var(--viz-cell-active-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.3)) !important;
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.viz-memo-slot.is-ref-left {
+  background-color: var(--viz-cell-left-bg, #fef3c7) !important;
+  border-color: var(--viz-cell-left-border, #fbbf24) !important;
+  border-style: dashed !important;
+}
+
+/* ===== 代码高亮行 ===== */
 .code-line {
   display: block;
   padding: 1px 8px;
@@ -39,37 +156,21 @@
   border-left: 3px solid transparent;
 }
 .code-line.active-line {
-  background-color: rgba(59, 130, 246, 0.25);
-  border-left-color: #3b82f6;
+  background-color: var(--viz-code-active-line, rgba(59, 130, 246, 0.25));
+  border-left-color: var(--viz-code-active-border, #3b82f6);
   color: #ffffff !important;
   font-weight: 700;
 }
 .code-line.context-line {
-  background-color: #f8fafc;
-}
-
-/* ===== Full 版代码高亮行 (琥珀色覆盖) ===== */
-.full-mode .code-line.active-line {
-  background-color: #fef3c7;
-  border-left-color: #f59e0b;
-  color: inherit !important;
-  font-weight: 600;
+  background-color: rgba(248, 250, 252, 0.05);
 }
 
 /* ===== 动物动效 ===== */
 @keyframes frog-hop {
-  0%, 100% {
-    transform: translateY(0) scale(1, 1);
-  }
-  30% {
-    transform: translateY(-8px) scale(1.08, 0.92);
-  }
-  50% {
-    transform: translateY(-12px) scale(0.95, 1.08);
-  }
-  75% {
-    transform: translateY(0) scale(1.1, 0.88);
-  }
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-8px) scale(1.08, 0.92); }
+  50% { transform: translateY(-12px) scale(0.95, 1.08); }
+  75% { transform: translateY(0) scale(1.1, 0.88); }
 }
 .animal-frog {
   display: inline-block;
@@ -78,18 +179,10 @@
 }
 
 @keyframes cat-bounce-wave {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-4px) rotate(-6deg);
-  }
-  50% {
-    transform: translateY(0) rotate(0deg);
-  }
-  75% {
-    transform: translateY(-4px) rotate(6deg);
-  }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(-6deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-4px) rotate(6deg); }
 }
 .animal-cat {
   display: inline-block;
@@ -97,102 +190,28 @@
   transform-origin: bottom center;
 }
 
-/* ===== 探险家小人跳跃与欢呼动画 ===== */
-@keyframes charHopJump {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-  }
-  30% {
-    transform: translateY(-8px) scale(1.06);
-  }
-  60% {
-    transform: translateY(-2px) scale(0.97);
-  }
-  80% {
-    transform: translateY(-4px) scale(1.02);
-  }
+/* ===== 探险家小人动画 ===== */
+@keyframes adventurer-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.08, 0.92); }
+}
+@keyframes adventurer-cheer {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1.1); }
+  25% { transform: translateY(-14px) rotate(-6deg) scale(1.2); }
+  75% { transform: translateY(-14px) rotate(6deg) scale(1.2); }
+}
+.adventurer-char.is-jumping {
+  animation: adventurer-bounce 0.75s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+.adventurer-char.is-cheering {
+  animation: adventurer-cheer 0.6s ease-in-out infinite;
+  transform-origin: bottom center;
 }
 
-@keyframes charShadowScale {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.45;
-  }
-  30% {
-    transform: scale(0.65);
-    opacity: 0.18;
-  }
-  60% {
-    transform: scale(0.95);
-    opacity: 0.4;
-  }
-}
-
-.adventurer-char.is-jumping .char-body {
-  animation: charHopJump 0.7s ease-in-out infinite;
-  transform-origin: center bottom;
-}
-
-.adventurer-char.is-jumping .char-shadow {
-  animation: charShadowScale 0.7s ease-in-out infinite;
-  transform-origin: center center;
-}
-
-.adventurer-char.is-cheering .char-body {
-  animation: charHopJump 0.45s ease-in-out infinite;
-  transform-origin: center bottom;
-}
-
-/* ===== 河流波纹动画 ===== */
-@keyframes riverWaveMove1 {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-60px); }
-}
-
-@keyframes riverWaveMove2 {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-48px); }
-}
-
-.dp-river-waves-1 {
-  animation: riverWaveMove1 3s linear infinite;
-}
-
-.dp-river-waves-2 {
-  animation: riverWaveMove2 2.4s linear infinite;
-}
-
-/* ===== 网格单元格弹出与脉冲动画 (Full 版) ===== */
-@keyframes cell-pop {
-  0% { transform: scale(0.85); opacity: 0.5; }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
-}
-.animate-pop {
-  animation: cell-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
-  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-}
-.ring-active {
-  animation: pulse-ring 1.8s infinite;
-}
-
-/* ===== 隐藏数字输入框自带的上下箭头 ===== */
+/* ===== 数字输入框样式 ===== */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-input[type="number"] {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
-/* ===== 字体声明 (.font-mono-code) ===== */
-.font-mono-code {
-  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }

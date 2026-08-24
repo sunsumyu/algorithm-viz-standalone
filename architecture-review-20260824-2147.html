@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>架构评审报告：UI 风格配置化与主题引擎深化设计 (Visual Theme & Layout Architecture Review)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    body { font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 sm:p-10 selection:bg-cyan-500 selection:text-white">
+
+  <div class="max-w-6xl mx-auto space-y-10">
+
+    <!-- 顶栏标题与背景 -->
+    <header class="border-b border-slate-800 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-semibold mb-3">
+          <i class="fa-solid fa-palette"></i> 架构深化提案 · UI 风格配置化与视觉主题引擎
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          可视化 UI 风格配置化与主题引擎深化设计
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          消除硬编码 Tailwind 类名与分散布局文件，构建高内聚、低耦合的 <code class="font-mono-code text-cyan-400">VisualThemeManager</code> 与声明式主题分层体系。
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-300 font-mono">
+          <i class="fa-solid fa-code-commit text-emerald-400 mr-1"></i> Git: dev-gemini
+        </span>
+      </div>
+    </header>
+
+    <!-- 现状架构摩擦分析 (Context & Friction) -->
+    <section class="bg-slate-800/60 rounded-2xl p-6 border border-slate-700/60 shadow-xl space-y-4">
+      <h2 class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> 当前视觉渲染与 UI 风格的 4 大摩擦点 (Friction Points)
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed text-slate-300">
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div class="font-bold text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-1"></i> 视觉适配器硬编码样式类名 (Token Hardcoding)
+          </div>
+          <p>
+            <code class="font-mono-code text-slate-200">GridVisualAdapter</code> 中直接拼装固定 Tailwind 类名（如 <code class="font-mono-code text-cyan-300">bg-blue-100 border-2 border-blue-500</code>）和特定小人 SVG。若要切换暗黑模式（Dark Mode）、赛博朋克（Cyberpunk）或学术线框风格，必须侵入修改 Adapter 内部代码。
+          </p>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div class="font-bold text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-2"></i> 布局风格依赖物理 HTML 分离 (Layout Fragmentation)
+          </div>
+          <p>
+            Lite 紧凑版与 Full 全景版目前依赖不同的 HTML 入口文件（<code class="font-mono-code text-slate-200">*-lite.html</code> vs <code class="font-mono-code text-slate-200">*.html</code>）。导致切换排版风格时需要进行整页 URL 跳转，无法在同一会话内实现无缝的 Layout 变体切换。
+          </p>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div class="font-bold text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-3"></i> 缺少统一的主题状态机与 CSS 变量系统 (No Theme Manager)
+          </div>
+          <p>
+            没有全局主题控制器（<code class="font-mono-code text-cyan-400">ThemeManager</code>）来管理用户选中的主题 ID、色彩模式（Dark/Light）、动效开关（Playful / Minimal / Reduced-Motion），也没有使用 CSS 变量（CSS Custom Properties）解耦表现层。
+          </p>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div class="font-bold text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-4"></i> 模型特定视觉角色缺乏声明式契约 (No Avatar Contract)
+          </div>
+          <p>
+            不同算法题需要不同的语义角色（背包问题需要大盗/背包、爬楼梯需要青蛙/荷叶、网格需要探险家/机器人），目前角色动效与图标分散在 HTML 与 Adapter 中，无法在 YAML 模型中声明式配置。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 个架构深化方案 (Candidates) -->
+    <div class="space-y-8">
+
+      <!-- Candidate 1: VisualThemeManager 深模块 -->
+      <section class="bg-slate-800/90 rounded-2xl p-6 border-2 border-cyan-500/50 shadow-2xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-cyan-500 text-slate-950 font-black text-sm flex items-center justify-center">1</span>
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-white">
+                提取 <code class="font-mono-code text-cyan-300">VisualThemeManager</code> 视觉主题配置管理深模块
+              </h3>
+              <p class="text-xs text-slate-400">集中管理主题调色板（Light / Dark / Cyberpunk / Paper / Arcade）、CSS Variables 动态注入与持久化</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold font-mono">
+            🟢 Strong · 强烈推荐
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="space-y-3 text-xs">
+            <div class="font-bold text-slate-200">📋 涉及模块与文件：</div>
+            <ul class="list-disc list-inside text-slate-400 space-y-1">
+              <li><code class="font-mono-code text-cyan-300">src/core/theme/visual-theme-manager.ts</code> (NEW)</li>
+              <li><code class="font-mono-code text-cyan-300">src/core/theme/theme-presets.ts</code> (NEW)</li>
+              <li><code class="font-mono-code text-cyan-300">src/styles/visualizer-theme.css</code> (MODIFY)</li>
+            </ul>
+
+            <div class="font-bold text-slate-200 pt-2">🎯 解决方案 (Solution)：</div>
+            <p class="text-slate-300 leading-relaxed">
+              将所有主题相关逻辑封装进 <code class="font-mono-code text-cyan-300">VisualThemeManager</code>。定义语义化设计令牌契约（Tokens：<code class="font-mono-code text-slate-200">--viz-bg-primary</code>, <code class="font-mono-code text-slate-200">--viz-cell-active</code>, <code class="font-mono-code text-slate-200">--viz-accent-color</code> 等）。
+              外部仅需调用 <code class="font-mono-code text-cyan-300">themeManager.setTheme('dark-cyberpunk')</code>，深模块内部自动向 DOM 根节点注入 CSS 变量与主题属性，并同步至 localStorage / URL Hash。
+            </p>
+
+            <div class="font-bold text-slate-200 pt-2">✨ 杠杆与收益 (Leverage & Locality)：</div>
+            <ul class="list-disc list-inside text-slate-300 space-y-1">
+              <li><strong>单点高杠杆</strong>：新增一个主题只需要在配置表中增加一组 Tokens，所有视图与适配器自动生效。</li>
+              <li><strong>零泄漏</strong>：HTML 与 Adapter 不再关心具体颜色值，只引用语义类名或 CSS 变量。</li>
+            </ul>
+          </div>
+
+          <!-- Mermaid 对比图 -->
+          <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
+            <div class="text-[11px] font-bold text-slate-400 mb-2 font-mono text-center">Before vs After: 主题调用 Seam 对比</div>
+            <div class="mermaid">
+graph TD
+    subgraph After["深化后: Deep VisualThemeManager"]
+        APP2["VisualizerAppController"] --> TM["VisualThemeManager"]
+        TM --> CSSVAR["CSS Variables (HTML Root)"]
+        TM --> STORE["LocalStorage & StateRouter"]
+        GRID2["GridVisualAdapter"] -.-> CSSVAR
+        TREE2["RecursionTreeAdapter"] -.-> CSSVAR
+    end
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Candidate 2: VisualAdapter 视觉令牌化契约 -->
+      <section class="bg-slate-800/90 rounded-2xl p-6 border border-slate-700 shadow-xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center">2</span>
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-white">
+                将 <code class="font-mono-code text-amber-300">GridVisualAdapter</code> 改造为语义化视觉契约
+              </h3>
+              <p class="text-xs text-slate-400">消除 Adapter 内部硬编码 Tailwind 颜色类，改为语义化状态类名</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold font-mono">
+            🟢 Strong · 强烈推荐
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="space-y-3 text-xs">
+            <div class="font-bold text-slate-200">📋 涉及模块与文件：</div>
+            <ul class="list-disc list-inside text-slate-400 space-y-1">
+              <li><code class="font-mono-code text-amber-300">src/core/renderers/grid-visual-adapter.ts</code> (MODIFY)</li>
+              <li><code class="font-mono-code text-amber-300">src/core/renderers/grid-visual-adapter.test.ts</code> (MODIFY)</li>
+            </ul>
+
+            <div class="font-bold text-slate-200 pt-2">🎯 解决方案 (Solution)：</div>
+            <p class="text-slate-300 leading-relaxed">
+              将网格单元格（Cell）与一维槽位（Slot）从硬编码类名重构成语义化状态标记：
+              <br/>• <code class="font-mono-code text-slate-200">.viz-cell</code> + <code class="font-mono-code text-slate-200">.is-active</code> / <code class="font-mono-code text-slate-200">.is-source-top</code> / <code class="font-mono-code text-slate-200">.is-source-left</code> / <code class="font-mono-code text-slate-200">.is-obstacle</code> / <code class="font-mono-code text-slate-200">.is-done</code>
+              <br/>所有的具体样式（边框光效、阴影、背景渐变、文字高亮）统一在 <code class="font-mono-code text-slate-200">visualizer-theme.css</code> 中由对应主题的 CSS 变量驱动。
+            </p>
+
+            <div class="font-bold text-slate-200 pt-2">✨ 杠杆与收益 (Leverage & Locality)：</div>
+            <ul class="list-disc list-inside text-slate-300 space-y-1">
+              <li><strong>适配器纯粹化</strong>：Adapter 只负责“这是什么状态”，不负责“这个状态长什么颜色”。</li>
+              <li><strong>单测稳健性</strong>：单测只验证语义类名是否存在，不受 CSS 视觉调色板改版影响。</li>
+            </ul>
+          </div>
+
+          <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
+            <div class="text-[11px] font-bold text-slate-400 mb-2 font-mono text-center">Adapter 职责分离架构图</div>
+            <div class="mermaid">
+graph LR
+    subgraph Adapter["GridVisualAdapter"]
+        CALC["Step 计算"] --> SEMANTIC[".viz-cell.is-active\n.viz-cell.is-source-top"]
+    end
+    subgraph Themes["Theme Layer (CSS Vars)"]
+        SEMANTIC --> LIGHT["[data-theme='light']\nBlue/Purple/Emerald"]
+        SEMANTIC --> DARK["[data-theme='cyberpunk']\nNeon Cyan/Magenta/Green"]
+        SEMANTIC --> PAPER["[data-theme='academic']\nMonochrome / Crosshatch"]
+    end
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Candidate 3: 统一自适应布局容器 (Unify Lite & Full) -->
+      <section class="bg-slate-800/90 rounded-2xl p-6 border border-slate-700 shadow-xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-purple-500 text-slate-950 font-black text-sm flex items-center justify-center">3</span>
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-white">
+                动态可配置布局容器（合并 Lite 与 Full 为统一自适应页面）
+              </h3>
+              <p class="text-xs text-slate-400">消灭 4 个 HTML 入口文件之间的物理隔离，支持配置级无刷新布局切换</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold font-mono">
+            🟡 Worth exploring · 值得探索
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="space-y-3 text-xs">
+            <div class="font-bold text-slate-200">📋 涉及模块与文件：</div>
+            <ul class="list-disc list-inside text-slate-400 space-y-1">
+              <li><code class="font-mono-code text-purple-300">src/core/visualizer-app-controller.ts</code> (MODIFY)</li>
+              <li><code class="font-mono-code text-purple-300">stage-explorer.html</code> (MODIFY - 设为主入口)</li>
+            </ul>
+
+            <div class="font-bold text-slate-200 pt-2">🎯 解决方案 (Solution)：</div>
+            <p class="text-slate-300 leading-relaxed">
+              无需通过不同的 HTML 文件来区分 Lite 与 Full。在页面顶栏或配置面板提供【布局模式】切换按钮：
+              <br/>• <code class="font-mono-code text-slate-200">data-layout="compact"</code> (Lite 紧凑双卡模式)
+              <br/>• <code class="font-mono-code text-slate-200">data-layout="panoramic"</code> (Full 宽幅看板 + 变量矩阵)
+              <br/>• <code class="font-mono-code text-slate-200">data-layout="zen"</code> (专注纯画布模式)
+              <br/>由 CSS Grid 与 Controller 自适应控制 DOM 容器展现，切换瞬间保持播放状态与步数进度。
+            </p>
+          </div>
+
+          <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
+            <div class="text-[11px] font-bold text-slate-400 mb-2 font-mono text-center">布局模式无刷新状态保持</div>
+            <div class="mermaid">
+sequenceDiagram
+    participant User as 用户交互
+    participant CTRL as VisualizerAppController
+    participant DOM as document.body
+    User->>CTRL: switchLayout('panoramic')
+    CTRL->>DOM: setAttribute('data-layout', 'panoramic')
+    CTRL->>CTRL: syncViews(currentStep)
+    Note over CTRL,DOM: 保持当前播放步数无需重新刷新页面
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Candidate 4: 声明式 YAML 视觉角色与动效契约 -->
+      <section class="bg-slate-800/90 rounded-2xl p-6 border border-slate-700 shadow-xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-pink-500 text-slate-950 font-black text-sm flex items-center justify-center">4</span>
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-white">
+                声明式 YAML 模型视觉角色与精灵（Avatar Sprite）规范化
+              </h3>
+              <p class="text-xs text-slate-400">在 YAML 中声明算法专属的 Character、Emoji 符号与重点色系</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold font-mono">
+            🟡 Worth exploring · 值得探索
+          </span>
+        </div>
+
+        <div class="text-xs text-slate-300 space-y-2">
+          <p>
+            在 YAML 模型规范中新增可选的 <code class="font-mono-code text-pink-300">visualProfile</code> 声明：
+          </p>
+          <pre class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-pink-300 font-mono-code overflow-x-auto">
+visualProfile:
+  themeAccent: "amber"          # 主色系: amber | blue | emerald | purple | rose
+  character:
+    walker: "adventurer-explorer" # 角色: adventurer | frog | robot | wizard
+    cheerIcon: "🏆"
+  sourceIndicators:
+    primary: { icon: "🐱", label: "上方旧值" }
+    secondary: { icon: "🐸", label: "左方新值" }
+          </pre>
+          <p class="text-slate-400">
+            使得新增任何新的算法题时，视觉角色无需硬编码在 TS 或 HTML 中，完全由 YAML 规范声明驱动。
+          </p>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- 总结推荐 (Top Recommendation) -->
+    <section class="bg-gradient-to-r from-cyan-950/80 via-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-cyan-500/40 shadow-xl space-y-3">
+      <h3 class="text-base font-bold text-cyan-300 flex items-center gap-2">
+        <i class="fa-solid fa-crown text-amber-400"></i> 首选推进建议 (Top Recommendation)
+      </h3>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        建议以 <strong>Candidate 1 + 2</strong> 为核心实施序列：
+        <br/>1. 提取自治的 <code class="font-mono-code text-cyan-400">VisualThemeManager</code> 深模块与 CSS 变量体系，提供统一的主题切换契约；
+        <br/>2. 将 <code class="font-mono-code text-cyan-400">GridVisualAdapter</code> 彻底收敛为语义化状态输出，将颜色表现权交给主题层；
+        <br/>3. 在顶栏增加一个精致的【主题风格切换下拉/药丸】，实时支持 <strong>Light (力扣经典)</strong>、<strong>Dark Cyberpunk (极客霓虹)</strong>、<strong>Minimal Academic (学术极简)</strong>、<strong>Retro Arcade (复古街机)</strong> 4 套风格。
+      </p>
+    </section>
+
+  </div>
+
+</body>
+</html>

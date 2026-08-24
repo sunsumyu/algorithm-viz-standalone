@@ -7,9 +7,19 @@ class MockElement {
   public id = '';
   public value = '';
   public textContent = '';
-  public innerHTML = '';
+  private _innerHTML = '';
+  public get innerHTML(): string { return this._innerHTML; }
+  public set innerHTML(val: string) {
+    this._innerHTML = val;
+    if (val === '') {
+      this.children = [];
+    }
+  }
   public className = '';
-  public style: Record<string, string> = {};
+  public style: Record<string, any> = {
+    setProperty: (k: string, v: string) => { (this.style as any)[k] = v; },
+    getPropertyValue: (k: string) => (this.style as any)[k] || ''
+  };
   public children: MockElement[] = [];
   public dataset: Record<string, string> = {};
   public listeners: Record<string, Function[]> = {};
@@ -18,13 +28,25 @@ class MockElement {
   public scrollTop = 0;
   public scrollHeight = 100;
   public clientHeight = 50;
+  public parentElement: MockElement | null = null;
 
   constructor(id = '') {
     this.id = id;
+    this.children = [];
   }
 
   public appendChild(child: MockElement) {
+    if (!this.children) this.children = [];
+    child.parentElement = this;
     this.children.push(child);
+    return child;
+  }
+
+  public insertBefore(newChild: MockElement, _refChild?: MockElement) {
+    if (!this.children) this.children = [];
+    newChild.parentElement = this;
+    this.children.push(newChild);
+    return newChild;
   }
 
   public addEventListener(event: string, cb: Function) {
@@ -60,14 +82,29 @@ class MockElement {
     return list;
   }
 
+  public attributes: Record<string, string> = {};
+
+  public setAttribute(name: string, value: string) {
+    this.attributes[name] = value;
+  }
+
+  public getAttribute(name: string) {
+    return this.attributes[name] || null;
+  }
+
   public classList = {
-    add: (cls: string) => {
-      if (!this.className.includes(cls)) this.className += ` ${cls}`;
+    _classes: new Set<string>(),
+    add: (c: string) => { this.classList._classes.add(c); this.className = Array.from(this.classList._classes).join(' '); },
+    remove: (c: string) => { this.classList._classes.delete(c); this.className = Array.from(this.classList._classes).join(' '); },
+    toggle: (c: string, force?: boolean) => {
+      if (force === true) this.classList._classes.add(c);
+      else if (force === false) this.classList._classes.delete(c);
+      else if (this.classList._classes.has(c)) this.classList._classes.delete(c);
+      else this.classList._classes.add(c);
+      this.className = Array.from(this.classList._classes).join(' ');
+      return this.classList._classes.has(c);
     },
-    remove: (cls: string) => {
-      this.className = this.className.replace(cls, '').trim();
-    },
-    contains: (cls: string) => this.className.includes(cls)
+    contains: (c: string) => this.classList._classes.has(c) || this.className.includes(c)
   };
 
   public scrollTo(_opts: any) {}
@@ -87,10 +124,14 @@ describe('VisualizerAppController Deep Module', () => {
       return elementsMap.get(id)!;
     };
 
+    const docRoot = new MockElement('root');
+
     (globalThis as any).document = {
+      documentElement: docRoot,
       getElementById: (id: string) => getOrCreate(id),
       createElement: () => new MockElement(),
-      querySelectorAll: () => []
+      querySelectorAll: () => [],
+      addEventListener: vi.fn()
     };
 
     (globalThis as any).window = {

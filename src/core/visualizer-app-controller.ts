@@ -11,6 +11,7 @@ import { UniversalStageEngine, type UniversalStep } from './universal-stage-engi
 import { VisualizerStateRouter, type VisualizerState } from './state-router';
 import { GridVisualAdapter, RecursionTreeAdapter } from './renderers/grid-visual-adapter';
 import { PlaybackTimelineController } from './playback-timeline-controller';
+import { VisualThemeManager } from './theme/visual-theme-manager';
 import type { IYamlAlgorithmModel } from './interfaces';
 
 export type VisualizerMode = 'lite' | 'full';
@@ -20,6 +21,8 @@ export interface VisualizerAppControllerOptions {
   mode?: VisualizerMode;
   /** 默认算法模型 ID (默认从 ?model= URL 参数读取，无则为 'unique-paths') */
   defaultModelId?: string;
+  /** 默认视觉主题 ID */
+  defaultTheme?: string;
 }
 
 export class VisualizerAppController {
@@ -33,10 +36,12 @@ export class VisualizerAppController {
   private n = 4;
   private steps: UniversalStep[] = [];
   private timeline: PlaybackTimelineController | null = null;
+  private themeManager: VisualThemeManager;
   private isDestroyed = false;
 
   constructor(options: VisualizerAppControllerOptions = {}) {
     this.mode = options.mode || 'lite';
+    this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
     
     // 解析 URL 参数获取 modelId
     let requestedId = options.defaultModelId;
@@ -62,27 +67,14 @@ export class VisualizerAppController {
   public init(): void {
     if (typeof document === 'undefined') return;
 
-    // 1. 从模型注入默认网格参数
-    if (this.model.defaultParams) {
-      const inputM = document.getElementById('input-m') as HTMLInputElement | null;
-      const inputN = document.getElementById('input-n') as HTMLInputElement | null;
-      if (inputM && this.model.defaultParams.m !== undefined) {
-        inputM.value = String(this.model.defaultParams.m);
-        this.m = Number(this.model.defaultParams.m);
-      }
-      if (inputN && this.model.defaultParams.n !== undefined) {
-        inputN.value = String(this.model.defaultParams.n);
-        this.n = Number(this.model.defaultParams.n);
-      }
-    }
-
-    // 2. 从 URL Hash 恢复持久化状态
+    // 0. 从 URL Hash 恢复持久化状态与主题
     const restored = VisualizerStateRouter.restore();
     let targetStep = 0;
     if (restored) {
       if (restored.stage) this.currentStage = restored.stage;
       if (restored.dir) this.currentDirection = restored.dir;
       if (restored.variant) this.currentStageVariant = restored.variant;
+      if (restored.theme) this.themeManager.setTheme(restored.theme, true);
       if (restored.m) {
         this.m = restored.m;
         const inputM = document.getElementById('input-m') as HTMLInputElement | null;
@@ -96,7 +88,31 @@ export class VisualizerAppController {
       if (restored.step !== undefined) targetStep = restored.step;
     }
 
-    // 3. 构建顶部导航选项卡
+    // 应用主题并装配顶栏主题选择器
+    this.themeManager.applyThemeToDom();
+    this.renderThemeSelector();
+    this.themeManager.subscribe(() => {
+      if (this.steps.length > 0) {
+        const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+        this.syncStateToHash(curStep);
+      }
+    });
+
+    // 1. 从模型注入默认网格参数 (若未被 hash 覆盖)
+    if (this.model.defaultParams && (!restored || (!restored.m && !restored.n))) {
+      const inputM = document.getElementById('input-m') as HTMLInputElement | null;
+      const inputN = document.getElementById('input-n') as HTMLInputElement | null;
+      if (inputM && this.model.defaultParams.m !== undefined) {
+        inputM.value = String(this.model.defaultParams.m);
+        this.m = Number(this.model.defaultParams.m);
+      }
+      if (inputN && this.model.defaultParams.n !== undefined) {
+        inputN.value = String(this.model.defaultParams.n);
+        this.n = Number(this.model.defaultParams.n);
+      }
+    }
+
+    // 2. 构建顶部导航选项卡
     this.renderStageTabs();
     this.renderDirectionTabs();
 
@@ -203,13 +219,19 @@ export class VisualizerAppController {
     this.updateCodeHighlight(step.line);
 
     // 4. URL Hash 状态持久化
+    this.syncStateToHash(index);
+  }
+
+  private syncStateToHash(stepIndex?: number): void {
+    const cur = stepIndex !== undefined ? stepIndex : (this.timeline ? this.timeline.getCurrentStep() : 0);
     VisualizerStateRouter.updateHash({
       stage: this.currentStage,
       dir: this.currentDirection,
       variant: this.currentStageVariant,
       m: this.m,
       n: this.n,
-      step: index
+      step: cur,
+      theme: this.themeManager.getCurrentThemeId()
     });
   }
 
@@ -601,7 +623,8 @@ export class VisualizerAppController {
         variant: this.currentStageVariant,
         m: this.m,
         n: this.n,
-        step: this.timeline ? this.timeline.getCurrentStep() : 0
+        step: this.timeline ? this.timeline.getCurrentStep() : 0,
+        theme: this.themeManager.getCurrentThemeId()
       });
     };
 
@@ -615,6 +638,26 @@ export class VisualizerAppController {
         const faqEl = document.querySelector('footer') || document.body;
         faqEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
+    }
+  }
+
+  private renderThemeSelector(): void {
+    let container = document.getElementById('theme-selector-container');
+    if (!container) {
+      // 智能寻找挂载点：在切换视图按钮或 FAQ 按钮前插入
+      const anchor = document.getElementById('btn-switch-lite') || 
+                     document.getElementById('btn-switch-full') ||
+                     document.getElementById('btn-quick-faq') ||
+                     document.getElementById('btn-reset');
+      if (anchor && anchor.parentElement) {
+        container = document.createElement('div');
+        container.id = 'theme-selector-container';
+        container.className = 'inline-flex items-center';
+        anchor.parentElement.insertBefore(container, anchor);
+      }
+    }
+    if (container) {
+      this.themeManager.renderThemeSelector(container);
     }
   }
 }
