@@ -647,7 +647,7 @@ export class VisualizerAppController {
   private renderThemeSelector(): void {
     let container = document.getElementById('theme-selector-container');
     if (!container) {
-      // 智能寻找挂载点：在切换视图按钮或 FAQ 按钮前插入
+      // 智能寻找挂载点：在切换视图按钮或重置按钮旁插入
       const anchor = document.getElementById('btn-switch-lite') || 
                      document.getElementById('btn-switch-full') ||
                      document.getElementById('btn-quick-faq') ||
@@ -656,11 +656,35 @@ export class VisualizerAppController {
         container = document.createElement('div');
         container.id = 'theme-selector-container';
         container.className = 'inline-flex items-center';
-        anchor.parentElement.insertBefore(container, anchor);
+        anchor.parentElement.insertBefore(container, anchor.nextSibling);
       }
     }
     if (container) {
-      this.themeManager.renderThemeSelector(container);
+      const handleSwitch = (targetType: 'full' | 'lite') => {
+        const isStageExplorer = typeof window !== 'undefined' && window.location.pathname.includes('stage-explorer');
+        const targetBase = targetType === 'full'
+          ? (isStageExplorer ? 'stage-explorer.html' : 'unique-paths.html')
+          : (isStageExplorer ? 'stage-explorer-lite.html' : 'unique-paths-lite.html');
+        
+        const queryParam = this.modelId !== 'unique-paths' ? `?model=${this.modelId}` : '';
+        VisualizerStateRouter.switchView(`${targetBase}${queryParam}`, {
+          stage: this.currentStage,
+          dir: this.currentDirection,
+          variant: this.currentStageVariant,
+          m: this.m,
+          n: this.n,
+          step: this.timeline ? this.timeline.getCurrentStep() : 0,
+          theme: this.themeManager.getCurrentThemeId()
+        });
+      };
+
+      this.themeManager.renderThemeSelector(container, {
+        currentMode: this.mode,
+        onSwitchMode: (mode) => handleSwitch(mode),
+        onSpeedChange: (speedMs) => {
+          if (this.timeline) this.timeline.setSpeed(speedMs);
+        }
+      });
     }
   }
 }
