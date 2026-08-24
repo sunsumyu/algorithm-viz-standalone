@@ -76,31 +76,31 @@ stages:
             title: "NaiveRecursiveTerminal.java (越界拦截版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      return dfs(0, 0, m, n);
-                  }
-                  private int dfs(int i, int j, int m, int n) { // @step:entry
-                      if (i >= m || j >= n) return 0; // @step:out_of_bounds // 越界无路径
-                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 到达终点
-                      int down = dfs(i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
-                      int right = dfs(i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
-                      return down + right; // @step:combine
-                  }
+                public int uniquePaths(int m, int n) {
+                  return dfs(0, 0, m, n);
+                }
+                private int dfs(int i, int j, int m, int n) { // @step:entry
+                  if (i >= m || j >= n) return 0; // @step:out_of_bounds // 越界无路径
+                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 到达终点
+                  int down = dfs(i + 1, j, m, n);  // @step:branch_down // 向下探索
+                  int right = dfs(i, j + 1, m, n); // @step:branch_right // 向右探索
+                  return down + right; // @step:combine
+                }
               }
           reverse:
             title: "NaiveRecursiveReverseTerminal.java (越界拦截版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      return dfs(m - 1, n - 1);
-                  }
-                  private int dfs(int i, int j) { // @step:entry
-                      if (i < 0 || j < 0) return 0; // @step:out_of_bounds // 逆推越界
-                      if (i == 0 && j == 0) return 1; // @step:boundary // 回到起点
-                      int left = dfs(i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
-                      int up = dfs(i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
-                      return left + up; // @step:combine
-                  }
+                public int uniquePaths(int m, int n) {
+                  return dfs(m - 1, n - 1);
+                }
+                private int dfs(int i, int j) { // @step:entry
+                  if (i < 0 || j < 0) return 0; // @step:out_of_bounds // 逆推越界
+                  if (i == 0 && j == 0) return 1; // @step:boundary // 回到起点
+                  int left = dfs(i, j - 1);  // @step:branch_left // 向左寻源
+                  int up = dfs(i - 1, j);    // @step:branch_up // 向上寻源
+                  return left + up; // @step:combine
+                }
               }
       boundary:
         variantLabel: "边缘直达版"
@@ -112,29 +112,29 @@ stages:
             title: "NaiveRecursiveBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      return dfs(0, 0, m, n);
-                  }
-                  private int dfs(int i, int j, int m, int n) { // @step:entry
-                      if (i == m - 1 || j == n - 1) return 1; // @step:boundary
-                      int down = dfs(i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
-                      int right = dfs(i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
-                      return down + right; // @step:combine
-                  }
+                public int uniquePaths(int m, int n) {
+                  return dfs(0, 0, m, n);
+                }
+                private int dfs(int i, int j, int m, int n) { // @step:entry
+                  if (i == m - 1 || j == n - 1) return 1; // @step:boundary
+                  int down = dfs(i + 1, j, m, n);  // @step:branch_down // 向下探索
+                  int right = dfs(i, j + 1, m, n); // @step:branch_right // 向右探索
+                  return down + right; // @step:combine
+                }
               }
           reverse:
             title: "NaiveRecursiveReverseBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      return dfs(m - 1, n - 1);
-                  }
-                  private int dfs(int i, int j) { // @step:entry
-                      if (i == 0 || j == 0) return 1; // @step:boundary
-                      int left = dfs(i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
-                      int up = dfs(i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
-                      return left + up; // @step:combine
-                  }
+                public int uniquePaths(int m, int n) {
+                  return dfs(m - 1, n - 1);
+                }
+                private int dfs(int i, int j) { // @step:entry
+                  if (i == 0 || j == 0) return 1; // @step:boundary
+                  int left = dfs(i, j - 1);  // @step:branch_left // 向左寻源
+                  int up = dfs(i - 1, j);    // @step:branch_up // 向上寻源
+                  return left + up; // @step:combine
+                }
               }
     card2Title:
       forward: "顺推递归调用树 (Recursive Call Tree)"
@@ -147,29 +147,29 @@ stages:
         title: "NaiveRecursiveForward.java"
         source: |
           class Solution {
-              public int uniquePaths(int m, int n) {
-                  return dfs(0, 0, m, n);
-              }
-              private int dfs(int i, int j, int m, int n) { // @step:entry
-                  if (i == m - 1 || j == n - 1) return 1; // @step:boundary
-                  int down = dfs(i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
-                  int right = dfs(i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
-                  return down + right; // @step:combine
-              }
+            public int uniquePaths(int m, int n) {
+              return dfs(0, 0, m, n);
+            }
+            private int dfs(int i, int j, int m, int n) { // @step:entry
+              if (i == m - 1 || j == n - 1) return 1; // @step:boundary
+              int down = dfs(i + 1, j, m, n);  // @step:branch_down // 向下探索
+              int right = dfs(i, j + 1, m, n); // @step:branch_right // 向右探索
+              return down + right; // @step:combine
+            }
           }
       reverse:
         title: "NaiveRecursiveReverse.java"
         source: |
           class Solution {
-              public int uniquePaths(int m, int n) {
-                  return dfs(m - 1, n - 1);
-              }
-              private int dfs(int i, int j) { // @step:entry
-                  if (i == 0 || j == 0) return 1; // @step:boundary
-                  int left = dfs(i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
-                  int up = dfs(i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
-                  return left + up; // @step:combine
-              }
+            public int uniquePaths(int m, int n) {
+              return dfs(m - 1, n - 1);
+            }
+            private int dfs(int i, int j) { // @step:entry
+              if (i == 0 || j == 0) return 1; // @step:boundary
+              int left = dfs(i, j - 1);  // @step:branch_left // 向左寻源
+              int up = dfs(i - 1, j);    // @step:branch_up // 向上寻源
+              return left + up; // @step:combine
+            }
           }
 
   stage-2:
@@ -200,37 +200,37 @@ stages:
             title: "MemoizedTerminal.java (越界拦截版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[m][n];
-                      return dfs(0, 0, m, n);
-                  }
-                  private int dfs(int i, int j, int m, int n) { // @step:entry
-                      if (i >= m || j >= n) return 0; // @step:out_of_bounds
-                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                      int down = dfs(i + 1, j, m, n); // @step:branch_down
-                      int right = dfs(i, j + 1, m, n); // @step:branch_right
-                      return memo[i][j] = down + right; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[m][n];
+                  return dfs(0, 0, m, n);
+                }
+                private int dfs(int i, int j, int m, int n) { // @step:entry
+                  if (i >= m || j >= n) return 0; // @step:out_of_bounds
+                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+                  int down = dfs(i + 1, j, m, n); // @step:branch_down
+                  int right = dfs(i, j + 1, m, n); // @step:branch_right
+                  return memo[i][j] = down + right; // @step:combine
+                }
               }
           reverse:
             title: "MemoizedReverseTerminal.java (越界拦截版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[m][n];
-                      return dfs(m - 1, n - 1);
-                  }
-                  private int dfs(int i, int j) { // @step:entry
-                      if (i < 0 || j < 0) return 0; // @step:out_of_bounds
-                      if (i == 0 && j == 0) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                      int left = dfs(i, j - 1); // @step:branch_left
-                      int up = dfs(i - 1, j); // @step:branch_up
-                      return memo[i][j] = left + up; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[m][n];
+                  return dfs(m - 1, n - 1);
+                }
+                private int dfs(int i, int j) { // @step:entry
+                  if (i < 0 || j < 0) return 0; // @step:out_of_bounds
+                  if (i == 0 && j == 0) return 1; // @step:boundary
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+                  int left = dfs(i, j - 1); // @step:branch_left
+                  int up = dfs(i - 1, j); // @step:branch_up
+                  return memo[i][j] = left + up; // @step:combine
+                }
               }
       boundary:
         variantLabel: "边缘直达剪枝版"
@@ -242,70 +242,70 @@ stages:
             title: "MemoizedBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[m][n];
-                      return dfs(0, 0, m, n);
-                  }
-                  private int dfs(int i, int j, int m, int n) { // @step:entry
-                      if (i == m - 1 || j == n - 1) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                      int down = dfs(i + 1, j, m, n); // @step:branch_down
-                      int right = dfs(i, j + 1, m, n); // @step:branch_right
-                      return memo[i][j] = down + right; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[m][n];
+                  return dfs(0, 0, m, n);
+                }
+                private int dfs(int i, int j, int m, int n) { // @step:entry
+                  if (i == m - 1 || j == n - 1) return 1; // @step:boundary
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+                  int down = dfs(i + 1, j, m, n); // @step:branch_down
+                  int right = dfs(i, j + 1, m, n); // @step:branch_right
+                  return memo[i][j] = down + right; // @step:combine
+                }
               }
           reverse:
             title: "MemoizedReverseBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[m][n];
-                      return dfs(m - 1, n - 1);
-                  }
-                  private int dfs(int i, int j) { // @step:entry
-                      if (i == 0 || j == 0) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                      int left = dfs(i, j - 1); // @step:branch_left
-                      int up = dfs(i - 1, j); // @step:branch_up
-                      return memo[i][j] = left + up; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[m][n];
+                  return dfs(m - 1, n - 1);
+                }
+                private int dfs(int i, int j) { // @step:entry
+                  if (i == 0 || j == 0) return 1; // @step:boundary
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+                  int left = dfs(i, j - 1); // @step:branch_left
+                  int up = dfs(i - 1, j); // @step:branch_up
+                  return memo[i][j] = left + up; // @step:combine
+                }
               }
     code:
       forward:
         title: "MemoizedSolutionForward.java"
         source: |
           class Solution {
-              private int[][] memo;
-              public int uniquePaths(int m, int n) {
-                  memo = new int[m][n];
-                  return dfs(0, 0, m, n);
-              }
-              private int dfs(int i, int j, int m, int n) { // @step:entry
-                  if (i == m - 1 || j == n - 1) return 1; // @step:boundary
-                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                  int down = dfs(i + 1, j, m, n); // @step:branch_down
-                  int right = dfs(i, j + 1, m, n); // @step:branch_right
-                  return memo[i][j] = down + right; // @step:combine
-              }
+            private int[][] memo;
+            public int uniquePaths(int m, int n) {
+              memo = new int[m][n];
+              return dfs(0, 0, m, n);
+            }
+            private int dfs(int i, int j, int m, int n) { // @step:entry
+              if (i == m - 1 || j == n - 1) return 1; // @step:boundary
+              if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+              int down = dfs(i + 1, j, m, n); // @step:branch_down
+              int right = dfs(i, j + 1, m, n); // @step:branch_right
+              return memo[i][j] = down + right; // @step:combine
+            }
           }
       reverse:
         title: "MemoizedSolutionReverse.java"
         source: |
           class Solution {
-              private int[][] memo;
-              public int uniquePaths(int m, int n) {
-                  memo = new int[m][n];
-                  return dfs(m - 1, n - 1);
-              }
-              private int dfs(int i, int j) { // @step:entry
-                  if (i == 0 || j == 0) return 1; // @step:boundary
-                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                  int left = dfs(i, j - 1); // @step:branch_left
-                  int up = dfs(i - 1, j); // @step:branch_up
-                  return memo[i][j] = left + up; // @step:combine
-              }
+            private int[][] memo;
+            public int uniquePaths(int m, int n) {
+              memo = new int[m][n];
+              return dfs(m - 1, n - 1);
+            }
+            private int dfs(int i, int j) { // @step:entry
+              if (i == 0 || j == 0) return 1; // @step:boundary
+              if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+              int left = dfs(i, j - 1); // @step:branch_left
+              int up = dfs(i - 1, j); // @step:branch_up
+              return memo[i][j] = left + up; // @step:combine
+            }
           }
 
   stage-3:
@@ -336,37 +336,37 @@ stages:
             title: "TabulationIfSolution.java (内嵌 if 版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = 0; i < m; i++) { // @step:loop_i
-                          for (int j = 0; j < n; j++) { // @step:loop_j
-                              if (i == 0 || j == 0) { // @step:cond
-                                  dp[i][j] = 1; // @step:init_val
-                              } else {
-                                  dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
-                              }
-                          }
+                public int uniquePaths(int m, int n) {
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = 0; i < m; i++) { // @step:loop_i
+                    for (int j = 0; j < n; j++) { // @step:loop_j
+                      if (i == 0 || j == 0) { // @step:cond
+                        dp[i][j] = 1; // @step:init_val
+                      } else {
+                        dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
                       }
-                      return dp[m - 1][n - 1]; // @step:return
+                    }
                   }
+                  return dp[m - 1][n - 1]; // @step:return
+                }
               }
           reverse:
             title: "ReverseTabulationIf.java (内嵌 if 版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
-                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
-                              if (i == m - 1 || j == n - 1) { // @step:cond
-                                  dp[i][j] = 1; // @step:init_val
-                              } else {
-                                  dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
-                              }
-                          }
+                public int uniquePaths(int m, int n) {
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                    for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                      if (i == m - 1 || j == n - 1) { // @step:cond
+                        dp[i][j] = 1; // @step:init_val
+                      } else {
+                        dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
                       }
-                      return dp[0][0]; // @step:return
+                    }
                   }
+                  return dp[0][0]; // @step:return
+                }
               }
       for:
         variantLabel: "外层 for 循环"
@@ -378,66 +378,66 @@ stages:
             title: "TabulationForSolution.java (外层 for 版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = 0; i < m; i++) dp[i][0] = 1; // @step:init_row
-                      for (int j = 0; j < n; j++) dp[0][j] = 1; // @step:init_col
-                      for (int i = 1; i < m; i++) { // @step:loop_i
-                          for (int j = 1; j < n; j++) { // @step:loop_j
-                              dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
-                          }
-                      }
-                      return dp[m - 1][n - 1]; // @step:return
+                public int uniquePaths(int m, int n) {
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = 0; i < m; i++) dp[i][0] = 1; // @step:init_row
+                  for (int j = 0; j < n; j++) dp[0][j] = 1; // @step:init_col
+                  for (int i = 1; i < m; i++) { // @step:loop_i
+                    for (int j = 1; j < n; j++) { // @step:loop_j
+                      dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
+                    }
                   }
+                  return dp[m - 1][n - 1]; // @step:return
+                }
               }
           reverse:
             title: "ReverseTabulationFor.java (逆推外层 for 版)"
             source: |
               class Solution {
-                  public int uniquePaths(int m, int n) {
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = 0; i < m; i++) dp[i][n - 1] = 1; // @step:init_row
-                      for (int j = 0; j < n; j++) dp[m - 1][j] = 1; // @step:init_col
-                      for (int i = m - 2; i >= 0; i--) { // @step:loop_i
-                          for (int j = n - 2; j >= 0; j--) { // @step:loop_j
-                              dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
-                          }
-                      }
-                      return dp[0][0]; // @step:return
+                public int uniquePaths(int m, int n) {
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = 0; i < m; i++) dp[i][n - 1] = 1; // @step:init_row
+                  for (int j = 0; j < n; j++) dp[m - 1][j] = 1; // @step:init_col
+                  for (int i = m - 2; i >= 0; i--) { // @step:loop_i
+                    for (int j = n - 2; j >= 0; j--) { // @step:loop_j
+                      dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
+                    }
                   }
+                  return dp[0][0]; // @step:return
+                }
               }
     code:
       forward:
         title: "TabulationSolution.java"
         source: |
           class Solution {
-              public int uniquePaths(int m, int n) {
-                  int[][] dp = new int[m][n]; // @step:init
-                  for (int i = 0; i < m; i++) dp[i][0] = 1; // @step:init_row
-                  for (int j = 0; j < n; j++) dp[0][j] = 1; // @step:init_col
-                  for (int i = 1; i < m; i++) { // @step:loop_i
-                      for (int j = 1; j < n; j++) { // @step:loop_j
-                          dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
-                      }
-                  }
-                  return dp[m - 1][n - 1]; // @step:return
+            public int uniquePaths(int m, int n) {
+              int[][] dp = new int[m][n]; // @step:init
+              for (int i = 0; i < m; i++) dp[i][0] = 1; // @step:init_row
+              for (int j = 0; j < n; j++) dp[0][j] = 1; // @step:init_col
+              for (int i = 1; i < m; i++) { // @step:loop_i
+                for (int j = 1; j < n; j++) { // @step:loop_j
+                  dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
+                }
               }
+              return dp[m - 1][n - 1]; // @step:return
+            }
           }
       reverse:
         title: "ReverseTabulation.java"
         source: |
           class Solution {
-              public int uniquePaths(int m, int n) {
-                  int[][] dp = new int[m][n]; // @step:init
-                  for (int i = 0; i < m; i++) dp[i][n - 1] = 1; // @step:init_row
-                  for (int j = 0; j < n; j++) dp[m - 1][j] = 1; // @step:init_col
-                  for (int i = m - 2; i >= 0; i--) { // @step:loop_i
-                      for (int j = n - 2; j >= 0; j--) { // @step:loop_j
-                          dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
-                      }
-                  }
-                  return dp[0][0]; // @step:return
+            public int uniquePaths(int m, int n) {
+              int[][] dp = new int[m][n]; // @step:init
+              for (int i = 0; i < m; i++) dp[i][n - 1] = 1; // @step:init_row
+              for (int j = 0; j < n; j++) dp[m - 1][j] = 1; // @step:init_col
+              for (int i = m - 2; i >= 0; i--) { // @step:loop_i
+                for (int j = n - 2; j >= 0; j--) { // @step:loop_j
+                  dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
+                }
               }
+              return dp[0][0]; // @step:return
+            }
           }
 
   stage-4:
@@ -464,43 +464,43 @@ stages:
             title: "Solution.java (内嵌 if 版)"
             source: |
               class Solution {
-                  private int[] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[n]; // @step:init
-                      for (int i = 0; i < m; i++) { // @step:loop_i
-                          for (int j = 0; j < n; j++) { // @step:loop_j
-                              if (i == 0 || j == 0) { // @step:cond
-                                  memo[j] = 1; // @step:init_val
-                              } else {
-                                  int down = memo[j]; // @step:fetch_down
-                                  int right = memo[j - 1]; // @step:fetch_right
-                                  memo[j] = right + down; // @step:accumulate
-                              }
-                          }
+                private int[] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[n]; // @step:init
+                  for (int i = 0; i < m; i++) { // @step:loop_i
+                    for (int j = 0; j < n; j++) { // @step:loop_j
+                      if (i == 0 || j == 0) { // @step:cond
+                        memo[j] = 1; // @step:init_val
+                      } else {
+                        int down = memo[j]; // @step:fetch_down
+                        int right = memo[j - 1]; // @step:fetch_right
+                        memo[j] = right + down; // @step:accumulate
                       }
-                      return memo[n - 1]; // @step:return
+                    }
                   }
+                  return memo[n - 1]; // @step:return
+                }
               }
           reverse:
             title: "SolutionReverse.java (内嵌 if 版)"
             source: |
               class Solution {
-                  private int[] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[n]; // @step:init
-                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
-                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
-                              if (i == m - 1 || j == n - 1) { // @step:cond
-                                  memo[j] = 1; // @step:init_val
-                              } else {
-                                  int down = memo[j]; // @step:fetch_down
-                                  int right = memo[j + 1]; // @step:fetch_right
-                                  memo[j] = right + down; // @step:accumulate
-                              }
-                          }
+                private int[] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[n]; // @step:init
+                  for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                    for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                      if (i == m - 1 || j == n - 1) { // @step:cond
+                        memo[j] = 1; // @step:init_val
+                      } else {
+                        int down = memo[j]; // @step:fetch_down
+                        int right = memo[j + 1]; // @step:fetch_right
+                        memo[j] = right + down; // @step:accumulate
                       }
-                      return memo[0]; // @step:return
+                    }
                   }
+                  return memo[0]; // @step:return
+                }
               }
       for:
         variantLabel: "外层 for 循环"
@@ -512,35 +512,36 @@ stages:
             title: "SolutionFor.java (外层 for 版)"
             source: |
               class Solution {
-                  private int[] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[n]; // @step:init
-                      for (int j = 0; j < n; j++) memo[j] = 1; // @step:init_row // 外层for初始化第0行
-                      for (int i = 1; i < m; i++) { // @step:loop_i
-                          for (int j = 1; j < n; j++) { // @step:loop_j
-                              int down = memo[j]; // @step:fetch_down
-                              int right = memo[j - 1]; // @step:fetch_right
-                              memo[j] = right + down; // @step:accumulate
-                          }
-                      }
-                      return memo[n - 1]; // @step:return
+                private int[] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[n]; // @step:init
+                  for (int j = 0; j < n; j++) memo[j] = 1; // @step:init_row // 外层for初始化第0行
+                  for (int i = 1; i < m; i++) { // @step:loop_i
+                    for (int j = 1; j < n; j++) { // @step:loop_j
+                      int down = memo[j]; // @step:fetch_down
+                      int right = memo[j - 1]; // @step:fetch_right
+                      memo[j] = right + down; // @step:accumulate
+                    }
                   }
+                  return memo[n - 1]; // @step:return
+                }
               }
           reverse:
             title: "SolutionReverseFor.java (外层 for 版)"
             source: |
               class Solution {
-                  private int[] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[n]; // @step:init
-                      for (int j = 0; j < n; j++) memo[j] = 1; // @step:init_row // 外层for初始化最底行
-                      for (int i = m - 2; i >= 0; i--) { // @step:loop_i
-                          for (int j = n - 2; j >= 0; j--) { // @step:loop_j
-                              int down = memo[j]; // @step:fetch_down
-                              int right = memo[j + 1]; // @step:fetch_right
-                              memo[j] = right + down; // @step:accumulate
-                          }
-                      }
-                      return memo[0]; // @step:return
+                private int[] memo;
+                public int uniquePaths(int m, int n) {
+                  memo = new int[n]; // @step:init
+                  for (int j = 0; j < n; j++) memo[j] = 1; // @step:init_row // 外层for初始化最底行
+                  for (int i = m - 2; i >= 0; i--) { // @step:loop_i
+                    for (int j = n - 2; j >= 0; j--) { // @step:loop_j
+                      int down = memo[j]; // @step:fetch_down
+                      int right = memo[j + 1]; // @step:fetch_right
+                      memo[j] = right + down; // @step:accumulate
+                    }
                   }
+                  return memo[0]; // @step:return
+                }
               }
+

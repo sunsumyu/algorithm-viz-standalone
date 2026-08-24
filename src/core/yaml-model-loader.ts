@@ -151,7 +151,7 @@ export class YamlModelLoader {
     }
 
     // 单趟正则匹配关键字、类型、方法和数字，防止二次扫描误伤已插入的 HTML 标签
-    const tokenRegex = /\b(class|public|private|protected|int|vector|void|return|if|else|for|while|new|const|let|function|def|self)\b|\b(Solution|Array|Math|vector)\b|\b(uniquePaths|dfs|fill|push|pop|min|max)\b(?=\s*\()|\b(\d+)\b/g;
+    const tokenRegex = /\b(class|public|private|protected|int|vector|void|return|if|else|for|while|new|const|let|function|def|self)\b|\b(Solution|Array|Math|vector)\b|\b(uniquePaths|uniquePathsWithObstacles|minPathSum|dfs|fill|push|pop|min|max)\b(?=\s*\()|\b(\d+)\b/g;
 
     safe = safe.replace(tokenRegex, (match, kw, type, fn, num) => {
       if (kw) return `<span class="text-purple-400">${kw}</span>`;

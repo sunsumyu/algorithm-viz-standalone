@@ -35,6 +35,7 @@ export class VisualizerAppController {
   private currentStageVariant = 'if';
   private m = 3;
   private n = 4;
+  private codeFontSize = 11.5;
   private steps: UniversalStep[] = [];
   private timeline: PlaybackTimelineController | null = null;
   private splitterEngine: SplitterEngine | null = null;
@@ -73,6 +74,9 @@ export class VisualizerAppController {
    */
   public init(): void {
     if (typeof document === 'undefined') return;
+
+    // 初始化代码字号配置
+    this.initCodeFontSize();
 
     // 0. 从 URL Hash 恢复持久化状态与主题
     const restored = VisualizerStateRouter.restore();
@@ -285,6 +289,50 @@ export class VisualizerAppController {
       className: 'algo-layout-splitter',
       title: '拖拽调节左右面板宽度（双击复原 50:50）'
     });
+  }
+
+  /**
+   * 初始化代码字号配置
+   */
+  private initCodeFontSize(): void {
+    if (typeof localStorage !== 'undefined') {
+      const saved = parseFloat(localStorage.getItem('algo-code-font-size') || '');
+      if (Number.isFinite(saved) && saved >= 9 && saved <= 18) {
+        this.codeFontSize = saved;
+      }
+    }
+    this.applyCodeFontSize();
+  }
+
+  /**
+   * 动态设置代码面板字号
+   */
+  public setCodeFontSize(size: number): void {
+    const clamped = Math.min(Math.max(size, 9.5), 16);
+    this.codeFontSize = clamped;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('algo-code-font-size', String(clamped));
+    }
+    this.applyCodeFontSize();
+  }
+
+  /**
+   * 应用代码面板字号到 DOM
+   */
+  private applyCodeFontSize(): void {
+    if (typeof document === 'undefined') return;
+    const rounded = Math.round(this.codeFontSize * 10) / 10;
+    if (document.documentElement) {
+      document.documentElement.style.setProperty('--viz-code-font-size', `${rounded}px`);
+    }
+    const indicator = document.getElementById('code-font-indicator');
+    if (indicator) {
+      indicator.textContent = String(rounded);
+    }
+    const codeBox = document.getElementById('code-container-box');
+    if (codeBox) {
+      codeBox.style.fontSize = `${rounded}px`;
+    }
   }
 
   // ================= 内部辅助渲染方法 =================
@@ -649,6 +697,20 @@ export class VisualizerAppController {
     if (btnGenerate) btnGenerate.addEventListener('click', () => this.loadAndReset());
     if (slider) slider.addEventListener('input', (e) => this.timeline?.seek(parseInt((e.target as HTMLInputElement).value) || 0));
     if (selectSpeed) selectSpeed.addEventListener('change', (e) => this.timeline?.setSpeed(parseInt((e.target as HTMLSelectElement).value) || 900));
+
+    // Code font size scaling
+    const btnFontDec = document.getElementById('btn-code-font-dec');
+    const btnFontInc = document.getElementById('btn-code-font-inc');
+    if (btnFontDec) {
+      btnFontDec.addEventListener('click', () => {
+        this.setCodeFontSize(this.codeFontSize - 0.5);
+      });
+    }
+    if (btnFontInc) {
+      btnFontInc.addEventListener('click', () => {
+        this.setCodeFontSize(this.codeFontSize + 0.5);
+      });
+    }
 
     // Preset buttons (Full mode)
     document.querySelectorAll('.preset-btn').forEach(btn => {

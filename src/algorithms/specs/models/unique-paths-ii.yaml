@@ -85,33 +85,33 @@ stages:
             title: "UniquePathsII_RecursiveTerminal.java (拦截版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      return dfs(obstacleGrid, 0, 0, m, n);
-                  }
-                  private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                      if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 越界或遇障碍物阻断
-                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 成功到达终点
-                      int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
-                      int right = dfs(grid, i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
-                      return down + right; // @step:combine
-                  }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  return dfs(obstacleGrid, 0, 0, m, n);
+                }
+                private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 达到终点
+                  int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down // 向下探索
+                  int right = dfs(grid, i, j + 1, m, n); // @step:branch_right // 向右探索
+                  return down + right; // @step:combine
+                }
               }
           reverse:
             title: "UniquePathsII_RecursiveReverseTerminal.java (拦截版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      return dfs(obstacleGrid, m - 1, n - 1);
-                  }
-                  private int dfs(int[][] grid, int i, int j) { // @step:entry
-                      if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle // 越界或遇障碍物阻断
-                      if (i == 0 && j == 0) return 1; // @step:boundary // 成功回溯到起点
-                      int left = dfs(grid, i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
-                      int up = dfs(grid, i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
-                      return left + up; // @step:combine
-                  }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  return dfs(obstacleGrid, m - 1, n - 1);
+                }
+                private int dfs(int[][] grid, int i, int j) { // @step:entry
+                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+                  if (i == 0 && j == 0) return 1; // @step:boundary // 回到起点
+                  int left = dfs(grid, i, j - 1);  // @step:branch_left // 向左寻源
+                  int up = dfs(grid, i - 1, j);    // @step:branch_up // 向上寻源
+                  return left + up; // @step:combine
+                }
               }
       boundary:
         variantLabel: "边缘直达障碍版"
@@ -123,66 +123,66 @@ stages:
             title: "UniquePathsII_RecursiveBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      return dfs(obstacleGrid, 0, 0, m, n);
-                  }
-                  private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                      if (grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍物直接阻断
-                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
-                      int down = (i < m - 1) ? dfs(grid, i + 1, j, m, n) : 0;  // @step:branch_down
-                      int right = (j < n - 1) ? dfs(grid, i, j + 1, m, n) : 0; // @step:branch_right
-                      return down + right; // @step:combine
-                  }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  return dfs(obstacleGrid, 0, 0, m, n);
+                }
+                private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                  if (grid[i][j] == 1) return 0; // @step:obstacle // 障碍物阻断
+                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
+                  int down = (i < m - 1) ? dfs(grid, i + 1, j, m, n) : 0;  // @step:branch_down
+                  int right = (j < n - 1) ? dfs(grid, i, j + 1, m, n) : 0; // @step:branch_right
+                  return down + right; // @step:combine
+                }
               }
           reverse:
             title: "UniquePathsII_RecursiveReverseBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      return dfs(obstacleGrid, m - 1, n - 1);
-                  }
-                  private int dfs(int[][] grid, int i, int j) { // @step:entry
-                      if (grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍物直接阻断
-                      if (i == 0 && j == 0) return 1; // @step:boundary // 回溯到起点
-                      int left = (j > 0) ? dfs(grid, i, j - 1) : 0; // @step:branch_left
-                      int up = (i > 0) ? dfs(grid, i - 1, j) : 0;   // @step:branch_up
-                      return left + up; // @step:combine
-                  }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  return dfs(obstacleGrid, m - 1, n - 1);
+                }
+                private int dfs(int[][] grid, int i, int j) { // @step:entry
+                  if (grid[i][j] == 1) return 0; // @step:obstacle // 障碍物阻断
+                  if (i == 0 && j == 0) return 1; // @step:boundary // 回溯到起点
+                  int left = (j > 0) ? dfs(grid, i, j - 1) : 0; // @step:branch_left
+                  int up = (i > 0) ? dfs(grid, i - 1, j) : 0;   // @step:branch_up
+                  return left + up; // @step:combine
+                }
               }
     code:
       forward:
         title: "UniquePathsII_Recursive.java"
         source: |
           class Solution {
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  return dfs(obstacleGrid, 0, 0, m, n);
-              }
-              private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 越界或遇障碍物
-                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 成功到达终点
-                  int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
-                  int right = dfs(grid, i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
-                  return down + right; // @step:combine
-              }
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              return dfs(obstacleGrid, 0, 0, m, n);
+            }
+            private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+              if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+              if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 成功到达终点
+              int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down // 向下探索
+              int right = dfs(grid, i, j + 1, m, n); // @step:branch_right // 向右探索
+              return down + right; // @step:combine
+            }
           }
       reverse:
         title: "UniquePathsII_RecursiveReverse.java"
         source: |
           class Solution {
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  return dfs(obstacleGrid, m - 1, n - 1);
-              }
-              private int dfs(int[][] grid, int i, int j) { // @step:entry
-                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle // 越界或遇障碍物
-                  if (i == 0 && j == 0) return 1; // @step:boundary // 成功回溯到起点
-                  int left = dfs(grid, i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
-                  int up = dfs(grid, i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
-                  return left + up; // @step:combine
-              }
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              return dfs(obstacleGrid, m - 1, n - 1);
+            }
+            private int dfs(int[][] grid, int i, int j) { // @step:entry
+              if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+              if (i == 0 && j == 0) return 1; // @step:boundary // 成功回溯到起点
+              int left = dfs(grid, i, j - 1);  // @step:branch_left // 向左寻找来源
+              int up = dfs(grid, i - 1, j);    // @step:branch_up // 向上寻找来源
+              return left + up; // @step:combine
+            }
           }
 
   stage-2:
@@ -213,39 +213,39 @@ stages:
             title: "UniquePathsII_MemoTerminal.java (拦截剪枝版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      memo = new int[m][n];
-                      return dfs(obstacleGrid, 0, 0, m, n);
-                  }
-                  private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                      if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍阻断
-                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 备忘录剪枝命中
-                      int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
-                      int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
-                      return memo[i][j] = down + right; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  memo = new int[m][n];
+                  return dfs(obstacleGrid, 0, 0, m, n);
+                }
+                private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍阻断
+                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
+                  int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
+                  int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
+                  return memo[i][j] = down + right; // @step:combine
+                }
               }
           reverse:
             title: "UniquePathsII_MemoReverseTerminal.java (拦截剪枝版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      memo = new int[m][n];
-                      return dfs(obstacleGrid, m - 1, n - 1);
-                  }
-                  private int dfs(int[][] grid, int i, int j) { // @step:entry
-                      if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle
-                      if (i == 0 && j == 0) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 备忘录剪枝命中
-                      int left = dfs(grid, i, j - 1);  // @step:branch_left
-                      int up = dfs(grid, i - 1, j);    // @step:branch_up
-                      return memo[i][j] = left + up; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  memo = new int[m][n];
+                  return dfs(obstacleGrid, m - 1, n - 1);
+                }
+                private int dfs(int[][] grid, int i, int j) { // @step:entry
+                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle
+                  if (i == 0 && j == 0) return 1; // @step:boundary
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
+                  int left = dfs(grid, i, j - 1);  // @step:branch_left
+                  int up = dfs(grid, i - 1, j);    // @step:branch_up
+                  return memo[i][j] = left + up; // @step:combine
+                }
               }
       boundary:
         variantLabel: "边缘直达障碍剪枝版"
@@ -257,78 +257,78 @@ stages:
             title: "UniquePathsII_MemoBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      memo = new int[m][n];
-                      return dfs(obstacleGrid, 0, 0, m, n);
-                  }
-                  private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                      if (grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍物直接阻断
-                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 备忘录剪枝命中
-                      int down = (i < m - 1) ? dfs(grid, i + 1, j, m, n) : 0;  // @step:branch_down
-                      int right = (j < n - 1) ? dfs(grid, i, j + 1, m, n) : 0; // @step:branch_right
-                      return memo[i][j] = down + right; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  memo = new int[m][n];
+                  return dfs(obstacleGrid, 0, 0, m, n);
+                }
+                private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                  if (grid[i][j] == 1) return 0; // @step:obstacle // 障碍物阻断
+                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
+                  int down = (i < m - 1) ? dfs(grid, i + 1, j, m, n) : 0;  // @step:branch_down
+                  int right = (j < n - 1) ? dfs(grid, i, j + 1, m, n) : 0; // @step:branch_right
+                  return memo[i][j] = down + right; // @step:combine
+                }
               }
           reverse:
             title: "UniquePathsII_MemoReverseBoundary.java (边缘直达版)"
             source: |
               class Solution {
-                  private int[][] memo;
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      memo = new int[m][n];
-                      return dfs(obstacleGrid, m - 1, n - 1);
-                  }
-                  private int dfs(int[][] grid, int i, int j) { // @step:entry
-                      if (grid[i][j] == 1) return 0; // @step:obstacle
-                      if (i == 0 && j == 0) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 备忘录剪枝命中
-                      int left = (j > 0) ? dfs(grid, i, j - 1) : 0; // @step:branch_left
-                      int up = (i > 0) ? dfs(grid, i - 1, j) : 0;   // @step:branch_up
-                      return memo[i][j] = left + up; // @step:combine
-                  }
+                private int[][] memo;
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  memo = new int[m][n];
+                  return dfs(obstacleGrid, m - 1, n - 1);
+                }
+                private int dfs(int[][] grid, int i, int j) { // @step:entry
+                  if (grid[i][j] == 1) return 0; // @step:obstacle
+                  if (i == 0 && j == 0) return 1; // @step:boundary
+                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
+                  int left = (j > 0) ? dfs(grid, i, j - 1) : 0; // @step:branch_left
+                  int up = (i > 0) ? dfs(grid, i - 1, j) : 0;   // @step:branch_up
+                  return memo[i][j] = left + up; // @step:combine
+                }
               }
     code:
       forward:
         title: "UniquePathsII_Memo.java"
         source: |
           class Solution {
-              private int[][] memo;
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  memo = new int[m][n];
-                  return dfs(obstacleGrid, 0, 0, m, n);
-              }
-              private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍阻断
-                  if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
-                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 备忘录剪枝命中
-                  int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
-                  int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
-                  return memo[i][j] = down + right; // @step:combine
-              }
+            private int[][] memo;
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              memo = new int[m][n];
+              return dfs(obstacleGrid, 0, 0, m, n);
+            }
+            private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+              if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍阻断
+              if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
+              if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
+              int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
+              int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
+              return memo[i][j] = down + right; // @step:combine
+            }
           }
       reverse:
         title: "UniquePathsII_MemoReverse.java"
         source: |
           class Solution {
-              private int[][] memo;
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  memo = new int[m][n];
-                  return dfs(obstacleGrid, m - 1, n - 1);
-              }
-              private int dfs(int[][] grid, int i, int j) { // @step:entry
-                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle
-                  if (i == 0 && j == 0) return 1; // @step:boundary
-                  if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 备忘录剪枝命中
-                  int left = dfs(grid, i, j - 1);  // @step:branch_left
-                  int up = dfs(grid, i - 1, j);    // @step:branch_up
-                  return memo[i][j] = left + up; // @step:combine
-              }
+            private int[][] memo;
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              memo = new int[m][n];
+              return dfs(obstacleGrid, m - 1, n - 1);
+            }
+            private int dfs(int[][] grid, int i, int j) { // @step:entry
+              if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle
+              if (i == 0 && j == 0) return 1; // @step:boundary
+              if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
+              int left = dfs(grid, i, j - 1);  // @step:branch_left
+              int up = dfs(grid, i - 1, j);    // @step:branch_up
+              return memo[i][j] = left + up; // @step:combine
+            }
           }
 
   stage-3:
@@ -359,47 +359,47 @@ stages:
             title: "UniquePathsII_2D_If.java (内嵌 if 版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = 0; i < m; i++) { // @step:loop_i
-                          for (int j = 0; j < n; j++) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 1) { // @step:cond
-                                  dp[i][j] = 0; // @step:init_val // 遇到障碍物路径数为 0
-                              } else if (i == 0 && j == 0) {
-                                  dp[i][j] = 1; // @step:init_val // 起点初始化
-                              } else {
-                                  int fromTop = (i > 0) ? dp[i - 1][j] : 0;
-                                  int fromLeft = (j > 0) ? dp[i][j - 1] : 0;
-                                  dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = 0; i < m; i++) { // @step:loop_i
+                    for (int j = 0; j < n; j++) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 1) { // @step:cond
+                        dp[i][j] = 0; // @step:init_val // 障碍物格点为 0
+                      } else if (i == 0 && j == 0) {
+                        dp[i][j] = 1; // @step:init_val // 起点初始化
+                      } else {
+                        int fromTop = (i > 0) ? dp[i - 1][j] : 0;
+                        int fromLeft = (j > 0) ? dp[i][j - 1] : 0;
+                        dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移
                       }
-                      return dp[m - 1][n - 1]; // @step:return
+                    }
                   }
+                  return dp[m - 1][n - 1]; // @step:return
+                }
               }
           reverse:
             title: "UniquePathsII_2D_ReverseIf.java (内嵌 if 版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
-                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 1) { // @step:cond
-                                  dp[i][j] = 0; // @step:init_val // 障碍格为 0
-                              } else if (i == m - 1 && j == n - 1) {
-                                  dp[i][j] = 1; // @step:init_val // 终点初始化
-                              } else {
-                                  int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0;
-                                  int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0;
-                                  dp[i][j] = fromDown + fromRight; // @step:transfer
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                    for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 1) { // @step:cond
+                        dp[i][j] = 0; // @step:init_val // 障碍格为 0
+                      } else if (i == m - 1 && j == n - 1) {
+                        dp[i][j] = 1; // @step:init_val // 终点初始化
+                      } else {
+                        int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0;
+                        int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0;
+                        dp[i][j] = fromDown + fromRight; // @step:transfer
                       }
-                      return dp[0][0]; // @step:return
+                    }
                   }
+                  return dp[0][0]; // @step:return
+                }
               }
       for:
         variantLabel: "外层边界预处理版"
@@ -411,86 +411,86 @@ stages:
             title: "UniquePathsII_2D_For.java (外层 for 版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = 0; i < m && obstacleGrid[i][0] == 0; i++) dp[i][0] = 1; // @step:init_row
-                      for (int j = 0; j < n && obstacleGrid[0][j] == 0; j++) dp[0][j] = 1; // @step:init_col
-                      for (int i = 1; i < m; i++) { // @step:loop_i
-                          for (int j = 1; j < n; j++) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 0) { // @step:cond
-                                  dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = 0; i < m && obstacleGrid[i][0] == 0; i++) dp[i][0] = 1; // @step:init_row
+                  for (int j = 0; j < n && obstacleGrid[0][j] == 0; j++) dp[0][j] = 1; // @step:init_col
+                  for (int i = 1; i < m; i++) { // @step:loop_i
+                    for (int j = 1; j < n; j++) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 0) { // @step:cond
+                        dp[i][j] = dp[i - 1][j] + dp[i][j - 1]; // @step:transfer
                       }
-                      return dp[m - 1][n - 1]; // @step:return
+                    }
                   }
+                  return dp[m - 1][n - 1]; // @step:return
+                }
               }
           reverse:
             title: "UniquePathsII_2D_ReverseFor.java (外层 for 版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[][] dp = new int[m][n]; // @step:init
-                      for (int i = m - 1; i >= 0 && obstacleGrid[i][n - 1] == 0; i--) dp[i][n - 1] = 1; // @step:init_row
-                      for (int j = n - 1; j >= 0 && obstacleGrid[m - 1][j] == 0; j--) dp[m - 1][j] = 1; // @step:init_col
-                      for (int i = m - 2; i >= 0; i--) { // @step:loop_i
-                          for (int j = n - 2; j >= 0; j--) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 0) { // @step:cond
-                                  dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[][] dp = new int[m][n]; // @step:init
+                  for (int i = m - 1; i >= 0 && obstacleGrid[i][n - 1] == 0; i--) dp[i][n - 1] = 1; // @step:init_row
+                  for (int j = n - 1; j >= 0 && obstacleGrid[m - 1][j] == 0; j--) dp[m - 1][j] = 1; // @step:init_col
+                  for (int i = m - 2; i >= 0; i--) { // @step:loop_i
+                    for (int j = n - 2; j >= 0; j--) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 0) { // @step:cond
+                        dp[i][j] = dp[i + 1][j] + dp[i][j + 1]; // @step:transfer
                       }
-                      return dp[0][0]; // @step:return
+                    }
                   }
+                  return dp[0][0]; // @step:return
+                }
               }
     code:
       forward:
         title: "UniquePathsII_2D_If.java"
         source: |
           class Solution {
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  int[][] dp = new int[m][n]; // @step:init
-                  for (int i = 0; i < m; i++) { // @step:loop_i
-                      for (int j = 0; j < n; j++) { // @step:loop_j
-                          if (obstacleGrid[i][j] == 1) { // @step:cond
-                              dp[i][j] = 0; // @step:init_val // 遇到障碍物路径数为 0
-                          } else if (i == 0 && j == 0) {
-                              dp[i][j] = 1; // @step:init_val // 起点初始化
-                          } else {
-                              int fromTop = (i > 0) ? dp[i - 1][j] : 0;
-                              int fromLeft = (j > 0) ? dp[i][j - 1] : 0;
-                              dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移
-                          }
-                      }
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              int[][] dp = new int[m][n]; // @step:init
+              for (int i = 0; i < m; i++) { // @step:loop_i
+                for (int j = 0; j < n; j++) { // @step:loop_j
+                  if (obstacleGrid[i][j] == 1) { // @step:cond
+                    dp[i][j] = 0; // @step:init_val // 遇到障碍物路径数为 0
+                  } else if (i == 0 && j == 0) {
+                    dp[i][j] = 1; // @step:init_val // 起点初始化
+                  } else {
+                    int fromTop = (i > 0) ? dp[i - 1][j] : 0;
+                    int fromLeft = (j > 0) ? dp[i][j - 1] : 0;
+                    dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移
                   }
-                  return dp[m - 1][n - 1]; // @step:return
+                }
               }
+              return dp[m - 1][n - 1]; // @step:return
+            }
           }
       reverse:
         title: "UniquePathsII_2D_ReverseIf.java"
         source: |
           class Solution {
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  int[][] dp = new int[m][n]; // @step:init
-                  for (int i = m - 1; i >= 0; i--) { // @step:loop_i
-                      for (int j = n - 1; j >= 0; j--) { // @step:loop_j
-                          if (obstacleGrid[i][j] == 1) { // @step:cond
-                              dp[i][j] = 0; // @step:init_val // 障碍格为 0
-                          } else if (i == m - 1 && j == n - 1) {
-                              dp[i][j] = 1; // @step:init_val // 终点初始化
-                          } else {
-                              int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0;
-                              int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0;
-                              dp[i][j] = fromDown + fromRight; // @step:transfer
-                          }
-                      }
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              int[][] dp = new int[m][n]; // @step:init
+              for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                  if (obstacleGrid[i][j] == 1) { // @step:cond
+                    dp[i][j] = 0; // @step:init_val // 障碍格为 0
+                  } else if (i == m - 1 && j == n - 1) {
+                    dp[i][j] = 1; // @step:init_val // 终点初始化
+                  } else {
+                    int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0;
+                    int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0;
+                    dp[i][j] = fromDown + fromRight; // @step:transfer
                   }
-                  return dp[0][0]; // @step:return
+                }
               }
+              return dp[0][0]; // @step:return
+            }
           }
 
   stage-4:
@@ -517,45 +517,45 @@ stages:
             title: "UniquePathsII_1D_Optimized.java (一维压缩)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[] memo = new int[n]; // @step:init
-                      memo[0] = (obstacleGrid[0][0] == 0) ? 1 : 0;
-                      for (int i = 0; i < m; i++) { // @step:loop_i
-                          for (int j = 0; j < n; j++) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 1) { // @step:cond
-                                  memo[j] = 0; // @step:init_val // 遇到障碍物该列置 0
-                              } else if (j > 0) {
-                                  int down = memo[j];     // @step:fetch_down // 上一行旧值
-                                  int right = memo[j - 1]; // @step:fetch_right // 本行左列新值
-                                  memo[j] += right;        // @step:accumulate // 原地累加覆盖
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[] memo = new int[n]; // @step:init
+                  memo[0] = (obstacleGrid[0][0] == 0) ? 1 : 0;
+                  for (int i = 0; i < m; i++) { // @step:loop_i
+                    for (int j = 0; j < n; j++) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 1) { // @step:cond
+                        memo[j] = 0; // @step:init_val // 遇到障碍物列置 0
+                      } else if (j > 0) {
+                        int down = memo[j];     // @step:fetch_down // 上一行旧值
+                        int right = memo[j - 1]; // @step:fetch_right // 本行左列新值
+                        memo[j] += right;        // @step:accumulate // 原地累加覆盖
                       }
-                      return memo[n - 1]; // @step:return
+                    }
                   }
+                  return memo[n - 1]; // @step:return
+                }
               }
           reverse:
             title: "UniquePathsII_1D_ReverseOptimized.java (一维压缩)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[] memo = new int[n]; // @step:init
-                      memo[n - 1] = (obstacleGrid[m - 1][n - 1] == 0) ? 1 : 0;
-                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
-                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 1) { // @step:cond
-                                  memo[j] = 0; // @step:init_val // 遇到障碍物该列置 0
-                              } else if (j < n - 1) {
-                                  int down = memo[j];     // @step:fetch_down
-                                  int right = memo[j + 1]; // @step:fetch_right
-                                  memo[j] += right;        // @step:accumulate
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[] memo = new int[n]; // @step:init
+                  memo[n - 1] = (obstacleGrid[m - 1][n - 1] == 0) ? 1 : 0;
+                  for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                    for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 1) { // @step:cond
+                        memo[j] = 0; // @step:init_val // 遇到障碍物列置 0
+                      } else if (j < n - 1) {
+                        int down = memo[j];     // @step:fetch_down
+                        int right = memo[j + 1]; // @step:fetch_right
+                        memo[j] += right;        // @step:accumulate
                       }
-                      return memo[0]; // @step:return
+                    }
                   }
+                  return memo[0]; // @step:return
+                }
               }
       for:
         variantLabel: "标准一维滚动数组版"
@@ -567,86 +567,87 @@ stages:
             title: "UniquePathsII_1D_For.java (滚动数组版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[] memo = new int[n]; // @step:init
-                      for (int j = 0; j < n && obstacleGrid[0][j] == 0; j++) memo[j] = 1; // @step:init_val
-                      for (int i = 1; i < m; i++) { // @step:loop_i
-                          if (obstacleGrid[i][0] == 1) memo[0] = 0;
-                          for (int j = 1; j < n; j++) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 1) {
-                                  memo[j] = 0; // @step:init_val
-                              } else {
-                                  memo[j] += memo[j - 1]; // @step:accumulate
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[] memo = new int[n]; // @step:init
+                  for (int j = 0; j < n && obstacleGrid[0][j] == 0; j++) memo[j] = 1; // @step:init_val
+                  for (int i = 1; i < m; i++) { // @step:loop_i
+                    if (obstacleGrid[i][0] == 1) memo[0] = 0;
+                    for (int j = 1; j < n; j++) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 1) {
+                        memo[j] = 0; // @step:init_val
+                      } else {
+                        memo[j] += memo[j - 1]; // @step:accumulate
                       }
-                      return memo[n - 1]; // @step:return
+                    }
                   }
+                  return memo[n - 1]; // @step:return
+                }
               }
           reverse:
             title: "UniquePathsII_1D_ReverseFor.java (滚动数组版)"
             source: |
               class Solution {
-                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                      int[] memo = new int[n]; // @step:init
-                      for (int j = n - 1; j >= 0 && obstacleGrid[m - 1][j] == 0; j--) memo[j] = 1; // @step:init_val
-                      for (int i = m - 2; i >= 0; i--) { // @step:loop_i
-                          if (obstacleGrid[i][n - 1] == 1) memo[n - 1] = 0;
-                          for (int j = n - 2; j >= 0; j--) { // @step:loop_j
-                              if (obstacleGrid[i][j] == 1) {
-                                  memo[j] = 0; // @step:init_val
-                              } else {
-                                  memo[j] += memo[j + 1]; // @step:accumulate
-                              }
-                          }
+                public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                  int[] memo = new int[n]; // @step:init
+                  for (int j = n - 1; j >= 0 && obstacleGrid[m - 1][j] == 0; j--) memo[j] = 1; // @step:init_val
+                  for (int i = m - 2; i >= 0; i--) { // @step:loop_i
+                    if (obstacleGrid[i][n - 1] == 1) memo[n - 1] = 0;
+                    for (int j = n - 2; j >= 0; j--) { // @step:loop_j
+                      if (obstacleGrid[i][j] == 1) {
+                        memo[j] = 0; // @step:init_val
+                      } else {
+                        memo[j] += memo[j + 1]; // @step:accumulate
                       }
-                      return memo[0]; // @step:return
+                    }
                   }
+                  return memo[0]; // @step:return
+                }
               }
     code:
       forward:
         title: "UniquePathsII_1D_Optimized.java"
         source: |
           class Solution {
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  int[] memo = new int[n]; // @step:init
-                  memo[0] = (obstacleGrid[0][0] == 0) ? 1 : 0;
-                  for (int i = 0; i < m; i++) { // @step:loop_i
-                      for (int j = 0; j < n; j++) { // @step:loop_j
-                          if (obstacleGrid[i][j] == 1) { // @step:cond
-                              memo[j] = 0; // @step:init_val // 遇到障碍物该列置 0
-                          } else if (j > 0) {
-                              int down = memo[j];     // @step:fetch_down // 上一行旧值
-                              int right = memo[j - 1]; // @step:fetch_right // 本行左列新值
-                              memo[j] += right;        // @step:accumulate // 原地累加覆盖
-                          }
-                      }
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              int[] memo = new int[n]; // @step:init
+              memo[0] = (obstacleGrid[0][0] == 0) ? 1 : 0;
+              for (int i = 0; i < m; i++) { // @step:loop_i
+                for (int j = 0; j < n; j++) { // @step:loop_j
+                  if (obstacleGrid[i][j] == 1) { // @step:cond
+                    memo[j] = 0; // @step:init_val // 遇到障碍物列置 0
+                  } else if (j > 0) {
+                    int down = memo[j];     // @step:fetch_down // 上一行旧值
+                    int right = memo[j - 1]; // @step:fetch_right // 本行左列新值
+                    memo[j] += right;        // @step:accumulate // 原地累加覆盖
                   }
-                  return memo[n - 1]; // @step:return
+                }
               }
+              return memo[n - 1]; // @step:return
+            }
           }
       reverse:
         title: "UniquePathsII_1D_ReverseOptimized.java"
         source: |
           class Solution {
-              public int uniquePathsWithObstacles(int[][] obstacleGrid) {
-                  int m = obstacleGrid.length, n = obstacleGrid[0].length;
-                  int[] memo = new int[n]; // @step:init
-                  memo[n - 1] = (obstacleGrid[m - 1][n - 1] == 0) ? 1 : 0;
-                  for (int i = m - 1; i >= 0; i--) { // @step:loop_i
-                      for (int j = n - 1; j >= 0; j--) { // @step:loop_j
-                          if (obstacleGrid[i][j] == 1) { // @step:cond
-                              memo[j] = 0; // @step:init_val // 遇到障碍物该列置 0
-                          } else if (j < n - 1) {
-                              int down = memo[j];     // @step:fetch_down
-                              int right = memo[j + 1]; // @step:fetch_right
-                              memo[j] += right;        // @step:accumulate
-                          }
-                      }
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+              int m = obstacleGrid.length, n = obstacleGrid[0].length;
+              int[] memo = new int[n]; // @step:init
+              memo[n - 1] = (obstacleGrid[m - 1][n - 1] == 0) ? 1 : 0;
+              for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                  if (obstacleGrid[i][j] == 1) { // @step:cond
+                    memo[j] = 0; // @step:init_val // 遇到障碍物列置 0
+                  } else if (j < n - 1) {
+                    int down = memo[j];     // @step:fetch_down
+                    int right = memo[j + 1]; // @step:fetch_right
+                    memo[j] += right;        // @step:accumulate
                   }
-                  return memo[0]; // @step:return
+                }
               }
+              return memo[0]; // @step:return
+            }
           }
+

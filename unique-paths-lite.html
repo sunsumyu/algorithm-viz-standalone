@@ -197,10 +197,19 @@
               </button>
             </div>
 
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-              <span class="w-2 h-2 rounded-full bg-red-500/80"></span>
-              <span class="w-2 h-2 rounded-full bg-yellow-500/80"></span>
-              <span class="w-2 h-2 rounded-full bg-green-500/80"></span>
+            <!-- 字号缩放器与控制 -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <div class="flex items-center bg-slate-800/90 rounded-md border border-slate-700/80 p-0.5 text-slate-300">
+                <button id="btn-code-font-dec" title="缩小代码字号 (A-)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1">A-</button>
+                <span id="code-font-indicator" class="px-1 text-[10px] font-mono text-slate-400">12</span>
+                <button id="btn-code-font-inc" title="放大代码字号 (A+)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1">A+</button>
+              </div>
+
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <span class="w-2 h-2 rounded-full bg-red-500/80"></span>
+                <span class="w-2 h-2 rounded-full bg-yellow-500/80"></span>
+                <span class="w-2 h-2 rounded-full bg-green-500/80"></span>
+              </div>
             </div>
           </div>
 
