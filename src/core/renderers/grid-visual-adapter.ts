@@ -95,6 +95,12 @@ export class GridVisualAdapter {
     container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
     container.innerHTML = '';
 
+    const cellSizeClass = (m >= 5 || n >= 6)
+      ? 'w-8 h-8 sm:w-9 sm:h-9 text-[11px]'
+      : (m >= 4 || n >= 5)
+      ? 'w-9 h-9 sm:w-10 sm:h-10 text-xs'
+      : 'w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 text-xs';
+
     for (let r = 0; r < m; r++) {
       for (let c = 0; c < n; c++) {
         const cellVal = step.grid?.[r]?.[c] ?? null;
@@ -107,13 +113,13 @@ export class GridVisualAdapter {
         const cellEl = document.createElement('div');
 
         if (isObstacle) {
-          cellEl.className = 'viz-cell is-obstacle w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border';
+          cellEl.className = `viz-cell is-obstacle ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border`;
           cellEl.innerHTML = `
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="text-base font-bold mt-2 z-10">🚧</span>
           `;
         } else if (isCur) {
-          cellEl.className = 'viz-cell is-cur w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
+          cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold`;
           cellEl.innerHTML = `
             <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
               ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
@@ -122,27 +128,27 @@ export class GridVisualAdapter {
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isTop) {
-          cellEl.className = 'viz-cell is-top w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
+          cellEl.className = `viz-cell is-top ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold`;
           cellEl.innerHTML = `
             <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isLeft) {
-          cellEl.className = 'viz-cell is-left w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
+          cellEl.className = `viz-cell is-left ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold`;
           cellEl.innerHTML = `
             <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (cellVal !== null) {
-          cellEl.className = 'viz-cell is-done w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border font-bold';
+          cellEl.className = `viz-cell is-done ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold`;
           cellEl.innerHTML = `
             <span class="cell-coord text-[9px] absolute top-0.5 left-1">${r},${c}</span>
             <span class="cell-val text-sm font-bold mt-2 z-10">${cellVal}</span>
           `;
         } else {
-          cellEl.className = 'viz-cell is-empty w-11 h-11 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center relative font-mono-code text-xs transition-all border';
+          cellEl.className = `viz-cell is-empty ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border`;
           cellEl.innerHTML = `
             <span class="cell-coord text-[9px] absolute top-0.5 left-1">${r},${c}</span>
             ${isFinish ? `<span class="text-xs absolute bottom-1 right-1 opacity-70">🏁</span>` : ''}
@@ -326,7 +332,7 @@ export class RecursionTreeAdapter {
     let levelH = 50;
     let fontSize = 10.5;
     let tagFontSize = 8;
-    const topPad = 26;
+    const topPad = 34;
 
     if (leafCount >= 10 || maxDepth >= 4) {
       nodeW = 44;
