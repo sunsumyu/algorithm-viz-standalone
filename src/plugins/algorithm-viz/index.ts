@@ -366,7 +366,7 @@ function renderSidebarRecentFooter(): void {
         <span class="sidebar-recent-name">${escapeHtml(algo.name)}</span>
         <span class="sidebar-recent-cat" style="color: ${catConfig.color}">${catConfig.name}</span>
       </div>
-      <span class="sidebar-recent-dot" style="color: ${diff.color}" title="${diff.name}">${diff.dot}</span>
+      <span class="sidebar-recent-dot" style="color: ${diff.color}" title="${diff.label}">${diff.dot}</span>
     `;
 
     itemEl.addEventListener('click', () => {

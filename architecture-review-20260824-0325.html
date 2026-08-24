@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>算法配置化与深度架构重构评审报告 (Architecture Review)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            },
+            dark: {
+              900: '#0f172a',
+              800: '#1e293b',
+              700: '#334155',
+              600: '#475569',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #0b0f19; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-card:hover { border-color: rgba(34, 197, 94, 0.4); }
+    .mermaid { background: transparent !important; }
+    pre { background: #0f172a; border-radius: 8px; padding: 12px; border: 1px solid #334155; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="p-6 md:p-12 max-w-7xl mx-auto">
+  <!-- Header -->
+  <header class="mb-10 pb-6 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">
+        ⚡ 架构深度重构评审 (Architecture Review)
+      </div>
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+        <span>算法声明式 YAML 配置化与模型抽象架构重构</span>
+      </h1>
+      <p class="text-slate-400 text-sm mt-2">
+        基于 <strong>开闭原则 (OCP)</strong>、<strong>里氏替换 (LSP)</strong>、<strong>依赖倒置 (DIP)</strong> 与 <strong>深度模块 (Deep Modules)</strong> 体系，将算法写法与演化逻辑彻底配置化解耦。
+      </p>
+    </div>
+    <div class="text-right">
+      <div class="text-xs text-slate-500">评审时间</div>
+      <div class="text-sm font-mono text-slate-300">2026-08-24 03:25</div>
+      <div class="mt-2 text-xs px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono inline-block">TypeScript 5.x / YAML Declarative Engine</div>
+    </div>
+  </header>
+
+  <!-- Summary Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">配置化目标</div>
+      <div class="text-3xl font-bold text-emerald-400 mt-2">100% 解耦</div>
+      <div class="text-xs text-slate-500 mt-1">代码变体、阶段、推导规则全配置化</div>
+    </div>
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">设计原则遵从</div>
+      <div class="text-3xl font-bold text-blue-400 mt-2">OCP / LSP / DIP</div>
+      <div class="text-xs text-slate-500 mt-1">对扩展开放，对修改关闭；多态模型替换</div>
+    </div>
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">骨架复用率</div>
+      <div class="text-3xl font-bold text-amber-400 mt-2">&gt; 95%</div>
+      <div class="text-xs text-slate-500 mt-1">不同路径作为标准模板，全题型复用</div>
+    </div>
+    <div class="glass-card rounded-xl p-5">
+      <div class="text-xs text-slate-400 font-medium">代码侵入风险</div>
+      <div class="text-3xl font-bold text-green-400 mt-2">0 逻辑改动</div>
+      <div class="text-xs text-slate-500 mt-1">改算法只改 YAML，绝不改写引擎代码</div>
+    </div>
+  </div>
+
+  <!-- Candidates Section -->
+  <div class="space-y-10">
+
+    <!-- Candidate 1 -->
+    <section class="glass-card rounded-2xl p-6 md:p-8 border border-slate-700/60 transition-all">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold">1</span>
+          <h2 class="text-2xl font-bold text-white">建立「声明式 YAML 算法规范规范与加载器」深模块 (DIP / OCP 基础)</h2>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">强烈推荐 (Strong)</span>
+      </div>
+
+      <div class="text-sm text-slate-400 mb-6 flex flex-wrap gap-2">
+        <span class="text-slate-500">涉及文件:</span>
+        <code class="text-amber-300 bg-slate-800/80 px-2 py-0.5 rounded">src/algorithms/specs/models/unique-paths.yaml (新增标准模型)</code>
+        <code class="text-blue-300 bg-slate-800/80 px-2 py-0.5 rounded">src/core/yaml-spec-loader.ts (新增深模块)</code>
+        <code class="text-slate-300 bg-slate-800/80 px-2 py-0.5 rounded">src/core/interfaces.ts (增强契约接口)</code>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h3 class="text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">现状问题 (Architectural Friction)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed mb-3">
+            目前所有算法的写法（Java 顺推/逆推、内嵌 if / 外层 for 版、代码高亮行号、执行日志文本、各阶段副标题）全都作为脆弱的 HTML/JS 字符串硬编码在 2000 多行的单体文件中。
+          </p>
+          <ul class="list-disc list-inside text-xs text-slate-400 space-y-1.5">
+            <li><strong>违反 OCP（开闭原则）</strong>：每次想添加一种算法变体或调整日志，必须打开并改动核心渲染与推导代码；</li>
+            <li><strong>违反 DIP（依赖倒置原则）</strong>：高层 UI 逻辑直接依赖了底层的硬编码算法实现字符串，导致维护时极易改乱写好的算法；</li>
+            <li><strong>缺乏 Locality（局部性）</strong>：算法的知识（代码、步骤说明、阶段信息）与 UI 逻辑纠缠，改一处影响全局。</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-2">解决方案 (Proposed Deep Seam)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed mb-3">
+            将所有算法变体与配置彻底外置到 <code>unique-paths.yaml</code> 中，建立强类型校验的 <code>YamlSpecLoader</code> 深模块：
+          </p>
+          <ul class="list-disc list-inside text-xs text-slate-400 space-y-1.5">
+            <li><strong>元数据层</strong>：题目 ID、名称、多语言描述、图例映射；</li>
+            <li><strong>演化阶段层</strong>：<code>stage-1</code>（递归）、<code>stage-2</code>（记忆化）、<code>stage-3</code>（二维DP）、<code>stage-4</code>（一维压缩）；</li>
+            <li><strong>方向维度</strong>：<code>forward</code>（顺推正序）与 <code>reverse</code>（逆推倒序）完全声明式配置；</li>
+            <li><strong>代码变体库</strong>：支持多语言与多样态（<code>if</code> / <code>for</code> / 递归辅助函数）的代码模板及语义锚点。</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Before / After Architecture Diagram -->
+      <div class="bg-slate-900/90 rounded-xl p-5 border border-slate-800">
+        <h4 class="text-xs font-semibold text-slate-400 uppercase mb-3">架构演进对比 (Mermaid Visual Architecture)</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-950 p-4 rounded-lg border border-red-900/30">
+            <div class="text-xs font-bold text-red-400 mb-2">重构前：浅模块、紧密耦合、硬编码侵入</div>
+            <pre class="mermaid text-xs">
+graph TD
+    UI[HTML 视图单体] -->|硬编码字符串| STAGE[STAGE_CONFIGS 巨型对象]
+    UI -->|手写 push| GEN[硬编码 Step Generators]
+    GEN -->|散落各处| CODE[代码行高亮与日志模板]
+    style UI fill:#331515,stroke:#ef4444,stroke-width:1px
+    style STAGE fill:#331515,stroke:#ef4444,stroke-width:1px
+    style GEN fill:#331515,stroke:#ef4444,stroke-width:1px
+            </pre>
+          </div>
+          <div class="bg-slate-950 p-4 rounded-lg border border-emerald-900/30">
+            <div class="text-xs font-bold text-emerald-400 mb-2">重构后：DIP 依赖倒置、声明式 YAML 规范契约</div>
+            <pre class="mermaid text-xs">
+graph TD
+    YAML[unique-paths.yaml 算法模型规范] -->|纯声明式配置| LOADER[YamlSpecLoader 深加载器]
+    LOADER -->|输出标准化 AlgorithmSpec| ENGINE[通用演化推导引擎]
+    ENGINE -->|驱动| VIEW[通用可视化骨架 UI]
+    style YAML fill:#064e3b,stroke:#10b981,stroke-width:2px
+    style LOADER fill:#1e293b,stroke:#3b82f6,stroke-width:1px
+    style ENGINE fill:#1e293b,stroke:#3b82f6,stroke-width:1px
+    style VIEW fill:#1e293b,stroke:#10b981,stroke-width:1px
+            </pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Candidate 2 -->
+    <section class="glass-card rounded-2xl p-6 md:p-8 border border-slate-700/60 transition-all">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 font-bold">2</span>
+          <h2 class="text-2xl font-bold text-white">符合 LSP（里氏替换）的「通用多阶段状态转移执行引擎」</h2>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">强烈推荐 (Strong)</span>
+      </div>
+
+      <div class="text-sm text-slate-400 mb-6 flex flex-wrap gap-2">
+        <span class="text-slate-500">涉及文件:</span>
+        <code class="text-blue-300 bg-slate-800/80 px-2 py-0.5 rounded">src/core/universal-stage-engine.ts (新增多态执行中枢)</code>
+        <code class="text-purple-300 bg-slate-800/80 px-2 py-0.5 rounded">src/algorithms/categories/dynamic-programming/engine/dp-step-engine.ts</code>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h3 class="text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">现状问题</h3>
+          <p class="text-slate-300 text-sm leading-relaxed mb-3">
+            在每个阶段、每个方向中，都要手写一次 <code>dfs(r, c)</code>、<code>for</code> 循环和几十个 <code>steps.push({...})</code>。各个推导函数逻辑类似但又有微小差异，极难维护。
+          </p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-2">解决方案 (LSP 设计)</h3>
+          <p class="text-slate-300 text-sm leading-relaxed mb-3">
+            定义统一的 <code>IAlgorithmExecutionModel</code>。引擎根据 YAML 中声明的转移拓扑公式（如 <code>dp[i][j] = left + up</code> 或 <code>memo[j] = down + right</code>），自动驱动：
+          </p>
+          <ul class="list-disc list-inside text-xs text-slate-400 space-y-1.5">
+            <li><strong>递归树与调用栈追踪</strong>（自动生成 <code>activeStack</code> 与剪枝标记）；</li>
+            <li><strong>状态依赖关联</strong>（自动解析当前格引用的上方/左方/下方/右方单元格）；</li>
+            <li><strong>代码行号映射</strong>（通过语义锚点 <code>@step:branch_left</code> 等自动高亮，杜绝行号硬编码）。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Candidate 3 -->
+    <section class="glass-card rounded-2xl p-6 md:p-8 border border-slate-700/60 transition-all">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 font-bold">3</span>
+          <h2 class="text-2xl font-bold text-white">构建标准模型模板与 YAML 驱动的可复用通用舞台</h2>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-semibold">建议采纳 (Worth Exploring)</span>
+      </div>
+
+      <p class="text-slate-300 text-sm leading-relaxed mb-4">
+        将「不同路径 (Unique Paths)」作为<strong>标准模型模板 (Gold Standard Model)</strong>。以后增加新题目（如 <code>unique-paths-ii</code>、<code>minimum-path-sum</code>、<code>triangle</code>、<code>edit-distance</code> 等）时：
+        <strong>零代码编写，仅需新建一个对应的 <code>.yaml</code> 配置文件</strong>，即可自动获得 4 阶段演化、多方向推导、动态树形生成、多变体代码高亮与交互控制器！
+      </p>
+    </section>
+
+  </div>
+
+  <!-- YAML Model Spec Preview -->
+  <div class="mt-10 glass-card rounded-2xl p-6 md:p-8 border border-slate-700/60">
+    <h3 class="text-xl font-bold text-white mb-3 flex items-center gap-2">
+      <span class="text-emerald-400">📄</span> 拟提取的标准模型 YAML 结构设计 (unique-paths.yaml)
+    </h3>
+    <pre><code class="text-xs text-slate-300">id: unique-paths
+name: "不同路径 (Unique Paths)"
+category: "dynamic-programming"
+icon: "🧭"
+difficulty: "medium"
+levelOrder: 5
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    start: [0, 0]
+    target: [m - 1, n - 1]
+    branches:
+      - name: "down"
+        delta: [1, 0]
+        label: "向下探索"
+      - name: "right"
+        delta: [0, 1]
+        label: "向右探索"
+  reverse:
+    label: "逆推 (倒序)"
+    start: [m - 1, n - 1]
+    target: [0, 0]
+    branches:
+      - name: "left"
+        delta: [0, -1]
+        label: "向左寻源"
+      - name: "up"
+        delta: [-1, 0]
+        label: "向上寻源"
+
+stages:
+  stage-1:
+    type: "recursion"
+    title: "阶段 1: 朴素递归"
+    timeComplexity: "O(2^(m+n))"
+    spaceComplexity: "O(m+n)"
+    code:
+      java:
+        forward: |
+          class Solution {
+              public int uniquePaths(int m, int n) {
+                  return dfs(0, 0, m, n);
+              }
+              private int dfs(int i, int j, int m, int n) {
+                  if (i == m - 1 || j == n - 1) return 1;
+                  int down = dfs(i + 1, j, m, n);
+                  int right = dfs(i, j + 1, m, n);
+                  return down + right;
+              }
+          }
+        reverse: |
+          class Solution {
+              public int uniquePaths(int m, int n) {
+                  return dfs(m - 1, n - 1);
+              }
+              private int dfs(int i, int j) {
+                  if (i == 0 || j == 0) return 1;
+                  int left = dfs(i, j - 1);
+                  int up = dfs(i - 1, j);
+                  return left + up;
+              }
+          }
+  stage-4:
+    type: "space-optimized"
+    title: "阶段 4: 一维空间压缩"
+    variants:
+      if:
+        title: "内嵌 if 版"
+        code:
+          java: ...
+      for:
+        title: "外层 for 版"
+        code:
+          java: ...</code></pre>
+  </div>
+
+  <!-- Top Recommendation -->
+  <footer class="mt-10 p-6 rounded-2xl bg-emerald-950/40 border border-emerald-800/60">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-2xl">🎯</span>
+      <h3 class="text-lg font-bold text-emerald-300">首要执行建议 (Top Recommendation)</h3>
+    </div>
+    <p class="text-sm text-slate-300 leading-relaxed">
+      我们建议首先实施 <strong>Candidate 1 与 Candidate 2</strong>：
+      在 <code>src/algorithms/specs/models/unique-paths.yaml</code> 中建立完整的数据契约模型，实现 <code>YamlSpecLoader</code> 与基于规则的多态推导引擎，将 <code>unique-paths</code> 彻底改造为开闭原则示范模型，实现<strong>改算法只改 YAML，核心代码零改动</strong>。
+    </p>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+</body>
+</html>

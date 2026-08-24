@@ -16,12 +16,17 @@ pub fn run() {
 
   tauri::Builder::default()
     .setup(|app| {
-      if cfg!(debug_assertions) {
+      #[cfg(debug_assertions)]
+      {
+        use tauri::Manager;
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
             .level(log::LevelFilter::Info)
             .build(),
         )?;
+        if let Some(main_window) = app.get_webview_window("main") {
+          main_window.open_devtools();
+        }
       }
       Ok(())
     })

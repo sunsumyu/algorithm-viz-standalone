@@ -8,28 +8,35 @@
 import { pluginLoader } from './core/plugin-loader';
 import { setupTauriWindowControls } from './core/tauri-window-controls';
 import { algorithmVizPlugin } from './plugins/algorithm-viz/index';
+import { algorithmManager } from './core/algorithm-manager';
+
+if (typeof window !== 'undefined') {
+  (window as unknown as { algorithmManager: typeof algorithmManager }).algorithmManager = algorithmManager;
+}
 
 /**
  * 应用初始化
  */
 async function main(): Promise<void> {
+  const startTime = performance.now();
   console.log('[Main] Starting Algorithm Visualization Desktop App...');
   console.log(`[Main] Platform: ${navigator.platform}, User Agent: ${navigator.userAgent}`);
+  console.log(`[Main] Initial Algorithm Metadata Count: ${algorithmManager.getAllAlgorithms().length}`);
 
   try {
-    // 1. 绑定桌面窗口控制
-    await setupTauriWindowControls();
-    console.log('[Main] Window controls initialized');
-
-    // 2. 注册算法可视化插件
+    // 1. 立即注册并加载核心 UI 插件（毫秒级瞬间渲染侧边栏和算法卡片）
+    const pluginT0 = performance.now();
     pluginLoader.register(algorithmVizPlugin);
-    console.log('[Main] Plugin registered');
-
-    // 3. 加载插件
     await pluginLoader.load('algorithm-viz');
-    console.log('[Main] Plugin loaded');
+    console.log(`[Main] Plugin loaded & UI rendered in ${(performance.now() - pluginT0).toFixed(1)}ms`);
 
-    console.log('[Main] Application ready');
+    // 2. 异步绑定桌面窗口控制（最小化/最大化/关闭），不阻塞首屏渲染
+    setupTauriWindowControls().catch((err) => {
+      console.warn('[Main] Window controls init warning:', err);
+    });
+
+    const totalTime = (performance.now() - startTime).toFixed(1);
+    console.log(`[Main] Application ready in ${totalTime}ms (Total ${algorithmManager.getAllAlgorithms().length} algorithms active)`);
   } catch (error) {
     console.error('[Main] Failed to initialize:', error);
 
@@ -58,3 +65,4 @@ if (document.readyState === 'loading') {
 } else {
   main();
 }
+

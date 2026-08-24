@@ -1,0 +1,286 @@
+id: unique-paths-ii
+name: "不同路径 II"
+nameEn: "Unique Paths II"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🚧"
+difficulty: 2
+levelOrder: 6
+learningGoal: "掌握带障碍物的网格路径动态规划与状态阻断边界处理技巧"
+description: "网格路径数 II（LeetCode 63）：网格中存在障碍物（值为 1），遇到障碍物时路径数为 0，空间复杂度优化至一维 O(n)。"
+defaultParams:
+  m: 3
+  n: 3
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    start: [0, 0]
+    targetFormula: "[m - 1, n - 1]"
+    branches:
+      - name: "down"
+        delta: [1, 0]
+        label: "向下探索"
+        codeVar: "down"
+        arrow: "⬇️"
+      - name: "right"
+        delta: [0, 1]
+        label: "向右探索"
+        codeVar: "right"
+        arrow: "➡️"
+    combineFormula: "down + right"
+  reverse:
+    label: "逆推 (倒序)"
+    startFormula: "[m - 1, n - 1]"
+    target: [0, 0]
+    branches:
+      - name: "left"
+        delta: [0, -1]
+        label: "向左寻源"
+        codeVar: "left"
+        arrow: "⬅️"
+      - name: "up"
+        delta: [-1, 0]
+        label: "向上寻源"
+        codeVar: "up"
+        arrow: "⬆️"
+    combineFormula: "left + up"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (带障碍顺推探索)"
+      reverse: "阶段 1: 朴素递归 (带障碍逆推寻源)"
+    desc:
+      forward: "从起点 (0, 0) 开始向右向下递归分支，遇到障碍物格点立即返回 0 阻断，到达终点返回 1。"
+      reverse: "从终点 (m-1, n-1) 开始逆推寻源，遇到障碍物返回 0，到达起点返回 1。"
+    variants:
+      boundary:
+        variantLabel: "障碍拦截版"
+        title:
+          forward: "UniquePathsII_Recursive.java (障碍拦截版)"
+          reverse: "UniquePathsII_RecursiveReverse.java (障碍拦截版)"
+        code:
+          forward:
+            title: "UniquePathsII_Recursive.java (障碍拦截版)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      return dfs(obstacleGrid, 0, 0, m, n);
+                  }
+                  private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                      if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 越界或遇障碍物
+                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 成功到达终点
+                      int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
+                      int right = dfs(grid, i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
+                      return down + right; // @step:combine
+                  }
+              }
+          reverse:
+            title: "UniquePathsII_RecursiveReverse.java (障碍拦截版)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      return dfs(obstacleGrid, m - 1, n - 1);
+                  }
+                  private int dfs(int[][] grid, int i, int j) { // @step:entry
+                      if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle // 越界或遇障碍物
+                      if (i == 0 && j == 0) return 1; // @step:boundary // 成功回溯到起点
+                      int left = dfs(grid, i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
+                      int up = dfs(grid, i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
+                      return left + up; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+      reverse: "阶段 2: 逆推记忆化搜索 (自顶向下剪枝)"
+    desc:
+      forward: "引入 memo[m][n] 缓存，遇到已计算格点直接 O(1) 返回；遇障碍物记录为 0 剪枝。"
+      reverse: "倒序记忆化搜索，自顶向下剪枝，已访问状态直接查表返回。"
+    variants:
+      array_memo:
+        variantLabel: "数组备忘录版"
+        title:
+          forward: "UniquePathsII_Memo.java (二维备忘录版)"
+          reverse: "UniquePathsII_MemoReverse.java (二维备忘录版)"
+        code:
+          forward:
+            title: "UniquePathsII_Memo.java (二维备忘录版)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      int[][] memo = new int[m][n];
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(obstacleGrid, 0, 0, m, n, memo);
+                  }
+                  private int dfs(int[][] grid, int i, int j, int m, int n, int[][] memo) { // @step:entry
+                      if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍阻断
+                      if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
+                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit // 备忘录剪枝命中
+                      int down = dfs(grid, i + 1, j, m, n, memo);  // @step:branch_down
+                      int right = dfs(grid, i, j + 1, m, n, memo); // @step:branch_right
+                      return memo[i][j] = down + right; // @step:combine // 存入备忘录并返回
+                  }
+              }
+          reverse:
+            title: "UniquePathsII_MemoReverse.java (二维备忘录版)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      int[][] memo = new int[m][n];
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(obstacleGrid, m - 1, n - 1, memo);
+                  }
+                  private int dfs(int[][] grid, int i, int j, int[][] memo) { // @step:entry
+                      if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle
+                      if (i == 0 && j == 0) return 1; // @step:boundary
+                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+                      int left = dfs(grid, i, j - 1, memo);  // @step:branch_left
+                      int up = dfs(grid, i - 1, j, memo);    // @step:branch_up
+                      return memo[i][j] = left + up; // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 经典顺推二维 DP 填表 (带障碍物处理)"
+      reverse: "阶段 3: 逆向倒序二维 DP 填表 (带障碍物处理)"
+    desc:
+      forward: "dp[i][j] 表示从起点到达 (i, j) 的路径总数。遇到障碍格时 dp[i][j] = 0，否则从上方与左方累加。"
+      reverse: "dp[i][j] 表示从 (i, j) 到达终点的路径总数。遇障碍格置 0，否则从下方与右方累加。"
+    variants:
+      if:
+        variantLabel: "内嵌 if 判断版"
+        title:
+          forward: "UniquePathsII_2D_If.java (内嵌 if 版)"
+          reverse: "UniquePathsII_2D_ReverseIf.java (内嵌 if 版)"
+        code:
+          forward:
+            title: "UniquePathsII_2D_If.java (内嵌 if 版)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      if (obstacleGrid[0][0] == 1 || obstacleGrid[m - 1][n - 1] == 1) return 0;
+                      int[][] dp = new int[m][n]; // @step:init
+                      for (int i = 0; i < m; i++) { // @step:loop_i
+                          for (int j = 0; j < n; j++) { // @step:loop_j
+                              if (obstacleGrid[i][j] == 1) { // @step:cond
+                                  dp[i][j] = 0; // @step:init_val // 障碍格路径数为 0
+                              } else if (i == 0 && j == 0) {
+                                  dp[i][j] = 1; // @step:init_val // 起点初始化
+                              } else {
+                                  int fromTop = (i > 0) ? dp[i - 1][j] : 0;
+                                  int fromLeft = (j > 0) ? dp[i][j - 1] : 0;
+                                  dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移
+                              }
+                          }
+                      }
+                      return dp[m - 1][n - 1]; // @step:return
+                  }
+              }
+          reverse:
+            title: "UniquePathsII_2D_ReverseIf.java (内嵌 if 版)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      if (obstacleGrid[0][0] == 1 || obstacleGrid[m - 1][n - 1] == 1) return 0;
+                      int[][] dp = new int[m][n]; // @step:init
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                              if (obstacleGrid[i][j] == 1) { // @step:cond
+                                  dp[i][j] = 0; // @step:init_val
+                              } else if (i == m - 1 && j == n - 1) {
+                                  dp[i][j] = 1; // @step:init_val
+                              } else {
+                                  int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0;
+                                  int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0;
+                                  dp[i][j] = fromDown + fromRight; // @step:transfer
+                              }
+                          }
+                      }
+                      return dp[0][0]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "一维优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(n) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 一维空间压缩优化 (带障碍物 原地覆盖)"
+      reverse: "阶段 4: 逆推一维空间压缩优化 (带障碍物 原地覆盖)"
+    desc:
+      forward: "仅保留长度为 n 的一维 memo 数组。遇到障碍物时 memo[j] = 0 清零；否则 memo[j] += memo[j - 1]。"
+      reverse: "仅保留长度为 n 的一维 memo 数组倒序更新。遇到障碍物时 memo[j] = 0；否则 memo[j] += memo[j + 1]。"
+    variants:
+      if:
+        variantLabel: "原地覆盖版"
+        title:
+          forward: "UniquePathsII_1D_Optimized.java (一维压缩)"
+          reverse: "UniquePathsII_1D_ReverseOptimized.java (一维压缩)"
+        code:
+          forward:
+            title: "UniquePathsII_1D_Optimized.java (一维压缩)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      int[] memo = new int[n]; // @step:init
+                      memo[0] = (obstacleGrid[0][0] == 0) ? 1 : 0;
+                      for (int i = 0; i < m; i++) {
+                          for (int j = 0; j < n; j++) {
+                              if (obstacleGrid[i][j] == 1) {
+                                  memo[j] = 0; // @step:init_val // 遇到障碍物该列置 0
+                              } else if (j > 0) {
+                                  int down = memo[j];     // @step:fetch_down // 上一行旧值
+                                  int right = memo[j - 1]; // @step:fetch_right // 本行左列新值
+                                  memo[j] += right;        // @step:accumulate // 原地累加覆盖
+                              }
+                          }
+                      }
+                      return memo[n - 1]; // @step:return
+                  }
+              }
+          reverse:
+            title: "UniquePathsII_1D_ReverseOptimized.java (一维压缩)"
+            source: |
+              class Solution {
+                  public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                      int m = obstacleGrid.length, n = obstacleGrid[0].length;
+                      int[] memo = new int[n]; // @step:init
+                      memo[n - 1] = (obstacleGrid[m - 1][n - 1] == 0) ? 1 : 0;
+                      for (int i = m - 1; i >= 0; i--) {
+                          for (int j = n - 1; j >= 0; j--) {
+                              if (obstacleGrid[i][j] == 1) {
+                                  memo[j] = 0; // @step:init_val
+                              } else if (j < n - 1) {
+                                  int down = memo[j];     // @step:fetch_down
+                                  int right = memo[j + 1]; // @step:fetch_right
+                                  memo[j] += right;        // @step:accumulate
+                              }
+                          }
+                      }
+                      return memo[0]; // @step:return
+                  }
+              }

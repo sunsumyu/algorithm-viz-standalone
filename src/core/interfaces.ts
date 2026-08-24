@@ -156,3 +156,80 @@ export interface DpBacktrackStep {
   stepIndex?: number;
 }
 
+/**
+ * 声明式 YAML 算法模型规范契约 (YAML Algorithm Model Spec Schema)
+ */
+export interface IYamlBranchDef {
+  name: string;
+  delta: [number, number];
+  label: string;
+  codeVar?: string;
+  arrow?: string;
+}
+
+export interface IYamlDirectionDef {
+  label: string;
+  start?: [number, number];
+  target?: [number, number];
+  startFormula?: string;
+  targetFormula?: string;
+  branches: IYamlBranchDef[];
+  combineFormula?: string;
+}
+
+export interface IYamlCodeSnippet {
+  title: string;
+  source: string;
+}
+
+export interface IYamlStageVariant {
+  variantLabel?: string;
+  title: { forward: string; reverse: string } | string;
+  code: {
+    forward?: IYamlCodeSnippet;
+    reverse?: IYamlCodeSnippet;
+  };
+}
+
+export interface IYamlStageSpec {
+  type: 'recursion' | 'memoization' | 'tabulation-2d' | 'space-optimized-1d' | 'sequence-dp' | 'knapsack-dp';
+  shortName?: string;
+  timeBadge?: string;
+  badgeBg?: string;
+  name: { forward: string; reverse: string } | string;
+  desc: { forward: string; reverse: string } | string;
+  card2Title?: { forward: string; reverse: string } | string;
+  card2Desc?: { forward: string; reverse: string } | string;
+  code?: {
+    forward?: IYamlCodeSnippet;
+    reverse?: IYamlCodeSnippet;
+  };
+  variants?: Record<string, IYamlStageVariant>;
+}
+
+export interface IYamlAlgorithmModel {
+  id: string;
+  name: string;
+  nameEn?: string;
+  category: string;
+  icon?: string;
+  difficulty?: number | string;
+  levelOrder?: number;
+  learningGoal?: string;
+  description?: string;
+  defaultStage?: string;
+  defaultParams?: Record<string, any>;
+  directions: {
+    forward: IYamlDirectionDef;
+    reverse: IYamlDirectionDef;
+    [key: string]: IYamlDirectionDef;
+  };
+  stages: {
+    'stage-1': IYamlStageSpec;
+    'stage-2': IYamlStageSpec;
+    'stage-3': IYamlStageSpec;
+    'stage-4': IYamlStageSpec;
+    [key: string]: IYamlStageSpec;
+  };
+}
+

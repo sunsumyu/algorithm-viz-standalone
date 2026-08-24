@@ -3,9 +3,9 @@ import { UniversalFidelityAuditor } from './fidelity-auditor';
 import { AlgorithmManager } from './algorithm-manager';
 
 describe('Universal Algorithm Fidelity Auditor', () => {
-  it('should audit all registered algorithms and report integrity', () => {
-    // 触发单例初始化以加载所有 batch 索引中的算法
-    AlgorithmManager.getInstance();
+  it('should audit all registered algorithms and report integrity', async () => {
+    // 预热加载所有 batch 模块
+    await AlgorithmManager.getInstance().ensureAllLoaded();
 
     const summary = UniversalFidelityAuditor.runGlobalAudit();
 
@@ -21,7 +21,7 @@ describe('Universal Algorithm Fidelity Auditor', () => {
     }
 
     expect(summary.failedCount).toBe(0);
-  });
+  }, 30000);
 
   it('should verify fidelity and multi-language alignment for core DP algorithms', () => {
     const dpAlgorithms = [

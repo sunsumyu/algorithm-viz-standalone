@@ -1,0 +1,153 @@
+id: fibonacci
+name: "斐波那契数"
+nameEn: "Fibonacci Number"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🔢"
+difficulty: 1
+levelOrder: 1
+learningGoal: "动态规划极简第一课：从朴素二叉递归爆炸到 O(1) 滚动双变量"
+description: "斐波那契数列（LeetCode 509）：F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2)。展示递归重叠子问题、剪枝备忘录与空间优化。"
+defaultParams:
+  n: 6
+
+directions:
+  forward:
+    label: "顺推 (自顶向下)"
+    branches:
+      - name: "left"
+        delta: [-1, 0]
+        label: "F(n-1) 分支"
+        codeVar: "f_n_1"
+        arrow: "↙️"
+      - name: "right"
+        delta: [-2, 0]
+        label: "F(n-2) 分支"
+        codeVar: "f_n_2"
+        arrow: "↘️"
+    combineFormula: "f_n_1 + f_n_2"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (自顶向下展开)"
+    desc:
+      forward: "直接依据数学定义递归调用，每个节点分化两个子节点，导致大量的重复子问题计算（指数级爆炸）。"
+    variants:
+      standard:
+        variantLabel: "标准递归版"
+        title:
+          forward: "Fibonacci_Recursive.java"
+        code:
+          forward:
+            title: "Fibonacci_Recursive.java"
+            source: |
+              class Solution {
+                  public int fib(int n) { // @step:entry
+                      if (n <= 0) return 0; // @step:boundary
+                      if (n == 1) return 1; // @step:boundary
+                      int left = fib(n - 1);  // @step:branch_left // 计算 F(n-1)
+                      int right = fib(n - 2); // @step:branch_right // 计算 F(n-2)
+                      return left + right;    // @step:combine // 合并子问题
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠计算)"
+    desc:
+      forward: "引入一维备忘录 memo[n+1] 缓存中间结果，遇到计算过的状态直接 O(1) 查表返回，将调用树剪枝为单链。"
+    variants:
+      array_memo:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "Fibonacci_Memo.java"
+        code:
+          forward:
+            title: "Fibonacci_Memo.java"
+            source: |
+              class Solution {
+                  public int fib(int n) {
+                      int[] memo = new int[n + 1];
+                      Arrays.fill(memo, -1);
+                      return dfs(n, memo);
+                  }
+                  private int dfs(int n, int[] memo) { // @step:entry
+                      if (n <= 0) return 0; // @step:boundary
+                      if (n == 1) return 1; // @step:boundary
+                      if (memo[n] != -1) return memo[n]; // @step:cache_hit // 剪枝直接命中
+                      int left = dfs(n - 1, memo);  // @step:branch_left
+                      int right = dfs(n - 2, memo); // @step:branch_right
+                      return memo[n] = left + right; // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation-2d"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 自底向上递推填表 (1D Tabulation)"
+    desc:
+      forward: "消除函数递归栈开销，从 base cases (dp[0]=0, dp[1]=1) 开始顺推填表，依状态转移方程逐步填到 dp[n]。"
+    variants:
+      standard:
+        variantLabel: "数组填表版"
+        title:
+          forward: "Fibonacci_DP.java"
+        code:
+          forward:
+            title: "Fibonacci_DP.java"
+            source: |
+              class Solution {
+                  public int fib(int n) {
+                      if (n <= 1) return n;
+                      int[] dp = new int[n + 1]; // @step:init
+                      dp[0] = 0; // @step:init_val
+                      dp[1] = 1; // @step:init_val
+                      for (int i = 2; i <= n; i++) { // @step:loop_i
+                          dp[i] = dp[i - 1] + dp[i - 2]; // @step:transfer // 状态转移
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(1) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 空间压缩双变量滚动 (O(1) 状态机)"
+    desc:
+      forward: "当前状态仅依赖前两个值，无需保留整个数组，仅维护 prev2, prev1 两个滚动变量，空间复杂度降至 O(1)。"
+    variants:
+      two_vars:
+        variantLabel: "双变量滚动版"
+        title:
+          forward: "Fibonacci_SpaceOptimized.java"
+        code:
+          forward:
+            title: "Fibonacci_SpaceOptimized.java"
+            source: |
+              class Solution {
+                  public int fib(int n) {
+                      if (n <= 1) return n;
+                      int prev2 = 0, prev1 = 1; // @step:init
+                      for (int i = 2; i <= n; i++) {
+                          int curr = prev1 + prev2; // @step:accumulate // 计算当前值
+                          prev2 = prev1;            // @step:fetch_down // 滑动更新 prev2
+                          prev1 = curr;             // @step:fetch_right // 滑动更新 prev1
+                      }
+                      return prev1; // @step:return
+                  }
+              }

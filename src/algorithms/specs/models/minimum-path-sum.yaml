@@ -1,0 +1,278 @@
+id: min-path-sum
+name: "最小路径和"
+nameEn: "Minimum Path Sum"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "📉"
+difficulty: 2
+levelOrder: 7
+learningGoal: "掌握网格权值最小化动态规划模型与一维空间滚动压缩"
+description: "网格权值路径（LeetCode 64）：从左上角到右下角，路径上的数字总和最小，状态转移方程 dp[i][j] = min(上, 左) + grid[i][j]。"
+defaultParams:
+  m: 3
+  n: 3
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    start: [0, 0]
+    targetFormula: "[m - 1, n - 1]"
+    branches:
+      - name: "down"
+        delta: [1, 0]
+        label: "向下走"
+        codeVar: "down"
+        arrow: "⬇️"
+      - name: "right"
+        delta: [0, 1]
+        label: "向右走"
+        codeVar: "right"
+        arrow: "➡️"
+    combineFormula: "Math.min(down, right) + grid[i][j]"
+  reverse:
+    label: "逆推 (倒序)"
+    startFormula: "[m - 1, n - 1]"
+    target: [0, 0]
+    branches:
+      - name: "left"
+        delta: [0, -1]
+        label: "向左寻源"
+        codeVar: "left"
+        arrow: "⬅️"
+      - name: "up"
+        delta: [-1, 0]
+        label: "向上寻源"
+        codeVar: "up"
+        arrow: "⬆️"
+    combineFormula: "Math.min(left, up) + grid[i][j]"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (权值路径搜索)"
+      reverse: "阶段 1: 朴素递归 (倒序寻源权值搜索)"
+    desc:
+      forward: "从起点 (0, 0) 向右向下分支，到达终点返回格点权值，非终点返回 min(下, 右) + grid[i][j]。"
+      reverse: "从终点 (m-1, n-1) 逆推向上向左寻找最小来源代价。"
+    variants:
+      boundary:
+        variantLabel: "边界直达版"
+        title:
+          forward: "MinPathSum_Recursive.java (边界直达版)"
+          reverse: "MinPathSum_RecursiveReverse.java (边界直达版)"
+        code:
+          forward:
+            title: "MinPathSum_Recursive.java (边界直达版)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      return dfs(grid, 0, 0, grid.length, grid[0].length);
+                  }
+                  private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                      if (i == m - 1 && j == n - 1) return grid[i][j]; // @step:boundary // 抵达终点
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:terminal // 越界返回无穷大
+                      int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
+                      int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
+                      return Math.min(down, right) + grid[i][j]; // @step:combine
+                  }
+              }
+          reverse:
+            title: "MinPathSum_RecursiveReverse.java (边界直达版)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      return dfs(grid, grid.length - 1, grid[0].length - 1);
+                  }
+                  private int dfs(int[][] grid, int i, int j) { // @step:entry
+                      if (i == 0 && j == 0) return grid[0][0]; // @step:boundary
+                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:terminal
+                      int left = dfs(grid, i, j - 1);  // @step:branch_left
+                      int up = dfs(grid, i - 1, j);    // @step:branch_up
+                      return Math.min(left, up) + grid[i][j]; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+      reverse: "阶段 2: 逆推记忆化搜索 (自顶向下剪枝)"
+    desc:
+      forward: "引入 memo[m][n] 缓存各格点至终点的最小路径和，避免指数级爆炸。"
+      reverse: "自顶向下倒序记忆化，查表剪枝加速。"
+    variants:
+      array_memo:
+        variantLabel: "数组备忘录版"
+        title:
+          forward: "MinPathSum_Memo.java (二维备忘录版)"
+          reverse: "MinPathSum_MemoReverse.java (二维备忘录版)"
+        code:
+          forward:
+            title: "MinPathSum_Memo.java (二维备忘录版)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      int m = grid.length, n = grid[0].length;
+                      int[][] memo = new int[m][n];
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(grid, 0, 0, m, n, memo);
+                  }
+                  private int dfs(int[][] grid, int i, int j, int m, int n, int[][] memo) { // @step:entry
+                      if (i == m - 1 && j == n - 1) return grid[i][j]; // @step:boundary
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:terminal
+                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+                      int down = dfs(grid, i + 1, j, m, n, memo);  // @step:branch_down
+                      int right = dfs(grid, i, j + 1, m, n, memo); // @step:branch_right
+                      return memo[i][j] = Math.min(down, right) + grid[i][j]; // @step:combine
+                  }
+              }
+          reverse:
+            title: "MinPathSum_MemoReverse.java (二维备忘录版)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      int m = grid.length, n = grid[0].length;
+                      int[][] memo = new int[m][n];
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(grid, m - 1, n - 1, memo);
+                  }
+                  private int dfs(int[][] grid, int i, int j, int[][] memo) { // @step:entry
+                      if (i == 0 && j == 0) return grid[0][0]; // @step:boundary
+                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:terminal
+                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+                      int left = dfs(grid, i, j - 1, memo);  // @step:branch_left
+                      int up = dfs(grid, i - 1, j, memo);    // @step:branch_up
+                      return memo[i][j] = Math.min(left, up) + grid[i][j]; // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 经典顺推二维 DP 填表 (Min Path Sum)"
+      reverse: "阶段 3: 逆向倒序二维 DP 填表 (Min Path Sum)"
+    desc:
+      forward: "dp[i][j] 表示从起点到 (i, j) 的最小权值和，dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + grid[i][j]。"
+      reverse: "dp[i][j] 表示从 (i, j) 到终点的最小权值和。"
+    variants:
+      if:
+        variantLabel: "前缀与内嵌 if 版"
+        title:
+          forward: "MinPathSum_2D_If.java (内嵌 if 版)"
+          reverse: "MinPathSum_2D_ReverseIf.java (内嵌 if 版)"
+        code:
+          forward:
+            title: "MinPathSum_2D_If.java (内嵌 if 版)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      int m = grid.length, n = grid[0].length;
+                      int[][] dp = new int[m][n]; // @step:init
+                      for (int i = 0; i < m; i++) { // @step:loop_i
+                          for (int j = 0; j < n; j++) { // @step:loop_j
+                              if (i == 0 && j == 0) {
+                                  dp[i][j] = grid[0][0]; // @step:init_val // 起点自身权值
+                              } else if (i == 0) {
+                                  dp[i][j] = dp[0][j - 1] + grid[0][j]; // @step:init_val // 首行只能从左来
+                              } else if (j == 0) {
+                                  dp[i][j] = dp[i - 1][0] + grid[i][0]; // @step:init_val // 首列只能从上来
+                              } else {
+                                  dp[i][j] = Math.min(dp[i - 1][j], dp[i][j - 1]) + grid[i][j]; // @step:transfer
+                              }
+                          }
+                      }
+                      return dp[m - 1][n - 1]; // @step:return
+                  }
+              }
+          reverse:
+            title: "MinPathSum_2D_ReverseIf.java (内嵌 if 版)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      int m = grid.length, n = grid[0].length;
+                      int[][] dp = new int[m][n]; // @step:init
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                              if (i == m - 1 && j == n - 1) {
+                                  dp[i][j] = grid[m - 1][n - 1]; // @step:init_val
+                              } else if (i == m - 1) {
+                                  dp[i][j] = dp[m - 1][j + 1] + grid[m - 1][j]; // @step:init_val
+                              } else if (j == n - 1) {
+                                  dp[i][j] = dp[i + 1][n - 1] + grid[i][n - 1]; // @step:init_val
+                              } else {
+                                  dp[i][j] = Math.min(dp[i + 1][j], dp[i][j + 1]) + grid[i][j]; // @step:transfer
+                              }
+                          }
+                      }
+                      return dp[0][0]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "一维优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(n) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 一维空间压缩优化 (Min Path Sum 滚动数组)"
+      reverse: "阶段 4: 逆推一维空间压缩优化 (Min Path Sum 滚动数组)"
+    desc:
+      forward: "仅保留长度为 n 的一维 memo 数组。首行前缀和初始化，后续每行 memo[j] = min(memo[j], memo[j - 1]) + grid[i][j]。"
+      reverse: "倒序一维滚动数组。"
+    variants:
+      if:
+        variantLabel: "原地覆盖版"
+        title:
+          forward: "MinPathSum_1D_Optimized.java (一维压缩)"
+          reverse: "MinPathSum_1D_ReverseOptimized.java (一维压缩)"
+        code:
+          forward:
+            title: "MinPathSum_1D_Optimized.java (一维压缩)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      int m = grid.length, n = grid[0].length;
+                      int[] memo = new int[n]; // @step:init
+                      memo[0] = grid[0][0];
+                      for (int j = 1; j < n; j++) memo[j] = memo[j - 1] + grid[0][j]; // 初始化首行
+                      for (int i = 1; i < m; i++) {
+                          memo[0] += grid[i][0]; // 更新首列
+                          for (int j = 1; j < n; j++) {
+                              int fromTop = memo[j];      // @step:fetch_down // 上方旧值
+                              int fromLeft = memo[j - 1]; // @step:fetch_right // 左方新值
+                              memo[j] = Math.min(fromTop, fromLeft) + grid[i][j]; // @step:accumulate
+                          }
+                      }
+                      return memo[n - 1]; // @step:return
+                  }
+              }
+          reverse:
+            title: "MinPathSum_1D_ReverseOptimized.java (一维压缩)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      int m = grid.length, n = grid[0].length;
+                      int[] memo = new int[n]; // @step:init
+                      memo[n - 1] = grid[m - 1][n - 1];
+                      for (int j = n - 2; j >= 0; j--) memo[j] = memo[j + 1] + grid[m - 1][j];
+                      for (int i = m - 2; i >= 0; i--) {
+                          memo[n - 1] += grid[i][n - 1];
+                          for (int j = n - 2; j >= 0; j--) {
+                              int fromDown = memo[j];
+                              int fromRight = memo[j + 1];
+                              memo[j] = Math.min(fromDown, fromRight) + grid[i][j]; // @step:accumulate
+                          }
+                      }
+                      return memo[0]; // @step:return
+                  }
+              }

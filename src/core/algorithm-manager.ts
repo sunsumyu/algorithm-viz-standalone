@@ -1,31 +1,15 @@
 /**
- * 算法管理器 - 工厂模式 + 单例模式
- * 负责管理所有算法的初始化和渲染
+ * 算法管理器 - 工厂模式 + 单例模式 + 按需懒加载架构
+ * 负责管理所有算法的元数据、动态按需加载和视图生命周期
  */
 
 import { templateLoader } from './template-loader';
-import { IVisualizer, VisualizerContext } from './interfaces';
-import { getAllManifests, AlgorithmMetadata } from './registry';
+import { IVisualizer } from './interfaces';
+import { getManifest, getAllManifests, AlgorithmMetadata } from './registry';
 import { algoNavigation } from './algo-navigation';
 import { addRecentAlgorithm } from './recent-algorithms';
-
-// 触发自描述算法的 manifest 注册（必须在单例实例化前执行副作用）。
-// batch-1-index 内部 import 各 renderer，renderer 顶层调用 registerAlgorithm()。
-import '../algorithms/batch-1-index';
-import '../algorithms/batch-2-index';
-import '../algorithms/batch-3-index';
-import '../algorithms/batch-4-index';
-import '../algorithms/batch-5-index';
-import '../algorithms/batch-backtracking-index';
-import '../algorithms/batch-dynamic-programming-index';
-import '../algorithms/batch-6-index';
-
-// 导入模板（仅保留未迁移的算法模板）
-// 所有算法已迁移到自描述注册模式，模板由 renderer 通过 registerAlgorithm 提供
-
-// 导入可视化器（仅保留未迁移的渲染器）
-// 所有算法已迁移到自描述注册模式，Visualizer 由 renderer 通过 registerAlgorithm 提供
-
+import { ALL_ALGORITHM_METADATA } from './algorithm-manifests-meta';
+import { loadAlgorithmBatch, loadAllAlgorithmBatches } from './algorithm-loader';
 import { viewMountEngine } from './view-mount-engine';
 
 export interface AlgorithmConfig extends AlgorithmMetadata {
@@ -38,7 +22,7 @@ export class AlgorithmManager {
   private algorithms: Map<string, AlgorithmConfig> = new Map();
 
   private constructor() {
-    this.registerAlgorithms();
+    this.initMetadata();
   }
 
   public static getInstance(): AlgorithmManager {
@@ -49,24 +33,56 @@ export class AlgorithmManager {
   }
 
   /**
-   * 注册所有算法
+   * 初始化轻量元数据（首屏毫秒级就绪，不加载任何模板与代码）
    */
-  private registerAlgorithms(): void {
-    getAllManifests().forEach((manifest) => {
-      const config: AlgorithmConfig = {
-        ...manifest,
-        templateContent: manifest.template,
-      };
-      this.algorithms.set(config.id, config);
-      templateLoader.register(config.viewId, config.templateContent as string);
+  private initMetadata(): void {
+    ALL_ALGORITHM_METADATA.forEach((meta) => {
+      this.algorithms.set(meta.id, { ...meta });
     });
+  }
+
+  /**
+   * 预热加载所有算法模块（用于测试或全量审计）
+   */
+  public async ensureAllLoaded(): Promise<void> {
+    await loadAllAlgorithmBatches();
+    getAllManifests().forEach((manifest) => {
+      const config = this.algorithms.get(manifest.id) || { ...manifest };
+      config.templateContent = manifest.template;
+      config.Visualizer = manifest.Visualizer;
+      this.algorithms.set(manifest.id, config);
+      templateLoader.register(config.viewId, config.templateContent);
+    });
+  }
+
+  /**
+   * 确保单个算法已动态加载
+   */
+  public async ensureAlgorithmLoaded(algorithmId: string): Promise<AlgorithmConfig | undefined> {
+    const config = this.algorithms.get(algorithmId);
+    if (!config) {
+      return undefined;
+    }
+
+    if (!config.Visualizer || !config.templateContent) {
+      // 触发对应专题的动态 import
+      await loadAlgorithmBatch(config.category);
+      const manifest = getManifest(algorithmId);
+      if (manifest) {
+        config.templateContent = manifest.template;
+        config.Visualizer = manifest.Visualizer;
+        templateLoader.register(config.viewId, config.templateContent);
+      }
+    }
+
+    return config;
   }
 
   /**
    * 显示算法页面
    */
   public async showAlgorithm(algorithmId: string): Promise<void> {
-    const config = this.algorithms.get(algorithmId);
+    const config = await this.ensureAlgorithmLoaded(algorithmId);
     if (!config) {
       console.error(`[AlgorithmManager] Algorithm not found: ${algorithmId}`);
       return;
@@ -114,33 +130,6 @@ export class AlgorithmManager {
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('algo:selector-shown'));
-    }
-  }
-
-  /**
-   * 确保算法视图容器存在。大量专题页面可通过 manifest 动态创建容器。
-   */
-  private ensureViewContainer(viewId: string): HTMLElement | null {
-    let container = document.getElementById(viewId);
-    if (container) return container;
-
-    const mainLayout = document.getElementById('main-layout');
-    if (!mainLayout) return null;
-
-    container = document.createElement('div');
-    container.id = viewId;
-    container.className = 'view-container';
-    mainLayout.appendChild(container);
-    return container;
-  }
-
-  /**
-   * 清理旧版分散的返回按钮，统一使用 algoNavigation 全局顶栏
-   */
-  private ensureBackButton(container: HTMLElement): void {
-    const existing = container.querySelector('.algo-global-back');
-    if (existing) {
-      existing.remove();
     }
   }
 

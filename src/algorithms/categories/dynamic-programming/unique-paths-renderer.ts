@@ -9,6 +9,8 @@ import { registerAlgorithm } from '../../../core/registry';
 import uniquePathsLiteHtml from '../../../../unique-paths-lite.html?raw';
 import uniquePathsFullHtml from '../../../../unique-paths.html?raw';
 
+import { VisualizerStateRouter, type VisualizerState } from '../../../core/state-router';
+
 export class UniquePathsVisualizer implements IVisualizer {
   private iframe: HTMLIFrameElement | null = null;
   private currentMode: 'lite' | 'full' = 'lite';
@@ -36,11 +38,16 @@ export class UniquePathsVisualizer implements IVisualizer {
     container.appendChild(iframe);
     this.iframe = iframe;
 
-    // 挂载全局切换钩子，方便 iframe 内部一键切换
-    (window as any).__toggleUniquePathsVersion = (targetMode: 'lite' | 'full') => {
+    // 挂载全局切换钩子，方便 iframe 内部一键切换并无损携带状态
+    (window as any).__toggleUniquePathsVersion = (targetMode: 'lite' | 'full', state?: VisualizerState) => {
       this.currentMode = targetMode;
       if (this.iframe) {
-        this.iframe.srcdoc = targetMode === 'lite' ? uniquePathsLiteHtml : uniquePathsFullHtml;
+        let baseHtml = targetMode === 'lite' ? uniquePathsLiteHtml : uniquePathsFullHtml;
+        if (state) {
+          const hash = VisualizerStateRouter.serialize(state);
+          baseHtml = baseHtml.replace('</head>', `<script>window.location.hash = ${JSON.stringify(hash)};</script>\n</head>`);
+        }
+        this.iframe.srcdoc = baseHtml;
       }
     };
   }

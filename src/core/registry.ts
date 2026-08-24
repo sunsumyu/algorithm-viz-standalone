@@ -28,22 +28,36 @@ export interface AlgorithmManifest extends AlgorithmMetadata {
 }
 
 /** 所有自描述算法清单（按添加顺序注册） */
-const manifests: AlgorithmManifest[] = [];
+const manifests: Map<string, AlgorithmManifest> = new Map();
 
 /**
  * 注册一个算法清单
  */
 export function registerAlgorithm(manifest: AlgorithmManifest): void {
-  if (manifests.some((item) => item.id === manifest.id)) {
-    console.warn(`[Registry] 算法已存在，跳过重复注册: ${manifest.id}`);
+  if (manifests.has(manifest.id)) {
     return;
   }
-  manifests.push(manifest);
+  manifests.set(manifest.id, manifest);
+}
+
+/**
+ * 获取指定 ID 的算法清单
+ */
+export function getManifest(id: string): AlgorithmManifest | undefined {
+  return manifests.get(id);
+}
+
+/**
+ * 判断指定 ID 的算法清单是否已注册
+ */
+export function hasManifest(id: string): boolean {
+  return manifests.has(id);
 }
 
 /**
  * 获取所有已注册的算法清单
  */
 export function getAllManifests(): AlgorithmManifest[] {
-  return [...manifests];
+  return Array.from(manifests.values());
 }
+

@@ -1,0 +1,165 @@
+id: knapsack-01
+name: "0-1 背包问题"
+nameEn: "0-1 Knapsack Problem"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🎒"
+difficulty: 2
+levelOrder: 10
+learningGoal: "动态规划核心分水岭：掌握选与不选二叉决策树、二维状态矩阵与倒序一维滚动数组"
+description: "0-1 背包问题：n 件物品与容量为 w 的背包。每件物品只能选 0 次或 1 次，求不超过背包容量时的最大总价值。"
+defaultParams:
+  bagWeight: 4
+  weights: [1, 3, 4]
+  values: [15, 20, 30]
+
+directions:
+  forward:
+    label: "物品正序决策"
+    branches:
+      - name: "not_take"
+        label: "不放入 (保持容量)"
+        codeVar: "not_take"
+        arrow: "🚫"
+      - name: "take"
+        label: "放入 (消耗容量+获得价值)"
+        codeVar: "take"
+        arrow: "📦"
+    combineFormula: "Math.max(not_take, take)"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (选/不选 二叉决策展开)"
+    desc:
+      forward: "对每件物品做两种决策：不放入背包（容量不变）或放入背包（容量扣减并累加价值），展开为指数级二叉决策树。"
+    variants:
+      standard:
+        variantLabel: "二叉决策递归版"
+        title:
+          forward: "Knapsack01_Recursive.java"
+        code:
+          forward:
+            title: "Knapsack01_Recursive.java"
+            source: |
+              class Solution {
+                  public int knapsack(int[] weights, int[] values, int w) {
+                      return dfs(weights, values, 0, w);
+                  }
+                  private int dfs(int[] weights, int[] values, int i, int w) { // @step:entry
+                      if (i >= weights.length || w <= 0) return 0; // @step:boundary // 物品遍历完毕或背包已满
+                      int notTake = dfs(weights, values, i + 1, w); // @step:branch_not_take // 决策 1: 不选当前物品
+                      int take = 0;
+                      if (w >= weights[i]) {
+                          take = values[i] + dfs(weights, values, i + 1, w - weights[i]); // @step:branch_take // 决策 2: 选当前物品
+                      }
+                      return Math.max(notTake, take); // @step:combine // 取两者最大价值
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n×w)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (二维备忘录剪枝)"
+    desc:
+      forward: "状态由 (当前物品索引 i, 剩余背包容量 w) 唯一确定。使用 memo[n][w+1] 缓存，避免相同子问题重复推导。"
+    variants:
+      array_memo:
+        variantLabel: "二维备忘录版"
+        title:
+          forward: "Knapsack01_Memo.java"
+        code:
+          forward:
+            title: "Knapsack01_Memo.java"
+            source: |
+              class Solution {
+                  public int knapsack(int[] weights, int[] values, int w) {
+                      int n = weights.length;
+                      int[][] memo = new int[n][w + 1];
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(weights, values, 0, w, memo);
+                  }
+                  private int dfs(int[] weights, int[] values, int i, int w, int[][] memo) { // @step:entry
+                      if (i >= weights.length || w <= 0) return 0; // @step:boundary
+                      if (memo[i][w] != -1) return memo[i][w]; // @step:cache_hit // 剪枝命中
+                      int notTake = dfs(weights, values, i + 1, w, memo); // @step:branch_not_take
+                      int take = 0;
+                      if (w >= weights[i]) {
+                          take = values[i] + dfs(weights, values, i + 1, w - weights[i], memo); // @step:branch_take
+                      }
+                      return memo[i][w] = Math.max(notTake, take); // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(n×w)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 经典二维 DP 填表 (dp[i][j] 物品×容量)"
+    desc:
+      forward: "dp[i][j] 表示从前 i 件物品中任选，放入容量为 j 的背包所能获得的最大价值。状态转移：dp[i][j] = max(dp[i-1][j], dp[i-1][j-w[i]] + v[i])。"
+    variants:
+      standard:
+        variantLabel: "二维网格填表版"
+        title:
+          forward: "Knapsack01_2D.java"
+        code:
+          forward:
+            title: "Knapsack01_2D.java"
+            source: |
+              class Solution {
+                  public int knapsack(int[] weights, int[] values, int bagWeight) {
+                      int n = weights.length;
+                      int[][] dp = new int[n][bagWeight + 1]; // @step:init
+                      for (int j = weights[0]; j <= bagWeight; j++) dp[0][j] = values[0]; // @step:init_val // 初始化首行
+                      for (int i = 1; i < n; i++) { // @step:loop_i // 遍历物品
+                          for (int j = 0; j <= bagWeight; j++) { // @step:loop_j // 遍历容量
+                              if (j < weights[i]) {
+                                  dp[i][j] = dp[i - 1][j]; // @step:init_val // 容量不足，继承上一行
+                              } else {
+                                  dp[i][j] = Math.max(dp[i - 1][j], dp[i - 1][j - weights[i]] + values[i]); // @step:transfer // 状态转移
+                              }
+                          }
+                      }
+                      return dp[n - 1][bagWeight]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "一维滚动"
+    type: "space-optimized-1d"
+    timeBadge: "O(w) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 一维空间压缩 (倒序遍历 dp[j])"
+    desc:
+      forward: "将二维矩阵压缩为单行一维数组 dp[j]。容量必须从大到小【倒序遍历】，保证每件物品只被放入一次，防止当前物品被重复计算。"
+    variants:
+      reverse_1d:
+        variantLabel: "倒序滚动一维版"
+        title:
+          forward: "Knapsack01_1D_Reverse.java"
+        code:
+          forward:
+            title: "Knapsack01_1D_Reverse.java"
+            source: |
+              class Solution {
+                  public int knapsack(int[] weights, int[] values, int bagWeight) {
+                      int[] dp = new int[bagWeight + 1]; // @step:init
+                      for (int i = 0; i < weights.length; i++) { // 遍历物品
+                          for (int j = bagWeight; j >= weights[i]; j--) { // @step:loop_j // 核心：倒序遍历容量
+                              dp[j] = Math.max(dp[j], dp[j - weights[i]] + values[i]); // @step:accumulate // 原地滚动更新
+                          }
+                      }
+                      return dp[bagWeight]; // @step:return
+                  }
+              }
