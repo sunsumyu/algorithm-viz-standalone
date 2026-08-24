@@ -816,20 +816,48 @@ export class RecursionTreeAdapter {
 
     draw(rootPos);
 
-    container.innerHTML = `
-      <div id="tree-scroll-box" class="w-full h-full flex items-center justify-start overflow-auto p-1 scroll-smooth">
-        <svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="min-width: ${totalW}px; min-height: ${totalH}px; display: block; margin: auto;">
-          ${lines.join('')}
-          ${nodes.join('')}
-        </svg>
-      </div>
+    const svgContent = `
+      <svg id="tree-svg-canvas" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="min-width: ${totalW}px; min-height: ${totalH}px; display: block; margin: auto;">
+        ${lines.join('')}
+        ${nodes.join('')}
+      </svg>
     `;
 
-    if (activeX !== null) {
-      const scrollBox = container.querySelector('#tree-scroll-box');
-      if (scrollBox && scrollBox.scrollWidth > scrollBox.clientWidth) {
-        const targetScrollLeft = (activeX as number) - scrollBox.clientWidth / 2;
-        scrollBox.scrollTo({ left: Math.max(0, targetScrollLeft), behavior: 'smooth' });
+    let scrollBox = container.querySelector('#tree-scroll-box') as HTMLElement | null;
+    const isFirstMount = !scrollBox;
+
+    if (isFirstMount) {
+      container.innerHTML = `
+        <div id="tree-scroll-box" class="w-full h-full flex items-center justify-start overflow-auto p-1">
+          ${svgContent}
+        </div>
+      `;
+      scrollBox = container.querySelector('#tree-scroll-box');
+    } else {
+      // 保持现有 scrollBox DOM 容器，仅更新内部 SVG 内容，绝对不重置 scrollLeft
+      scrollBox.innerHTML = svgContent;
+    }
+
+    if (activeX !== null && scrollBox && typeof scrollBox.scrollTo === 'function') {
+      const clientW = scrollBox.clientWidth || 0;
+      const scrollW = scrollBox.scrollWidth || 0;
+      if (scrollW > clientW && clientW > 0) {
+        const targetScrollLeft = Math.max(0, (activeX as number) - clientW / 2);
+
+        if (isFirstMount) {
+          // 首次挂载瞬间对齐中心，避免从 0 闪动
+          scrollBox.scrollLeft = targetScrollLeft;
+        } else {
+          const curScrollLeft = scrollBox.scrollLeft;
+          // 仅当活跃节点超出当前可视安全区域时才平滑跟随，消除微小晃动与左移闪回
+          const leftBound = curScrollLeft + 40;
+          const rightBound = curScrollLeft + clientW - 40;
+          const outOfView = (activeX as number) < leftBound || (activeX as number) > rightBound;
+
+          if (outOfView) {
+            scrollBox.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+          }
+        }
       }
     }
   }
