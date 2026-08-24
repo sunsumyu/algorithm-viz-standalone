@@ -94,6 +94,12 @@ export class UniversalStageEngine {
     let callCount = 0;
     let nodeIdCounter = 0;
 
+    const obstacleGrid: number[][] | undefined =
+      (model.defaultParams as any)?.obstacleGrid ||
+      (model.id === 'unique-paths-ii'
+        ? Array.from({ length: mVal }, (_, r) => Array.from({ length: nVal }, (_, c) => (r === 1 && c === 1 && mVal > 1 && nVal > 1 ? 1 : 0)))
+        : undefined);
+
     const isForward = direction === 'forward';
     const isTerminal = variant === 'terminal';
     const startR = isForward ? 0 : mVal - 1;
@@ -102,6 +108,7 @@ export class UniversalStageEngine {
     // 行号映射 fallback
     const lineEntry = anchorMap?.entry || (isMemo ? 7 : 5);
     const lineOutOfBounds = anchorMap?.out_of_bounds || (isMemo ? 8 : 6);
+    const lineObstacle = anchorMap?.obstacle || anchorMap?.out_of_bounds || (isMemo ? 8 : 6);
     const lineBoundary = anchorMap?.boundary || (isMemo ? (isTerminal ? 9 : 8) : (isTerminal ? 7 : 6));
     const lineCacheHit = anchorMap?.cache_hit || (isTerminal ? 10 : 9);
     const lineBranch1 = anchorMap?.branch_down || anchorMap?.branch_left || (isMemo ? (isTerminal ? 11 : 10) : (isTerminal ? 8 : 7));
@@ -161,6 +168,7 @@ export class UniversalStageEngine {
         j: c,
         fromI: fromR,
         fromJ: fromC,
+        obstacleGrid,
         grid: JSON.parse(JSON.stringify(gridState)),
         activeStack: [...activeStack],
         visited: [...visitedCells],
@@ -196,6 +204,7 @@ export class UniversalStageEngine {
             outOfBoundsDir,
             isOutOfBounds: true,
             isBlockedStep: true,
+            obstacleGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
@@ -219,6 +228,38 @@ export class UniversalStageEngine {
           return 0;
         }
 
+        // 障碍物阻断 (Obstacle Hit)
+        if (obstacleGrid && obstacleGrid[r]?.[c] === 1) {
+          currentTreeNode.status = 'pruned';
+          currentTreeNode.tag = '🚧障碍=0';
+
+          generated.push({
+            type: 'obstacle-hit',
+            i: r,
+            j: c,
+            fromI: fromR,
+            fromJ: fromC,
+            isBlockedStep: true,
+            obstacleGrid,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineObstacle,
+            tag: '🚧 遇障碍阻断',
+            log: `| 🚧 【遇到障碍物阻断】dfs(i=${r}, j=${c}) 遭遇障碍物 (obstacleGrid[${r}][${c}] == 1)！路径阻断不可通行，return 0`,
+            msg: `🚧 <strong>【遭遇障碍物阻断】</strong>探险家到达障碍物格点 (i = ${r}, j = ${c})，路径被阻断无法通行！return <strong>0</strong>。`,
+            topI: -1,
+            topJ: -1,
+            leftI: -1,
+            leftJ: -1,
+            gridHighlight: { i: r, j: c },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+          activeStack.pop();
+          return 0;
+        }
+
         if (isTarget(r, c)) {
           gridState[r][c] = 1;
           currentTreeNode.status = 'base';
@@ -230,6 +271,7 @@ export class UniversalStageEngine {
             j: c,
             fromI: fromR,
             fromJ: fromC,
+            obstacleGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
@@ -250,7 +292,38 @@ export class UniversalStageEngine {
         }
       } else {
         // 边缘直达版 (Boundary Variant)
-        if (isBoundary(r, c)) {
+        if (obstacleGrid && obstacleGrid[r]?.[c] === 1) {
+          currentTreeNode.status = 'pruned';
+          currentTreeNode.tag = '🚧障碍=0';
+
+          generated.push({
+            type: 'obstacle-hit',
+            i: r,
+            j: c,
+            fromI: fromR,
+            fromJ: fromC,
+            isBlockedStep: true,
+            obstacleGrid,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineObstacle,
+            tag: '🚧 遇障碍阻断',
+            log: `| 🚧 【遇到障碍物阻断】dfs(i=${r}, j=${c}) 遭遇障碍物！路径阻断不可通行，return 0`,
+            msg: `🚧 <strong>【遭遇障碍物阻断】</strong>探险家到达障碍物格点 (i = ${r}, j = ${c})，路径被阻断！return <strong>0</strong>。`,
+            topI: -1,
+            topJ: -1,
+            leftI: -1,
+            leftJ: -1,
+            gridHighlight: { i: r, j: c },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+          activeStack.pop();
+          return 0;
+        }
+
+        if (obstacleGrid ? isTarget(r, c) : isBoundary(r, c)) {
           gridState[r][c] = 1;
           currentTreeNode.status = 'base';
           currentTreeNode.tag = '= 1';
@@ -261,13 +334,18 @@ export class UniversalStageEngine {
             j: c,
             fromI: fromR,
             fromJ: fromC,
+            obstacleGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
             line: lineBoundary,
-            tag: 'Base Case',
-            log: `| 🎬 边界 Base Case: (i=${r} 或 j=${c}) 到达${isForward ? '终点' : '起点'}边界，直达路径 1 条，return 1`,
-            msg: `🎬 到达${isForward ? '终点' : '起点'}边界 (i = ${r} 或 j = ${c})，直达${isForward ? '终点' : '起点'}，return 1。`,
+            tag: obstacleGrid ? '🏆 到达终点' : 'Base Case',
+            log: obstacleGrid
+              ? `| 🏆 【终点达成】dfs(i=${r}, j=${c}) 到达目标${isForward ? '终点' : '起点'}，找到 1 条有效通达路径，return 1`
+              : `| 🎬 边界 Base Case: (i=${r} 或 j=${c}) 到达${isForward ? '终点' : '起点'}边界，直达路径 1 条，return 1`,
+            msg: obstacleGrid
+              ? `🏆 <strong>【终点达成】</strong>到达目标${isForward ? '终点' : '起点'} (i = ${r}, j = ${c})，开辟 1 条有效通达路径，return <strong>1</strong>。`
+              : `🎬 到达${isForward ? '终点' : '起点'}边界 (i = ${r} 或 j = ${c})，直达${isForward ? '终点' : '起点'}，return 1。`,
             topI: -1,
             topJ: -1,
             leftI: -1,
@@ -291,6 +369,7 @@ export class UniversalStageEngine {
           j: c,
           fromI: fromR,
           fromJ: fromC,
+          obstacleGrid,
           grid: JSON.parse(JSON.stringify(gridState)),
           activeStack: [...activeStack],
           visited: [...visitedCells],
@@ -315,88 +394,100 @@ export class UniversalStageEngine {
       // 分支 1：顺推向下 (r+1, c) / 逆推向左 (r, c-1)
       const b1R = isForward ? r + 1 : r;
       const b1C = isForward ? c : c - 1;
-      const b1Tag = isForward ? '顺推向下探索' : '逆推向左寻源';
-      const b1Log = isForward
-        ? `| ⬇️ 执行 int down = dfs(${b1R}, ${b1C})，准备向下探索子分支`
-        : `| ⬅️ 执行 int left = dfs(${b1R}, ${b1C})，准备向左寻找来源`;
-      const b1Msg = isForward
-        ? `⬇️ 执行 int down = dfs(${b1R}, ${b1C})，准备向下探索子分支。`
-        : `⬅️ 执行 int left = dfs(${b1R}, ${b1C})，准备向左寻找来源。`;
+      const canBranch1 = isTerminal || !obstacleGrid || (isForward ? r < mVal - 1 : r > 0);
+      let val1 = 0;
 
-      generated.push({
-        type: isForward ? 'branch-down' : 'branch-left',
-        i: r,
-        j: c,
-        grid: JSON.parse(JSON.stringify(gridState)),
-        activeStack: [...activeStack],
-        visited: [...visitedCells],
-        line: lineBranch1,
-        tag: b1Tag,
-        log: b1Log,
-        msg: b1Msg,
-        topI: -1,
-        topJ: -1,
-        leftI: -1,
-        leftJ: -1,
-        gridHighlight: { i: r, j: c },
-        activeNodeId: currentTreeNode.id,
-        treeRoot: UniversalStageEngine.cloneTree(rootNode)
-      });
+      if (canBranch1) {
+        const b1Tag = isForward ? '顺推向下探索' : '逆推向左寻源';
+        const b1Log = isForward
+          ? `| ⬇️ 执行 int down = dfs(${b1R}, ${b1C})，准备向下探索子分支`
+          : `| ⬅️ 执行 int left = dfs(${b1R}, ${b1C})，准备向左寻找来源`;
+        const b1Msg = isForward
+          ? `⬇️ 执行 int down = dfs(${b1R}, ${b1C})，准备向下探索子分支。`
+          : `⬅️ 执行 int left = dfs(${b1R}, ${b1C})，准备向左寻找来源。`;
 
-      const childNode1: UniversalTreeNode = {
-        id: `node-${++nodeIdCounter}`,
-        r: b1R,
-        c: b1C,
-        val: `dfs(${b1R},${b1C})`,
-        status: 'normal',
-        children: []
-      };
-      currentTreeNode.children.push(childNode1);
-      const val1 = dfs(b1R, b1C, childNode1, r, c);
+        generated.push({
+          type: isForward ? 'branch-down' : 'branch-left',
+          i: r,
+          j: c,
+          obstacleGrid,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineBranch1,
+          tag: b1Tag,
+          log: b1Log,
+          msg: b1Msg,
+          topI: -1,
+          topJ: -1,
+          leftI: -1,
+          leftJ: -1,
+          gridHighlight: { i: r, j: c },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+
+        const childNode1: UniversalTreeNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: b1R,
+          c: b1C,
+          val: `dfs(${b1R},${b1C})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(childNode1);
+        val1 = dfs(b1R, b1C, childNode1, r, c);
+      }
 
       // 分支 2：顺推向右 (r, c+1) / 逆推向上 (r-1, c)
       const b2R = isForward ? r : r - 1;
       const b2C = isForward ? c + 1 : c;
-      const b2Tag = isForward ? '顺推向右探索' : '逆推向上寻源';
-      const b2Log = isForward
-        ? `| ➡️ 执行 int right = dfs(${b2R}, ${b2C}) [down已得 ${val1}]，准备向右探索子分支`
-        : `| ⬆️ 执行 int up = dfs(${b2R}, ${b2C}) [left已得 ${val1}]，准备向上寻找来源`;
-      const b2Msg = isForward
-        ? `➡️ 执行 int right = dfs(${b2R}, ${b2C}) [down已得 ${val1}]，准备向右探索子分支。`
-        : `⬆️ 执行 int up = dfs(${b2R}, ${b2C}) [left已得 ${val1}]，准备向上寻找来源。`;
+      const canBranch2 = isTerminal || !obstacleGrid || (isForward ? c < nVal - 1 : c > 0);
+      let val2 = 0;
 
-      generated.push({
-        type: isForward ? 'branch-right' : 'branch-up',
-        i: r,
-        j: c,
-        fromI: fromR,
-        fromJ: fromC,
-        grid: JSON.parse(JSON.stringify(gridState)),
-        activeStack: [...activeStack],
-        visited: [...visitedCells],
-        line: lineBranch2,
-        tag: b2Tag,
-        log: b2Log,
-        msg: b2Msg,
-        topI: -1,
-        topJ: -1,
-        leftI: -1,
-        leftJ: -1,
-        gridHighlight: { i: r, j: c },
-        activeNodeId: currentTreeNode.id,
-        treeRoot: UniversalStageEngine.cloneTree(rootNode)
-      });
+      if (canBranch2) {
+        const b2Tag = isForward ? '顺推向右探索' : '逆推向上寻源';
+        const b2Log = isForward
+          ? `| ➡️ 执行 int right = dfs(${b2R}, ${b2C}) [down已得 ${val1}]，准备向右探索子分支`
+          : `| ⬆️ 执行 int up = dfs(${b2R}, ${b2C}) [left已得 ${val1}]，准备向上寻找来源`;
+        const b2Msg = isForward
+          ? `➡️ 执行 int right = dfs(${b2R}, ${b2C}) [down已得 ${val1}]，准备向右探索子分支。`
+          : `⬆️ 执行 int up = dfs(${b2R}, ${b2C}) [left已得 ${val1}]，准备向上寻找来源。`;
 
-      const childNode2: UniversalTreeNode = {
-        id: `node-${++nodeIdCounter}`,
-        r: b2R,
-        c: b2C,
-        val: `dfs(${b2R},${b2C})`,
-        status: 'normal',
-        children: []
-      };
-      currentTreeNode.children.push(childNode2);
-      const val2 = dfs(b2R, b2C, childNode2, r, c);
+        generated.push({
+          type: isForward ? 'branch-right' : 'branch-up',
+          i: r,
+          j: c,
+          fromI: fromR,
+          fromJ: fromC,
+          obstacleGrid,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineBranch2,
+          tag: b2Tag,
+          log: b2Log,
+          msg: b2Msg,
+          topI: -1,
+          topJ: -1,
+          leftI: -1,
+          leftJ: -1,
+          gridHighlight: { i: r, j: c },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+
+        const childNode2: UniversalTreeNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: b2R,
+          c: b2C,
+          val: `dfs(${b2R},${b2C})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(childNode2);
+        val2 = dfs(b2R, b2C, childNode2, r, c);
+      }
 
       const res = val1 + val2;
       if (isMemo) memoCache[key] = res;
@@ -416,6 +507,7 @@ export class UniversalStageEngine {
         type: 'update',
         i: r,
         j: c,
+        obstacleGrid,
         grid: JSON.parse(JSON.stringify(gridState)),
         activeStack: [...activeStack],
         visited: [...visitedCells],
@@ -442,13 +534,14 @@ export class UniversalStageEngine {
       type: 'return',
       i: startR,
       j: startC,
+      obstacleGrid,
       grid: JSON.parse(JSON.stringify(gridState)),
       activeStack: [],
       visited: [...visitedCells],
       line: lineReturn,
       tag: '最终答案',
       log: `| 🏆 最终答案: uniquePaths(${mVal}, ${nVal}) = ${total}`,
-      msg: `🏆 演化计算完成！最终不同路径数: uniquePaths(${mVal}, ${nVal}) = ${total}。`,
+      msg: `🏆 演化计算完成！最终不同路径数: uniquePaths(${mVal}, ${nVal}) = <strong>${total}</strong>。`,
       topI: -1,
       topJ: -1,
       leftI: -1,
@@ -465,7 +558,7 @@ export class UniversalStageEngine {
    * 生成阶段 3 (经典二维 DP 填表) 演化步骤
    */
   public static generateStage3Steps(
-    _model: IYamlAlgorithmModel,
+    model: IYamlAlgorithmModel,
     mVal: number,
     nVal: number,
     direction: 'forward' | 'reverse' = 'forward',
@@ -475,11 +568,19 @@ export class UniversalStageEngine {
     const dp = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
 
+    const obstacleGrid: number[][] | undefined =
+      (model.defaultParams as any)?.obstacleGrid ||
+      (model.id === 'unique-paths-ii'
+        ? Array.from({ length: mVal }, (_, r) => Array.from({ length: nVal }, (_, c) => (r === 1 && c === 1 && mVal > 1 && nVal > 1 ? 1 : 0)))
+        : undefined);
+
     const lineInit = anchorMap?.init || 3;
     const lineInitRow = anchorMap?.init_row || 4;
     const lineInitCol = anchorMap?.init_col || 5;
     const lineLoopI = anchorMap?.loop_i || 6;
-    const lineTransfer = anchorMap?.transfer || 8;
+    const lineCond = anchorMap?.cond || anchorMap?.obstacle || 7;
+    const lineInitVal = anchorMap?.init_val || 8;
+    const lineTransfer = anchorMap?.transfer || 9;
     const lineReturn = anchorMap?.return || 11;
 
     // 1. 初始化数组
@@ -488,142 +589,278 @@ export class UniversalStageEngine {
       line: lineInit,
       i: isForward ? 0 : mVal - 1,
       j: isForward ? 0 : nVal - 1,
+      obstacleGrid,
       grid: JSON.parse(JSON.stringify(dp)),
       tag: '初始化二维矩阵',
       log: `| 📦 创建二维 DP 状态矩阵 dp[${mVal}][${nVal}]`,
       msg: `创建 ${mVal}×${nVal} 的二维 DP 表格，准备按${isForward ? '顺推' : '逆推'}顺序自底向上计算。`
     });
 
-    if (isForward) {
-      // 顺推初始化第 0 列
-      for (let r = 0; r < mVal; r++) {
-        dp[r][0] = 1;
+    if (obstacleGrid) {
+      if (isForward) {
+        for (let r = 0; r < mVal; r++) {
+          for (let c = 0; c < nVal; c++) {
+            if (obstacleGrid[r][c] === 1) {
+              dp[r][c] = 0;
+              steps.push({
+                type: 'obstacle-cell',
+                line: lineCond,
+                i: r,
+                j: c,
+                obstacleGrid,
+                grid: JSON.parse(JSON.stringify(dp)),
+                tag: '🚧 遇障碍置 0',
+                log: `| 🚧 坐标 (${r}, ${c}) 为障碍物，路径数 dp[${r}][${c}] = 0`,
+                msg: `🚧 坐标 (${r}, ${c}) 为障碍物，路径阻断，直接置 <code>dp[${r}][${c}] = 0</code>。`
+              });
+            } else if (r === 0 && c === 0) {
+              dp[0][0] = 1;
+              steps.push({
+                type: 'init-val',
+                line: lineInitVal,
+                i: 0,
+                j: 0,
+                obstacleGrid,
+                grid: JSON.parse(JSON.stringify(dp)),
+                tag: '起点初始化',
+                log: `| 🎬 起点 dp[0][0] = 1`,
+                msg: `🎬 起点 (0, 0) 无障碍，初始化路径数为 1。`
+              });
+            } else {
+              const topVal = (r > 0) ? dp[r - 1][c] : 0;
+              const leftVal = (c > 0) ? dp[r][c - 1] : 0;
+              const sum = topVal + leftVal;
+              dp[r][c] = sum;
+
+              steps.push({
+                type: 'transfer',
+                line: lineTransfer,
+                i: r,
+                j: c,
+                topI: r > 0 ? r - 1 : -1,
+                topJ: r > 0 ? c : -1,
+                leftI: c > 0 ? r : -1,
+                leftJ: c > 0 ? c - 1 : -1,
+                obstacleGrid,
+                grid: JSON.parse(JSON.stringify(dp)),
+                tag: '状态转移',
+                log: `| 🔄 dp[${r}][${c}] = 上方(${topVal}) + 左方(${leftVal}) = ${sum}`,
+                msg: `状态转移: dp[${r}][${c}] = 上方 (${topVal}) + 左方 (${leftVal}) = <strong>${sum}</strong>。`
+              });
+            }
+          }
+        }
+
         steps.push({
-          type: 'init-col',
-          line: lineInitRow,
-          i: r,
-          j: 0,
+          type: 'return',
+          line: lineReturn,
+          i: mVal - 1,
+          j: nVal - 1,
+          obstacleGrid,
           grid: JSON.parse(JSON.stringify(dp)),
-          tag: '边界初始化',
-          log: `| 🎬 初始化边界 dp[${r}][0] = 1 (最左列只能向下走)`,
-          msg: `最左列坐标 (${r}, 0) 只能一直向下走，路径数为 1。`
+          tag: '返回最终结果',
+          log: `| 🏆 顺推填表完成！最终结果 dp[${mVal - 1}][${nVal - 1}] = ${dp[mVal - 1][nVal - 1]}`,
+          msg: `🏆 顺推填表全部完成！右下角终点路径数: <strong>${dp[mVal - 1][nVal - 1]}</strong>。`
         });
-      }
-      // 顺推初始化第 0 行
-      for (let c = 1; c < nVal; c++) {
-        dp[0][c] = 1;
+      } else {
+        // 逆推带障碍物
+        for (let r = mVal - 1; r >= 0; r--) {
+          for (let c = nVal - 1; c >= 0; c--) {
+            if (obstacleGrid[r][c] === 1) {
+              dp[r][c] = 0;
+              steps.push({
+                type: 'obstacle-cell',
+                line: lineCond,
+                i: r,
+                j: c,
+                obstacleGrid,
+                grid: JSON.parse(JSON.stringify(dp)),
+                tag: '🚧 遇障碍置 0',
+                log: `| 🚧 坐标 (${r}, ${c}) 为障碍物，逆推路径数 dp[${r}][${c}] = 0`,
+                msg: `🚧 坐标 (${r}, ${c}) 为障碍物，逆推路径阻断置 0。`
+              });
+            } else if (r === mVal - 1 && c === nVal - 1) {
+              dp[mVal - 1][nVal - 1] = 1;
+              steps.push({
+                type: 'init-val',
+                line: lineInitVal,
+                i: mVal - 1,
+                j: nVal - 1,
+                obstacleGrid,
+                grid: JSON.parse(JSON.stringify(dp)),
+                tag: '逆推终点初始化',
+                log: `| 🎬 终点 dp[${mVal - 1}][${nVal - 1}] = 1`,
+                msg: `🎬 终点 (${mVal - 1}, ${nVal - 1}) 无障碍，初始化路径数为 1。`
+              });
+            } else {
+              const downVal = (r + 1 < mVal) ? dp[r + 1][c] : 0;
+              const rightVal = (c + 1 < nVal) ? dp[r][c + 1] : 0;
+              const sum = downVal + rightVal;
+              dp[r][c] = sum;
+
+              steps.push({
+                type: 'transfer',
+                line: lineTransfer,
+                i: r,
+                j: c,
+                topI: r + 1 < mVal ? r + 1 : -1,
+                topJ: r + 1 < mVal ? c : -1,
+                leftI: c + 1 < nVal ? r : -1,
+                leftJ: c + 1 < nVal ? c + 1 : -1,
+                obstacleGrid,
+                grid: JSON.parse(JSON.stringify(dp)),
+                tag: '逆推状态转移',
+                log: `| 🔄 dp[${r}][${c}] = 下方(${downVal}) + 右方(${rightVal}) = ${sum}`,
+                msg: `逆推转移: dp[${r}][${c}] = 下方 (${downVal}) + 右方 (${rightVal}) = <strong>${sum}</strong>。`
+              });
+            }
+          }
+        }
+
         steps.push({
-          type: 'init-row',
-          line: lineInitCol,
+          type: 'return',
+          line: lineReturn,
           i: 0,
-          j: c,
+          j: 0,
+          obstacleGrid,
           grid: JSON.parse(JSON.stringify(dp)),
-          tag: '边界初始化',
-          log: `| 🎬 初始化边界 dp[0][${c}] = 1 (最上行只能向右走)`,
-          msg: `最上行坐标 (0, ${c}) 只能一直向右走，路径数为 1。`
+          tag: '返回最终结果',
+          log: `| 🏆 逆推填表完成！起点结果 dp[0][0] = ${dp[0][0]}`,
+          msg: `🏆 逆推填表全部完成！左上角起点路径数: <strong>${dp[0][0]}</strong>。`
         });
       }
-
-      // 顺推双重循环填表
-      for (let r = 1; r < mVal; r++) {
-        for (let c = 1; c < nVal; c++) {
-          const topVal = dp[r - 1][c];
-          const leftVal = dp[r][c - 1];
-          const sum = topVal + leftVal;
-          dp[r][c] = sum;
-
+    } else {
+      if (isForward) {
+        // 顺推初始化第 0 列
+        for (let r = 0; r < mVal; r++) {
+          dp[r][0] = 1;
           steps.push({
-            type: 'transfer',
-            line: lineTransfer,
+            type: 'init-col',
+            line: lineInitRow,
             i: r,
-            j: c,
-            topI: r - 1,
-            topJ: c,
-            leftI: r,
-            leftJ: c - 1,
+            j: 0,
             grid: JSON.parse(JSON.stringify(dp)),
-            tag: '状态转移',
-            log: `| 🔄 dp[${r}][${c}] = 上方(${topVal}) + 左方(${leftVal}) = ${sum}`,
-            msg: `状态转移: dp[${r}][${c}] = dp[${r - 1}][${c}] (上方 ${topVal}) + dp[${r}][${c - 1}] (左方 ${leftVal}) = <strong>${sum}</strong>。`
+            tag: '边界初始化',
+            log: `| 🎬 初始化边界 dp[${r}][0] = 1 (最左列只能向下走)`,
+            msg: `最左列坐标 (${r}, 0) 只能一直向下走，路径数为 1。`
           });
         }
-      }
+        // 顺推初始化第 0 行
+        for (let c = 1; c < nVal; c++) {
+          dp[0][c] = 1;
+          steps.push({
+            type: 'init-row',
+            line: lineInitCol,
+            i: 0,
+            j: c,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: '边界初始化',
+            log: `| 🎬 初始化边界 dp[0][${c}] = 1 (最上行只能向右走)`,
+            msg: `最上行坐标 (0, ${c}) 只能一直向右走，路径数为 1。`
+          });
+        }
 
-      steps.push({
-        type: 'return',
-        line: lineReturn,
-        i: mVal - 1,
-        j: nVal - 1,
-        grid: JSON.parse(JSON.stringify(dp)),
-        tag: '返回最终结果',
-        log: `| 🏆 顺推填表完成！最终结果 dp[${mVal - 1}][${nVal - 1}] = ${dp[mVal - 1][nVal - 1]}`,
-        msg: `🏆 顺推填表全部完成！右下角终点路径数: <strong>${dp[mVal - 1][nVal - 1]}</strong>。`
-      });
-    } else {
-      // 逆推初始化最右列
-      for (let r = 0; r < mVal; r++) {
-        dp[r][nVal - 1] = 1;
+        // 顺推双重循环填表
+        for (let r = 1; r < mVal; r++) {
+          for (let c = 1; c < nVal; c++) {
+            const topVal = dp[r - 1][c];
+            const leftVal = dp[r][c - 1];
+            const sum = topVal + leftVal;
+            dp[r][c] = sum;
+
+            steps.push({
+              type: 'transfer',
+              line: lineTransfer,
+              i: r,
+              j: c,
+              topI: r - 1,
+              topJ: c,
+              leftI: r,
+              leftJ: c - 1,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: '状态转移',
+              log: `| 🔄 dp[${r}][${c}] = 上方(${topVal}) + 左方(${leftVal}) = ${sum}`,
+              msg: `状态转移: dp[${r}][${c}] = dp[${r - 1}][${c}] (上方 ${topVal}) + dp[${r}][${c - 1}] (左方 ${leftVal}) = <strong>${sum}</strong>。`
+            });
+          }
+        }
+
         steps.push({
-          type: 'init-col',
-          line: lineInitRow,
-          i: r,
+          type: 'return',
+          line: lineReturn,
+          i: mVal - 1,
           j: nVal - 1,
           grid: JSON.parse(JSON.stringify(dp)),
-          tag: '逆推边界初始化',
-          log: `| 🎬 逆推初始化边界 dp[${r}][${nVal - 1}] = 1 (最右列)`,
-          msg: `最右列坐标 (${r}, ${nVal - 1}) 逆推到达终点只有 1 条直达路径。`
+          tag: '返回最终结果',
+          log: `| 🏆 顺推填表完成！最终结果 dp[${mVal - 1}][${nVal - 1}] = ${dp[mVal - 1][nVal - 1]}`,
+          msg: `🏆 顺推填表全部完成！右下角终点路径数: <strong>${dp[mVal - 1][nVal - 1]}</strong>。`
         });
-      }
-      // 逆推初始化最底行
-      for (let c = 0; c < nVal - 1; c++) {
-        dp[mVal - 1][c] = 1;
-        steps.push({
-          type: 'init-row',
-          line: lineInitCol,
-          i: mVal - 1,
-          j: c,
-          grid: JSON.parse(JSON.stringify(dp)),
-          tag: '逆推边界初始化',
-          log: `| 🎬 逆推初始化边界 dp[${mVal - 1}][${c}] = 1 (最底行)`,
-          msg: `最底行坐标 (${mVal - 1}, ${c}) 逆推到达终点只有 1 条直达路径。`
-        });
-      }
-
-      // 逆推倒序双重循环
-      for (let r = mVal - 2; r >= 0; r--) {
-        for (let c = nVal - 2; c >= 0; c--) {
-          const downVal = dp[r + 1][c];
-          const rightVal = dp[r][c + 1];
-          const sum = downVal + rightVal;
-          dp[r][c] = sum;
-
+      } else {
+        // 逆推初始化最右列
+        for (let r = 0; r < mVal; r++) {
+          dp[r][nVal - 1] = 1;
           steps.push({
-            type: 'transfer',
-            line: lineTransfer,
+            type: 'init-col',
+            line: lineInitRow,
             i: r,
-            j: c,
-            topI: r + 1,
-            topJ: c,
-            leftI: r,
-            leftJ: c + 1,
+            j: nVal - 1,
             grid: JSON.parse(JSON.stringify(dp)),
-            tag: '逆推状态转移',
-            log: `| 🔄 dp[${r}][${c}] = 下方(${downVal}) + 右方(${rightVal}) = ${sum}`,
-            msg: `逆推转移: dp[${r}][${c}] = 下方 dp[${r + 1}][${c}] (${downVal}) + 右方 dp[${r}][${c + 1}] (${rightVal}) = <strong>${sum}</strong>。`
+            tag: '逆推边界初始化',
+            log: `| 🎬 逆推初始化边界 dp[${r}][${nVal - 1}] = 1 (最右列)`,
+            msg: `最右列坐标 (${r}, ${nVal - 1}) 逆推到达终点只有 1 条直达路径。`
           });
         }
-      }
+        // 逆推初始化最底行
+        for (let c = 0; c < nVal - 1; c++) {
+          dp[mVal - 1][c] = 1;
+          steps.push({
+            type: 'init-row',
+            line: lineInitCol,
+            i: mVal - 1,
+            j: c,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: '逆推边界初始化',
+            log: `| 🎬 逆推初始化边界 dp[${mVal - 1}][${c}] = 1 (最底行)`,
+            msg: `最底行坐标 (${mVal - 1}, ${c}) 逆推到达终点只有 1 条直达路径。`
+          });
+        }
 
-      steps.push({
-        type: 'return',
-        line: lineReturn,
-        i: 0,
-        j: 0,
-        grid: JSON.parse(JSON.stringify(dp)),
-        tag: '返回最终结果',
-        log: `| 🏆 逆推填表完成！起点结果 dp[0][0] = ${dp[0][0]}`,
-        msg: `🏆 逆推填表全部完成！左上角起点路径数: <strong>${dp[0][0]}</strong>。`
-      });
+        // 逆推倒序双重循环
+        for (let r = mVal - 2; r >= 0; r--) {
+          for (let c = nVal - 2; c >= 0; c--) {
+            const downVal = dp[r + 1][c];
+            const rightVal = dp[r][c + 1];
+            const sum = downVal + rightVal;
+            dp[r][c] = sum;
+
+            steps.push({
+              type: 'transfer',
+              line: lineTransfer,
+              i: r,
+              j: c,
+              topI: r + 1,
+              topJ: c,
+              leftI: r,
+              leftJ: c + 1,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: '逆推状态转移',
+              log: `| 🔄 dp[${r}][${c}] = 下方(${downVal}) + 右方(${rightVal}) = ${sum}`,
+              msg: `逆推转移: dp[${r}][${c}] = 下方 dp[${r + 1}][${c}] (${downVal}) + 右方 dp[${r}][${c + 1}] (${rightVal}) = <strong>${sum}</strong>。`
+            });
+          }
+        }
+
+        steps.push({
+          type: 'return',
+          line: lineReturn,
+          i: 0,
+          j: 0,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: '返回最终结果',
+          log: `| 🏆 逆推填表完成！起点结果 dp[0][0] = ${dp[0][0]}`,
+          msg: `🏆 逆推填表全部完成！左上角起点路径数: <strong>${dp[0][0]}</strong>。`
+        });
+      }
     }
 
     return steps;
@@ -633,7 +870,7 @@ export class UniversalStageEngine {
    * 生成阶段 4 (一维空间压缩) 演化步骤
    */
   public static generateStage4Steps(
-    _model: IYamlAlgorithmModel,
+    model: IYamlAlgorithmModel,
     mVal: number,
     nVal: number,
     direction: 'forward' | 'reverse' = 'forward',
@@ -644,6 +881,12 @@ export class UniversalStageEngine {
     const memo = new Array(nVal).fill(0);
     const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
+
+    const obstacleGrid: number[][] | undefined =
+      (model.defaultParams as any)?.obstacleGrid ||
+      (model.id === 'unique-paths-ii'
+        ? Array.from({ length: mVal }, (_, r) => Array.from({ length: nVal }, (_, c) => (r === 1 && c === 1 && mVal > 1 && nVal > 1 ? 1 : 0)))
+        : undefined);
 
     const lineInit = anchorMap?.init || (variant === 'if' ? 4 : (isForward ? 4 : 4));
     const lineInitVal = anchorMap?.init_val || anchorMap?.init_row || 8;
@@ -659,6 +902,7 @@ export class UniversalStageEngine {
       i: isForward ? 0 : mVal - 1,
       j: isForward ? 0 : nVal - 1,
       activeSlot: -1,
+      obstacleGrid,
       memoSnapshot: [...memo],
       grid: JSON.parse(JSON.stringify(gridState)),
       tag: '创建一维滚动数组',
@@ -666,7 +910,126 @@ export class UniversalStageEngine {
       msg: `创建长度为 ${nVal} 的一维滚动数组 <code>memo[0..${nVal - 1}]</code>，准备滚动覆盖。`
     });
 
-    if (variant === 'for') {
+    if (obstacleGrid) {
+      if (isForward) {
+        memo[0] = (obstacleGrid[0][0] === 0) ? 1 : 0;
+        steps.push({
+          type: 'init-slot',
+          line: lineInitVal,
+          i: 0,
+          j: 0,
+          activeSlot: 0,
+          slotMode: 'updated',
+          obstacleGrid,
+          memoSnapshot: [...memo],
+          tag: '起点初始化',
+          log: `| 🎬 起点初始化 memo[0] = ${memo[0]}`,
+          msg: `起点 (0, 0) ${memo[0] === 1 ? '无障碍' : '为障碍物'}，初始化 <code>memo[0] = ${memo[0]}</code>。`
+        });
+
+        for (let i = 0; i < mVal; i++) {
+          for (let j = 0; j < nVal; j++) {
+            if (obstacleGrid[i][j] === 1) {
+              memo[j] = 0;
+              steps.push({
+                type: 'init-slot',
+                line: lineInitVal,
+                i,
+                j,
+                activeSlot: j,
+                slotMode: 'updated',
+                obstacleGrid,
+                memoSnapshot: [...memo],
+                memoj: 0,
+                tag: '🚧 障碍物清零',
+                log: `| 🚧 遇到障碍物 (${i}, ${j})，一维状态 memo[${j}] 原地清零置 0`,
+                msg: `🚧 坐标 (${i}, ${j}) 为障碍物，一维状态 <code>memo[${j}] = 0</code> 原地清零。`
+              });
+            } else if (j > 0) {
+              const downVal = memo[j];
+              const rightVal = memo[j - 1];
+              memo[j] += rightVal;
+
+              steps.push({
+                type: 'accumulate',
+                line: lineAccumulate,
+                i,
+                j,
+                activeSlot: j,
+                slotMode: 'updated',
+                obstacleGrid,
+                memoSnapshot: [...memo],
+                down: downVal,
+                right: rightVal,
+                memoj: memo[j],
+                tag: '一维原地累加',
+                log: `| ✨ memo[${j}] += memo[${j - 1}] (${rightVal}) = ${memo[j]}`,
+                msg: `一维状态覆盖: <code>memo[${j}] (${downVal}) += memo[${j - 1}] (${rightVal}) = <strong>${memo[j]}</strong></code>。`
+              });
+            }
+          }
+        }
+      } else {
+        // 逆推带障碍物
+        memo[nVal - 1] = (obstacleGrid[mVal - 1][nVal - 1] === 0) ? 1 : 0;
+        steps.push({
+          type: 'init-slot',
+          line: lineInitVal,
+          i: mVal - 1,
+          j: nVal - 1,
+          activeSlot: nVal - 1,
+          slotMode: 'updated',
+          obstacleGrid,
+          memoSnapshot: [...memo],
+          tag: '逆推终点初始化',
+          log: `| 🎬 终点初始化 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+          msg: `终点 (${mVal - 1}, ${nVal - 1}) 初始化 <code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
+        });
+
+        for (let i = mVal - 1; i >= 0; i--) {
+          for (let j = nVal - 1; j >= 0; j--) {
+            if (obstacleGrid[i][j] === 1) {
+              memo[j] = 0;
+              steps.push({
+                type: 'init-slot',
+                line: lineInitVal,
+                i,
+                j,
+                activeSlot: j,
+                slotMode: 'updated',
+                obstacleGrid,
+                memoSnapshot: [...memo],
+                memoj: 0,
+                tag: '🚧 障碍物清零',
+                log: `| 🚧 逆推遇到障碍物 (${i}, ${j})，memo[${j}] = 0`,
+                msg: `🚧 坐标 (${i}, ${j}) 为障碍物，逆推 <code>memo[${j}] = 0</code>。`
+              });
+            } else if (j < nVal - 1) {
+              const downVal = memo[j];
+              const rightVal = memo[j + 1];
+              memo[j] += rightVal;
+
+              steps.push({
+                type: 'accumulate',
+                line: lineAccumulate,
+                i,
+                j,
+                activeSlot: j,
+                slotMode: 'updated',
+                obstacleGrid,
+                memoSnapshot: [...memo],
+                down: downVal,
+                right: rightVal,
+                memoj: memo[j],
+                tag: '逆推原地累加',
+                log: `| ✨ 逆推 memo[${j}] += memo[${j + 1}] (${rightVal}) = ${memo[j]}`,
+                msg: `逆推覆盖: <code>memo[${j}] (${downVal}) += memo[${j + 1}] (${rightVal}) = <strong>${memo[j]}</strong></code>。`
+              });
+            }
+          }
+        }
+      }
+    } else if (variant === 'for') {
       // 外层 for 初始化
       for (let j = 0; j < nVal; j++) {
         memo[j] = 1;
@@ -966,6 +1329,7 @@ export class UniversalStageEngine {
       j: isForward ? nVal - 1 : 0,
       activeSlot: finalIdx,
       slotMode: 'final',
+      obstacleGrid,
       memoSnapshot: [...memo],
       tag: '最终答案',
       log: `| 🏆 一维空间优化完成！最终答案 memo[${finalIdx}] = ${memo[finalIdx]}`,
