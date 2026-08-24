@@ -28,10 +28,10 @@
 </head>
 <body class="bg-slate-100/90 text-slate-800 antialiased h-screen overflow-hidden p-2 sm:p-2.5 md:p-3 flex flex-col justify-start">
 
-  <div class="max-w-7xl w-full mx-auto flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden">
+  <div class="w-full h-full mx-auto flex flex-col gap-2 sm:gap-2.5 min-h-0 overflow-hidden px-1.5 sm:px-2.5">
 
     <!-- 1. 顶栏标题与演化阶段选项卡卡片 (Header & Control Card) -->
-    <header class="bg-white rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 border border-slate-200 shadow-xs flex items-center justify-between gap-1.5 sm:gap-2 flex-shrink-0">
+    <header class="bg-white rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 border border-slate-200 shadow-xs flex items-center justify-between gap-1.5 sm:gap-2 flex-shrink-0 w-full">
       
       <!-- 1. 左侧：品牌与题号信息 (精简紧凑) -->
       <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-0">
@@ -73,11 +73,11 @@
       </div>
     </header>
 
-    <!-- 2. 主演示区：左侧可视化画布 + 右侧代码与日志 (严格锁定高度，内部滚动，步进绝不扩大) -->
-    <main class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3 flex-1 min-h-0 overflow-hidden">
+    <!-- 2. 主演示区：左侧可视化画布 + 动态可拖拽 Splitter + 右侧代码与日志 (弹性全屏自适应) -->
+    <main id="main-content-layout" class="flex flex-col lg:flex-row gap-2 sm:gap-2.5 flex-1 min-h-0 overflow-hidden w-full relative">
 
-      <!-- ================= 左侧：双看板 + 底部进度条 (7 栏，高度固定自适应) ================= -->
-      <section class="lg:col-span-7 flex flex-col gap-2.5 sm:gap-3 h-full min-h-0 overflow-hidden">
+      <!-- ================= 左侧：双看板 + 底部进度条 (自适应宽度，支持拖拽) ================= -->
+      <section id="left-visual-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 320px; flex: 1 1 50%;">
 
         <!-- 卡片 1: 二维网格 (虚拟地图 m×n, 比例紧凑, 播放控制器位于右下角) -->
         <div class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden relative">
@@ -176,8 +176,8 @@
 
       </section>
 
-      <!-- ================= 右侧：代码与日志 (5 栏，比例撑满，步进绝不扩大) ================= -->
-      <section class="lg:col-span-5 flex flex-col gap-2.5 sm:gap-3 h-full min-h-0 overflow-hidden">
+      <!-- ================= 右侧：代码与日志 (自适应宽度，支持拖拽) ================= -->
+      <section id="right-code-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 340px; flex: 1 1 50%;">
 
         <!-- 卡片 3: 迭代代码追踪 (Java, 占比 1.1 绝不膨胀) -->
         <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xs overflow-hidden flex flex-col flex-[1.1] min-h-0">

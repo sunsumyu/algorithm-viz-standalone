@@ -298,4 +298,39 @@ input[type="number"]::-webkit-outer-spin-button {
   animation: trailDashMove 0.8s linear infinite;
 }
 
+/* ===== 拖拽分隔条 (Splitter Styles) ===== */
+.algo-splitter {
+  position: relative;
+  user-select: none;
+  touch-action: none;
+  z-index: 25;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.algo-splitter-horizontal {
+  width: 8px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 -2px;
+}
+
+.algo-splitter-horizontal .algo-splitter-bar {
+  width: 3px;
+  height: 36px;
+  border-radius: 9999px;
+  background-color: var(--viz-card-border, #cbd5e1);
+  transition: all 0.2s ease;
+}
+
+.algo-splitter-horizontal:hover .algo-splitter-bar,
+.algo-splitter-horizontal.is-dragging .algo-splitter-bar {
+  background-color: var(--viz-primary, #3b82f6);
+  height: 48px;
+  width: 4px;
+}
+
+
 

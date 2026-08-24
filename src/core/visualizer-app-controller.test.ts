@@ -54,6 +54,12 @@ class MockElement {
     this.listeners[event].push(cb);
   }
 
+  public removeEventListener(event: string, cb: Function) {
+    if (this.listeners[event]) {
+      this.listeners[event] = this.listeners[event].filter(fn => fn !== cb);
+    }
+  }
+
   public dispatch(event: string, data?: any) {
     if (this.listeners[event]) {
       this.listeners[event].forEach(cb => cb(data || { target: this }));

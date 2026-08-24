@@ -12,6 +12,7 @@ import { VisualizerStateRouter, type VisualizerState } from './state-router';
 import { GridVisualAdapter, RecursionTreeAdapter } from './renderers/grid-visual-adapter';
 import { PlaybackTimelineController } from './playback-timeline-controller';
 import { VisualThemeManager } from './theme/visual-theme-manager';
+import { SplitterEngine } from './splitter-engine';
 import type { IYamlAlgorithmModel } from './interfaces';
 
 export type VisualizerMode = 'lite' | 'full';
@@ -36,6 +37,7 @@ export class VisualizerAppController {
   private n = 4;
   private steps: UniversalStep[] = [];
   private timeline: PlaybackTimelineController | null = null;
+  private splitterEngine: SplitterEngine | null = null;
   private themeManager: VisualThemeManager;
   private isDestroyed = false;
 
@@ -141,10 +143,13 @@ export class VisualizerAppController {
     // 5. 绑定全局控制交互事件
     this.bindEvents();
 
-    // 6. 初次装载与步骤推导计算
+    // 6. 装配左右拖拽分栏调节条 (Splitter)
+    this.setupSplitter();
+
+    // 7. 初次装载与步骤推导计算
     this.loadAndReset();
 
-    // 7. 定位到指定步数
+    // 8. 定位到指定步数
     if (targetStep > 0 && targetStep < this.steps.length) {
       this.timeline.seek(targetStep);
     }
@@ -249,6 +254,37 @@ export class VisualizerAppController {
       this.timeline.destroy();
       this.timeline = null;
     }
+    if (this.splitterEngine) {
+      this.splitterEngine.destroy();
+      this.splitterEngine = null;
+    }
+  }
+
+  /**
+   * 初始化左右拖拽分割条
+   */
+  private setupSplitter(): void {
+    if (typeof document === 'undefined') return;
+    const leftPane = document.getElementById('left-visual-section');
+    const mainContainer = document.getElementById('main-content-layout');
+    if (!leftPane || !mainContainer) return;
+
+    this.splitterEngine?.destroy();
+    this.splitterEngine = new SplitterEngine({
+      id: 'grid-dp-split',
+      direction: 'horizontal',
+      targetElement: leftPane,
+      containerElement: mainContainer,
+      defaultSize: Math.round((mainContainer.clientWidth || 1000) * 0.5) || 520,
+      minSize: 320,
+      minRatio: 0.28,
+      maxRatio: 0.72,
+      mode: 'flex',
+      attachPosition: 'after',
+      invert: false,
+      className: 'algo-layout-splitter',
+      title: '拖拽调节左右面板宽度（双击复原 50:50）'
+    });
   }
 
   // ================= 内部辅助渲染方法 =================

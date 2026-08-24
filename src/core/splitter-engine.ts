@@ -137,6 +137,7 @@ export class SplitterEngine {
   }
 
   private detectMode(container: HTMLElement, direction: SplitterDirection): SplitterMode {
+    if (typeof getComputedStyle !== 'function') return 'dimension';
     const display = getComputedStyle(container).display;
     if (display === 'grid' || display === 'inline-grid') {
       return 'grid';
@@ -169,7 +170,7 @@ export class SplitterEngine {
     this.splitterEl.appendChild(bar);
 
     // 确保目标或容器定位正确
-    if (getComputedStyle(targetElement).position === 'static' && this.options.mode === 'dimension') {
+    if (typeof getComputedStyle === 'function' && getComputedStyle(targetElement).position === 'static' && this.options.mode === 'dimension') {
       targetElement.style.position = 'relative';
     }
 
@@ -335,7 +336,11 @@ export class SplitterEngine {
     this.options.onResize?.(clamped);
 
     // 派发全局 resize 事件让图表/SVG/Canvas 自适应
-    window.dispatchEvent(new Event('resize'));
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      try {
+        window.dispatchEvent(new Event('resize'));
+      } catch {}
+    }
   }
 
   /**
@@ -392,8 +397,8 @@ export class SplitterEngine {
       window.removeEventListener('pointercancel', this.onPointerUp);
     }
 
-    this.splitterEl?.removeEventListener('pointerdown', this.onPointerDown);
-    this.splitterEl?.removeEventListener('dblclick', this.onDoubleClick);
+    this.splitterEl?.removeEventListener?.('pointerdown', this.onPointerDown);
+    this.splitterEl?.removeEventListener?.('dblclick', this.onDoubleClick);
     if (this.splitterEl) {
       if (typeof this.splitterEl.remove === 'function') {
         this.splitterEl.remove();
