@@ -21,6 +21,18 @@ describe('UniversalStageEngine & VisualizerStateRouter Deep Modules', () => {
       expect(lastReverseStep.log).toContain('uniquePaths(3, 3) = 6');
     });
 
+    it('should generate valid Stage 1 terminal variant steps with out-of-bounds river interception', () => {
+      const terminalSteps = UniversalStageEngine.generateStage1or2Steps(model, 3, 4, 'forward', false, undefined, 'terminal');
+      expect(terminalSteps.length).toBeGreaterThan(0);
+      const outOfBoundsSteps = terminalSteps.filter(s => s.type === 'out-of-bounds' || s.isBlockedStep);
+      expect(outOfBoundsSteps.length).toBeGreaterThan(0);
+      const riverSteps = outOfBoundsSteps.filter(s => s.outOfBoundsDir === 'river');
+      expect(riverSteps.length).toBeGreaterThan(0);
+      expect(riverSteps[0].msg).toContain('越界触水拦截');
+      const lastStep = terminalSteps[terminalSteps.length - 1];
+      expect(lastStep.log).toContain('uniquePaths(3, 4) = 10');
+    });
+
     it('should generate valid Stage 2 (memoization) steps with cache-hit pruning', () => {
       const memoSteps = UniversalStageEngine.generateStage1or2Steps(model, 3, 3, 'forward', true);
       const cacheHitSteps = memoSteps.filter(s => s.type === 'cache-hit');

@@ -52,6 +52,12 @@ export interface UniversalStep {
   fromTopCell?: { i: number; j: number } | null;
   fromLeftCell?: { i: number; j: number } | null;
   action?: string;
+  // 越界拦截与物理反弹属性
+  fromI?: number;
+  fromJ?: number;
+  outOfBoundsDir?: 'river' | 'right-wall' | 'top-wall' | 'left-wall' | string;
+  isOutOfBounds?: boolean;
+  isBlockedStep?: boolean;
 }
 
 export class UniversalStageEngine {
@@ -77,7 +83,8 @@ export class UniversalStageEngine {
     nVal: number,
     direction: 'forward' | 'reverse' = 'forward',
     isMemo: boolean = false,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    variant: string = 'boundary'
   ): UniversalStep[] {
     const generated: UniversalStep[] = [];
     const memoCache: Record<string, number> = {};
@@ -88,16 +95,18 @@ export class UniversalStageEngine {
     let nodeIdCounter = 0;
 
     const isForward = direction === 'forward';
+    const isTerminal = variant === 'terminal';
     const startR = isForward ? 0 : mVal - 1;
     const startC = isForward ? 0 : nVal - 1;
 
     // 行号映射 fallback
     const lineEntry = anchorMap?.entry || (isMemo ? 7 : 5);
-    const lineBoundary = anchorMap?.boundary || (isMemo ? 8 : 6);
-    const lineCacheHit = anchorMap?.cache_hit || 9;
-    const lineBranch1 = anchorMap?.branch_down || anchorMap?.branch_left || (isMemo ? 10 : 7);
-    const lineBranch2 = anchorMap?.branch_right || anchorMap?.branch_up || (isMemo ? 11 : 8);
-    const lineCombine = anchorMap?.combine || (isMemo ? 12 : 9);
+    const lineOutOfBounds = anchorMap?.out_of_bounds || (isMemo ? 8 : 6);
+    const lineBoundary = anchorMap?.boundary || (isMemo ? (isTerminal ? 9 : 8) : (isTerminal ? 7 : 6));
+    const lineCacheHit = anchorMap?.cache_hit || (isTerminal ? 10 : 9);
+    const lineBranch1 = anchorMap?.branch_down || anchorMap?.branch_left || (isMemo ? (isTerminal ? 11 : 10) : (isTerminal ? 8 : 7));
+    const lineBranch2 = anchorMap?.branch_right || anchorMap?.branch_up || (isMemo ? (isTerminal ? 12 : 11) : (isTerminal ? 9 : 8));
+    const lineCombine = anchorMap?.combine || (isMemo ? (isTerminal ? 13 : 12) : (isTerminal ? 10 : 9));
     const lineReturn = isMemo ? 5 : 3;
 
     const rootNode: UniversalTreeNode = {
@@ -109,6 +118,22 @@ export class UniversalStageEngine {
       children: []
     };
 
+    function isOutOfBounds(r: number, c: number): boolean {
+      if (isForward) {
+        return r >= mVal || c >= nVal;
+      } else {
+        return r < 0 || c < 0;
+      }
+    }
+
+    function isTarget(r: number, c: number): boolean {
+      if (isForward) {
+        return r === mVal - 1 && c === nVal - 1;
+      } else {
+        return r === 0 && c === 0;
+      }
+    }
+
     function isBoundary(r: number, c: number): boolean {
       if (isForward) {
         return r === mVal - 1 || c === nVal - 1;
@@ -117,7 +142,7 @@ export class UniversalStageEngine {
       }
     }
 
-    function dfs(r: number, c: number, currentTreeNode: UniversalTreeNode): number {
+    function dfs(r: number, c: number, currentTreeNode: UniversalTreeNode, fromR: number = -1, fromC: number = -1): number {
       callCount++;
       const key = `${r},${c}`;
       const isRepeated = !isMemo && memoCache[key] !== undefined;
@@ -134,6 +159,8 @@ export class UniversalStageEngine {
         type: 'dfs-call',
         i: r,
         j: c,
+        fromI: fromR,
+        fromJ: fromC,
         grid: JSON.parse(JSON.stringify(gridState)),
         activeStack: [...activeStack],
         visited: [...visitedCells],
@@ -150,32 +177,108 @@ export class UniversalStageEngine {
         treeRoot: UniversalStageEngine.cloneTree(rootNode)
       });
 
-      if (isBoundary(r, c)) {
-        gridState[r][c] = 1;
-        currentTreeNode.status = 'base';
-        currentTreeNode.tag = '= 1';
+      // 越界拦截判断 (Terminal Variant)
+      if (isTerminal) {
+        if (isOutOfBounds(r, c)) {
+          const outOfBoundsDir = isForward
+            ? (r >= mVal ? 'river' : 'right-wall')
+            : (r < 0 ? 'top-wall' : 'left-wall');
 
-        generated.push({
-          type: 'boundary',
-          i: r,
-          j: c,
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineBoundary,
-          tag: 'Base Case',
-          log: `| 🎬 边界 Base Case: (i=${r} 或 j=${c}) 到达${isForward ? '终点' : '起点'}边界，直达路径 1 条，return 1`,
-          msg: `🎬 到达${isForward ? '终点' : '起点'}边界 (i = ${r} 或 j = ${c})，直达${isForward ? '终点' : '起点'}，return 1。`,
-          topI: -1,
-          topJ: -1,
-          leftI: -1,
-          leftJ: -1,
-          gridHighlight: { i: r, j: c },
-          activeNodeId: currentTreeNode.id,
-          treeRoot: UniversalStageEngine.cloneTree(rootNode)
-        });
-        activeStack.pop();
-        return 1;
+          currentTreeNode.status = 'pruned';
+          currentTreeNode.tag = '🚫=0';
+
+          generated.push({
+            type: 'out-of-bounds',
+            i: r,
+            j: c,
+            fromI: fromR,
+            fromJ: fromC,
+            outOfBoundsDir,
+            isOutOfBounds: true,
+            isBlockedStep: true,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineOutOfBounds,
+            tag: outOfBoundsDir === 'river' ? '🌊 触水反弹' : '🚧 撞墙反弹',
+            log: outOfBoundsDir === 'river'
+              ? `| 🌊 【越界触水拦截】dfs(i=${r}, j=${c}) 跳入边界深水河流！水花四溅并立即弹回，return 0`
+              : `| 🚧 【越界撞墙拦截】dfs(i=${r}, j=${c}) 越出网格边界！撞上高墙立即弹回，return 0`,
+            msg: outOfBoundsDir === 'river'
+              ? `🌊 <strong>【越界触水拦截】</strong>探险家向下方移动跳入边界深水河流 (i = ${r})，水花四溅并弹回！return <strong>0</strong>。`
+              : `🚧 <strong>【越界撞墙拦截】</strong>探险家向右方越界 (j = ${c})，撞上边界高墙弹回！return <strong>0</strong>。`,
+            topI: -1,
+            topJ: -1,
+            leftI: -1,
+            leftJ: -1,
+            gridHighlight: { i: r, j: c },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+          activeStack.pop();
+          return 0;
+        }
+
+        if (isTarget(r, c)) {
+          gridState[r][c] = 1;
+          currentTreeNode.status = 'base';
+          currentTreeNode.tag = '= 1';
+
+          generated.push({
+            type: 'boundary',
+            i: r,
+            j: c,
+            fromI: fromR,
+            fromJ: fromC,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineBoundary,
+            tag: '🏆 到达终点',
+            log: `| 🏆 【终点达成】dfs(i=${r}, j=${c}) 到达目标${isForward ? '终点' : '起点'}，找到 1 条有效通达路径，return 1`,
+            msg: `🏆 <strong>【终点达成】</strong>到达目标${isForward ? '终点' : '起点'} (i = ${r}, j = ${c})，开辟 1 条有效通达路径，return <strong>1</strong>。`,
+            topI: -1,
+            topJ: -1,
+            leftI: -1,
+            leftJ: -1,
+            gridHighlight: { i: r, j: c },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+          activeStack.pop();
+          return 1;
+        }
+      } else {
+        // 边缘直达版 (Boundary Variant)
+        if (isBoundary(r, c)) {
+          gridState[r][c] = 1;
+          currentTreeNode.status = 'base';
+          currentTreeNode.tag = '= 1';
+
+          generated.push({
+            type: 'boundary',
+            i: r,
+            j: c,
+            fromI: fromR,
+            fromJ: fromC,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineBoundary,
+            tag: 'Base Case',
+            log: `| 🎬 边界 Base Case: (i=${r} 或 j=${c}) 到达${isForward ? '终点' : '起点'}边界，直达路径 1 条，return 1`,
+            msg: `🎬 到达${isForward ? '终点' : '起点'}边界 (i = ${r} 或 j = ${c})，直达${isForward ? '终点' : '起点'}，return 1。`,
+            topI: -1,
+            topJ: -1,
+            leftI: -1,
+            leftJ: -1,
+            gridHighlight: { i: r, j: c },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+          activeStack.pop();
+          return 1;
+        }
       }
 
       if (isMemo && memoCache[key] !== undefined) {
@@ -186,6 +289,8 @@ export class UniversalStageEngine {
           type: 'cache-hit',
           i: r,
           j: c,
+          fromI: fromR,
+          fromJ: fromC,
           grid: JSON.parse(JSON.stringify(gridState)),
           activeStack: [...activeStack],
           visited: [...visitedCells],

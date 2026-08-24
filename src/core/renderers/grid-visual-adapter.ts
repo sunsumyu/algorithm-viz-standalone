@@ -4,7 +4,7 @@
  */
 
 export interface AdventurerRenderOptions {
-  state?: 'walking' | 'cheering' | 'jumping';
+  state?: 'walking' | 'cheering' | 'jumping' | 'blocked';
   isFinish?: boolean;
 }
 
@@ -26,8 +26,15 @@ export class GridVisualAdapter {
    * 生成探险家小人矢量 SVG
    */
   public static getAdventurerSvgHtml(options: AdventurerRenderOptions = {}): string {
+    const isBlocked = options.state === 'blocked';
     const isCheering = options.isFinish || options.state === 'cheering';
-    const extraHead = isCheering
+    const extraHead = isBlocked
+      ? `
+         <circle cx="0" cy="-22" r="15" fill="rgba(239, 68, 68, 0.35)" />
+         <text x="-12" y="-22" font-size="11">💥</text>
+         <text x="6" y="-22" font-size="11">💦</text>
+        `
+      : isCheering
       ? `
          <circle cx="0" cy="-22" r="16" fill="rgba(250, 204, 21, 0.28)" />
          <text x="-13" y="-22" font-size="10">✨</text>
@@ -39,8 +46,14 @@ export class GridVisualAdapter {
          <text x="-12" y="-22" font-size="9">✨</text>
         `;
 
+    const charAnimClass = isBlocked
+      ? 'is-jumping'
+      : isCheering
+      ? 'is-cheering'
+      : 'is-jumping';
+
     return `
-      <svg class="adventurer-char ${isCheering ? 'is-cheering' : 'is-jumping'}" viewBox="-22 -36 44 56" width="38" height="48" style="overflow: visible;">
+      <svg class="adventurer-char ${charAnimClass}" viewBox="-22 -36 44 56" width="38" height="48" style="overflow: visible;">
         <ellipse cx="0" cy="17" rx="11" ry="3.2" fill="rgba(0, 0, 0, 0.35)" class="char-shadow" />
         <g class="char-body">
           <rect x="-13" y="-5" width="6.5" height="13" rx="2.5" fill="#854d0e" stroke="#713f12" stroke-width="0.8" />
@@ -49,14 +62,14 @@ export class GridVisualAdapter {
           <rect x="2" y="7" width="3.5" height="7" rx="1.5" fill="#1e293b" />
           <rect x="-7.5" y="11.5" width="6" height="4" rx="1.5" fill="#b45309" stroke="#78350f" stroke-width="0.7" />
           <rect x="1.5" y="11.5" width="6" height="4" rx="1.5" fill="#b45309" stroke="#78350f" stroke-width="0.7" />
-          <rect x="-8.5" y="-6" width="17" height="15" rx="4.5" fill="#0284c7" stroke="#0369a1" stroke-width="1" />
-          <path d="M -5 -6 L 0 0 L 5 -6 Z" fill="#ef4444" />
+          <rect x="-8.5" y="-6" width="17" height="15" rx="4.5" fill="${isBlocked ? '#ef4444' : '#0284c7'}" stroke="${isBlocked ? '#b91c1c' : '#0369a1'}" stroke-width="1" />
+          <path d="M -5 -6 L 0 0 L 5 -6 Z" fill="${isBlocked ? '#facc15' : '#ef4444'}" />
           <rect x="-8" y="3.5" width="16" height="2.5" fill="#334155" />
           <rect x="-2" y="3" width="4.5" height="3.5" rx="0.8" fill="#facc15" stroke="#ca8a04" stroke-width="0.5" />
           ${!isCheering ? `
-            <rect x="-11" y="-4" width="4" height="10" rx="2" fill="#0284c7" stroke="#0369a1" stroke-width="0.7" transform="rotate(10 -11 -4)" />
+            <rect x="-11" y="-4" width="4" height="10" rx="2" fill="${isBlocked ? '#ef4444' : '#0284c7'}" stroke="${isBlocked ? '#b91c1c' : '#0369a1'}" stroke-width="0.7" transform="rotate(10 -11 -4)" />
             <circle cx="-10" cy="6" r="2.2" fill="#fed7aa" />
-            <rect x="7" y="-4" width="4" height="10" rx="2" fill="#0284c7" stroke="#0369a1" stroke-width="0.7" transform="rotate(-10 7 -4)" />
+            <rect x="7" y="-4" width="4" height="10" rx="2" fill="${isBlocked ? '#ef4444' : '#0284c7'}" stroke="${isBlocked ? '#b91c1c' : '#0369a1'}" stroke-width="0.7" transform="rotate(-10 7 -4)" />
             <circle cx="10" cy="6" r="2.2" fill="#fed7aa" />
           ` : `
             <circle cx="-11" cy="-14" r="3" fill="#fed7aa" stroke="#ea580c" stroke-width="0.8" />
@@ -65,7 +78,9 @@ export class GridVisualAdapter {
           <circle cx="0" cy="-12" r="10" fill="#fed7aa" stroke="#ea580c" stroke-width="0.8" />
           <ellipse cx="-5.5" cy="-10" rx="2.2" ry="1.3" fill="rgba(248, 113, 113, 0.45)" />
           <ellipse cx="5.5" cy="-10" rx="2.2" ry="1.3" fill="rgba(248, 113, 113, 0.45)" />
-          ${isCheering ? `
+          ${isBlocked ? `
+            <text x="-6" y="-9" font-size="8">😵</text>
+          ` : isCheering ? `
             <path d="M -4.5 -13 Q -3 -15.5 -1.5 -13" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round" />
             <path d="M 1.5 -13 Q 3 -15.5 4.5 -13" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round" />
           ` : `
@@ -101,6 +116,12 @@ export class GridVisualAdapter {
       ? 'w-9 h-9 sm:w-10 sm:h-10 text-xs'
       : 'w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 text-xs';
 
+    const isOutOfBounds = step.isOutOfBounds || step.type === 'out-of-bounds';
+    const isRiverBounce = isOutOfBounds && (step.outOfBoundsDir === 'river' || step.i >= m);
+    const isRightWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'right-wall' || step.j >= n);
+    const isTopWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'top-wall' || step.i < 0);
+    const isLeftWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'left-wall' || step.j < 0);
+
     for (let r = 0; r < m; r++) {
       for (let c = 0; c < n; c++) {
         const cellVal = step.grid?.[r]?.[c] ?? null;
@@ -110,6 +131,12 @@ export class GridVisualAdapter {
         const isFinish = isReverse ? (r === 0 && c === 0) : (r === m - 1 && c === n - 1);
         const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
 
+        // 越界弹回时的发射源网格
+        const isRiverOrigin = isRiverBounce && r === m - 1 && c === (step.fromJ >= 0 ? step.fromJ : step.j);
+        const isRightWallOrigin = isRightWallBounce && r === (step.fromI >= 0 ? step.fromI : step.i) && c === n - 1;
+        const isTopWallOrigin = isTopWallBounce && r === 0 && c === (step.fromJ >= 0 ? step.fromJ : step.j);
+        const isLeftWallOrigin = isLeftWallBounce && r === (step.fromI >= 0 ? step.fromI : step.i) && c === 0;
+
         const cellEl = document.createElement('div');
 
         if (isObstacle) {
@@ -117,6 +144,47 @@ export class GridVisualAdapter {
           cellEl.innerHTML = `
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="text-base font-bold mt-2 z-10">🚧</span>
+          `;
+        } else if (isRiverOrigin) {
+          // 触水弹回单元格展示
+          cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-sky-100 border-sky-400`;
+          cellEl.innerHTML = `
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30 river-splash-dive">
+              ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+            </div>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[10px] pointer-events-none z-30 font-bold text-sky-600 flex items-center gap-0.5">
+              <span>⬇️💦</span>
+            </div>
+          `;
+        } else if (isRightWallOrigin) {
+          // 撞墙弹回单元格展示
+          cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-red-50 border-red-400`;
+          cellEl.innerHTML = `
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30 wall-recoil-bump">
+              ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+            </div>
+            <div class="absolute top-1/2 -right-6 -translate-y-1/2 pointer-events-none z-30">
+              <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-red-600 text-white shadow border border-white whitespace-nowrap">
+                🚧 撞墙 return 0
+              </span>
+            </div>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+          `;
+        } else if (isTopWallOrigin || isLeftWallOrigin) {
+          // 逆推越界单元格展示
+          cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-red-50 border-red-400`;
+          cellEl.innerHTML = `
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30 wall-recoil-bump">
+              ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+            </div>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+            <div class="absolute ${isTopWallOrigin ? '-top-3' : '-left-3'} left-1/2 -translate-x-1/2 text-[10px] pointer-events-none z-30 font-bold text-red-600">
+              🚫 越界 return 0
+            </div>
           `;
         } else if (isCur) {
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold`;
@@ -156,6 +224,41 @@ export class GridVisualAdapter {
           `;
         }
         container.appendChild(cellEl);
+      }
+    }
+
+    // 动态更新底部深水河流栏 (触水落水弹回动效)
+    const riverBarrier = (typeof document !== 'undefined' && typeof document.getElementById === 'function')
+      ? document.getElementById('grid-river-barrier')
+      : null;
+    if (riverBarrier) {
+      if (isRiverBounce) {
+        riverBarrier.className = 'w-full max-w-[280px] mt-1.5 relative overflow-hidden rounded-lg border-2 border-red-400 bg-gradient-to-r from-sky-800 via-sky-600 to-sky-800 py-1 px-2.5 flex items-center justify-center shadow-md flex-shrink-0';
+        riverBarrier.innerHTML = `
+          <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-60" preserveAspectRatio="none">
+            <path class="dp-river-waves-1" d="M -60 6 Q -30 2, 0 6 T 60 6 T 120 6 T 180 6 T 240 6 T 300 6 T 360 6 T 420 6 T 480 6 T 540 6 T 600 6 T 660 6 T 720 6 T 780 6 T 840 6" fill="none" stroke="#ffffff" stroke-width="1.6" />
+            <path class="dp-river-waves-2" d="M -60 14 Q -30 10, 0 14 T 60 14 T 120 14 T 180 14 T 240 14 T 300 14 T 360 14 T 420 14 T 480 14 T 540 14 T 600 14 T 660 14 T 720 14 T 780 14" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="6 4" />
+          </svg>
+          <div class="relative z-10 flex items-center gap-1.5 river-splash-dive">
+            <span class="text-xs">💦</span>
+            <span class="text-[10px] font-extrabold text-white bg-red-600/95 px-2 py-0.5 rounded-full border border-red-300 shadow flex items-center gap-1">
+              <span>💥 触水弹回!</span>
+              <span class="font-mono bg-white/20 px-1 rounded text-[9px]">return 0</span>
+            </span>
+            <span class="text-xs">💦</span>
+          </div>
+        `;
+      } else {
+        riverBarrier.className = 'w-full max-w-[280px] mt-1.5 relative overflow-hidden rounded-lg border border-sky-400/80 bg-gradient-to-r from-sky-700 via-sky-600 to-sky-800 py-0.5 px-2.5 flex items-center justify-center shadow-xs flex-shrink-0';
+        riverBarrier.innerHTML = `
+          <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40" preserveAspectRatio="none">
+            <path class="dp-river-waves-1" d="M -60 6 Q -30 2, 0 6 T 60 6 T 120 6 T 180 6 T 240 6 T 300 6 T 360 6 T 420 6 T 480 6 T 540 6 T 600 6 T 660 6 T 720 6 T 780 6 T 840 6" fill="none" stroke="#ffffff" stroke-width="1.3" />
+            <path class="dp-river-waves-2" d="M -60 14 Q -30 10, 0 14 T 60 14 T 120 14 T 180 14 T 240 14 T 300 14 T 360 14 T 420 14 T 480 14 T 540 14 T 600 14 T 660 14 T 720 14 T 780 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="6 4" />
+          </svg>
+          <span class="relative z-10 text-[10px] font-bold text-sky-100 flex items-center gap-1 drop-shadow select-none">
+            🌊 边界深水河流 · 越界反弹 🚫
+          </span>
+        `;
       }
     }
   }
@@ -414,6 +517,7 @@ export class RecursionTreeAdapter {
 
       const isBase = n.status === 'base';
       const isPruned = n.status === 'pruned';
+      const isOutOfBoundsNode = isPruned && n.tag && n.tag.includes('🚫');
       const isRepeated = n.tag && n.tag.includes('重复');
       const isVisited = n.status === 'visited';
 
@@ -429,6 +533,10 @@ export class RecursionTreeAdapter {
         fill = '#eff6ff';
         textColor = '#1d4ed8';
         filterGlow = 'filter="drop-shadow(0 0 6px rgba(59, 130, 246, 0.45))"';
+      } else if (isOutOfBoundsNode) {
+        stroke = '#ef4444';
+        fill = '#fef2f2';
+        textColor = '#b91c1c';
       } else if (isPruned) {
         stroke = '#9333ea';
         fill = '#faf5ff';
@@ -449,7 +557,7 @@ export class RecursionTreeAdapter {
 
       let badgeHtml = '';
       if (n.tag) {
-        const tagBg = isPruned ? '#9333ea' : isRepeated ? '#d97706' : '#10b981';
+        const tagBg = isOutOfBoundsNode ? '#ef4444' : isPruned ? '#9333ea' : isRepeated ? '#d97706' : '#10b981';
         const badgeW = Math.min(nodeW - 2, Math.max(26, n.tag.length * 6.5 + 4));
         badgeHtml = `
           <g transform="translate(0, ${nodeH / 2 + 7})">

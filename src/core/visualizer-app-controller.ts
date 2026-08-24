@@ -181,9 +181,9 @@ export class VisualizerAppController {
       : stageConfig.anchorMap;
 
     if (this.currentStage === 'stage-1') {
-      this.steps = UniversalStageEngine.generateStage1or2Steps(this.model, this.m, this.n, this.currentDirection, false, anchorMap);
+      this.steps = UniversalStageEngine.generateStage1or2Steps(this.model, this.m, this.n, this.currentDirection, false, anchorMap, this.currentStageVariant);
     } else if (this.currentStage === 'stage-2') {
-      this.steps = UniversalStageEngine.generateStage1or2Steps(this.model, this.m, this.n, this.currentDirection, true, anchorMap);
+      this.steps = UniversalStageEngine.generateStage1or2Steps(this.model, this.m, this.n, this.currentDirection, true, anchorMap, this.currentStageVariant);
     } else if (this.currentStage === 'stage-3') {
       this.steps = UniversalStageEngine.generateStage3Steps(this.model, this.m, this.n, this.currentDirection, anchorMap);
     } else if (this.currentStage === 'stage-4') {

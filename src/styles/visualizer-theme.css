@@ -215,3 +215,66 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* ===== 河流波动与跳河落水反弹动效 (River Waves & Splash Recoil) ===== */
+@keyframes riverWaveFlow1 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-60px); }
+}
+@keyframes riverWaveFlow2 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(60px); }
+}
+.dp-river-waves-1 {
+  animation: riverWaveFlow1 3.5s linear infinite;
+}
+.dp-river-waves-2 {
+  animation: riverWaveFlow2 2.8s linear infinite;
+}
+
+@keyframes riverSplashDive {
+  0% {
+    transform: translateY(-22px) scale(0.88);
+    opacity: 0.85;
+  }
+  40% {
+    transform: translateY(5px) scale(1.22, 0.78);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-10px) scale(0.92, 1.12);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+}
+
+.river-splash-dive {
+  display: inline-block;
+  animation: riverSplashDive 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes wallRecoilBump {
+  0% {
+    transform: translateX(-16px) scale(0.9);
+  }
+  40% {
+    transform: translateX(6px) scale(0.85, 1.15);
+  }
+  70% {
+    transform: translateX(-8px) scale(1.1, 0.95);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+.wall-recoil-bump {
+  display: inline-block;
+  animation: wallRecoilBump 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  transform-origin: center right;
+}
+
