@@ -122,6 +122,14 @@ export class GridVisualAdapter {
     const isTopWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'top-wall' || step.i < 0);
     const isLeftWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'left-wall' || step.j < 0);
 
+    const isStepOutOfBounds = (step.i >= m || step.j >= n || step.i < 0 || step.j < 0);
+    const activeStandingI = isStepOutOfBounds
+      ? (step.fromI !== undefined && step.fromI >= 0 && step.fromI < m ? step.fromI : Math.min(m - 1, Math.max(0, step.i)))
+      : step.i;
+    const activeStandingJ = isStepOutOfBounds
+      ? (step.fromJ !== undefined && step.fromJ >= 0 && step.fromJ < n ? step.fromJ : Math.min(n - 1, Math.max(0, step.j)))
+      : step.j;
+
     const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
     const activeTrailSet = new Set<string>(activeStackList);
 
@@ -129,20 +137,23 @@ export class GridVisualAdapter {
       for (let c = 0; c < n; c++) {
         const key = `${r},${c}`;
         const cellVal = step.grid?.[r]?.[c] ?? null;
-        const isCur = step.i === r && step.j === c;
+        const isStandingCell = (r === activeStandingI && c === activeStandingJ);
         const isTop = step.topI === r && step.topJ === c;
         const isLeft = step.leftI === r && step.leftJ === c;
         const isFinish = isReverse ? (r === 0 && c === 0) : (r === m - 1 && c === n - 1);
         const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
 
         // 越界弹回时的发射源网格
-        const isRiverOrigin = isRiverBounce && r === m - 1 && c === (step.fromJ >= 0 ? step.fromJ : step.j);
-        const isRightWallOrigin = isRightWallBounce && r === (step.fromI >= 0 ? step.fromI : step.i) && c === n - 1;
-        const isTopWallOrigin = isTopWallBounce && r === 0 && c === (step.fromJ >= 0 ? step.fromJ : step.j);
-        const isLeftWallOrigin = isLeftWallBounce && r === (step.fromI >= 0 ? step.fromI : step.i) && c === 0;
+        const isRiverOrigin = isRiverBounce && r === m - 1 && c === (step.fromJ !== undefined && step.fromJ >= 0 ? step.fromJ : Math.min(n - 1, Math.max(0, step.j)));
+        const isRightWallOrigin = isRightWallBounce && r === (step.fromI !== undefined && step.fromI >= 0 ? step.fromI : Math.min(m - 1, Math.max(0, step.i))) && c === n - 1;
+        const isTopWallOrigin = isTopWallBounce && r === 0 && c === (step.fromJ !== undefined && step.fromJ >= 0 ? step.fromJ : Math.min(n - 1, Math.max(0, step.j)));
+        const isLeftWallOrigin = isLeftWallBounce && r === (step.fromI !== undefined && step.fromI >= 0 ? step.fromI : Math.min(m - 1, Math.max(0, step.i))) && c === 0;
+
+        // 当前探险家站立点 (包含正常点与准备越界时停留的父节点)
+        const isCur = isStandingCell && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
 
         // 探索中足迹 (在递归调用栈中，但非当前站立点)
-        const isTrail = activeTrailSet.has(key) && !isCur && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
+        const isTrail = activeTrailSet.has(key) && !isStandingCell && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
 
         const cellEl = document.createElement('div');
 

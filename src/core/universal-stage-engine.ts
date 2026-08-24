@@ -352,7 +352,7 @@ export class UniversalStageEngine {
         children: []
       };
       currentTreeNode.children.push(childNode1);
-      const val1 = dfs(b1R, b1C, childNode1);
+      const val1 = dfs(b1R, b1C, childNode1, r, c);
 
       // 分支 2：顺推向右 (r, c+1) / 逆推向上 (r-1, c)
       const b2R = isForward ? r : r - 1;
@@ -369,6 +369,8 @@ export class UniversalStageEngine {
         type: isForward ? 'branch-right' : 'branch-up',
         i: r,
         j: c,
+        fromI: fromR,
+        fromJ: fromC,
         grid: JSON.parse(JSON.stringify(gridState)),
         activeStack: [...activeStack],
         visited: [...visitedCells],
@@ -394,7 +396,7 @@ export class UniversalStageEngine {
         children: []
       };
       currentTreeNode.children.push(childNode2);
-      const val2 = dfs(b2R, b2C, childNode2);
+      const val2 = dfs(b2R, b2C, childNode2, r, c);
 
       const res = val1 + val2;
       if (isMemo) memoCache[key] = res;

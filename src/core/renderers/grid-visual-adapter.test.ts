@@ -103,6 +103,30 @@ describe('GridVisualAdapter Deep Module', () => {
     expect(curCell20.innerHTML).toContain('adventurer-char');
   });
 
+  it('当进入越界方法头 (dfs(3,0)) 时，探险家小人应驻留在父节点单元格 (2,0) 上而不消失', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const mockStep = {
+      type: 'dfs-call',
+      i: 3,
+      j: 0,
+      fromI: 2,
+      fromJ: 0,
+      activeStack: ['0,0', '1,0', '2,0', '3,0'],
+      grid: [
+        [null, null, null],
+        [null, null, null],
+        [null, null, null]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
+    const mockContainer = container as unknown as MockHTMLElement;
+    // 检查父节点单元格 (2,0) 是否依然持有探险家小人 (is-cur)
+    const parentCell20 = mockContainer.children[6]; // (2,0)
+    expect(parentCell20.className).toContain('is-cur');
+    expect(parentCell20.innerHTML).toContain('adventurer-char');
+  });
+
   it('应该能构建一维空间压缩槽位', () => {
     const container = new MockHTMLElement() as unknown as HTMLElement;
     GridVisualAdapter.build1DSlots(container, 4, 'dp');
