@@ -64,9 +64,9 @@ describe('🏆 Unique Paths Golden Baseline Regression Guard', () => {
     expect(oobStep).toBeDefined();
     expect(oobStep?.outOfBoundsDir).toBeDefined();
 
-    // Stage 2 Forward (Memoization for 3x4 grid: 39 steps)
+    // Stage 2 Forward (Memoization terminal variant for 3x4 grid: 69 steps)
     const s2Steps = UniversalStageEngine.generateStage1or2Steps(model, m, n, 'forward', true);
-    expect(s2Steps.length).toBe(39);
+    expect(s2Steps.length).toBe(69);
     expect(s2Steps[s2Steps.length - 1].log).toContain('uniquePaths(3, 4) = 10');
 
     // Stage 3 Forward (2D Tabulation: 14 steps)

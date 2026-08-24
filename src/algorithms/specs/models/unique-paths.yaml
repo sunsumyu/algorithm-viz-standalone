@@ -66,40 +66,6 @@ stages:
       forward: "从起点 (0, 0) 开始顺向右向下分支递归，直至到达终点边界 (m-1, n-1)。"
       reverse: "从终点 (m-1, n-1) 逆推向左向上寻找来源，展示倒序搜索的重叠子问题。"
     variants:
-      boundary:
-        variantLabel: "边缘直达版"
-        title:
-          forward: "NaiveRecursiveBoundary.java (边缘直达版)"
-          reverse: "NaiveRecursiveReverseBoundary.java (边缘直达版)"
-        code:
-          forward:
-            title: "NaiveRecursiveBoundary.java (边缘直达版)"
-            source: |
-              class Solution {
-                  public int uniquePaths(int m, int n) {
-                      return dfs(0, 0, m, n);
-                  }
-                  private int dfs(int i, int j, int m, int n) { // @step:entry
-                      if (i == m - 1 || j == n - 1) return 1; // @step:boundary
-                      int down = dfs(i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
-                      int right = dfs(i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
-                      return down + right; // @step:combine
-                  }
-              }
-          reverse:
-            title: "NaiveRecursiveReverseBoundary.java (边缘直达版)"
-            source: |
-              class Solution {
-                  public int uniquePaths(int m, int n) {
-                      return dfs(m - 1, n - 1);
-                  }
-                  private int dfs(int i, int j) { // @step:entry
-                      if (i == 0 || j == 0) return 1; // @step:boundary
-                      int left = dfs(i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
-                      int up = dfs(i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
-                      return left + up; // @step:combine
-                  }
-              }
       terminal:
         variantLabel: "越界拦截版"
         title:
@@ -131,6 +97,40 @@ stages:
                   private int dfs(int i, int j) { // @step:entry
                       if (i < 0 || j < 0) return 0; // @step:out_of_bounds // 逆推越界
                       if (i == 0 && j == 0) return 1; // @step:boundary // 回到起点
+                      int left = dfs(i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
+                      int up = dfs(i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
+                      return left + up; // @step:combine
+                  }
+              }
+      boundary:
+        variantLabel: "边缘直达版"
+        title:
+          forward: "NaiveRecursiveBoundary.java (边缘直达版)"
+          reverse: "NaiveRecursiveReverseBoundary.java (边缘直达版)"
+        code:
+          forward:
+            title: "NaiveRecursiveBoundary.java (边缘直达版)"
+            source: |
+              class Solution {
+                  public int uniquePaths(int m, int n) {
+                      return dfs(0, 0, m, n);
+                  }
+                  private int dfs(int i, int j, int m, int n) { // @step:entry
+                      if (i == m - 1 || j == n - 1) return 1; // @step:boundary
+                      int down = dfs(i + 1, j, m, n);  // @step:branch_down // 顺推：向下探索
+                      int right = dfs(i, j + 1, m, n); // @step:branch_right // 顺推：向右探索
+                      return down + right; // @step:combine
+                  }
+              }
+          reverse:
+            title: "NaiveRecursiveReverseBoundary.java (边缘直达版)"
+            source: |
+              class Solution {
+                  public int uniquePaths(int m, int n) {
+                      return dfs(m - 1, n - 1);
+                  }
+                  private int dfs(int i, int j) { // @step:entry
+                      if (i == 0 || j == 0) return 1; // @step:boundary
                       int left = dfs(i, j - 1);  // @step:branch_left // 逆推：向左寻找来源
                       int up = dfs(i - 1, j);    // @step:branch_up // 逆推：向上寻找来源
                       return left + up; // @step:combine
@@ -190,46 +190,6 @@ stages:
       forward: "已计算过的 (i, j) 到终点路径数直接查表返回，跳过整棵子树展开。"
       reverse: "已计算过的 (i, j) 到终点路径数直接查表返回，跳过整棵子树。"
     variants:
-      boundary:
-        variantLabel: "边缘直达剪枝版"
-        title:
-          forward: "MemoizedBoundary.java (边缘直达版)"
-          reverse: "MemoizedReverseBoundary.java (边缘直达版)"
-        code:
-          forward:
-            title: "MemoizedBoundary.java (边缘直达版)"
-            source: |
-              class Solution {
-                  private int[][] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[m][n];
-                      return dfs(0, 0, m, n);
-                  }
-                  private int dfs(int i, int j, int m, int n) { // @step:entry
-                      if (i == m - 1 || j == n - 1) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                      int down = dfs(i + 1, j, m, n); // @step:branch_down
-                      int right = dfs(i, j + 1, m, n); // @step:branch_right
-                      return memo[i][j] = down + right; // @step:combine
-                  }
-              }
-          reverse:
-            title: "MemoizedReverseBoundary.java (边缘直达版)"
-            source: |
-              class Solution {
-                  private int[][] memo;
-                  public int uniquePaths(int m, int n) {
-                      memo = new int[m][n];
-                      return dfs(m - 1, n - 1);
-                  }
-                  private int dfs(int i, int j) { // @step:entry
-                      if (i == 0 || j == 0) return 1; // @step:boundary
-                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
-                      int left = dfs(i, j - 1); // @step:branch_left
-                      int up = dfs(i - 1, j); // @step:branch_up
-                      return memo[i][j] = left + up; // @step:combine
-                  }
-              }
       terminal:
         variantLabel: "越界拦截剪枝版"
         title:
@@ -266,6 +226,46 @@ stages:
                   private int dfs(int i, int j) { // @step:entry
                       if (i < 0 || j < 0) return 0; // @step:out_of_bounds
                       if (i == 0 && j == 0) return 1; // @step:boundary
+                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+                      int left = dfs(i, j - 1); // @step:branch_left
+                      int up = dfs(i - 1, j); // @step:branch_up
+                      return memo[i][j] = left + up; // @step:combine
+                  }
+              }
+      boundary:
+        variantLabel: "边缘直达剪枝版"
+        title:
+          forward: "MemoizedBoundary.java (边缘直达版)"
+          reverse: "MemoizedReverseBoundary.java (边缘直达版)"
+        code:
+          forward:
+            title: "MemoizedBoundary.java (边缘直达版)"
+            source: |
+              class Solution {
+                  private int[][] memo;
+                  public int uniquePaths(int m, int n) {
+                      memo = new int[m][n];
+                      return dfs(0, 0, m, n);
+                  }
+                  private int dfs(int i, int j, int m, int n) { // @step:entry
+                      if (i == m - 1 || j == n - 1) return 1; // @step:boundary
+                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
+                      int down = dfs(i + 1, j, m, n); // @step:branch_down
+                      int right = dfs(i, j + 1, m, n); // @step:branch_right
+                      return memo[i][j] = down + right; // @step:combine
+                  }
+              }
+          reverse:
+            title: "MemoizedReverseBoundary.java (边缘直达版)"
+            source: |
+              class Solution {
+                  private int[][] memo;
+                  public int uniquePaths(int m, int n) {
+                      memo = new int[m][n];
+                      return dfs(m - 1, n - 1);
+                  }
+                  private int dfs(int i, int j) { // @step:entry
+                      if (i == 0 || j == 0) return 1; // @step:boundary
                       if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 命中剪枝
                       int left = dfs(i, j - 1); // @step:branch_left
                       int up = dfs(i - 1, j); // @step:branch_up

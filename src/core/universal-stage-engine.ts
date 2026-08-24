@@ -84,7 +84,7 @@ export class UniversalStageEngine {
     direction: 'forward' | 'reverse' = 'forward',
     isMemo: boolean = false,
     anchorMap?: Record<string, number>,
-    variant: string = 'boundary'
+    variant: string = 'terminal'
   ): UniversalStep[] {
     const generated: UniversalStep[] = [];
     const memoCache: Record<string, number> = {};
