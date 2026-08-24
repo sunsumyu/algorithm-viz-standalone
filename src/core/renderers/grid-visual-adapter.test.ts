@@ -74,6 +74,35 @@ describe('GridVisualAdapter Deep Module', () => {
     expect(curCell.innerHTML).toContain('1,1');
   });
 
+  it('应该在递归调用栈中正确渲染探索足迹 👣 (is-trail)', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const mockStep = {
+      i: 2,
+      j: 0,
+      activeStack: ['0,0', '1,0', '2,0'],
+      grid: [
+        [null, null, null],
+        [null, null, null],
+        [null, null, null]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
+    const mockContainer = container as unknown as MockHTMLElement;
+    // 检查 (0, 0) 和 (1, 0) 是探索足迹 (is-trail) 并包含 👣
+    const trailCell00 = mockContainer.children[0]; // (0,0)
+    const trailCell10 = mockContainer.children[3]; // (1,0)
+    const curCell20 = mockContainer.children[6];   // (2,0)
+
+    expect(trailCell00.className).toContain('is-trail');
+    expect(trailCell00.innerHTML).toContain('👣');
+    expect(trailCell10.className).toContain('is-trail');
+    expect(trailCell10.innerHTML).toContain('👣');
+    // 当前点 (2,0) 则是探险家
+    expect(curCell20.className).toContain('is-cur');
+    expect(curCell20.innerHTML).toContain('adventurer-char');
+  });
+
   it('应该能构建一维空间压缩槽位', () => {
     const container = new MockHTMLElement() as unknown as HTMLElement;
     GridVisualAdapter.build1DSlots(container, 4, 'dp');

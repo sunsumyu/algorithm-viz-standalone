@@ -122,8 +122,12 @@ export class GridVisualAdapter {
     const isTopWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'top-wall' || step.i < 0);
     const isLeftWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'left-wall' || step.j < 0);
 
+    const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
+    const activeTrailSet = new Set<string>(activeStackList);
+
     for (let r = 0; r < m; r++) {
       for (let c = 0; c < n; c++) {
+        const key = `${r},${c}`;
         const cellVal = step.grid?.[r]?.[c] ?? null;
         const isCur = step.i === r && step.j === c;
         const isTop = step.topI === r && step.topJ === c;
@@ -136,6 +140,9 @@ export class GridVisualAdapter {
         const isRightWallOrigin = isRightWallBounce && r === (step.fromI >= 0 ? step.fromI : step.i) && c === n - 1;
         const isTopWallOrigin = isTopWallBounce && r === 0 && c === (step.fromJ >= 0 ? step.fromJ : step.j);
         const isLeftWallOrigin = isLeftWallBounce && r === (step.fromI >= 0 ? step.fromI : step.i) && c === 0;
+
+        // 探索中足迹 (在递归调用栈中，但非当前站立点)
+        const isTrail = activeTrailSet.has(key) && !isCur && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
 
         const cellEl = document.createElement('div');
 
@@ -195,6 +202,14 @@ export class GridVisualAdapter {
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
+        } else if (isTrail) {
+          // 探索中足迹单元格展示
+          cellEl.className = `viz-cell is-trail ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-sky-50/80 border-sky-400 border-dashed text-sky-700 shadow-2xs`;
+          cellEl.innerHTML = `
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-sky-600">${r},${c}</span>
+            <span class="text-sm select-none animate-pulse">👣</span>
+            <span class="cell-val text-xs font-extrabold mt-0.5 z-10 text-sky-700">${cellVal !== null ? cellVal : ''}</span>
+          `;
         } else if (isTop) {
           cellEl.className = `viz-cell is-top ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold`;
           cellEl.innerHTML = `
@@ -226,6 +241,9 @@ export class GridVisualAdapter {
         container.appendChild(cellEl);
       }
     }
+
+    // 动态绘制箭头连线 (探索路径连线 & DP 状态转移箭头)
+    GridVisualAdapter.drawGridArrows(container, step, options);
 
     // 动态更新底部深水河流栏 (触水落水弹回动效)
     const riverBarrier = (typeof document !== 'undefined' && typeof document.getElementById === 'function')
@@ -259,6 +277,205 @@ export class GridVisualAdapter {
             🌊 边界深水河流 · 越界反弹 🚫
           </span>
         `;
+      }
+    }
+  }
+
+  /**
+   * 绘制网格探索箭头与状态转移连线
+   */
+  public static drawGridArrows(container: HTMLElement, step: any, options: GridRenderOptions): void {
+    if (!container || typeof document === 'undefined') return;
+    const gridWrapper = container.parentElement;
+    const svg = (gridWrapper && typeof gridWrapper.querySelector === 'function')
+      ? gridWrapper.querySelector('#grid-arrows-svg')
+      : (typeof document.getElementById === 'function' ? document.getElementById('grid-arrows-svg') : null);
+    if (!svg) return;
+
+    const defs = typeof svg.querySelector === 'function' ? svg.querySelector('defs') : null;
+    const defsHtml = defs ? defs.outerHTML : `
+      <defs>
+        <marker id="arrow-forward" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="#0284c7" />
+        </marker>
+        <marker id="arrow-reverse" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 9 1 L 0 5 L 9 9 z" fill="#0284c7" />
+        </marker>
+        <marker id="arrow-top-down" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="#9333ea" />
+        </marker>
+        <marker id="arrow-left-right" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="#d97706" />
+        </marker>
+      </defs>
+    `;
+    svg.innerHTML = defsHtml;
+
+    const { m, n } = options;
+    const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
+
+    // 1. 递归路径足迹连线 (Stage 1 & Stage 2)
+    if (activeStackList.length >= 2 && typeof document.createElementNS === 'function') {
+      for (let i = 0; i < activeStackList.length - 1; i++) {
+        const [r1, c1] = activeStackList[i].split(',').map(Number);
+        const [r2, c2] = activeStackList[i + 1].split(',').map(Number);
+
+        const idx1 = r1 * n + c1;
+        const cellEl1 = container.children[idx1] as HTMLElement;
+        if (!cellEl1 || typeof cellEl1.offsetLeft === 'undefined') continue;
+
+        const x1 = cellEl1.offsetLeft + cellEl1.offsetWidth / 2;
+        const y1 = cellEl1.offsetTop + cellEl1.offsetHeight / 2;
+
+        if (r2 < m && c2 < n && r2 >= 0 && c2 >= 0) {
+          const idx2 = r2 * n + c2;
+          const cellEl2 = container.children[idx2] as HTMLElement;
+          if (!cellEl2 || typeof cellEl2.offsetLeft === 'undefined') continue;
+
+          const x2 = cellEl2.offsetLeft + cellEl2.offsetWidth / 2;
+          const y2 = cellEl2.offsetTop + cellEl2.offsetHeight / 2;
+
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const sx = x1 + (dx / dist) * 12;
+          const sy = y1 + (dy / dist) * 12;
+          const ex = x2 - (dx / dist) * 14;
+          const ey = y2 - (dy / dist) * 14;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(sx));
+          line.setAttribute('y1', String(sy));
+          line.setAttribute('x2', String(ex));
+          line.setAttribute('y2', String(ey));
+          line.setAttribute('stroke', '#0284c7');
+          line.setAttribute('stroke-width', '2.5');
+          line.setAttribute('stroke-dasharray', '4 2');
+          line.setAttribute('marker-end', 'url(#arrow-forward)');
+          line.setAttribute('class', 'dp-trail-arrow');
+          line.setAttribute('opacity', '0.85');
+          svg.appendChild(line);
+        } else if (r2 >= m) {
+          // 向下跳入深水河流
+          const riverBarrier = (typeof document.getElementById === 'function') ? document.getElementById('grid-river-barrier') : null;
+          const targetY = riverBarrier ? riverBarrier.offsetTop : (y1 + cellEl1.offsetHeight / 2 + 16);
+          const sx = x1;
+          const sy = y1 + 12;
+          const ex = x1;
+          const ey = targetY;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(sx));
+          line.setAttribute('y1', String(sy));
+          line.setAttribute('x2', String(ex));
+          line.setAttribute('y2', String(ey));
+          line.setAttribute('stroke', '#ef4444');
+          line.setAttribute('stroke-width', '2.5');
+          line.setAttribute('stroke-dasharray', '4 2');
+          line.setAttribute('marker-end', 'url(#arrow-forward)');
+          line.setAttribute('class', 'dp-trail-arrow');
+          svg.appendChild(line);
+        } else if (c2 >= n) {
+          // 向右撞墙
+          const sx = x1 + 12;
+          const sy = y1;
+          const ex = x1 + cellEl1.offsetWidth / 2 + 14;
+          const ey = y1;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(sx));
+          line.setAttribute('y1', String(sy));
+          line.setAttribute('x2', String(ex));
+          line.setAttribute('y2', String(ey));
+          line.setAttribute('stroke', '#ef4444');
+          line.setAttribute('stroke-width', '2.5');
+          line.setAttribute('stroke-dasharray', '4 2');
+          line.setAttribute('marker-end', 'url(#arrow-forward)');
+          line.setAttribute('class', 'dp-trail-arrow');
+          svg.appendChild(line);
+        } else if (r2 < 0) {
+          // 向上撞墙
+          const sx = x1;
+          const sy = y1 - 12;
+          const ex = x1;
+          const ey = container.offsetTop - 8;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(sx));
+          line.setAttribute('y1', String(sy));
+          line.setAttribute('x2', String(ex));
+          line.setAttribute('y2', String(ey));
+          line.setAttribute('stroke', '#ef4444');
+          line.setAttribute('stroke-width', '2.5');
+          line.setAttribute('stroke-dasharray', '4 2');
+          line.setAttribute('marker-end', 'url(#arrow-forward)');
+          line.setAttribute('class', 'dp-trail-arrow');
+          svg.appendChild(line);
+        } else if (c2 < 0) {
+          // 向左撞墙
+          const sx = x1 - 12;
+          const sy = y1;
+          const ex = container.offsetLeft - 8;
+          const ey = y1;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(sx));
+          line.setAttribute('y1', String(sy));
+          line.setAttribute('x2', String(ex));
+          line.setAttribute('y2', String(ey));
+          line.setAttribute('stroke', '#ef4444');
+          line.setAttribute('stroke-width', '2.5');
+          line.setAttribute('stroke-dasharray', '4 2');
+          line.setAttribute('marker-end', 'url(#arrow-forward)');
+          line.setAttribute('class', 'dp-trail-arrow');
+          svg.appendChild(line);
+        }
+      }
+    }
+
+    // 2. 状态转移箭头 (Stage 3 二维 DP 填表)
+    if ((step.type === 'update' || step.type === 'update-cell' || (step.topI !== undefined && step.topI >= 0) || (step.leftI !== undefined && step.leftI >= 0)) && typeof document.createElementNS === 'function') {
+      const curIdx = step.i * n + step.j;
+      const curCell = container.children[curIdx] as HTMLElement;
+      if (curCell && typeof curCell.offsetLeft !== 'undefined') {
+        const curX = curCell.offsetLeft + curCell.offsetWidth / 2;
+        const curY = curCell.offsetTop + curCell.offsetHeight / 2;
+
+        if (step.topI !== undefined && step.topI >= 0 && step.topI < m && step.topJ !== undefined && step.topJ >= 0 && step.topJ < n) {
+          const topIdx = step.topI * n + step.topJ;
+          const topCell = container.children[topIdx] as HTMLElement;
+          if (topCell && typeof topCell.offsetLeft !== 'undefined') {
+            const topX = topCell.offsetLeft + topCell.offsetWidth / 2;
+            const topY = topCell.offsetTop + topCell.offsetHeight / 2;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', String(topX));
+            line.setAttribute('y1', String(topY + 12));
+            line.setAttribute('x2', String(curX));
+            line.setAttribute('y2', String(curY - 14));
+            line.setAttribute('stroke', '#9333ea');
+            line.setAttribute('stroke-width', '2.2');
+            line.setAttribute('marker-end', 'url(#arrow-top-down)');
+            svg.appendChild(line);
+          }
+        }
+
+        if (step.leftI !== undefined && step.leftI >= 0 && step.leftI < m && step.leftJ !== undefined && step.leftJ >= 0 && step.leftJ < n) {
+          const leftIdx = step.leftI * n + step.leftJ;
+          const leftCell = container.children[leftIdx] as HTMLElement;
+          if (leftCell && typeof leftCell.offsetLeft !== 'undefined') {
+            const leftX = leftCell.offsetLeft + leftCell.offsetWidth / 2;
+            const leftY = leftCell.offsetTop + leftCell.offsetHeight / 2;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', String(leftX + 12));
+            line.setAttribute('y1', String(leftY));
+            line.setAttribute('x2', String(curX - 14));
+            line.setAttribute('y2', String(curY));
+            line.setAttribute('stroke', '#d97706');
+            line.setAttribute('stroke-width', '2.2');
+            line.setAttribute('marker-end', 'url(#arrow-left-right)');
+            svg.appendChild(line);
+          }
+        }
       }
     }
   }

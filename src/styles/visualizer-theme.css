@@ -278,3 +278,24 @@ input[type="number"]::-webkit-outer-spin-button {
   transform-origin: center right;
 }
 
+/* ===== 探索足迹与箭头流动动效 ===== */
+.viz-cell.is-trail {
+  background-color: var(--viz-cell-trail-bg, #f0f9ff) !important;
+  border-color: var(--viz-cell-trail-border, #38bdf8) !important;
+  border-style: dashed !important;
+  color: var(--viz-cell-trail-text, #0369a1) !important;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+  z-index: 5;
+}
+
+@keyframes trailDashMove {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.dp-trail-arrow {
+  animation: trailDashMove 0.8s linear infinite;
+}
+
+
