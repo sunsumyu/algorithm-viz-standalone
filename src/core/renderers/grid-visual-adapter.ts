@@ -826,7 +826,7 @@ export class RecursionTreeAdapter {
     let scrollBox = container.querySelector('#tree-scroll-box') as HTMLElement | null;
     const isFirstMount = !scrollBox;
 
-    if (isFirstMount) {
+    if (!scrollBox) {
       container.innerHTML = `
         <div id="tree-scroll-box" class="w-full h-full flex items-center justify-start overflow-auto p-1">
           ${svgContent}

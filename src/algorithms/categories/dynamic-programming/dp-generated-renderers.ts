@@ -440,7 +440,6 @@ const demos: DemoDef[] = [
   oneDDef('fibonacci', '斐波那契数', 'dp[i] = dp[i-1] + dp[i-2]，动态规划经典入门。', '🔢', 'fibonacci', '8'),
   oneDDef('climb-stairs', '爬楼梯', '每次爬 1 或 2 阶，方案数来自前两阶。', '🪜', 'climb-stairs', '6'),
   numsDef('min-cost-climbing-stairs', '使用最小花费爬楼梯', '到达当前台阶的最小花费来自前一阶或前两阶。', '💰', 'min-cost', '10,15,20'),
-  gridDef('unique-paths-ii', '不同路径II', '带障碍网格路径数：障碍格路径数为 0。', '🚧', true),
   {
     id: 'decode-ways',
     name: '解码方法',

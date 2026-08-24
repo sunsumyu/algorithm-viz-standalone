@@ -26,25 +26,33 @@ describe('🏆 Unique Paths Golden Baseline Regression Guard', () => {
     
     // 检查阶段 1: 朴素递归 (含顺推、逆推、变体)
     const s1 = model.stages['stage-1'];
-    expect(s1.name.forward).toBeDefined();
-    expect(s1.name.reverse).toBeDefined();
+    expect(typeof s1.name).toBe('object');
+    const s1Name = s1.name as { forward: string; reverse: string };
+    expect(s1Name.forward).toBeDefined();
+    expect(s1Name.reverse).toBeDefined();
     expect(s1.variants?.['boundary']).toBeDefined();
     expect(s1.variants?.['terminal']).toBeDefined();
 
     // 检查阶段 2: 记忆化搜索
     const s2 = model.stages['stage-2'];
-    expect(s2.name.forward).toBeDefined();
-    expect(s2.name.reverse).toBeDefined();
+    expect(typeof s2.name).toBe('object');
+    const s2Name = s2.name as { forward: string; reverse: string };
+    expect(s2Name.forward).toBeDefined();
+    expect(s2Name.reverse).toBeDefined();
 
     // 检查阶段 3: 二维动态规划
     const s3 = model.stages['stage-3'];
-    expect(s3.name.forward).toBeDefined();
-    expect(s3.name.reverse).toBeDefined();
+    expect(typeof s3.name).toBe('object');
+    const s3Name = s3.name as { forward: string; reverse: string };
+    expect(s3Name.forward).toBeDefined();
+    expect(s3Name.reverse).toBeDefined();
 
     // 检查阶段 4: 一维空间压缩优化
     const s4 = model.stages['stage-4'];
-    expect(s4.name.forward).toBeDefined();
-    expect(s4.name.reverse).toBeDefined();
+    expect(typeof s4.name).toBe('object');
+    const s4Name = s4.name as { forward: string; reverse: string };
+    expect(s4Name.forward).toBeDefined();
+    expect(s4Name.reverse).toBeDefined();
   });
 
   it('should guarantee deterministic step derivations for 3x4 grid across all stages', () => {

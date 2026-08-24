@@ -43,12 +43,17 @@ export class VisualizerAppController {
     this.mode = options.mode || 'lite';
     this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
     
-    // 解析 URL 参数获取 modelId
+    // 解析 URL 参数或全局变量获取 modelId
     let requestedId = options.defaultModelId;
-    if (typeof window !== 'undefined' && window.location) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlModel = urlParams.get('model');
-      if (urlModel) requestedId = urlModel;
+    if (typeof window !== 'undefined') {
+      if ((window as any).__DEFAULT_MODEL_ID) {
+        requestedId = (window as any).__DEFAULT_MODEL_ID;
+      }
+      if (window.location) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlModel = urlParams.get('model');
+        if (urlModel) requestedId = urlModel;
+      }
     }
     this.modelId = requestedId && AlgorithmModelRepository.hasModel(requestedId)
       ? requestedId
@@ -405,6 +410,17 @@ export class VisualizerAppController {
   }
 
   private updateHeaderMeta(stageConfig: any): void {
+    const mainTitleEl = document.getElementById('header-algo-main-title') || document.getElementById('main-algo-title');
+    if (mainTitleEl && this.model) {
+      const prefix = this.model.id === 'unique-paths-ii' ? '63. ' : this.model.id === 'unique-paths' ? '62. ' : '';
+      mainTitleEl.textContent = `${prefix}${this.model.name}`;
+    }
+    const fullPageTitleEl = typeof document.querySelector === 'function' ? document.querySelector('header h1') : null;
+    if (fullPageTitleEl && this.model) {
+      const prefix = this.model.id === 'unique-paths-ii' ? '63. ' : this.model.id === 'unique-paths' ? '62. ' : '';
+      fullPageTitleEl.textContent = `LeetCode ${prefix}${this.model.name}`;
+    }
+
     const titleEl = document.getElementById('header-algo-title') || document.getElementById('stage-title-text');
     if (titleEl) {
       titleEl.textContent = stageConfig.name;
