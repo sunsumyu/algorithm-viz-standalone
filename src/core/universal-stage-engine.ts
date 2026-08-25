@@ -605,8 +605,8 @@ export class UniversalStageEngine {
 
   /**
    * 构建阶段 3 二维 DP 状态转移依赖树 (State Dependency Tree)
-   * 顺推：根节点为终点 dp[m-1][n-1]，向左上方依赖分解直至起点 dp[0][0] 与障碍物
-   * 逆推：根节点为起点 dp[0][0]，向右下方依赖分解直至终点 dp[m-1][n-1] 与障碍物
+   * 顺推：以当前计算格 (currentI, currentJ) 为根节点，向下动态展开其所有前置依赖子状态直至起点 dp[0][0] 与障碍物
+   * 逆推：以当前计算格 (currentI, currentJ) 为根节点，向下动态展开其所有后续依赖子状态直至终点 dp[m-1][n-1] 与障碍物
    */
   public static build2DDPDependencyTree(
     mVal: number,
@@ -619,13 +619,19 @@ export class UniversalStageEngine {
   ): UniversalTreeNode {
     let nodeIdCounter = 0;
     const isForward = direction === 'forward';
-    const startR = isForward ? mVal - 1 : 0;
-    const startC = isForward ? nVal - 1 : 0;
 
-    function buildNode(r: number, c: number): UniversalTreeNode {
+    // 如果未指定当前坐标，默认顺推起点 (0, 0) / 逆推起点 (m-1, n-1)
+    const activeI = currentI !== undefined && currentI >= 0 && currentI < mVal
+      ? currentI
+      : (isForward ? 0 : mVal - 1);
+    const activeJ = currentJ !== undefined && currentJ >= 0 && currentJ < nVal
+      ? currentJ
+      : (isForward ? 0 : nVal - 1);
+
+    function buildNode(r: number, c: number, isRoot: boolean): UniversalTreeNode {
       const id = `dp-node-${r}-${c}-${++nodeIdCounter}`;
-      const isCurrent = currentI === r && currentJ === c;
       const isObstacle = obstacleGrid?.[r]?.[c] === 1;
+      const isBaseCell = isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1);
       const val = currentGrid?.[r]?.[c] ?? null;
 
       let status: 'current' | 'base' | 'pruned' | 'visited' | 'pending' = 'pending';
@@ -634,15 +640,15 @@ export class UniversalStageEngine {
       if (isObstacle) {
         status = 'pruned';
         tag = '🚧障碍=0';
-      } else if (isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1)) {
-        status = val !== null ? 'base' : (isCurrent ? 'current' : 'pending');
+      } else if (isBaseCell) {
+        status = 'base';
         tag = val !== null ? `= ${val}` : '= 1';
       } else if (val !== null) {
         status = 'visited';
         tag = `= ${val}`;
       }
 
-      if (isCurrent) {
+      if (isRoot) {
         status = 'current';
         if (isObstacle) {
           tag = '🚧=0';
@@ -664,32 +670,32 @@ export class UniversalStageEngine {
       };
 
       // 遇障碍物或 Base 起点停止向下展开
-      if (isObstacle || (isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1))) {
+      if (isObstacle || isBaseCell) {
         return node;
       }
 
       // 顺推：依赖上方 (r - 1, c) 与左方 (r, c - 1)
       if (isForward) {
         if (r > 0) {
-          node.children.push(buildNode(r - 1, c));
+          node.children.push(buildNode(r - 1, c, false));
         }
         if (c > 0) {
-          node.children.push(buildNode(r, c - 1));
+          node.children.push(buildNode(r, c - 1, false));
         }
       } else {
         // 逆推：依赖下方 (r + 1, c) 与右方 (r, c + 1)
         if (r + 1 < mVal) {
-          node.children.push(buildNode(r + 1, c));
+          node.children.push(buildNode(r + 1, c, false));
         }
         if (c + 1 < nVal) {
-          node.children.push(buildNode(r, c + 1));
+          node.children.push(buildNode(r, c + 1, false));
         }
       }
 
       return node;
     }
 
-    return buildNode(startR, startC);
+    return buildNode(activeI, activeJ, true);
   }
 
   /**

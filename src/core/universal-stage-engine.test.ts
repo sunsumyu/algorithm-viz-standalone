@@ -41,9 +41,16 @@ describe('UniversalStageEngine & VisualizerStateRouter Deep Modules', () => {
       expect(lastStep.log).toContain('uniquePaths(3, 3) = 6');
     });
 
-    it('should generate valid Stage 3 (2D tabulation) steps with complete filling', () => {
+    it('should generate valid Stage 3 (2D tabulation) steps with complete filling and dynamic growing tree', () => {
       const tabStepsForward = UniversalStageEngine.generateStage3Steps(model, 3, 3, 'forward');
       expect(tabStepsForward.length).toBeGreaterThan(0);
+      
+      // 初始第 1 步：仅有 dp[0][0] 单个根节点，无子节点，杜绝提前剧透
+      const firstStep = tabStepsForward[0];
+      expect(firstStep.treeRoot?.val).toBe('dp[0][0]');
+      expect(firstStep.treeRoot?.children?.length).toBe(0);
+
+      // 最终完成步：生长至完整的 dp[2][2] 依赖树
       const lastStepForward = tabStepsForward[tabStepsForward.length - 1];
       expect(lastStepForward.grid?.[2][2]).toBe(6);
       expect(lastStepForward.treeRoot).toBeDefined();
