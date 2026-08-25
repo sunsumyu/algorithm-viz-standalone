@@ -24,6 +24,8 @@ import {
   DpTreeNode,
 } from './dp-demo-visualizer';
 
+import { ArticleDef, articleTemplate, dpArticles } from './dp-articles';
+
 export type DemoBuilder = (root: HTMLElement, mode?: import('../../../core/interfaces').ExecutionStepMode) => DpDemoStep[];
 
 export type DemoDef = {
@@ -43,20 +45,6 @@ export type DemoDef = {
   problemDetail?: ProblemDetail;
   faqList?: Array<{ question: string; answer: string; tag?: string }>;
   build: DemoBuilder;
-  /** 难度：1=🟢入门 2=🟡进阶 3=🔴挑战 */
-  difficulty?: 1 | 2 | 3;
-  /** 同分类内的关卡顺序 */
-  levelOrder?: number;
-  /** 本关的学习目标（一句话） */
-  learningGoal?: string;
-};
-
-export type ArticleDef = {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  sections: Array<[string, string]>;
   /** 难度：1=🟢入门 2=🟡进阶 3=🔴挑战 */
   difficulty?: 1 | 2 | 3;
   /** 同分类内的关卡顺序 */
@@ -278,16 +266,6 @@ function registerDemo(def: DemoDef): void {
   });
 }
 
-function articleTemplate(name: string, desc: string, sections: Array<[string, string]>): string {
-  const body = sections
-    .map(
-      ([title, html]) =>
-        `<div class="article-section"><h3>${title}</h3><div class="article-body">${html}</div></div>`
-    )
-    .join('');
-  return `<div class="article-viewer"><div class="article-header"><h2>${name}</h2><p class="article-desc">${desc}</p></div>${body}</div>`;
-}
-
 function registerArticle(def: ArticleDef): void {
   registerAlgorithm({
     id: def.id,
@@ -299,7 +277,7 @@ function registerArticle(def: ArticleDef): void {
     difficulty: def.difficulty ?? 1,
     levelOrder: def.levelOrder ?? 1,
     learningGoal: def.learningGoal,
-    template: articleTemplate(def.name, def.description, def.sections),
+    template: articleTemplate(def),
     Visualizer: ArticleVisualizer,
   });
 }
@@ -396,41 +374,7 @@ function stockDef(id: string, name: string, description: string, icon: string, k
 // 文章专栏与知识库 (Article Columns)
 // ---------------------------------------------------------------------------
 
-const articleCommon: Record<string, Array<[string, string]>> = {
-  theory: [
-    ['动规五部曲', '<p><span class="tag">确定 dp 数组含义</span><span class="tag">确定递推公式</span><span class="tag">初始化</span><span class="tag">遍历顺序</span><span class="tag">打印 dp 数组</span></p>'],
-    ['核心模板', '<pre><code>const dp = 初始化;\nfor (遍历顺序) {\n  dp[当前状态] = 从历史状态转移而来;\n}\nreturn dp[目标状态];</code></pre>'],
-  ],
-  bag: [
-    ['背包问题分类', '<table><tr><th>类型</th><th>遍历方式</th><th>典型题</th></tr><tr><td>0/1 背包</td><td>容量倒序</td><td>分割等和子集、目标和</td></tr><tr><td>完全背包</td><td>容量正序</td><td>零钱兑换、完全平方数</td></tr><tr><td>多重背包</td><td>拆分数量或二进制优化</td><td>有限件物品</td></tr></table>'],
-    ['一维公式', '<pre><code>// 0/1 背包\nfor (j = bag; j >= weight; j--) dp[j] = max(dp[j], dp[j-weight] + value);\n// 完全背包\nfor (j = weight; j <= bag; j++) dp[j] = max(dp[j], dp[j-weight] + value);</code></pre>'],
-  ],
-  stock: [
-    ['股票状态机', '<p>股票题的关键是定义“持有/不持有”以及交易次数、冷冻期、手续费等附加状态。</p><pre><code>hold = max(hold, cash - price)\ncash = max(cash, hold + price - fee)</code></pre>'],
-  ],
-  edit: [
-    ['字符串 DP', '<p>编辑距离类问题通常使用二维表，横纵分别对应两个字符串前缀。左、上、左上分别代表插入、删除、替换/匹配。</p>'],
-  ],
-};
-
-const articles: ArticleDef[] = [
-  { id: 'dp-theory', name: '动态规划理论基础', description: '动态规划五部曲、状态定义、递推公式与遍历顺序。', icon: '📘', sections: articleCommon.theory },
-  { id: 'dp-week-summary-1', name: '动规周总结（一）', description: '一维基础 DP：斐波那契、爬楼梯、最小花费。', icon: '🧭', sections: articleCommon.theory },
-  { id: 'dp-week-summary-2', name: '动规周总结（二）', description: '路径问题、整数拆分、不同 BST 的阶段总结。', icon: '🧭', sections: articleCommon.theory },
-  { id: 'knapsack-01-theory-1', name: '0-1背包理论基础（一）', description: '二维 0/1 背包：物品和容量两维状态。', icon: '🎒', sections: articleCommon.bag },
-  { id: 'knapsack-01-theory-2', name: '0-1背包理论基础（二）', description: '一维滚动数组：容量倒序遍历避免重复使用物品。', icon: '🎒', sections: articleCommon.bag },
-  { id: 'dp-week-summary-3', name: '动规周总结（三）', description: '0/1 背包应用题总结。', icon: '🧭', sections: articleCommon.bag },
-  { id: 'complete-knapsack-theory', name: '完全背包理论基础', description: '完全背包：每件物品可以使用无限次，容量正序遍历。', icon: '🧺', sections: articleCommon.bag },
-  { id: 'dp-week-summary-4', name: '动规周总结（四）', description: '完全背包组合数问题总结。', icon: '🧭', sections: articleCommon.bag },
-  { id: 'dp-week-summary-5', name: '动规周总结（五）', description: '完全背包最值问题与单词拆分总结。', icon: '🧭', sections: articleCommon.bag },
-  { id: 'multiple-knapsack-theory', name: '多重背包理论基础', description: '有限件物品的背包问题，可展开为多个 0/1 物品。', icon: '📦', sections: articleCommon.bag },
-  { id: 'knapsack-summary', name: '背包问题总结篇', description: '0/1、完全、多重背包及组合/排列/最值类公式汇总。', icon: '🏁', sections: articleCommon.bag },
-  { id: 'dp-week-summary-6', name: '动规周总结（六）', description: '打家劫舍与股票入门状态机总结。', icon: '🧭', sections: articleCommon.stock },
-  { id: 'dp-week-summary-7', name: '动规周总结（七）', description: '多交易、冷冻期、手续费股票题总结。', icon: '🧭', sections: articleCommon.stock },
-  { id: 'stock-summary', name: '股票问题总结篇', description: '股票 DP 的持有/不持有、多次交易、冷冻期和手续费状态总结。', icon: '📈', sections: articleCommon.stock },
-  { id: 'edit-distance-summary', name: '编辑距离总结篇', description: '判断子序列、不同子序列、删除操作、编辑距离的状态转移对比。', icon: '✍️', sections: articleCommon.edit },
-  { id: 'dp-final-summary', name: '动态规划总结篇', description: '动态规划专题总复盘：状态、转移、遍历顺序和题型地图。', icon: '🏁', sections: [...articleCommon.theory, ...articleCommon.bag, ...articleCommon.stock, ...articleCommon.edit] },
-];
+const articles: ArticleDef[] = dpArticles;
 
 // ---------------------------------------------------------------------------
 // 交互式算法演示定义表 (Interactive Demos)
