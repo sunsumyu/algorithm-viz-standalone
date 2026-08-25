@@ -77,6 +77,31 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 动态生成契合当前 (m, n) 尺寸的障碍物网格矩阵
+   */
+  public static getDynamicObstacleGrid(
+    model: IYamlAlgorithmModel,
+    mVal: number,
+    nVal: number
+  ): number[][] | undefined {
+    if (model.id !== 'unique-paths-ii' && !(model.defaultParams as any)?.obstacleGrid) {
+      return undefined;
+    }
+    const defaultGrid = (model.defaultParams as any)?.obstacleGrid as number[][] | undefined;
+    if (defaultGrid && defaultGrid.length === mVal && defaultGrid[0]?.length === nVal) {
+      return JSON.parse(JSON.stringify(defaultGrid));
+    }
+    return Array.from({ length: mVal }, (_, r) =>
+      Array.from({ length: nVal }, (_, c) => {
+        if (defaultGrid && defaultGrid[r]?.[c] !== undefined) {
+          return defaultGrid[r][c];
+        }
+        return (r === 1 && c === 1 && mVal > 1 && nVal > 1) ? 1 : 0;
+      })
+    );
+  }
+
+  /**
    * 生成阶段 1 (朴素递归) 或阶段 2 (记忆化搜索) 的完整演化步骤
    */
   public static generateStage1or2Steps(
@@ -96,11 +121,7 @@ export class UniversalStageEngine {
     let callCount = 0;
     let nodeIdCounter = 0;
 
-    const obstacleGrid: number[][] | undefined =
-      (model.defaultParams as any)?.obstacleGrid ||
-      (model.id === 'unique-paths-ii'
-        ? Array.from({ length: mVal }, (_, r) => Array.from({ length: nVal }, (_, c) => (r === 1 && c === 1 && mVal > 1 && nVal > 1 ? 1 : 0)))
-        : undefined);
+    const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
 
     const isForward = direction === 'forward';
     const isTerminal = variant === 'terminal';
@@ -685,11 +706,7 @@ export class UniversalStageEngine {
     const dp = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
 
-    const obstacleGrid: number[][] | undefined =
-      (model.defaultParams as any)?.obstacleGrid ||
-      (model.id === 'unique-paths-ii'
-        ? Array.from({ length: mVal }, (_, r) => Array.from({ length: nVal }, (_, c) => (r === 1 && c === 1 && mVal > 1 && nVal > 1 ? 1 : 0)))
-        : undefined);
+    const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
 
     const lineInit = anchorMap?.init || 3;
     const lineInitRow = anchorMap?.init_row || 4;
@@ -1111,11 +1128,7 @@ export class UniversalStageEngine {
     const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
 
-    const obstacleGrid: number[][] | undefined =
-      (model.defaultParams as any)?.obstacleGrid ||
-      (model.id === 'unique-paths-ii'
-        ? Array.from({ length: mVal }, (_, r) => Array.from({ length: nVal }, (_, c) => (r === 1 && c === 1 && mVal > 1 && nVal > 1 ? 1 : 0)))
-        : undefined);
+    const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
 
     const lineInit = anchorMap?.init || (variant === 'if' ? 4 : (isForward ? 4 : 4));
     const lineInitVal = anchorMap?.init_val || anchorMap?.init_row || 8;

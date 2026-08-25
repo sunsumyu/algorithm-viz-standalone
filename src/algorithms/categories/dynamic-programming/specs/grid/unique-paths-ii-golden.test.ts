@@ -144,4 +144,27 @@ describe('🏆 Unique Paths II Golden Baseline Regression Guard', () => {
     expect(calcRightSteps[0].highlightText).toBeDefined();
     expect(reverseTransferSteps[0].highlightText).toBe('fromDown + fromRight');
   });
+
+  it('should support dynamic custom dimensions (e.g. 4x4) and calculate all cells to completion', () => {
+    const model = AlgorithmModelRepository.getModel('unique-paths-ii');
+    const m = 4;
+    const n = 4;
+
+    // Stage 3 Forward on 4x4
+    const s3Steps = UniversalStageEngine.generateStage3Steps(model, m, n, 'forward');
+    expect(s3Steps.length).toBeGreaterThan(0);
+    const lastStep = s3Steps[s3Steps.length - 1];
+    // With obstacle at (1, 1), 4x4 grid has target dp[3][3] = 8
+    expect(lastStep.grid?.[3]?.[3]).toBe(8);
+    expect(lastStep.i).toBe(3);
+    expect(lastStep.j).toBe(3);
+    // Tree root should be dp[3][3]
+    expect(lastStep.treeRoot?.val).toBe('dp[3][3]');
+
+    // Stage 4 Forward on 4x4
+    const s4Steps = UniversalStageEngine.generateStage4Steps(model, m, n, 'forward', 'if');
+    expect(s4Steps.length).toBeGreaterThan(0);
+    const lastS4 = s4Steps[s4Steps.length - 1];
+    expect(lastS4.memoSnapshot?.[3]).toBe(8);
+  });
 });
