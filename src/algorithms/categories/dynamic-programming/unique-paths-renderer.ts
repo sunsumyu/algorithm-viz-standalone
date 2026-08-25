@@ -162,3 +162,63 @@ registerAlgorithm({
   template: '<div id="distinct-subsequences" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
   Visualizer: UniversalStageVisualizer,
 });
+
+// 7. 两个字符串的删除操作 (LeetCode 583)
+registerAlgorithm({
+  id: 'delete-operation-for-two-strings',
+  name: '两个字符串的删除操作',
+  viewId: 'delete-operation-for-two-strings',
+  category: 'dynamic-programming',
+  description: '两个字符串的删除操作（LeetCode 583）：计算使得两字符串相同所需的最少删除字符步数。',
+  icon: '🗑️',
+  difficulty: 2,
+  levelOrder: 9,
+  learningGoal: '掌握双字符串状态定义、字符匹配无损继承与字符不匹配双向删除最小化转移',
+  template: '<div id="delete-operation-for-two-strings" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
+  Visualizer: UniversalStageVisualizer,
+});
+
+// 8. 编辑距离 (LeetCode 72)
+registerAlgorithm({
+  id: 'edit-distance',
+  name: '编辑距离',
+  viewId: 'edit-distance',
+  category: 'dynamic-programming',
+  description: '编辑距离（LeetCode 72）：计算将 word1 转换为 word2 所需的最少操作数（插入、删除、替换）。',
+  icon: '📝',
+  difficulty: 3,
+  levelOrder: 10,
+  learningGoal: '掌握经典 Levenshtein 编辑距离状态转移模型、三向决策取最小与带 pre 变量的一维空间压缩',
+  template: '<div id="edit-distance" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
+  Visualizer: UniversalStageVisualizer,
+});
+
+// 9. 回文子串 (LeetCode 647)
+registerAlgorithm({
+  id: 'palindromic-substrings',
+  name: '回文子串',
+  viewId: 'palindromic-substrings',
+  category: 'dynamic-programming',
+  description: '回文子串（LeetCode 647）：统计字符串中所有回文子串的总数，自底向上区间 DP 与中心扩散法。',
+  icon: '🔄',
+  difficulty: 2,
+  levelOrder: 11,
+  learningGoal: '掌握区间动态规划自底向上填表拓扑、内层回文依赖与双向中心扩散空间优化',
+  template: '<div id="palindromic-substrings" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
+  Visualizer: UniversalStageVisualizer,
+});
+
+// 10. 最长回文子序列 (LeetCode 516)
+registerAlgorithm({
+  id: 'longest-palindromic-subsequence',
+  name: '最长回文子序列',
+  viewId: 'longest-palindromic-subsequence',
+  category: 'dynamic-programming',
+  description: '最长回文子序列（LeetCode 516）：求解字符串中最长的回文子序列长度，区间 DP 与滚动空间压缩。',
+  icon: '🪞',
+  difficulty: 2,
+  levelOrder: 12,
+  learningGoal: '掌握区间动态规划两端匹配(+2)与缩减左右端取最大值的状态转移模型，以及带 pre 变量的一维空间压缩',
+  template: '<div id="longest-palindromic-subsequence" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
+  Visualizer: UniversalStageVisualizer,
+});

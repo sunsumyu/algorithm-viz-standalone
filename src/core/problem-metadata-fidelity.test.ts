@@ -14,6 +14,10 @@ describe('🛡️ Algorithm Problem Metadata Fidelity Guard', () => {
     'climb-stairs',
     'fibonacci',
     'distinct-subsequences',
+    'delete-operation-for-two-strings',
+    'edit-distance',
+    'palindromic-substrings',
+    'longest-palindromic-subsequence',
     'knapsack-01',
   ];
 

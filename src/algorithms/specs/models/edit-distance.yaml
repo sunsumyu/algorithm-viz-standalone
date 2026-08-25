@@ -1,0 +1,257 @@
+id: edit-distance
+name: 编辑距离
+category: dynamic-programming
+difficulty: hard
+defaultStage: stage-1
+defaultDirection: forward
+
+defaultParams:
+  word1: "horse"
+  word2: "ros"
+
+problem:
+  title: "LeetCode 72. 编辑距离"
+  difficulty: "Hard"
+  description: |
+    给你两个单词 <code>word1</code> 和 <code>word2</code>， 请返回将 <code>word1</code> 转换成 <code>word2</code> 所使用的最少操作数。
+
+    你可以对一个单词进行如下三种操作：
+    1. <strong>插入</strong>一个字符
+    2. <strong>删除</strong>一个字符
+    3. <strong>替换</strong>一个字符
+  examples:
+    - input: 'word1 = "horse", word2 = "ros"'
+      output: "3"
+      explanation: |
+        horse -> rorse (将 'h' 替换为 'r')
+        rorse -> rose (删除 'r')
+        rose -> ros (删除 'e')
+    - input: 'word1 = "intention", word2 = "execution"'
+      output: "5"
+      explanation: |
+        intention -> inention (删除 't')
+        inention -> enention (将 'i' 替换为 'e')
+        enention -> exention (将 'n' 替换为 'x')
+        exention -> exection (将 'n' 替换为 'c')
+        exection -> execution (插入 'u')
+  constraints:
+    - "0 <= word1.length, word2.length <= 500"
+    - "word1 和 word2 由小写英文字母组成"
+
+directions:
+  forward:
+    name: 顺推视角 (自顶向下 / 正向构造)
+    description: 从前缀匹配出发，从空串逐步扩展至完整字符串
+    branches:
+      - name: 替换字符 (对角线)
+        delta: [-1, -1]
+        arrow: ↖
+        description: 将 word1[i-1] 替换为 word2[j-1]，两序列前缀同时缩减
+      - name: 删除字符 (上方来源)
+        delta: [-1, 0]
+        arrow: ↑
+        description: 删去 word1[i-1]，仅缩减 word1 前缀
+      - name: 插入字符 (左侧来源)
+        delta: [0, -1]
+        arrow: ←
+        description: 插入 word2[j-1]，仅缩减 word2 前缀
+  reverse:
+    name: 逆推视角 (后缀消除)
+    description: 从两串末尾向前回溯匹配决策
+
+stages:
+  stage-1:
+    name: 阶段 1：朴素递归 (Naive DFS)
+    desc: 穷举「字符相同直接继承」、「插入字符」、「删除字符」与「替换字符」三向分支，展示三叉递归树与指数级重叠子问题。
+    timeComplexity: "O(3^(m+n))"
+    spaceComplexity: "O(m+n)"
+    variants:
+      standard:
+        name: 标准三叉递归
+        desc: 直接按照操作定义递归求解，无剪枝
+        code: |
+          public int minDistance(String word1, String word2) {
+              return dfs(word1, word2, word1.length(), word2.length());
+          }
+
+          private int dfs(String s, String t, int i, int j) {
+              // @step:boundary_word1 Base Case 1: word1 为空，需插入 j 个字符
+              if (i == 0) return j;
+              // @step:boundary_word2 Base Case 2: word2 为空，需删除 i 个字符
+              if (j == 0) return i;
+
+              // @step:match 字符相同：无需任何编辑操作，直接进入子问题
+              if (s.charAt(i - 1) == t.charAt(j - 1)) {
+                  // @step:match_branch 继承 dfs(i-1, j-1)
+                  return dfs(s, t, i - 1, j - 1);
+              }
+
+              // @step:diff 字符不同：三向决策分支探索
+              // 1. 替换: dfs(i-1, j-1)
+              int replace = dfs(s, t, i - 1, j - 1);
+              // 2. 删除: dfs(i-1, j)
+              int delete = dfs(s, t, i - 1, j);
+              // 3. 插入: dfs(i, j-1)
+              int insert = dfs(s, t, i, j - 1);
+
+              // @step:combine 取三者最小代价 + 1
+              return Math.min(replace, Math.min(delete, insert)) + 1;
+          }
+
+  stage-2:
+    name: 阶段 2：记忆化搜索 (Memoization)
+    desc: 引入 memo[i][j] 备忘录缓存已求解的 (i, j) 子问题，消除三叉树上的重叠分支，将复杂度降为多项式级别。
+    timeComplexity: "O(m * n)"
+    spaceComplexity: "O(m * n)"
+    variants:
+      standard:
+        name: 二维备忘录优化
+        desc: 记忆化二维前缀状态，O(1) 命中快速剪枝
+        code: |
+          public int minDistance(String word1, String word2) {
+              int m = word1.length(), n = word2.length();
+              Integer[][] memo = new Integer[m + 1][n + 1];
+              return dfs(word1, word2, m, n, memo);
+          }
+
+          private int dfs(String s, String t, int i, int j, Integer[][] memo) {
+              // @step:boundary_word1 Base Case 1: word1 为空
+              if (i == 0) return j;
+              // @step:boundary_word2 Base Case 2: word2 为空
+              if (j == 0) return i;
+
+              // @step:cache_hit 备忘录命中剪枝，O(1) 立即返回
+              if (memo[i][j] != null) return memo[i][j];
+
+              // @step:match 字符相同判断
+              if (s.charAt(i - 1) == t.charAt(j - 1)) {
+                  // @step:match_branch 直接继承
+                  return memo[i][j] = dfs(s, t, i - 1, j - 1, memo);
+              }
+
+              // @step:diff 三向决策合并
+              int replace = dfs(s, t, i - 1, j - 1, memo);
+              int delete = dfs(s, t, i - 1, j, memo);
+              int insert = dfs(s, t, i, j - 1, memo);
+
+              // @step:combine 缓存并返回
+              return memo[i][j] = Math.min(replace, Math.min(delete, insert)) + 1;
+          }
+
+  stage-3:
+    name: 阶段 3：二维动态规划 (2D Tabulation)
+    desc: 构建 (m+1)×(n+1) 的二维 DP 状态表格，自底向上顺序填表，清晰展现对角线（替换）、上方（删除）、左侧（插入）的三维依赖。
+    timeComplexity: "O(m * n)"
+    spaceComplexity: "O(m * n)"
+    variants:
+      standard:
+        name: 经典二维 DP 表格
+        desc: 严格按照拓扑依赖逐行逐列填表
+        code: |
+          public int minDistance(String word1, String word2) {
+              int m = word1.length(), n = word2.length();
+              // @step:init 创建 (m+1)x(n+1) 二维 DP 状态表
+              int[][] dp = new int[m + 1][n + 1];
+
+              // @step:init_col 初始化首列: dp[i][0] = i (全部删除)
+              for (int i = 0; i <= m; i++) dp[i][0] = i;
+              // @step:init_row 初始化首行: dp[0][j] = j (全部插入)
+              for (int j = 0; j <= n; j++) dp[0][j] = j;
+
+              // @step:loop_i 自底向上逐行遍历
+              for (int i = 1; i <= m; i++) {
+                  // @step:loop_j 逐列计算状态
+                  for (int j = 1; j <= n; j++) {
+                      // @step:cond 字符是否匹配
+                      if (word1.charAt(i - 1) == word2.charAt(j - 1)) {
+                          // @step:transfer_match 字符相同：无损继承左上角 dp[i-1][j-1]
+                          dp[i][j] = dp[i - 1][j - 1];
+                      } else {
+                          // @step:transfer_diff 字符不同：min(替换, 删除, 插入) + 1
+                          dp[i][j] = Math.min(dp[i - 1][j - 1], Math.min(dp[i - 1][j], dp[i][j - 1])) + 1;
+                      }
+                  }
+              }
+              // @step:return 返回右下角目标解
+              return dp[m][n];
+          }
+
+  stage-4:
+    name: 阶段 4：一维空间压缩 (1D Compression)
+    desc: 使用一维滚动数组与临时变量 pre 暂存左上角 dp[i-1][j-1]，将空间复杂度从 O(m*n) 极限压缩至 O(n)。
+    timeComplexity: "O(m * n)"
+    spaceComplexity: "O(n)"
+    variants:
+      rolling_1d:
+        name: 一维滚动数组 (带 pre 对角线暂存)
+        desc: pre 记录左上角旧值，dp[j] 代表上方，dp[j-1] 代表左侧
+        code: |
+          public int minDistance(String word1, String word2) {
+              int m = word1.length(), n = word2.length();
+              // @step:init 创建一维状态数组 dp[0..n]
+              int[] dp = new int[n + 1];
+              // @step:init_val 初始化首行 dp[j] = j
+              for (int j = 0; j <= n; j++) dp[j] = j;
+
+              // @step:loop_i 外层遍历 word1 每一行
+              for (int i = 1; i <= m; i++) {
+                  // @step:pre_init 暂存每行首列的左上角 pre
+                  int pre = dp[0];
+                  dp[0] = i; // 更新当前行首列
+
+                  // @step:loop_j 内层遍历 word2
+                  for (int j = 1; j <= n; j++) {
+                      int temp = dp[j]; // 暂存未覆盖前的上方旧值
+                      // @step:cond 字符匹配判断
+                      if (word1.charAt(i - 1) == word2.charAt(j - 1)) {
+                          // @step:assign_match 字符相同：直接继承 pre (左上角)
+                          dp[j] = pre;
+                      } else {
+                          // @step:calc_min 字符不同：min(pre替换, 上方删除, 左侧插入) + 1
+                          dp[j] = Math.min(pre, Math.min(dp[j], dp[j - 1])) + 1;
+                      }
+                      // @step:pre_update 传递 pre 供下一列作为左上角使用
+                      pre = temp;
+                  }
+              }
+              // @step:return 返回终点结果
+              return dp[n];
+          }
+
+analysis:
+  coreInsight: |
+    编辑距离是序列动态规划领域的经典基石（Levenshtein Distance）。核心在于：
+    1. 状态定义：<code>dp[i][j]</code> 表示将 <code>word1[0..i-1]</code> 转换为 <code>word2[0..j-1]</code> 所需的最少操作数。
+    2. 字符匹配：若 <code>word1[i-1] == word2[j-1]</code>，末尾字符无需任何修改，最少操作数完全等于 <code>dp[i-1][j-1]</code>。
+    3. 字符不匹配：存在三种基本操作：
+       - <strong>替换</strong>：将 <code>word1[i-1]</code> 替换为 <code>word2[j-1]</code>，子问题转化为 <code>dp[i-1][j-1]</code>。
+       - <strong>删除</strong>：将 <code>word1[i-1]</code> 删去，子问题转化为 <code>dp[i-1][j]</code>。
+       - <strong>插入</strong>：在 <code>word1</code> 末尾插入 <code>word2[j-1]</code>，子问题转化为 <code>dp[i][j-1]</code>。
+       三者取最小值并加 1。
+  dimensionComparison:
+    - dimension: "阶段 1 朴素递归"
+      timeComplexity: "O(3^(m+n))"
+      spaceComplexity: "O(m+n)"
+      pros: "直观表达所有可能操作序列分支"
+      cons: "重叠子问题呈指数爆炸，极易超时"
+    - dimension: "阶段 2 记忆化搜索"
+      timeComplexity: "O(m * n)"
+      spaceComplexity: "O(m * n)"
+      pros: "自顶向下按需计算，剪除全部冗余分支"
+      cons: "递归栈开销与哈希/矩阵常数"
+    - dimension: "阶段 3 二维动态规划"
+      timeComplexity: "O(m * n)"
+      spaceComplexity: "O(m * n)"
+      pros: "无递归开销，填表顺序极具可视化直观度"
+      cons: "需 O(m*n) 矩阵空间"
+    - dimension: "阶段 4 一维空间压缩"
+      timeComplexity: "O(m * n)"
+      spaceComplexity: "O(n)"
+      pros: "空间复杂度降低一个维度至 O(n)"
+      cons: "需引入 pre 变量暂存左上角数据"
+
+faqs:
+  - q: "为什么编辑距离有 3 种转移来源，而删除操作只有 2 种？"
+    a: "因为编辑距离允许「替换」操作（对应对角线 dp[i-1][j-1] + 1）。而两个字符串的删除操作仅允许删除，只能从上方 dp[i-1][j] 或左方 dp[i][j-1] 转移。"
+  - q: "在一维空间压缩中，为什么必须用 pre 暂存左上角？"
+    a: "因为在正序遍历时，当我们计算 dp[j] 时，dp[j-1] 已经被当前行的新值覆盖了，而尚未被覆盖的 dp[j] 代表上方旧值。此时原先的左上角 dp[i-1][j-1] 已经被前一次迭代冲掉，必须在循环开头用 pre 暂存。"

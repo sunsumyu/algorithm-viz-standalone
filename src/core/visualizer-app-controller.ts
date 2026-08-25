@@ -76,13 +76,21 @@ export class VisualizerAppController {
     if (this.model?.defaultParams) {
       if (this.model.defaultParams.m !== undefined) {
         this.m = Number(this.model.defaultParams.m);
+      } else if (this.model.defaultParams.word1 !== undefined) {
+        this.m = String(this.model.defaultParams.word1).length + 1;
       } else if (this.model.defaultParams.s !== undefined) {
-        this.m = String(this.model.defaultParams.s).length + 1;
+        this.m = this.model.defaultParams.t !== undefined
+          ? String(this.model.defaultParams.s).length + 1
+          : String(this.model.defaultParams.s).length;
       }
       if (this.model.defaultParams.n !== undefined) {
         this.n = Number(this.model.defaultParams.n);
+      } else if (this.model.defaultParams.word2 !== undefined) {
+        this.n = String(this.model.defaultParams.word2).length + 1;
       } else if (this.model.defaultParams.t !== undefined) {
         this.n = String(this.model.defaultParams.t).length + 1;
+      } else if (this.model.defaultParams.s !== undefined) {
+        this.n = String(this.model.defaultParams.s).length;
       }
     }
 
@@ -203,15 +211,26 @@ export class VisualizerAppController {
       if (this.model.defaultParams.m !== undefined) {
         this.m = Number(this.model.defaultParams.m);
         if (inputM) inputM.value = String(this.model.defaultParams.m);
+      } else if (this.model.defaultParams.word1 !== undefined) {
+        this.m = String(this.model.defaultParams.word1).length + 1;
+        if (inputM) inputM.value = String(this.m);
       } else if (this.model.defaultParams.s !== undefined) {
-        this.m = String(this.model.defaultParams.s).length + 1;
+        this.m = this.model.defaultParams.t !== undefined
+          ? String(this.model.defaultParams.s).length + 1
+          : String(this.model.defaultParams.s).length;
         if (inputM) inputM.value = String(this.m);
       }
       if (this.model.defaultParams.n !== undefined) {
         this.n = Number(this.model.defaultParams.n);
         if (inputN) inputN.value = String(this.model.defaultParams.n);
+      } else if (this.model.defaultParams.word2 !== undefined) {
+        this.n = String(this.model.defaultParams.word2).length + 1;
+        if (inputN) inputN.value = String(this.n);
       } else if (this.model.defaultParams.t !== undefined) {
         this.n = String(this.model.defaultParams.t).length + 1;
+        if (inputN) inputN.value = String(this.n);
+      } else if (this.model.defaultParams.s !== undefined) {
+        this.n = String(this.model.defaultParams.s).length;
         if (inputN) inputN.value = String(this.n);
       }
     }

@@ -1,0 +1,233 @@
+id: longest-palindromic-subsequence
+name: 最长回文子序列
+category: dynamic-programming
+difficulty: medium
+defaultStage: stage-1
+defaultDirection: forward
+
+defaultParams:
+  s: "bbbab"
+
+problem:
+  title: "LeetCode 516. 最长回文子序列"
+  difficulty: "Medium"
+  description: |
+    给你一个字符串 <code>s</code> ，找出其中最长的回文子序列，并返回该序列的长度。
+
+    <strong>子序列</strong> 定义为：不改变剩余字符顺序的情况下，删除某些字符或者不删除字符形成的一个新序列。
+  examples:
+    - input: 's = "bbbab"'
+      output: "4"
+      explanation: "一个可能的最长回文子序列为 \"bbbb\" 。"
+    - input: 's = "cbbd"'
+      output: "2"
+      explanation: "一个可能的最长回文子序列为 \"bb\" 。"
+  constraints:
+    - "1 <= s.length <= 1000"
+    - "s 仅由小写英文字母组成"
+
+directions:
+  forward:
+    name: 逆序区间填表 (i从底向上, j从左到右)
+    description: 由短区间向长区间扩展，dp[i][j] 依赖左下角 dp[i+1][j-1]、下方 dp[i+1][j] 与左方 dp[i][j-1]
+    branches:
+      - name: 两端匹配扩展 (+2)
+        delta: [1, -1]
+        arrow: ↙
+        description: s[i] == s[j] 时，两端同时加入回文，长度 = dp[i+1][j-1] + 2
+      - name: 缩减左端 s[i] (下方)
+        delta: [1, 0]
+        arrow: ↓
+        description: s[i] != s[j] 时，尝试舍弃 s[i]，继承 dp[i+1][j]
+      - name: 缩减右端 s[j] (左方)
+        delta: [0, -1]
+        arrow: ←
+        description: s[i] != s[j] 时，尝试舍弃 s[j]，继承 dp[i][j-1]
+  reverse:
+    name: 逆向回溯视角
+    description: 从全局区间 [0, n-1] 向内层子区间逐步分解
+
+stages:
+  stage-1:
+    name: 阶段 1：区间分治递归 (Interval DFS)
+    desc: 基于两端字符匹配性质进行分治，若两端相等则两端贡献长度 2，否则分别尝试舍弃左端或右端字符取最大值。
+    timeComplexity: "O(2^n)"
+    spaceComplexity: "O(n)"
+    variants:
+      standard:
+        name: 标准区间分治递归
+        desc: 分治求解子区间最大回文长度，无备忘录
+        code: |
+          public int longestPalindromeSubseq(String s) {
+              return dfs(s, 0, s.length() - 1);
+          }
+
+          private int dfs(String s, int i, int j) {
+              // @step:boundary_cross Base Case 1: 越界或空区间
+              if (i > j) return 0;
+              // @step:boundary_single Base Case 2: 单字符区间
+              if (i == j) return 1;
+
+              // @step:match 端点字符相同：两端同时加入回文序列 (+2)
+              if (s.charAt(i) == s.charAt(j)) {
+                  // @step:match_branch 递归求解内层 dfs(i+1, j-1) + 2
+                  return dfs(s, i + 1, j - 1) + 2;
+              }
+
+              // @step:diff 端点字符不同：分别尝试舍弃左端或右端字符
+              int skipLeft = dfs(s, i + 1, j);
+              int skipRight = dfs(s, i, j - 1);
+
+              // @step:combine 取两分支较大值
+              return Math.max(skipLeft, skipRight);
+          }
+
+  stage-2:
+    name: 阶段 2：记忆化搜索 (Memoization)
+    desc: 引入 Integer[][] memo 缓存已求解的 [i, j] 区间最长回文长度，消除指数级重叠子问题。
+    timeComplexity: "O(n^2)"
+    spaceComplexity: "O(n^2)"
+    variants:
+      standard:
+        name: 二维备忘录区间优化
+        desc: 记忆化二维区间 [i, j]，O(1) 命中快速剪枝
+        code: |
+          public int longestPalindromeSubseq(String s) {
+              int n = s.length();
+              Integer[][] memo = new Integer[n][n];
+              return dfs(s, 0, n - 1, memo);
+          }
+
+          private int dfs(String s, int i, int j, Integer[][] memo) {
+              // @step:boundary_cross Base Case 1: 越界
+              if (i > j) return 0;
+              // @step:boundary_single Base Case 2: 单字符
+              if (i == j) return 1;
+
+              // @step:cache_hit 备忘录命中剪枝，O(1) 立即返回
+              if (memo[i][j] != null) return memo[i][j];
+
+              // @step:match 端点相同
+              if (s.charAt(i) == s.charAt(j)) {
+                  return memo[i][j] = dfs(s, i + 1, j - 1, memo) + 2;
+              }
+
+              // @step:diff 端点不同取最大值
+              int skipLeft = dfs(s, i + 1, j, memo);
+              int skipRight = dfs(s, i, j - 1, memo);
+
+              // @step:combine 写入缓存并返回
+              return memo[i][j] = Math.max(skipLeft, skipRight);
+          }
+
+  stage-3:
+    name: 阶段 3：二维动态规划 (2D Tabulation)
+    desc: 构建 n×n 的上三角 DP 状态表格，对角线初始化为 1，自底向上 (i 从 n-1 到 0) 顺序填表。
+    timeComplexity: "O(n^2)"
+    spaceComplexity: "O(n^2)"
+    variants:
+      standard:
+        name: 上三角区间动态规划
+        desc: 严格自底向上推导，解决 dp[i+1][j-1]、dp[i+1][j] 的拓扑依赖
+        code: |
+          public int longestPalindromeSubseq(String s) {
+              int n = s.length();
+              // @step:init 创建 n x n 状态矩阵
+              int[][] dp = new int[n][n];
+
+              // @step:init_diag 对角线初始化: 单字符回文长度为 1
+              for (int i = 0; i < n; i++) dp[i][i] = 1;
+
+              // @step:loop_i i 从底向上倒序遍历
+              for (int i = n - 1; i >= 0; i--) {
+                  // @step:loop_j j 从 i+1 向右正序扩展
+                  for (int j = i + 1; j < n; j++) {
+                      // @step:cond 端点字符比较
+                      if (s.charAt(i) == s.charAt(j)) {
+                          // @step:transfer_match 端点相同：dp[i+1][j-1] + 2
+                          dp[i][j] = dp[i + 1][j - 1] + 2;
+                      } else {
+                          // @step:transfer_diff 端点不同：max(下方 dp[i+1][j], 左方 dp[i][j-1])
+                          dp[i][j] = Math.max(dp[i + 1][j], dp[i][j - 1]);
+                      }
+                  }
+              }
+              // @step:return 返回右上角全局最长长度
+              return dp[0][n - 1];
+          }
+
+  stage-4:
+    name: 阶段 4：一维空间压缩 (1D Compression)
+    desc: 使用一维滚动数组与临时变量 pre 暂存左下角 dp[i+1][j-1]，将空间复杂度从 O(n^2) 降至 O(n)。
+    timeComplexity: "O(n^2)"
+    spaceComplexity: "O(n)"
+    variants:
+      rolling_1d:
+        name: 一维滚动数组 (带 pre 对角线暂存)
+        desc: pre 暂存左下角旧值，dp[j] 代表下方，dp[j-1] 代表左侧
+        code: |
+          public int longestPalindromeSubseq(String s) {
+              int n = s.length();
+              // @step:init 创建一维状态数组 dp[0..n-1]
+              int[] dp = new int[n];
+
+              // @step:loop_i i 从底向上倒序遍历
+              for (int i = n - 1; i >= 0; i--) {
+                  dp[i] = 1; // 单字符初始化
+                  int pre = 0; // pre 暂存左下角 dp[i+1][j-1]
+
+                  // @step:loop_j j 从 i+1 向右遍历
+                  for (int j = i + 1; j < n; j++) {
+                      int temp = dp[j]; // 暂存未覆盖前的下方旧值 dp[i+1][j]
+                      // @step:cond 端点字符判断
+                      if (s.charAt(i) == s.charAt(j)) {
+                          // @step:assign_match 端点相同：pre + 2
+                          dp[j] = pre + 2;
+                      } else {
+                          // @step:calc_max 端点不同：max(下方 dp[j], 左方 dp[j-1])
+                          dp[j] = Math.max(dp[j], dp[j - 1]);
+                      }
+                      // @step:pre_update 传递 pre 供下一列作为左下角使用
+                      pre = temp;
+                  }
+              }
+              // @step:return 返回全局最长长度
+              return dp[n - 1];
+          }
+
+analysis:
+  coreInsight: |
+    最长回文子序列是经典区间动态规划问题：
+    1. 状态定义：<code>dp[i][j]</code> 表示子串 <code>s[i..j]</code> 的最长回文子序列长度。
+    2. 状态转移：
+       - 当 <code>s[i] == s[j]</code> 时：首尾两字符可以同时配对加入回文，<code>dp[i][j] = dp[i+1][j-1] + 2</code>。
+       - 当 <code>s[i] != s[j]</code> 时：首尾不能同时使用，最长长度取舍弃 <code>s[i]</code> 或舍弃 <code>s[j]</code> 的较大者：<code>dp[i][j] = max(dp[i+1][j], dp[i][j-1])</code>。
+    3. 拓扑依赖：
+       <code>dp[i][j]</code> 依赖于左下方 <code>dp[i+1][j-1]</code>、下方 <code>dp[i+1][j]</code> 和左方 <code>dp[i][j-1]</code>。必须保证外层 <code>i</code> 倒序遍历（从 <code>n-1</code> 到 <code>0</code>），内层 <code>j</code> 正序遍历（从 <code>i+1</code> 到 <code>n-1</code>）。
+  dimensionComparison:
+    - dimension: "阶段 1 区间分治递归"
+      timeComplexity: "O(2^n)"
+      spaceComplexity: "O(n)"
+      pros: "直观的分治决策树"
+      cons: "指数级重叠子问题，极易超时"
+    - dimension: "阶段 2 记忆化搜索"
+      timeComplexity: "O(n^2)"
+      spaceComplexity: "O(n^2)"
+      pros: "自顶向下按需展开，剪除全部冗余分支"
+      cons: "递归栈开销与矩阵寻址常数"
+    - dimension: "阶段 3 二维 DP 填表"
+      timeComplexity: "O(n^2)"
+      spaceComplexity: "O(n^2)"
+      pros: "上三角拓扑清晰，填表直观"
+      cons: "占用 O(n^2) 矩阵空间"
+    - dimension: "阶段 4 一维空间压缩"
+      timeComplexity: "O(n^2)"
+      spaceComplexity: "O(n)"
+      pros: "空间复杂度降低一个维度至 O(n)"
+      cons: "需引入 pre 变量暂存左下角数据"
+
+faqs:
+  - q: "回文子串 (LeetCode 647) 与最长回文子序列 (LeetCode 516) 的状态转移有什么区别？"
+    a: "回文子串要求子串字符必须连续，因此 dp[i][j] 是布尔值，s[i] != s[j] 时直接为 false；而最长回文子序列允许删除中间字符（不连续），dp[i][j] 是数值，s[i] != s[j] 时取 max(dp[i+1][j], dp[i][j-1]) 继承最大长度。"
+  - q: "为什么最长回文子序列也可以通过求 s 与 reverse(s) 的最长公共子序列 (LCS) 求解？"
+    a: "因为一个字符串的回文子序列在正序与逆序中具有相同的字符排列顺序，s 与其反转串的最长公共子序列长度恰好等于 s 的最长回文子序列长度。"

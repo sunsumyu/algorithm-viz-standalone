@@ -1,0 +1,353 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「两个字符串的删除操作 (Delete Operation for Two Strings)」四阶段全演化标准实现。
+# 包含：双字符决策分支、空串 Base Case 初始化、二维 DP 矩阵与一维滚动空间压缩。
+# ==============================================================================
+
+id: delete-operation-for-two-strings
+name: "两个字符串的删除操作"
+nameEn: "Delete Operation for Two Strings"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🗑️"
+difficulty: 2
+levelOrder: 9
+learningGoal: "掌握双字符串状态定义、字符匹配无损继承与字符不匹配双向删除最小化转移"
+description: "给定两个单词 word1 和 word2，返回使得两单词相同所需的最少删除字符步数。状态转移 dp[i][j] = word1[i-1]==word2[j-1] ? dp[i-1][j-1] : min(dp[i-1][j], dp[i][j-1]) + 1。"
+defaultParams:
+  word1: "sea"
+  word2: "eat"
+  s: "sea"
+  t: "eat"
+
+problem:
+  leetcodeId: 583
+  title: "两个字符串的删除操作"
+  difficulty: "中等"
+  tags: ["字符串", "动态规划", "双串DP"]
+  description: "给定两个单词 <code>word1</code> 和 <code>word2</code> ，返回使得 <code>word1</code> 和 <code>word2</code> <strong>相同所需的最小步数</strong> 。<br/><br/>每步可以删除任意一个字符串中的一个字符。<br/><br/><strong>两路思维</strong>：<br/>• <strong>直接 DP 转移</strong>：<code>dp[i][j]</code> 为使 <code>word1[0..i-1]</code> 与 <code>word2[0..j-1]</code> 相同所需最少删除次数。<br/>• <strong>LCS 间接求法</strong>：两串相同保留部分即为最长公共子序列 (LCS)，答案为 <code>word1.length + word2.length - 2 * LCS(word1, word2)</code>。"
+  examples:
+    - input: 'word1 = "sea", word2 = "eat"'
+      output: "2"
+      explanation: "第一步将 \"sea\" 变为 \"ea\" (删去 's')，第二步将 \"eat\" 变为 \"ea\" (删去 't')。"
+    - input: 'word1 = "leetcode", word2 = "etco"'
+      output: "4"
+      explanation: "最少需要删除 4 个字符以使两单词变为 \"etco\"。"
+  constraints:
+    - "1 <= word1.length, word2.length <= 500"
+    - "word1 和 word2 只包含小写英文字母"
+  leetcodeUrl: "https://leetcode.cn/problems/delete-operation-for-two-strings/"
+
+directions:
+  forward:
+    label: "自顶向下 (目标分解)"
+    branches:
+      - name: "match"
+        delta: [-1, -1]
+        label: "字符匹配"
+        codeVar: "match"
+        arrow: "↖️"
+      - name: "del_word1"
+        delta: [-1, 0]
+        label: "删word1字符"
+        codeVar: "del1"
+        arrow: "⬆️"
+      - name: "del_word2"
+        delta: [0, -1]
+        label: "删word2字符"
+        codeVar: "del2"
+        arrow: "⬅️"
+    combineFormula: "min(del1, del2) + 1"
+  reverse:
+    label: "逆向求解"
+    branches:
+      - name: "match"
+        delta: [-1, -1]
+        label: "字符匹配"
+        codeVar: "match"
+        arrow: "↖️"
+      - name: "del_word1"
+        delta: [-1, 0]
+        label: "删word1字符"
+        codeVar: "del1"
+        arrow: "⬆️"
+      - name: "del_word2"
+        delta: [0, -1]
+        label: "删word2字符"
+        codeVar: "del2"
+        arrow: "⬅️"
+    combineFormula: "min(del1, del2) + 1"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ᵐ⁺ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (二叉决策树指数展开)"
+      reverse: "阶段 1: 朴素递归 (二叉决策树指数展开)"
+    desc:
+      forward: "从 dfs(m, n) 开始向下分解。末尾字符相等时直接继承 dfs(i-1, j-1)；不相等时分别尝试删去 word1[i-1] 或 word2[j-1]，取较小步数 + 1。"
+      reverse: "从 dfs(m, n) 开始向下递归分解。"
+    variants:
+      standard:
+        variantLabel: "标准递归实现"
+        title:
+          forward: "DeleteDistance_Recursive.java"
+          reverse: "DeleteDistance_Recursive.java"
+        code:
+          forward:
+            title: "DeleteDistance_Recursive.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      return dfs(word1, word2, word1.length(), word2.length());
+                  }
+                  private int dfs(String s, String t, int i, int j) { // @step:entry
+                      if (i == 0) return j; // @step:boundary_word1 // s 为空，需删去 t 的全部 j 个字符
+                      if (j == 0) return i; // @step:boundary_word2 // t 为空，需删去 s 的全部 i 个字符
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          return dfs(s, t, i - 1, j - 1); // @step:match_branch // 字符相同，无需额外删除
+                      } else {
+                          int delWord1 = dfs(s, t, i - 1, j); // 删 word1[i-1]
+                          int delWord2 = dfs(s, t, i, j - 1); // 删 word2[j-1]
+                          return Math.min(delWord1, delWord2) + 1; // @step:combine // 选代价较小者 + 1
+                      }
+                  }
+              }
+          reverse:
+            title: "DeleteDistance_Recursive.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      return dfs(word1, word2, word1.length(), word2.length());
+                  }
+                  private int dfs(String s, String t, int i, int j) { // @step:entry
+                      if (i == 0) return j; // @step:boundary_word1
+                      if (j == 0) return i; // @step:boundary_word2
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          return dfs(s, t, i - 1, j - 1); // @step:match_branch
+                      } else {
+                          int delWord1 = dfs(s, t, i - 1, j);
+                          int delWord2 = dfs(s, t, i, j - 1);
+                          return Math.min(delWord1, delWord2) + 1; // @step:combine
+                      }
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+      reverse: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+    desc:
+      forward: "引入 memo[i][j] 备忘录缓存历史计算结果。遇到已算过的 (i, j) 状态直接 O(1) 查表返回。"
+      reverse: "引入 memo[i][j] 备忘录缓存历史计算结果。"
+    variants:
+      standard:
+        variantLabel: "二维备忘录缓存"
+        title:
+          forward: "DeleteDistance_Memo.java"
+          reverse: "DeleteDistance_Memo.java"
+        code:
+          forward:
+            title: "DeleteDistance_Memo.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      int m = word1.length(), n = word2.length();
+                      Integer[][] memo = new Integer[m + 1][n + 1];
+                      return dfs(word1, word2, m, n, memo);
+                  }
+                  private int dfs(String s, String t, int i, int j, Integer[][] memo) { // @step:entry
+                      if (i == 0) return j; // @step:boundary_word1
+                      if (j == 0) return i; // @step:boundary_word2
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit // 备忘录命中剪枝
+                      int res;
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          res = dfs(s, t, i - 1, j - 1, memo); // @step:match_branch
+                      } else {
+                          res = Math.min(dfs(s, t, i - 1, j, memo), dfs(s, t, i, j - 1, memo)) + 1; // @step:combine
+                      }
+                      return memo[i][j] = res;
+                  }
+              }
+          reverse:
+            title: "DeleteDistance_Memo.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      int m = word1.length(), n = word2.length();
+                      Integer[][] memo = new Integer[m + 1][n + 1];
+                      return dfs(word1, word2, m, n, memo);
+                  }
+                  private int dfs(String s, String t, int i, int j, Integer[][] memo) { // @step:entry
+                      if (i == 0) return j; // @step:boundary_word1
+                      if (j == 0) return i; // @step:boundary_word2
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit
+                      int res;
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          res = dfs(s, t, i - 1, j - 1, memo); // @step:match_branch
+                      } else {
+                          res = Math.min(dfs(s, t, i - 1, j, memo), dfs(s, t, i, j - 1, memo)) + 1; // @step:combine
+                      }
+                      return memo[i][j] = res;
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 递推填表 (二维 DP 矩阵)"
+      reverse: "阶段 3: 递推填表 (二维 DP 矩阵)"
+    desc:
+      forward: "自底向上构建 (m+1) × (n+1) 的二维 DP 矩阵。初始化首行首列为递增索引，逐行按字符匹配情况填表。"
+      reverse: "自底向上构建 (m+1) × (n+1) 的二维 DP 矩阵。"
+    variants:
+      standard:
+        variantLabel: "标准矩阵填表"
+        title:
+          forward: "DeleteDistance_2D.java"
+          reverse: "DeleteDistance_2D.java"
+        code:
+          forward:
+            title: "DeleteDistance_2D.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      int m = word1.length(), n = word2.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init // 创建 (m+1)×(n+1) 矩阵
+                      for (int i = 0; i <= m; i++) dp[i][0] = i; // @step:init_col // 初始化首列
+                      for (int j = 0; j <= n; j++) dp[0][j] = j; // @step:init_row // 初始化首行
+                      for (int i = 1; i <= m; i++) {      // @step:loop_i
+                          for (int j = 1; j <= n; j++) {  // @step:loop_j
+                              if (word1.charAt(i - 1) == word2.charAt(j - 1)) { // @step:cond
+                                  dp[i][j] = dp[i - 1][j - 1]; // @step:transfer_match // 字符相同继承对角线
+                              } else {
+                                  dp[i][j] = Math.min(dp[i - 1][j], dp[i][j - 1]) + 1; // @step:transfer_diff // 字符不同取 min(上, 左) + 1
+                              }
+                          }
+                      }
+                      return dp[m][n]; // @step:return // 最终最少删除步数
+                  }
+              }
+          reverse:
+            title: "DeleteDistance_2D.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      int m = word1.length(), n = word2.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init
+                      for (int i = 0; i <= m; i++) dp[i][0] = i; // @step:init_col
+                      for (int j = 0; j <= n; j++) dp[0][j] = j; // @step:init_row
+                      for (int i = 1; i <= m; i++) {      // @step:loop_i
+                          for (int j = 1; j <= n; j++) {  // @step:loop_j
+                              if (word1.charAt(i - 1) == word2.charAt(j - 1)) { // @step:cond
+                                  dp[i][j] = dp[i - 1][j - 1]; // @step:transfer_match
+                              } else {
+                                  dp[i][j] = Math.min(dp[i - 1][j], dp[i][j - 1]) + 1; // @step:transfer_diff
+                              }
+                          }
+                      }
+                      return dp[m][n]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimized"
+    timeBadge: "O(n) 空间"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 空间压缩 (一维滚动数组)"
+      reverse: "阶段 4: 空间压缩 (一维滚动数组)"
+    desc:
+      forward: "将状态矩阵压缩至一维数组 dp[0..n]，借助变量 pre 暂存左上方旧值 dp[i-1][j-1]，实现 O(n) 极限空间优化。"
+      reverse: "将状态矩阵压缩至一维数组 dp[0..n]。"
+    variants:
+      rolling_1d:
+        variantLabel: "一维滚动暂存"
+        title:
+          forward: "DeleteDistance_1D.java"
+          reverse: "DeleteDistance_1D.java"
+        code:
+          forward:
+            title: "DeleteDistance_1D.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      int m = word1.length(), n = word2.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建长度为 n+1 的滚动数组
+                      for (int j = 0; j <= n; j++) dp[j] = j; // @step:init_val // 初始化首行
+                      for (int i = 1; i <= m; i++) { // @step:loop_i
+                          int pre = dp[0];           // 暂存上一行左上角值 dp[i-1][0]
+                          dp[0] = i;                 // 更新当前行首列 Base Case
+                          for (int j = 1; j <= n; j++) { // @step:loop_j
+                              int temp = dp[j];      // 暂存覆盖前的旧值（供下一个 j 作为左上角值）
+                              if (word1.charAt(i - 1) == word2.charAt(j - 1)) { // @step:cond
+                                  dp[j] = pre;       // @step:assign_match // 直接继承左上角 pre
+                              } else {
+                                  dp[j] = Math.min(dp[j], dp[j - 1]) + 1; // @step:calc_min // min(上方旧值, 左侧新值) + 1
+                              }
+                              pre = temp;            // 更新 pre 供下一列使用
+                          }
+                      }
+                      return dp[n]; // @step:return // 最终答案
+                  }
+              }
+          reverse:
+            title: "DeleteDistance_1D.java"
+            source: |
+              class Solution {
+                  public int minDistance(String word1, String word2) {
+                      int m = word1.length(), n = word2.length();
+                      int[] dp = new int[n + 1]; // @step:init
+                      for (int j = 0; j <= n; j++) dp[j] = j; // @step:init_val
+                      for (int i = 1; i <= m; i++) { // @step:loop_i
+                          int pre = dp[0];
+                          dp[0] = i;
+                          for (int j = 1; j <= n; j++) { // @step:loop_j
+                              int temp = dp[j];
+                              if (word1.charAt(i - 1) == word2.charAt(j - 1)) { // @step:cond
+                                  dp[j] = pre; // @step:assign_match
+                              } else {
+                                  dp[j] = Math.min(dp[j], dp[j - 1]) + 1; // @step:calc_min
+                              }
+                              pre = temp;
+                          }
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+
+analysis:
+  step1_definition:
+    title: 1. 确定 dp 数组及其下标含义
+    content: "dp[i][j] 表示使 word1 的前 i 个字符 word1[0..i-1] 和 word2 的前 j 个字符 word2[0..j-1] 相同所需的最少删除字符步数。"
+  step2_formula:
+    title: 2. 确定递推公式
+    content: "当 word1[i-1] == word2[j-1] 时，当前字符天然相同无需删除，直接继承 dp[i][j] = dp[i-1][j-1]；当 word1[i-1] != word2[j-1] 时，有两个删除选择：删 word1[i-1]（步数 dp[i-1][j] + 1）或删 word2[j-1]（步数 dp[i][j-1] + 1），取二者较小值：dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + 1。"
+  step3_init:
+    title: 3. dp 数组初始化
+    content: "dp[i][0] = i (0 <= i <= m)：word2 为空串时，需删去 word1 的全部 i 个字符；dp[0][j] = j (0 <= j <= n)：word1 为空串时，需删去 word2 的全部 j 个字符；特别地，dp[0][0] = 0。"
+  step4_order:
+    title: 4. 确定遍历顺序
+    content: "外层循环遍历 word1 (i 从 1 到 m)，内层循环正序遍历 word2 (j 从 1 到 n)。在一维空间压缩下，使用 pre 变量暂存左上角旧值 dp[i-1][j-1]，实现 O(n) 原地滚动更新。"
+  step5_derivation:
+    title: 5. 举例推导状态矩阵
+    content: "以 word1=\"sea\", word2=\"eat\" 为例，dp[0][0]=0, dp[1][1]=2, dp[2][2]=2, 最终 dp[3][3]=2，对应删去 's' 和 't' 后共同保留 \"ea\"。"
+
+faqs:
+  - q: 为什么两字符不同时，同时删除两字符的 dp[i-1][j-1] + 2 不需要显式写出？
+    a: 因为同时删除两字符可以通过先删 word1[i-1]（转移至 dp[i-1][j]）再删 word2[j-1]（转移至 dp[i-1][j-1] + 1）隐式覆盖，min(dp[i-1][j], dp[i][j-1]) + 1 必然小于或等于 dp[i-1][j-1] + 2，因此只需保留单字符删除分支即可。
+  - q: 如何用最长公共子序列 (LCS) 求解本题？
+    a: 使得两单词相同且删除次数最少，等价于保留尽可能长的公共子序列。若 LCS(word1, word2) 长度为 L，则保留 L 个字符，最少删除次数为 (word1.length - L) + (word2.length - L) = m + n - 2*L。
+  - q: 一维空间压缩中 pre 变量的作用是什么？
+    a: 二维转移中 dp[i][j] 在字符相同时需要读取左上角的 dp[i-1][j-1]。在一维数组正序遍历时，计算 dp[j] 前的 dp[j-1] 已被更新为当前行新值，无法提供上一行的旧值。通过 pre 变量在更新前保存旧 dp[j]，便可将上一行的旧值安全传递给下一次迭代。

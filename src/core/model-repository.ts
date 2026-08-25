@@ -13,6 +13,10 @@ import fibonacciModel from '../algorithms/specs/models/fibonacci.yaml';
 import climbStairsModel from '../algorithms/specs/models/climb-stairs.yaml';
 import knapsack01Model from '../algorithms/specs/models/knapsack-01.yaml';
 import distinctSubsequencesModel from '../algorithms/specs/models/distinct-subsequences.yaml';
+import deleteOperationForTwoStringsModel from '../algorithms/specs/models/delete-operation-for-two-strings.yaml';
+import editDistanceModel from '../algorithms/specs/models/edit-distance.yaml';
+import palindromicSubstringsModel from '../algorithms/specs/models/palindromic-substrings.yaml';
+import longestPalindromicSubsequenceModel from '../algorithms/specs/models/longest-palindromic-subsequence.yaml';
 
 export class AlgorithmModelRepository {
   private static registry = new Map<string, IYamlAlgorithmModel>([
@@ -24,6 +28,11 @@ export class AlgorithmModelRepository {
     ['01-knapsack', knapsack01Model as IYamlAlgorithmModel],
     ['knapsack-01', knapsack01Model as IYamlAlgorithmModel],
     ['distinct-subsequences', distinctSubsequencesModel as IYamlAlgorithmModel],
+    ['delete-operation-for-two-strings', deleteOperationForTwoStringsModel as IYamlAlgorithmModel],
+    ['delete-distance', deleteOperationForTwoStringsModel as IYamlAlgorithmModel],
+    ['edit-distance', editDistanceModel as IYamlAlgorithmModel],
+    ['palindromic-substrings', palindromicSubstringsModel as IYamlAlgorithmModel],
+    ['longest-palindromic-subsequence', longestPalindromicSubsequenceModel as IYamlAlgorithmModel],
   ]);
 
   /**
