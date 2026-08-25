@@ -19,6 +19,27 @@ defaultParams:
   m: 3
   n: 4
 
+problem:
+  leetcodeId: 62
+  title: "不同路径"
+  difficulty: "中等"
+  tags: ["数学", "动态规划", "组合数学"]
+  description: "一个机器人位于一个 <code>m x n</code> 网格的左上角 （起始点在下图中标记为 “Start” ）。<br/><br/>机器人每次只能向下或者向右移动一步。机器人试图达到网格的右下角（在下图中标记为 “Finish” ）。<br/><br/>问总共有多少条不同的路径？"
+  examples:
+    - input: "m = 3, n = 7"
+      output: "28"
+    - input: "m = 3, n = 2"
+      output: "3"
+      explanation: "从左上角开始，总共有 3 条路径可以到达右下角。<br/>1. 向右 -> 向下 -> 向下<br/>2. 向下 -> 向下 -> 向右<br/>3. 向下 -> 向右 -> 向下"
+    - input: "m = 7, n = 3"
+      output: "28"
+    - input: "m = 3, n = 3"
+      output: "6"
+  constraints:
+    - "1 <= m, n <= 100"
+    - "题目数据保证答案小于等于 2 * 10^9"
+  leetcodeUrl: "https://leetcode.cn/problems/unique-paths/"
+
 directions:
   forward:
     label: "顺推 (正序)"

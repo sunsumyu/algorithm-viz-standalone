@@ -936,7 +936,7 @@ export class RecursionTreeAdapter {
     let levelH = 50;
     let fontSize = 10.5;
     let tagFontSize = 8;
-    const topPad = 34;
+    const topPad = 42;
 
     if (leafCount >= 10 || maxDepth >= 4) {
       nodeW = 44;
@@ -986,13 +986,14 @@ export class RecursionTreeAdapter {
     }
 
     const measured = measure(root);
-    const totalW = Math.max(340, measured.width + 24);
+    const totalW = Math.max(340, measured.width + 36);
     const rootPos = assign(measured, 0, (totalW - measured.width) / 2);
-    const totalH = Math.max(160, topPad + maxDepth * levelH + 34);
+    const totalH = Math.max(180, topPad + maxDepth * levelH + nodeH + 36);
 
     const lines: string[] = [];
     const nodes: string[] = [];
     let activeX: number | null = null;
+    let activeY: number | null = null;
 
     function draw(n: any): void {
       for (const c of n.children) {
@@ -1014,7 +1015,10 @@ export class RecursionTreeAdapter {
       }
 
       const isCurrent = n.id === activeNodeId;
-      if (isCurrent) activeX = n.x;
+      if (isCurrent) {
+        activeX = n.x;
+        activeY = n.y;
+      }
 
       const isBase = n.status === 'base';
       const isPruned = n.status === 'pruned';
@@ -1071,7 +1075,7 @@ export class RecursionTreeAdapter {
       let animalHtml = '';
       if (isCurrent) {
         animalHtml = `
-          <g transform="translate(0, ${-nodeH / 2 - 5})">
+          <g transform="translate(0, ${-nodeH / 2 - 6})">
             <text x="0" y="0" text-anchor="middle" font-size="${Math.max(12, fontSize + 3)}" class="animal-frog select-none">🐸</text>
           </g>
         `;
@@ -1090,7 +1094,7 @@ export class RecursionTreeAdapter {
     draw(rootPos);
 
     const svgContent = `
-      <svg id="tree-svg-canvas" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="min-width: ${totalW}px; min-height: ${totalH}px; display: block; margin: auto;">
+      <svg id="tree-svg-canvas" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="min-width: ${totalW}px; min-height: ${totalH}px; display: block; margin: 0 auto;">
         ${lines.join('')}
         ${nodes.join('')}
       </svg>
@@ -1101,35 +1105,65 @@ export class RecursionTreeAdapter {
 
     if (!scrollBox) {
       container.innerHTML = `
-        <div id="tree-scroll-box" class="w-full h-full flex items-center justify-start overflow-auto p-1">
+        <div id="tree-scroll-box" class="w-full h-full flex items-start justify-start overflow-auto p-2">
           ${svgContent}
         </div>
       `;
       scrollBox = container.querySelector('#tree-scroll-box');
     } else {
-      // 保持现有 scrollBox DOM 容器，仅更新内部 SVG 内容，绝对不重置 scrollLeft
+      // 保持现有 scrollBox DOM 容器，仅更新内部 SVG 内容，绝对不粗暴重置滚动坐标
       scrollBox.innerHTML = svgContent;
     }
 
-    if (activeX !== null && scrollBox && typeof scrollBox.scrollTo === 'function') {
+    if (scrollBox && typeof scrollBox.scrollTo === 'function') {
       const clientW = scrollBox.clientWidth || 0;
       const scrollW = scrollBox.scrollWidth || 0;
-      if (scrollW > clientW && clientW > 0) {
-        const targetScrollLeft = Math.max(0, (activeX as number) - clientW / 2);
+      const clientH = scrollBox.clientHeight || 0;
+      const scrollH = scrollBox.scrollHeight || 0;
+
+      let targetLeft = scrollBox.scrollLeft;
+      let targetTop = scrollBox.scrollTop;
+      let needScroll = false;
+
+      // 水平方向自适应聚焦
+      if (activeX !== null && clientW > 0) {
+        const curScrollLeft = scrollBox.scrollLeft;
+        const leftMargin = 50;
+        const leftBound = curScrollLeft + leftMargin;
+        const rightBound = curScrollLeft + clientW - leftMargin;
 
         if (isFirstMount) {
-          // 首次挂载瞬间对齐中心，避免从 0 闪动
-          scrollBox.scrollLeft = targetScrollLeft;
-        } else {
-          const curScrollLeft = scrollBox.scrollLeft;
-          // 仅当活跃节点超出当前可视安全区域时才平滑跟随，消除微小晃动与左移闪回
-          const leftBound = curScrollLeft + 40;
-          const rightBound = curScrollLeft + clientW - 40;
-          const outOfView = (activeX as number) < leftBound || (activeX as number) > rightBound;
+          targetLeft = Math.max(0, activeX - clientW / 2);
+          needScroll = true;
+        } else if (activeX < leftBound || activeX > rightBound) {
+          targetLeft = Math.max(0, activeX - clientW / 2);
+          needScroll = true;
+        }
+      }
 
-          if (outOfView) {
-            scrollBox.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
-          }
+      // 垂直方向自适应聚焦 (防止活跃节点被顶部或底部遮挡)
+      if (activeY !== null && clientH > 0) {
+        const curScrollTop = scrollBox.scrollTop;
+        const topMargin = 45;
+        const bottomMargin = 45;
+        const topBound = curScrollTop + topMargin;
+        const bottomBound = curScrollTop + clientH - bottomMargin;
+
+        if (isFirstMount) {
+          targetTop = Math.max(0, activeY - clientH / 2);
+          needScroll = true;
+        } else if (activeY < topBound || activeY > bottomBound) {
+          targetTop = Math.max(0, activeY - clientH / 2);
+          needScroll = true;
+        }
+      }
+
+      if (needScroll) {
+        if (isFirstMount) {
+          scrollBox.scrollLeft = targetLeft;
+          scrollBox.scrollTop = targetTop;
+        } else {
+          scrollBox.scrollTo({ left: targetLeft, top: targetTop, behavior: 'smooth' });
         }
       }
     }

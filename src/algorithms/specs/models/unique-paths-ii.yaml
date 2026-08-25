@@ -22,6 +22,25 @@ defaultParams:
     - [0, 1, 0]
     - [0, 0, 0]
 
+problem:
+  leetcodeId: 63
+  title: "不同路径 II"
+  difficulty: "中等"
+  tags: ["数组", "动态规划", "矩阵"]
+  description: "给定一个 <code>m x n</code> 的整数数组 <code>grid</code>。一个机器人初始位于 <strong>左上角</strong>（即 <code>grid[0][0]</code>）。<br/><br/>机器人尝试移动到 <strong>右下角</strong>（即 <code>grid[m - 1][n - 1]</code>）。机器人每次只能向下或者向右移动一步。<br/><br/>网格中的障碍物和空位置分别用 <code>1</code> 和 <code>0</code> 来表示。机器人的移动路径中不能包含 <strong>任何</strong> 有障碍物的方格。<br/><br/>返回机器人从左上角到右下角所有可能的 <strong>不同路径的数量</strong>。"
+  examples:
+    - input: "obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]"
+      output: "2"
+      explanation: "3x3 网格的正中间有一个障碍物。<br/>从左上角到右下角一共有 2 条不同的路径：<br/>1. 向右 -> 向右 -> 向下 -> 向下<br/>2. 向下 -> 向下 -> 向右 -> 向右"
+    - input: "obstacleGrid = [[0,1],[0,0]]"
+      output: "1"
+  constraints:
+    - "m == obstacleGrid.length"
+    - "n == obstacleGrid[i].length"
+    - "1 <= m, n <= 100"
+    - "obstacleGrid[i][j] 为 0 或 1"
+  leetcodeUrl: "https://leetcode.cn/problems/unique-paths-ii/"
+
 directions:
   forward:
     label: "顺推 (正序)"

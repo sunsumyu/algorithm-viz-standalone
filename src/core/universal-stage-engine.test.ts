@@ -45,10 +45,9 @@ describe('UniversalStageEngine & VisualizerStateRouter Deep Modules', () => {
       const tabStepsForward = UniversalStageEngine.generateStage3Steps(model, 3, 3, 'forward');
       expect(tabStepsForward.length).toBeGreaterThan(0);
       
-      // 初始第 1 步：仅有 dp[0][0] 单个根节点，无子节点，杜绝提前剧透
+      // 初始第 1 步：状态依赖树以终点 dp[2][2] 为根节点
       const firstStep = tabStepsForward[0];
-      expect(firstStep.treeRoot?.val).toBe('dp[0][0]');
-      expect(firstStep.treeRoot?.children?.length).toBe(0);
+      expect(firstStep.treeRoot?.val).toBe('dp[2][2]');
 
       // 最终完成步：生长至完整的 dp[2][2] 依赖树
       const lastStepForward = tabStepsForward[tabStepsForward.length - 1];

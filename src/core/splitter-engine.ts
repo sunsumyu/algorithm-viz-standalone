@@ -13,14 +13,16 @@
 export type SplitterDirection = 'horizontal' | 'vertical';
 export type SplitterMode = 'grid' | 'flex' | 'dimension';
 export type SplitterAttachPosition = 'before' | 'after';
+export type WindowBreakpoint = 'small' | 'medium' | 'large';
 
 export interface SplitterOptions {
   id: string;                                // 面板唯一标识 (如 'sidebar', 'code-aside', 'stage-top-bottom', 'code-vars')
   direction?: SplitterDirection;             // 拖拽方向：'horizontal' (左右) | 'vertical' (上下)，默认 'horizontal'
   targetElement: HTMLElement;                // 被调节尺寸的目标元素
   containerElement?: HTMLElement;            // 容器元素，默认 targetElement.parentElement
-  defaultSize: number;                       // 默认尺寸（像素）
-  minSize?: number;                          // 最小限制像素（默认 100）
+  defaultSize?: number;                      // 默认尺寸（像素）
+  defaultRatio?: number;                     // 默认容器占比 (如 0.5 表示 50%)
+  minSize?: number;                          // 最小限制像素（默认 80）
   maxSize?: number;                          // 最大限制像素
   minRatio?: number;                         // 最小占用父容器比例 (如 0.1)
   maxRatio?: number;                         // 最大占用父容器比例 (如 0.75)
@@ -35,14 +37,39 @@ export interface SplitterOptions {
 }
 
 export class SplitterStorage {
-  static getKey(id: string, scope?: string): string {
-    const s = scope && scope.trim() && scope !== 'global' ? scope.trim() : 'global';
-    return `algo-splitter:${s}:${id}`;
+  /**
+   * 根据当前视口/容器宽度判断所属断点
+   * small: < 1200px (紧凑窗口/小屏)
+   * medium: 1200px ~ 1599px (标准常规窗口)
+   * large: >= 1600px (大屏/全屏/2K/4K)
+   */
+  static getBreakpoint(width?: number): WindowBreakpoint {
+    const w = width ?? (typeof window !== 'undefined' ? window.innerWidth : 1200);
+    if (w >= 1600) return 'large';
+    if (w >= 1200) return 'medium';
+    return 'small';
   }
 
-  static get(id: string, scope?: string, defaultVal?: number): number | null {
-    if (typeof localStorage === 'undefined') return defaultVal ?? null;
+  static getKey(id: string, scope?: string, bp?: WindowBreakpoint): string {
+    const s = scope && scope.trim() && scope !== 'global' ? scope.trim() : 'global';
+    return bp ? `algo-splitter:${s}:${id}:${bp}` : `algo-splitter:${s}:${id}`;
+  }
 
+  static get(id: string, scope?: string, defaultVal?: number, bp?: WindowBreakpoint): number | null {
+    if (typeof localStorage === 'undefined') return defaultVal ?? null;
+    const currentBp = bp || this.getBreakpoint();
+
+    // 1. 优先读取当前作用域 + 当前断点的独立尺寸
+    if (scope && scope !== 'global') {
+      const scopedBpVal = parseFloat(localStorage.getItem(`algo-splitter:${scope}:${id}:${currentBp}`) || '');
+      if (Number.isFinite(scopedBpVal) && scopedBpVal > 0) return scopedBpVal;
+    }
+
+    // 2. 读取全局 + 当前断点的独立尺寸
+    const globalBpVal = parseFloat(localStorage.getItem(`algo-splitter:global:${id}:${currentBp}`) || '');
+    if (Number.isFinite(globalBpVal) && globalBpVal > 0) return globalBpVal;
+
+    // 3. 回退读取无断点历史数据（向后兼容）
     if (scope && scope !== 'global') {
       const scopedVal = parseFloat(localStorage.getItem(`algo-splitter:${scope}:${id}`) || '');
       if (Number.isFinite(scopedVal) && scopedVal > 0) return scopedVal;
@@ -54,34 +81,42 @@ export class SplitterStorage {
     return defaultVal ?? null;
   }
 
-  static set(id: string, value: number, scope?: string, isolateScope = false): void {
+  static set(id: string, value: number, scope?: string, isolateScope = false, bp?: WindowBreakpoint): void {
     if (typeof localStorage === 'undefined') return;
     const rounded = Math.round(value);
+    const currentBp = bp || this.getBreakpoint();
 
-    // 默认全站共享：同步写入全局配置，使得下次启动或切换其它算法时默认继承当前调好的偏好
+    // 保存到当前断点独立键中，实现大/小窗口独立记忆
     if (!isolateScope || !scope || scope === 'global') {
+      localStorage.setItem(`algo-splitter:global:${id}:${currentBp}`, String(rounded));
       localStorage.setItem(`algo-splitter:global:${id}`, String(rounded));
     }
 
-    // 若指定了页面 scope，同步写入该页面的独立键
     if (scope && scope !== 'global') {
+      localStorage.setItem(`algo-splitter:${scope}:${id}:${currentBp}`, String(rounded));
       localStorage.setItem(`algo-splitter:${scope}:${id}`, String(rounded));
     }
   }
 
-  static remove(id: string, scope?: string): void {
+  static remove(id: string, scope?: string, bp?: WindowBreakpoint): void {
     if (typeof localStorage === 'undefined') return;
+    const currentBp = bp || this.getBreakpoint();
+
     if (!scope || scope === 'global') {
+      localStorage.removeItem(`algo-splitter:global:${id}:${currentBp}`);
       localStorage.removeItem(`algo-splitter:global:${id}`);
     }
     if (scope && scope !== 'global') {
+      localStorage.removeItem(`algo-splitter:${scope}:${id}:${currentBp}`);
       localStorage.removeItem(`algo-splitter:${scope}:${id}`);
     }
   }
 }
 
 export class SplitterEngine {
-  private options: Required<Omit<SplitterOptions, 'onResize' | 'onDragEnd' | 'maxSize' | 'minRatio'>> & {
+  private options: Required<Omit<SplitterOptions, 'onResize' | 'onDragEnd' | 'maxSize' | 'minRatio' | 'defaultSize' | 'defaultRatio'>> & {
+    defaultSize?: number;
+    defaultRatio?: number;
     maxSize?: number;
     minRatio?: number;
     onResize?: (size: number) => void;
@@ -91,6 +126,7 @@ export class SplitterEngine {
   private splitterEl: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private currentSize: number;
+  private currentBreakpoint: WindowBreakpoint;
   private isDragging = false;
   private startCoord = 0;
   private startSize = 0;
@@ -103,7 +139,6 @@ export class SplitterEngine {
 
     const direction = opts.direction || 'horizontal';
     const attachPosition = opts.attachPosition || 'before';
-    // 默认 invert：如果挂载在 before 且为横向右侧面板，向左拖拽（坐标减小）应该增大尺寸，因此 invert 为 true
     const defaultInvert = attachPosition === 'before';
 
     this.options = {
@@ -112,6 +147,7 @@ export class SplitterEngine {
       targetElement: opts.targetElement,
       containerElement: container,
       defaultSize: opts.defaultSize,
+      defaultRatio: opts.defaultRatio,
       minSize: opts.minSize ?? 80,
       maxSize: opts.maxSize,
       minRatio: opts.minRatio,
@@ -126,14 +162,39 @@ export class SplitterEngine {
       onDragEnd: opts.onDragEnd,
     };
 
-    // 读取已保存或默认尺寸
-    const saved = SplitterStorage.get(this.options.id, this.options.scope, this.options.defaultSize);
-    this.currentSize = saved !== null && Number.isFinite(saved) && saved > 0 ? saved : this.options.defaultSize;
+    // 智能获取当前断点及专属尺寸
+    this.currentBreakpoint = SplitterStorage.getBreakpoint(this.getContainerDimension());
+    const initialDefault = this.computeDefaultSize();
+    const saved = SplitterStorage.get(this.options.id, this.options.scope, initialDefault, this.currentBreakpoint);
+    this.currentSize = saved !== null && Number.isFinite(saved) && saved > 0 ? this.clampSize(saved) : initialDefault;
 
     this.createDOM();
     this.applySize(this.currentSize);
     this.setupEvents();
     this.setupResizeObserver();
+  }
+
+  public getContainerDimension(): number {
+    const { containerElement, direction } = this.options;
+    if (direction === 'horizontal') {
+      return containerElement.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 1200);
+    } else {
+      return containerElement.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 800);
+    }
+  }
+
+  public computeDefaultSize(): number {
+    const containerLen = this.getContainerDimension();
+    if (this.options.defaultRatio !== undefined && containerLen > 0) {
+      return this.clampSize(Math.round(containerLen * this.options.defaultRatio));
+    }
+    if (this.options.defaultSize !== undefined) {
+      if (this.currentBreakpoint === 'large' && containerLen >= 1600 && this.options.defaultSize < containerLen * 0.38) {
+        return this.clampSize(Math.round(containerLen * 0.5));
+      }
+      return this.clampSize(this.options.defaultSize);
+    }
+    return this.clampSize(Math.round(containerLen * 0.5));
   }
 
   private detectMode(container: HTMLElement, direction: SplitterDirection): SplitterMode {
@@ -151,7 +212,6 @@ export class SplitterEngine {
   private createDOM(): void {
     const { direction, className, title, attachPosition, targetElement } = this.options;
 
-    // 移除已有相同 ID 的分隔条，防止重绘时残留
     const existing = targetElement.parentElement?.querySelector?.(`.algo-splitter[data-splitter-id="${this.options.id}"]`);
     if (existing) {
       existing.remove();
@@ -164,12 +224,10 @@ export class SplitterEngine {
     this.splitterEl.setAttribute('role', 'separator');
     this.splitterEl.setAttribute('aria-orientation', direction);
 
-    // 内部手柄指示条
     const bar = document.createElement('div');
     bar.className = 'algo-splitter-bar';
     this.splitterEl.appendChild(bar);
 
-    // 确保目标或容器定位正确
     if (typeof getComputedStyle === 'function' && getComputedStyle(targetElement).position === 'static' && this.options.mode === 'dimension') {
       targetElement.style.position = 'relative';
     }
@@ -197,18 +255,36 @@ export class SplitterEngine {
 
     this.resizeObserver = new ResizeObserver(() => {
       if (!this.isDragging) {
-        this.syncLayout();
+        const containerLen = this.getContainerDimension();
+        const newBp = SplitterStorage.getBreakpoint(containerLen);
+
+        if (newBp !== this.currentBreakpoint) {
+          // 断点发生改变（如从小窗口最大化到大窗口，或大窗口还原为小窗口）
+          this.currentBreakpoint = newBp;
+          const defaultForNewBp = this.computeDefaultSize();
+          const savedForNewBp = SplitterStorage.get(
+            this.options.id,
+            this.options.scope,
+            defaultForNewBp,
+            newBp
+          );
+          const targetSize = savedForNewBp !== null && Number.isFinite(savedForNewBp) && savedForNewBp > 0
+            ? this.clampSize(savedForNewBp)
+            : defaultForNewBp;
+          this.applySize(targetSize);
+        } else {
+          this.syncLayout();
+        }
       }
     });
     this.resizeObserver.observe(this.options.containerElement);
   }
 
   private onPointerDown = (e: PointerEvent): void => {
-    if (e.button !== 0) return; // 仅响应鼠标左键或触控
+    if (e.button !== 0) return;
     this.isDragging = true;
     this.startCoord = this.options.direction === 'horizontal' ? e.clientX : e.clientY;
     
-    // 获取当前实际渲染尺寸
     const rect = this.options.targetElement.getBoundingClientRect();
     this.startSize = this.options.direction === 'horizontal' ? rect.width : rect.height;
     if (!this.startSize || this.startSize <= 0) {
@@ -253,8 +329,8 @@ export class SplitterEngine {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
 
-    // 立即保存最新尺寸到 localStorage
-    SplitterStorage.set(this.options.id, this.currentSize, this.options.scope);
+    // 立即保存最新尺寸到对应断点的独立 localStorage
+    SplitterStorage.set(this.options.id, this.currentSize, this.options.scope, false, this.currentBreakpoint);
     this.options.onDragEnd?.(this.currentSize);
   };
 
@@ -282,7 +358,6 @@ export class SplitterEngine {
       max = Math.min(max, containerLength * maxRatio);
     }
 
-    // 确保 min 不大于 max
     if (min > max) min = max;
 
     return Math.round(Math.max(min, Math.min(max, raw)));
@@ -321,7 +396,6 @@ export class SplitterEngine {
         targetElement.style.height = `${clamped}px`;
       }
     } else {
-      // dimension mode
       if (direction === 'horizontal') {
         targetElement.style.width = `${clamped}px`;
         targetElement.style.maxWidth = `${clamped}px`;
@@ -335,7 +409,6 @@ export class SplitterEngine {
 
     this.options.onResize?.(clamped);
 
-    // 派发全局 resize 事件让图表/SVG/Canvas 自适应
     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       try {
         window.dispatchEvent(new Event('resize'));
@@ -344,7 +417,7 @@ export class SplitterEngine {
   }
 
   /**
-   * 同步外部布局（如容器响应式断点改变时）
+   * 同步外部布局
    */
   public syncLayout(): void {
     if (this.options.mode === 'grid') {
@@ -354,7 +427,6 @@ export class SplitterEngine {
         : getComputedStyle(this.options.containerElement).gridTemplateRows;
 
       const segments = template ? template.split(' ').filter(Boolean) : [];
-      // 若处于单列/单行折叠媒体查询状态，不强行覆盖
       if (segments.length <= 1) {
         return;
       }
@@ -366,12 +438,12 @@ export class SplitterEngine {
    * 重置为默认尺寸
    */
   public resetSize(): void {
-    this.currentSize = this.options.defaultSize;
-    this.applySize(this.options.defaultSize);
-    SplitterStorage.remove(this.options.id, this.options.scope);
+    const defSize = this.computeDefaultSize();
+    this.currentSize = defSize;
+    this.applySize(defSize);
+    SplitterStorage.remove(this.options.id, this.options.scope, this.currentBreakpoint);
     this.options.onDragEnd?.(this.currentSize);
 
-    // 视觉反馈动画
     if (this.splitterEl) {
       this.splitterEl.classList.add('is-resetting');
       setTimeout(() => this.splitterEl?.classList.remove('is-resetting'), 300);
@@ -382,9 +454,13 @@ export class SplitterEngine {
     return this.currentSize;
   }
 
+  public getCurrentBreakpoint(): WindowBreakpoint {
+    return this.currentBreakpoint;
+  }
+
   public setScope(newScope: string): void {
     this.options.scope = newScope;
-    const saved = SplitterStorage.get(this.options.id, newScope, this.options.defaultSize);
+    const saved = SplitterStorage.get(this.options.id, newScope, this.computeDefaultSize(), this.currentBreakpoint);
     if (saved !== null && Number.isFinite(saved)) {
       this.applySize(saved);
     }

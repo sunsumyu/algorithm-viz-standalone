@@ -43,11 +43,16 @@ export class VisualizerAppController {
   private themeManager: VisualThemeManager;
   private isDestroyed = false;
   public stage3SubView: 'matrix' | 'tree' = 'matrix';
+  public activeRightTab: 'code' | 'problem' | 'analysis' = 'code';
 
   constructor(options: VisualizerAppControllerOptions = {}) {
     this.mode = options.mode || 'lite';
     this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
     this.stage3SubView = (typeof localStorage !== 'undefined' && localStorage.getItem('algo-stage3-subview') === 'tree') ? 'tree' : 'matrix';
+    this.activeRightTab = (typeof localStorage !== 'undefined' && (localStorage.getItem('algo-right-tab') as any)) || 'code';
+    if (this.activeRightTab !== 'code' && this.activeRightTab !== 'problem' && this.activeRightTab !== 'analysis') {
+      this.activeRightTab = 'code';
+    }
     
     // 解析 options, URL 参数或全局变量获取 modelId
     let requestedId = options.defaultModelId;
@@ -67,6 +72,19 @@ export class VisualizerAppController {
     this.model = AlgorithmModelRepository.hasModel(this.modelId)
       ? AlgorithmModelRepository.getModel(this.modelId)
       : AlgorithmModelRepository.getModel('unique-paths');
+
+    if (this.model?.defaultParams) {
+      if (this.model.defaultParams.m !== undefined) {
+        this.m = Number(this.model.defaultParams.m);
+      } else if (this.model.defaultParams.s !== undefined) {
+        this.m = String(this.model.defaultParams.s).length + 1;
+      }
+      if (this.model.defaultParams.n !== undefined) {
+        this.n = Number(this.model.defaultParams.n);
+      } else if (this.model.defaultParams.t !== undefined) {
+        this.n = String(this.model.defaultParams.t).length + 1;
+      }
+    }
 
     // 智能恢复阶段与方向记忆 (URL Hash > LocalStorage 本题记忆 > LocalStorage 全局偏好 > 模型默认)
     this.currentStage = this.getInitialStage(this.modelId);
@@ -182,13 +200,19 @@ export class VisualizerAppController {
     if (this.model.defaultParams && (!restored || (!restored.m && !restored.n))) {
       const inputM = document.getElementById('input-m') as HTMLInputElement | null;
       const inputN = document.getElementById('input-n') as HTMLInputElement | null;
-      if (inputM && this.model.defaultParams.m !== undefined) {
-        inputM.value = String(this.model.defaultParams.m);
+      if (this.model.defaultParams.m !== undefined) {
         this.m = Number(this.model.defaultParams.m);
+        if (inputM) inputM.value = String(this.model.defaultParams.m);
+      } else if (this.model.defaultParams.s !== undefined) {
+        this.m = String(this.model.defaultParams.s).length + 1;
+        if (inputM) inputM.value = String(this.m);
       }
-      if (inputN && this.model.defaultParams.n !== undefined) {
-        inputN.value = String(this.model.defaultParams.n);
+      if (this.model.defaultParams.n !== undefined) {
         this.n = Number(this.model.defaultParams.n);
+        if (inputN) inputN.value = String(this.model.defaultParams.n);
+      } else if (this.model.defaultParams.t !== undefined) {
+        this.n = String(this.model.defaultParams.t).length + 1;
+        if (inputN) inputN.value = String(this.n);
       }
     }
 
@@ -222,7 +246,10 @@ export class VisualizerAppController {
     // 7. 初次装载与步骤推导计算
     this.loadAndReset();
 
-    // 8. 定位到指定步数
+    // 8. 装配右侧选项卡初始视图 (代码 / 题目 / 精讲)
+    this.switchRightTab(this.activeRightTab);
+
+    // 9. 定位到指定步数
     if (targetStep > 0 && targetStep < this.steps.length) {
       this.timeline.seek(targetStep);
     }
@@ -348,7 +375,8 @@ export class VisualizerAppController {
       direction: 'horizontal',
       targetElement: leftPane,
       containerElement: mainContainer,
-      defaultSize: Math.round((mainContainer.clientWidth || 1000) * 0.5) || 520,
+      defaultRatio: 0.5,
+      defaultSize: 520,
       minSize: 320,
       minRatio: 0.28,
       maxRatio: 0.72,
@@ -668,11 +696,13 @@ export class VisualizerAppController {
 
   private updateCodePanel(stageConfig: any): void {
     const variantBar = document.getElementById('code-variant-bar');
-    if (stageConfig.variants && Object.keys(stageConfig.variants).length > 0) {
+    const variantKeys = stageConfig.variants ? Object.keys(stageConfig.variants) : [];
+    
+    if (stageConfig.variants && variantKeys.length > 1) {
       if (variantBar) {
         variantBar.classList.remove('hidden');
+        variantBar.classList.add('flex-shrink-0', 'whitespace-nowrap');
         variantBar.innerHTML = '';
-        const variantKeys = Object.keys(stageConfig.variants);
         
         // 尝试从 localStorage 恢复该题该阶段的代码变体偏好
         if (typeof localStorage !== 'undefined') {
@@ -691,7 +721,7 @@ export class VisualizerAppController {
           const btn = document.createElement('button');
           const isActive = varKey === this.currentStageVariant;
           btn.dataset.variant = varKey;
-          btn.className = `variant-btn px-2 py-0.5 rounded text-[10px] transition ${
+          btn.className = `variant-btn whitespace-nowrap px-2 py-0.5 rounded text-[10px] transition ${
             isActive 
               ? 'font-bold bg-blue-600 text-white shadow-2xs' 
               : 'font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -715,14 +745,275 @@ export class VisualizerAppController {
       if (codeBox) codeBox.innerHTML = variantConfig.codeHtml || variantConfig.html;
     } else {
       if (variantBar) variantBar.classList.add('hidden');
+      const variantConfig = stageConfig.variants ? (stageConfig.variants[this.currentStageVariant] || Object.values(stageConfig.variants)[0]) : null;
       const codeTitleEl = document.getElementById('code-file-title') || document.getElementById('code-lang-title');
-      if (codeTitleEl) codeTitleEl.textContent = stageConfig.codeTitle;
+      if (codeTitleEl) codeTitleEl.textContent = variantConfig?.title || stageConfig.codeTitle;
       const codeBox = document.getElementById('code-content') || document.getElementById('code-display-container');
-      if (codeBox) codeBox.innerHTML = stageConfig.codeHtml;
+      if (codeBox) codeBox.innerHTML = variantConfig?.codeHtml || variantConfig?.html || stageConfig.codeHtml;
     }
 
     const codeContainer = document.getElementById('code-container-box') || document.getElementById('code-display-container');
     if (codeContainer) codeContainer.scrollTop = 0;
+  }
+
+  /**
+   * 切换右侧面板展示视图 (代码调试 / 题目描述 / 递推精讲)
+   */
+  public switchRightTab(tab: 'code' | 'problem' | 'analysis'): void {
+    this.activeRightTab = tab;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('algo-right-tab', tab);
+    }
+    if (typeof document === 'undefined') return;
+
+    const btnCode = document.getElementById('btn-tab-code');
+    const btnProblem = document.getElementById('btn-tab-problem');
+    const btnAnalysis = document.getElementById('btn-tab-analysis');
+
+    const setActiveClass = (btn: HTMLElement | null, isActive: boolean) => {
+      if (!btn) return;
+      btn.className = isActive
+        ? 'tab-btn active px-2.5 py-0.5 rounded text-[11px] font-bold transition bg-blue-600 text-white shadow-2xs flex items-center gap-1.5'
+        : 'tab-btn px-2.5 py-0.5 rounded text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1.5';
+    };
+
+    setActiveClass(btnCode, tab === 'code');
+    setActiveClass(btnProblem, tab === 'problem');
+    setActiveClass(btnAnalysis, tab === 'analysis');
+
+    const viewCode = document.getElementById('code-view-container');
+    const viewProblem = document.getElementById('problem-view-container');
+    const viewAnalysis = document.getElementById('analysis-view-container');
+    const variantBar = document.getElementById('code-variant-bar');
+    const fontControls = document.getElementById('code-font-container') || document.getElementById('btn-code-font-dec')?.parentElement?.parentElement;
+
+    if (viewCode) {
+      if (tab === 'code') viewCode.classList.remove('hidden');
+      else viewCode.classList.add('hidden');
+    }
+    if (viewProblem) {
+      if (tab === 'problem') viewProblem.classList.remove('hidden');
+      else viewProblem.classList.add('hidden');
+    }
+    if (viewAnalysis) {
+      if (tab === 'analysis') viewAnalysis.classList.remove('hidden');
+      else viewAnalysis.classList.add('hidden');
+    }
+
+    // 变体选择器与字号缩放只在代码视图显示（且仅当存在 2 个及以上变体可选时才显示）
+    if (variantBar && this.currentStage) {
+      const stageConfig = AlgorithmModelRepository.getCompiledStage(this.model.id, this.currentStage, this.currentDirection);
+      if (stageConfig?.variants && Object.keys(stageConfig.variants).length > 1) {
+        if (tab === 'code') variantBar.classList.remove('hidden');
+        else variantBar.classList.add('hidden');
+      } else {
+        variantBar.classList.add('hidden');
+      }
+    }
+    if (fontControls) {
+      if (tab === 'code') fontControls.classList.remove('hidden');
+      else fontControls.classList.add('hidden');
+    }
+
+    if (tab === 'problem') {
+      this.renderProblemView();
+    } else if (tab === 'analysis') {
+      this.renderAnalysisView();
+    } else if (tab === 'code') {
+      const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+      if (this.steps[curStep]) {
+        this.updateCodeHighlight(this.steps[curStep].line, this.steps[curStep].highlightText);
+      }
+    }
+  }
+
+  /**
+   * 生成并渲染力扣题目描述内容
+   */
+  public renderProblemView(): void {
+    if (typeof document === 'undefined') return;
+    const container = document.getElementById('problem-view-container');
+    const problem = this.model.problem;
+    
+    const difficultyMap: Record<string, { label: string; class: string }> = {
+      'easy': { label: '简单', class: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' },
+      '简单': { label: '简单', class: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' },
+      'medium': { label: '中等', class: 'bg-amber-500/20 text-amber-400 border border-amber-500/40' },
+      '中等': { label: '中等', class: 'bg-amber-500/20 text-amber-400 border border-amber-500/40' },
+      'hard': { label: '困难', class: 'bg-rose-500/20 text-rose-400 border border-rose-500/40' },
+      '困难': { label: '困难', class: 'bg-rose-500/20 text-rose-400 border border-rose-500/40' },
+    };
+
+    const diffInfo = difficultyMap[String(problem?.difficulty || this.model.difficulty)] || {
+      label: '中等',
+      class: 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+    };
+
+    const title = problem?.title || this.model.name;
+    const lcId = problem?.leetcodeId ? `LeetCode ${problem.leetcodeId}. ` : '';
+    const desc = problem?.description || this.model.description || '暂无详细描述。';
+    const tags = problem?.tags || [this.model.category, '动态规划'];
+    const leetcodeUrl = problem?.leetcodeUrl;
+
+    let examplesHtml = '';
+    if (problem?.examples && problem.examples.length > 0) {
+      examplesHtml = `
+        <div class="mt-4 space-y-3">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-vial text-blue-400"></i> 示例用例 (Examples)
+          </h4>
+          ${problem.examples.map((ex, idx) => `
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs font-mono-code space-y-1.5">
+              <div class="font-bold text-slate-300 font-sans flex items-center justify-between">
+                <span>示例 ${idx + 1}</span>
+              </div>
+              <div class="text-slate-300"><span class="text-slate-500 font-sans">输入：</span><code class="text-blue-300">${ex.input}</code></div>
+              <div class="text-slate-300"><span class="text-slate-500 font-sans">输出：</span><code class="text-emerald-400 font-bold">${ex.output}</code></div>
+              ${ex.explanation ? `<div class="text-slate-400 font-sans text-[11px] leading-relaxed pt-1 border-t border-slate-800/60"><span class="text-slate-500">解释：</span>${ex.explanation}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    let constraintsHtml = '';
+    if (problem?.constraints && problem.constraints.length > 0) {
+      constraintsHtml = `
+        <div class="mt-4 space-y-2">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> 提示与数据约束 (Constraints)
+          </h4>
+          <ul class="list-disc list-inside space-y-1 text-xs text-slate-400 font-mono-code bg-slate-950/40 p-3 rounded-xl border border-slate-800/80">
+            ${problem.constraints.map(c => `<li><span class="text-slate-300">${c}</span></li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    const contentHtml = `
+      <div class="space-y-4">
+        <!-- 题目标题与徽章 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="text-sm font-bold text-white">${lcId}${title}</h3>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-md ${diffInfo.class}">${diffInfo.label}</span>
+            ${tags.map(t => `<span class="px-2 py-0.5 text-[10px] rounded-md bg-slate-800 text-slate-300 border border-slate-700">${t}</span>`).join('')}
+          </div>
+          ${leetcodeUrl ? `
+            <a href="${leetcodeUrl}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg transition flex items-center gap-1">
+              <span>力扣原题</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
+          ` : ''}
+        </div>
+
+        <!-- 题目正文描述 -->
+        <div class="text-xs leading-relaxed text-slate-300 space-y-2">
+          ${desc}
+        </div>
+
+        <!-- 示例 -->
+        ${examplesHtml}
+
+        <!-- 约束条件 -->
+        ${constraintsHtml}
+      </div>
+    `;
+
+    if (container) {
+      container.innerHTML = contentHtml;
+    }
+
+    const modalBody = document.getElementById('modal-problem-body');
+    if (modalBody) {
+      modalBody.innerHTML = contentHtml;
+    }
+  }
+
+  /**
+   * 生成并渲染递推 5 步法与 FAQs 分析内容
+   */
+  public renderAnalysisView(): void {
+    if (typeof document === 'undefined') return;
+    const container = document.getElementById('analysis-view-container');
+    if (!container) return;
+
+    const analysis = this.model.analysis;
+    const faqs = this.model.faqs;
+
+    let analysisHtml = '';
+    if (analysis && Object.keys(analysis).length > 0) {
+      analysisHtml = `
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-800">
+            <i class="fa-solid fa-stairs text-emerald-400"></i> 动态规划标准 5 步递推分析
+          </h4>
+          <div class="space-y-2.5">
+            ${Object.values(analysis).map((item, idx) => `
+              <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                <div class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px]">${idx + 1}</span>
+                  <span>${item.title || `步骤 ${idx + 1}`}</span>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed pl-5">${item.content || ''}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    let faqsHtml = '';
+    if (faqs && faqs.length > 0) {
+      faqsHtml = `
+        <div class="mt-4 space-y-3">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-800">
+            <i class="fa-solid fa-circle-question text-blue-400"></i> 常见易错疑问与核心要点 (FAQs)
+          </h4>
+          <div class="space-y-2">
+            ${faqs.map(faq => `
+              <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <div class="text-xs font-bold text-slate-200 flex items-start gap-1.5">
+                  <span class="text-amber-400 font-mono">Q:</span>
+                  <span>${faq.q}</span>
+                </div>
+                <div class="text-xs text-slate-400 leading-relaxed flex items-start gap-1.5 pl-3 border-l-2 border-slate-800">
+                  <span class="text-blue-400 font-mono">A:</span>
+                  <span>${faq.a}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="space-y-4">
+        ${analysisHtml}
+        ${faqsHtml}
+      </div>
+    `;
+  }
+
+  /**
+   * 打开题目描述弹窗
+   */
+  public openProblemModal(): void {
+    if (typeof document === 'undefined') return;
+    const modal = document.getElementById('modal-problem');
+    if (!modal) return;
+    this.renderProblemView();
+    modal.classList.remove('hidden');
+  }
+
+  /**
+   * 关闭题目描述弹窗
+   */
+  public closeProblemModal(): void {
+    if (typeof document === 'undefined') return;
+    const modal = document.getElementById('modal-problem');
+    if (modal) modal.classList.add('hidden');
   }
 
   private rebuildFullLayout(): void {
@@ -924,6 +1215,38 @@ export class VisualizerAppController {
         faqEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
+
+    // Right-panel tabs (Code / Problem / Analysis)
+    const btnTabCode = document.getElementById('btn-tab-code');
+    const btnTabProblem = document.getElementById('btn-tab-problem');
+    const btnTabAnalysis = document.getElementById('btn-tab-analysis');
+    if (btnTabCode) btnTabCode.addEventListener('click', () => this.switchRightTab('code'));
+    if (btnTabProblem) btnTabProblem.addEventListener('click', () => this.switchRightTab('problem'));
+    if (btnTabAnalysis) btnTabAnalysis.addEventListener('click', () => this.switchRightTab('analysis'));
+
+    // Problem Modal (Open / Close)
+    const btnOpenProblemModal = document.getElementById('btn-open-problem-modal') || document.getElementById('btn-problem-meta-badge');
+    const btnCloseProblemModal = document.getElementById('btn-close-problem-modal');
+    const modalProblem = document.getElementById('modal-problem');
+
+    if (btnOpenProblemModal) {
+      btnOpenProblemModal.addEventListener('click', () => this.openProblemModal());
+    }
+    if (btnCloseProblemModal) {
+      btnCloseProblemModal.addEventListener('click', () => this.closeProblemModal());
+    }
+    if (modalProblem) {
+      modalProblem.addEventListener('click', (e) => {
+        if (e.target === modalProblem) {
+          this.closeProblemModal();
+        }
+      });
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalProblem && !modalProblem.classList.contains('hidden')) {
+        this.closeProblemModal();
+      }
+    });
   }
 
   private renderThemeSelector(): void {

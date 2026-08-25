@@ -287,4 +287,19 @@ describe('VisualizerAppController Deep Module', () => {
 
     controller.destroy();
   });
+
+  it('应该正确为字符串序列模型(如 distinct-subsequences)初始化网格尺寸 m=s.length+1 与 n=t.length+1', () => {
+    const controller = new VisualizerAppController({ mode: 'lite', defaultModelId: 'distinct-subsequences' });
+    controller.init();
+
+    const inputM = elementsMap.get('input-m');
+    const inputN = elementsMap.get('input-n');
+    expect(inputM?.value).toBe('8'); // 'rabbbit'.length + 1
+    expect(inputN?.value).toBe('7'); // 'rabbit'.length + 1
+
+    const badgeMemoLen = elementsMap.get('badge-memo-len');
+    expect(badgeMemoLen?.textContent).toBe('8 × 7');
+
+    controller.destroy();
+  });
 });

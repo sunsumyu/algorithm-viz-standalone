@@ -3,6 +3,7 @@
  * 遵循 LSP（里氏替换原则）与 OCP（开闭原则）：
  * 依据 YAML 算法模型声明的 directions, branches 与阶段规则，
  * 自动派发并生成 4 个阶段的标准单步快照，消除各处手写重复推导逻辑。
+ * 支持：不同路径 (LeetCode 62)、不同路径 II (LeetCode 63)、最小路径和 (LeetCode 64)、爬楼梯 (LeetCode 70)、斐波那契数 (LeetCode 509) 等。
  */
 
 import type { IYamlAlgorithmModel } from './interfaces';
@@ -42,6 +43,7 @@ export interface UniversalStep {
   leftVal?: number;
   sumVal?: number;
   obstacleGrid?: number[][];
+  weightsGrid?: number[][];
   activeSlot?: number;
   slotMode?: 'down' | 'right' | 'updated' | 'final';
   memoSnapshot?: number[];
@@ -102,6 +104,769 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 动态生成契合当前 (m, n) 尺寸的权值网格矩阵 (用于最小路径和等网格权值题型)
+   */
+  public static getDynamicWeightsGrid(
+    model: IYamlAlgorithmModel,
+    mVal: number,
+    nVal: number
+  ): number[][] | undefined {
+    if (model.id !== 'min-path-sum' && !(model.defaultParams as any)?.grid) {
+      return undefined;
+    }
+    const defaultGrid = (model.defaultParams as any)?.grid as number[][] | undefined;
+    if (defaultGrid && defaultGrid.length === mVal && defaultGrid[0]?.length === nVal) {
+      return JSON.parse(JSON.stringify(defaultGrid));
+    }
+    const fallbackTemplate = [
+      [1, 3, 1, 2, 1, 4, 2, 3],
+      [1, 5, 1, 3, 2, 1, 5, 2],
+      [4, 2, 1, 1, 4, 3, 1, 2],
+      [2, 1, 3, 2, 1, 5, 2, 1],
+      [3, 4, 1, 2, 3, 1, 4, 2],
+      [1, 2, 5, 1, 2, 4, 1, 3],
+      [2, 3, 1, 4, 1, 2, 3, 1],
+      [1, 4, 2, 1, 3, 2, 1, 5]
+    ];
+    return Array.from({ length: mVal }, (_, r) =>
+      Array.from({ length: nVal }, (_, c) => {
+        if (defaultGrid && defaultGrid[r]?.[c] !== undefined) {
+          return defaultGrid[r][c];
+        }
+        return fallbackTemplate[r % fallbackTemplate.length][c % fallbackTemplate[0].length];
+      })
+    );
+  }
+
+  /**
+   * 生成一维线性 DP 阶段 1/2 演化步骤 (爬楼梯 / 斐波那契数)
+   */
+  public static generate1DStage1or2Steps(
+    model: IYamlAlgorithmModel,
+    nVal: number,
+    isMemo: boolean = false,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const isFib = model.id === 'fibonacci';
+    const funcName = isFib ? 'fib' : 'climbStairs';
+    const n = Math.min(Math.max(nVal || (isFib ? 6 : 5), 1), 6);
+
+    const generated: UniversalStep[] = [];
+    const memoCache: Record<number, number> = {};
+    const dpState: number[] = new Array(n + 1).fill(null);
+    let callCount = 0;
+    let nodeIdCounter = 0;
+
+    const lineEntry = anchorMap?.entry || (isMemo ? 7 : 1);
+    const lineBoundary = anchorMap?.boundary || (isMemo ? 8 : 2);
+    const lineCacheHit = anchorMap?.cache_hit || (isMemo ? 9 : 3);
+    const lineBranchLeft = anchorMap?.branch_left || (isMemo ? 10 : 3);
+    const lineBranchRight = anchorMap?.branch_right || (isMemo ? 11 : 4);
+    const lineCombine = anchorMap?.combine || (isMemo ? 12 : 5);
+    const lineReturn = anchorMap?.return || (isMemo ? 5 : 5);
+
+    const rootNode: UniversalTreeNode = {
+      id: `node-${++nodeIdCounter}`,
+      r: n,
+      c: 0,
+      val: `${funcName}(${n})`,
+      status: 'current',
+      children: []
+    };
+
+    function isBaseCase(k: number): boolean {
+      if (isFib) {
+        return k <= 0 || k === 1;
+      }
+      return k <= 1;
+    }
+
+    function getBaseValue(k: number): number {
+      if (isFib) {
+        return k <= 0 ? 0 : 1;
+      }
+      return 1;
+    }
+
+    function dfs(k: number, currentNode: UniversalTreeNode): number {
+      callCount++;
+      const isRepeated = !isMemo && memoCache[k] !== undefined;
+      currentNode.status = 'current';
+      if (isRepeated) {
+        currentNode.tag = '⚠️重复';
+      }
+
+      generated.push({
+        type: 'dfs-call',
+        i: k,
+        j: 0,
+        grid: [JSON.parse(JSON.stringify(dpState))],
+        memo: [...dpState],
+        line: lineEntry,
+        tag: `调用 #${callCount} (${funcName}(${k}))`,
+        log: `| 📥 进入 ${funcName}(n=${k}) [调用 #${callCount}]`,
+        msg: `📥 进入 <code>${funcName}(${k})</code>，向下展开子状态分支。`,
+        activeNodeId: currentNode.id,
+        treeRoot: UniversalStageEngine.cloneTree(rootNode)
+      });
+
+      if (isBaseCase(k)) {
+        const baseVal = getBaseValue(k);
+        dpState[k] = baseVal;
+        currentNode.status = 'base';
+        currentNode.tag = `= ${baseVal}`;
+
+        generated.push({
+          type: 'boundary',
+          i: k,
+          j: 0,
+          grid: [JSON.parse(JSON.stringify(dpState))],
+          memo: [...dpState],
+          line: lineBoundary,
+          tag: 'Base Case',
+          log: `| 🎬 满足 Base Case: ${funcName}(${k}) = ${baseVal}`,
+          msg: `🎬 达到基础边界条件：<code>${funcName}(${k}) = <strong>${baseVal}</strong></code>，直接返回。`,
+          activeNodeId: currentNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+        return baseVal;
+      }
+
+      if (isMemo && memoCache[k] !== undefined) {
+        currentNode.status = 'pruned';
+        currentNode.tag = `⚡=${memoCache[k]}`;
+
+        generated.push({
+          type: 'cache-hit',
+          i: k,
+          j: 0,
+          grid: [JSON.parse(JSON.stringify(dpState))],
+          memo: [...dpState],
+          line: lineCacheHit,
+          tag: '⚡ 备忘录命中',
+          log: `| ⚡ 【备忘录命中剪枝】memo[${k}] 已缓存 ${memoCache[k]}！直接 O(1) 返回`,
+          msg: `⚡ 【备忘录剪枝】<code>memo[${k}]</code> 已命中缓存 <strong>${memoCache[k]}</strong>，无需重复递归！`,
+          activeNodeId: currentNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+        return memoCache[k];
+      }
+
+      memoCache[k] = (memoCache[k] || 0) + 1;
+
+      // 分支 1: n - 1
+      const leftNode: UniversalTreeNode = {
+        id: `node-${++nodeIdCounter}`,
+        r: k - 1,
+        c: 0,
+        val: `${funcName}(${k - 1})`,
+        status: 'normal',
+        children: []
+      };
+      currentNode.children.push(leftNode);
+
+      generated.push({
+        type: 'branch-left',
+        i: k,
+        j: 0,
+        grid: [JSON.parse(JSON.stringify(dpState))],
+        memo: [...dpState],
+        line: lineBranchLeft,
+        tag: `计算 ${funcName}(${k - 1})`,
+        log: `| ↙️ 递归求解左分支 ${funcName}(${k - 1})`,
+        msg: `↙️ 执行 <code>${funcName}(${k - 1})</code>，进入左子分支计算。`,
+        activeNodeId: currentNode.id,
+        treeRoot: UniversalStageEngine.cloneTree(rootNode)
+      });
+
+      const leftVal = dfs(k - 1, leftNode);
+
+      // 分支 2: n - 2
+      const rightNode: UniversalTreeNode = {
+        id: `node-${++nodeIdCounter}`,
+        r: k - 2,
+        c: 0,
+        val: `${funcName}(${k - 2})`,
+        status: 'normal',
+        children: []
+      };
+      currentNode.children.push(rightNode);
+
+      generated.push({
+        type: 'branch-right',
+        i: k,
+        j: 0,
+        grid: [JSON.parse(JSON.stringify(dpState))],
+        memo: [...dpState],
+        line: lineBranchRight,
+        tag: `计算 ${funcName}(${k - 2})`,
+        log: `| ↘️ 递归求解右分支 ${funcName}(${k - 2}) [左分支已得 ${leftVal}]`,
+        msg: `↘️ 执行 <code>${funcName}(${k - 2})</code>，左分支已得 ${leftVal}，进入右子分支。`,
+        activeNodeId: currentNode.id,
+        treeRoot: UniversalStageEngine.cloneTree(rootNode)
+      });
+
+      const rightVal = dfs(k - 2, rightNode);
+      const res = leftVal + rightVal;
+      if (isMemo) memoCache[k] = res;
+      dpState[k] = res;
+
+      currentNode.status = 'visited';
+      currentNode.tag = `= ${res}`;
+
+      generated.push({
+        type: 'update',
+        i: k,
+        j: 0,
+        grid: [JSON.parse(JSON.stringify(dpState))],
+        memo: [...dpState],
+        line: lineCombine,
+        tag: '合并子问题',
+        log: `| ✨ 合并: ${funcName}(${k}) = ${leftVal} + ${rightVal} = ${res}${isMemo ? ' [写入备忘录]' : ''}`,
+        msg: `✨ 汇总子问题：<code>${funcName}(${k}) = ${leftVal} + ${rightVal} = <strong>${res}</strong></code>${isMemo ? '，写入 memo' : ''}。`,
+        activeNodeId: currentNode.id,
+        treeRoot: UniversalStageEngine.cloneTree(rootNode)
+      });
+
+      return res;
+    }
+
+    const total = dfs(n, rootNode);
+
+    generated.push({
+      type: 'return',
+      i: n,
+      j: 0,
+      grid: [JSON.parse(JSON.stringify(dpState))],
+      memo: [...dpState],
+      line: lineReturn,
+      tag: '最终答案',
+      log: `| 🏆 最终答案: ${funcName}(${n}) = ${total}`,
+      msg: `🏆 演化计算完成！最终结果: <code>${funcName}(${n}) = <strong>${total}</strong></code>。`,
+      activeNodeId: rootNode.id,
+      treeRoot: UniversalStageEngine.cloneTree(rootNode)
+    });
+
+    return generated;
+  }
+
+  /**
+   * 生成一维线性 DP 阶段 3 演化步骤 (1D 数组填表)
+   */
+  public static generate1DStage3Steps(
+    model: IYamlAlgorithmModel,
+    nVal: number,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const isFib = model.id === 'fibonacci';
+    const n = Math.min(Math.max(nVal || (isFib ? 6 : 5), 1), 10);
+    const steps: UniversalStep[] = [];
+    const dp = new Array(n + 1).fill(null);
+
+    const lineInit = anchorMap?.init || 3;
+    const lineInitVal = anchorMap?.init_val || 4;
+    const lineLoop = anchorMap?.loop_i || 6;
+    const lineTransfer = anchorMap?.transfer || 7;
+    const lineReturn = anchorMap?.return || 9;
+
+    steps.push({
+      type: 'init',
+      line: lineInit,
+      i: 0,
+      j: 0,
+      grid: [JSON.parse(JSON.stringify(dp))],
+      memo: [...dp],
+      tag: '初始化 DP 数组',
+      log: `| 📦 创建一维 DP 状态数组 dp[0..${n}]`,
+      msg: `创建长度为 ${n + 1} 的一维 DP 数组，准备自底向上顺序填表。`
+    });
+
+    if (isFib) {
+      dp[0] = 0;
+      steps.push({
+        type: 'init-val',
+        line: lineInitVal,
+        i: 0,
+        j: 0,
+        activeSlot: 0,
+        grid: [JSON.parse(JSON.stringify(dp))],
+        memo: [...dp],
+        tag: 'Base Case dp[0]=0',
+        log: `| 🎬 初始化 Base Case: dp[0] = 0`,
+        msg: `初始化 <code>dp[0] = 0</code>。`
+      });
+      if (n >= 1) {
+        dp[1] = 1;
+        steps.push({
+          type: 'init-val',
+          line: lineInitVal,
+          i: 1,
+          j: 0,
+          activeSlot: 1,
+          grid: [JSON.parse(JSON.stringify(dp))],
+          memo: [...dp],
+          tag: 'Base Case dp[1]=1',
+          log: `| 🎬 初始化 Base Case: dp[1] = 1`,
+          msg: `初始化 <code>dp[1] = 1</code>。`
+        });
+      }
+    } else {
+      dp[0] = 1;
+      steps.push({
+        type: 'init-val',
+        line: lineInitVal,
+        i: 0,
+        j: 0,
+        activeSlot: 0,
+        grid: [JSON.parse(JSON.stringify(dp))],
+        memo: [...dp],
+        tag: 'Base Case dp[0]=1',
+        log: `| 🎬 初始化 Base Case: dp[0] = 1`,
+        msg: `初始化 <code>dp[0] = 1</code> (站在地面直达1种方案)。`
+      });
+      if (n >= 1) {
+        dp[1] = 1;
+        steps.push({
+          type: 'init-val',
+          line: lineInitVal,
+          i: 1,
+          j: 0,
+          activeSlot: 1,
+          grid: [JSON.parse(JSON.stringify(dp))],
+          memo: [...dp],
+          tag: 'Base Case dp[1]=1',
+          log: `| 🎬 初始化 Base Case: dp[1] = 1`,
+          msg: `初始化 <code>dp[1] = 1</code> (跨1阶直达1种方案)。`
+        });
+      }
+    }
+
+    for (let i = 2; i <= n; i++) {
+      const prev1 = dp[i - 1];
+      const prev2 = dp[i - 2];
+      const sum = prev1 + prev2;
+      dp[i] = sum;
+
+      steps.push({
+        type: 'transfer',
+        line: lineTransfer,
+        i,
+        j: 0,
+        activeSlot: i,
+        grid: [JSON.parse(JSON.stringify(dp))],
+        memo: [...dp],
+        tag: `状态转移 dp[${i}]`,
+        log: `| 🔄 dp[${i}] = dp[${i - 1}](${prev1}) + dp[${i - 2}](${prev2}) = ${sum}`,
+        msg: `状态转移：<code>dp[${i}] = dp[${i - 1}] (${prev1}) + dp[${i - 2}] (${prev2}) = <strong>${sum}</strong></code>。`
+      });
+    }
+
+    steps.push({
+      type: 'return',
+      line: lineReturn,
+      i: n,
+      j: 0,
+      activeSlot: n,
+      grid: [JSON.parse(JSON.stringify(dp))],
+      memo: [...dp],
+      tag: '最终答案',
+      log: `| 🏆 填表计算完成！最终结果 dp[${n}] = ${dp[n]}`,
+      msg: `🏆 递推填表完成！最终答案: <code>dp[${n}] = <strong>${dp[n]}</strong></code>。`
+    });
+
+    return steps;
+  }
+
+  /**
+   * 生成一维线性 DP 阶段 4 演化步骤 (O(1) 双变量滚动)
+   */
+  public static generate1DStage4Steps(
+    model: IYamlAlgorithmModel,
+    nVal: number,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const isFib = model.id === 'fibonacci';
+    const n = Math.min(Math.max(nVal || (isFib ? 6 : 5), 1), 10);
+    const steps: UniversalStep[] = [];
+
+    const lineInit = anchorMap?.init || 3;
+    const lineAccumulate = anchorMap?.accumulate || 5;
+    const lineFetchDown = anchorMap?.fetch_down || 6;
+    const lineFetchRight = anchorMap?.fetch_right || 7;
+    const lineReturn = anchorMap?.return || 9;
+
+    let p = isFib ? 0 : 1;
+    let q = 1;
+
+    steps.push({
+      type: 'init',
+      line: lineInit,
+      i: 0,
+      j: 0,
+      activeSlot: 0,
+      down: p,
+      right: q,
+      memoj: p,
+      tag: '初始化双变量',
+      log: `| 📦 初始化滚动状态: p = ${p}, q = ${q} [空间复杂度 O(1)]`,
+      msg: `初始化双滚动变量 <code>p = ${p}, q = ${q}</code>，空间复杂度降至 <strong>O(1)</strong>。`
+    });
+
+    for (let i = 2; i <= n; i++) {
+      const r = p + q;
+
+      steps.push({
+        type: 'accumulate',
+        line: lineAccumulate,
+        i,
+        j: 0,
+        activeSlot: i,
+        slotMode: 'updated',
+        down: p,
+        right: q,
+        memoj: r,
+        tag: `计算当前值 i=${i}`,
+        log: `| ✨ 计算当前项: r = p(${p}) + q(${q}) = ${r}`,
+        msg: `计算当前项：<code>r = p (${p}) + q (${q}) = <strong>${r}</strong></code>。`
+      });
+
+      p = q;
+      steps.push({
+        type: 'fetch-down',
+        line: lineFetchDown,
+        i,
+        j: 0,
+        activeSlot: i,
+        slotMode: 'down',
+        down: p,
+        right: q,
+        memoj: r,
+        tag: '滑动更新 p = q',
+        log: `| ⬇️ 滑动状态: p = q (${p})`,
+        msg: `滚动变量前移：<code>p = q (${p})</code>。`
+      });
+
+      q = r;
+      steps.push({
+        type: 'fetch-right',
+        line: lineFetchRight,
+        i,
+        j: 0,
+        activeSlot: i,
+        slotMode: 'right',
+        down: p,
+        right: q,
+        memoj: q,
+        tag: '滑动更新 q = r',
+        log: `| ➡️ 滑动状态: q = r (${q})`,
+        msg: `滚动变量前移：<code>q = r (${q})</code>。`
+      });
+    }
+
+    steps.push({
+      type: 'return',
+      line: lineReturn,
+      i: n,
+      j: 0,
+      activeSlot: n,
+      slotMode: 'final',
+      down: p,
+      right: q,
+      memoj: q,
+      tag: '最终答案',
+      log: `| 🏆 O(1) 滚动完成！最终答案 = ${q}`,
+      msg: `🏆 O(1) 滚动压缩计算完成！最终结果: <strong>${q}</strong>。`
+    });
+
+    return steps;
+  }
+
+  /**
+   * 生成不同的子序列 (Distinct Subsequences) 阶段 1/2 演化步骤
+   */
+  public static generateDistinctSubsequencesStage1or2Steps(
+    model: IYamlAlgorithmModel,
+    isMemo: boolean = false,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const s = ((model.defaultParams as any)?.s || 'rabbbit') as string;
+    const t = ((model.defaultParams as any)?.t || 'rabbit') as string;
+    const m = s.length;
+    const n = t.length;
+
+    const generated: UniversalStep[] = [];
+    const memoCache: Record<string, number> = {};
+    const gridState: (number | null)[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(null));
+    const activeStack: string[] = [];
+    const visitedCells: Set<string> = new Set();
+    let callCount = 0;
+    let nodeIdCounter = 0;
+
+    const lineEntry = anchorMap?.entry || (isMemo ? 3 : 3);
+    const lineBoundaryTarget = anchorMap?.boundary_target || (isMemo ? 9 : 8);
+    const lineBoundarySource = anchorMap?.boundary_source || (isMemo ? 11 : 10);
+    const lineCacheHit = anchorMap?.cache_hit || 13;
+    const lineMatch = anchorMap?.match || (isMemo ? 17 : 13);
+    const lineCombine = anchorMap?.combine || (isMemo ? 19 : 15);
+    const lineSkip = anchorMap?.skip || (isMemo ? 22 : 18);
+    const lineReturn = anchorMap?.return || 4;
+
+    const rootNode: UniversalTreeNode = {
+      id: `node-${++nodeIdCounter}`,
+      r: m,
+      c: n,
+      val: `dfs(${m},${n})`,
+      status: 'current',
+      children: []
+    };
+
+    function dfs(i: number, j: number, currentTreeNode: UniversalTreeNode): number {
+      callCount++;
+      const key = `${i},${j}`;
+      const isRepeated = !isMemo && memoCache[key] !== undefined;
+
+      activeStack.push(key);
+      visitedCells.add(key);
+
+      currentTreeNode.status = 'current';
+      if (isRepeated) {
+        currentTreeNode.tag = '⚠️重复';
+      }
+
+      generated.push({
+        type: 'dfs-call',
+        i,
+        j,
+        grid: JSON.parse(JSON.stringify(gridState)),
+        activeStack: [...activeStack],
+        visited: [...visitedCells],
+        line: lineEntry,
+        tag: `DFS #${callCount} (i=${i}, j=${j})`,
+        log: `| 📥 进入 dfs(i=${i}, j=${j}) [s前缀="${s.slice(0, i)}", t前缀="${t.slice(0, j)}"]`,
+        msg: `📥 进入 <code>dfs(i=${i}, j=${j})</code>：求解 <code>s[0..${i - 1}]</code> 中匹配 <code>t[0..${j - 1}]</code> 的不同子序列数。`,
+        gridHighlight: { i, j },
+        activeNodeId: currentTreeNode.id,
+        treeRoot: UniversalStageEngine.cloneTree(rootNode)
+      });
+
+      // Base Case 1: 目标串已全部匹配完成 (j == 0) -> 成功得到 1 种方案
+      if (j === 0) {
+        gridState[i][0] = 1;
+        currentTreeNode.status = 'base';
+        currentTreeNode.tag = '= 1 (匹配成功)';
+
+        generated.push({
+          type: 'boundary',
+          i,
+          j: 0,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineBoundaryTarget,
+          tag: '🏆 目标串匹配完成',
+          log: `| 🏆 【Base Case 达成】j=0: 目标串 t 为空，删除 s 中剩余字符即得 1 种方案，return 1`,
+          msg: `🏆 <strong>【目标串匹配完成】</strong><code>j = 0</code>（目标串为空）：唯一选法是删除源串剩余全部字符，返回 <strong>1</strong>。`,
+          gridHighlight: { i, j: 0 },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+        activeStack.pop();
+        return 1;
+      }
+
+      // Base Case 2: 源串已耗尽但目标串未匹配完 (i == 0, j > 0) -> 无法匹配，返回 0
+      if (i === 0) {
+        gridState[0][j] = 0;
+        currentTreeNode.status = 'pruned';
+        currentTreeNode.tag = '= 0 (源串耗尽)';
+
+        generated.push({
+          type: 'boundary',
+          i: 0,
+          j,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineBoundarySource,
+          tag: '🚫 源串耗尽',
+          log: `| 🚫 【Base Case 阻断】i=0 且 j=${j}>0: 源串已空无法匹配目标串剩余字符，return 0`,
+          msg: `🚫 <strong>【源串耗尽】</strong><code>i = 0</code> 且 <code>j > 0</code>：源串已无可用字符，无法构成目标串，返回 <strong>0</strong>。`,
+          gridHighlight: { i: 0, j },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+        activeStack.pop();
+        return 0;
+      }
+
+      // 备忘录剪枝
+      if (isMemo && memoCache[key] !== undefined) {
+        currentTreeNode.status = 'pruned';
+        currentTreeNode.tag = `⚡=${memoCache[key]}`;
+
+        generated.push({
+          type: 'cache-hit',
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineCacheHit,
+          tag: '⚡ 备忘录命中',
+          log: `| ⚡ 【备忘录命中剪枝】memo[${i}][${j}] 已缓存 ${memoCache[key]}！直接 O(1) 返回`,
+          msg: `⚡ 【备忘录剪枝】<code>memo[${i}][${j}]</code> 已命中缓存 <strong>${memoCache[key]}</strong>，直接返回！`,
+          gridHighlight: { i, j },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+        activeStack.pop();
+        return memoCache[key];
+      }
+
+      memoCache[key] = (memoCache[key] || 0) + 1;
+
+      const isMatch = s[i - 1] === t[j - 1];
+      let res = 0;
+
+      if (isMatch) {
+        generated.push({
+          type: 'match-branch',
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineMatch,
+          tag: `匹配字符 '${s[i - 1]}'`,
+          log: `| 🔀 末尾字符匹配 s[${i - 1}] == t[${j - 1}] ('${s[i - 1]}')，进入「使用匹配」与「跳过匹配」双分支`,
+          msg: `🔀 末尾字符匹配 <code>s[${i - 1}] == t[${j - 1}] == '${s[i - 1]}'</code>，展开双二叉决策分支。`,
+          gridHighlight: { i, j },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+
+        const childNode1: UniversalTreeNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: i - 1,
+          c: j - 1,
+          val: `dfs(${i - 1},${j - 1})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(childNode1);
+        const valMatch = dfs(i - 1, j - 1, childNode1);
+
+        const childNode2: UniversalTreeNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: i - 1,
+          c: j,
+          val: `dfs(${i - 1},${j})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(childNode2);
+        const valSkip = dfs(i - 1, j, childNode2);
+
+        res = valMatch + valSkip;
+
+        if (isMemo) memoCache[key] = res;
+        gridState[i][j] = res;
+
+        currentTreeNode.status = 'visited';
+        currentTreeNode.tag = `= ${res}`;
+
+        generated.push({
+          type: 'update',
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineCombine,
+          tag: '合并匹配与跳过方案',
+          log: `| ✨ 合并分支: dfs(${i}, ${j}) = 匹配(${valMatch}) + 跳过(${valSkip}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`,
+          msg: `✨ 汇总分支决策：<code>使用 s[${i - 1}] 匹配 (${valMatch}) + 跳过 s[${i - 1}] (${valSkip}) = <strong>${res}</strong></code>。`,
+          gridHighlight: { i, j },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+      } else {
+        generated.push({
+          type: 'skip-branch',
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineSkip,
+          tag: `不匹配跳过 '${s[i - 1]}'`,
+          log: `| ⏩ 字符不匹配 s[${i - 1}]('${s[i - 1]}') != t[${j - 1}]('${t[j - 1]}')，只能跳过 s[${i - 1}]`,
+          msg: `⏩ 字符不匹配 <code>s[${i - 1}] ('${s[i - 1]}') != t[${j - 1}] ('${t[j - 1]}')</code>，只能跳过 <code>s[${i - 1}]</code>，进入 <code>dfs(${i - 1}, ${j})</code>。`,
+          gridHighlight: { i, j },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+
+        const childNode: UniversalTreeNode = {
+          id: `node-${++nodeIdCounter}`,
+          r: i - 1,
+          c: j,
+          val: `dfs(${i - 1},${j})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(childNode);
+        res = dfs(i - 1, j, childNode);
+
+        if (isMemo) memoCache[key] = res;
+        gridState[i][j] = res;
+
+        currentTreeNode.status = 'visited';
+        currentTreeNode.tag = `= ${res}`;
+
+        generated.push({
+          type: 'update',
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineSkip,
+          tag: '跳过分支结果',
+          log: `| ✨ 不匹配结果: dfs(${i}, ${j}) = dfs(${i - 1}, ${j}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`,
+          msg: `✨ 跳过决策结果：<code>dfs(${i}, ${j}) = dfs(${i - 1}, ${j}) = <strong>${res}</strong></code>。`,
+          gridHighlight: { i, j },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+      }
+
+      activeStack.pop();
+      return res;
+    }
+
+    const total = dfs(m, n, rootNode);
+
+    generated.push({
+      type: 'return',
+      i: m,
+      j: n,
+      grid: JSON.parse(JSON.stringify(gridState)),
+      activeStack: [],
+      visited: [...visitedCells],
+      line: lineReturn,
+      tag: '最终答案',
+      log: `| 🏆 不同的子序列演化完成！numDistinct("${s}", "${t}") = ${total}`,
+      msg: `🏆 演化计算完成！在 <code>s = "${s}"</code> 的子序列中，<code>t = "${t}"</code> 出现的次数为 <strong>${total}</strong>。`,
+      gridHighlight: { i: m, j: n },
+      activeNodeId: rootNode.id,
+      treeRoot: UniversalStageEngine.cloneTree(rootNode)
+    });
+
+    return generated;
+  }
+
+  /**
    * 生成阶段 1 (朴素递归) 或阶段 2 (记忆化搜索) 的完整演化步骤
    */
   public static generateStage1or2Steps(
@@ -113,6 +878,15 @@ export class UniversalStageEngine {
     anchorMap?: Record<string, number>,
     variant: string = 'terminal'
   ): UniversalStep[] {
+    // 1D 模型特化派发
+    if (model.id === 'fibonacci' || model.id === 'climb-stairs') {
+      return UniversalStageEngine.generate1DStage1or2Steps(model, Math.max(mVal, nVal), isMemo, anchorMap);
+    }
+    // 字符串子序列 DP 特化派发
+    if (model.id === 'distinct-subsequences') {
+      return UniversalStageEngine.generateDistinctSubsequencesStage1or2Steps(model, isMemo, anchorMap);
+    }
+
     const generated: UniversalStep[] = [];
     const memoCache: Record<string, number> = {};
     const gridState: (number | null)[][] = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
@@ -121,7 +895,9 @@ export class UniversalStageEngine {
     let callCount = 0;
     let nodeIdCounter = 0;
 
+    const isMinPath = model.id === 'min-path-sum';
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
+    const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
 
     const isForward = direction === 'forward';
     const isTerminal = variant === 'terminal';
@@ -192,6 +968,7 @@ export class UniversalStageEngine {
         fromI: fromR,
         fromJ: fromC,
         obstacleGrid,
+        weightsGrid,
         grid: JSON.parse(JSON.stringify(gridState)),
         activeStack: [...activeStack],
         visited: [...visitedCells],
@@ -219,7 +996,7 @@ export class UniversalStageEngine {
             : (r < 0 ? 'i < 0' : 'j < 0');
 
           currentTreeNode.status = 'pruned';
-          currentTreeNode.tag = '🚫=0';
+          currentTreeNode.tag = isMinPath ? '🚫=MAX' : '🚫=0';
 
           generated.push({
             type: 'out-of-bounds',
@@ -232,17 +1009,18 @@ export class UniversalStageEngine {
             isBlockedStep: true,
             highlightText: oobHighlightText,
             obstacleGrid,
+            weightsGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
             line: lineOutOfBounds,
             tag: outOfBoundsDir === 'river' ? '🌊 触水反弹' : '🚧 撞墙反弹',
             log: outOfBoundsDir === 'river'
-              ? `| 🌊 【越界触水拦截】dfs(i=${r}, j=${c}) 跳入边界深水河流！水花四溅并立即弹回，return 0`
-              : `| 🚧 【越界撞墙拦截】dfs(i=${r}, j=${c}) 越出网格边界！撞上高墙立即弹回，return 0`,
+              ? `| 🌊 【越界触水拦截】dfs(i=${r}, j=${c}) 跳入边界深水河流！水花四溅并立即弹回，return ${isMinPath ? 'MAX' : '0'}`
+              : `| 🚧 【越界撞墙拦截】dfs(i=${r}, j=${c}) 越出网格边界！撞上高墙立即弹回，return ${isMinPath ? 'MAX' : '0'}`,
             msg: outOfBoundsDir === 'river'
-              ? `🌊 <strong>【越界触水拦截】</strong>探险家向下方移动跳入边界深水河流 (i = ${r})，水花四溅并弹回！return <strong>0</strong>。`
-              : `🚧 <strong>【越界撞墙拦截】</strong>探险家向右方越界 (j = ${c})，撞上边界高墙弹回！return <strong>0</strong>。`,
+              ? `🌊 <strong>【越界触水拦截】</strong>探险家向下方移动跳入边界深水河流 (i = ${r})，水花四溅并弹回！return <strong>${isMinPath ? 'MAX_VALUE' : '0'}</strong>。`
+              : `🚧 <strong>【越界撞墙拦截】</strong>探险家向右方越界 (j = ${c})，撞上边界高墙弹回！return <strong>${isMinPath ? 'MAX_VALUE' : '0'}</strong>。`,
             topI: -1,
             topJ: -1,
             leftI: -1,
@@ -252,7 +1030,7 @@ export class UniversalStageEngine {
             treeRoot: UniversalStageEngine.cloneTree(rootNode)
           });
           activeStack.pop();
-          return 0;
+          return isMinPath ? 999999 : 0;
         }
 
         // 障碍物阻断 (Obstacle Hit)
@@ -269,6 +1047,7 @@ export class UniversalStageEngine {
             isBlockedStep: true,
             highlightText: 'grid[i][j] == 1',
             obstacleGrid,
+            weightsGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
@@ -289,9 +1068,10 @@ export class UniversalStageEngine {
         }
 
         if (isTarget(r, c)) {
-          gridState[r][c] = 1;
+          const targetVal = isMinPath && weightsGrid ? weightsGrid[r][c] : 1;
+          gridState[r][c] = targetVal;
           currentTreeNode.status = 'base';
-          currentTreeNode.tag = '= 1';
+          currentTreeNode.tag = `= ${targetVal}`;
 
           generated.push({
             type: 'boundary',
@@ -301,13 +1081,14 @@ export class UniversalStageEngine {
             fromJ: fromC,
             highlightText: isForward ? 'i == m - 1 && j == n - 1' : 'i == 0 && j == 0',
             obstacleGrid,
+            weightsGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
             line: lineBoundary,
             tag: '🏆 到达终点',
-            log: `| 🏆 【终点达成】dfs(i=${r}, j=${c}) 到达目标${isForward ? '终点' : '起点'}，找到 1 条有效通达路径，return 1`,
-            msg: `🏆 <strong>【终点达成】</strong>到达目标${isForward ? '终点' : '起点'} (i = ${r}, j = ${c})，开辟 1 条有效通达路径，return <strong>1</strong>。`,
+            log: `| 🏆 【终点达成】dfs(i=${r}, j=${c}) 到达目标${isForward ? '终点' : '起点'}，返回权值 ${targetVal}`,
+            msg: `🏆 <strong>【终点达成】</strong>到达目标${isForward ? '终点' : '起点'} (i = ${r}, j = ${c})，返回目标格点值 <strong>${targetVal}</strong>。`,
             topI: -1,
             topJ: -1,
             leftI: -1,
@@ -317,7 +1098,7 @@ export class UniversalStageEngine {
             treeRoot: UniversalStageEngine.cloneTree(rootNode)
           });
           activeStack.pop();
-          return 1;
+          return targetVal;
         }
       } else {
         // 边缘直达版 (Boundary Variant)
@@ -333,6 +1114,7 @@ export class UniversalStageEngine {
             fromJ: fromC,
             isBlockedStep: true,
             obstacleGrid,
+            weightsGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
@@ -352,10 +1134,11 @@ export class UniversalStageEngine {
           return 0;
         }
 
-        if (obstacleGrid ? isTarget(r, c) : isBoundary(r, c)) {
-          gridState[r][c] = 1;
+        if (obstacleGrid ? isTarget(r, c) : (isMinPath ? isTarget(r, c) : isBoundary(r, c))) {
+          const targetVal = isMinPath && weightsGrid ? weightsGrid[r][c] : 1;
+          gridState[r][c] = targetVal;
           currentTreeNode.status = 'base';
-          currentTreeNode.tag = '= 1';
+          currentTreeNode.tag = `= ${targetVal}`;
 
           generated.push({
             type: 'boundary',
@@ -364,17 +1147,14 @@ export class UniversalStageEngine {
             fromI: fromR,
             fromJ: fromC,
             obstacleGrid,
+            weightsGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
             visited: [...visitedCells],
             line: lineBoundary,
-            tag: obstacleGrid ? '🏆 到达终点' : 'Base Case',
-            log: obstacleGrid
-              ? `| 🏆 【终点达成】dfs(i=${r}, j=${c}) 到达目标${isForward ? '终点' : '起点'}，找到 1 条有效通达路径，return 1`
-              : `| 🎬 边界 Base Case: (i=${r} 或 j=${c}) 到达${isForward ? '终点' : '起点'}边界，直达路径 1 条，return 1`,
-            msg: obstacleGrid
-              ? `🏆 <strong>【终点达成】</strong>到达目标${isForward ? '终点' : '起点'} (i = ${r}, j = ${c})，开辟 1 条有效通达路径，return <strong>1</strong>。`
-              : `🎬 到达${isForward ? '终点' : '起点'}边界 (i = ${r} 或 j = ${c})，直达${isForward ? '终点' : '起点'}，return 1。`,
+            tag: isTarget(r, c) ? '🏆 到达终点' : 'Base Case',
+            log: `| 🎬 到达目标 (i=${r}, j=${c})，返回 ${targetVal}`,
+            msg: `🎬 到达目标 (i = ${r}, j = ${c})，返回 <strong>${targetVal}</strong>。`,
             topI: -1,
             topJ: -1,
             leftI: -1,
@@ -384,7 +1164,7 @@ export class UniversalStageEngine {
             treeRoot: UniversalStageEngine.cloneTree(rootNode)
           });
           activeStack.pop();
-          return 1;
+          return targetVal;
         }
       }
 
@@ -399,6 +1179,7 @@ export class UniversalStageEngine {
           fromI: fromR,
           fromJ: fromC,
           obstacleGrid,
+          weightsGrid,
           grid: JSON.parse(JSON.stringify(gridState)),
           activeStack: [...activeStack],
           visited: [...visitedCells],
@@ -424,7 +1205,7 @@ export class UniversalStageEngine {
       const b1R = isForward ? r + 1 : r;
       const b1C = isForward ? c : c - 1;
       const canBranch1 = isTerminal || (isForward ? r < mVal - 1 : c > 0);
-      let val1 = 0;
+      let val1 = isMinPath ? 999999 : 0;
 
       if (canBranch1) {
         const b1Tag = isForward ? '顺推向下探索' : '逆推向左寻源';
@@ -440,6 +1221,7 @@ export class UniversalStageEngine {
           i: r,
           j: c,
           obstacleGrid,
+          weightsGrid,
           grid: JSON.parse(JSON.stringify(gridState)),
           activeStack: [...activeStack],
           visited: [...visitedCells],
@@ -472,7 +1254,7 @@ export class UniversalStageEngine {
       const b2R = isForward ? r : r - 1;
       const b2C = isForward ? c + 1 : c;
       const canBranch2 = isTerminal || (isForward ? c < nVal - 1 : r > 0);
-      let val2 = 0;
+      let val2 = isMinPath ? 999999 : 0;
 
       if (canBranch2) {
         const b2Tag = isForward ? '顺推向右探索' : '逆推向上寻源';
@@ -490,6 +1272,7 @@ export class UniversalStageEngine {
           fromI: fromR,
           fromJ: fromC,
           obstacleGrid,
+          weightsGrid,
           grid: JSON.parse(JSON.stringify(gridState)),
           activeStack: [...activeStack],
           visited: [...visitedCells],
@@ -518,30 +1301,43 @@ export class UniversalStageEngine {
         val2 = dfs(b2R, b2C, childNode2, r, c);
       }
 
-      const res = val1 + val2;
+      let res = 0;
+      if (isMinPath && weightsGrid) {
+        const minBranch = Math.min(val1, val2);
+        res = (minBranch < 900000 ? minBranch : 0) + weightsGrid[r][c];
+      } else {
+        res = val1 + val2;
+      }
+
       if (isMemo) memoCache[key] = res;
       gridState[r][c] = res;
 
       currentTreeNode.status = 'visited';
       currentTreeNode.tag = `= ${res}`;
 
-      const mergeLog = isForward
-        ? `| ✨ 顺推合并: (${r}, ${c}) = 下(${val1}) + 右(${val2}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`
-        : `| ✨ 逆推合并: (${r}, ${c}) = 左(${val1}) + 上(${val2}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`;
-      const mergeMsg = isForward
-        ? `✨ 坐标 (${r}, ${c}) 顺推合并：下方 (${val1}) + 右方 (${val2}) = ${res}${isMemo ? ' [存入缓存]' : ''}。`
-        : `✨ 坐标 (${r}, ${c}) 逆推合并：左方 (${val1}) + 上方 (${val2}) = ${res}${isMemo ? ' [存入缓存]' : ''}。`;
+      const mergeLog = isMinPath
+        ? `| ✨ 合并最小权值: (${r}, ${c}) = min(${val1}, ${val2}) + grid(${weightsGrid?.[r]?.[c]}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`
+        : (isForward
+          ? `| ✨ 顺推合并: (${r}, ${c}) = 下(${val1}) + 右(${val2}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`
+          : `| ✨ 逆推合并: (${r}, ${c}) = 左(${val1}) + 上(${val2}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`);
+
+      const mergeMsg = isMinPath
+        ? `✨ 坐标 (${r}, ${c}) 合并：min(下=${val1}, 右=${val2}) + 格点权值 (${weightsGrid?.[r]?.[c]}) = <strong>${res}</strong>${isMemo ? ' [存入缓存]' : ''}。`
+        : (isForward
+          ? `✨ 坐标 (${r}, ${c}) 顺推合并：下方 (${val1}) + 右方 (${val2}) = ${res}${isMemo ? ' [存入缓存]' : ''}。`
+          : `✨ 坐标 (${r}, ${c}) 逆推合并：左方 (${val1}) + 上方 (${val2}) = ${res}${isMemo ? ' [存入缓存]' : ''}。`);
 
       generated.push({
         type: 'update',
         i: r,
         j: c,
         obstacleGrid,
+        weightsGrid,
         grid: JSON.parse(JSON.stringify(gridState)),
         activeStack: [...activeStack],
         visited: [...visitedCells],
         line: lineCombine,
-        tag: `${isForward ? '顺推' : '逆推'}合并子问题`,
+        tag: isMinPath ? '合并最小权值' : `${isForward ? '顺推' : '逆推'}合并子问题`,
         log: mergeLog,
         msg: mergeMsg,
         topI: isForward ? r + 1 : r - 1,
@@ -564,13 +1360,16 @@ export class UniversalStageEngine {
       i: startR,
       j: startC,
       obstacleGrid,
+      weightsGrid,
       grid: JSON.parse(JSON.stringify(gridState)),
       activeStack: [],
       visited: [...visitedCells],
       line: lineReturn,
       tag: '最终答案',
-      log: `| 🏆 最终答案: uniquePaths(${mVal}, ${nVal}) = ${total}`,
-      msg: `🏆 演化计算完成！最终不同路径数: uniquePaths(${mVal}, ${nVal}) = <strong>${total}</strong>。`,
+      log: isMinPath ? `| 🏆 最终最小路径和: minPathSum(${mVal}, ${nVal}) = ${total}` : `| 🏆 最终答案: uniquePaths(${mVal}, ${nVal}) = ${total}`,
+      msg: isMinPath
+        ? `🏆 演化计算完成！起点到终点最小路径和为 <strong>${total}</strong>。`
+        : `🏆 演化计算完成！最终不同路径数: uniquePaths(${mVal}, ${nVal}) = <strong>${total}</strong>。`,
       topI: -1,
       topJ: -1,
       leftI: -1,
@@ -581,6 +1380,93 @@ export class UniversalStageEngine {
     });
 
     return generated;
+  }
+
+  /**
+   * 构建阶段 3 二维 DP 状态转移依赖树 (State Dependency Tree)
+   */
+  public static build2DDPDependencyTree(
+    mVal: number,
+    nVal: number,
+    direction: 'forward' | 'reverse' = 'forward',
+    obstacleGrid?: number[][],
+    currentGrid?: (number | null)[][],
+    currentI?: number,
+    currentJ?: number
+  ): UniversalTreeNode {
+    let nodeIdCounter = 0;
+    const isForward = direction === 'forward';
+    const startR = isForward ? mVal - 1 : 0;
+    const startC = isForward ? nVal - 1 : 0;
+
+    function buildNode(r: number, c: number): UniversalTreeNode {
+      const id = `dp-node-${r}-${c}-${++nodeIdCounter}`;
+      const isCurrent = currentI === r && currentJ === c;
+      const isObstacle = obstacleGrid?.[r]?.[c] === 1;
+      const val = currentGrid?.[r]?.[c] ?? null;
+
+      let status: 'normal' | 'current' | 'base' | 'pruned' | 'visited' = 'normal';
+      let tag: string | undefined = undefined;
+
+      if (isObstacle) {
+        status = 'pruned';
+        tag = '🚧障碍=0';
+      } else if (isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1)) {
+        status = val !== null ? 'base' : (isCurrent ? 'current' : 'normal');
+        tag = val !== null ? `= ${val}` : '= 1';
+      } else if (val !== null) {
+        status = 'visited';
+        tag = `= ${val}`;
+      }
+
+      if (isCurrent) {
+        status = 'current';
+        if (isObstacle) {
+          tag = '🚧=0';
+        } else if (val !== null) {
+          tag = `= ${val}`;
+        } else {
+          tag = '当前计算';
+        }
+      }
+
+      const node: UniversalTreeNode = {
+        id,
+        r,
+        c,
+        val: `dp[${r}][${c}]`,
+        status,
+        tag,
+        children: []
+      };
+
+      // 遇障碍物或 Base 起点停止向下展开
+      if (isObstacle || (isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1))) {
+        return node;
+      }
+
+      // 顺推：依赖上方 (r - 1, c) 与左方 (r, c - 1)
+      if (isForward) {
+        if (r > 0) {
+          node.children.push(buildNode(r - 1, c));
+        }
+        if (c > 0) {
+          node.children.push(buildNode(r, c - 1));
+        }
+      } else {
+        // 逆推：依赖下方 (r + 1, c) 与右方 (r, c + 1)
+        if (r + 1 < mVal) {
+          node.children.push(buildNode(r + 1, c));
+        }
+        if (c + 1 < nVal) {
+          node.children.push(buildNode(r, c + 1));
+        }
+      }
+
+      return node;
+    }
+
+    return buildNode(startR, startC);
   }
 
   /**
@@ -604,98 +1490,121 @@ export class UniversalStageEngine {
   }
 
   /**
-   * 构建阶段 3 二维 DP 状态转移依赖树 (State Dependency Tree)
-   * 顺推：以当前计算格 (currentI, currentJ) 为根节点，向下动态展开其所有前置依赖子状态直至起点 dp[0][0] 与障碍物
-   * 逆推：以当前计算格 (currentI, currentJ) 为根节点，向下动态展开其所有后续依赖子状态直至终点 dp[m-1][n-1] 与障碍物
+   * 生成不同的子序列 (Distinct Subsequences) 阶段 3 二维 DP 填表步骤
    */
-  public static build2DDPDependencyTree(
-    mVal: number,
-    nVal: number,
-    direction: 'forward' | 'reverse' = 'forward',
-    obstacleGrid?: number[][],
-    currentGrid?: (number | null)[][],
-    currentI?: number,
-    currentJ?: number
-  ): UniversalTreeNode {
-    let nodeIdCounter = 0;
-    const isForward = direction === 'forward';
+  public static generateDistinctSubsequencesStage3Steps(
+    model: IYamlAlgorithmModel,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const s = ((model.defaultParams as any)?.s || 'rabbbit') as string;
+    const t = ((model.defaultParams as any)?.t || 'rabbit') as string;
+    const m = s.length;
+    const n = t.length;
 
-    // 如果未指定当前坐标，默认顺推起点 (0, 0) / 逆推起点 (m-1, n-1)
-    const activeI = currentI !== undefined && currentI >= 0 && currentI < mVal
-      ? currentI
-      : (isForward ? 0 : mVal - 1);
-    const activeJ = currentJ !== undefined && currentJ >= 0 && currentJ < nVal
-      ? currentJ
-      : (isForward ? 0 : nVal - 1);
+    const steps: UniversalStep[] = [];
+    const dp: (number | null)[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(null));
 
-    function buildNode(r: number, c: number, isRoot: boolean): UniversalTreeNode {
-      const id = `dp-node-${r}-${c}-${++nodeIdCounter}`;
-      const isObstacle = obstacleGrid?.[r]?.[c] === 1;
-      const isBaseCell = isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1);
-      const val = currentGrid?.[r]?.[c] ?? null;
+    const lineInit = anchorMap?.init || 4;
+    const lineInitVal = anchorMap?.init_val || 7;
+    const lineLoopI = anchorMap?.loop_i || 11;
+    const lineLoopJ = anchorMap?.loop_j || 13;
+    const lineCond = anchorMap?.cond || 15;
+    const lineTransferMatch = anchorMap?.transfer_match || 17;
+    const lineTransferSkip = anchorMap?.transfer_skip || 20;
+    const lineReturn = anchorMap?.return || 24;
 
-      let status: 'current' | 'base' | 'pruned' | 'visited' | 'pending' = 'pending';
-      let tag: string | undefined = undefined;
+    // 1. 初始化二维矩阵
+    steps.push({
+      type: 'init',
+      line: lineInit,
+      i: 0,
+      j: 0,
+      grid: JSON.parse(JSON.stringify(dp)),
+      tag: '创建二维 DP 表格',
+      log: `| 📦 创建 (m+1)×(n+1) = ${m + 1}×${n + 1} 的二维 DP 状态表格`,
+      msg: `创建 <code>${m + 1}×${n + 1}</code> 的二维 DP 表格，行对应源串 <code>s[0..${m - 1}]</code>，列对应目标串 <code>t[0..${n - 1}]</code>。`
+    });
 
-      if (isObstacle) {
-        status = 'pruned';
-        tag = '🚧障碍=0';
-      } else if (isBaseCell) {
-        status = 'base';
-        tag = val !== null ? `= ${val}` : '= 1';
-      } else if (val !== null) {
-        status = 'visited';
-        tag = `= ${val}`;
-      }
-
-      if (isRoot) {
-        status = 'current';
-        if (isObstacle) {
-          tag = '🚧=0';
-        } else if (val !== null) {
-          tag = `= ${val}`;
-        } else {
-          tag = '当前计算';
-        }
-      }
-
-      const node: UniversalTreeNode = {
-        id,
-        r,
-        c,
-        val: `dp[${r}][${c}]`,
-        status,
-        tag,
-        children: []
-      };
-
-      // 遇障碍物或 Base 起点停止向下展开
-      if (isObstacle || isBaseCell) {
-        return node;
-      }
-
-      // 顺推：依赖上方 (r - 1, c) 与左方 (r, c - 1)
-      if (isForward) {
-        if (r > 0) {
-          node.children.push(buildNode(r - 1, c, false));
-        }
-        if (c > 0) {
-          node.children.push(buildNode(r, c - 1, false));
-        }
-      } else {
-        // 逆推：依赖下方 (r + 1, c) 与右方 (r, c + 1)
-        if (r + 1 < mVal) {
-          node.children.push(buildNode(r + 1, c, false));
-        }
-        if (c + 1 < nVal) {
-          node.children.push(buildNode(r, c + 1, false));
-        }
-      }
-
-      return node;
+    // 2. 初始化首列 dp[i][0] = 1 (t 为空串时恒有 1 种方案)
+    for (let i = 0; i <= m; i++) {
+      dp[i][0] = 1;
+      steps.push({
+        type: 'init-col',
+        line: lineInitVal,
+        i,
+        j: 0,
+        grid: JSON.parse(JSON.stringify(dp)),
+        tag: `Base Case dp[${i}][0]=1`,
+        log: `| 🎬 初始化首列: dp[${i}][0] = 1 (目标串为空串，方案数为 1)`,
+        msg: `初始化首列：<code>dp[${i}][0] = 1</code>（匹配空串 <code>t = ""</code> 时，唯一方案是删除 <code>s</code> 中所有字符）。`
+      });
     }
 
-    return buildNode(activeI, activeJ, true);
+    // 初始化首行其余位置为 0
+    for (let j = 1; j <= n; j++) {
+      dp[0][j] = 0;
+    }
+
+    // 3. 双重循环自底向上填表
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const isMatch = s[i - 1] === t[j - 1];
+
+        if (isMatch) {
+          const fromMatch = dp[i - 1][j - 1] ?? 0;
+          const fromSkip = dp[i - 1][j] ?? 0;
+          const sum = fromMatch + fromSkip;
+          dp[i][j] = sum;
+
+          steps.push({
+            type: 'transfer',
+            line: lineTransferMatch,
+            i,
+            j,
+            topI: i - 1,
+            topJ: j,
+            leftI: i - 1,
+            leftJ: j - 1,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: `匹配 s[${i - 1}]=='${s[i - 1]}': 匹配 + 跳过`,
+            log: `| 🔄 字符匹配 s[${i - 1}] == t[${j - 1}] ('${s[i - 1]}'): dp[${i}][${j}] = dp[${i - 1}][${j - 1}](${fromMatch}) + dp[${i - 1}][${j}](${fromSkip}) = ${sum}`,
+            msg: `字符匹配 <code>s[${i - 1}] == t[${j - 1}] == '${s[i - 1]}'</code>：<code>dp[${i}][${j}] = dp[${i - 1}][${j - 1}] (${fromMatch}) + dp[${i - 1}][${j}] (${fromSkip}) = <strong>${sum}</strong></code>。`
+          });
+        } else {
+          const fromSkip = dp[i - 1][j] ?? 0;
+          dp[i][j] = fromSkip;
+
+          steps.push({
+            type: 'transfer',
+            line: lineTransferSkip,
+            i,
+            j,
+            topI: i - 1,
+            topJ: j,
+            leftI: -1,
+            leftJ: -1,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: `不匹配: dp[${i}][${j}] = 上方旧值`,
+            log: `| 🔄 字符不匹配 s[${i - 1}]('${s[i - 1]}') != t[${j - 1}]('${t[j - 1]}'): dp[${i}][${j}] = dp[${i - 1}][${j}](${fromSkip})`,
+            msg: `字符不匹配 <code>s[${i - 1}] ('${s[i - 1]}') != t[${j - 1}] ('${t[j - 1]}')</code>：只能不用 <code>s[${i - 1}]</code>，<code>dp[${i}][${j}] = dp[${i - 1}][${j}] = <strong>${fromSkip}</strong></code>。`
+          });
+        }
+      }
+    }
+
+    // 4. 最终返回步骤
+    steps.push({
+      type: 'return',
+      line: lineReturn,
+      i: m,
+      j: n,
+      grid: JSON.parse(JSON.stringify(dp)),
+      tag: '返回最终结果',
+      log: `| 🏆 填表计算完成！最终结果 dp[${m}][${n}] = ${dp[m][n]}`,
+      msg: `🏆 二维填表全部完成！在 <code>"${s}"</code> 中匹配 <code>"${t}"</code> 的不同子序列数为: <strong>${dp[m][n]}</strong>。`
+    });
+
+    return steps;
   }
 
   /**
@@ -708,20 +1617,30 @@ export class UniversalStageEngine {
     direction: 'forward' | 'reverse' = 'forward',
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
+    // 1D 模型特化派发
+    if (model.id === 'fibonacci' || model.id === 'climb-stairs') {
+      return UniversalStageEngine.generate1DStage3Steps(model, Math.max(mVal, nVal), anchorMap);
+    }
+    // 字符串子序列 DP 特化派发
+    if (model.id === 'distinct-subsequences') {
+      return UniversalStageEngine.generateDistinctSubsequencesStage3Steps(model, anchorMap);
+    }
+
     const steps: UniversalStep[] = [];
     const dp = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
+    const isMinPath = model.id === 'min-path-sum';
 
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
+    const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
 
     const lineInit = anchorMap?.init || 3;
     const lineInitRow = anchorMap?.init_row || 4;
     const lineInitCol = anchorMap?.init_col || 5;
-    const lineLoopI = anchorMap?.loop_i || 6;
-    const lineCond = anchorMap?.cond || anchorMap?.obstacle || 7;
     const lineInitVal = anchorMap?.init_val || 8;
     const lineTransfer = anchorMap?.transfer || 9;
     const lineReturn = anchorMap?.return || 11;
+    const lineCond = anchorMap?.cond || anchorMap?.obstacle || 7;
 
     const lineCalcTop = anchorMap?.calc_top;
     const lineCalcLeft = anchorMap?.calc_left;
@@ -735,13 +1654,180 @@ export class UniversalStageEngine {
       i: isForward ? 0 : mVal - 1,
       j: isForward ? 0 : nVal - 1,
       obstacleGrid,
+      weightsGrid,
       grid: JSON.parse(JSON.stringify(dp)),
       tag: '初始化二维矩阵',
       log: `| 📦 创建二维 DP 状态矩阵 dp[${mVal}][${nVal}]`,
       msg: `创建 ${mVal}×${nVal} 的二维 DP 表格，准备按${isForward ? '顺推' : '逆推'}顺序自底向上计算。`
     });
 
-    if (obstacleGrid) {
+    if (isMinPath && weightsGrid) {
+      if (isForward) {
+        dp[0][0] = weightsGrid[0][0];
+        steps.push({
+          type: 'init-val',
+          line: lineInitVal,
+          i: 0,
+          j: 0,
+          weightsGrid,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: '起点初始化',
+          log: `| 🎬 起点 dp[0][0] = grid[0][0] = ${weightsGrid[0][0]}`,
+          msg: `🎬 起点 (0, 0) 初始化为自身权值：<code>dp[0][0] = ${weightsGrid[0][0]}</code>。`
+        });
+
+        // 最左列初始化
+        for (let r = 1; r < mVal; r++) {
+          dp[r][0] = dp[r - 1][0] + weightsGrid[r][0];
+          steps.push({
+            type: 'init-col',
+            line: lineInitVal,
+            i: r,
+            j: 0,
+            weightsGrid,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: '首列前缀累加',
+            log: `| 🎬 首列 dp[${r}][0] = dp[${r - 1}][0] + grid[${r}][0] = ${dp[r][0]}`,
+            msg: `首列只能从上方直达：<code>dp[${r}][0] = dp[${r - 1}][0] + grid[${r}][0] = <strong>${dp[r][0]}</strong></code>。`
+          });
+        }
+
+        // 最上行初始化
+        for (let c = 1; c < nVal; c++) {
+          dp[0][c] = dp[0][c - 1] + weightsGrid[0][c];
+          steps.push({
+            type: 'init-row',
+            line: lineInitVal,
+            i: 0,
+            j: c,
+            weightsGrid,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: '首行前缀累加',
+            log: `| 🎬 首行 dp[0][${c}] = dp[0][${c - 1}] + grid[0][${c}] = ${dp[0][c]}`,
+            msg: `首行只能从左方直达：<code>dp[0][${c}] = dp[0][${c - 1}] + grid[0][${c}] = <strong>${dp[0][c]}</strong></code>。`
+          });
+        }
+
+        // 内部双重循环
+        for (let r = 1; r < mVal; r++) {
+          for (let c = 1; c < nVal; c++) {
+            const topVal = dp[r - 1][c];
+            const leftVal = dp[r][c - 1];
+            const sum = Math.min(topVal, leftVal) + weightsGrid[r][c];
+            dp[r][c] = sum;
+
+            steps.push({
+              type: 'transfer',
+              line: lineTransfer,
+              i: r,
+              j: c,
+              topI: r - 1,
+              topJ: c,
+              leftI: r,
+              leftJ: c - 1,
+              weightsGrid,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: '状态转移求最小和',
+              log: `| 🔄 dp[${r}][${c}] = min(上=${topVal}, 左=${leftVal}) + grid[${r}][${c}](${weightsGrid[r][c]}) = ${sum}`,
+              msg: `状态转移：<code>dp[${r}][${c}] = min(上 ${topVal}, 左 ${leftVal}) + grid (${weightsGrid[r][c]}) = <strong>${sum}</strong></code>。`
+            });
+          }
+        }
+
+        steps.push({
+          type: 'return',
+          line: lineReturn,
+          i: mVal - 1,
+          j: nVal - 1,
+          weightsGrid,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: '返回最终结果',
+          log: `| 🏆 顺推填表完成！右下角最小路径和 = ${dp[mVal - 1][nVal - 1]}`,
+          msg: `🏆 顺推填表全部完成！右下角终点最小路径和: <strong>${dp[mVal - 1][nVal - 1]}</strong>。`
+        });
+      } else {
+        // 逆推最小路径和
+        dp[mVal - 1][nVal - 1] = weightsGrid[mVal - 1][nVal - 1];
+        steps.push({
+          type: 'init-val',
+          line: lineInitVal,
+          i: mVal - 1,
+          j: nVal - 1,
+          weightsGrid,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: '逆推终点初始化',
+          log: `| 🎬 逆推终点 dp[${mVal - 1}][${nVal - 1}] = ${weightsGrid[mVal - 1][nVal - 1]}`,
+          msg: `🎬 逆推终点初始化为自身权值：<code>dp[${mVal - 1}][${nVal - 1}] = ${weightsGrid[mVal - 1][nVal - 1]}</code>。`
+        });
+
+        for (let r = mVal - 2; r >= 0; r--) {
+          dp[r][nVal - 1] = dp[r + 1][nVal - 1] + weightsGrid[r][nVal - 1];
+          steps.push({
+            type: 'init-col',
+            line: lineInitVal,
+            i: r,
+            j: nVal - 1,
+            weightsGrid,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: '逆推最右列累加',
+            log: `| 🎬 最右列 dp[${r}][${nVal - 1}] = dp[${r + 1}][${nVal - 1}] + grid[${r}][${nVal - 1}] = ${dp[r][nVal - 1]}`,
+            msg: `最右列只能从下方直达：<code>dp[${r}][${nVal - 1}] = ${dp[r][nVal - 1]}</code>。`
+          });
+        }
+
+        for (let c = nVal - 2; c >= 0; c--) {
+          dp[mVal - 1][c] = dp[mVal - 1][c + 1] + weightsGrid[mVal - 1][c];
+          steps.push({
+            type: 'init-row',
+            line: lineInitVal,
+            i: mVal - 1,
+            j: c,
+            weightsGrid,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: '逆推最底行累加',
+            log: `| 🎬 最底行 dp[${mVal - 1}][${c}] = dp[${mVal - 1}][${c + 1}] + grid[${mVal - 1}][${c}] = ${dp[mVal - 1][c]}`,
+            msg: `最底行只能从右方直达：<code>dp[${mVal - 1}][${c}] = ${dp[mVal - 1][c]}</code>。`
+          });
+        }
+
+        for (let r = mVal - 2; r >= 0; r--) {
+          for (let c = nVal - 2; c >= 0; c--) {
+            const downVal = dp[r + 1][c];
+            const rightVal = dp[r][c + 1];
+            const sum = Math.min(downVal, rightVal) + weightsGrid[r][c];
+            dp[r][c] = sum;
+
+            steps.push({
+              type: 'transfer',
+              line: lineTransfer,
+              i: r,
+              j: c,
+              topI: r + 1,
+              topJ: c,
+              leftI: r,
+              leftJ: c + 1,
+              weightsGrid,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: '逆推状态转移',
+              log: `| 🔄 dp[${r}][${c}] = min(下=${downVal}, 右=${rightVal}) + grid[${r}][${c}] = ${sum}`,
+              msg: `逆推转移：<code>dp[${r}][${c}] = min(下 ${downVal}, 右 ${rightVal}) + grid (${weightsGrid[r][c]}) = <strong>${sum}</strong></code>。`
+            });
+          }
+        }
+
+        steps.push({
+          type: 'return',
+          line: lineReturn,
+          i: 0,
+          j: 0,
+          weightsGrid,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: '返回最终结果',
+          log: `| 🏆 逆推填表完成！起点最小路径和 = ${dp[0][0]}`,
+          msg: `🏆 逆推填表全部完成！左上角起点最小路径和: <strong>${dp[0][0]}</strong>。`
+        });
+      }
+    } else if (obstacleGrid) {
       if (isForward) {
         for (let r = 0; r < mVal; r++) {
           for (let c = 0; c < nVal; c++) {
@@ -781,7 +1867,6 @@ export class UniversalStageEngine {
               const leftVal = (c > 0) ? dp[r][c - 1] : 0;
               const sum = topVal + leftVal;
 
-              // 教学分步 1：读取上方路径并高亮三元运算符执行分支
               if (lineCalcTop !== undefined) {
                 steps.push({
                   type: 'calc-top',
@@ -802,7 +1887,6 @@ export class UniversalStageEngine {
                 });
               }
 
-              // 教学分步 2：读取左方路径并高亮三元运算符执行分支
               if (lineCalcLeft !== undefined) {
                 steps.push({
                   type: 'calc-left',
@@ -825,7 +1909,6 @@ export class UniversalStageEngine {
 
               dp[r][c] = sum;
 
-              // 教学分步 3：汇总状态转移求和
               steps.push({
                 type: 'transfer',
                 line: lineTransfer,
@@ -898,7 +1981,6 @@ export class UniversalStageEngine {
               const rightVal = (c + 1 < nVal) ? dp[r][c + 1] : 0;
               const sum = downVal + rightVal;
 
-              // 逆推分步 1：读取下方路径并高亮三元运算符执行分支
               if (lineCalcDown !== undefined) {
                 steps.push({
                   type: 'calc-down',
@@ -919,7 +2001,6 @@ export class UniversalStageEngine {
                 });
               }
 
-              // 逆推分步 2：读取右方路径并高亮三元运算符执行分支
               if (lineCalcRight !== undefined) {
                 steps.push({
                   type: 'calc-right',
@@ -942,7 +2023,6 @@ export class UniversalStageEngine {
 
               dp[r][c] = sum;
 
-              // 逆推分步 3：汇总状态转移求和
               steps.push({
                 type: 'transfer',
                 line: lineTransfer,
@@ -978,7 +2058,6 @@ export class UniversalStageEngine {
       }
     } else {
       if (isForward) {
-        // 顺推初始化第 0 列
         for (let r = 0; r < mVal; r++) {
           dp[r][0] = 1;
           steps.push({
@@ -992,7 +2071,6 @@ export class UniversalStageEngine {
             msg: `最左列坐标 (${r}, 0) 只能一直向下走，路径数为 1。`
           });
         }
-        // 顺推初始化第 0 行
         for (let c = 1; c < nVal; c++) {
           dp[0][c] = 1;
           steps.push({
@@ -1007,7 +2085,6 @@ export class UniversalStageEngine {
           });
         }
 
-        // 顺推双重循环填表
         for (let r = 1; r < mVal; r++) {
           for (let c = 1; c < nVal; c++) {
             const topVal = dp[r - 1][c];
@@ -1043,7 +2120,6 @@ export class UniversalStageEngine {
           msg: `🏆 顺推填表全部完成！右下角终点路径数: <strong>${dp[mVal - 1][nVal - 1]}</strong>。`
         });
       } else {
-        // 逆推初始化最右列
         for (let r = 0; r < mVal; r++) {
           dp[r][nVal - 1] = 1;
           steps.push({
@@ -1057,7 +2133,6 @@ export class UniversalStageEngine {
             msg: `最右列坐标 (${r}, ${nVal - 1}) 逆推到达终点只有 1 条直达路径。`
           });
         }
-        // 逆推初始化最底行
         for (let c = 0; c < nVal - 1; c++) {
           dp[mVal - 1][c] = 1;
           steps.push({
@@ -1072,7 +2147,6 @@ export class UniversalStageEngine {
           });
         }
 
-        // 逆推倒序双重循环
         for (let r = mVal - 2; r >= 0; r--) {
           for (let c = nVal - 2; c >= 0; c--) {
             const downVal = dp[r + 1][c];
@@ -1119,6 +2193,101 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 生成不同的子序列 (Distinct Subsequences) 阶段 4 一维倒序空间压缩步骤
+   */
+  public static generateDistinctSubsequencesStage4Steps(
+    model: IYamlAlgorithmModel,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const s = ((model.defaultParams as any)?.s || 'rabbbit') as string;
+    const t = ((model.defaultParams as any)?.t || 'rabbit') as string;
+    const m = s.length;
+    const n = t.length;
+
+    const steps: UniversalStep[] = [];
+    const memo = new Array(n + 1).fill(0);
+    const gridState = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(null));
+
+    const lineInit = anchorMap?.init || 4;
+    const lineInitVal = anchorMap?.init_val || 6;
+    const lineLoopI = anchorMap?.loop_i || 9;
+    const lineLoopJReverse = anchorMap?.loop_j_reverse || 11;
+    const lineCond = anchorMap?.cond || 13;
+    const lineAccumulateReverse = anchorMap?.accumulate_reverse || 15;
+    const lineReturn = anchorMap?.return || 19;
+
+    memo[0] = 1;
+    gridState[0][0] = 1;
+
+    steps.push({
+      type: 'init',
+      line: lineInit,
+      i: 0,
+      j: 0,
+      activeSlot: 0,
+      memo: [...memo],
+      memoSnapshot: [...memo],
+      grid: JSON.parse(JSON.stringify(gridState)),
+      tag: '初始化一维滚动数组',
+      log: `| 📦 创建长度为 ${n + 1} 的一维滚动数组 memo[0..${n}], 初始化 memo[0] = 1`,
+      msg: `创建长度为 <code>${n + 1}</code> 的一维滚动状态数组 <code>memo[0..${n}]</code>，初始化空串 Base Case <code>memo[0] = 1</code>。`
+    });
+
+    for (let i = 1; i <= m; i++) {
+      gridState[i][0] = 1;
+
+      for (let j = n; j >= 1; j--) {
+        const isMatch = s[i - 1] === t[j - 1];
+
+        if (isMatch) {
+          const downVal = memo[j];
+          const rightVal = memo[j - 1];
+          memo[j] += rightVal;
+          gridState[i][j] = memo[j];
+
+          steps.push({
+            type: 'accumulate',
+            line: lineAccumulateReverse,
+            i,
+            j,
+            activeSlot: j,
+            slotMode: 'updated',
+            down: downVal,
+            right: rightVal,
+            memoj: memo[j],
+            memo: [...memo],
+            memoSnapshot: [...memo],
+            grid: JSON.parse(JSON.stringify(gridState)),
+            tag: `倒序累加: memo[${j}] += memo[${j - 1}]`,
+            log: `| ✨ s[${i - 1}] == t[${j - 1}] ('${s[i - 1]}'): memo[${j}] (${downVal}) += memo[${j - 1}] (${rightVal}) = ${memo[j]} [倒序确保取到旧值]`,
+            msg: `字符匹配 <code>s[${i - 1}] == t[${j - 1}] == '${s[i - 1]}'</code>：倒序原地累加 <code>memo[${j}] (${downVal}) += memo[${j - 1}] (${rightVal}) = <strong>${memo[j]}</strong></code>。`
+          });
+        }
+      }
+    }
+
+    steps.push({
+      type: 'return',
+      line: lineReturn,
+      i: m,
+      j: n,
+      activeSlot: n,
+      slotMode: 'final',
+      down: memo[n],
+      right: memo[n - 1],
+      memoj: memo[n],
+      memo: [...memo],
+      memoSnapshot: [...memo],
+      grid: JSON.parse(JSON.stringify(gridState)),
+      tag: '最终答案',
+      log: `| 🏆 一维倒序优化完成！最终答案 memo[${n}] = ${memo[n]}`,
+      msg: `🏆 一维倒序压缩计算完成！在 <code>"${s}"</code> 中匹配 <code>"${t}"</code> 的方案数: <strong>${memo[n]}</strong>。`
+    });
+
+    return steps;
+  }
+
+  /**
    * 生成阶段 4 (一维空间压缩) 演化步骤
    */
   public static generateStage4Steps(
@@ -1129,12 +2298,23 @@ export class UniversalStageEngine {
     variant: 'if' | 'for' = 'if',
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
+    // 1D 模型特化派发
+    if (model.id === 'fibonacci' || model.id === 'climb-stairs') {
+      return UniversalStageEngine.generate1DStage4Steps(model, Math.max(mVal, nVal), anchorMap);
+    }
+    // 字符串子序列 DP 特化派发
+    if (model.id === 'distinct-subsequences') {
+      return UniversalStageEngine.generateDistinctSubsequencesStage4Steps(model, anchorMap);
+    }
+
     const steps: UniversalStep[] = [];
     const memo = new Array(nVal).fill(0);
     const gridState = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
+    const isMinPath = model.id === 'min-path-sum';
 
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
+    const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
 
     const lineInit = anchorMap?.init || (variant === 'if' ? 4 : (isForward ? 4 : 4));
     const lineInitVal = anchorMap?.init_val || anchorMap?.init_row || 8;
@@ -1160,7 +2340,6 @@ export class UniversalStageEngine {
       fromI?: number;
       fromJ?: number;
     }) => {
-      // 保持 2D 地图上单元格数值与 1D 滚动计算实时同步
       if (params.i >= 0 && params.i < mVal && params.j >= 0 && params.j < nVal && memo[params.j] !== undefined) {
         gridState[params.i][params.j] = memo[params.j];
       }
@@ -1191,6 +2370,7 @@ export class UniversalStageEngine {
         leftJ: leftJ >= 0 && leftJ < nVal ? leftJ : -1,
         gridHighlight: { i: params.i, j: params.j },
         obstacleGrid,
+        weightsGrid,
         memo: [...memo],
         memoSnapshot: [...memo],
         grid: JSON.parse(JSON.stringify(gridState))
@@ -1209,7 +2389,177 @@ export class UniversalStageEngine {
       msg: `创建长度为 ${nVal} 的一维滚动数组 <code>memo[0..${nVal - 1}]</code>，准备滚动覆盖。`
     });
 
-    if (obstacleGrid) {
+    if (isMinPath && weightsGrid) {
+      if (isForward) {
+        memo[0] = weightsGrid[0][0];
+        pushStep({
+          type: 'init-slot',
+          line: lineInitVal,
+          i: 0,
+          j: 0,
+          activeSlot: 0,
+          slotMode: 'updated',
+          memoj: memo[0],
+          tag: '起点初始化',
+          log: `| 🎬 起点 memo[0] = ${memo[0]}`,
+          msg: `起点 (0, 0) 初始化 <code>memo[0] = ${memo[0]}</code>。`
+        });
+
+        for (let j = 1; j < nVal; j++) {
+          memo[j] = memo[j - 1] + weightsGrid[0][j];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i: 0,
+            j,
+            activeSlot: j,
+            slotMode: 'updated',
+            memoj: memo[j],
+            tag: '首行前缀累加',
+            log: `| 🎬 memo[${j}] = memo[${j - 1}] + grid[0][${j}] = ${memo[j]}`,
+            msg: `首行前缀累加：<code>memo[${j}] = memo[${j - 1}] + grid[0][${j}] = <strong>${memo[j]}</strong></code>。`
+          });
+        }
+
+        for (let i = 1; i < mVal; i++) {
+          memo[0] += weightsGrid[i][0];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i,
+            j: 0,
+            activeSlot: 0,
+            slotMode: 'updated',
+            memoj: memo[0],
+            tag: `第${i}行首列更新`,
+            log: `| ⬇️ memo[0] += grid[${i}][0] = ${memo[0]}`,
+            msg: `第 ${i} 行首列累加上方：<code>memo[0] += grid[${i}][0] = <strong>${memo[0]}</strong></code>。`
+          });
+
+          for (let j = 1; j < nVal; j++) {
+            const downVal = memo[j];
+            const rightVal = memo[j - 1];
+
+            pushStep({
+              type: 'fetch-down',
+              line: lineFetchDown,
+              i,
+              j,
+              activeSlot: j,
+              slotMode: 'down',
+              down: downVal,
+              right: rightVal,
+              memoj: downVal,
+              tag: '读取上方旧值 (down)',
+              log: `| ⬇️ 读取上方旧值 fromTop = memo[${j}] = ${downVal}`,
+              msg: `读取上方旧值 <code>fromTop = memo[${j}] = ${downVal}</code>。`
+            });
+
+            pushStep({
+              type: 'fetch-right',
+              line: lineFetchRight,
+              i,
+              j,
+              activeSlot: j - 1,
+              slotMode: 'right',
+              down: downVal,
+              right: rightVal,
+              memoj: rightVal,
+              tag: '读取左侧新值 (right)',
+              log: `| ➡️ 读取左侧新值 fromLeft = memo[${j - 1}] = ${rightVal}`,
+              msg: `读取左侧新值 <code>fromLeft = memo[${j - 1}] = ${rightVal}</code>。`
+            });
+
+            const sum = Math.min(downVal, rightVal) + weightsGrid[i][j];
+            memo[j] = sum;
+
+            pushStep({
+              type: 'accumulate',
+              line: lineAccumulate,
+              i,
+              j,
+              activeSlot: j,
+              slotMode: 'updated',
+              down: downVal,
+              right: rightVal,
+              memoj: sum,
+              tag: '滚动累加求最小',
+              log: `| ✨ memo[${j}] = min(${downVal}, ${rightVal}) + grid[${i}][${j}] = ${sum}`,
+              msg: `滚动覆盖：<code>memo[${j}] = min(${downVal}, ${rightVal}) + ${weightsGrid[i][j]} = <strong>${sum}</strong></code>。`
+            });
+          }
+        }
+      } else {
+        // 逆推最小路径和一维滚动
+        memo[nVal - 1] = weightsGrid[mVal - 1][nVal - 1];
+        pushStep({
+          type: 'init-slot',
+          line: lineInitVal,
+          i: mVal - 1,
+          j: nVal - 1,
+          activeSlot: nVal - 1,
+          slotMode: 'updated',
+          memoj: memo[nVal - 1],
+          tag: '终点初始化',
+          log: `| 🎬 终点 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+          msg: `终点初始化 <code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
+        });
+
+        for (let j = nVal - 2; j >= 0; j--) {
+          memo[j] = memo[j + 1] + weightsGrid[mVal - 1][j];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i: mVal - 1,
+            j,
+            activeSlot: j,
+            slotMode: 'updated',
+            memoj: memo[j],
+            tag: '最底行累加',
+            log: `| 🎬 memo[${j}] = memo[${j + 1}] + grid = ${memo[j]}`,
+            msg: `最底行累加：<code>memo[${j}] = ${memo[j]}</code>。`
+          });
+        }
+
+        for (let i = mVal - 2; i >= 0; i--) {
+          memo[nVal - 1] += weightsGrid[i][nVal - 1];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i,
+            j: nVal - 1,
+            activeSlot: nVal - 1,
+            slotMode: 'updated',
+            memoj: memo[nVal - 1],
+            tag: `第${i}行最右列更新`,
+            log: `| ⬇️ memo[${nVal - 1}] += grid = ${memo[nVal - 1]}`,
+            msg: `最右列累加下方：<code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
+          });
+
+          for (let j = nVal - 2; j >= 0; j--) {
+            const downVal = memo[j];
+            const rightVal = memo[j + 1];
+            const sum = Math.min(downVal, rightVal) + weightsGrid[i][j];
+            memo[j] = sum;
+
+            pushStep({
+              type: 'accumulate',
+              line: lineAccumulate,
+              i,
+              j,
+              activeSlot: j,
+              slotMode: 'updated',
+              down: downVal,
+              right: rightVal,
+              memoj: sum,
+              tag: '逆推滚动更新',
+              log: `| ✨ 逆推 memo[${j}] = min(${downVal}, ${rightVal}) + grid = ${sum}`,
+              msg: `逆推覆盖：<code>memo[${j}] = min(${downVal}, ${rightVal}) + ${weightsGrid[i][j]} = <strong>${sum}</strong></code>。`
+            });
+          }
+        }
+      }
+    } else if (obstacleGrid) {
       if (isForward) {
         memo[0] = (obstacleGrid[0][0] === 0) ? 1 : 0;
         pushStep({
@@ -1227,7 +2577,7 @@ export class UniversalStageEngine {
         for (let i = 0; i < mVal; i++) {
           for (let j = 0; j < nVal; j++) {
             if (i === 0 && j === 0) {
-              continue; // 起点已初始化
+              continue;
             }
             if (obstacleGrid[i][j] === 1) {
               memo[j] = 0;
@@ -1249,7 +2599,6 @@ export class UniversalStageEngine {
                 msg: `🚧 坐标 (${i}, ${j}) 为障碍物，探险家从 (${fromR}, ${fromC}) 尝试进入受阻弹回，一维状态 <code>memo[${j}] = 0</code> 原地清零。`
               });
             } else if (j === 0) {
-              // 首列无左侧新值，保持上一行旧值
               pushStep({
                 type: 'keep-val',
                 line: lineInitVal,
@@ -1304,7 +2653,7 @@ export class UniversalStageEngine {
         for (let i = mVal - 1; i >= 0; i--) {
           for (let j = nVal - 1; j >= 0; j--) {
             if (i === mVal - 1 && j === nVal - 1) {
-              continue; // 终点已初始化
+              continue;
             }
             if (obstacleGrid[i][j] === 1) {
               memo[j] = 0;
@@ -1364,7 +2713,6 @@ export class UniversalStageEngine {
         }
       }
     } else if (variant === 'for') {
-      // 外层 for 初始化
       for (let j = 0; j < nVal; j++) {
         memo[j] = 1;
         pushStep({
@@ -1451,7 +2799,6 @@ export class UniversalStageEngine {
           }
         }
       } else {
-        // 逆推 for 版
         for (let i = mVal - 2; i >= 0; i--) {
           pushStep({
             type: 'keep-val',
@@ -1523,7 +2870,6 @@ export class UniversalStageEngine {
         }
       }
     } else {
-      // 内嵌 if 版
       if (isForward) {
         for (let i = 0; i < mVal; i++) {
           for (let j = 0; j < nVal; j++) {
@@ -1596,7 +2942,6 @@ export class UniversalStageEngine {
           }
         }
       } else {
-        // 逆推 if 版
         for (let i = mVal - 1; i >= 0; i--) {
           for (let j = nVal - 1; j >= 0; j--) {
             if (i === mVal - 1 || j === nVal - 1) {
@@ -1679,8 +3024,8 @@ export class UniversalStageEngine {
       activeSlot: finalIdx,
       slotMode: 'final',
       tag: '最终答案',
-      log: `| 🏆 一维空间优化完成！最终答案 memo[${finalIdx}] = ${memo[finalIdx]}`,
-      msg: `🏆 一维滚动压缩计算完成！最终不同路径数: <strong>${memo[finalIdx]}</strong>。`
+      log: isMinPath ? `| 🏆 一维空间优化完成！最终最小路径和 = ${memo[finalIdx]}` : `| 🏆 一维空间优化完成！最终答案 memo[${finalIdx}] = ${memo[finalIdx]}`,
+      msg: isMinPath ? `🏆 一维滚动压缩计算完成！最终最小路径和为: <strong>${memo[finalIdx]}</strong>。` : `🏆 一维滚动压缩计算完成！最终不同路径数: <strong>${memo[finalIdx]}</strong>。`
     });
 
     return steps;

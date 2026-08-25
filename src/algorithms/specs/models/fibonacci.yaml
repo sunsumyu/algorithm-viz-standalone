@@ -1,3 +1,9 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「斐波那契数 (Fibonacci Number)」四阶段全演化标准实现。
+# 包含：朴素二叉递归爆炸、记忆化查表剪枝、自底向上递推填表与 O(1) 滚动双变量。
+# ==============================================================================
+
 id: fibonacci
 name: "斐波那契数"
 nameEn: "Fibonacci Number"
@@ -10,6 +16,26 @@ learningGoal: "动态规划极简第一课：从朴素二叉递归爆炸到 O(1)
 description: "斐波那契数列（LeetCode 509）：F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2)。展示递归重叠子问题、剪枝备忘录与空间优化。"
 defaultParams:
   n: 6
+
+problem:
+  leetcodeId: 509
+  title: "斐波那契数"
+  difficulty: "简单"
+  tags: ["递归", "记忆化搜索", "数学", "动态规划"]
+  description: "<strong>斐波那契数</strong> （通常用 <code>F(n)</code> 表示）形成的序列称为 <strong>斐波那契数列</strong> 。该数列由 <code>0</code> 和 <code>1</code> 开始，后面的每一项数字都是前面两项数字的和。也就是：<br/><br/><code>F(0) = 0, F(1) = 1</code><br/><code>F(n) = F(n - 1) + F(n - 2)</code>，其中 <code>n > 1</code><br/><br/>给定 <code>n</code> ，请计算 <code>F(n)</code> 。"
+  examples:
+    - input: "n = 2"
+      output: "1"
+      explanation: "F(2) = F(1) + F(0) = 1 + 0 = 1"
+    - input: "n = 3"
+      output: "2"
+      explanation: "F(3) = F(2) + F(1) = 1 + 1 = 2"
+    - input: "n = 4"
+      output: "3"
+      explanation: "F(4) = F(3) + F(2) = 2 + 1 = 3"
+  constraints:
+    - "0 <= n <= 30"
+  leetcodeUrl: "https://leetcode.cn/problems/fibonacci-number/"
 
 directions:
   forward:
@@ -48,8 +74,8 @@ stages:
             source: |
               class Solution {
                   public int fib(int n) { // @step:entry
-                      if (n <= 0) return 0; // @step:boundary
-                      if (n == 1) return 1; // @step:boundary
+                      if (n <= 0) return 0; // @step:boundary // F(0) = 0
+                      if (n == 1) return 1; // @step:boundary // F(1) = 1
                       int left = fib(n - 1);  // @step:branch_left // 计算 F(n-1)
                       int right = fib(n - 2); // @step:branch_right // 计算 F(n-2)
                       return left + right;    // @step:combine // 合并子问题
@@ -151,3 +177,42 @@ stages:
                       return prev1; // @step:return
                   }
               }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 斐波那契数 5 步法系统精讲"
+  summary: "LeetCode 509。动态规划经典入门第一题。核心在于：严密的二阶递推关系 F(n) = F(n-1) + F(n-2)。"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i]</code>：第 <code>i</code> 个斐波那契数的值。"
+      icon: "🎯"
+      badge: "数值状态"
+    - label: "二、状态转移方程"
+      desc: "<code>dp[i] = dp[i - 1] + dp[i - 2]</code>。"
+      icon: "🔄"
+      badge: "二阶线性递推"
+    - label: "三、边界与初始化"
+      desc: "<code>dp[0] = 0</code>，<code>dp[1] = 1</code>。"
+      icon: "🎬"
+      badge: "Base Case"
+    - label: "四、遍历顺序"
+      desc: "自底向上从 <code>i = 2</code> 到 <code>n</code>。"
+      icon: "🧭"
+      badge: "线性递推"
+    - label: "五、举例推导"
+      desc: "0, 1, 1, 2, 3, 5, 8, 13, 21, 34..."
+      icon: "📊"
+      badge: "经典序列"
+
+# ==============================================================================
+# 常见面试高频问题 (FAQ List)
+# ==============================================================================
+faqList:
+  - question: "为什么朴素递归的时间复杂度是 O(2ⁿ)？"
+    answer: "每个递归节点都会分裂出 2 个子递归分支，整棵递归树的高度为 n，总节点数为 2⁰ + 2¹ + ... + 2ⁿ ≈ O(2ⁿ) 指数级爆炸。"
+    tag: "复杂度分析"
+  - question: "记忆化搜索与动态规划有什么本质区别与联系？"
+    answer: "两者都通过消除重叠子问题将复杂度降到 O(n)。记忆化搜索是自顶向下（递归+备忘录缓存），而动态规划是自底向上（迭代填表，无递归栈开销）。"
+    tag: "解法对比"

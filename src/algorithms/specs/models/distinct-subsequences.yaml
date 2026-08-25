@@ -1,0 +1,331 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「不同的子序列 (Distinct Subsequences)」四阶段全演化标准实现。
+# 包含：双字符匹配决策分支、空串 Base Case 初始化、二维 DP 矩阵与一维倒序空间压缩。
+# ==============================================================================
+
+id: distinct-subsequences
+name: "不同的子序列"
+nameEn: "Distinct Subsequences"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🧮"
+difficulty: 3
+levelOrder: 8
+learningGoal: "掌握双序列匹配决策分支、空串 Base Case 初始化与一维倒序空间压缩核心技巧"
+description: "子序列方案数（LeetCode 115）：计算在字符串 s 的子序列中 t 出现的个数，状态转移 dp[i][j] = dp[i-1][j-1] + dp[i-1][j] 与一维倒序压缩。"
+defaultParams:
+  s: "rabbbit"
+  t: "rabbit"
+
+problem:
+  leetcodeId: 115
+  title: "不同的子序列"
+  difficulty: "困难"
+  tags: ["字符串", "动态规划"]
+  description: "给你两个字符串 <code>s</code> 和 <code>t</code> ，统计并返回在 <code>s</code> 的 <strong>子序列</strong> 中 <code>t</code> 出现的个数。<br/><br/>题目数据保证答案在 32 位带符号整数范围内。"
+  examples:
+    - input: 's = "rabbbit", t = "rabbit"'
+      output: "3"
+      explanation: "如下图所示, 有 3 种可以从 s 中得到 \"rabbit\" 的方案。<br/><strong><u>rabb</u></strong>b<strong><u>it</u></strong><br/><strong><u>ra</u></strong>b<strong><u>bbit</u></strong><br/><strong><u>rab</u></strong>b<strong><u>bit</u></strong>"
+    - input: 's = "babgbag", t = "bag"'
+      output: "5"
+      explanation: "如下图所示, 有 5 种可以从 s 中得到 \"bag\" 的方案。<br/><strong><u>ba</u></strong>b<strong><u>g</u></strong>bag<br/><strong><u>ba</u></strong>bgba<strong><u>g</u></strong><br/><strong><u>b</u></strong>abgb<strong><u>ag</u></strong><br/>ba<strong><u>b</u></strong>gb<strong><u>ag</u></strong><br/>babg<strong><u>bag</u></strong>"
+  constraints:
+    - "1 <= s.length, t.length <= 1000"
+    - "s 和 t 由英文字母组成"
+  leetcodeUrl: "https://leetcode.cn/problems/distinct-subsequences/"
+
+directions:
+  forward:
+    label: "自顶向下 (目标分解)"
+    branches:
+      - name: "match"
+        delta: [-1, -1]
+        label: "匹配字符"
+        codeVar: "match"
+        arrow: "↖️"
+      - name: "skip"
+        delta: [-1, 0]
+        label: "跳过字符"
+        codeVar: "skip"
+        arrow: "⬆️"
+    combineFormula: "match + skip"
+  reverse:
+    label: "逆向求解"
+    branches:
+      - name: "match"
+        delta: [-1, -1]
+        label: "匹配字符"
+        codeVar: "match"
+        arrow: "↖️"
+      - name: "skip"
+        delta: [-1, 0]
+        label: "跳过字符"
+        codeVar: "skip"
+        arrow: "⬆️"
+    combineFormula: "match + skip"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ᵐ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (二叉决策树指数展开)"
+      reverse: "阶段 1: 朴素递归 (二叉决策树指数展开)"
+    desc:
+      forward: "从 dfs(m, n) 开始向下递归分解。末尾字符相等时可选择「匹配」或「跳过不用」；不相等时只能「跳过不用」。"
+      reverse: "从 dfs(m, n) 开始向下递归分解。"
+    variants:
+      standard:
+        variantLabel: "标准二叉递归"
+        title:
+          forward: "DistinctSubsequences_Recursive.java"
+          reverse: "DistinctSubsequences_Recursive.java"
+        code:
+          forward:
+            title: "DistinctSubsequences_Recursive.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      return dfs(s, t, s.length(), t.length());
+                  }
+                  private int dfs(String s, String t, int i, int j) { // @step:entry
+                      if (j == 0) return 1; // @step:boundary_target // 目标串匹配完成
+                      if (i == 0) return 0; // @step:boundary_source // 源串耗尽无法匹配
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          int useMatch = dfs(s, t, i - 1, j - 1); // 匹配分支
+                          int skipChar = dfs(s, t, i - 1, j);     // 跳过分支
+                          return useMatch + skipChar; // @step:combine // 汇总方案数
+                      } else {
+                          return dfs(s, t, i - 1, j); // @step:skip // 只能跳过
+                      }
+                  }
+              }
+          reverse:
+            title: "DistinctSubsequences_Recursive.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      return dfs(s, t, s.length(), t.length());
+                  }
+                  private int dfs(String s, String t, int i, int j) { // @step:entry
+                      if (j == 0) return 1; // @step:boundary_target
+                      if (i == 0) return 0; // @step:boundary_source
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          int useMatch = dfs(s, t, i - 1, j - 1);
+                          int skipChar = dfs(s, t, i - 1, j);
+                          return useMatch + skipChar; // @step:combine
+                      } else {
+                          return dfs(s, t, i - 1, j); // @step:skip
+                      }
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memo"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (2D Memo 剪枝)"
+      reverse: "阶段 2: 记忆化搜索 (2D Memo 剪枝)"
+    desc:
+      forward: "引入二维数组 memo[i][j] 缓存已求解的 (i, j) 子问题状态，再次遇到相同子问题时实现 O(1) 立即剪枝返回。"
+      reverse: "引入二维数组 memo[i][j] 缓存已求解的 (i, j) 子问题状态。"
+    variants:
+      matrix_memo:
+        variantLabel: "二维备忘录"
+        title:
+          forward: "DistinctSubsequences_Memo.java"
+          reverse: "DistinctSubsequences_Memo.java"
+        code:
+          forward:
+            title: "DistinctSubsequences_Memo.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      Integer[][] memo = new Integer[m + 1][n + 1];
+                      return dfs(s, t, m, n, memo);
+                  }
+                  private int dfs(String s, String t, int i, int j, Integer[][] memo) { // @step:entry
+                      if (j == 0) return 1; // @step:boundary_target
+                      if (i == 0) return 0; // @step:boundary_source
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit // 备忘录命中剪枝
+                      int res = 0;
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          res = dfs(s, t, i - 1, j - 1, memo) + dfs(s, t, i - 1, j, memo); // @step:combine
+                      } else {
+                          res = dfs(s, t, i - 1, j, memo); // @step:skip
+                      }
+                      return memo[i][j] = res;
+                  }
+              }
+          reverse:
+            title: "DistinctSubsequences_Memo.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      Integer[][] memo = new Integer[m + 1][n + 1];
+                      return dfs(s, t, m, n, memo);
+                  }
+                  private int dfs(String s, String t, int i, int j, Integer[][] memo) { // @step:entry
+                      if (j == 0) return 1; // @step:boundary_target
+                      if (i == 0) return 0; // @step:boundary_source
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit
+                      int res = 0;
+                      if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:match
+                          res = dfs(s, t, i - 1, j - 1, memo) + dfs(s, t, i - 1, j, memo); // @step:combine
+                      } else {
+                          res = dfs(s, t, i - 1, j, memo); // @step:skip
+                      }
+                      return memo[i][j] = res;
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 递推填表 (二维 DP 矩阵)"
+      reverse: "阶段 3: 递推填表 (二维 DP 矩阵)"
+    desc:
+      forward: "自底向上构建 (m+1) × (n+1) 的二维 DP 矩阵。首列初始化为 1，逐行按字符匹配情况进行状态转移。"
+      reverse: "自底向上构建 (m+1) × (n+1) 的二维 DP 矩阵。"
+    variants:
+      standard:
+        variantLabel: "标准矩阵填表"
+        title:
+          forward: "DistinctSubsequences_2D.java"
+          reverse: "DistinctSubsequences_2D.java"
+        code:
+          forward:
+            title: "DistinctSubsequences_2D.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init // 创建 (m+1)×(n+1) 矩阵
+                      for (int i = 0; i <= m; i++) {       // @step:init_val
+                          dp[i][0] = 1;                   // 初始化首列：目标串为空方案数为1
+                      }
+                      for (int i = 1; i <= m; i++) {      // @step:loop_i
+                          for (int j = 1; j <= n; j++) {  // @step:loop_j
+                              if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:cond
+                                  dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j]; // @step:transfer_match
+                              } else {
+                                  dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
+                              }
+                          }
+                      }
+                      return dp[m][n]; // @step:return // 最终方案数
+                  }
+              }
+          reverse:
+            title: "DistinctSubsequences_2D.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init
+                      for (int i = 0; i <= m; i++) {       // @step:init_val
+                          dp[i][0] = 1;
+                      }
+                      for (int i = 1; i <= m; i++) {      // @step:loop_i
+                          for (int j = 1; j <= n; j++) {  // @step:loop_j
+                              if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:cond
+                                  dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j]; // @step:transfer_match
+                              } else {
+                                  dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
+                              }
+                          }
+                      }
+                      return dp[m][n]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimized"
+    timeBadge: "O(n) 空间"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 空间压缩 (一维倒序滚动)"
+      reverse: "阶段 4: 空间压缩 (一维倒序滚动)"
+    desc:
+      forward: "将状态矩阵压缩至一维数组 dp[0..n]，内层循环从 n 倒序递减至 1 遍历，确保读取的 dp[j-1] 为上一轮旧值。"
+      reverse: "将状态矩阵压缩至一维数组 dp[0..n]。"
+    variants:
+      reverse_1d:
+        variantLabel: "一维倒序压缩"
+        title:
+          forward: "DistinctSubsequences_1D.java"
+          reverse: "DistinctSubsequences_1D.java"
+        code:
+          forward:
+            title: "DistinctSubsequences_1D.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建长度为 n+1 的滚动数组
+                      dp[0] = 1;                 // @step:init_val // 空串 Base Case
+                      for (int i = 1; i <= m; i++) { // @step:loop_i
+                          for (int j = n; j >= 1; j--) { // @step:loop_j_reverse // 必须倒序遍历
+                              if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:cond
+                                  dp[j] += dp[j - 1]; // @step:accumulate_reverse // 原地累加
+                              }
+                          }
+                      }
+                      return dp[n]; // @step:return // 最终答案
+                  }
+              }
+          reverse:
+            title: "DistinctSubsequences_1D.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[] dp = new int[n + 1]; // @step:init
+                      dp[0] = 1;                 // @step:init_val
+                      for (int i = 1; i <= m; i++) { // @step:loop_i
+                          for (int j = n; j >= 1; j--) { // @step:loop_j_reverse
+                              if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:cond
+                                  dp[j] += dp[j - 1]; // @step:accumulate_reverse
+                              }
+                          }
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+
+analysis:
+  step1_definition:
+    title: 1. 确定 dp 数组及其下标含义
+    content: "dp[i][j] 表示以 s 的前 i 个字符 s[0..i-1] 的子序列中，出现 t 的前 j 个字符 t[0..j-1] 的个数。"
+  step2_formula:
+    title: 2. 确定递推公式
+    content: "当 s[i-1] == t[j-1] 时，有两个选择：用 s[i-1] 匹配（等于 dp[i-1][j-1]）+ 不用 s[i-1] 匹配（等于 dp[i-1][j]），即 dp[i][j] = dp[i-1][j-1] + dp[i-1][j]；当 s[i-1] != t[j-1] 时，只能不用 s[i-1]，即 dp[i][j] = dp[i-1][j]。"
+  step3_init:
+    title: 3. dp 数组初始化
+    content: "dp[i][0] = 1 (0 <= i <= m)：t 为空串时，从任何 s 中删除所有字符即可得到空串，方案数为 1；dp[0][j] = 0 (j > 0)：s 为空且 t 非空，无法匹配，方案数为 0；dp[0][0] = 1。"
+  step4_order:
+    title: 4. 确定遍历顺序
+    content: "外层循环遍历源串 s (i 从 1 到 m)，内层循环遍历目标串 t (j 从 1 到 n)。在一维空间压缩下，内层循环必须「倒序」从 n 到 1 遍历，以防上一行旧值被提前覆盖。"
+  step5_derivation:
+    title: 5. 举例推导状态矩阵
+    content: "以 s=\"rabbbit\", t=\"rabbit\" 为例，最终 dp[7][6] = 3，分别对应跳过第 3、第 4、第 5 个 'b' 的 3 种匹配路径。"
+
+faqs:
+  - q: 为什么一维空间压缩必须采用「倒序」遍历？
+    a: 二维转移方程中 dp[i][j] 依赖左上方的 dp[i-1][j-1]。如果正序遍历，计算 dp[j] 时其左侧的 dp[j-1] 已经更新为当前第 i 行的新值，导致重复使用当前轮字符。只有从右往左倒序计算，读取的 dp[j-1] 才是上一行 (第 i-1 行) 的旧值。
+  - q: 为什么 dp[i][0] 一定初始化为 1？
+    a: 当 t 为空串（长度为 0）时，在 s 的前 i 个字符中，只需把所有字符全部删除（即选择空集），就唯一确定了 1 种匹配空串的子序列方案。因此所有 dp[i][0] = 1。
+  - q: 当 s[i-1] == t[j-1] 时，为什么还要加上 dp[i-1][j]？
+    a: 因为即便当前字符 s[i-1] 能够匹配 t[j-1]，我们依然可以选择「放弃当前字符的匹配机会」，继续利用 s 更前面的前缀去匹配完整的 t[0..j-1]（例如源串中有多个重复字母 'b' 时）。

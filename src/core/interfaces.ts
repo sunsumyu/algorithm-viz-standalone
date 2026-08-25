@@ -207,6 +207,29 @@ export interface IYamlStageSpec {
   variants?: Record<string, IYamlStageVariant>;
 }
 
+export interface IAlgorithmProblemExample {
+  input: string;
+  output: string;
+  explanation?: string;
+  image?: string;
+}
+
+export interface IAlgorithmProblemMeta {
+  leetcodeId?: number | string;
+  title?: string;
+  difficulty?: 'easy' | 'medium' | 'hard' | '简单' | '中等' | '困难' | string;
+  tags?: string[];
+  description?: string;
+  examples?: IAlgorithmProblemExample[];
+  constraints?: string[];
+  leetcodeUrl?: string;
+}
+
+export interface IAlgorithmFaqItem {
+  q: string;
+  a: string;
+}
+
 export interface IYamlAlgorithmModel {
   id: string;
   name: string;
@@ -219,6 +242,9 @@ export interface IYamlAlgorithmModel {
   description?: string;
   defaultStage?: string;
   defaultParams?: Record<string, any>;
+  problem?: IAlgorithmProblemMeta;
+  analysis?: Record<string, { title?: string; content?: string }>;
+  faqs?: IAlgorithmFaqItem[];
   directions: {
     forward: IYamlDirectionDef;
     reverse: IYamlDirectionDef;
@@ -232,4 +258,5 @@ export interface IYamlAlgorithmModel {
     [key: string]: IYamlStageSpec;
   };
 }
+
 

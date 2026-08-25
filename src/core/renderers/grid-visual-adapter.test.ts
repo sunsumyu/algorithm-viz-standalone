@@ -321,4 +321,31 @@ describe('RecursionTreeAdapter Deep Module', () => {
     const mockContainer = container as unknown as MockHTMLElement;
     expect(mockContainer.textContent).toContain('暂无递归调用树');
   });
+
+  it('应该在活跃节点更新时自动计算 2D 视口滚动并聚焦活跃节点', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const mockTree = {
+      id: 'root',
+      val: 'dfs(7,6)',
+      status: 'visited',
+      children: [
+        {
+          id: 'child-1',
+          val: 'dfs(6,5)',
+          status: 'visited',
+          children: [
+            { id: 'deep-active', val: 'dfs(1,1)', status: 'current', children: [] }
+          ]
+        }
+      ]
+    };
+
+    RecursionTreeAdapter.renderRecursionTree(container, mockTree, 'deep-active');
+    const mockContainer = container as unknown as MockHTMLElement;
+    const scrollBox = mockContainer.querySelector('#tree-scroll-box');
+    expect(scrollBox).toBeDefined();
+    expect(mockContainer.innerHTML).toContain('dfs(7,6)');
+    expect(mockContainer.innerHTML).toContain('dfs(1,1)');
+    expect(mockContainer.innerHTML).toContain('🐸');
+  });
 });

@@ -1,3 +1,9 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「爬楼梯 (Climbing Stairs)」四阶段全演化标准实现。
+# 包含：二叉递归树展开、记忆化单链剪枝、自底向上递推填表与 O(1) 双变量滚动。
+# ==============================================================================
+
 id: climb-stairs
 name: "爬楼梯"
 nameEn: "Climbing Stairs"
@@ -10,6 +16,23 @@ learningGoal: "理解组合状态转移与物理意义映射：每次跨 1 步�
 description: "爬楼梯问题（LeetCode 70）：每次只能爬 1 阶或 2 阶，到达第 n 阶的方法数为到达第 n-1 阶与第 n-2 阶方法数之和。"
 defaultParams:
   n: 5
+
+problem:
+  leetcodeId: 70
+  title: "爬楼梯"
+  difficulty: "简单"
+  tags: ["记忆化搜索", "数学", "动态规划"]
+  description: "假设你正在爬楼梯。需要 <code>n</code> 阶你才能到达楼顶。<br/><br/>每次你可以爬 <code>1</code> 或 <code>2</code> 个台阶。你有多少种不同的方法可以爬到楼顶呢？"
+  examples:
+    - input: "n = 2"
+      output: "2"
+      explanation: "有两种方法可以爬到楼顶。<br/>1. 1 阶 + 1 阶<br/>2. 2 阶"
+    - input: "n = 3"
+      output: "3"
+      explanation: "有三种方法可以爬到楼顶。<br/>1. 1 阶 + 1 阶 + 1 阶<br/>2. 1 阶 + 2 阶<br/>3. 2 阶 + 1 阶"
+  constraints:
+    - "1 <= n <= 45"
+  leetcodeUrl: "https://leetcode.cn/problems/climbing-stairs/"
 
 directions:
   forward:
@@ -36,7 +59,7 @@ stages:
     name:
       forward: "阶段 1: 朴素递归 (状态树指数展开)"
     desc:
-      forward: "从第 n 阶向下递归分解为跨 1 步 (n-1) 与跨 2 步 (n-2) 的方案之和。"
+      forward: "从第 n 阶向下递归分解为跨 1 步 (n-1) 与跨 2 步 (n-2) 的方案之和，每个节点分化两个子节点，出现大量重复子问题。"
     variants:
       standard:
         variantLabel: "标准递归版"
@@ -48,7 +71,7 @@ stages:
             source: |
               class Solution {
                   public int climbStairs(int n) { // @step:entry
-                      if (n <= 1) return 1; // @step:boundary
+                      if (n <= 1) return 1; // @step:boundary // 到达第0/1阶直达1种
                       int one = climbStairs(n - 1); // @step:branch_left // 跨 1 步分支
                       int two = climbStairs(n - 2); // @step:branch_right // 跨 2 步分支
                       return one + two;             // @step:combine // 汇总方案数
@@ -63,7 +86,7 @@ stages:
     name:
       forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
     desc:
-      forward: "记录各台阶计算结果，防止同一高度被重复递归计算。"
+      forward: "记录各台阶计算结果，防止同一高度被重复递归计算，调用树从指数膨胀剪枝为线性单链。"
     variants:
       array_memo:
         variantLabel: "一维备忘录版"
@@ -80,7 +103,7 @@ stages:
                   }
                   private int dfs(int n, int[] memo) { // @step:entry
                       if (n <= 1) return 1; // @step:boundary
-                      if (memo[n] != 0) return memo[n]; // @step:cache_hit // 剪枝命中
+                      if (memo[n] != 0) return memo[n]; // @step:cache_hit // 剪枝直接命中
                       int one = dfs(n - 1, memo);  // @step:branch_left
                       int two = dfs(n - 2, memo);  // @step:branch_right
                       return memo[n] = one + two;  // @step:combine
@@ -112,7 +135,7 @@ stages:
                       dp[0] = 1; // @step:init_val
                       dp[1] = 1; // @step:init_val
                       for (int i = 2; i <= n; i++) { // @step:loop_i
-                          dp[i] = dp[i - 1] + dp[i - 2]; // @step:transfer
+                          dp[i] = dp[i - 1] + dp[i - 2]; // @step:transfer // 状态转移
                       }
                       return dp[n]; // @step:return
                   }
@@ -126,7 +149,7 @@ stages:
     name:
       forward: "阶段 4: 空间压缩双变量滚动 (O(1) 状态机)"
     desc:
-      forward: "仅需维护到达前一阶与前两阶的方案数，空间复杂度压缩至 O(1)。"
+      forward: "到达第 i 阶仅依赖前一阶与前两阶方案数，无需完整数组，仅维护 p, q 双变量滚动，空间复杂度压缩至 O(1)。"
     variants:
       two_vars:
         variantLabel: "双变量滚动版"
@@ -142,9 +165,48 @@ stages:
                       int p = 1, q = 1; // @step:init
                       for (int i = 2; i <= n; i++) {
                           int r = p + q; // @step:accumulate
-                          p = q;         // @step:fetch_down
-                          q = r;         // @step:fetch_right
+                          p = q;         // @step:fetch_down // 滑动更新前两阶
+                          q = r;         // @step:fetch_right // 滑动更新前一阶
                       }
                       return q; // @step:return
                   }
               }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 爬楼梯 5 步法系统精讲"
+  summary: "LeetCode 70。动态规划极简第一课。核心在于：到达第 n 阶的最后一步只有两种可能——从第 n-1 阶迈 1 步上来，或从第 n-2 阶迈 2 步上来！"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i]</code>：爬到第 <code>i</code> 阶楼梯的方法总数。"
+      icon: "🎯"
+      badge: "方案数状态"
+    - label: "二、状态转移方程"
+      desc: "<code>dp[i] = dp[i - 1] + dp[i - 2]</code>。加法原理，两种互斥选择方案数相加。"
+      icon: "🔄"
+      badge: "加法原理"
+    - label: "三、边界与初始化"
+      desc: "<code>dp[0] = 1</code>（地面直达），<code>dp[1] = 1</code>（1 步跨上）。"
+      icon: "🎬"
+      badge: "Base Case"
+    - label: "四、遍历顺序"
+      desc: "从底层 <code>i = 2</code> 顺推遍历到 <code>n</code>。"
+      icon: "🧭"
+      badge: "自底向上"
+    - label: "五、举例推导"
+      desc: "当 n=5 时，数列序列为：dp[0]=1, dp[1]=1, dp[2]=2, dp[3]=3, dp[4]=5, dp[5]=8。"
+      icon: "📊"
+      badge: "斐波那契规律"
+
+# ==============================================================================
+# 常见面试高频问题 (FAQ List)
+# ==============================================================================
+faqList:
+  - question: "为什么 climbStairs(0) 定义为 1？"
+    answer: "站在地面（第 0 阶）不动本身就是 1 种合法的初始状态；同时当从第 2 阶向下看跨 2 步到达地面时，正好对应 1 种直达方案。"
+    tag: "边界思考"
+  - question: "为什么可以用两个变量完成空间压缩？"
+    answer: "计算 dp[i] 时仅依赖 dp[i-1] 和 dp[i-2]，更早期的台阶方案数不再参与后续计算，因此只需滚动维护 p 和 q 两个数字即可。"
+    tag: "空间压缩"

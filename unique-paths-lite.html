@@ -40,6 +40,10 @@
         </button>
         <div class="flex items-center gap-1 min-w-0">
           <h1 id="header-algo-main-title" class="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight flex-shrink-0">62. 不同路径</h1>
+          <button id="btn-open-problem-modal" title="点击查看力扣原题描述、示例与约束" class="px-1.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-800 text-[10px] font-bold transition flex items-center gap-1 flex-shrink-0 shadow-2xs">
+            <i class="fa-regular fa-file-lines text-amber-600"></i>
+            <span>题目</span>
+          </button>
           <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden 2xl:inline-block max-w-[140px]">阶段 1: 朴素递归</span>
           <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold font-mono flex-shrink-0 hidden xl:inline-block">O(2ⁿ)</span>
         </div>
@@ -190,26 +194,34 @@
       <!-- ================= 右侧：代码与日志 (自适应宽度，支持拖拽) ================= -->
       <section id="right-code-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 340px; flex: 1 1 50%;">
 
-        <!-- 卡片 3: 迭代代码追踪 (Java, 占比 1.1 绝不膨胀) -->
+        <!-- 卡片 3: 源码实现 / 题目描述 / 递推精讲 三 Tab 沉浸面板 -->
         <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xs overflow-hidden flex flex-col flex-[1.1] min-h-0">
-          <div class="px-3 py-1.5 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0">
-            <div class="flex items-center gap-2 min-w-0">
-              <i class="fa-brands fa-java text-amber-400 text-sm flex-shrink-0"></i>
-              <span id="code-file-title" class="text-xs font-bold text-slate-200 truncate">Solution.java</span>
+          <div class="px-2.5 py-1.5 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0 gap-2">
+            <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+            <div class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 flex-shrink-0">
+              <button id="btn-tab-code" class="tab-btn active px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold transition bg-blue-600 text-white shadow-2xs flex items-center gap-1">
+                <i class="fa-solid fa-code text-[9px]"></i> <span>代码调试</span>
+              </button>
+              <button id="btn-tab-problem" class="tab-btn px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1">
+                <i class="fa-regular fa-file-lines text-[9px]"></i> <span>题目描述</span>
+              </button>
+              <button id="btn-tab-analysis" class="tab-btn px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1">
+                <i class="fa-solid fa-lightbulb text-[9px]"></i> <span>递推精讲</span>
+              </button>
             </div>
 
-            <!-- 阶段 4 专属小变体版本切换器 (v1: 内嵌 if / v2: 外层 for) -->
-            <div id="code-variant-bar" class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800">
-              <button id="btn-variant-if" data-variant="if" class="variant-btn active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs">
+            <!-- 2. 阶段专属小变体版本切换器 (v1: 内嵌 if / v2: 外层 for) -->
+            <div id="code-variant-bar" class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 flex-shrink-0 whitespace-nowrap">
+              <button id="btn-variant-if" data-variant="if" class="variant-btn whitespace-nowrap active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs">
                 内嵌 if 分支
               </button>
-              <button id="btn-variant-for" data-variant="for" class="variant-btn px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+              <button id="btn-variant-for" data-variant="for" class="variant-btn whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800">
                 外层 for 循环
               </button>
             </div>
 
-            <!-- 字号缩放器与控制 -->
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <!-- 3. 字号缩放器与窗口微控制 -->
+            <div id="code-font-container" class="flex items-center gap-2 flex-shrink-0">
               <div class="flex items-center bg-slate-800/90 rounded-md border border-slate-700/80 p-0.5 text-slate-300">
                 <button id="btn-code-font-dec" title="缩小代码字号 (A-)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1">A-</button>
                 <span id="code-font-indicator" class="px-1 text-[10px] font-mono text-slate-400">12</span>
@@ -224,10 +236,23 @@
             </div>
           </div>
 
-          <div id="code-container-box" class="p-2.5 font-mono-code overflow-y-auto text-slate-300 flex-1 min-h-0 scroll-smooth">
-            <pre class="m-0 p-0 leading-tight"><code id="code-content">
-              <!-- 动态装载对应阶段的代码 -->
-            </code></pre>
+          <!-- 容器 1: 源码高亮与单步追踪视图 -->
+          <div id="code-view-container" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div id="code-container-box" class="p-2.5 font-mono-code overflow-y-auto text-slate-300 flex-1 min-h-0 scroll-smooth">
+              <pre class="m-0 p-0 leading-tight"><code id="code-content">
+                <!-- 动态装载对应阶段的代码 -->
+              </code></pre>
+            </div>
+          </div>
+
+          <!-- 容器 2: 题目完整描述视图 -->
+          <div id="problem-view-container" class="hidden flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
+            <!-- 动态渲染题目描述、用例与约束 -->
+          </div>
+
+          <!-- 容器 3: 5 步递推与 FAQs 精讲视图 -->
+          <div id="analysis-view-container" class="hidden flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
+            <!-- 动态渲染 5 步递推与 FAQs -->
           </div>
         </div>
 
@@ -252,6 +277,25 @@
 
   </div>
 
+  <!-- 4. 力扣原题描述与用例轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div class="px-4 py-3 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-bold">
+            <i class="fa-regular fa-file-lines"></i>
+          </span>
+          <h3 class="text-xs sm:text-sm font-bold text-white">力扣原题描述</h3>
+        </div>
+        <button id="btn-close-problem-modal" title="关闭 (Esc)" class="w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      <div id="modal-problem-body" class="p-4 sm:p-5 overflow-y-auto text-xs leading-relaxed text-slate-300 space-y-4 scroll-smooth">
+        <!-- 动态装载题目内容 -->
+      </div>
+    </div>
+  </div>
 
   <!-- 3. 算法引擎与交互控制脚本 (深度模块装配) -->
   <script type="module">

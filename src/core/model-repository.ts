@@ -12,6 +12,7 @@ import minimumPathSumModel from '../algorithms/specs/models/minimum-path-sum.yam
 import fibonacciModel from '../algorithms/specs/models/fibonacci.yaml';
 import climbStairsModel from '../algorithms/specs/models/climb-stairs.yaml';
 import knapsack01Model from '../algorithms/specs/models/knapsack-01.yaml';
+import distinctSubsequencesModel from '../algorithms/specs/models/distinct-subsequences.yaml';
 
 export class AlgorithmModelRepository {
   private static registry = new Map<string, IYamlAlgorithmModel>([
@@ -22,6 +23,7 @@ export class AlgorithmModelRepository {
     ['climb-stairs', climbStairsModel as IYamlAlgorithmModel],
     ['01-knapsack', knapsack01Model as IYamlAlgorithmModel],
     ['knapsack-01', knapsack01Model as IYamlAlgorithmModel],
+    ['distinct-subsequences', distinctSubsequencesModel as IYamlAlgorithmModel],
   ]);
 
   /**

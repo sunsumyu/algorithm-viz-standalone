@@ -1,3 +1,9 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「最小路径和 (Minimum Path Sum)」四阶段全演化标准实现。
+# 包含：权值累加、越界无穷大拦截、记忆化剪枝、二维DP与一维空间滚动压缩。
+# ==============================================================================
+
 id: min-path-sum
 name: "最小路径和"
 nameEn: "Minimum Path Sum"
@@ -11,6 +17,29 @@ description: "网格权值路径（LeetCode 64）：从左上角到右下角，�
 defaultParams:
   m: 3
   n: 3
+  grid:
+    - [1, 3, 1]
+    - [1, 5, 1]
+    - [4, 2, 1]
+
+problem:
+  leetcodeId: 64
+  title: "最小路径和"
+  difficulty: "中等"
+  tags: ["数组", "动态规划", "矩阵"]
+  description: "给定一个包含非负整数的 <code>m x n</code> 网格 <code>grid</code> ，请找出一条从左上角到右下角的路径，使得路径上的数字总和为最小。<br/><br/><strong>说明：</strong>每次只能向下或者向右移动一步。"
+  examples:
+    - input: "grid = [[1,3,1],[1,5,1],[4,2,1]]"
+      output: "7"
+      explanation: "因为路径 1 -> 3 -> 1 -> 1 -> 1 的总和最小。"
+    - input: "grid = [[1,2,3],[4,5,6]]"
+      output: "12"
+  constraints:
+    - "m == grid.length"
+    - "n == grid[i].length"
+    - "1 <= m, n <= 200"
+    - "0 <= grid[i][j] <= 200"
+  leetcodeUrl: "https://leetcode.cn/problems/minimum-path-sum/"
 
 directions:
   forward:
@@ -53,35 +82,72 @@ stages:
     timeBadge: "O(2ⁿ)"
     badgeBg: "bg-slate-100 text-slate-700"
     name:
-      forward: "阶段 1: 朴素递归 (权值路径搜索)"
-      reverse: "阶段 1: 朴素递归 (倒序寻源权值搜索)"
+      forward: "阶段 1: 朴素递归 (自顶向下权值搜索)"
+      reverse: "阶段 1: 朴素递归 (逆向倒序权值搜索)"
     desc:
-      forward: "从起点 (0, 0) 向右向下分支，到达终点返回格点权值，非终点返回 min(下, 右) + grid[i][j]。"
+      forward: "从起点 (0, 0) 向右向下分支，到达终点返回格点权值，越界返回无穷大，非终点返回 min(下, 右) + grid[i][j]。"
       reverse: "从终点 (m-1, n-1) 逆推向上向左寻找最小来源代价。"
     variants:
-      boundary:
-        variantLabel: "边界直达版"
+      terminal:
+        variantLabel: "越界拦截版"
         title:
-          forward: "MinPathSum_Recursive.java (边界直达版)"
-          reverse: "MinPathSum_RecursiveReverse.java (边界直达版)"
+          forward: "MinPathSum_Recursive.java (越界拦截版)"
+          reverse: "MinPathSum_RecursiveReverse.java (越界拦截版)"
         code:
           forward:
-            title: "MinPathSum_Recursive.java (边界直达版)"
+            title: "MinPathSum_Recursive.java (越界拦截版)"
             source: |
               class Solution {
                   public int minPathSum(int[][] grid) {
                       return dfs(grid, 0, 0, grid.length, grid[0].length);
                   }
                   private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds // 越界返回无穷大
                       if (i == m - 1 && j == n - 1) return grid[i][j]; // @step:boundary // 抵达终点
-                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal // 越界返回无穷大
+                      int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
+                      int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
+                      return Math.min(down, right) + grid[i][j]; // @step:combine // 汇总最小权值
+                  }
+              }
+          reverse:
+            title: "MinPathSum_RecursiveReverse.java (越界拦截版)"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      return dfs(grid, grid.length - 1, grid[0].length - 1);
+                  }
+                  private int dfs(int[][] grid, int i, int j) { // @step:entry
+                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:out_of_bounds
+                      if (i == 0 && j == 0) return grid[0][0]; // @step:boundary
+                      int left = dfs(grid, i, j - 1);  // @step:branch_left
+                      int up = dfs(grid, i - 1, j);    // @step:branch_up
+                      return Math.min(left, up) + grid[i][j]; // @step:combine
+                  }
+              }
+      boundary:
+        variantLabel: "边界直达版"
+        title:
+          forward: "MinPathSum_RecursiveBoundary.java"
+          reverse: "MinPathSum_RecursiveBoundaryReverse.java"
+        code:
+          forward:
+            title: "MinPathSum_RecursiveBoundary.java"
+            source: |
+              class Solution {
+                  public int minPathSum(int[][] grid) {
+                      return dfs(grid, 0, 0, grid.length, grid[0].length);
+                  }
+                  private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
+                      if (i == m - 1 && j == n - 1) return grid[i][j]; // @step:boundary
+                      if (i == m - 1) return dfs(grid, i, j + 1, m, n) + grid[i][j]; // @step:branch_right
+                      if (j == n - 1) return dfs(grid, i + 1, j, m, n) + grid[i][j]; // @step:branch_down
                       int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
                       int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
                       return Math.min(down, right) + grid[i][j]; // @step:combine
                   }
               }
           reverse:
-            title: "MinPathSum_RecursiveReverse.java (边界直达版)"
+            title: "MinPathSum_RecursiveBoundaryReverse.java"
             source: |
               class Solution {
                   public int minPathSum(int[][] grid) {
@@ -89,7 +155,8 @@ stages:
                   }
                   private int dfs(int[][] grid, int i, int j) { // @step:entry
                       if (i == 0 && j == 0) return grid[0][0]; // @step:boundary
-                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal
+                      if (i == 0) return dfs(grid, i, j - 1) + grid[i][j]; // @step:branch_left
+                      if (j == 0) return dfs(grid, i - 1, j) + grid[i][j]; // @step:branch_up
                       int left = dfs(grid, i, j - 1);  // @step:branch_left
                       int up = dfs(grid, i - 1, j);    // @step:branch_up
                       return Math.min(left, up) + grid[i][j]; // @step:combine
@@ -105,7 +172,7 @@ stages:
       forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
       reverse: "阶段 2: 逆推记忆化搜索 (自顶向下剪枝)"
     desc:
-      forward: "引入 memo[m][n] 缓存各格点至终点的最小路径和，避免指数级爆炸。"
+      forward: "引入 memo[m][n] 缓存各格点至终点的最小路径和，避免指数级重复展开。"
       reverse: "自顶向下倒序记忆化，查表剪枝加速。"
     variants:
       array_memo:
@@ -125,9 +192,9 @@ stages:
                       return dfs(grid, 0, 0, m, n, memo);
                   }
                   private int dfs(int[][] grid, int i, int j, int m, int n, int[][] memo) { // @step:entry
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds
                       if (i == m - 1 && j == n - 1) return grid[i][j]; // @step:boundary
-                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal
-                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit // 剪枝命中
                       int down = dfs(grid, i + 1, j, m, n, memo);  // @step:branch_down
                       int right = dfs(grid, i, j + 1, m, n, memo); // @step:branch_right
                       return memo[i][j] = Math.min(down, right) + grid[i][j]; // @step:combine
@@ -144,8 +211,8 @@ stages:
                       return dfs(grid, m - 1, n - 1, memo);
                   }
                   private int dfs(int[][] grid, int i, int j, int[][] memo) { // @step:entry
+                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:out_of_bounds
                       if (i == 0 && j == 0) return grid[0][0]; // @step:boundary
-                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal
                       if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
                       int left = dfs(grid, i, j - 1, memo);  // @step:branch_left
                       int up = dfs(grid, i - 1, j, memo);    // @step:branch_up
@@ -162,7 +229,7 @@ stages:
       forward: "阶段 3: 经典顺推二维 DP 填表 (Min Path Sum)"
       reverse: "阶段 3: 逆向倒序二维 DP 填表 (Min Path Sum)"
     desc:
-      forward: "dp[i][j] 表示从起点到 (i, j) 的最小权值和，dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + grid[i][j]。"
+      forward: "dp[i][j] 表示从起点 (0,0) 到 (i, j) 的最小权值和，dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + grid[i][j]。"
       reverse: "dp[i][j] 表示从 (i, j) 到终点的最小权值和。"
     variants:
       if:
@@ -243,11 +310,11 @@ stages:
                   public int minPathSum(int[][] grid) {
                       int m = grid.length, n = grid[0].length;
                       int[] memo = new int[n]; // @step:init
-                      memo[0] = grid[0][0];
-                      for (int j = 1; j < n; j++) memo[j] = memo[j - 1] + grid[0][j]; // 初始化首行
-                      for (int i = 1; i < m; i++) {
-                          memo[0] += grid[i][0]; // 更新首列
-                          for (int j = 1; j < n; j++) {
+                      memo[0] = grid[0][0]; // @step:init_val
+                      for (int j = 1; j < n; j++) memo[j] = memo[j - 1] + grid[0][j]; // @step:init_row
+                      for (int i = 1; i < m; i++) { // @step:loop_i
+                          memo[0] += grid[i][0]; // @step:init_col // 更新首列
+                          for (int j = 1; j < n; j++) { // @step:loop_j
                               int fromTop = memo[j];      // @step:fetch_down // 上方旧值
                               int fromLeft = memo[j - 1]; // @step:fetch_right // 左方新值
                               memo[j] = Math.min(fromTop, fromLeft) + grid[i][j]; // @step:accumulate
@@ -263,16 +330,55 @@ stages:
                   public int minPathSum(int[][] grid) {
                       int m = grid.length, n = grid[0].length;
                       int[] memo = new int[n]; // @step:init
-                      memo[n - 1] = grid[m - 1][n - 1];
-                      for (int j = n - 2; j >= 0; j--) memo[j] = memo[j + 1] + grid[m - 1][j];
-                      for (int i = m - 2; i >= 0; i--) {
-                          memo[n - 1] += grid[i][n - 1];
-                          for (int j = n - 2; j >= 0; j--) {
-                              int fromDown = memo[j];
-                              int fromRight = memo[j + 1];
+                      memo[n - 1] = grid[m - 1][n - 1]; // @step:init_val
+                      for (int j = n - 2; j >= 0; j--) memo[j] = memo[j + 1] + grid[m - 1][j]; // @step:init_row
+                      for (int i = m - 2; i >= 0; i--) { // @step:loop_i
+                          memo[n - 1] += grid[i][n - 1]; // @step:init_col
+                          for (int j = n - 2; j >= 0; j--) { // @step:loop_j
+                              int fromDown = memo[j];      // @step:fetch_down
+                              int fromRight = memo[j + 1]; // @step:fetch_right
                               memo[j] = Math.min(fromDown, fromRight) + grid[i][j]; // @step:accumulate
                           }
                       }
                       return memo[0]; // @step:return
                   }
               }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 最小路径和 5 步法系统精讲"
+  summary: "LeetCode 64。网格权值最小化动态规划核心题型。核心在于：每一个位置的最小权值来自于上方和左方两者的较小值加上当前格自身数字！"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i][j]</code>：从起点 <code>(0, 0)</code> 出发到达网格 <code>(i, j)</code> 的最小数字路径和。"
+      icon: "🎯"
+      badge: "权值状态"
+    - label: "二、状态转移方程"
+      desc: "<code>dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + grid[i][j]</code>。当前格最小和由上方与左方较小者决定。"
+      icon: "🔄"
+      badge: "取最小加当前值"
+    - label: "三、边界与初始化"
+      desc: "起点 <code>dp[0][0] = grid[0][0]</code>；首行 <code>dp[0][j] = dp[0][j-1] + grid[0][j]</code>；首列 <code>dp[i][0] = dp[i-1][0] + grid[i][0]</code>。"
+      icon: "🎬"
+      badge: "前缀累加"
+    - label: "四、遍历顺序"
+      desc: "双重循环从左到右、从上到下。空间压缩时外层遍历行、内层正序遍历列，用一维数组 <code>memo[j]</code> 原地更新。"
+      icon: "🧭"
+      badge: "双重循环"
+    - label: "五、举例推导"
+      desc: "以 3x3 矩阵 [[1,3,1],[1,5,1],[4,2,1]] 为例：第一行=[1,4,5]，第二行=[2,7,6]，第三行=[6,8,7]，最终终点为 7。"
+      icon: "📊"
+      badge: "答案验证"
+
+# ==============================================================================
+# 常见面试高频问题 (FAQ List)
+# ==============================================================================
+faqList:
+  - question: "为什么最小路径和的递推方程是 min 而不是加法？"
+    answer: "不同路径求的是'路径总方案数'（加法原理：总方案数 = 从上方来 + 从左方来）；而最小路径和求的是'最优代价'（极值原理：最优解 = min(从上方代价, 从左方代价) + 本格代价）。"
+    tag: "核心区别"
+  - question: "为什么空间复杂度可以从 O(m×n) 优化到 O(n)？"
+    answer: "计算 dp[i][j] 时只依赖上方 dp[i-1][j]（更新前 memo[j] 的旧值）和左方 dp[i][j-1]（刚更新后的 memo[j-1] 新值），更早的历史行已经不再需要。"
+    tag: "空间压缩"
