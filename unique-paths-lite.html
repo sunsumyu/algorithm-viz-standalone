@@ -103,9 +103,23 @@
             </div>
           </div>
 
-          <!-- 网格居中展示盒 (带 3D 舞台与沙盘视角切换) -->
-          <div id="grid-stage-wrapper" class="grid-3d-scene bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col items-center justify-start flex-1 min-h-0 overflow-auto relative scroll-smooth">
-            <div id="grid-board-wrapper" class="grid-3d-board relative inline-flex flex-col items-center m-auto pt-3 pb-8">
+          <!-- 网格居中展示盒 (WebGL 3D 与 2D 经典平面无缝切换) -->
+          <div id="grid-stage-wrapper" class="bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col items-center justify-start flex-1 min-h-0 overflow-auto relative scroll-smooth">
+            
+            <!-- Three.js 3D WebGL Canvas 容器 (3D 模式显示) -->
+            <div id="three-canvas-container" class="absolute inset-0 w-full h-full hidden z-10"></div>
+            
+            <!-- 3D 视角交互控制浮动栏 (3D 模式显示) -->
+            <div id="three-controls-bar" class="absolute bottom-2 right-2 z-20 hidden items-center gap-1.5 bg-white/90 backdrop-blur-xs px-2 py-1 rounded-xl border border-slate-200 shadow-sm text-xs font-medium text-slate-600">
+              <span class="text-[10px] text-slate-400 font-sans hidden sm:inline">🖱️ 拖拽旋转 · 滚轮缩放</span>
+              <button id="btn-reset-3d-cam" title="重置等轴测 3D 视角" class="px-1.5 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-arrows-rotate text-blue-600"></i>
+                <span>复位视角</span>
+              </button>
+            </div>
+
+            <!-- 2D 经典平面展示盒 (2D 模式显示) -->
+            <div id="grid-board-wrapper" class="relative inline-flex flex-col items-center m-auto pt-3 pb-8">
               <div id="grid-container" class="inline-grid gap-1.5 p-2 bg-white rounded-xl border border-slate-200 shadow-sm relative z-0">
                 <!-- 动态构建单元格 -->
               </div>

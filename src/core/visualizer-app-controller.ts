@@ -10,6 +10,7 @@ import { AlgorithmModelRepository } from './model-repository';
 import { UniversalStageEngine, type UniversalStep } from './universal-stage-engine';
 import { VisualizerStateRouter, type VisualizerState } from './state-router';
 import { GridVisualAdapter, RecursionTreeAdapter } from './renderers/grid-visual-adapter';
+import { ThreeGridVisualAdapter } from './renderers/three-grid-visual-adapter';
 import { PlaybackTimelineController } from './playback-timeline-controller';
 import { VisualThemeManager } from './theme/visual-theme-manager';
 import { SplitterEngine } from './splitter-engine';
@@ -508,10 +509,22 @@ export class VisualizerAppController {
       legendRefEl.innerHTML = isReverse ? '🐱 参考下方/右方' : '🐱 参考上方/左方';
     }
 
-    // 二维网格渲染
+    // 二维/三维网格渲染
+    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(this.modelId);
+    if (this.is3DMode && typeof document !== 'undefined') {
+      const threeContainer = document.getElementById('three-canvas-container');
+      if (threeContainer && !threeContainer.classList.contains('hidden')) {
+        ThreeGridVisualAdapter.getInstance().updateStep(step, {
+          m: this.m,
+          n: this.n,
+          isReverse,
+          modelId: this.modelId,
+          isGridProblem
+        });
+      }
+    }
     const gridContainer = document.getElementById('grid-container');
     if (gridContainer) {
-      const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(this.modelId);
       GridVisualAdapter.renderGrid(gridContainer, step, {
         m: this.m,
         n: this.n,
@@ -785,17 +798,42 @@ export class VisualizerAppController {
     if (typeof document === 'undefined') return;
     const stageWrapper = document.getElementById('grid-stage-wrapper');
     const boardWrapper = document.getElementById('grid-board-wrapper');
+    const threeContainer = document.getElementById('three-canvas-container');
+    const threeControls = document.getElementById('three-controls-bar');
     const btnToggle = document.getElementById('btn-toggle-3d');
     const labelToggle = document.getElementById('label-toggle-3d');
 
-    if (stageWrapper && boardWrapper) {
-      if (this.is3DMode) {
-        stageWrapper.classList.add('grid-3d-scene');
-        boardWrapper.classList.add('grid-3d-board');
-      } else {
-        stageWrapper.classList.remove('grid-3d-scene');
-        boardWrapper.classList.remove('grid-3d-board');
+    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(this.modelId);
+
+    if (this.is3DMode) {
+      if (threeContainer) {
+        threeContainer.classList.remove('hidden');
+        ThreeGridVisualAdapter.getInstance().mount(threeContainer);
+        const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+        if (this.steps[curStep]) {
+          ThreeGridVisualAdapter.getInstance().updateStep(this.steps[curStep], {
+            m: this.m,
+            n: this.n,
+            modelId: this.modelId,
+            isGridProblem
+          });
+        }
       }
+      if (threeControls) {
+        threeControls.classList.remove('hidden');
+        threeControls.classList.add('flex');
+      }
+      if (boardWrapper) boardWrapper.classList.add('hidden');
+    } else {
+      if (threeContainer) {
+        threeContainer.classList.add('hidden');
+        ThreeGridVisualAdapter.getInstance().dispose();
+      }
+      if (threeControls) {
+        threeControls.classList.add('hidden');
+        threeControls.classList.remove('flex');
+      }
+      if (boardWrapper) boardWrapper.classList.remove('hidden');
     }
 
     if (btnToggle) {
@@ -1310,11 +1348,17 @@ export class VisualizerAppController {
     if (btnSubMatrix) btnSubMatrix.addEventListener('click', () => this.setStage3SubView('matrix'));
     if (btnSubTree) btnSubTree.addEventListener('click', () => this.setStage3SubView('tree'));
 
-    // 3D Isometric Perspective toggle
+    // 3D Isometric Perspective toggle & Camera reset
     const btnToggle3D = document.getElementById('btn-toggle-3d');
     if (btnToggle3D) {
       btnToggle3D.addEventListener('click', () => {
         this.toggle3DPerspective();
+      });
+    }
+    const btnReset3DCam = document.getElementById('btn-reset-3d-cam');
+    if (btnReset3DCam) {
+      btnReset3DCam.addEventListener('click', () => {
+        ThreeGridVisualAdapter.getInstance().resetCameraPosition();
       });
     }
 
