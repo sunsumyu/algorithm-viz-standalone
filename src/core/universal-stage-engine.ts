@@ -567,7 +567,10 @@ export class UniversalStageEngine {
    */
   public static findNodeIdByCoord(root: any, r?: number, c?: number): string | undefined {
     if (!root || r === undefined || c === undefined || r < 0 || c < 0) return undefined;
-    if (root.label && (root.label.includes(`dfs(${r},${c})`) || root.label.includes(`dfs(${r}, ${c})`))) {
+    if (root.r === r && root.c === c) {
+      return root.id;
+    }
+    if (root.val && (root.val.includes(`dfs(${r},${c})`) || root.val.includes(`dfs(${r}, ${c})`))) {
       return root.id;
     }
     if (root.children) {
@@ -595,10 +598,10 @@ export class UniversalStageEngine {
 
     let baseFullTree: any = undefined;
     try {
-      const stage2Steps = UniversalStageEngine.generateStage2Steps(model, mVal, nVal, direction, 'boundary');
+      const stage2Steps = UniversalStageEngine.generateStage1or2Steps(model, mVal, nVal, direction, true, anchorMap, 'terminal');
       baseFullTree = stage2Steps[stage2Steps.length - 1]?.treeRoot;
-    } catch {
-      // safe fallback
+    } catch (err) {
+      console.warn('[UniversalStageEngine] Failed to generate stage2 tree for stage3:', err);
     }
 
     const obstacleGrid: number[][] | undefined =
