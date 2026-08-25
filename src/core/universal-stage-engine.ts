@@ -563,6 +563,23 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 按坐标在树中查找对应节点 ID
+   */
+  public static findNodeIdByCoord(root: any, r?: number, c?: number): string | undefined {
+    if (!root || r === undefined || c === undefined || r < 0 || c < 0) return undefined;
+    if (root.label && (root.label.includes(`dfs(${r},${c})`) || root.label.includes(`dfs(${r}, ${c})`))) {
+      return root.id;
+    }
+    if (root.children) {
+      for (const child of root.children) {
+        const found = UniversalStageEngine.findNodeIdByCoord(child, r, c);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }
+
+  /**
    * 生成阶段 3 (经典二维 DP 填表) 演化步骤
    */
   public static generateStage3Steps(
@@ -575,6 +592,14 @@ export class UniversalStageEngine {
     const steps: UniversalStep[] = [];
     const dp = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
+
+    let baseFullTree: any = undefined;
+    try {
+      const stage2Steps = UniversalStageEngine.generateStage2Steps(model, mVal, nVal, direction, 'boundary');
+      baseFullTree = stage2Steps[stage2Steps.length - 1]?.treeRoot;
+    } catch {
+      // safe fallback
+    }
 
     const obstacleGrid: number[][] | undefined =
       (model.defaultParams as any)?.obstacleGrid ||
@@ -975,6 +1000,13 @@ export class UniversalStageEngine {
           log: `| 🏆 逆推填表完成！起点结果 dp[0][0] = ${dp[0][0]}`,
           msg: `🏆 逆推填表全部完成！左上角起点路径数: <strong>${dp[0][0]}</strong>。`
         });
+      }
+    }
+
+    if (baseFullTree) {
+      for (const step of steps) {
+        step.treeRoot = UniversalStageEngine.cloneTree(baseFullTree);
+        step.activeNodeId = UniversalStageEngine.findNodeIdByCoord(step.treeRoot, step.i, step.j);
       }
     }
 

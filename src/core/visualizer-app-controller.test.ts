@@ -260,4 +260,31 @@ describe('VisualizerAppController Deep Module', () => {
     expect(legendRefEl?.innerHTML).toContain('参考下方/右方');
     controller2.destroy();
   });
+
+  it('应该支持在阶段 3 切换 DP 状态表与状态依赖树子视图并持久化偏好', () => {
+    const controller = new VisualizerAppController({ mode: 'lite', defaultModelId: 'unique-paths-ii' });
+    controller.init();
+
+    // 切换到 stage-3
+    const stageTabs = elementsMap.get('stage-tabs-container');
+    const stage3Btn = stageTabs?.children.find(c => c.dataset.stage === 'stage-3');
+    stage3Btn?.dispatch('click');
+
+    // 默认子视图为 matrix
+    expect(controller.stage3SubView).toBe('matrix');
+    const stage3Bar = elementsMap.get('stage3-subview-bar');
+    expect(stage3Bar?.classList.contains('hidden')).toBe(false);
+
+    // 切换为 tree 子视图
+    controller.setStage3SubView('tree');
+    expect(controller.stage3SubView).toBe('tree');
+    expect(localStorage.getItem('algo-stage3-subview')).toBe('tree');
+
+    // 切换回 matrix 子视图
+    controller.setStage3SubView('matrix');
+    expect(controller.stage3SubView).toBe('matrix');
+    expect(localStorage.getItem('algo-stage3-subview')).toBe('matrix');
+
+    controller.destroy();
+  });
 });

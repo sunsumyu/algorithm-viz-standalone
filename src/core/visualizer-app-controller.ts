@@ -42,10 +42,12 @@ export class VisualizerAppController {
   private splitterEngine: SplitterEngine | null = null;
   private themeManager: VisualThemeManager;
   private isDestroyed = false;
+  public stage3SubView: 'matrix' | 'tree' = 'matrix';
 
   constructor(options: VisualizerAppControllerOptions = {}) {
     this.mode = options.mode || 'lite';
     this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
+    this.stage3SubView = (typeof localStorage !== 'undefined' && localStorage.getItem('algo-stage3-subview') === 'tree') ? 'tree' : 'matrix';
     
     // 解析 options, URL 参数或全局变量获取 modelId
     let requestedId = options.defaultModelId;
@@ -442,7 +444,11 @@ export class VisualizerAppController {
       if (this.currentStage === 'stage-4') {
         GridVisualAdapter.renderLiteMemoSlots(memoContainer, step, this.n);
       } else if (this.currentStage === 'stage-3') {
-        GridVisualAdapter.renderTransferEquation(memoContainer, step, isReverse);
+        if (this.stage3SubView === 'tree') {
+          RecursionTreeAdapter.renderRecursionTree(memoContainer, step.treeRoot, step.activeNodeId, true);
+        } else {
+          GridVisualAdapter.renderStage3DPTable(memoContainer, step, { m: this.m, n: this.n, isReverse });
+        }
       } else if (this.currentStage === 'stage-1' || this.currentStage === 'stage-2') {
         RecursionTreeAdapter.renderRecursionTree(memoContainer, step.treeRoot, step.activeNodeId, this.currentStage === 'stage-2');
       }
@@ -611,6 +617,53 @@ export class VisualizerAppController {
 
     const memoLenBadge = document.getElementById('badge-memo-len');
     if (memoLenBadge) memoLenBadge.textContent = this.currentStage === 'stage-4' ? `长度: ${this.n}` : `${this.m} × ${this.n}`;
+
+    this.updateStage3SubViewTabs();
+  }
+
+  /**
+   * 设置阶段 3 的子视图模式 (DP 矩阵 vs 状态依赖树)
+   */
+  public setStage3SubView(view: 'matrix' | 'tree'): void {
+    this.stage3SubView = view;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('algo-stage3-subview', view);
+    }
+    this.updateStage3SubViewTabs();
+    const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+    if (this.steps[curStep]) {
+      const isReverse = this.currentDirection === 'reverse';
+      if (this.mode === 'lite') {
+        this.renderLiteVisuals(this.steps[curStep], curStep, isReverse);
+      }
+    }
+  }
+
+  /**
+   * 同步阶段 3 子视图切换按钮高亮状态
+   */
+  public updateStage3SubViewTabs(): void {
+    const bar = document.getElementById('stage3-subview-bar');
+    if (!bar) return;
+    if (this.currentStage === 'stage-3') {
+      bar.classList.remove('hidden');
+      bar.classList.add('flex');
+    } else {
+      bar.classList.remove('flex');
+      bar.classList.add('hidden');
+    }
+    const btnMatrix = document.getElementById('btn-subview-matrix');
+    const btnTree = document.getElementById('btn-subview-tree');
+    if (btnMatrix) {
+      btnMatrix.className = this.stage3SubView === 'matrix'
+        ? 'px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1'
+        : 'px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1';
+    }
+    if (btnTree) {
+      btnTree.className = this.stage3SubView === 'tree'
+        ? 'px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-emerald-700 font-extrabold flex items-center gap-1'
+        : 'px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1';
+    }
   }
 
   private updateCodePanel(stageConfig: any): void {
@@ -820,6 +873,12 @@ export class VisualizerAppController {
         this.setCodeFontSize(this.codeFontSize + 0.5);
       });
     }
+
+    // Stage-3 Subview switcher
+    const btnSubMatrix = document.getElementById('btn-subview-matrix');
+    const btnSubTree = document.getElementById('btn-subview-tree');
+    if (btnSubMatrix) btnSubMatrix.addEventListener('click', () => this.setStage3SubView('matrix'));
+    if (btnSubTree) btnSubTree.addEventListener('click', () => this.setStage3SubView('tree'));
 
     // Preset buttons (Full mode)
     document.querySelectorAll('.preset-btn').forEach(btn => {

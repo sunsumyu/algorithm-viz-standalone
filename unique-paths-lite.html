@@ -153,7 +153,18 @@
               </h2>
               <p id="card2-desc" class="text-[11px] text-slate-500 mt-0.5">空间优化: 只保存当前行的数据，不断滚动覆盖。</p>
             </div>
-            <span id="badge-memo-len" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">长度: n</span>
+            <div class="flex items-center gap-2">
+              <!-- 阶段 3 专用：DP 矩阵与依赖树切换 Tab -->
+              <div id="stage3-subview-bar" class="hidden items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
+                <button id="btn-subview-matrix" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1">
+                  <i class="fa-solid fa-table-cells"></i> <span>DP 状态表</span>
+                </button>
+                <button id="btn-subview-tree" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                  <i class="fa-solid fa-network-wired"></i> <span>状态依赖树</span>
+                </button>
+              </div>
+              <span id="badge-memo-len" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">长度: n</span>
+            </div>
           </div>
 
           <!-- 槽位 / 递归树 / 状态居中展示盒 -->
