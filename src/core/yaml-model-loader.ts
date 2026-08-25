@@ -6,6 +6,7 @@
  */
 
 import * as jsYaml from 'js-yaml';
+import { highlightTokens, escapeHtml } from './code-highlighter';
 import type {
   IYamlAlgorithmModel,
   IYamlStageSpec,
@@ -109,18 +110,22 @@ export class YamlModelLoader {
       const lineNum = idx + 1;
       let lineText = rawLine;
 
-      // 提取 @step:anchor 标签
-      const anchorMatch = lineText.match(/\/\/\s*@step:([a-zA-Z0-9_\-]+)/);
-      if (anchorMatch) {
-        const anchorName = anchorMatch[1];
-        anchorMap[anchorName] = lineNum;
-        // 剥离 @step:anchor 标签
-        lineText = lineText.replace(/\/\/\s*@step:[a-zA-Z0-9_\-]+/, '');
+      // 全局提取本行所有 @step:anchor 标签
+      const anchorMatches = Array.from(lineText.matchAll(/@step:([a-zA-Z0-9_\-]+)/g));
+      if (anchorMatches.length > 0) {
+        anchorMatches.forEach((m) => {
+          anchorMap[m[1]] = lineNum;
+        });
+        // 剥离所有 @step:anchor 注释标签
+        lineText = lineText.replace(/@step:[a-zA-Z0-9_\-]+/g, '');
+        // 清理可能产生的重复 // 注释符号及行尾多余空注释
+        lineText = lineText.replace(/\/\/\s*\/\//g, '//');
+        lineText = lineText.replace(/\/\/\s*$/, '').trimEnd();
       }
 
       cleanLines.push(lineText);
-      const highlightedCode = YamlModelLoader.highlightSyntax(lineText, lang);
-      htmlLines.push(`<span class="code-line" data-line="${lineNum}">${highlightedCode}</span>`);
+      const highlightedCode = highlightTokens(lineText, lang);
+      htmlLines.push(`<span class="code-line" data-line="${lineNum}" data-raw-code="${escapeHtml(lineText)}">${highlightedCode}</span>`);
     });
 
     return {
@@ -133,35 +138,10 @@ export class YamlModelLoader {
   }
 
   /**
-   * 简单的语法高亮着色器（单趟 Token 匹配，杜绝标签嵌套冲突）
+   * 委托给词法分词高亮器 (CodeHighlighter.highlightTokens)
    */
-  public static highlightSyntax(codeLine: string, _lang: string = 'java'): string {
-    // 转义 HTML 字符
-    let safe = codeLine
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    // 匹配并分离注释
-    const commentMatch = safe.match(/(\/\/.*$)/);
-    let commentPart = '';
-    if (commentMatch && commentMatch.index !== undefined) {
-      commentPart = `<span class="text-slate-500">${commentMatch[1]}</span>`;
-      safe = safe.substring(0, commentMatch.index);
-    }
-
-    // 单趟正则匹配关键字、类型、方法和数字，防止二次扫描误伤已插入的 HTML 标签
-    const tokenRegex = /\b(class|public|private|protected|int|vector|void|return|if|else|for|while|new|const|let|function|def|self)\b|\b(Solution|Array|Math|vector)\b|\b(uniquePaths|uniquePathsWithObstacles|minPathSum|dfs|fill|push|pop|min|max)\b(?=\s*\()|\b(\d+)\b/g;
-
-    safe = safe.replace(tokenRegex, (match, kw, type, fn, num) => {
-      if (kw) return `<span class="text-purple-400">${kw}</span>`;
-      if (type) return `<span class="text-yellow-300">${type}</span>`;
-      if (fn) return `<span class="text-blue-400">${fn}</span>`;
-      if (num) return `<span class="text-amber-300">${num}</span>`;
-      return match;
-    });
-
-    return safe + commentPart;
+  public static highlightSyntax(codeLine: string, lang: string = 'java'): string {
+    return highlightTokens(codeLine, lang);
   }
 
   /**

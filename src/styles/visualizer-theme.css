@@ -201,18 +201,28 @@
   transform-origin: bottom center;
 }
 
-/* ===== 探险家小人动画 ===== */
-@keyframes adventurer-bounce {
+/* ===== 探险家小人基础状态 ===== */
+@keyframes adventurer-walk {
   0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-10px) scale(1.08, 0.92); }
+  50% { transform: translateY(-3px) scale(1.02, 0.98); }
+}
+@keyframes adventurer-blocked {
+  0%, 100% { transform: scale(1); }
+  25% { transform: translate(-2px, 1px) rotate(-3deg); }
+  75% { transform: translate(2px, -1px) rotate(3deg); }
 }
 @keyframes adventurer-cheer {
   0%, 100% { transform: translateY(0) rotate(0deg) scale(1.1); }
-  25% { transform: translateY(-14px) rotate(-6deg) scale(1.2); }
-  75% { transform: translateY(-14px) rotate(6deg) scale(1.2); }
+  25% { transform: translateY(-10px) rotate(-6deg) scale(1.2); }
+  75% { transform: translateY(-10px) rotate(6deg) scale(1.2); }
 }
-.adventurer-char.is-jumping {
-  animation: adventurer-bounce 0.75s ease-in-out infinite;
+.adventurer-char.is-jumping,
+.adventurer-char.is-walking {
+  animation: adventurer-walk 0.75s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+.adventurer-char.is-blocked {
+  animation: adventurer-blocked 0.25s ease-in-out infinite;
   transform-origin: bottom center;
 }
 .adventurer-char.is-cheering {
@@ -245,19 +255,15 @@ input[type="number"]::-webkit-outer-spin-button {
 
 @keyframes riverSplashDive {
   0% {
-    transform: translateY(-22px) scale(0.88);
-    opacity: 0.85;
+    transform: scale(0.95);
+    opacity: 0.9;
   }
-  40% {
-    transform: translateY(5px) scale(1.22, 0.78);
+  50% {
+    transform: scale(1.08);
     opacity: 1;
   }
-  70% {
-    transform: translateY(-10px) scale(0.92, 1.12);
-    opacity: 0.95;
-  }
   100% {
-    transform: translateY(0px) scale(1);
+    transform: scale(1);
     opacity: 1;
   }
 }
@@ -265,28 +271,243 @@ input[type="number"]::-webkit-outer-spin-button {
 .river-splash-dive {
   display: inline-block;
   animation: riverSplashDive 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes riverSplashRecoil {
+  0% {
+    /* 在安全格起点准备向下跳入河流 */
+    transform: translateY(0) scale(1);
+  }
+  32% {
+    /* 勇猛下跃，直接俯冲进入下方的深水河流 (下落 36px 深入河面) */
+    transform: translateY(36px) scale(0.92, 1.16);
+  }
+  50% {
+    /* 触碰河水！激起大片水花与冲击阻断，受水力反弹冲击压扁 */
+    transform: translateY(40px) scale(1.28, 0.72);
+  }
+  72% {
+    /* 边界反弹力瞬间将探险家向上弹回网格！ */
+    transform: translateY(-6px) scale(0.95, 1.05);
+  }
+  88% {
+    /* 稳稳落回安全网格 */
+    transform: translateY(2px) scale(1.02, 0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.river-splash-recoil {
+  display: inline-block;
+  animation: riverSplashRecoil 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
   transform-origin: bottom center;
 }
 
-@keyframes wallRecoilBump {
+@keyframes wallRecoilRight {
   0% {
-    transform: translateX(-16px) scale(0.9);
+    transform: translateX(0) scale(1);
   }
-  40% {
-    transform: translateX(6px) scale(0.85, 1.15);
+  32% {
+    /* 向右大步冲向右侧边界高墙 (+34px) */
+    transform: translateX(34px) scale(1.16, 0.92);
   }
-  70% {
-    transform: translateX(-8px) scale(1.1, 0.95);
+  50% {
+    /* 撞上墙壁！冲击震颤 */
+    transform: translateX(38px) scale(0.72, 1.28);
+  }
+  72% {
+    /* 反弹迅速弹回安全网格 */
+    transform: translateX(-6px) scale(1.05, 0.95);
+  }
+  88% {
+    transform: translateX(2px) scale(0.98, 1.02);
   }
   100% {
     transform: translateX(0) scale(1);
   }
 }
 
+.wall-recoil-right {
+  display: inline-block;
+  animation: wallRecoilRight 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center right;
+}
+
+@keyframes obstacleRecoilDown {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入下方障碍物格子 (+38px 深入障碍格) */
+    transform: translateY(38px) scale(0.92, 1.18);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateY(42px) scale(1.32, 0.68);
+  }
+  68% {
+    /* 瞬间受阻弹回安全来源格！ */
+    transform: translateY(-8px) scale(0.92, 1.08);
+  }
+  85% {
+    transform: translateY(3px) scale(1.03, 0.97);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.obstacle-recoil-down {
+  display: inline-block;
+  animation: obstacleRecoilDown 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes obstacleRecoilRight {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入右侧障碍物格子 (+38px 深入障碍格) */
+    transform: translateX(38px) scale(1.18, 0.92);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateX(42px) scale(0.68, 1.32);
+  }
+  68% {
+    /* 瞬间受阻弹回安全来源格！ */
+    transform: translateX(-8px) scale(1.08, 0.92);
+  }
+  85% {
+    transform: translateX(3px) scale(0.97, 1.03);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+.obstacle-recoil-right {
+  display: inline-block;
+  animation: obstacleRecoilRight 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes obstacleRecoilLeft {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入左侧障碍物格子 (-38px 深入障碍格) */
+    transform: translateX(-38px) scale(1.18, 0.92);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateX(-42px) scale(0.68, 1.32);
+  }
+  68% {
+    /* 瞬间受阻弹回右侧安全来源格！ */
+    transform: translateX(8px) scale(1.08, 0.92);
+  }
+  85% {
+    transform: translateX(-3px) scale(0.97, 1.03);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+.obstacle-recoil-left {
+  display: inline-block;
+  animation: obstacleRecoilLeft 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes obstacleRecoilUp {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入上方障碍物格子 (-38px 深入障碍格) */
+    transform: translateY(-38px) scale(0.92, 1.18);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateY(-42px) scale(1.32, 0.68);
+  }
+  68% {
+    /* 瞬间受阻弹回下方安全来源格！ */
+    transform: translateY(8px) scale(0.92, 1.08);
+  }
+  85% {
+    transform: translateY(-3px) scale(1.03, 0.97);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.obstacle-recoil-up {
+  display: inline-block;
+  animation: obstacleRecoilUp 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes obstacleBonkRecoil {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  26% {
+    /* 尝试起跳向前踏入障碍 */
+    transform: translate(0px, 12px) scale(0.9, 1.16);
+  }
+  46% {
+    /* 💥 触碰障碍物受到猛烈撞击阻挡！ */
+    transform: translate(0px, 16px) scale(1.3, 0.7);
+  }
+  66% {
+    /* 受到强大阻断力剧烈向后反弹弹回！ */
+    transform: translate(0px, -18px) scale(0.88, 1.14);
+  }
+  84% {
+    transform: translate(0px, 3px) scale(1.04, 0.96);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.obstacle-bonk-recoil {
+  display: inline-block;
+  animation: obstacleBonkRecoil 1.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes wallRecoilBump {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  32% {
+    transform: translate(16px, 6px) scale(1.1, 0.92);
+  }
+  50% {
+    transform: translate(20px, 8px) scale(0.8, 1.2);
+  }
+  72% {
+    transform: translate(-3px, -2px) scale(1.04, 0.96);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
 .wall-recoil-bump {
   display: inline-block;
-  animation: wallRecoilBump 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
-  transform-origin: center right;
+  animation: wallRecoilBump 0.9s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  transform-origin: center center;
 }
 
 /* ===== 探索足迹与箭头流动动效 ===== */
@@ -343,5 +564,27 @@ input[type="number"]::-webkit-outer-spin-button {
   width: 4px;
 }
 
+/* ===== 行内局部表达式发光聚焦 (Inline Token Focus) ===== */
+.inline-token-focus {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.25) !important;
+  border: 1.5px solid #f59e0b !important;
+  border-radius: 4px !important;
+  padding: 0 4px !important;
+  margin: 0 1px !important;
+  color: #fef08a !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.55) !important;
+  animation: tokenFocusPulse 1.2s ease-in-out infinite !important;
+}
 
-
+@keyframes tokenFocusPulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+    border-color: #f59e0b;
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.9);
+    border-color: #fbbf24;
+  }
+}

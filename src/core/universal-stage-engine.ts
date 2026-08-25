@@ -58,6 +58,8 @@ export interface UniversalStep {
   outOfBoundsDir?: 'river' | 'right-wall' | 'top-wall' | 'left-wall' | string;
   isOutOfBounds?: boolean;
   isBlockedStep?: boolean;
+  // 行内局部表达式发光聚焦 (Inline Sub-Expression Highlighting)
+  highlightText?: string;
 }
 
 export class UniversalStageEngine {
@@ -191,6 +193,9 @@ export class UniversalStageEngine {
           const outOfBoundsDir = isForward
             ? (r >= mVal ? 'river' : 'right-wall')
             : (r < 0 ? 'top-wall' : 'left-wall');
+          const oobHighlightText = isForward
+            ? (r >= mVal ? 'i >= m' : 'j >= n')
+            : (r < 0 ? 'i < 0' : 'j < 0');
 
           currentTreeNode.status = 'pruned';
           currentTreeNode.tag = '🚫=0';
@@ -204,6 +209,7 @@ export class UniversalStageEngine {
             outOfBoundsDir,
             isOutOfBounds: true,
             isBlockedStep: true,
+            highlightText: oobHighlightText,
             obstacleGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
@@ -240,6 +246,7 @@ export class UniversalStageEngine {
             fromI: fromR,
             fromJ: fromC,
             isBlockedStep: true,
+            highlightText: 'grid[i][j] == 1',
             obstacleGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
@@ -271,6 +278,7 @@ export class UniversalStageEngine {
             j: c,
             fromI: fromR,
             fromJ: fromC,
+            highlightText: isForward ? 'i == m - 1 && j == n - 1' : 'i == 0 && j == 0',
             obstacleGrid,
             grid: JSON.parse(JSON.stringify(gridState)),
             activeStack: [...activeStack],
@@ -394,7 +402,7 @@ export class UniversalStageEngine {
       // 分支 1：顺推向下 (r+1, c) / 逆推向左 (r, c-1)
       const b1R = isForward ? r + 1 : r;
       const b1C = isForward ? c : c - 1;
-      const canBranch1 = isTerminal || !obstacleGrid || (isForward ? r < mVal - 1 : r > 0);
+      const canBranch1 = isTerminal || (isForward ? r < mVal - 1 : c > 0);
       let val1 = 0;
 
       if (canBranch1) {
@@ -442,7 +450,7 @@ export class UniversalStageEngine {
       // 分支 2：顺推向右 (r, c+1) / 逆推向上 (r-1, c)
       const b2R = isForward ? r : r - 1;
       const b2C = isForward ? c + 1 : c;
-      const canBranch2 = isTerminal || !obstacleGrid || (isForward ? c < nVal - 1 : c > 0);
+      const canBranch2 = isTerminal || (isForward ? c < nVal - 1 : r > 0);
       let val2 = 0;
 
       if (canBranch2) {
@@ -583,6 +591,11 @@ export class UniversalStageEngine {
     const lineTransfer = anchorMap?.transfer || 9;
     const lineReturn = anchorMap?.return || 11;
 
+    const lineCalcTop = anchorMap?.calc_top;
+    const lineCalcLeft = anchorMap?.calc_left;
+    const lineCalcDown = anchorMap?.calc_down;
+    const lineCalcRight = anchorMap?.calc_right;
+
     // 1. 初始化数组
     steps.push({
       type: 'init',
@@ -602,16 +615,21 @@ export class UniversalStageEngine {
           for (let c = 0; c < nVal; c++) {
             if (obstacleGrid[r][c] === 1) {
               dp[r][c] = 0;
+              const fromR = c > 0 ? r : (r > 0 ? r - 1 : 0);
+              const fromC = c > 0 ? c - 1 : 0;
               steps.push({
                 type: 'obstacle-cell',
                 line: lineCond,
                 i: r,
                 j: c,
+                fromI: fromR,
+                fromJ: fromC,
+                isBlockedStep: true,
                 obstacleGrid,
                 grid: JSON.parse(JSON.stringify(dp)),
                 tag: '🚧 遇障碍置 0',
-                log: `| 🚧 坐标 (${r}, ${c}) 为障碍物，路径数 dp[${r}][${c}] = 0`,
-                msg: `🚧 坐标 (${r}, ${c}) 为障碍物，路径阻断，直接置 <code>dp[${r}][${c}] = 0</code>。`
+                log: `| 🚧 坐标 (${r}, ${c}) 为障碍物，从 (${fromR}, ${fromC}) 尝试进入受阻弹回，路径数 dp[${r}][${c}] = 0`,
+                msg: `🚧 坐标 (${r}, ${c}) 为障碍物，探险家从 (${fromR}, ${fromC}) 尝试进入受阻并弹回安全格，路径阻断，直接置 <code>dp[${r}][${c}] = 0</code>。`
               });
             } else if (r === 0 && c === 0) {
               dp[0][0] = 1;
@@ -630,8 +648,52 @@ export class UniversalStageEngine {
               const topVal = (r > 0) ? dp[r - 1][c] : 0;
               const leftVal = (c > 0) ? dp[r][c - 1] : 0;
               const sum = topVal + leftVal;
+
+              // 教学分步 1：读取上方路径并高亮三元运算符执行分支
+              if (lineCalcTop !== undefined) {
+                steps.push({
+                  type: 'calc-top',
+                  line: lineCalcTop,
+                  i: r,
+                  j: c,
+                  topI: r > 0 ? r - 1 : -1,
+                  topJ: r > 0 ? c : -1,
+                  leftI: -1,
+                  leftJ: -1,
+                  gridHighlight: { i: r, j: c },
+                  highlightText: r > 0 ? 'dp[i - 1][j]' : '0',
+                  obstacleGrid,
+                  grid: JSON.parse(JSON.stringify(dp)),
+                  tag: '查找上方路径',
+                  log: `| ⬆️ 检查上方格 (${r - 1}, ${c}): ${r > 0 ? `读取 dp[${r - 1}][${c}] = ${topVal}` : '上方越界置 0'}，得到 fromTop = ${topVal}`,
+                  msg: `⬆️ <strong>【查找上方路径】</strong>：${r > 0 ? `读取上方 <code>dp[${r - 1}][${c}] = ${topVal}</code>` : '上方越界，置 0'}，故 <code>fromTop = ${topVal}</code>。`
+                });
+              }
+
+              // 教学分步 2：读取左方路径并高亮三元运算符执行分支
+              if (lineCalcLeft !== undefined) {
+                steps.push({
+                  type: 'calc-left',
+                  line: lineCalcLeft,
+                  i: r,
+                  j: c,
+                  topI: -1,
+                  topJ: -1,
+                  leftI: c > 0 ? r : -1,
+                  leftJ: c > 0 ? c - 1 : -1,
+                  gridHighlight: { i: r, j: c },
+                  highlightText: c > 0 ? 'dp[i][j - 1]' : '0',
+                  obstacleGrid,
+                  grid: JSON.parse(JSON.stringify(dp)),
+                  tag: '查找左方路径',
+                  log: `| ⬅️ 检查左方格 (${r}, ${c - 1}): ${c > 0 ? `读取 dp[${r}][${c - 1}] = ${leftVal}` : '左方越界置 0'}，得到 fromLeft = ${leftVal}`,
+                  msg: `⬅️ <strong>【查找左方路径】</strong>：${c > 0 ? `读取左方 <code>dp[${r}][${c - 1}] = ${leftVal}</code>` : '左方越界，置 0'}，故 <code>fromLeft = ${leftVal}</code>。`
+                });
+              }
+
               dp[r][c] = sum;
 
+              // 教学分步 3：汇总状态转移求和
               steps.push({
                 type: 'transfer',
                 line: lineTransfer,
@@ -641,11 +703,13 @@ export class UniversalStageEngine {
                 topJ: r > 0 ? c : -1,
                 leftI: c > 0 ? r : -1,
                 leftJ: c > 0 ? c - 1 : -1,
+                gridHighlight: { i: r, j: c },
+                highlightText: 'fromTop + fromLeft',
                 obstacleGrid,
                 grid: JSON.parse(JSON.stringify(dp)),
-                tag: '状态转移',
-                log: `| 🔄 dp[${r}][${c}] = 上方(${topVal}) + 左方(${leftVal}) = ${sum}`,
-                msg: `状态转移: dp[${r}][${c}] = 上方 (${topVal}) + 左方 (${leftVal}) = <strong>${sum}</strong>。`
+                tag: '状态转移求和',
+                log: `| 🔄 汇总状态转移: dp[${r}][${c}] = fromTop(${topVal}) + fromLeft(${leftVal}) = ${sum}`,
+                msg: `🔄 <strong>【状态转移汇总】</strong>：<code>dp[${r}][${c}] = fromTop(${topVal}) + fromLeft(${leftVal}) = <strong>${sum}</strong></code>，写入 DP 表格。`
               });
             }
           }
@@ -668,16 +732,21 @@ export class UniversalStageEngine {
           for (let c = nVal - 1; c >= 0; c--) {
             if (obstacleGrid[r][c] === 1) {
               dp[r][c] = 0;
+              const fromR = c < nVal - 1 ? r : (r < mVal - 1 ? r + 1 : mVal - 1);
+              const fromC = c < nVal - 1 ? c + 1 : nVal - 1;
               steps.push({
                 type: 'obstacle-cell',
                 line: lineCond,
                 i: r,
                 j: c,
+                fromI: fromR,
+                fromJ: fromC,
+                isBlockedStep: true,
                 obstacleGrid,
                 grid: JSON.parse(JSON.stringify(dp)),
                 tag: '🚧 遇障碍置 0',
-                log: `| 🚧 坐标 (${r}, ${c}) 为障碍物，逆推路径数 dp[${r}][${c}] = 0`,
-                msg: `🚧 坐标 (${r}, ${c}) 为障碍物，逆推路径阻断置 0。`
+                log: `| 🚧 坐标 (${r}, ${c}) 为障碍物，从 (${fromR}, ${fromC}) 尝试进入受阻弹回，逆推路径数 dp[${r}][${c}] = 0`,
+                msg: `🚧 坐标 (${r}, ${c}) 为障碍物，探险家从 (${fromR}, ${fromC}) 尝试进入受阻并弹回安全格，逆推路径阻断置 0。`
               });
             } else if (r === mVal - 1 && c === nVal - 1) {
               dp[mVal - 1][nVal - 1] = 1;
@@ -696,8 +765,52 @@ export class UniversalStageEngine {
               const downVal = (r + 1 < mVal) ? dp[r + 1][c] : 0;
               const rightVal = (c + 1 < nVal) ? dp[r][c + 1] : 0;
               const sum = downVal + rightVal;
+
+              // 逆推分步 1：读取下方路径并高亮三元运算符执行分支
+              if (lineCalcDown !== undefined) {
+                steps.push({
+                  type: 'calc-down',
+                  line: lineCalcDown,
+                  i: r,
+                  j: c,
+                  topI: r + 1 < mVal ? r + 1 : -1,
+                  topJ: r + 1 < mVal ? c : -1,
+                  leftI: -1,
+                  leftJ: -1,
+                  gridHighlight: { i: r, j: c },
+                  highlightText: r + 1 < mVal ? 'dp[i + 1][j]' : '0',
+                  obstacleGrid,
+                  grid: JSON.parse(JSON.stringify(dp)),
+                  tag: '逆推查找下方路径',
+                  log: `| ⬇️ 检查下方格 (${r + 1}, ${c}): ${r + 1 < mVal ? `读取下方 dp[${r + 1}][${c}] = ${downVal}` : '下方越界置 0'}，得到 fromDown = ${downVal}`,
+                  msg: `⬇️ <strong>【逆推查找下方路径】</strong>：${r + 1 < mVal ? `读取下方 <code>dp[${r + 1}][${c}] = ${downVal}</code>` : '下方越界，置 0'}，故 <code>fromDown = ${downVal}</code>。`
+                });
+              }
+
+              // 逆推分步 2：读取右方路径并高亮三元运算符执行分支
+              if (lineCalcRight !== undefined) {
+                steps.push({
+                  type: 'calc-right',
+                  line: lineCalcRight,
+                  i: r,
+                  j: c,
+                  topI: -1,
+                  topJ: -1,
+                  leftI: c + 1 < nVal ? r : -1,
+                  leftJ: c + 1 < nVal ? c + 1 : -1,
+                  gridHighlight: { i: r, j: c },
+                  highlightText: c + 1 < nVal ? 'dp[i][j + 1]' : '0',
+                  obstacleGrid,
+                  grid: JSON.parse(JSON.stringify(dp)),
+                  tag: '逆推查找右方路径',
+                  log: `| ➡️ 检查右方格 (${r}, ${c + 1}): ${c + 1 < nVal ? `读取右方 dp[${r}][${c + 1}] = ${rightVal}` : '右方越界置 0'}，得到 fromRight = ${rightVal}`,
+                  msg: `➡️ <strong>【逆推查找右方路径】</strong>：${c + 1 < nVal ? `读取右方 <code>dp[${r}][${c + 1}] = ${rightVal}</code>` : '右方越界，置 0'}，故 <code>fromRight = ${rightVal}</code>。`
+                });
+              }
+
               dp[r][c] = sum;
 
+              // 逆推分步 3：汇总状态转移求和
               steps.push({
                 type: 'transfer',
                 line: lineTransfer,
@@ -707,11 +820,13 @@ export class UniversalStageEngine {
                 topJ: r + 1 < mVal ? c : -1,
                 leftI: c + 1 < nVal ? r : -1,
                 leftJ: c + 1 < nVal ? c + 1 : -1,
+                gridHighlight: { i: r, j: c },
+                highlightText: 'fromDown + fromRight',
                 obstacleGrid,
                 grid: JSON.parse(JSON.stringify(dp)),
-                tag: '逆推状态转移',
-                log: `| 🔄 dp[${r}][${c}] = 下方(${downVal}) + 右方(${rightVal}) = ${sum}`,
-                msg: `逆推转移: dp[${r}][${c}] = 下方 (${downVal}) + 右方 (${rightVal}) = <strong>${sum}</strong>。`
+                tag: '逆推状态转移求和',
+                log: `| 🔄 dp[${r}][${c}] = fromDown(${downVal}) + fromRight(${rightVal}) = ${sum}`,
+                msg: `🔄 <strong>【逆推状态转移】</strong>：<code>dp[${r}][${c}] = fromDown(${downVal}) + fromRight(${rightVal}) = <strong>${sum}</strong></code>，写入 DP 表格。`
               });
             }
           }
@@ -895,16 +1010,67 @@ export class UniversalStageEngine {
     const lineAccumulate = anchorMap?.accumulate || (variant === 'if' ? 12 : 10);
     const lineReturn = anchorMap?.return || (variant === 'if' ? 16 : 13);
 
+    const pushStep = (params: Partial<UniversalStep> & {
+      type: string;
+      line: number;
+      i: number;
+      j: number;
+      tag: string;
+      log: string;
+      msg: string;
+      activeSlot?: number;
+      slotMode?: 'updated' | 'down' | 'right' | 'final';
+      down?: number;
+      right?: number;
+      memoj?: number;
+      isBlockedStep?: boolean;
+      fromI?: number;
+      fromJ?: number;
+    }) => {
+      // 保持 2D 地图上单元格数值与 1D 滚动计算实时同步
+      if (params.i >= 0 && params.i < mVal && params.j >= 0 && params.j < nVal && memo[params.j] !== undefined) {
+        gridState[params.i][params.j] = memo[params.j];
+      }
+
+      let topI = -1;
+      let topJ = -1;
+      let leftI = -1;
+      let leftJ = -1;
+
+      if (params.slotMode === 'down') {
+        topI = isForward ? params.i - 1 : params.i + 1;
+        topJ = params.j;
+      } else if (params.slotMode === 'right') {
+        leftI = params.i;
+        leftJ = isForward ? params.j - 1 : params.j + 1;
+      } else if (params.slotMode === 'updated' || params.type === 'accumulate') {
+        topI = isForward ? params.i - 1 : params.i + 1;
+        topJ = params.j;
+        leftI = params.i;
+        leftJ = isForward ? params.j - 1 : params.j + 1;
+      }
+
+      steps.push({
+        ...params,
+        topI: topI >= 0 && topI < mVal ? topI : -1,
+        topJ: topJ >= 0 && topJ < nVal ? topJ : -1,
+        leftI: leftI >= 0 && leftI < mVal ? leftI : -1,
+        leftJ: leftJ >= 0 && leftJ < nVal ? leftJ : -1,
+        gridHighlight: { i: params.i, j: params.j },
+        obstacleGrid,
+        memo: [...memo],
+        memoSnapshot: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState))
+      });
+    };
+
     // 初始状态
-    steps.push({
+    pushStep({
       type: 'init',
       line: lineInit,
       i: isForward ? 0 : mVal - 1,
       j: isForward ? 0 : nVal - 1,
       activeSlot: -1,
-      obstacleGrid,
-      memoSnapshot: [...memo],
-      grid: JSON.parse(JSON.stringify(gridState)),
       tag: '创建一维滚动数组',
       log: `| 📦 创建长度为 ${nVal} 的一维 memo 数组 [空间压缩至 O(n)]`,
       msg: `创建长度为 ${nVal} 的一维滚动数组 <code>memo[0..${nVal - 1}]</code>，准备滚动覆盖。`
@@ -913,15 +1079,13 @@ export class UniversalStageEngine {
     if (obstacleGrid) {
       if (isForward) {
         memo[0] = (obstacleGrid[0][0] === 0) ? 1 : 0;
-        steps.push({
+        pushStep({
           type: 'init-slot',
           line: lineInitVal,
           i: 0,
           j: 0,
           activeSlot: 0,
           slotMode: 'updated',
-          obstacleGrid,
-          memoSnapshot: [...memo],
           tag: '起点初始化',
           log: `| 🎬 起点初始化 memo[0] = ${memo[0]}`,
           msg: `起点 (0, 0) ${memo[0] === 1 ? '无障碍' : '为障碍物'}，初始化 <code>memo[0] = ${memo[0]}</code>。`
@@ -929,36 +1093,56 @@ export class UniversalStageEngine {
 
         for (let i = 0; i < mVal; i++) {
           for (let j = 0; j < nVal; j++) {
+            if (i === 0 && j === 0) {
+              continue; // 起点已初始化
+            }
             if (obstacleGrid[i][j] === 1) {
               memo[j] = 0;
-              steps.push({
-                type: 'init-slot',
+              const fromR = j > 0 ? i : (i > 0 ? i - 1 : 0);
+              const fromC = j > 0 ? j - 1 : 0;
+              pushStep({
+                type: 'obstacle-cell',
                 line: lineInitVal,
                 i,
                 j,
+                fromI: fromR,
+                fromJ: fromC,
+                isBlockedStep: true,
                 activeSlot: j,
                 slotMode: 'updated',
-                obstacleGrid,
-                memoSnapshot: [...memo],
                 memoj: 0,
                 tag: '🚧 障碍物清零',
-                log: `| 🚧 遇到障碍物 (${i}, ${j})，一维状态 memo[${j}] 原地清零置 0`,
-                msg: `🚧 坐标 (${i}, ${j}) 为障碍物，一维状态 <code>memo[${j}] = 0</code> 原地清零。`
+                log: `| 🚧 遇到障碍物 (${i}, ${j})，从 (${fromR}, ${fromC}) 尝试进入受阻弹回，一维状态 memo[${j}] 原地清零置 0`,
+                msg: `🚧 坐标 (${i}, ${j}) 为障碍物，探险家从 (${fromR}, ${fromC}) 尝试进入受阻弹回，一维状态 <code>memo[${j}] = 0</code> 原地清零。`
               });
-            } else if (j > 0) {
+            } else if (j === 0) {
+              // 首列无左侧新值，保持上一行旧值
+              pushStep({
+                type: 'keep-val',
+                line: lineInitVal,
+                i,
+                j: 0,
+                activeSlot: 0,
+                slotMode: 'down',
+                down: memo[0],
+                right: 0,
+                memoj: memo[0],
+                tag: '首列保持上一行旧值',
+                log: `| ⬇️ 首列 (${i}, 0) 无左侧新值，保持上一行 memo[0] = ${memo[0]}`,
+                msg: `首列坐标 (${i}, 0) 无左侧路径，一维状态保持上一行旧值 <code>memo[0] = <strong>${memo[0]}</strong></code>。`
+              });
+            } else {
               const downVal = memo[j];
               const rightVal = memo[j - 1];
               memo[j] += rightVal;
 
-              steps.push({
+              pushStep({
                 type: 'accumulate',
                 line: lineAccumulate,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'updated',
-                obstacleGrid,
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: memo[j],
@@ -972,15 +1156,13 @@ export class UniversalStageEngine {
       } else {
         // 逆推带障碍物
         memo[nVal - 1] = (obstacleGrid[mVal - 1][nVal - 1] === 0) ? 1 : 0;
-        steps.push({
+        pushStep({
           type: 'init-slot',
           line: lineInitVal,
           i: mVal - 1,
           j: nVal - 1,
           activeSlot: nVal - 1,
           slotMode: 'updated',
-          obstacleGrid,
-          memoSnapshot: [...memo],
           tag: '逆推终点初始化',
           log: `| 🎬 终点初始化 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
           msg: `终点 (${mVal - 1}, ${nVal - 1}) 初始化 <code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
@@ -988,36 +1170,55 @@ export class UniversalStageEngine {
 
         for (let i = mVal - 1; i >= 0; i--) {
           for (let j = nVal - 1; j >= 0; j--) {
+            if (i === mVal - 1 && j === nVal - 1) {
+              continue; // 终点已初始化
+            }
             if (obstacleGrid[i][j] === 1) {
               memo[j] = 0;
-              steps.push({
-                type: 'init-slot',
+              const fromR = j < nVal - 1 ? i : (i < mVal - 1 ? i + 1 : mVal - 1);
+              const fromC = j < nVal - 1 ? j + 1 : nVal - 1;
+              pushStep({
+                type: 'obstacle-cell',
                 line: lineInitVal,
                 i,
                 j,
+                fromI: fromR,
+                fromJ: fromC,
+                isBlockedStep: true,
                 activeSlot: j,
                 slotMode: 'updated',
-                obstacleGrid,
-                memoSnapshot: [...memo],
                 memoj: 0,
                 tag: '🚧 障碍物清零',
-                log: `| 🚧 逆推遇到障碍物 (${i}, ${j})，memo[${j}] = 0`,
-                msg: `🚧 坐标 (${i}, ${j}) 为障碍物，逆推 <code>memo[${j}] = 0</code>。`
+                log: `| 🚧 遇到障碍物 (${i}, ${j})，从 (${fromR}, ${fromC}) 尝试进入受阻弹回，逆推一维状态 memo[${j}] 原地清零置 0`,
+                msg: `🚧 坐标 (${i}, ${j}) 为障碍物，探险家从 (${fromR}, ${fromC}) 尝试进入受阻弹回，逆推一维状态 <code>memo[${j}] = 0</code> 原地清零。`
               });
-            } else if (j < nVal - 1) {
+            } else if (j === nVal - 1) {
+              pushStep({
+                type: 'keep-val',
+                line: lineInitVal,
+                i,
+                j: nVal - 1,
+                activeSlot: nVal - 1,
+                slotMode: 'down',
+                down: memo[nVal - 1],
+                right: 0,
+                memoj: memo[nVal - 1],
+                tag: '最右列保持下方旧值',
+                log: `| ⬇️ 最右列 (${i}, ${nVal - 1}) 无右侧新值，保持下方 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+                msg: `最右列坐标 (${i}, ${nVal - 1}) 无右侧路径，逆推一维状态保持下方旧值 <code>memo[${nVal - 1}] = <strong>${memo[nVal - 1]}</strong></code>。`
+              });
+            } else {
               const downVal = memo[j];
               const rightVal = memo[j + 1];
               memo[j] += rightVal;
 
-              steps.push({
+              pushStep({
                 type: 'accumulate',
                 line: lineAccumulate,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'updated',
-                obstacleGrid,
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: memo[j],
@@ -1033,34 +1234,47 @@ export class UniversalStageEngine {
       // 外层 for 初始化
       for (let j = 0; j < nVal; j++) {
         memo[j] = 1;
-        steps.push({
+        pushStep({
           type: 'init-slot',
           line: lineInitVal,
           i: isForward ? 0 : mVal - 1,
           j: j,
           activeSlot: j,
           slotMode: 'updated',
-          memoSnapshot: [...memo],
-          tag: '初始化第0行',
+          tag: isForward ? '初始化第0行' : '逆推初始化最底行',
           log: `| 🎬 初始化 memo[${j}] = 1`,
-          msg: `外层 for: 初始化首行 <code>memo[${j}] = 1</code>。`
+          msg: `外层 for: 初始化边界 <code>memo[${j}] = 1</code>。`
         });
       }
 
       if (isForward) {
         for (let i = 1; i < mVal; i++) {
+          pushStep({
+            type: 'keep-val',
+            line: lineInitVal,
+            i,
+            j: 0,
+            activeSlot: 0,
+            slotMode: 'down',
+            down: memo[0],
+            right: 0,
+            memoj: memo[0],
+            tag: '首列保持上一行旧值',
+            log: `| ⬇️ 第 ${i} 行首列保持上一行 memo[0] = ${memo[0]}`,
+            msg: `第 ${i} 行首列坐标 (${i}, 0) 只能从上方到达，保持 <code>memo[0] = <strong>${memo[0]}</strong></code>。`
+          });
+
           for (let j = 1; j < nVal; j++) {
             const downVal = memo[j];
             const rightVal = memo[j - 1];
 
-            steps.push({
+            pushStep({
               type: 'fetch-down',
               line: lineFetchDown,
               i,
               j,
               activeSlot: j,
               slotMode: 'down',
-              memoSnapshot: [...memo],
               down: downVal,
               right: rightVal,
               memoj: downVal,
@@ -1069,14 +1283,13 @@ export class UniversalStageEngine {
               msg: `读取当前格未更新前的旧值 <code>down = memo[${j}] = ${downVal}</code> (等价于上方 <code>dp[i-1][j]</code>)。`
             });
 
-            steps.push({
+            pushStep({
               type: 'fetch-right',
               line: lineFetchRight,
               i,
               j,
               activeSlot: j - 1,
               slotMode: 'right',
-              memoSnapshot: [...memo],
               down: downVal,
               right: rightVal,
               memoj: rightVal,
@@ -1088,14 +1301,13 @@ export class UniversalStageEngine {
             const sum = downVal + rightVal;
             memo[j] = sum;
 
-            steps.push({
+            pushStep({
               type: 'accumulate',
               line: lineAccumulate,
               i,
               j,
               activeSlot: j,
               slotMode: 'updated',
-              memoSnapshot: [...memo],
               down: downVal,
               right: rightVal,
               memoj: sum,
@@ -1108,18 +1320,32 @@ export class UniversalStageEngine {
       } else {
         // 逆推 for 版
         for (let i = mVal - 2; i >= 0; i--) {
+          pushStep({
+            type: 'keep-val',
+            line: lineInitVal,
+            i,
+            j: nVal - 1,
+            activeSlot: nVal - 1,
+            slotMode: 'down',
+            down: memo[nVal - 1],
+            right: 0,
+            memoj: memo[nVal - 1],
+            tag: '最右列保持下方旧值',
+            log: `| ⬇️ 第 ${i} 行最右列保持下方 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+            msg: `第 ${i} 行最右列坐标 (${i}, ${nVal - 1}) 逆推只能从下方到达，保持 <code>memo[${nVal - 1}] = <strong>${memo[nVal - 1]}</strong></code>。`
+          });
+
           for (let j = nVal - 2; j >= 0; j--) {
             const downVal = memo[j];
             const rightVal = memo[j + 1];
 
-            steps.push({
+            pushStep({
               type: 'fetch-down',
               line: lineFetchDown,
               i,
               j,
               activeSlot: j,
               slotMode: 'down',
-              memoSnapshot: [...memo],
               down: downVal,
               right: rightVal,
               memoj: downVal,
@@ -1128,14 +1354,13 @@ export class UniversalStageEngine {
               msg: `逆推读取下方旧值 <code>down = memo[${j}] = ${downVal}</code>。`
             });
 
-            steps.push({
+            pushStep({
               type: 'fetch-right',
               line: lineFetchRight,
               i,
               j,
               activeSlot: j + 1,
               slotMode: 'right',
-              memoSnapshot: [...memo],
               down: downVal,
               right: rightVal,
               memoj: rightVal,
@@ -1147,14 +1372,13 @@ export class UniversalStageEngine {
             const sum = downVal + rightVal;
             memo[j] = sum;
 
-            steps.push({
+            pushStep({
               type: 'accumulate',
               line: lineAccumulate,
               i,
               j,
               activeSlot: j,
               slotMode: 'updated',
-              memoSnapshot: [...memo],
               down: downVal,
               right: rightVal,
               memoj: sum,
@@ -1172,14 +1396,13 @@ export class UniversalStageEngine {
           for (let j = 0; j < nVal; j++) {
             if (i === 0 || j === 0) {
               memo[j] = 1;
-              steps.push({
+              pushStep({
                 type: 'init-val',
                 line: lineInitVal,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'updated',
-                memoSnapshot: [...memo],
                 memoj: 1,
                 tag: '边界初始化',
                 log: `| 🎬 满足 (i=${i} || j=${j})，memo[${j}] = 1`,
@@ -1189,14 +1412,13 @@ export class UniversalStageEngine {
               const downVal = memo[j];
               const rightVal = memo[j - 1];
 
-              steps.push({
+              pushStep({
                 type: 'fetch-down',
                 line: lineFetchDown,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'down',
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: downVal,
@@ -1205,14 +1427,13 @@ export class UniversalStageEngine {
                 msg: `读取当前格未更新前的旧值 <code>down = memo[${j}] = ${downVal}</code>。`
               });
 
-              steps.push({
+              pushStep({
                 type: 'fetch-right',
                 line: lineFetchRight,
                 i,
                 j,
                 activeSlot: j - 1,
                 slotMode: 'right',
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: rightVal,
@@ -1224,14 +1445,13 @@ export class UniversalStageEngine {
               const sum = downVal + rightVal;
               memo[j] = sum;
 
-              steps.push({
+              pushStep({
                 type: 'accumulate',
                 line: lineAccumulate,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'updated',
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: sum,
@@ -1248,14 +1468,13 @@ export class UniversalStageEngine {
           for (let j = nVal - 1; j >= 0; j--) {
             if (i === mVal - 1 || j === nVal - 1) {
               memo[j] = 1;
-              steps.push({
+              pushStep({
                 type: 'init-val',
                 line: lineInitVal,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'updated',
-                memoSnapshot: [...memo],
                 memoj: 1,
                 tag: '逆推边界初始化',
                 log: `| 🎬 满足逆推边界 (i=${i} || j=${j})，memo[${j}] = 1`,
@@ -1265,14 +1484,13 @@ export class UniversalStageEngine {
               const downVal = memo[j];
               const rightVal = memo[j + 1];
 
-              steps.push({
+              pushStep({
                 type: 'fetch-down',
                 line: lineFetchDown,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'down',
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: downVal,
@@ -1281,14 +1499,13 @@ export class UniversalStageEngine {
                 msg: `逆推读取下方旧值 <code>down = memo[${j}] = ${downVal}</code>。`
               });
 
-              steps.push({
+              pushStep({
                 type: 'fetch-right',
                 line: lineFetchRight,
                 i,
                 j,
                 activeSlot: j + 1,
                 slotMode: 'right',
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: rightVal,
@@ -1300,14 +1517,13 @@ export class UniversalStageEngine {
               const sum = downVal + rightVal;
               memo[j] = sum;
 
-              steps.push({
+              pushStep({
                 type: 'accumulate',
                 line: lineAccumulate,
                 i,
                 j,
                 activeSlot: j,
                 slotMode: 'updated',
-                memoSnapshot: [...memo],
                 down: downVal,
                 right: rightVal,
                 memoj: sum,
@@ -1322,15 +1538,13 @@ export class UniversalStageEngine {
     }
 
     const finalIdx = isForward ? nVal - 1 : 0;
-    steps.push({
+    pushStep({
       type: 'return',
       line: lineReturn,
       i: isForward ? mVal - 1 : 0,
       j: isForward ? nVal - 1 : 0,
       activeSlot: finalIdx,
       slotMode: 'final',
-      obstacleGrid,
-      memoSnapshot: [...memo],
       tag: '最终答案',
       log: `| 🏆 一维空间优化完成！最终答案 memo[${finalIdx}] = ${memo[finalIdx]}`,
       msg: `🏆 一维滚动压缩计算完成！最终不同路径数: <strong>${memo[finalIdx]}</strong>。`

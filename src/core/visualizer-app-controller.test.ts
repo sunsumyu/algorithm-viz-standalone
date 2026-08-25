@@ -140,7 +140,17 @@ describe('VisualizerAppController Deep Module', () => {
       addEventListener: vi.fn()
     };
 
+    const storageData: Record<string, string> = {};
+    const mockStorage = {
+      getItem: (k: string) => storageData[k] ?? null,
+      setItem: (k: string, v: string) => { storageData[k] = String(v); },
+      removeItem: (k: string) => { delete storageData[k]; },
+      clear: () => { Object.keys(storageData).forEach(k => delete storageData[k]); }
+    };
+    (globalThis as any).localStorage = mockStorage;
+
     (globalThis as any).window = {
+      localStorage: mockStorage,
       location: {
         search: '?model=unique-paths',
         pathname: '/stage-explorer-lite.html',
@@ -204,5 +214,50 @@ describe('VisualizerAppController Deep Module', () => {
     const controller = new VisualizerAppController({ mode: 'lite' });
     controller.init();
     expect(() => controller.destroy()).not.toThrow();
+  });
+
+  it('应该在用户点击阶段时记住选中项并在下次初始化时自动恢复', () => {
+    const controller1 = new VisualizerAppController({ mode: 'lite', defaultModelId: 'unique-paths-ii' });
+    controller1.init();
+
+    const stageTabs = elementsMap.get('stage-tabs-container');
+    // 模拟点击「3 二维DP」选项卡
+    const stage3Btn = stageTabs?.children.find(c => c.dataset.stage === 'stage-3');
+    expect(stage3Btn).toBeDefined();
+    stage3Btn?.dispatch('click');
+
+    expect(localStorage.getItem('algo-stage-unique-paths-ii')).toBe('stage-3');
+    expect(localStorage.getItem('algo-preferred-stage')).toBe('stage-3');
+    controller1.destroy();
+
+    // 重新实例化控制器（模拟刷新或重新打开）
+    const controller2 = new VisualizerAppController({ mode: 'lite', defaultModelId: 'unique-paths-ii' });
+    controller2.init();
+
+    const titleEl = elementsMap.get('header-algo-title');
+    expect(titleEl?.textContent).toContain('二维 DP');
+    controller2.destroy();
+  });
+
+  it('应该在用户切换演化方向时记住方向并在下次初始化时自动恢复', () => {
+    const controller1 = new VisualizerAppController({ mode: 'lite', defaultModelId: 'unique-paths-ii' });
+    controller1.init();
+
+    const dirTabs = elementsMap.get('dir-tabs-container');
+    const reverseBtn = dirTabs?.children.find(c => c.dataset.dir === 'reverse');
+    expect(reverseBtn).toBeDefined();
+    reverseBtn?.dispatch('click');
+
+    expect(localStorage.getItem('algo-dir-unique-paths-ii')).toBe('reverse');
+    expect(localStorage.getItem('algo-preferred-dir')).toBe('reverse');
+    controller1.destroy();
+
+    // 重新实例化控制器
+    const controller2 = new VisualizerAppController({ mode: 'lite', defaultModelId: 'unique-paths-ii' });
+    controller2.init();
+
+    const legendRefEl = elementsMap.get('legend-ref');
+    expect(legendRefEl?.innerHTML).toContain('参考下方/右方');
+    controller2.destroy();
   });
 });

@@ -49,31 +49,74 @@ export function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
-/** 包裹为高亮 span（内容会被 HTML 转义） */
+/**
+ * 包裹为高亮 span（内容会被 HTML 转义）
+ */
 function wrap(cls: string, text: string): string {
   return `<span class="${cls}">${escapeHtml(text)}</span>`;
 }
 
 /**
- * 对单行代码应用简单的 token 高亮
- * 支持 keyword / type / string / comment / number / annotation
+ * 对单行纯文本代码应用单趟词法扫描与 Token 语法高亮
+ * 支持 keyword / type / string / comment / number / annotation / 任意行内局部聚焦 (focusTarget)
  *
- * 采用单遍词法扫描（lexer）逐 token 分类后再输出 HTML，
- * 避免多次正则替换互相污染已注入的标签（例如 `class="..."` 中的 class 被当成关键字）。
+ * 架构优势：
+ * 1. 单向数据流：纯代码文本 -> 结构化 Token 分流 -> 一次性输出标准 HTML
+ * 2. 连续胶囊聚焦：整段子表达式 (如 dp[i - 1][j]) 高亮为一个统一平滑的发光外框，杜绝碎块化
+ * 3. 绝对免疫 HTML 属性破坏：在进入 HTML 生成前已在源码字符偏移量层判定聚焦，绝不二次字符串替换已生成的 HTML
  */
-export function highlightTokens(line: string, lang: string): string {
+export function highlightTokens(
+  line: string,
+  lang: string = 'java',
+  focusTarget?: string
+): string {
   const keywords = new Set(getKeywordsForLang(lang));
   let out = '';
   let i = 0;
   const n = line.length;
 
+  // 计算聚焦子串在源码中的绝对字符区间 [focusStart, focusEnd)
+  let focusStart = -1;
+  let focusEnd = -1;
+  if (focusTarget && focusTarget.trim().length > 0) {
+    const target = focusTarget.trim();
+    // 优先匹配靠近末尾或者精确匹配的目标（如 : 0）
+    focusStart = line.lastIndexOf(target);
+    if (focusStart === -1) {
+      focusStart = line.indexOf(target);
+    }
+    if (focusStart !== -1) {
+      focusEnd = focusStart + target.length;
+    }
+  }
+
+  let isInsideFocusContainer = false;
+
+  const ensureFocusOpen = (currIdx: number) => {
+    if (focusStart !== -1 && currIdx >= focusStart && currIdx < focusEnd && !isInsideFocusContainer) {
+      out += '<span class="inline-token-focus">';
+      isInsideFocusContainer = true;
+    }
+  };
+
+  const ensureFocusClose = (currIdx: number) => {
+    if (isInsideFocusContainer && currIdx >= focusEnd) {
+      out += '</span>';
+      isInsideFocusContainer = false;
+    }
+  };
+
   while (i < n) {
+    ensureFocusClose(i);
+    ensureFocusOpen(i);
+
     const ch = line[i];
     const rest = line.slice(i);
 
     // 行注释：// 或 #（Python）直到行尾
     if (rest.startsWith('//') || (lang !== 'java' && lang !== 'cpp' && ch === '#')) {
-      out += wrap('algo-code-token-comment', rest);
+      out += wrap('algo-code-token-comment text-slate-500', rest);
+      i = n;
       break;
     }
 
@@ -85,7 +128,7 @@ export function highlightTokens(line: string, lang: string): string {
         if (line[j] === ch) { j++; break; }
         j++;
       }
-      out += wrap('algo-code-token-string', line.slice(i, j));
+      out += wrap('algo-code-token-string text-green-400', line.slice(i, j));
       i = j;
       continue;
     }
@@ -94,7 +137,7 @@ export function highlightTokens(line: string, lang: string): string {
     if (ch === '@' && lang === 'java' && /[A-Za-z]/.test(line[i + 1] || '')) {
       let j = i + 1;
       while (j < n && /\w/.test(line[j])) j++;
-      out += wrap('algo-code-token-annotation', line.slice(i, j));
+      out += wrap('algo-code-token-annotation text-amber-400', line.slice(i, j));
       i = j;
       continue;
     }
@@ -103,34 +146,41 @@ export function highlightTokens(line: string, lang: string): string {
     if (/[0-9]/.test(ch)) {
       const numMatch = rest.match(/^\d+(?:\.\d+)?[lLfFdD]?/);
       if (numMatch) {
-        out += wrap('algo-code-token-number', numMatch[0]);
-        i += numMatch[0].length;
+        const tokenStr = numMatch[0];
+        out += wrap('algo-code-token-number text-amber-300 font-bold', tokenStr);
+        i += tokenStr.length;
         continue;
       }
     }
 
-    // 标识符：关键字 / 类型名 / 普通
+    // 标识符：关键字 / 类型名 / 普通标识符
     if (/[A-Za-z_$]/.test(ch)) {
       const idMatch = rest.match(/^[A-Za-z_$][A-Za-z0-9_$]*/);
       const word = idMatch![0];
+      const j = i + word.length;
+
       if (keywords.has(word)) {
-        out += wrap('algo-code-token-keyword', word);
+        out += wrap('algo-code-token-keyword text-purple-400 font-semibold', word);
       } else if (/^[A-Z]/.test(word)) {
-        // 大写开头且非紧跟 ( 的标识符视为类型名
-        const after = line[i + word.length];
-        if (after !== '(') out += wrap('algo-code-token-type', word);
-        else out += escapeHtml(word);
+        const after = line[j];
+        if (after !== '(') {
+          out += wrap('algo-code-token-type text-yellow-300', word);
+        } else {
+          out += escapeHtml(word);
+        }
       } else {
         out += escapeHtml(word);
       }
-      i += word.length;
+      i = j;
       continue;
     }
 
-    // 其它字符（运算符 / 标点 / 空白）直接转义输出
+    // 其它字符（运算符 / 标点 / 空白）
     out += escapeHtml(ch);
     i++;
   }
+
+  ensureFocusClose(n);
 
   return out;
 }

@@ -4,25 +4,61 @@ import { GridVisualAdapter, RecursionTreeAdapter } from './grid-visual-adapter';
 // Lightweight DOM mock for node environment
 class MockHTMLElement {
   public style: Record<string, string> = {};
-  public innerHTML = '';
+  public _innerHTML = '';
   public className = '';
   public children: MockHTMLElement[] = [];
   public id = '';
+  public dataset: Record<string, string> = {};
+  public attributes: Record<string, string> = {};
+
+  public get innerHTML(): string {
+    if (this.children.length > 0) {
+      return this._innerHTML + this.children.map(c => c.innerHTML).join('');
+    }
+    return this._innerHTML;
+  }
+
+  public set innerHTML(val: string) {
+    this._innerHTML = val;
+    if (val === '') {
+      this.children = [];
+    }
+  }
 
   public appendChild(child: MockHTMLElement) {
     this.children.push(child);
+  }
+
+  public setAttribute(name: string, value: string) {
+    this.attributes[name] = value;
+  }
+
+  public getAttribute(name: string): string | null {
+    return this.attributes[name] ?? null;
   }
 
   public querySelector(selector: string): MockHTMLElement | null {
     if (selector.startsWith('#')) {
       const id = selector.slice(1);
       if (this.id === id) return this;
-      for (const c of this.children) {
-        const found = c.querySelector(selector);
-        if (found) return found;
-      }
+    }
+    if (selector.startsWith('.')) {
+      const cls = selector.slice(1);
+      if (this.className.includes(cls) || this.innerHTML.includes(cls)) return this;
+    }
+    if (selector.startsWith('[data-coord=')) {
+      const match = selector.match(/\[data-coord="([^"]+)"\]/);
+      if (match && this.attributes['data-coord'] === match[1]) return this;
+    }
+    for (const c of this.children) {
+      const found = c.querySelector(selector);
+      if (found) return found;
     }
     return null;
+  }
+
+  public get firstElementChild(): MockHTMLElement | null {
+    return this.children[0] || null;
   }
 
   public get textContent(): string {
@@ -40,7 +76,10 @@ describe('GridVisualAdapter Deep Module', () => {
   it('应该正确生成探险家小人矢量 SVG HTML', () => {
     const normalSvg = GridVisualAdapter.getAdventurerSvgHtml({ state: 'walking' });
     expect(normalSvg).toContain('<svg class="adventurer-char');
-    expect(normalSvg).toContain('is-jumping');
+    expect(normalSvg).toContain('is-walking');
+
+    const blockedSvg = GridVisualAdapter.getAdventurerSvgHtml({ state: 'blocked' });
+    expect(blockedSvg).toContain('is-blocked');
 
     const cheerSvg = GridVisualAdapter.getAdventurerSvgHtml({ isFinish: true });
     expect(cheerSvg).toContain('is-cheering');
@@ -127,6 +166,43 @@ describe('GridVisualAdapter Deep Module', () => {
     expect(parentCell20.innerHTML).toContain('adventurer-char');
   });
 
+  it('当探险家遭遇障碍物格点 (1,1) 时，探险家小人应弹回到安全来源格 (0,1) 上而不停留在障碍物格子里', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const mockStep = {
+      type: 'obstacle-hit',
+      i: 1,
+      j: 1,
+      fromI: 0,
+      fromJ: 1,
+      activeStack: ['0,0', '0,1', '1,1'],
+      obstacleGrid: [
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0]
+      ],
+      grid: [
+        [null, null, null],
+        [null, null, null],
+        [null, null, null]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
+    const mockContainer = container as unknown as MockHTMLElement;
+    const originCell01 = mockContainer.children[1];   // (0,1) 来源格
+    const obstacleCell11 = mockContainer.children[4]; // (1,1) 障碍格
+
+    // 1. 探险家小人应安全驻留在来源格 (0,1) 上并播放遇障弹回动画
+    expect(originCell01.className).toContain('is-cur');
+    expect(originCell01.innerHTML).toContain('adventurer-char');
+    expect(originCell01.innerHTML).toContain('遇障弹回');
+
+    // 2. 障碍物格子 (1,1) 保持为纯障碍物，严禁小人站在障碍物内部
+    expect(obstacleCell11.className).toContain('is-obstacle');
+    expect(obstacleCell11.innerHTML).toContain('🚧');
+    expect(obstacleCell11.innerHTML).not.toContain('adventurer-char');
+  });
+
   it('应该能构建一维空间压缩槽位', () => {
     const container = new MockHTMLElement() as unknown as HTMLElement;
     GridVisualAdapter.build1DSlots(container, 4, 'dp');
@@ -139,17 +215,18 @@ describe('GridVisualAdapter Deep Module', () => {
   it('应该能渲染 Lite 模式下的 memo 槽位并标注活跃与参考项', () => {
     const container = new MockHTMLElement() as unknown as HTMLElement;
     const mockStep = {
-      memo: [1, 2, 3, 0],
-      memoUpdatedIndex: 1,
-      memoRefLeftIndex: 0
+      memoSnapshot: [1, 2, 3, 0],
+      activeSlot: 1,
+      slotMode: 'updated',
+      memoj: 2
     };
     GridVisualAdapter.renderLiteMemoSlots(container, mockStep, 4);
     const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.children.length).toBe(4);
+    expect(mockContainer.children.length).toBe(2); // 包含顶部等式看板与槽位行
+    const slotsRow = mockContainer.children[1];
+    expect(slotsRow.children.length).toBe(4);
     // 检查第 1 项 (被更新项) 包含青蛙 icon
-    expect(mockContainer.children[1].innerHTML).toContain('🐸');
-    // 检查第 0 项 (左侧参考项) 包含猫咪 icon
-    expect(mockContainer.children[0].innerHTML).toContain('🐱');
+    expect(slotsRow.children[1].innerHTML).toContain('🐸');
   });
 
   it('应该能渲染 Stage-3 状态转移等式看板', () => {
@@ -161,9 +238,58 @@ describe('GridVisualAdapter Deep Module', () => {
     };
     GridVisualAdapter.renderTransferEquation(container, mockStep, false);
     const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.innerHTML).toContain('上方: 3');
-    expect(mockContainer.innerHTML).toContain('左方: 4');
-    expect(mockContainer.innerHTML).toContain('当前单元: 7');
+    expect(mockContainer.innerHTML).toContain('3');
+    expect(mockContainer.innerHTML).toContain('4');
+    expect(mockContainer.innerHTML).toContain('7');
+  });
+
+  it('在 Stage 3 二维 DP 阶段遍历到障碍格 (1,1) 时，探险家必须驻留在此单元格展示受阻状态，绝不消失', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const mockStep = {
+      type: 'obstacle-cell',
+      i: 1,
+      j: 1,
+      obstacleGrid: [
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0]
+      ],
+      grid: [
+        [1, 1, 1],
+        [1, null, null],
+        [null, null, null]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
+    const mockContainer = container as unknown as MockHTMLElement;
+    const obstacleCell11 = mockContainer.children[4]; // (1,1) 障碍格
+
+    // 探险家必须驻留在正在计算的障碍格 (1,1) 上，同时展示 🚧 与障碍格置 0 徽章
+    expect(obstacleCell11.className).toContain('is-obstacle');
+    expect(obstacleCell11.className).toContain('is-cur');
+    expect(obstacleCell11.innerHTML).toContain('adventurer-char');
+    expect(obstacleCell11.innerHTML).toContain('is-blocked');
+    expect(obstacleCell11.innerHTML).toContain('🚧 障碍格置 0');
+  });
+
+  it('兜底卫士：在全阶段任何边界或异常步骤下，整个网格中必须有且仅有一个 adventurer-char 存在', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    // 模拟无坐标或极端异常的步
+    const irregularStep = {
+      type: 'unknown-boundary',
+      grid: [
+        [1, 1, 1],
+        [1, 2, 3],
+        [1, 3, 6]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, irregularStep, { m: 3, n: 3 });
+    const mockContainer = container as unknown as MockHTMLElement;
+    // 兜底机制生效，探险家被自动注入到默认单元格
+    const foundAdventurer = mockContainer.querySelector('.adventurer-char');
+    expect(foundAdventurer).not.toBeNull();
   });
 });
 

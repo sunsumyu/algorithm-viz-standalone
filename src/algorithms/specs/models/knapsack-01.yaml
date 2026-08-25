@@ -52,10 +52,10 @@ stages:
                   }
                   private int dfs(int[] weights, int[] values, int i, int w) { // @step:entry
                       if (i >= weights.length || w <= 0) return 0; // @step:boundary // 物品遍历完毕或背包已满
-                      int notTake = dfs(weights, values, i + 1, w); // @step:branch_not_take // 决策 1: 不选当前物品
+                      int notTake = dfs(weights, values, i + 1, w); // @step:branch_down @step:branch_not_take // 决策 1: 不选当前物品
                       int take = 0;
                       if (w >= weights[i]) {
-                          take = values[i] + dfs(weights, values, i + 1, w - weights[i]); // @step:branch_take // 决策 2: 选当前物品
+                          take = values[i] + dfs(weights, values, i + 1, w - weights[i]); // @step:branch_right @step:branch_take // 决策 2: 选当前物品
                       }
                       return Math.max(notTake, take); // @step:combine // 取两者最大价值
                   }
@@ -89,10 +89,10 @@ stages:
                   private int dfs(int[] weights, int[] values, int i, int w, int[][] memo) { // @step:entry
                       if (i >= weights.length || w <= 0) return 0; // @step:boundary
                       if (memo[i][w] != -1) return memo[i][w]; // @step:cache_hit // 剪枝命中
-                      int notTake = dfs(weights, values, i + 1, w, memo); // @step:branch_not_take
+                      int notTake = dfs(weights, values, i + 1, w, memo); // @step:branch_down @step:branch_not_take
                       int take = 0;
                       if (w >= weights[i]) {
-                          take = values[i] + dfs(weights, values, i + 1, w - weights[i], memo); // @step:branch_take
+                          take = values[i] + dfs(weights, values, i + 1, w - weights[i], memo); // @step:branch_right @step:branch_take
                       }
                       return memo[i][w] = Math.max(notTake, take); // @step:combine
                   }

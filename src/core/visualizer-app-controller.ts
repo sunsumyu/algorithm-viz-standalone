@@ -13,6 +13,7 @@ import { GridVisualAdapter, RecursionTreeAdapter } from './renderers/grid-visual
 import { PlaybackTimelineController } from './playback-timeline-controller';
 import { VisualThemeManager } from './theme/visual-theme-manager';
 import { SplitterEngine } from './splitter-engine';
+import { highlightTokens } from './code-highlighter';
 import type { IYamlAlgorithmModel } from './interfaces';
 
 export type VisualizerMode = 'lite' | 'full';
@@ -46,13 +47,12 @@ export class VisualizerAppController {
     this.mode = options.mode || 'lite';
     this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
     
-    // 解析 URL 参数或全局变量获取 modelId
+    // 解析 options, URL 参数或全局变量获取 modelId
     let requestedId = options.defaultModelId;
-    if (typeof window !== 'undefined') {
+    if (!requestedId && typeof window !== 'undefined') {
       if ((window as any).__DEFAULT_MODEL_ID) {
         requestedId = (window as any).__DEFAULT_MODEL_ID;
-      }
-      if (window.location) {
+      } else if (window.location) {
         const urlParams = new URLSearchParams(window.location.search);
         const urlModel = urlParams.get('model');
         if (urlModel) requestedId = urlModel;
@@ -66,7 +66,71 @@ export class VisualizerAppController {
       ? AlgorithmModelRepository.getModel(this.modelId)
       : AlgorithmModelRepository.getModel('unique-paths');
 
-    this.currentStage = this.model?.defaultStage || 'stage-1';
+    // 智能恢复阶段与方向记忆 (URL Hash > LocalStorage 本题记忆 > LocalStorage 全局偏好 > 模型默认)
+    this.currentStage = this.getInitialStage(this.modelId);
+    this.currentDirection = this.getInitialDirection(this.modelId);
+  }
+
+  /**
+   * 计算初始阶段（具备多层记忆感知能力）
+   */
+  private getInitialStage(modelId?: string): string {
+    const id = modelId || this.modelId;
+    const model = AlgorithmModelRepository.hasModel(id)
+      ? AlgorithmModelRepository.getModel(id)
+      : this.model;
+
+    // 1. URL Hash 最高优先级
+    const restored = VisualizerStateRouter.restore();
+    if (restored && restored.stage && model?.stages?.[restored.stage]) {
+      return restored.stage;
+    }
+
+    // 2. 本题专属 LocalStorage 记忆
+    if (typeof localStorage !== 'undefined') {
+      const savedModelStage = localStorage.getItem(`algo-stage-${id}`);
+      if (savedModelStage && model?.stages?.[savedModelStage]) {
+        return savedModelStage;
+      }
+      // 3. 全局通用阶段偏好记忆 (例如用户偏好浏览二维 DP)
+      const savedGlobalStage = localStorage.getItem('algo-preferred-stage');
+      if (savedGlobalStage && model?.stages?.[savedGlobalStage]) {
+        return savedGlobalStage;
+      }
+    }
+
+    // 4. 算法模型默认阶段兜底
+    return model?.defaultStage || 'stage-1';
+  }
+
+  /**
+   * 计算初始演化方向（具备多层记忆感知能力）
+   */
+  private getInitialDirection(modelId?: string): 'forward' | 'reverse' {
+    const id = modelId || this.modelId;
+    const model = AlgorithmModelRepository.hasModel(id)
+      ? AlgorithmModelRepository.getModel(id)
+      : this.model;
+
+    // 1. URL Hash
+    const restored = VisualizerStateRouter.restore();
+    if (restored && (restored.dir === 'forward' || restored.dir === 'reverse') && model?.directions?.[restored.dir]) {
+      return restored.dir;
+    }
+
+    // 2. LocalStorage 记忆
+    if (typeof localStorage !== 'undefined') {
+      const savedModelDir = localStorage.getItem(`algo-dir-${id}`) as any;
+      if ((savedModelDir === 'forward' || savedModelDir === 'reverse') && model?.directions?.[savedModelDir]) {
+        return savedModelDir;
+      }
+      const savedGlobalDir = localStorage.getItem('algo-preferred-dir') as any;
+      if ((savedGlobalDir === 'forward' || savedGlobalDir === 'reverse') && model?.directions?.[savedGlobalDir]) {
+        return savedGlobalDir;
+      }
+    }
+
+    return 'forward';
   }
 
   /**
@@ -82,8 +146,8 @@ export class VisualizerAppController {
     const restored = VisualizerStateRouter.restore();
     let targetStep = 0;
     if (restored) {
-      if (restored.stage) this.currentStage = restored.stage;
-      if (restored.dir) this.currentDirection = restored.dir;
+      if (restored.stage && this.model?.stages?.[restored.stage]) this.currentStage = restored.stage;
+      if ((restored.dir === 'forward' || restored.dir === 'reverse') && this.model?.directions?.[restored.dir]) this.currentDirection = restored.dir;
       if (restored.variant) this.currentStageVariant = restored.variant;
       if (restored.theme) this.themeManager.setTheme(restored.theme, true);
       if (restored.m) {
@@ -97,6 +161,9 @@ export class VisualizerAppController {
         if (inputN) inputN.value = String(restored.n);
       }
       if (restored.step !== undefined) targetStep = restored.step;
+    } else {
+      this.currentStage = this.getInitialStage();
+      this.currentDirection = this.getInitialDirection();
     }
 
     // 应用主题并装配顶栏主题选择器
@@ -229,8 +296,8 @@ export class VisualizerAppController {
       this.renderFullVisuals(step, index);
     }
 
-    // 3. 代码逐行高亮与自动滚动
-    this.updateCodeHighlight(step.line);
+    // 3. 代码逐行高亮与行内局部表达式聚焦
+    this.updateCodeHighlight(step.line, step.highlightText);
 
     // 4. URL Hash 状态持久化
     this.syncStateToHash(index);
@@ -467,15 +534,33 @@ export class VisualizerAppController {
     if (varReturn) varReturn.textContent = step.grid?.[this.m - 1]?.[this.n - 1] !== undefined ? String(step.grid[this.m - 1][this.n - 1]) : '-';
   }
 
-  private updateCodeHighlight(line?: number): void {
+  private updateCodeHighlight(line?: number, highlightText?: string): void {
     if (line === undefined) return;
     const container = document.getElementById('code-container-box') || document.getElementById('code-display-container');
     if (!container) return;
 
-    container.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+    // 1. 清理上一高亮行与局部聚焦状态（基于纯文本源码单向恢复）
+    container.querySelectorAll('.code-line').forEach(el => {
+      const htmlEl = el as HTMLElement;
+      if (htmlEl.dataset.isDirty === 'true' && htmlEl.dataset.rawCode) {
+        htmlEl.innerHTML = highlightTokens(htmlEl.dataset.rawCode, 'java');
+        delete htmlEl.dataset.isDirty;
+      }
+      htmlEl.classList.remove('active-line');
+    });
+
     const activeLineEl = container.querySelector(`.code-line[data-line="${line}"]`) as HTMLElement | null;
     if (activeLineEl) {
       activeLineEl.classList.add('active-line');
+
+      // 2. 若存在行内目标子串，通过纯文本 Lexer 重新生成带聚焦状态的 HTML（单向数据流，零 DOM 破坏）
+      const rawCode = activeLineEl.dataset.rawCode;
+      if (rawCode && highlightText) {
+        activeLineEl.innerHTML = highlightTokens(rawCode, 'java', highlightText);
+        activeLineEl.dataset.isDirty = 'true';
+      }
+
+      // 3. 自动滚动居中
       if (line <= 6) {
         container.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -535,9 +620,19 @@ export class VisualizerAppController {
         variantBar.classList.remove('hidden');
         variantBar.innerHTML = '';
         const variantKeys = Object.keys(stageConfig.variants);
+        
+        // 尝试从 localStorage 恢复该题该阶段的代码变体偏好
+        if (typeof localStorage !== 'undefined') {
+          const savedVariant = localStorage.getItem(`algo-variant-${this.modelId}-${this.currentStage}`);
+          if (savedVariant && stageConfig.variants[savedVariant]) {
+            this.currentStageVariant = savedVariant;
+          }
+        }
+
         if (!stageConfig.variants[this.currentStageVariant]) {
           this.currentStageVariant = variantKeys[0];
         }
+
         variantKeys.forEach(varKey => {
           const v = stageConfig.variants[varKey];
           const btn = document.createElement('button');
@@ -551,7 +646,11 @@ export class VisualizerAppController {
           btn.textContent = v.variantLabel || v.title || varKey;
           btn.addEventListener('click', () => {
             this.currentStageVariant = varKey;
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem(`algo-variant-${this.modelId}-${this.currentStage}`, varKey);
+            }
             this.loadAndReset();
+            this.syncStateToHash(0);
           });
           variantBar.appendChild(btn);
         });
@@ -641,8 +740,13 @@ export class VisualizerAppController {
 
       btn.addEventListener('click', () => {
         this.currentStage = stageKey;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(`algo-stage-${this.modelId}`, stageKey);
+          localStorage.setItem('algo-preferred-stage', stageKey);
+        }
         this.renderStageTabs();
         this.loadAndReset();
+        this.syncStateToHash(0);
       });
       container.appendChild(btn);
     });
@@ -674,8 +778,13 @@ export class VisualizerAppController {
       `;
       btn.addEventListener('click', () => {
         this.currentDirection = dirKey as 'forward' | 'reverse';
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(`algo-dir-${this.modelId}`, dirKey);
+          localStorage.setItem('algo-preferred-dir', dirKey);
+        }
         this.renderDirectionTabs();
         this.loadAndReset();
+        this.syncStateToHash(0);
       });
       container.appendChild(btn);
     });

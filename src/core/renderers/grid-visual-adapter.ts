@@ -47,10 +47,10 @@ export class GridVisualAdapter {
         `;
 
     const charAnimClass = isBlocked
-      ? 'is-jumping'
+      ? 'is-blocked'
       : isCheering
       ? 'is-cheering'
-      : 'is-jumping';
+      : 'is-walking';
 
     return `
       <svg class="adventurer-char ${charAnimClass}" viewBox="-22 -36 44 56" width="38" height="48" style="overflow: visible;">
@@ -123,12 +123,16 @@ export class GridVisualAdapter {
     const isLeftWallBounce = isOutOfBounds && (step.outOfBoundsDir === 'left-wall' || step.j < 0);
 
     const isStepOutOfBounds = (step.i >= m || step.j >= n || step.i < 0 || step.j < 0);
-    const activeStandingI = isStepOutOfBounds
-      ? (step.fromI !== undefined && step.fromI >= 0 && step.fromI < m ? step.fromI : Math.min(m - 1, Math.max(0, step.i)))
-      : step.i;
-    const activeStandingJ = isStepOutOfBounds
-      ? (step.fromJ !== undefined && step.fromJ >= 0 && step.fromJ < n ? step.fromJ : Math.min(n - 1, Math.max(0, step.j)))
-      : step.j;
+    const isObstacleHit = (step.type === 'obstacle-hit' || step.type === 'obstacle-cell')
+      || (step.obstacleGrid?.[step.i]?.[step.j] === 1 && (step.isBlockedStep || step.type === 'dfs-call'));
+    const isStepBlocked = (isStepOutOfBounds || isObstacleHit) && (step.fromI !== undefined && step.fromI >= 0 && step.fromJ !== undefined && step.fromJ >= 0);
+
+    const activeStandingI = isStepBlocked
+      ? step.fromI
+      : (isStepOutOfBounds ? Math.min(m - 1, Math.max(0, step.i)) : step.i);
+    const activeStandingJ = isStepBlocked
+      ? step.fromJ
+      : (isStepOutOfBounds ? Math.min(n - 1, Math.max(0, step.j)) : step.j);
 
     const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
     const activeTrailSet = new Set<string>(activeStackList);
@@ -149,39 +153,99 @@ export class GridVisualAdapter {
         const isTopWallOrigin = isTopWallBounce && r === 0 && c === (step.fromJ !== undefined && step.fromJ >= 0 ? step.fromJ : Math.min(n - 1, Math.max(0, step.j)));
         const isLeftWallOrigin = isLeftWallBounce && r === (step.fromI !== undefined && step.fromI >= 0 ? step.fromI : Math.min(m - 1, Math.max(0, step.i))) && c === 0;
 
-        // 当前探险家站立点 (包含正常点与准备越界时停留的父节点)
-        const isCur = isStandingCell && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
+        // 障碍物弹回时的发射源网格 (探险家留在安全的无障碍格子中，受阻弹回)
+        const isObstacleOrigin = isObstacleHit && isStepBlocked && (r === step.fromI && c === step.fromJ);
+
+        // 当前探险家站立点 (包含正常点与准备越界/撞障时停留的父节点)
+        const isCur = (isStandingCell || isObstacleOrigin) && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
 
         // 探索中足迹 (在递归调用栈中，但非当前站立点)
-        const isTrail = activeTrailSet.has(key) && !isStandingCell && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
+        const isTrail = activeTrailSet.has(key) && !isStandingCell && !isObstacleOrigin && !isRiverOrigin && !isRightWallOrigin && !isTopWallOrigin && !isLeftWallOrigin;
 
         const cellEl = document.createElement('div');
+        cellEl.setAttribute('data-coord', `${r},${c}`);
 
-        if (isObstacle) {
-          cellEl.className = `viz-cell is-obstacle ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border`;
+        if (isObstacleOrigin) {
+          // 探险家在无障碍来源格子上展示遇障弹回：跳向障碍格，受阻并瞬间弹回当前安全格！
+          const isObstacleDown = step.i > (step.fromI ?? -1);
+          const isObstacleRight = step.j > (step.fromJ ?? -1);
+          const isObstacleUp = step.i < (step.fromI ?? -1);
+          const isObstacleLeft = step.j < (step.fromJ ?? -1);
+          const obstacleAnimClass = isObstacleDown
+            ? 'obstacle-recoil-down'
+            : isObstacleRight
+            ? 'obstacle-recoil-right'
+            : isObstacleUp
+            ? 'obstacle-recoil-up'
+            : isObstacleLeft
+            ? 'obstacle-recoil-left'
+            : 'obstacle-bonk-recoil';
+
+          cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-amber-50/90 border-amber-500 shadow-md`;
+          cellEl.innerHTML = `
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+              <div class="${obstacleAnimClass}">
+                ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+              </div>
+            </div>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] pointer-events-none z-30 font-bold px-1.5 py-0.5 rounded-full bg-amber-600 text-white shadow whitespace-nowrap border border-white">
+              🚧 遇障弹回 ${step.type === 'obstacle-cell' ? '置 0' : 'return 0'}
+            </div>
+          `;
+        } else if (isObstacle && isCur && !isObstacleOrigin) {
+          // 🛡️ 兜底分支：当无法确定来源格时的原地受阻反弹（例如起点 (0, 0) 本身就是障碍物）
+          cellEl.className = `viz-cell is-obstacle is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-amber-50/90 border-amber-400 shadow-md`;
+          cellEl.innerHTML = `
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+              <div class="obstacle-bonk-recoil">
+                ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+              </div>
+            </div>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="text-base font-bold mt-2 z-10">🚧</span>
+            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] pointer-events-none z-30 font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-white shadow whitespace-nowrap border border-white">
+              🚧 障碍格置 0
+            </div>
+          `;
+        } else if (isObstacle && (step.type === 'obstacle-cell' || step.type === 'obstacle-hit') && r === step.i && c === step.j) {
+          // 正在被扫描检查的障碍物目标单元格（小人在安全来源格弹跳，此格呈现受阻高亮与置0提示）
+          cellEl.className = `viz-cell is-obstacle is-target ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-amber-50/90 border-amber-400 shadow-md animate-pulse`;
+          cellEl.innerHTML = `
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="text-base font-bold mt-2 z-10">🚧</span>
+            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] pointer-events-none z-30 font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-white shadow whitespace-nowrap border border-white">
+              🚧 障碍格置 0
+            </div>
+          `;
+        } else if (isObstacle) {
+          // 静态障碍物格子 (非当前活动点)
+          cellEl.className = `viz-cell is-obstacle ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border bg-slate-100/90 border-slate-300`;
           cellEl.innerHTML = `
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="text-base font-bold mt-2 z-10">🚧</span>
           `;
         } else if (isRiverOrigin) {
-          // 触水弹回单元格展示
-          cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-sky-100 border-sky-400`;
+          // 触水弹回单元格展示 (探险家安全驻留在最后一行来源格，向下冲水并受阻弹回)
+          cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-sky-100 border-sky-400 shadow-md`;
           cellEl.innerHTML = `
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30 river-splash-dive">
-              ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+              <div class="river-splash-recoil">
+                ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+              </div>
             </div>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
-            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[10px] pointer-events-none z-30 font-bold text-sky-600 flex items-center gap-0.5">
-              <span>⬇️💦</span>
-            </div>
           `;
         } else if (isRightWallOrigin) {
           // 撞墙弹回单元格展示
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-red-50 border-red-400`;
           cellEl.innerHTML = `
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30 wall-recoil-bump">
-              ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+              <div class="wall-recoil-right">
+                ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+              </div>
             </div>
             <div class="absolute top-1/2 -right-6 -translate-y-1/2 pointer-events-none z-30">
               <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-red-600 text-white shadow border border-white whitespace-nowrap">
@@ -195,8 +259,10 @@ export class GridVisualAdapter {
           // 逆推越界单元格展示
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-red-50 border-red-400`;
           cellEl.innerHTML = `
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30 wall-recoil-bump">
-              ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+              <div class="wall-recoil-bump">
+                ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
+              </div>
             </div>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
@@ -250,6 +316,21 @@ export class GridVisualAdapter {
           `;
         }
         container.appendChild(cellEl);
+      }
+    }
+
+    // 🛡️ 架构级探险家存在性绝对守护 (Fail-Safe Adventurer Presence Guarantee)
+    const hasAdventurer = container.querySelector('.adventurer-char') !== null;
+    if (!hasAdventurer) {
+      // 若因任何边界或特殊状态导致网格未包含探险家，强制向当前活动单元格或起点注入探险家，100% 杜绝人物消失
+      const targetR = Math.min(m - 1, Math.max(0, activeStandingI ?? 0));
+      const targetC = Math.min(n - 1, Math.max(0, activeStandingJ ?? 0));
+      const targetCell = container.querySelector(`[data-coord="${targetR},${targetC}"]`) || container.firstElementChild;
+      if (targetCell) {
+        const advHolder = document.createElement('div');
+        advHolder.className = 'absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30';
+        advHolder.innerHTML = this.getAdventurerSvgHtml({ state: 'walking', isFinish: false });
+        targetCell.appendChild(advHolder);
       }
     }
 
@@ -516,46 +597,117 @@ export class GridVisualAdapter {
   public static renderLiteMemoSlots(container: HTMLElement, step: any, n: number): void {
     if (!container || !step) return;
     container.innerHTML = '';
-    const memoArr = step.memo || [];
+    
+    // 🛡️ 强制重置容器为竖向列式居中容器，杜绝与上层 HTML 任何 flex-row 冲突
+    container.className = 'w-full h-full flex flex-col items-center justify-center gap-2 p-1 relative overflow-auto';
+    
+    const memoArr = step.memoSnapshot || step.memo || [];
+
+    // 1. 顶层状态转移等式 / 解释卡片 (居中且限定最大宽度，绝对不与槽位争夺水平空间)
+    const equationWrapper = document.createElement('div');
+    equationWrapper.className = 'w-full max-w-md mx-auto mb-1 px-1';
+
+    if (step.slotMode === 'down') {
+      const isKeep = step.type === 'keep-val';
+      const label = isKeep ? '首列保持旧值 (Down):' : '读取上方旧值 (Down):';
+      const val = step.down ?? step.memoj ?? memoArr[step.activeSlot];
+      equationWrapper.innerHTML = `
+        <div class="text-xs font-mono font-bold text-purple-700 bg-purple-50/90 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center justify-between shadow-xs animate-pulse">
+          <span class="flex items-center gap-1.5"><span class="animal-cat">🐱</span> <span>${label}</span></span>
+          <span class="font-extrabold bg-purple-200/80 px-2 py-0.5 rounded text-purple-900">memo[${step.activeSlot}] = ${val}</span>
+        </div>
+      `;
+    } else if (step.slotMode === 'right') {
+      equationWrapper.innerHTML = `
+        <div class="text-xs font-mono font-bold text-amber-700 bg-amber-50/90 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-between shadow-xs animate-pulse">
+          <span class="flex items-center gap-1.5"><span class="animal-cat">🐱</span> <span>读取左侧新值 (Right):</span></span>
+          <span class="font-extrabold bg-amber-200/80 px-2 py-0.5 rounded text-amber-900">right = memo[${step.activeSlot}] = ${step.right ?? step.memoj}</span>
+        </div>
+      `;
+    } else if (step.slotMode === 'updated') {
+      const sumVal = step.memoj !== undefined ? step.memoj : memoArr[step.activeSlot];
+      const isBlocked = step.type === 'obstacle-cell';
+      const icon = isBlocked ? '🚧' : '<span class="animal-frog">🐸</span>';
+      const label = isBlocked ? '障碍物清零覆盖:' : '滚动覆盖累加:';
+      const color = isBlocked ? 'text-amber-800 bg-amber-50/90 border-amber-300' : 'text-emerald-700 bg-emerald-50/90 border-emerald-200';
+      const badgeColor = isBlocked ? 'bg-amber-200 text-amber-900' : 'bg-emerald-200/80 text-emerald-900';
+      equationWrapper.innerHTML = `
+        <div class="text-xs font-mono font-bold ${color} px-3 py-1.5 rounded-lg border flex items-center justify-between shadow-xs">
+          <span class="flex items-center gap-1.5">${icon} <span>${label}</span></span>
+          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">memo[${step.activeSlot}] = ${sumVal}</span>
+        </div>
+      `;
+    } else {
+      equationWrapper.innerHTML = `
+        <div class="text-xs text-slate-500 font-mono py-1.5 px-3 text-center bg-slate-50/80 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
+          <span>📦 一维空间压缩：长度为 <strong>${n}</strong> 的滚动数组</span>
+        </div>
+      `;
+    }
+    container.appendChild(equationWrapper);
+
+    // 2. 槽位容器 (单行水平居中排列，flex-nowrap，绝对不折行换行)
+    const slotsRow = document.createElement('div');
+    slotsRow.className = 'w-full flex items-center justify-center gap-3 sm:gap-4 flex-nowrap py-1 overflow-x-auto';
+
     for (let j = 0; j < n; j++) {
       const val = memoArr[j] !== undefined ? memoArr[j] : 0;
-      const isCur = step.memoUpdatedIndex === j;
-      const isRef = step.memoRefLeftIndex === j;
+      const isCur = step.activeSlot === j;
+      const mode = isCur ? step.slotMode : undefined;
 
       const slotBox = document.createElement('div');
-      slotBox.className = 'flex flex-col items-center gap-1';
+      slotBox.className = 'flex flex-col items-center gap-1 relative flex-shrink-0';
 
-      let slotClass = 'viz-memo-slot w-10 h-10 md:w-11 md:h-11 rounded-lg flex items-center justify-center font-mono-code text-xs font-bold border transition-all relative';
+      let slotClass = 'viz-memo-slot w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex flex-col items-center justify-center font-mono-code text-xs font-bold border-2 transition-all relative shadow-xs';
       let iconBadge = '';
+      let bottomTag = '';
 
-      if (isCur) {
-        slotClass += ' is-updated font-extrabold';
-        iconBadge = '<span class="absolute -top-3 -right-1 text-base"><span class="animal-frog">🐸</span></span>';
-      } else if (isRef) {
-        slotClass += ' is-ref-left font-bold';
-        iconBadge = '<span class="absolute -top-3 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
+      if (isCur && mode === 'updated') {
+        const isBlocked = step.type === 'obstacle-cell';
+        if (isBlocked) {
+          slotClass += ' bg-amber-100 border-amber-500 text-amber-900 font-extrabold ring-2 ring-amber-400 scale-105 shadow-md';
+          iconBadge = '<span class="absolute -top-3.5 -right-1 text-base">🚧</span>';
+          bottomTag = '<span class="text-[9px] px-1 rounded bg-amber-600 text-white font-sans font-semibold">置0</span>';
+        } else {
+          slotClass += ' bg-emerald-100 border-emerald-500 text-emerald-900 font-extrabold ring-2 ring-emerald-400 scale-105 shadow-md';
+          iconBadge = '<span class="absolute -top-3.5 -right-1 text-base"><span class="animal-frog">🐸</span></span>';
+          bottomTag = '<span class="text-[9px] px-1 rounded bg-emerald-600 text-white font-sans font-semibold">覆盖</span>';
+        }
+      } else if (isCur && mode === 'down') {
+        slotClass += ' bg-purple-100 border-purple-500 text-purple-900 font-extrabold ring-2 ring-purple-400 scale-105 shadow-md';
+        iconBadge = '<span class="absolute -top-3.5 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
+        bottomTag = '<span class="text-[9px] px-1 rounded bg-purple-600 text-white font-sans font-semibold">上方旧</span>';
+      } else if (isCur && mode === 'right') {
+        slotClass += ' bg-amber-100 border-amber-500 text-amber-900 font-extrabold ring-2 ring-amber-400 scale-105 shadow-md';
+        iconBadge = '<span class="absolute -top-3.5 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
+        bottomTag = '<span class="text-[9px] px-1 rounded bg-amber-600 text-white font-sans font-semibold">左侧新</span>';
       } else if (val > 0) {
-        slotClass += ' is-done font-bold';
+        slotClass += ' bg-slate-50 border-slate-300 text-slate-800 font-bold';
+        bottomTag = `<span class="text-[9px] text-slate-400 font-sans">就绪</span>`;
       } else {
-        slotClass += ' is-empty';
+        slotClass += ' bg-white border-slate-200 text-slate-400';
+        bottomTag = `<span class="text-[9px] text-slate-300 font-sans">0</span>`;
       }
 
       slotBox.innerHTML = `
-        <span class="text-[10px] font-mono-code text-slate-400">j=${j}</span>
+        <span class="text-[10px] font-mono-code font-semibold text-slate-500">memo[${j}]</span>
         <div class="${slotClass}">
           ${iconBadge}
-          <span class="slot-val">${val}</span>
+          <span class="slot-val text-sm sm:text-base font-extrabold">${val}</span>
         </div>
+        ${bottomTag}
       `;
-      container.appendChild(slotBox);
+      slotsRow.appendChild(slotBox);
     }
+    container.appendChild(slotsRow);
   }
 
   /**
    * 更新 Full 模式下一维滚动数组槽位状态
    */
   public static updateFullMemoSlots(slotsContainer: HTMLElement | null, step: any, n: number): void {
-    if (!step || !step.memo) return;
+    if (!step) return;
+    const memoArr = step.memoSnapshot || step.memo || [];
     for (let j = 0; j < n; j++) {
       const slot = slotsContainer 
         ? (slotsContainer.querySelector(`#memo-slot-${j}`) as HTMLElement || document.getElementById(`memo-slot-${j}`))
@@ -564,67 +716,188 @@ export class GridVisualAdapter {
 
       const valEl = slot.querySelector('.slot-val');
       const badgeEl = slot.querySelector('.slot-badge');
-      const val = step.memo[j] !== undefined ? step.memo[j] : 0;
+      const val = memoArr[j] !== undefined ? memoArr[j] : 0;
       if (valEl) valEl.textContent = String(val);
 
-      const isUpdated = step.memoUpdatedIndex === j;
-      const isRefLeft = step.memoRefLeftIndex === j;
+      const isCur = step.activeSlot === j;
+      const mode = isCur ? step.slotMode : undefined;
 
-      slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200';
-      if (isUpdated) {
-        slot.className += ' is-updated';
+      if (isCur && mode === 'updated') {
+        slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 bg-emerald-100 border-emerald-500 scale-105 ring-2 ring-emerald-400';
         if (badgeEl) {
-          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-500 text-white font-bold';
-          badgeEl.textContent = '当前写入 (覆盖)';
+          badgeEl.textContent = '✨ 累加更新';
+          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-emerald-600 text-white font-semibold';
         }
-      } else if (isRefLeft) {
-        slot.className += ' is-ref-left';
+      } else if (isCur && mode === 'down') {
+        slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 bg-purple-100 border-purple-500 scale-105 ring-2 ring-purple-400';
         if (badgeEl) {
-          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-100 text-amber-800 font-semibold';
-          badgeEl.textContent = '左方新值 (累加)';
+          badgeEl.textContent = '⬇️ 上方旧值';
+          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-purple-600 text-white font-semibold';
+        }
+      } else if (isCur && mode === 'right') {
+        slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 bg-amber-100 border-amber-500 scale-105 ring-2 ring-amber-400';
+        if (badgeEl) {
+          badgeEl.textContent = '➡️ 左侧新值';
+          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-600 text-white font-semibold';
         }
       } else if (val > 0) {
-        slot.className += ' is-done';
+        slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200 bg-slate-50 border-slate-300';
         if (badgeEl) {
-          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-emerald-100 text-emerald-700';
-          badgeEl.textContent = '上方旧值';
+          badgeEl.textContent = '已就绪';
+          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-slate-200 text-slate-700 font-semibold';
         }
       } else {
-        slot.className += ' is-empty';
+        slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-xs flex flex-col items-center justify-between p-1.5 transition-all duration-200 bg-white border-slate-200';
         if (badgeEl) {
-          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-slate-100 text-slate-500';
           badgeEl.textContent = '未就绪';
+          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-slate-100 text-slate-400';
         }
       }
     }
   }
 
   /**
-   * 渲染 Stage-3 状态转移等式看板 (Lite 模式)
+   * 渲染 Stage-3 二维 DP 状态表与转移看板 (Lite 模式 卡片 2)
    */
-  public static renderTransferEquation(container: HTMLElement, step: any, isReverse = false): void {
+  public static renderStage3DPTable(
+    container: HTMLElement,
+    step: any,
+    options: { m: number; n: number; isReverse?: boolean }
+  ): void {
     if (!container || !step) return;
-    const topTxt = step.topVal !== undefined ? step.topVal : '-';
-    const leftTxt = step.leftVal !== undefined ? step.leftVal : '-';
-    const sumTxt = step.sumVal !== undefined ? step.sumVal : '-';
+    const { m, n, isReverse = false } = options;
+    container.innerHTML = '';
+    container.className = 'w-full h-full flex flex-col items-center justify-start gap-1.5 p-1 overflow-auto relative';
+
+    // 1. 顶层状态转移等式 / 解释条 (居中限定最大宽度)
+    const equationWrapper = document.createElement('div');
+    equationWrapper.className = 'w-full max-w-lg mx-auto px-1 flex-shrink-0';
+
     const topLabel = isReverse ? '下方' : '上方';
     const leftLabel = isReverse ? '右方' : '左方';
+    const topTxt = step.topVal !== undefined ? step.topVal : (step.topI >= 0 && step.topJ >= 0 ? step.grid?.[step.topI]?.[step.topJ] ?? '-' : '-');
+    const leftTxt = step.leftVal !== undefined ? step.leftVal : (step.leftI >= 0 && step.leftJ >= 0 ? step.grid?.[step.leftI]?.[step.leftJ] ?? '-' : '-');
+    const curVal = step.sumVal !== undefined ? step.sumVal : (step.i >= 0 && step.j >= 0 ? step.grid?.[step.i]?.[step.j] ?? '-' : '-');
 
-    container.innerHTML = `
-      <div class="flex items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 shadow-sm text-xs font-mono-code">
-        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200">
-          <span class="animal-cat">🐱</span> ${topLabel}: ${topTxt}
+    if (step.type === 'obstacle-cell' || step.type === 'obstacle-hit' || (step.obstacleGrid?.[step.i]?.[step.j] === 1 && step.i >= 0 && step.j >= 0)) {
+      equationWrapper.innerHTML = `
+        <div class="text-xs font-mono font-bold text-amber-800 bg-amber-50/90 px-3 py-1 rounded-lg border border-amber-300 flex items-center justify-between shadow-xs">
+          <span class="flex items-center gap-1.5"><span>🚧</span> <span>障碍格阻断:</span></span>
+          <span class="font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded">dp[${step.i}][${step.j}] = 0</span>
         </div>
-        <span class="text-slate-400 font-bold text-base">+</span>
-        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200">
-          <span class="animal-cat">🐱</span> ${leftLabel}: ${leftTxt}
+      `;
+    } else if (step.type === 'init-row' || step.type === 'init-col' || step.type === 'init-val' || step.type === 'init-slot') {
+      equationWrapper.innerHTML = `
+        <div class="text-xs font-mono font-bold text-emerald-700 bg-emerald-50/90 px-3 py-1 rounded-lg border border-emerald-200 flex items-center justify-between shadow-xs">
+          <span class="flex items-center gap-1.5"><span class="animal-frog">🐸</span> <span>边界/起点初始化:</span></span>
+          <span class="font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded">dp[${step.i}][${step.j}] = ${curVal}</span>
         </div>
-        <span class="text-slate-400 font-bold text-base">=</span>
-        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-extrabold border border-blue-200">
-          <span class="animal-frog">🐸</span> 当前单元: ${sumTxt}
+      `;
+    } else if (step.type === 'transfer' || (step.topI >= 0 || step.leftI >= 0)) {
+      equationWrapper.innerHTML = `
+        <div class="flex items-center justify-center gap-2 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200 shadow-2xs">
+            <span class="animal-cat text-sm">🐱</span> <span>${topLabel}:</span> <span class="font-extrabold">${topTxt}</span>
+          </div>
+          <span class="text-slate-400 font-bold text-xs">+</span>
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-2xs">
+            <span class="animal-cat text-sm">🐱</span> <span>${leftLabel}:</span> <span class="font-extrabold">${leftTxt}</span>
+          </div>
+          <span class="text-slate-400 font-bold text-xs">=</span>
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+            <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    } else {
+      equationWrapper.innerHTML = `
+        <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
+          <span>📊 二维 DP 状态表 <code>dp[0..${m - 1}][0..${n - 1}]</code>，准备逐格填表</span>
+        </div>
+      `;
+    }
+    container.appendChild(equationWrapper);
+
+    // 2. 状态表格 (DP Table Matrix)
+    const tableCard = document.createElement('div');
+    tableCard.className = 'w-full flex-1 flex flex-col items-center justify-center min-h-0 py-0.5';
+
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = 'inline-block bg-white rounded-xl p-2 border border-slate-200/90 shadow-sm relative';
+
+    let tableHtml = '<table class="border-collapse font-mono-code text-xs">';
+    // 表头：列索引
+    tableHtml += '<thead><tr><th class="p-0.5 text-[10px] text-slate-400 font-normal">i\\j</th>';
+    for (let c = 0; c < n; c++) {
+      tableHtml += `<th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-center">j=${c}</th>`;
+    }
+    tableHtml += '</tr></thead><tbody>';
+
+    for (let r = 0; r < m; r++) {
+      tableHtml += `<tr><th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-right">i=${r}</th>`;
+      for (let c = 0; c < n; c++) {
+        const isCur = step.i === r && step.j === c;
+        const isTop = step.topI === r && step.topJ === c;
+        const isLeft = step.leftI === r && step.leftJ === c;
+        const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
+        const val = step.grid?.[r]?.[c] ?? null;
+
+        let cellClass = 'w-10 h-10 sm:w-11 sm:h-11 border rounded-lg text-center font-bold relative transition-all duration-150 flex flex-col items-center justify-center ';
+        let content = '';
+
+        if (isCur) {
+          cellClass += 'bg-emerald-100/90 border-emerald-500 text-emerald-900 font-extrabold ring-2 ring-emerald-400 scale-105 shadow-md z-10';
+          content = `
+            <span class="absolute -top-3 -right-1 text-sm"><span class="animal-frog">🐸</span></span>
+            <span class="text-sm font-extrabold">${val !== null ? val : (isObstacle ? 0 : '-')}</span>
+            <span class="text-[8px] font-sans text-emerald-700 font-semibold leading-none">当前</span>
+          `;
+        } else if (isTop) {
+          cellClass += 'bg-purple-100/90 border-purple-400 text-purple-900 font-bold ring-1 ring-purple-300 shadow-xs';
+          content = `
+            <span class="absolute -top-3 -right-1 text-sm"><span class="animal-cat">🐱</span></span>
+            <span class="text-sm font-bold">${val !== null ? val : '-'}</span>
+            <span class="text-[8px] font-sans text-purple-600 font-semibold leading-none">${topLabel}</span>
+          `;
+        } else if (isLeft) {
+          cellClass += 'bg-amber-100/90 border-amber-400 text-amber-900 font-bold ring-1 ring-amber-300 shadow-xs';
+          content = `
+            <span class="absolute -top-3 -right-1 text-sm"><span class="animal-cat">🐱</span></span>
+            <span class="text-sm font-bold">${val !== null ? val : '-'}</span>
+            <span class="text-[8px] font-sans text-amber-600 font-semibold leading-none">${leftLabel}</span>
+          `;
+        } else if (isObstacle) {
+          cellClass += 'bg-slate-100 border-slate-300 text-slate-400';
+          content = `
+            <span class="text-xs leading-none">🚧</span>
+            <span class="text-[10px] font-bold text-slate-500 leading-none">0</span>
+          `;
+        } else if (val !== null) {
+          cellClass += 'bg-slate-50/90 border-slate-200 text-slate-800 font-bold';
+          content = `<span class="text-sm font-bold text-slate-800">${val}</span>`;
+        } else {
+          cellClass += 'bg-white border-slate-200/70 text-slate-300';
+          content = '<span class="text-xs text-slate-300">-</span>';
+        }
+
+        tableHtml += `<td class="p-0.5"><div class="${cellClass}">${content}</div></td>`;
+      }
+      tableHtml += '</tr>';
+    }
+    tableHtml += '</tbody></table>';
+
+    tableWrapper.innerHTML = tableHtml;
+    tableCard.appendChild(tableWrapper);
+    container.appendChild(tableCard);
+  }
+
+  /**
+   * 兼容方法：渲染 Stage-3 状态转移看板
+   */
+  public static renderTransferEquation(container: HTMLElement, step: any, isReverse = false): void {
+    const m = step.grid?.length || 3;
+    const n = step.grid?.[0]?.length || 3;
+    this.renderStage3DPTable(container, step, { m, n, isReverse });
   }
 }
 

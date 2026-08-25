@@ -90,7 +90,7 @@ stages:
                   return dfs(obstacleGrid, 0, 0, m, n);
                 }
                 private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle // 越界/障碍阻断
                   if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 达到终点
                   int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down // 向下探索
                   int right = dfs(grid, i, j + 1, m, n); // @step:branch_right // 向右探索
@@ -106,7 +106,7 @@ stages:
                   return dfs(obstacleGrid, m - 1, n - 1);
                 }
                 private int dfs(int[][] grid, int i, int j) { // @step:entry
-                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle // 越界/障碍阻断
                   if (i == 0 && j == 0) return 1; // @step:boundary // 回到起点
                   int left = dfs(grid, i, j - 1);  // @step:branch_left // 向左寻源
                   int up = dfs(grid, i - 1, j);    // @step:branch_up // 向上寻源
@@ -161,7 +161,7 @@ stages:
               return dfs(obstacleGrid, 0, 0, m, n);
             }
             private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-              if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+              if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle // 越界/障碍阻断
               if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 成功到达终点
               int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down // 向下探索
               int right = dfs(grid, i, j + 1, m, n); // @step:branch_right // 向右探索
@@ -177,7 +177,7 @@ stages:
               return dfs(obstacleGrid, m - 1, n - 1);
             }
             private int dfs(int[][] grid, int i, int j) { // @step:entry
-              if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle // 越界/障碍阻断
+              if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle // 越界/障碍阻断
               if (i == 0 && j == 0) return 1; // @step:boundary // 成功回溯到起点
               int left = dfs(grid, i, j - 1);  // @step:branch_left // 向左寻找来源
               int up = dfs(grid, i - 1, j);    // @step:branch_up // 向上寻找来源
@@ -220,7 +220,7 @@ stages:
                   return dfs(obstacleGrid, 0, 0, m, n);
                 }
                 private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍阻断
+                  if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle // 遇障碍阻断
                   if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
                   if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
                   int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
@@ -239,7 +239,7 @@ stages:
                   return dfs(obstacleGrid, m - 1, n - 1);
                 }
                 private int dfs(int[][] grid, int i, int j) { // @step:entry
-                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle
+                  if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle
                   if (i == 0 && j == 0) return 1; // @step:boundary
                   if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
                   int left = dfs(grid, i, j - 1);  // @step:branch_left
@@ -303,7 +303,7 @@ stages:
               return dfs(obstacleGrid, 0, 0, m, n);
             }
             private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
-              if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:obstacle // 遇障碍阻断
+              if (i >= m || j >= n || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle // 遇障碍阻断
               if (i == m - 1 && j == n - 1) return 1; // @step:boundary // 抵达终点
               if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
               int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
@@ -322,7 +322,7 @@ stages:
               return dfs(obstacleGrid, m - 1, n - 1);
             }
             private int dfs(int[][] grid, int i, int j) { // @step:entry
-              if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:obstacle
+              if (i < 0 || j < 0 || grid[i][j] == 1) return 0; // @step:out_of_bounds @step:obstacle
               if (i == 0 && j == 0) return 1; // @step:boundary
               if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit // ⚡ 缓存命中
               int left = dfs(grid, i, j - 1);  // @step:branch_left
@@ -369,9 +369,9 @@ stages:
                       } else if (i == 0 && j == 0) {
                         dp[i][j] = 1; // @step:init_val // 起点初始化
                       } else {
-                        int fromTop = (i > 0) ? dp[i - 1][j] : 0;
-                        int fromLeft = (j > 0) ? dp[i][j - 1] : 0;
-                        dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移
+                        int fromTop = (i > 0) ? dp[i - 1][j] : 0; // @step:calc_top 查找上方可达路径
+                        int fromLeft = (j > 0) ? dp[i][j - 1] : 0; // @step:calc_left 查找左方可达路径
+                        dp[i][j] = fromTop + fromLeft; // @step:transfer 状态转移求和
                       }
                     }
                   }
@@ -388,13 +388,13 @@ stages:
                   for (int i = m - 1; i >= 0; i--) { // @step:loop_i
                     for (int j = n - 1; j >= 0; j--) { // @step:loop_j
                       if (obstacleGrid[i][j] == 1) { // @step:cond
-                        dp[i][j] = 0; // @step:init_val // 障碍格为 0
+                        dp[i][j] = 0; // @step:init_val 障碍格为 0
                       } else if (i == m - 1 && j == n - 1) {
-                        dp[i][j] = 1; // @step:init_val // 终点初始化
+                        dp[i][j] = 1; // @step:init_val 终点初始化
                       } else {
-                        int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0;
-                        int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0;
-                        dp[i][j] = fromDown + fromRight; // @step:transfer
+                        int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0; // @step:calc_down 查找下方可达路径
+                        int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0; // @step:calc_right 查找右方可达路径
+                        dp[i][j] = fromDown + fromRight; // @step:transfer 状态转移求和
                       }
                     }
                   }
@@ -460,9 +460,9 @@ stages:
                   } else if (i == 0 && j == 0) {
                     dp[i][j] = 1; // @step:init_val // 起点初始化
                   } else {
-                    int fromTop = (i > 0) ? dp[i - 1][j] : 0;
-                    int fromLeft = (j > 0) ? dp[i][j - 1] : 0;
-                    dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移
+                    int fromTop = (i > 0) ? dp[i - 1][j] : 0; // @step:calc_top // 查找上方可达路径
+                    int fromLeft = (j > 0) ? dp[i][j - 1] : 0; // @step:calc_left // 查找左方可达路径
+                    dp[i][j] = fromTop + fromLeft; // @step:transfer // 状态转移求和
                   }
                 }
               }
@@ -483,9 +483,9 @@ stages:
                   } else if (i == m - 1 && j == n - 1) {
                     dp[i][j] = 1; // @step:init_val // 终点初始化
                   } else {
-                    int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0;
-                    int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0;
-                    dp[i][j] = fromDown + fromRight; // @step:transfer
+                    int fromDown = (i + 1 < m) ? dp[i + 1][j] : 0; // @step:calc_down // 查找下方可达路径
+                    int fromRight = (j + 1 < n) ? dp[i][j + 1] : 0; // @step:calc_right // 查找右方可达路径
+                    dp[i][j] = fromDown + fromRight; // @step:transfer // 状态转移求和
                   }
                 }
               }

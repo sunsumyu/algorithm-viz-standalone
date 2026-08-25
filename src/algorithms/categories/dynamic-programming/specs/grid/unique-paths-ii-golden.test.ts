@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { AlgorithmModelRepository } from '../../../../../core/model-repository';
 import { UniversalStageEngine } from '../../../../../core/universal-stage-engine';
+import { YamlModelLoader } from '../../../../../core/yaml-model-loader';
 
 /**
  * 🏆 [Golden Baseline Regression Guard - Unique Paths II]
@@ -101,5 +102,46 @@ describe('🏆 Unique Paths II Golden Baseline Regression Guard', () => {
     const s4Steps = UniversalStageEngine.generateStage4Steps(model, m, n, 'forward', 'if');
     expect(s4Steps.length).toBeGreaterThan(0);
     expect(s4Steps[s4Steps.length - 1].memoSnapshot?.[2]).toBe(2);
+  });
+
+  it('should guarantee pedagogical 3-step granularity (calc-top, calc-left, transfer) in Stage 3 2D DP', () => {
+    const model = AlgorithmModelRepository.getModel('unique-paths-ii');
+    const s3Variant = model.stages['stage-3'].variants?.['if'];
+    expect(s3Variant).toBeDefined();
+
+    // 顺推教学细分步测试
+    const compiledForward = YamlModelLoader.compileSource(s3Variant?.code?.forward as any);
+    const forwardSteps = UniversalStageEngine.generateStage3Steps(model, 3, 3, 'forward', compiledForward.anchorMap);
+
+    const calcTopSteps = forwardSteps.filter(s => s.type === 'calc-top');
+    const calcLeftSteps = forwardSteps.filter(s => s.type === 'calc-left');
+    const transferSteps = forwardSteps.filter(s => s.type === 'transfer');
+
+    expect(calcTopSteps.length).toBeGreaterThan(0);
+    expect(calcLeftSteps.length).toBeGreaterThan(0);
+    expect(transferSteps.length).toBeGreaterThan(0);
+    expect(forwardSteps[forwardSteps.length - 1].grid?.[2][2]).toBe(2);
+
+    // 验证行内局部表达式聚焦属性 (Inline highlightText)
+    expect(calcTopSteps[0].highlightText).toBeDefined();
+    expect(calcLeftSteps[0].highlightText).toBeDefined();
+    expect(transferSteps[0].highlightText).toBe('fromTop + fromLeft');
+
+    // 逆推教学细分步测试
+    const compiledReverse = YamlModelLoader.compileSource(s3Variant?.code?.reverse as any);
+    const reverseSteps = UniversalStageEngine.generateStage3Steps(model, 3, 3, 'reverse', compiledReverse.anchorMap);
+
+    const calcDownSteps = reverseSteps.filter(s => s.type === 'calc-down');
+    const calcRightSteps = reverseSteps.filter(s => s.type === 'calc-right');
+    const reverseTransferSteps = reverseSteps.filter(s => s.type === 'transfer');
+
+    expect(calcDownSteps.length).toBeGreaterThan(0);
+    expect(calcRightSteps.length).toBeGreaterThan(0);
+    expect(reverseTransferSteps.length).toBeGreaterThan(0);
+    expect(reverseSteps[reverseSteps.length - 1].grid?.[0][0]).toBe(2);
+
+    expect(calcDownSteps[0].highlightText).toBeDefined();
+    expect(calcRightSteps[0].highlightText).toBeDefined();
+    expect(reverseTransferSteps[0].highlightText).toBe('fromDown + fromRight');
   });
 });

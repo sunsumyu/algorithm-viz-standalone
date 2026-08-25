@@ -74,7 +74,7 @@ stages:
                   }
                   private int dfs(int[][] grid, int i, int j, int m, int n) { // @step:entry
                       if (i == m - 1 && j == n - 1) return grid[i][j]; // @step:boundary // 抵达终点
-                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:terminal // 越界返回无穷大
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal // 越界返回无穷大
                       int down = dfs(grid, i + 1, j, m, n);  // @step:branch_down
                       int right = dfs(grid, i, j + 1, m, n); // @step:branch_right
                       return Math.min(down, right) + grid[i][j]; // @step:combine
@@ -89,7 +89,7 @@ stages:
                   }
                   private int dfs(int[][] grid, int i, int j) { // @step:entry
                       if (i == 0 && j == 0) return grid[0][0]; // @step:boundary
-                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:terminal
+                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal
                       int left = dfs(grid, i, j - 1);  // @step:branch_left
                       int up = dfs(grid, i - 1, j);    // @step:branch_up
                       return Math.min(left, up) + grid[i][j]; // @step:combine
@@ -126,7 +126,7 @@ stages:
                   }
                   private int dfs(int[][] grid, int i, int j, int m, int n, int[][] memo) { // @step:entry
                       if (i == m - 1 && j == n - 1) return grid[i][j]; // @step:boundary
-                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:terminal
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal
                       if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
                       int down = dfs(grid, i + 1, j, m, n, memo);  // @step:branch_down
                       int right = dfs(grid, i, j + 1, m, n, memo); // @step:branch_right
@@ -145,7 +145,7 @@ stages:
                   }
                   private int dfs(int[][] grid, int i, int j, int[][] memo) { // @step:entry
                       if (i == 0 && j == 0) return grid[0][0]; // @step:boundary
-                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:terminal
+                      if (i < 0 || j < 0) return Integer.MAX_VALUE; // @step:out_of_bounds @step:terminal
                       if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
                       int left = dfs(grid, i, j - 1, memo);  // @step:branch_left
                       int up = dfs(grid, i - 1, j, memo);    // @step:branch_up
