@@ -86,10 +86,10 @@
         <!-- 卡片 1: 二维网格 (虚拟地图 m×n, 比例紧凑, 播放控制器位于右下角) -->
         <div class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden relative">
           <div class="flex items-center justify-between flex-shrink-0">
-            <h2 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <h2 id="card1-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
               <i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 m×n)
             </h2>
-            <div class="flex items-center gap-2 sm:gap-2.5 text-[11px] text-slate-500 font-medium overflow-x-auto">
+            <div id="grid-legend-bar" class="flex items-center gap-2 sm:gap-2.5 text-[11px] text-slate-500 font-medium overflow-x-auto">
               <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已走通</span>
               <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-sky-100 border border-sky-400 border-dashed"></span> 👣 探索中</span>
               <span class="flex items-center gap-1 hidden sm:inline-flex">🧗‍♂️ 当前探险</span>

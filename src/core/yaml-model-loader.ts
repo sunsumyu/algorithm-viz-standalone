@@ -175,7 +175,16 @@ export class YamlModelLoader {
 
     // 编译主代码片段
     if (stage.code) {
-      const codeSnippet = stage.code[direction] || stage.code.forward;
+      let codeSnippet: IYamlCodeSnippet | undefined;
+      if (typeof stage.code === 'string') {
+        codeSnippet = { title: name, source: stage.code };
+      } else if (typeof stage.code === 'object') {
+        if ('source' in stage.code) {
+          codeSnippet = stage.code as any;
+        } else {
+          codeSnippet = stage.code[direction] || stage.code.forward;
+        }
+      }
       if (codeSnippet) {
         const compiled = YamlModelLoader.compileSource(codeSnippet);
         result.codeTitle = compiled.title;
@@ -188,18 +197,37 @@ export class YamlModelLoader {
     if (stage.variants) {
       result.variants = {};
       for (const [vKey, variant] of Object.entries(stage.variants)) {
-        const vTitle = YamlModelLoader.resolveDirectionalText(variant.title, direction);
-        const snippet = variant.code[direction] || variant.code.forward;
+        const vTitle = YamlModelLoader.resolveDirectionalText((variant as any).title || (variant as any).name, direction) || variant.variantLabel || vKey;
+        let snippet: IYamlCodeSnippet | undefined;
+        if (typeof (variant as any).code === 'string') {
+          snippet = { title: (variant as any).name || vTitle, source: (variant as any).code };
+        } else if (variant.code && typeof variant.code === 'object') {
+          if ('source' in variant.code) {
+            snippet = variant.code as any;
+          } else {
+            snippet = variant.code[direction] || variant.code.forward;
+          }
+        }
         if (snippet) {
           const compiled = YamlModelLoader.compileSource(snippet);
           result.variants[vKey] = {
-            variantLabel: variant.variantLabel || vTitle,
+            variantLabel: variant.variantLabel || (variant as any).name || vTitle,
             title: vTitle,
             codeTitle: compiled.title,
             codeHtml: compiled.codeHtml,
             anchorMap: compiled.anchorMap
           };
         }
+      }
+    }
+
+    // 若未显式定义主代码，则回退使用首个变体代码
+    if (!result.codeHtml && result.variants) {
+      const firstVariant = Object.values(result.variants)[0];
+      if (firstVariant) {
+        result.codeTitle = firstVariant.codeTitle || firstVariant.title;
+        result.codeHtml = firstVariant.codeHtml;
+        result.anchorMap = firstVariant.anchorMap;
       }
     }
 

@@ -184,7 +184,8 @@ export class VisualizerAppController {
     // 0. 从 URL Hash 恢复持久化状态与主题
     const restored = VisualizerStateRouter.restore();
     let targetStep = 0;
-    if (restored) {
+    const isSameAlgo = !restored?.algo || restored.algo === this.modelId;
+    if (restored && isSameAlgo) {
       if (restored.stage && this.model?.stages?.[restored.stage]) this.currentStage = restored.stage;
       if ((restored.dir === 'forward' || restored.dir === 'reverse') && this.model?.directions?.[restored.dir]) this.currentDirection = restored.dir;
       if (restored.variant) this.currentStageVariant = restored.variant;
@@ -203,6 +204,7 @@ export class VisualizerAppController {
     } else {
       this.currentStage = this.getInitialStage();
       this.currentDirection = this.getInitialDirection();
+      if (restored?.theme) this.themeManager.setTheme(restored.theme, true);
     }
 
     // 应用主题并装配顶栏主题选择器
@@ -215,8 +217,8 @@ export class VisualizerAppController {
       }
     });
 
-    // 1. 从模型注入默认网格参数 (若未被 hash 覆盖)
-    if (this.model.defaultParams && (!restored || (!restored.m && !restored.n))) {
+    // 1. 从模型注入默认网格参数 (若未被同题 hash 覆盖)
+    if (this.model.defaultParams && (!restored || !isSameAlgo || (!restored.m && !restored.n))) {
       const inputM = document.getElementById('input-m') as HTMLInputElement | null;
       const inputN = document.getElementById('input-n') as HTMLInputElement | null;
       if (this.model.defaultParams.m !== undefined) {
@@ -506,7 +508,14 @@ export class VisualizerAppController {
     // 二维网格渲染
     const gridContainer = document.getElementById('grid-container');
     if (gridContainer) {
-      GridVisualAdapter.renderGrid(gridContainer, step, { m: this.m, n: this.n, isReverse });
+      const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(this.modelId);
+      GridVisualAdapter.renderGrid(gridContainer, step, {
+        m: this.m,
+        n: this.n,
+        isReverse,
+        modelId: this.modelId,
+        isGridProblem
+      });
     }
 
     // 卡片 2 状态展示 (一维槽位 / 递归树 / 转移等式)
@@ -681,6 +690,24 @@ export class VisualizerAppController {
       complexityBadge.className = `px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${stageConfig.badgeBg || 'bg-blue-100 text-blue-800'}`;
     }
 
+    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(this.model.id);
+    const card1TitleEl = document.getElementById('card1-title');
+    if (card1TitleEl) {
+      card1TitleEl.innerHTML = isGridProblem
+        ? `<i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 m×n)`
+        : `<i class="fa-solid fa-table-cells text-slate-500"></i> 二维状态网格 (${this.m}×${this.n})`;
+    }
+
+    const legendBar = document.getElementById('grid-legend-bar');
+    if (legendBar && !isGridProblem) {
+      legendBar.innerHTML = `
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-slate-100 border border-slate-300"></span> 已求解</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> 参考上方</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> 参考左方</span>
+      `;
+    }
+
     const card2TitleEl = document.getElementById('card2-title');
     if (card2TitleEl) card2TitleEl.innerHTML = `<i class="fa-solid fa-bars-staggered text-slate-500"></i> ${stageConfig.card2Title}`;
     const card2DescEl = document.getElementById('card2-desc');
@@ -781,22 +808,38 @@ export class VisualizerAppController {
           variantBar.appendChild(btn);
         });
       }
-      const variantConfig = stageConfig.variants[this.currentStageVariant] || Object.values(stageConfig.variants)[0];
+      const variantConfig = stageConfig.variants ? (stageConfig.variants[this.currentStageVariant] || Object.values(stageConfig.variants)[0]) : null;
       const codeTitleEl = document.getElementById('code-file-title') || document.getElementById('code-lang-title');
-      if (codeTitleEl) codeTitleEl.textContent = variantConfig.title;
+      if (codeTitleEl) codeTitleEl.textContent = variantConfig?.title || stageConfig.codeTitle || '';
       const codeBox = document.getElementById('code-content') || document.getElementById('code-display-container');
-      if (codeBox) codeBox.innerHTML = variantConfig.codeHtml || variantConfig.html;
+      if (codeBox) codeBox.innerHTML = variantConfig?.codeHtml || (variantConfig as any)?.html || stageConfig.codeHtml || '';
     } else {
       if (variantBar) variantBar.classList.add('hidden');
       const variantConfig = stageConfig.variants ? (stageConfig.variants[this.currentStageVariant] || Object.values(stageConfig.variants)[0]) : null;
       const codeTitleEl = document.getElementById('code-file-title') || document.getElementById('code-lang-title');
-      if (codeTitleEl) codeTitleEl.textContent = variantConfig?.title || stageConfig.codeTitle;
+      if (codeTitleEl) codeTitleEl.textContent = variantConfig?.title || stageConfig.codeTitle || '';
       const codeBox = document.getElementById('code-content') || document.getElementById('code-display-container');
-      if (codeBox) codeBox.innerHTML = variantConfig?.codeHtml || variantConfig?.html || stageConfig.codeHtml;
+      if (codeBox) codeBox.innerHTML = variantConfig?.codeHtml || (variantConfig as any)?.html || stageConfig.codeHtml || '';
     }
 
     const codeContainer = document.getElementById('code-container-box') || document.getElementById('code-display-container');
     if (codeContainer) codeContainer.scrollTop = 0;
+  }
+
+  /**
+   * 将当前控制器状态同步到 URL Hash
+   */
+  public syncStateToHash(step: number): void {
+    VisualizerStateRouter.updateHash({
+      algo: this.modelId,
+      stage: this.currentStage,
+      dir: this.currentDirection,
+      variant: this.currentStageVariant,
+      m: this.m,
+      n: this.n,
+      step,
+      theme: this.themeManager.getCurrentThemeId()
+    });
   }
 
   /**

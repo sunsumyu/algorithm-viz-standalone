@@ -5,6 +5,7 @@
  */
 
 export interface VisualizerState {
+  algo?: string;
   stage: string;
   dir: 'forward' | 'reverse';
   variant?: string;
@@ -20,6 +21,7 @@ export class VisualizerStateRouter {
    */
   public static serialize(state: VisualizerState): string {
     const params = new URLSearchParams();
+    if (state.algo) params.set('algo', state.algo);
     if (state.stage) params.set('stage', state.stage);
     if (state.dir) params.set('dir', state.dir);
     if (state.variant) params.set('variant', state.variant);
@@ -42,6 +44,9 @@ export class VisualizerStateRouter {
       const params = new URLSearchParams(hash);
       const result: Partial<VisualizerState> = {};
       
+      const algo = params.get('algo');
+      if (algo) result.algo = algo;
+
       const stage = params.get('stage');
       if (stage) result.stage = stage;
 
