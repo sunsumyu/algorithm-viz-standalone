@@ -570,7 +570,7 @@ export class UniversalStageEngine {
     if (root.r === r && root.c === c) {
       return root.id;
     }
-    if (root.val && (root.val.includes(`dfs(${r},${c})`) || root.val.includes(`dfs(${r}, ${c})`))) {
+    if (root.val && (root.val === `dp[${r}][${c}]` || root.val.includes(`dfs(${r},${c})`) || root.val.includes(`dfs(${r}, ${c})`))) {
       return root.id;
     }
     if (root.children) {
@@ -580,6 +580,95 @@ export class UniversalStageEngine {
       }
     }
     return undefined;
+  }
+
+  /**
+   * 构建阶段 3 二维 DP 状态转移依赖树 (State Dependency Tree)
+   * 顺推：根节点为终点 dp[m-1][n-1]，向左上方依赖分解直至起点 dp[0][0] 与障碍物
+   * 逆推：根节点为起点 dp[0][0]，向右下方依赖分解直至终点 dp[m-1][n-1] 与障碍物
+   */
+  public static build2DDPDependencyTree(
+    mVal: number,
+    nVal: number,
+    direction: 'forward' | 'reverse' = 'forward',
+    obstacleGrid?: number[][],
+    currentGrid?: (number | null)[][],
+    currentI?: number,
+    currentJ?: number
+  ): UniversalTreeNode {
+    let nodeIdCounter = 0;
+    const isForward = direction === 'forward';
+    const startR = isForward ? mVal - 1 : 0;
+    const startC = isForward ? nVal - 1 : 0;
+
+    function buildNode(r: number, c: number): UniversalTreeNode {
+      const id = `dp-node-${r}-${c}-${++nodeIdCounter}`;
+      const isCurrent = currentI === r && currentJ === c;
+      const isObstacle = obstacleGrid?.[r]?.[c] === 1;
+      const val = currentGrid?.[r]?.[c] ?? null;
+
+      let status: 'current' | 'base' | 'pruned' | 'visited' | 'pending' = 'pending';
+      let tag: string | undefined = undefined;
+
+      if (isObstacle) {
+        status = 'pruned';
+        tag = '🚧障碍=0';
+      } else if (isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1)) {
+        status = val !== null ? 'base' : (isCurrent ? 'current' : 'pending');
+        tag = val !== null ? `= ${val}` : '= 1';
+      } else if (val !== null) {
+        status = 'visited';
+        tag = `= ${val}`;
+      }
+
+      if (isCurrent) {
+        status = 'current';
+        if (isObstacle) {
+          tag = '🚧=0';
+        } else if (val !== null) {
+          tag = `= ${val}`;
+        } else {
+          tag = '当前计算';
+        }
+      }
+
+      const node: UniversalTreeNode = {
+        id,
+        r,
+        c,
+        val: `dp[${r}][${c}]`,
+        status,
+        tag,
+        children: []
+      };
+
+      // 遇障碍物或 Base 起点停止向下展开
+      if (isObstacle || (isForward ? (r === 0 && c === 0) : (r === mVal - 1 && c === nVal - 1))) {
+        return node;
+      }
+
+      // 顺推：依赖上方 (r - 1, c) 与左方 (r, c - 1)
+      if (isForward) {
+        if (r > 0) {
+          node.children.push(buildNode(r - 1, c));
+        }
+        if (c > 0) {
+          node.children.push(buildNode(r, c - 1));
+        }
+      } else {
+        // 逆推：依赖下方 (r + 1, c) 与右方 (r, c + 1)
+        if (r + 1 < mVal) {
+          node.children.push(buildNode(r + 1, c));
+        }
+        if (c + 1 < nVal) {
+          node.children.push(buildNode(r, c + 1));
+        }
+      }
+
+      return node;
+    }
+
+    return buildNode(startR, startC);
   }
 
   /**
@@ -595,14 +684,6 @@ export class UniversalStageEngine {
     const steps: UniversalStep[] = [];
     const dp = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
-
-    let baseFullTree: any = undefined;
-    try {
-      const stage2Steps = UniversalStageEngine.generateStage1or2Steps(model, mVal, nVal, direction, true, anchorMap, 'terminal');
-      baseFullTree = stage2Steps[stage2Steps.length - 1]?.treeRoot;
-    } catch (err) {
-      console.warn('[UniversalStageEngine] Failed to generate stage2 tree for stage3:', err);
-    }
 
     const obstacleGrid: number[][] | undefined =
       (model.defaultParams as any)?.obstacleGrid ||
@@ -1006,11 +1087,9 @@ export class UniversalStageEngine {
       }
     }
 
-    if (baseFullTree) {
-      for (const step of steps) {
-        step.treeRoot = UniversalStageEngine.cloneTree(baseFullTree);
-        step.activeNodeId = UniversalStageEngine.findNodeIdByCoord(step.treeRoot, step.i, step.j);
-      }
+    for (const step of steps) {
+      step.treeRoot = UniversalStageEngine.build2DDPDependencyTree(mVal, nVal, direction, obstacleGrid, step.grid, step.i, step.j);
+      step.activeNodeId = UniversalStageEngine.findNodeIdByCoord(step.treeRoot, step.i, step.j);
     }
 
     return steps;

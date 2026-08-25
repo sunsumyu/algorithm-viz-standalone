@@ -47,13 +47,17 @@ describe('UniversalStageEngine & VisualizerStateRouter Deep Modules', () => {
       const lastStepForward = tabStepsForward[tabStepsForward.length - 1];
       expect(lastStepForward.grid?.[2][2]).toBe(6);
       expect(lastStepForward.treeRoot).toBeDefined();
-      expect(lastStepForward.treeRoot?.children?.length).toBeGreaterThan(0);
+      expect(lastStepForward.treeRoot?.val).toBe('dp[2][2]');
+      expect(lastStepForward.treeRoot?.children?.length).toBe(2);
+      expect(lastStepForward.treeRoot?.children?.[0]?.val).toBe('dp[1][2]');
+      expect(lastStepForward.treeRoot?.children?.[1]?.val).toBe('dp[2][1]');
 
       const tabStepsReverse = UniversalStageEngine.generateStage3Steps(model, 3, 3, 'reverse');
       expect(tabStepsReverse.length).toBeGreaterThan(0);
       const lastStepReverse = tabStepsReverse[tabStepsReverse.length - 1];
       expect(lastStepReverse.grid?.[0][0]).toBe(6);
       expect(lastStepReverse.treeRoot).toBeDefined();
+      expect(lastStepReverse.treeRoot?.val).toBe('dp[0][0]');
     });
 
     it('should generate valid Stage 4 (1D space optimization) steps for if and for variants', () => {
