@@ -285,10 +285,8 @@ export class GridVisualAdapter {
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           ` : `
-            <div class="absolute -top-2.5 left-1/2 -translate-x-1/2 pointer-events-none z-30">
-              <span class="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-blue-600 text-white shadow-xs">当前</span>
-            </div>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-blue-700">${r},${c}</span>
+            <span class="text-[9px] font-extrabold px-1 py-0.2 rounded bg-blue-600 text-white shadow-2xs absolute top-0.5 right-1 whitespace-nowrap leading-none">当前</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10 text-blue-900">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isTrail) {
@@ -309,7 +307,7 @@ export class GridVisualAdapter {
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           ` : `
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-purple-700">${r},${c}</span>
-            <span class="text-[9px] text-purple-600 font-bold absolute top-0.5 right-1">↑</span>
+            <span class="text-[9px] font-extrabold px-1 py-0.2 rounded bg-purple-100 text-purple-700 border border-purple-300 absolute top-0.5 right-1 whitespace-nowrap leading-none">↑上</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10 text-purple-900">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isLeft) {
@@ -320,7 +318,7 @@ export class GridVisualAdapter {
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           ` : `
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-amber-700">${r},${c}</span>
-            <span class="text-[9px] text-amber-600 font-bold absolute top-0.5 right-1">←</span>
+            <span class="text-[9px] font-extrabold px-1 py-0.2 rounded bg-amber-100 text-amber-700 border border-amber-300 absolute top-0.5 right-1 whitespace-nowrap leading-none">←左</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10 text-amber-900">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (cellVal !== null) {
@@ -411,10 +409,11 @@ export class GridVisualAdapter {
     svg.innerHTML = defsHtml;
 
     const { m, n } = options;
+    const isGridProblem = options.isGridProblem ?? (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId) : true);
     const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
 
-    // 1. 递归路径足迹连线 (Stage 1 & Stage 2)
-    if (activeStackList.length >= 2 && typeof document.createElementNS === 'function') {
+    // 1. 递归路径足迹连线 (Stage 1 & Stage 2) - 仅在网格迷宫问题上绘制空间探索足迹连线
+    if (isGridProblem && activeStackList.length >= 2 && typeof document.createElementNS === 'function') {
       for (let i = 0; i < activeStackList.length - 1; i++) {
         const [r1, c1] = activeStackList[i].split(',').map(Number);
         const [r2, c2] = activeStackList[i + 1].split(',').map(Number);
