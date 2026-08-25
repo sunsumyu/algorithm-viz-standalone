@@ -244,16 +244,22 @@
             </div>
           </div>
 
-          <!-- 二维物理网格可视化区 (2D Grid Canvas) -->
-          <div class="flex-1 flex flex-col items-center justify-center min-h-[260px] bg-slate-50/40 rounded-xl p-4 border border-slate-200/60 relative">
+          <!-- 二维物理网格可视化区 (2D/3D Grid Canvas) -->
+          <div id="grid-stage-wrapper" class="flex-1 flex flex-col items-center justify-center min-h-[260px] bg-slate-50/40 rounded-xl p-4 border border-slate-200/60 relative">
             
-            <div class="text-xs font-semibold text-slate-400 mb-2 flex items-center gap-1.5 self-start">
-              <i class="fa-solid fa-map-location-dot"></i> 网格坐标与机器人移动状态 (m × n)
+            <div class="w-full text-xs font-semibold text-slate-400 mb-2 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot"></i> 网格坐标与机器人移动状态 (m × n)</span>
+              <button id="btn-toggle-3d" title="切换 3D 立体沙盘 / 2D 经典平面视角" class="px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
+                <i class="fa-solid fa-cube text-indigo-600"></i>
+                <span id="label-toggle-3d">3D立体</span>
+              </button>
             </div>
 
-            <!-- 2D 网格矩阵 -->
-            <div id="grid-container" class="grid gap-2 transition-all duration-300">
-              <!-- 动态生成网格格子 -->
+            <!-- 2D/3D 网格矩阵 -->
+            <div id="grid-board-wrapper" class="relative">
+              <div id="grid-container" class="grid gap-2 transition-all duration-300">
+                <!-- 动态生成网格格子 -->
+              </div>
             </div>
 
             <!-- 状态说明悬浮提示 -->

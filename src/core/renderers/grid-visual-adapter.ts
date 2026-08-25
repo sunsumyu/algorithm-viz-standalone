@@ -238,7 +238,7 @@ export class GridVisualAdapter {
         } else if (isRiverOrigin) {
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-sky-100 border-sky-400`;
           cellEl.innerHTML = `
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
               <div class="river-recoil-jump">
                 ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
               </div>
@@ -249,7 +249,7 @@ export class GridVisualAdapter {
         } else if (isRightWallOrigin) {
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-red-50 border-red-400`;
           cellEl.innerHTML = `
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
               <div class="wall-recoil-right">
                 ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
               </div>
@@ -265,7 +265,7 @@ export class GridVisualAdapter {
         } else if (isTopWallOrigin || isLeftWallOrigin) {
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-red-50 border-red-400`;
           cellEl.innerHTML = `
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
               <div class="wall-recoil-bump">
                 ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
               </div>
@@ -279,7 +279,7 @@ export class GridVisualAdapter {
         } else if (isCur) {
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-blue-50/90 border-blue-500 shadow-sm`;
           cellEl.innerHTML = isGridProblem ? `
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
               ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
             </div>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
@@ -347,7 +347,7 @@ export class GridVisualAdapter {
         const targetCell = container.querySelector(`[data-coord="${targetR},${targetC}"]`) || container.firstElementChild;
         if (targetCell) {
           const advHolder = document.createElement('div');
-          advHolder.className = 'absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30';
+          advHolder.className = 'adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30';
           advHolder.innerHTML = this.getAdventurerSvgHtml({ state: 'walking', isFinish: false });
           targetCell.appendChild(advHolder);
         }

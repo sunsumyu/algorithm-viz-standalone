@@ -44,6 +44,7 @@ export class VisualizerAppController {
   private isDestroyed = false;
   public stage3SubView: 'matrix' | 'tree' = 'matrix';
   public activeRightTab: 'code' | 'problem' | 'analysis' = 'code';
+  public is3DMode: boolean = false;
 
   constructor(options: VisualizerAppControllerOptions = {}) {
     this.mode = options.mode || 'lite';
@@ -53,6 +54,7 @@ export class VisualizerAppController {
     if (this.activeRightTab !== 'code' && this.activeRightTab !== 'problem' && this.activeRightTab !== 'analysis') {
       this.activeRightTab = 'code';
     }
+    this.is3DMode = typeof localStorage !== 'undefined' ? localStorage.getItem('algo-grid-perspective-3d') === 'true' : false;
     
     // 解析 options, URL 参数或全局变量获取 modelId
     let requestedId = options.defaultModelId;
@@ -284,6 +286,7 @@ export class VisualizerAppController {
 
     // 5. 绑定全局控制交互事件
     this.bindEvents();
+    this.update3DPerspectiveUI();
 
     // 6. 装配左右拖拽分栏调节条 (Splitter)
     this.setupSplitter();
@@ -761,6 +764,48 @@ export class VisualizerAppController {
       btnTree.className = this.stage3SubView === 'tree'
         ? 'px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-emerald-700 font-extrabold flex items-center gap-1'
         : 'px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1';
+    }
+  }
+
+  /**
+   * 切换 3D 立体沙盘 / 2D 经典平面透视模式
+   */
+  public toggle3DPerspective(force?: boolean): void {
+    this.is3DMode = force !== undefined ? force : !this.is3DMode;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('algo-grid-perspective-3d', String(this.is3DMode));
+    }
+    this.update3DPerspectiveUI();
+  }
+
+  /**
+   * 同步 3D 立体透视容器样式与按钮状态
+   */
+  public update3DPerspectiveUI(): void {
+    if (typeof document === 'undefined') return;
+    const stageWrapper = document.getElementById('grid-stage-wrapper');
+    const boardWrapper = document.getElementById('grid-board-wrapper');
+    const btnToggle = document.getElementById('btn-toggle-3d');
+    const labelToggle = document.getElementById('label-toggle-3d');
+
+    if (stageWrapper && boardWrapper) {
+      if (this.is3DMode) {
+        stageWrapper.classList.add('grid-3d-scene');
+        boardWrapper.classList.add('grid-3d-board');
+      } else {
+        stageWrapper.classList.remove('grid-3d-scene');
+        boardWrapper.classList.remove('grid-3d-board');
+      }
+    }
+
+    if (btnToggle) {
+      if (this.is3DMode) {
+        btnToggle.className = 'px-2 py-0.5 rounded-lg border border-indigo-500 bg-indigo-600 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs';
+        if (labelToggle) labelToggle.textContent = '3D立体';
+      } else {
+        btnToggle.className = 'px-2 py-0.5 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs';
+        if (labelToggle) labelToggle.textContent = '2D平面';
+      }
     }
   }
 
@@ -1264,6 +1309,14 @@ export class VisualizerAppController {
     const btnSubTree = document.getElementById('btn-subview-tree');
     if (btnSubMatrix) btnSubMatrix.addEventListener('click', () => this.setStage3SubView('matrix'));
     if (btnSubTree) btnSubTree.addEventListener('click', () => this.setStage3SubView('tree'));
+
+    // 3D Isometric Perspective toggle
+    const btnToggle3D = document.getElementById('btn-toggle-3d');
+    if (btnToggle3D) {
+      btnToggle3D.addEventListener('click', () => {
+        this.toggle3DPerspective();
+      });
+    }
 
     // Preset buttons (Full mode)
     document.querySelectorAll('.preset-btn').forEach(btn => {

@@ -85,10 +85,16 @@
 
         <!-- 卡片 1: 二维网格 (虚拟地图 m×n, 比例紧凑, 播放控制器位于右下角) -->
         <div class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden relative">
-          <div class="flex items-center justify-between flex-shrink-0">
-            <h2 id="card1-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 m×n)
-            </h2>
+          <div class="flex items-center justify-between flex-shrink-0 gap-2">
+            <div class="flex items-center gap-2">
+              <h2 id="card1-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 m×n)
+              </h2>
+              <button id="btn-toggle-3d" title="切换 3D 立体沙盘 / 2D 经典平面视角" class="px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
+                <i class="fa-solid fa-cube text-indigo-600"></i>
+                <span id="label-toggle-3d">3D立体</span>
+              </button>
+            </div>
             <div id="grid-legend-bar" class="flex items-center gap-2 sm:gap-2.5 text-[11px] text-slate-500 font-medium overflow-x-auto">
               <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已走通</span>
               <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-sky-100 border border-sky-400 border-dashed"></span> 👣 探索中</span>
@@ -97,9 +103,9 @@
             </div>
           </div>
 
-          <!-- 网格居中展示盒 (采用 justify-start + m-auto 彻底消除顶部裁剪) -->
-          <div class="bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col items-center justify-start flex-1 min-h-0 overflow-auto relative scroll-smooth">
-            <div class="relative inline-flex flex-col items-center m-auto pt-2 pb-8">
+          <!-- 网格居中展示盒 (带 3D 舞台与沙盘视角切换) -->
+          <div id="grid-stage-wrapper" class="grid-3d-scene bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col items-center justify-start flex-1 min-h-0 overflow-auto relative scroll-smooth">
+            <div id="grid-board-wrapper" class="grid-3d-board relative inline-flex flex-col items-center m-auto pt-3 pb-8">
               <div id="grid-container" class="inline-grid gap-1.5 p-2 bg-white rounded-xl border border-slate-200 shadow-sm relative z-0">
                 <!-- 动态构建单元格 -->
               </div>
