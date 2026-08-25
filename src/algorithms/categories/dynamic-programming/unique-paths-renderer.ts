@@ -222,3 +222,18 @@ registerAlgorithm({
   template: '<div id="longest-palindromic-subsequence" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
   Visualizer: UniversalStageVisualizer,
 });
+
+// 11. 分割等和子集 (LeetCode 416)
+registerAlgorithm({
+  id: 'partition-equal-subset-sum',
+  name: '分割等和子集',
+  viewId: 'partition-equal-subset-sum',
+  category: 'dynamic-programming',
+  description: '分割等和子集（LeetCode 416）：将数组分割成两个和相等的子集，经典 0-1 背包问题转化。',
+  icon: '⚖️',
+  difficulty: 2,
+  levelOrder: 13,
+  learningGoal: '掌握 0-1 背包问题建模转化、选与不选二叉决策树与一维倒序容量滚动压缩机制',
+  template: '<div id="partition-equal-subset-sum" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
+  Visualizer: UniversalStageVisualizer,
+});

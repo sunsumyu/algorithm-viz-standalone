@@ -2012,6 +2012,304 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 生成分割等和子集 (Partition Equal Subset Sum) 阶段 1 二叉决策递归 / 阶段 2 记忆化搜索演化步骤
+   */
+  public static generatePartitionSubsetStage1or2Steps(
+    model: IYamlAlgorithmModel,
+    isMemo: boolean = false,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const rawNums = (model.defaultParams as any)?.nums || [1, 5, 11, 5];
+    const nums: number[] = Array.isArray(rawNums) ? rawNums : String(rawNums).split(',').map(Number);
+    const n = nums.length;
+    const sum = nums.reduce((a, b) => a + b, 0);
+
+    const generated: UniversalStep[] = [];
+    const lineOddCheck = anchorMap?.odd_check || 4;
+    const lineDfsStart = anchorMap?.dfs_start || 6;
+    const lineBaseMatch = anchorMap?.base_match || (isMemo ? 15 : 12);
+    const lineBaseOverflow = anchorMap?.base_overflow || (isMemo ? 17 : 14);
+    const lineCacheHit = anchorMap?.cache_hit || 19;
+    const lineBranchNotTake = anchorMap?.branch_not_take || (isMemo ? 22 : 17);
+    const lineBranchTake = anchorMap?.branch_take || (isMemo ? 26 : 21);
+    const lineCombine = anchorMap?.combine || (isMemo ? 28 : 23);
+
+    // 奇数直接剪枝
+    if (sum % 2 !== 0) {
+      generated.push({
+        type: 'boundary',
+        i: 0,
+        j: 0,
+        grid: [[0]],
+        activeStack: [],
+        visited: [],
+        line: lineOddCheck,
+        tag: `奇数总和 ${sum} 无法平分`,
+        log: `| ❌ 数组总和 sum = ${sum} 为奇数，无法等分为两个整数子集，直接 return false`,
+        msg: `数组总和 <code>sum = ${sum}</code> 为奇数，无法平分成两个相等的整数子集，直接返回 <strong>false</strong>。`
+      });
+      return generated;
+    }
+
+    const target = sum / 2;
+    const memoCache: Record<string, boolean> = {};
+    const gridState: (number | null)[][] = Array.from({ length: n }, () => new Array(target + 1).fill(null));
+    const activeStack: string[] = [];
+    const visitedCells: Set<string> = new Set();
+    let nodeIdCounter = 0;
+    let callCount = 0;
+    const MAX_RECORDED_CALLS = 100;
+
+    const rootNode: UniversalTreeNode = {
+      id: `node-${++nodeIdCounter}`,
+      r: 0,
+      c: target,
+      val: `canPartition(nums, target=${target})`,
+      status: 'current',
+      children: []
+    };
+
+    function dfs(i: number, curTarget: number, currentTreeNode?: UniversalTreeNode): boolean {
+      callCount++;
+      const shouldRecord = isMemo || callCount <= MAX_RECORDED_CALLS;
+      const key = `${i},${curTarget}`;
+      activeStack.push(key);
+      visitedCells.add(key);
+      if (currentTreeNode) currentTreeNode.status = 'current';
+
+      if (shouldRecord && currentTreeNode) {
+        generated.push({
+          type: 'entry',
+          i: Math.min(i, n - 1),
+          j: Math.max(0, Math.min(curTarget, target)),
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineDfsStart,
+          tag: `dfs(i=${i}, 剩${curTarget})`,
+          log: `| 📥 进入 dfs(i=${i}, curTarget=${curTarget}) [当前物品 nums[${i}]=${nums[i] ?? 'None'}]`,
+          msg: `进入函数 <code>dfs(i = ${i}, curTarget = ${curTarget})</code>，从第 <code>${i}</code> 个物品起搜索和为 <code>${curTarget}</code> 的子集。`,
+          gridHighlight: { i: Math.min(i, n - 1), j: Math.max(0, Math.min(curTarget, target)) },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+      }
+
+      // Base Case 1: curTarget === 0 成功凑齐
+      if (curTarget === 0) {
+        if (i < n) gridState[i][0] = 1;
+        if (currentTreeNode) {
+          currentTreeNode.status = 'base';
+          currentTreeNode.tag = '🎯 凑齐 target=0 (true)';
+        }
+
+        if (shouldRecord && currentTreeNode) {
+          generated.push({
+            type: 'boundary',
+            i: Math.min(i, n - 1),
+            j: 0,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineBaseMatch,
+            tag: 'Base Case 恰好凑齐目标和',
+            log: `| 🏆 【Base Case 达成】curTarget == 0，找到满足条件的等和子集！return true`,
+            msg: `🏆 <strong>【Base Case 达成】</strong><code>curTarget == 0</code>，已恰好凑齐目标和 <strong>${target}</strong>，返回 <strong>true</strong>！`,
+            gridHighlight: { i: Math.min(i, n - 1), j: 0 },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+        }
+        activeStack.pop();
+        return true;
+      }
+
+      // Base Case 2: 越界或负数
+      if (i >= n || curTarget < 0) {
+        if (currentTreeNode) {
+          currentTreeNode.status = 'pruned';
+          currentTreeNode.tag = '❌ 越界/超额 (false)';
+        }
+
+        if (shouldRecord && currentTreeNode) {
+          generated.push({
+            type: 'boundary',
+            i: Math.min(i, n - 1),
+            j: Math.max(0, Math.min(curTarget, target)),
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineBaseOverflow,
+            tag: 'Base Case 越界或超额',
+            log: `| ❌ 【Base Case】i=${i}>=${n} 或 curTarget=${curTarget}<0，分支失败，return false`,
+            msg: `❌ <strong>【Base Case】</strong><code>i = ${i} >= ${n}</code> 或 <code>curTarget = ${curTarget} < 0</code>，返回 <strong>false</strong>。`,
+            gridHighlight: { i: Math.min(i, n - 1), j: Math.max(0, Math.min(curTarget, target)) },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+        }
+        activeStack.pop();
+        return false;
+      }
+
+      // 备忘录命中
+      if (isMemo && memoCache[key] !== undefined) {
+        if (currentTreeNode) {
+          currentTreeNode.status = 'pruned';
+          currentTreeNode.tag = `⚡=${memoCache[key]}`;
+        }
+
+        if (shouldRecord && currentTreeNode) {
+          generated.push({
+            type: 'cache-hit',
+            i,
+            j: curTarget,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineCacheHit,
+            tag: '⚡ 备忘录命中',
+            log: `| ⚡ 【备忘录命中剪枝】memo[${i}][${curTarget}] 已缓存 ${memoCache[key]}！直接 O(1) 返回`,
+            msg: `⚡ 【备忘录剪枝】<code>memo[${i}][${curTarget}]</code> 已命中缓存 <strong>${memoCache[key]}</strong>，直接返回！`,
+            gridHighlight: { i, j: curTarget },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: UniversalStageEngine.cloneTree(rootNode)
+          });
+        }
+        activeStack.pop();
+        return memoCache[key];
+      }
+
+      // 分支 1: 不选当前数字 nums[i]
+      if (shouldRecord && currentTreeNode) {
+        generated.push({
+          type: 'diff-branch',
+          i,
+          j: curTarget,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineBranchNotTake,
+          tag: `不选 nums[${i}]=${nums[i]}`,
+          log: `| 🚫 决策 1: 不选 nums[${i}] (${nums[i]})，剩余目标仍为 ${curTarget}，进入 dfs(${i + 1}, ${curTarget})`,
+          msg: `🚫 决策 1：<strong>不选</strong> 当前数字 <code>nums[${i}] = ${nums[i]}</code>，剩余目标保持 <code>${curTarget}</code>。`,
+          gridHighlight: { i, j: curTarget },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+      }
+
+      let childNotTake: UniversalTreeNode | undefined;
+      if (shouldRecord && currentTreeNode) {
+        childNotTake = {
+          id: `node-${++nodeIdCounter}`,
+          r: i + 1,
+          c: curTarget,
+          val: `不选: dfs(${i + 1},${curTarget})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(childNotTake);
+      }
+      const notTakeRes = dfs(i + 1, curTarget, childNotTake);
+
+      if (notTakeRes) {
+        if (isMemo) memoCache[key] = true;
+        gridState[i][curTarget] = 1;
+        if (currentTreeNode) {
+          currentTreeNode.status = 'visited';
+          currentTreeNode.tag = '= true';
+        }
+        activeStack.pop();
+        return true;
+      }
+
+      // 分支 2: 选入当前数字 nums[i]
+      if (shouldRecord && currentTreeNode) {
+        generated.push({
+          type: 'match-branch',
+          i,
+          j: curTarget,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineBranchTake,
+          tag: `选入 nums[${i}]=${nums[i]}`,
+          log: `| 📦 决策 2: 选入 nums[${i}] (${nums[i]})，剩余目标扣减为 ${curTarget - nums[i]}，进入 dfs(${i + 1}, ${curTarget - nums[i]})`,
+          msg: `📦 决策 2：<strong>选入</strong> 当前数字 <code>nums[${i}] = ${nums[i]}</code>，剩余目标变为 <code>${curTarget - nums[i]}</code>。`,
+          gridHighlight: { i, j: curTarget },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+      }
+
+      let childTake: UniversalTreeNode | undefined;
+      if (shouldRecord && currentTreeNode) {
+        childTake = {
+          id: `node-${++nodeIdCounter}`,
+          r: i + 1,
+          c: Math.max(0, curTarget - nums[i]),
+          val: `选入: dfs(${i + 1},${curTarget - nums[i]})`,
+          status: 'normal',
+          children: []
+        };
+        currentTreeNode.children.push(childTake);
+      }
+      const takeRes = dfs(i + 1, curTarget - nums[i], childTake);
+
+      const finalRes = takeRes;
+      if (isMemo) memoCache[key] = finalRes;
+      gridState[i][curTarget] = finalRes ? 1 : 0;
+
+      if (currentTreeNode) {
+        currentTreeNode.status = finalRes ? 'visited' : 'pruned';
+        currentTreeNode.tag = `= ${finalRes}`;
+      }
+
+      if (shouldRecord && currentTreeNode) {
+        generated.push({
+          type: 'update',
+          i,
+          j: curTarget,
+          grid: JSON.parse(JSON.stringify(gridState)),
+          activeStack: [...activeStack],
+          visited: [...visitedCells],
+          line: lineCombine,
+          tag: `状态汇总: ${finalRes}`,
+          log: `| ✨ 合并分支: dfs(${i}, ${curTarget}) = ${finalRes}${isMemo ? ' [存入备忘录]' : ''}`,
+          msg: `✨ 汇总分支决策结果：<code>dfs(${i}, ${curTarget}) = <strong>${finalRes}</strong></code>。`,
+          gridHighlight: { i, j: curTarget },
+          activeNodeId: currentTreeNode.id,
+          treeRoot: UniversalStageEngine.cloneTree(rootNode)
+        });
+      }
+
+      activeStack.pop();
+      return finalRes;
+    }
+
+    const total = dfs(0, target, rootNode);
+
+    generated.push({
+      type: 'return',
+      i: 0,
+      j: target,
+      grid: JSON.parse(JSON.stringify(gridState)),
+      activeStack: [],
+      visited: [...visitedCells],
+      line: lineCombine,
+      tag: '最终判定答案',
+      log: `| 🏆 分割等和子集演化计算完成！canPartition([${nums}]) = ${total}`,
+      msg: `🏆 演化计算完成！数组 <code>[${nums.join(', ')}]</code> ${total ? '<strong>可以</strong>分割成两个和相等的子集（和为 ' + target + '）' : '<strong>无法</strong>分割成两个和相等的子集'}。`,
+      gridHighlight: { i: 0, j: target },
+      activeNodeId: rootNode.id,
+      treeRoot: UniversalStageEngine.cloneTree(rootNode)
+    });
+
+    return generated;
+  }
+
+  /**
    * 生成阶段 1 (朴素递归) 或阶段 2 (记忆化搜索) 的完整演化步骤
    */
   public static generateStage1or2Steps(
@@ -2046,6 +2344,10 @@ export class UniversalStageEngine {
     // 最长回文子序列特化派发
     if (model.id === 'longest-palindromic-subsequence') {
       return UniversalStageEngine.generateLongestPalindromicSubsequenceStage1or2Steps(model, isMemo, anchorMap);
+    }
+    // 分割等和子集特化派发
+    if (model.id === 'partition-equal-subset-sum') {
+      return UniversalStageEngine.generatePartitionSubsetStage1or2Steps(model, isMemo, anchorMap);
     }
 
     const generated: UniversalStep[] = [];
@@ -3297,6 +3599,138 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 生成分割等和子集 (Partition Equal Subset Sum) 阶段 3 二维 0-1 背包 DP 填表步骤
+   */
+  public static generatePartitionSubsetStage3Steps(
+    model: IYamlAlgorithmModel,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const rawNums = (model.defaultParams as any)?.nums || [1, 5, 11, 5];
+    const nums: number[] = Array.isArray(rawNums) ? rawNums : String(rawNums).split(',').map(Number);
+    const n = nums.length;
+    const sum = nums.reduce((a, b) => a + b, 0);
+
+    const steps: UniversalStep[] = [];
+    const lineOddCheck = anchorMap?.odd_check || 4;
+    const lineInit = anchorMap?.init || 8;
+    const lineInitRow = anchorMap?.init_row || 11;
+    const lineLoopI = anchorMap?.loop_i || 16;
+    const lineLoopJ = anchorMap?.loop_j || 18;
+    const lineCond = anchorMap?.cond || 20;
+    const lineTransferMax = anchorMap?.transfer_max || 23;
+    const lineReturn = anchorMap?.return || 28;
+
+    if (sum % 2 !== 0) {
+      steps.push({
+        type: 'init',
+        line: lineOddCheck,
+        i: 0,
+        j: 0,
+        grid: [[0]],
+        tag: `奇数总和 ${sum} 无法平分`,
+        log: `| ❌ 数组总和 sum = ${sum} 为奇数，无法等分为两个整数子集，直接 return false`,
+        msg: `数组总和 <code>sum = ${sum}</code> 为奇数，无法平分成两个相等的整数子集，直接返回 <strong>false</strong>。`
+      });
+      return steps;
+    }
+
+    const target = sum / 2;
+    const dp: (number | null)[][] = Array.from({ length: n }, () => new Array(target + 1).fill(0));
+
+    // 1. 初始化表格
+    steps.push({
+      type: 'init',
+      line: lineInit,
+      i: 0,
+      j: 0,
+      grid: JSON.parse(JSON.stringify(dp)),
+      tag: '创建二维 0-1 背包表',
+      log: `| 📦 创建 ${n}×${target + 1} 的二维 0-1 背包表格, 目标 target = ${target}`,
+      msg: `创建 <code>${n}×${target + 1}</code> 的二维 DP 表格，<code>dp[i][j]</code> 表示前 <code>i</code> 个物品在容量 <code>j</code> 时的最大价值（数值和）。`
+    });
+
+    // 2. 初始化首行: i = 0 (仅放第一个物品 nums[0])
+    for (let j = nums[0]; j <= target; j++) {
+      dp[0][j] = nums[0];
+    }
+    steps.push({
+      type: 'init-row',
+      line: lineInitRow,
+      i: 0,
+      j: nums[0],
+      grid: JSON.parse(JSON.stringify(dp)),
+      tag: `首行初始化: 仅容量 >= ${nums[0]} 能装下`,
+      log: `| 🎬 首行初始化物品 nums[0]=${nums[0]}: 当 j >= ${nums[0]} 时 dp[0][j] = ${nums[0]}`,
+      msg: `初始化第 0 行：对于首个物品 <code>nums[0] = ${nums[0]}</code>，当容量 <code>j >= ${nums[0]}</code> 时 <code>dp[0][j] = ${nums[0]}</code>。`
+    });
+
+    // 3. 递推填表
+    for (let i = 1; i < n; i++) {
+      for (let j = 0; j <= target; j++) {
+        if (j < nums[i]) {
+          dp[i][j] = dp[i - 1][j];
+
+          steps.push({
+            type: 'transfer',
+            line: lineCond,
+            i,
+            j,
+            topI: i - 1,
+            topJ: j,
+            leftI: -1,
+            leftJ: -1,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: `容量 ${j} < nums[${i}](${nums[i]}): 继承上方`,
+            log: `| 🔄 容量 j=${j} < nums[${i}](${nums[i]}): 无法装入，dp[${i}][${j}] = dp[${i - 1}][${j}] = ${dp[i][j]}`,
+            msg: `容量 <code>j = ${j} < nums[${i}] (${nums[i]})</code>：背包空间不足以放入当前数字，继承上方 <code>dp[${i}][${j}] = dp[${i - 1}][${j}] = <strong>${dp[i][j]}</strong></code>。`
+          });
+        } else {
+          const notTake = dp[i - 1][j] ?? 0;
+          const take = (dp[i - 1][j - nums[i]] ?? 0) + nums[i];
+          const maxVal = Math.max(notTake, take);
+          dp[i][j] = maxVal;
+
+          steps.push({
+            type: 'transfer',
+            line: lineTransferMax,
+            i,
+            j,
+            topI: i - 1,
+            topJ: j,
+            leftI: i - 1,
+            leftJ: j - nums[i],
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: `max(不选=${notTake}, 选=${take}) = ${maxVal}`,
+            log: `| 🔄 容量 j=${j} >= nums[${i}](${nums[i]}): dp[${i}][${j}] = max(不选=${notTake}, 选=${take}) = ${maxVal}`,
+            msg: `容量充足：<code>max(不选=${notTake}, 选=${take}) = <strong>${maxVal}</strong></code>。`
+          });
+        }
+      }
+    }
+
+    const isMatch = dp[n - 1][target] === target;
+
+    // 4. 最终返回步骤
+    steps.push({
+      type: 'return',
+      line: lineReturn,
+      i: n - 1,
+      j: target,
+      grid: JSON.parse(JSON.stringify(dp)),
+      tag: `最终判定: ${isMatch}`,
+      log: `| 🏆 二维填表完成！dp[${n - 1}][${target}] = ${dp[n - 1][target]}, 是否恰好装满 target(${target}): ${isMatch}`,
+      msg: `🏆 二维填表全部完成！最大容量为 <code>dp[${n - 1}][${target}] = ${dp[n - 1][target]}</code>，${isMatch ? '<strong>恰好等于目标和 ' + target + '</strong>，可以等分（return true）' : '<strong>无法凑齐目标和 ' + target + '</strong>（return false）'}。`
+    });
+
+    for (const step of steps) {
+      step.treeRoot = UniversalStageEngine.build2DDPDependencyTree(n, target + 1, 'forward', undefined, step.grid, step.i, step.j);
+      step.activeNodeId = UniversalStageEngine.findNodeIdByCoord(step.treeRoot, step.i, step.j);
+    }
+
+    return steps;
+  }
+
+  /**
    * 生成阶段 3 (经典二维 DP 填表) 演化步骤
    */
   public static generateStage3Steps(
@@ -3329,6 +3763,10 @@ export class UniversalStageEngine {
     // 最长回文子序列特化派发
     if (model.id === 'longest-palindromic-subsequence') {
       return UniversalStageEngine.generateLongestPalindromicSubsequenceStage3Steps(model, anchorMap);
+    }
+    // 分割等和子集特化派发
+    if (model.id === 'partition-equal-subset-sum') {
+      return UniversalStageEngine.generatePartitionSubsetStage3Steps(model, anchorMap);
     }
 
     const steps: UniversalStep[] = [];
@@ -4513,6 +4951,130 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 生成分割等和子集 (Partition Equal Subset Sum) 阶段 4 一维倒序滚动 0-1 背包步骤
+   */
+  public static generatePartitionSubsetStage4Steps(
+    model: IYamlAlgorithmModel,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const rawNums = (model.defaultParams as any)?.nums || [1, 5, 11, 5];
+    const nums: number[] = Array.isArray(rawNums) ? rawNums : String(rawNums).split(',').map(Number);
+    const n = nums.length;
+    const sum = nums.reduce((a, b) => a + b, 0);
+
+    const steps: UniversalStep[] = [];
+    const lineOddCheck = anchorMap?.odd_check || 4;
+    const lineInit = anchorMap?.init || 7;
+    const lineLoopI = anchorMap?.loop_i || 10;
+    const lineLoopJ = anchorMap?.loop_j || 12;
+    const lineCalcMax = anchorMap?.calc_max || 14;
+    const lineReturn = anchorMap?.return || 18;
+
+    if (sum % 2 !== 0) {
+      steps.push({
+        type: 'init',
+        line: lineOddCheck,
+        i: 0,
+        j: 0,
+        activeSlot: 0,
+        memo: [0],
+        memoSnapshot: [0],
+        grid: [[0]],
+        tag: `奇数总和 ${sum} 无法平分`,
+        log: `| ❌ 数组总和 sum = ${sum} 为奇数，无法等分为两个整数子集，直接 return false`,
+        msg: `数组总和 <code>sum = ${sum}</code> 为奇数，无法平分成两个相等的整数子集，直接返回 <strong>false</strong>。`
+      });
+      return steps;
+    }
+
+    const target = sum / 2;
+    const memo = new Array(target + 1).fill(0);
+    const gridState = Array.from({ length: n }, () => new Array(target + 1).fill(null));
+
+    steps.push({
+      type: 'init',
+      line: lineInit,
+      i: 0,
+      j: 0,
+      activeSlot: 0,
+      memo: [...memo],
+      memoSnapshot: [...memo],
+      grid: JSON.parse(JSON.stringify(gridState)),
+      tag: '初始化一维状态数组',
+      log: `| 📦 创建长度为 ${target + 1} 的一维 0-1 背包状态数组 dp[0..${target}], 目标 target = ${target}`,
+      msg: `创建长度为 <code>${target + 1}</code> 的一维 0-1 背包状态数组 <code>dp[0..${target}]</code>，初始值全为 0。`
+    });
+
+    for (let i = 0; i < n; i++) {
+      const num = nums[i];
+
+      steps.push({
+        type: 'init-slot',
+        line: lineLoopI,
+        i,
+        j: target,
+        activeSlot: target,
+        slotMode: 'updated',
+        memoj: memo[target],
+        memo: [...memo],
+        memoSnapshot: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        tag: `第 ${i} 轮物品: nums[${i}] = ${num}`,
+        log: `| 🎬 遍历物品 i=${i} (nums[${i}]=${num}): 开始容量倒序遍历 j 从 ${target} 递减到 ${num}`,
+        msg: `开始放入第 <code>${i}</code> 个物品 <code>nums[${i}] = ${num}</code>：从最大容量 <code>j = ${target}</code> 倒序更新至 <code>${num}</code>。`
+      });
+
+      for (let j = target; j >= num; j--) {
+        const prevVal = memo[j];
+        const candidate = memo[j - num] + num;
+        const maxVal = Math.max(prevVal, candidate);
+        memo[j] = maxVal;
+        gridState[i][j] = maxVal;
+
+        steps.push({
+          type: 'accumulate',
+          line: lineCalcMax,
+          i,
+          j,
+          activeSlot: j,
+          slotMode: 'updated',
+          down: prevVal,
+          right: memo[j - num],
+          memoj: maxVal,
+          memo: [...memo],
+          memoSnapshot: [...memo],
+          grid: JSON.parse(JSON.stringify(gridState)),
+          tag: `容量 ${j}: max(${prevVal}, ${candidate}) = ${maxVal}`,
+          log: `| ✨ 倒序更新 dp[${j}] = max(保持=${prevVal}, 放入=${candidate}) = ${maxVal}`,
+          msg: `容量 <code>j = ${j}</code>：<code>max(保持原值 ${prevVal}, 放入 nums[${i}] (${prevVal < candidate ? candidate : prevVal})) = <strong>${maxVal}</strong></code>。`
+        });
+      }
+    }
+
+    const isMatch = memo[target] === target;
+
+    steps.push({
+      type: 'return',
+      line: lineReturn,
+      i: n - 1,
+      j: target,
+      activeSlot: target,
+      slotMode: 'final',
+      down: memo[target],
+      right: memo[target],
+      memoj: memo[target],
+      memo: [...memo],
+      memoSnapshot: [...memo],
+      grid: JSON.parse(JSON.stringify(gridState)),
+      tag: `最终判定: ${isMatch}`,
+      log: `| 🏆 一维倒序 0-1 背包计算完成！dp[${target}] = ${memo[target]}, 是否恰好等于 target(${target}): ${isMatch}`,
+      msg: `🏆 一维滚动压缩计算完成！最终 <code>dp[${target}] = ${memo[target]}</code>，${isMatch ? '<strong>恰好等于目标和 ' + target + '</strong>，可以等分（return true）' : '<strong>无法凑齐目标和 ' + target + '</strong>（return false）'}。`
+    });
+
+    return steps;
+  }
+
+  /**
    * 生成阶段 4 (一维空间压缩) 演化步骤
    */
   public static generateStage4Steps(
@@ -4546,6 +5108,10 @@ export class UniversalStageEngine {
     // 最长回文子序列特化派发
     if (model.id === 'longest-palindromic-subsequence') {
       return UniversalStageEngine.generateLongestPalindromicSubsequenceStage4Steps(model, anchorMap);
+    }
+    // 分割等和子集特化派发
+    if (model.id === 'partition-equal-subset-sum') {
+      return UniversalStageEngine.generatePartitionSubsetStage4Steps(model, anchorMap);
     }
 
     const steps: UniversalStep[] = [];

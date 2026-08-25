@@ -1,0 +1,234 @@
+id: partition-equal-subset-sum
+name: 分割等和子集
+category: dynamic-programming
+difficulty: medium
+defaultStage: stage-1
+defaultDirection: forward
+
+defaultParams:
+  nums: [1, 5, 11, 5]
+
+problem:
+  title: "LeetCode 416. 分割等和子集"
+  difficulty: "Medium"
+  description: |
+    给你一个 <strong>只包含正整数</strong> 的 <strong>非空</strong> 数组 <code>nums</code> 。请你判断是否可以将这个数组分割成两个子集，使得两个子集的元素和相等。
+
+    <strong>等价转化</strong>：判断是否能从 <code>nums</code> 中选出若干元素，使其总和恰好等于 <code>sum / 2</code>（转化为容量为 <code>target = sum / 2</code> 的 0-1 背包问题）。
+  examples:
+    - input: "nums = [1, 5, 11, 5]"
+      output: "true"
+      explanation: "数组可以分割成 [1, 5, 5] 和 [11]，两者之和均为 11。"
+    - input: "nums = [1, 2, 3, 5]"
+      output: "false"
+      explanation: "数组总和为 11（奇数），无法分割成两个和相等的整数子集。"
+  constraints:
+    - "1 <= nums.length <= 200"
+    - "1 <= nums[i] <= 100"
+
+directions:
+  forward:
+    name: 物品正序决策与容量递推
+    description: 依次遍历物品 nums[i]，决策不放入背包或放入背包
+    branches:
+      - name: 不选当前物品 nums[i] (容量不变)
+        delta: [1, 0]
+        arrow: ↓
+        description: 保持容量与价值不变，dp[i][j] = dp[i-1][j]
+      - name: 选入当前物品 nums[i] (扣减容量+累加价值)
+        delta: [1, -1]
+        arrow: ↙
+        description: 当 j >= nums[i] 时，dp[i][j] = dp[i-1][j-nums[i]] + nums[i]
+  reverse:
+    name: 逆向目标拆解
+    description: 从总和 target 出发倒推各物品的选与不选
+
+stages:
+  stage-1:
+    name: 阶段 1：选/不选 二叉决策递归 (Decision Tree DFS)
+    desc: 对数组中的每个数字做选与不选两种决策，展开为指数级二叉决策树，搜索是否存在子集和等于 target = sum / 2。
+    timeComplexity: "O(2^n)"
+    spaceComplexity: "O(n)"
+    variants:
+      standard:
+        name: 标准二叉决策递归
+        desc: 递归探索选与不选两种分支
+        code: |
+          public boolean canPartition(int[] nums) {
+              int sum = 0;
+              for (int num : nums) sum += num;
+              // @step:odd_check 奇数总和不可能等分
+              if (sum % 2 != 0) return false;
+              int target = sum / 2;
+              // @step:dfs_start 开始深度优先二叉搜索
+              return dfs(nums, 0, target);
+          }
+
+          private boolean dfs(int[] nums, int i, int curTarget) {
+              // @step:base_match Base Case 1: 恰好凑齐目标和
+              if (curTarget == 0) return true;
+              // @step:base_overflow Base Case 2: 越界或超额
+              if (i >= nums.length || curTarget < 0) return false;
+
+              // @step:branch_not_take 决策 1: 不选当前数字 nums[i]
+              boolean notTake = dfs(nums, i + 1, curTarget);
+              if (notTake) return true;
+
+              // @step:branch_take 决策 2: 选当前数字 nums[i]
+              boolean take = dfs(nums, i + 1, curTarget - nums[i]);
+              // @step:combine 合并两分支结果
+              return take;
+          }
+
+  stage-2:
+    name: 阶段 2：记忆化搜索 (Memoization)
+    desc: 引入 Boolean[][] memo 缓存 (物品索引 i, 剩余目标值 curTarget) 的可行性，消除重叠子问题。
+    timeComplexity: "O(n × target)"
+    spaceComplexity: "O(n × target)"
+    variants:
+      standard:
+        name: 二维备忘录优化
+        desc: 缓存 (i, curTarget) 状态结果
+        code: |
+          public boolean canPartition(int[] nums) {
+              int sum = 0;
+              for (int num : nums) sum += num;
+              if (sum % 2 != 0) return false;
+              int target = sum / 2;
+              // @step:memo_init 初始化二维备忘录
+              Boolean[][] memo = new Boolean[nums.length][target + 1];
+              return dfs(nums, 0, target, memo);
+          }
+
+          private boolean dfs(int[] nums, int i, int curTarget, Boolean[][] memo) {
+              // @step:base_match Base Case 1
+              if (curTarget == 0) return true;
+              // @step:base_overflow Base Case 2
+              if (i >= nums.length || curTarget < 0) return false;
+              // @step:cache_hit 备忘录命中剪枝
+              if (memo[i][curTarget] != null) return memo[i][curTarget];
+
+              // @step:branch_not_take 决策 1: 不选
+              boolean notTake = dfs(nums, i + 1, curTarget, memo);
+              if (notTake) return memo[i][curTarget] = true;
+
+              // @step:branch_take 决策 2: 选入
+              boolean take = dfs(nums, i + 1, curTarget - nums[i], memo);
+              // @step:combine 存入备忘录并返回
+              return memo[i][curTarget] = take;
+          }
+
+  stage-3:
+    name: 阶段 3：二维 0-1 背包 DP (2D Tabulation)
+    desc: 构建 n × (target + 1) 二维状态表格，dp[i][j] 表示使用前 i 个物品在容量 j 时的最大和，检查 dp[n-1][target] == target。
+    timeComplexity: "O(n × target)"
+    spaceComplexity: "O(n × target)"
+    variants:
+      standard:
+        name: 二维 0-1 背包填表
+        desc: 严格按物品正序与容量遍历填表
+        code: |
+          public boolean canPartition(int[] nums) {
+              int sum = 0;
+              for (int x : nums) sum += x;
+              // @step:odd_check 奇数直接返回 false
+              if (sum % 2 != 0) return false;
+              int target = sum / 2;
+              int n = nums.length;
+              // @step:init 创建 n x (target + 1) DP 表格
+              int[][] dp = new int[n][target + 1];
+
+              // @step:init_row 初始化首行: 仅容量 >= nums[0] 时能装下物品 0
+              for (int j = nums[0]; j <= target; j++) {
+                  dp[0][j] = nums[0];
+              }
+
+              // @step:loop_i 遍历物品 i 从 1 到 n-1
+              for (int i = 1; i < n; i++) {
+                  // @step:loop_j 遍历背包容量 j 从 0 到 target
+                  for (int j = 0; j <= target; j++) {
+                      // @step:cond 容量不足装下 nums[i]: 继承上方
+                      if (j < nums[i]) {
+                          dp[i][j] = dp[i - 1][j];
+                      // @step:transfer_max 容量充足: max(不选 dp[i-1][j], 选 dp[i-1][j-nums[i]] + nums[i])
+                      } else {
+                          dp[i][j] = Math.max(dp[i - 1][j], dp[i - 1][j - nums[i]] + nums[i]);
+                      }
+                  }
+              }
+              // @step:return 检查最大容量能否装满 target
+              return dp[n - 1][target] == target;
+          }
+
+  stage-4:
+    name: 阶段 4：一维倒序滚动数组 (1D Space Compression)
+    desc: 使用一维滚动数组 dp[0..target]，内层容量从 target 倒序遍历至 nums[i]，将空间复杂度从 O(n × target) 降至 O(target)。
+    timeComplexity: "O(n × target)"
+    spaceComplexity: "O(target)"
+    variants:
+      rolling_1d:
+        name: 一维倒序滚动 0-1 背包
+        desc: 倒序遍历容量保证每个物品仅被使用一次
+        code: |
+          public boolean canPartition(int[] nums) {
+              int sum = 0;
+              for (int x : nums) sum += x;
+              // @step:odd_check 奇数和直接剪枝
+              if (sum % 2 != 0) return false;
+              int target = sum / 2;
+              // @step:init 创建一维状态数组 dp[0..target]
+              int[] dp = new int[target + 1];
+
+              // @step:loop_i 遍历每个物品
+              for (int i = 0; i < nums.length; i++) {
+                  // @step:loop_j 容量倒序遍历 (0-1 背包核心防重装机制)
+                  for (int j = target; j >= nums[i]; j--) {
+                      // @step:calc_max 更新最大价值: max(保持原值, 装入 nums[i])
+                      dp[j] = Math.max(dp[j], dp[j - nums[i]] + nums[i]);
+                  }
+              }
+              // @step:return 最终检查容量 target 是否能完全装满
+              return dp[target] == target;
+          }
+
+analysis:
+  coreInsight: |
+    分割等和子集是经典的 0-1 背包应用问题：
+    1. 问题转化：
+       - 将数组平分成两个和相等的子集，意味着每个子集的和必须为 <code>sum / 2</code>。
+       - 如果数组总和 <code>sum</code> 为奇数，必然无法平分，直接返回 <code>false</code>。
+       - 问题等价于：背包容量为 <code>target = sum / 2</code>，物品重量为 <code>nums[i]</code>，价值也为 <code>nums[i]</code>，问是否存在装满背包的选法（即最大价值是否为 <code>target</code>）。
+    2. 状态定义与转移：
+       - <code>dp[i][j]</code>：前 <code>i</code> 个物品在容量 <code>j</code> 时的最大总和。
+       - <code>dp[i][j] = max(dp[i-1][j], dp[i-1][j - nums[i]] + nums[i])</code>。
+    3. 一维空间压缩的倒序原理：
+       - 在一维滚动数组中，<code>dp[j]</code> 依赖于上一轮的 <code>dp[j - nums[i]]</code>。
+       - 如果正序遍历，较小的 <code>dp[j - nums[i]]</code> 会在本轮先被更新，导致物品 <code>nums[i]</code> 被重复使用多次（变成完全背包）。
+       - 倒序遍历从 <code>target</code> 到 <code>nums[i]</code>，计算 <code>dp[j]</code> 时用到的 <code>dp[j - nums[i]]</code> 仍是上一轮的值，确保每个物品最多只被放一次。
+  dimensionComparison:
+    - dimension: "阶段 1 二叉决策递归"
+      timeComplexity: "O(2^n)"
+      spaceComplexity: "O(n)"
+      pros: "选与不选模型清晰直观"
+      cons: "状态爆炸，容易超时"
+    - dimension: "阶段 2 记忆化搜索"
+      timeComplexity: "O(n × target)"
+      spaceComplexity: "O(n × target)"
+      pros: "自顶向下展开，快速剪除重叠子问题"
+      cons: "递归栈开销"
+    - dimension: "阶段 3 二维 DP 填表"
+      timeComplexity: "O(n × target)"
+      spaceComplexity: "O(n × target)"
+      pros: "矩阵状态完备，依赖关系清晰"
+      cons: "空间占用 O(n × target)"
+    - dimension: "阶段 4 一维倒序压缩"
+      timeComplexity: "O(n × target)"
+      spaceComplexity: "O(target)"
+      pros: "空间复杂度降低至 O(target)"
+      cons: "内层必须倒序遍历"
+
+faqs:
+  - q: "为什么一维数组必须倒序遍历容量 j？"
+    a: "因为 0-1 背包中每个物品只能使用一次。倒序遍历时，计算 dp[j] 所依赖的 dp[j - nums[i]] 尚未被当前物品更新，保存的是上一轮物品的状态；如果正序遍历，同一物品会被累加多次，变成完全背包。"
+  - q: "为什么要先判断 sum % 2 != 0？"
+    a: "因为正整数数组分割为两个和相等的子集时，两个子集和均为整数，总和必然为偶数。奇数总和不可能存在有效解，提前 O(1) 返回可极大提升效率。"

@@ -17,6 +17,7 @@ import deleteOperationForTwoStringsModel from '../algorithms/specs/models/delete
 import editDistanceModel from '../algorithms/specs/models/edit-distance.yaml';
 import palindromicSubstringsModel from '../algorithms/specs/models/palindromic-substrings.yaml';
 import longestPalindromicSubsequenceModel from '../algorithms/specs/models/longest-palindromic-subsequence.yaml';
+import partitionEqualSubsetSumModel from '../algorithms/specs/models/partition-equal-subset-sum.yaml';
 
 export class AlgorithmModelRepository {
   private static registry = new Map<string, IYamlAlgorithmModel>([
@@ -33,6 +34,8 @@ export class AlgorithmModelRepository {
     ['edit-distance', editDistanceModel as IYamlAlgorithmModel],
     ['palindromic-substrings', palindromicSubstringsModel as IYamlAlgorithmModel],
     ['longest-palindromic-subsequence', longestPalindromicSubsequenceModel as IYamlAlgorithmModel],
+    ['partition-equal-subset-sum', partitionEqualSubsetSumModel as IYamlAlgorithmModel],
+    ['partition-subset', partitionEqualSubsetSumModel as IYamlAlgorithmModel],
   ]);
 
   /**

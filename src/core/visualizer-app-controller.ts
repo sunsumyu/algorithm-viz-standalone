@@ -82,6 +82,11 @@ export class VisualizerAppController {
         this.m = this.model.defaultParams.t !== undefined
           ? String(this.model.defaultParams.s).length + 1
           : String(this.model.defaultParams.s).length;
+      } else if (this.model.defaultParams.nums !== undefined) {
+        const nums = Array.isArray(this.model.defaultParams.nums)
+          ? this.model.defaultParams.nums
+          : String(this.model.defaultParams.nums).split(',').map(Number);
+        this.m = nums.length;
       }
       if (this.model.defaultParams.n !== undefined) {
         this.n = Number(this.model.defaultParams.n);
@@ -91,6 +96,12 @@ export class VisualizerAppController {
         this.n = String(this.model.defaultParams.t).length + 1;
       } else if (this.model.defaultParams.s !== undefined) {
         this.n = String(this.model.defaultParams.s).length;
+      } else if (this.model.defaultParams.nums !== undefined) {
+        const nums = Array.isArray(this.model.defaultParams.nums)
+          ? this.model.defaultParams.nums
+          : String(this.model.defaultParams.nums).split(',').map(Number);
+        const sum = nums.reduce((a: number, b: number) => a + b, 0);
+        this.n = Math.floor(sum / 2) + 1;
       }
     }
 
@@ -219,6 +230,12 @@ export class VisualizerAppController {
           ? String(this.model.defaultParams.s).length + 1
           : String(this.model.defaultParams.s).length;
         if (inputM) inputM.value = String(this.m);
+      } else if (this.model.defaultParams.nums !== undefined) {
+        const nums = Array.isArray(this.model.defaultParams.nums)
+          ? this.model.defaultParams.nums
+          : String(this.model.defaultParams.nums).split(',').map(Number);
+        this.m = nums.length;
+        if (inputM) inputM.value = String(this.m);
       }
       if (this.model.defaultParams.n !== undefined) {
         this.n = Number(this.model.defaultParams.n);
@@ -231,6 +248,13 @@ export class VisualizerAppController {
         if (inputN) inputN.value = String(this.n);
       } else if (this.model.defaultParams.s !== undefined) {
         this.n = String(this.model.defaultParams.s).length;
+        if (inputN) inputN.value = String(this.n);
+      } else if (this.model.defaultParams.nums !== undefined) {
+        const nums = Array.isArray(this.model.defaultParams.nums)
+          ? this.model.defaultParams.nums
+          : String(this.model.defaultParams.nums).split(',').map(Number);
+        const sum = nums.reduce((a: number, b: number) => a + b, 0);
+        this.n = Math.floor(sum / 2) + 1;
         if (inputN) inputN.value = String(this.n);
       }
     }

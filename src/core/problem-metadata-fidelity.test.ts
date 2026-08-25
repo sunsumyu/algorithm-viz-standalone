@@ -18,6 +18,7 @@ describe('🛡️ Algorithm Problem Metadata Fidelity Guard', () => {
     'edit-distance',
     'palindromic-substrings',
     'longest-palindromic-subsequence',
+    'partition-equal-subset-sum',
     'knapsack-01',
   ];
 
