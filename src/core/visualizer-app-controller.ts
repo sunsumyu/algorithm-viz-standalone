@@ -1145,10 +1145,18 @@ export class VisualizerAppController {
     const container = document.getElementById('stage-tabs-container');
     if (!container || !this.model.stages) return;
     container.innerHTML = '';
+
+    const defaultShortNames: Record<string, string> = {
+      'stage-1': '递归',
+      'stage-2': '记忆化',
+      'stage-3': '二维DP',
+      'stage-4': '一维优化',
+    };
+
     const stageEntries = Object.entries(this.model.stages);
     stageEntries.forEach(([stageKey, stageSpec], idx) => {
       const stageNum = idx + 1;
-      const shortName = stageSpec.shortName || (typeof stageSpec.name === 'string' ? stageSpec.name.replace(/阶段\s*\d+:\s*/, '') : `阶段 ${stageNum}`);
+      const shortName = stageSpec.shortName || defaultShortNames[stageKey] || `阶段 ${stageNum}`;
       const timeBadge = stageSpec.timeBadge || '';
       const isActive = stageKey === this.currentStage;
       
@@ -1161,10 +1169,10 @@ export class VisualizerAppController {
         ? (isActive ? 'active bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 border-emerald-600 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold')
         : (isActive ? 'active bg-blue-600 text-white shadow-sm shadow-blue-500/20 border-blue-600 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold');
 
-      btn.className = `stage-tab-btn px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs transition-all flex items-center justify-center gap-1 border ${themeClass}`;
+      btn.className = `stage-tab-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 border whitespace-nowrap ${themeClass}`;
       btn.innerHTML = `
         <span class="w-4 h-4 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'} text-[10px] flex items-center justify-center font-bold flex-shrink-0">${stageNum}</span>
-        <span class="truncate max-w-[65px] sm:max-w-[85px] lg:max-w-none">${shortName}</span>
+        <span class="whitespace-nowrap font-medium text-xs">${shortName}</span>
         ${timeBadge ? `<span class="text-[9px] px-1 py-0.2 rounded ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200/70 text-slate-500'} font-mono hidden 2xl:inline flex-shrink-0">${timeBadge}</span>` : ''}
       `;
 

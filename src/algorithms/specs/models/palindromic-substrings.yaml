@@ -47,7 +47,8 @@ directions:
 
 stages:
   stage-1:
-    name: 阶段 1：区间递归判断 (Interval DFS)
+    shortName: "递归"
+    name: "阶段 1: 区间递归判断"
     desc: 穷举所有子串区间 [i, j]，递归判断 s[i..j] 是否为回文串并累加计数。
     timeComplexity: "O(n^3)"
     spaceComplexity: "O(n)"
@@ -83,7 +84,8 @@ stages:
           }
 
   stage-2:
-    name: 阶段 2：记忆化搜索 (Memoization)
+    shortName: "记忆化"
+    name: "阶段 2: 记忆化搜索"
     desc: 引入 Boolean[][] memo 缓存已验证区间的回文状态，消除子区间重复判断。
     timeComplexity: "O(n^2)"
     spaceComplexity: "O(n^2)"
@@ -119,7 +121,8 @@ stages:
           }
 
   stage-3:
-    name: 阶段 3：二维动态规划 (2D Tabulation)
+    shortName: "二维DP"
+    name: "阶段 3: 区间二维DP"
     desc: 构建 n×n 的上三角 DP 矩阵，从底向上 (i 从 n-1 到 0)、从左到右 (j 从 i 到 n-1) 顺序填表。
     timeComplexity: "O(n^2)"
     spaceComplexity: "O(n^2)"
@@ -157,7 +160,8 @@ stages:
           }
 
   stage-4:
-    name: 阶段 4：中心扩散法 / 空间优化 (Center Expansion)
+    shortName: "中心扩散"
+    name: "阶段 4: 中心扩散法"
     desc: 遍历 2n-1 个回文中心（单字符与双字符中心），双指针向两侧扩散，将空间复杂度从 O(n^2) 降至 O(1)。
     timeComplexity: "O(n^2)"
     spaceComplexity: "O(1)"

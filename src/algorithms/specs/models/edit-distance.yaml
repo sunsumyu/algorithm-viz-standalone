@@ -61,7 +61,8 @@ directions:
 
 stages:
   stage-1:
-    name: 阶段 1：朴素递归 (Naive DFS)
+    shortName: "递归"
+    name: "阶段 1: 朴素递归"
     desc: 穷举「字符相同直接继承」、「插入字符」、「删除字符」与「替换字符」三向分支，展示三叉递归树与指数级重叠子问题。
     timeComplexity: "O(3^(m+n))"
     spaceComplexity: "O(m+n)"
@@ -99,7 +100,8 @@ stages:
           }
 
   stage-2:
-    name: 阶段 2：记忆化搜索 (Memoization)
+    shortName: "记忆化"
+    name: "阶段 2: 记忆化搜索"
     desc: 引入 memo[i][j] 备忘录缓存已求解的 (i, j) 子问题，消除三叉树上的重叠分支，将复杂度降为多项式级别。
     timeComplexity: "O(m * n)"
     spaceComplexity: "O(m * n)"
@@ -139,7 +141,8 @@ stages:
           }
 
   stage-3:
-    name: 阶段 3：二维动态规划 (2D Tabulation)
+    shortName: "二维DP"
+    name: "阶段 3: 二维状态表格"
     desc: 构建 (m+1)×(n+1) 的二维 DP 状态表格，自底向上顺序填表，清晰展现对角线（替换）、上方（删除）、左侧（插入）的三维依赖。
     timeComplexity: "O(m * n)"
     spaceComplexity: "O(m * n)"
@@ -177,7 +180,8 @@ stages:
           }
 
   stage-4:
-    name: 阶段 4：一维空间压缩 (1D Compression)
+    shortName: "一维优化"
+    name: "阶段 4: 一维滚动压缩"
     desc: 使用一维滚动数组与临时变量 pre 暂存左上角 dp[i-1][j-1]，将空间复杂度从 O(m*n) 极限压缩至 O(n)。
     timeComplexity: "O(m * n)"
     spaceComplexity: "O(n)"

@@ -45,7 +45,8 @@ directions:
 
 stages:
   stage-1:
-    name: 阶段 1：选/不选 二叉决策递归 (Decision Tree DFS)
+    shortName: "递归"
+    name: "阶段 1: 选/不选递归"
     desc: 对数组中的每个数字做选与不选两种决策，展开为指数级二叉决策树，搜索是否存在子集和等于 target = sum / 2。
     timeComplexity: "O(2^n)"
     spaceComplexity: "O(n)"
@@ -81,7 +82,8 @@ stages:
           }
 
   stage-2:
-    name: 阶段 2：记忆化搜索 (Memoization)
+    shortName: "记忆化"
+    name: "阶段 2: 记忆化搜索"
     desc: 引入 Boolean[][] memo 缓存 (物品索引 i, 剩余目标值 curTarget) 的可行性，消除重叠子问题。
     timeComplexity: "O(n × target)"
     spaceComplexity: "O(n × target)"
@@ -119,7 +121,8 @@ stages:
           }
 
   stage-3:
-    name: 阶段 3：二维 0-1 背包 DP (2D Tabulation)
+    shortName: "二维DP"
+    name: "阶段 3: 二维背包DP"
     desc: 构建 n × (target + 1) 二维状态表格，dp[i][j] 表示使用前 i 个物品在容量 j 时的最大和，检查 dp[n-1][target] == target。
     timeComplexity: "O(n × target)"
     spaceComplexity: "O(n × target)"
@@ -161,7 +164,8 @@ stages:
           }
 
   stage-4:
-    name: 阶段 4：一维倒序滚动数组 (1D Space Compression)
+    shortName: "一维优化"
+    name: "阶段 4: 一维滚动数组"
     desc: 使用一维滚动数组 dp[0..target]，内层容量从 target 倒序遍历至 nums[i]，将空间复杂度从 O(n × target) 降至 O(target)。
     timeComplexity: "O(n × target)"
     spaceComplexity: "O(target)"
