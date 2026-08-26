@@ -933,29 +933,40 @@ export class RecursionTreeAdapter {
       return 1 + Math.max(...n.children.map(getDepth));
     }
 
+    function getMaxValLen(n: any): number {
+      let maxLen = n.val ? String(n.val).length : 0;
+      if (n.children && n.children.length > 0) {
+        for (const c of n.children) {
+          maxLen = Math.max(maxLen, getMaxValLen(c));
+        }
+      }
+      return maxLen;
+    }
+
     const leafCount = countLeaves(root);
     const maxDepth = getDepth(root);
+    const maxValLen = getMaxValLen(root);
 
-    let nodeW = 66;
-    let nodeH = 25;
-    let minGap = 12;
-    let levelH = 50;
+    let nodeW = Math.max(66, Math.round(maxValLen * 8.2 + 18));
+    let nodeH = 26;
+    let minGap = 16;
+    let levelH = 56;
     let fontSize = 10.5;
     let tagFontSize = 8;
-    const topPad = 42;
+    const topPad = 46;
 
     if (leafCount >= 10 || maxDepth >= 4) {
-      nodeW = 44;
-      nodeH = 19;
-      minGap = 6;
-      levelH = 38;
+      nodeW = Math.max(52, Math.round(maxValLen * 7.0 + 14));
+      nodeH = 20;
+      minGap = 8;
+      levelH = 46;
       fontSize = 8.5;
       tagFontSize = 7;
     } else if (leafCount >= 6 || maxDepth >= 3) {
-      nodeW = 54;
-      nodeH = 22;
-      minGap = 9;
-      levelH = 44;
+      nodeW = Math.max(60, Math.round(maxValLen * 7.6 + 16));
+      nodeH = 23;
+      minGap = 12;
+      levelH = 50;
       fontSize = 9.5;
       tagFontSize = 7.5;
     }
@@ -982,6 +993,7 @@ export class RecursionTreeAdapter {
       return {
         id: mNode.node.id,
         val: mNode.node.val,
+        edgeLabel: mNode.node.edgeLabel,
         status: mNode.node.status,
         tag: mNode.node.tag,
         x,
@@ -992,9 +1004,9 @@ export class RecursionTreeAdapter {
     }
 
     const measured = measure(root);
-    const totalW = Math.max(340, measured.width + 36);
+    const totalW = Math.max(360, measured.width + 48);
     const rootPos = assign(measured, 0, (totalW - measured.width) / 2);
-    const totalH = Math.max(180, topPad + maxDepth * levelH + nodeH + 36);
+    const totalH = Math.max(180, topPad + maxDepth * levelH + nodeH + 40);
 
     const lines: string[] = [];
     const nodes: string[] = [];
@@ -1007,6 +1019,7 @@ export class RecursionTreeAdapter {
         const startY = n.y + nodeH / 2;
         const endX = c.x;
         const endY = c.y - nodeH / 2;
+        const midX = (startX + endX) / 2;
         const midY = (startY + endY) / 2;
 
         const isCurrentBranch = n.id === activeNodeId || c.id === activeNodeId;
@@ -1017,6 +1030,18 @@ export class RecursionTreeAdapter {
         lines.push(
           `<path d="M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}" fill="none" stroke="${stroke}" stroke-width="${strokeW}" stroke-dasharray="${strokeDash}" />`
         );
+
+        if (c.edgeLabel) {
+          const edgeText = String(c.edgeLabel);
+          const edgeW = Math.max(22, edgeText.length * 9.5 + 8);
+          lines.push(`
+            <g transform="translate(${midX}, ${midY})">
+              <rect x="${-edgeW / 2}" y="-6.5" width="${edgeW}" height="13" rx="4" fill="#ffffff" stroke="${isCurrentBranch ? '#3b82f6' : '#94a3b8'}" stroke-width="1" />
+              <text x="0" y="2.5" text-anchor="middle" fill="${isCurrentBranch ? '#1d4ed8' : '#475569'}" font-size="7.5" font-weight="700" font-family="sans-serif">${edgeText}</text>
+            </g>
+          `);
+        }
+
         draw(c);
       }
 
@@ -1069,7 +1094,7 @@ export class RecursionTreeAdapter {
       let badgeHtml = '';
       if (n.tag) {
         const tagBg = isOutOfBoundsNode ? '#ef4444' : isPruned ? '#9333ea' : isRepeated ? '#d97706' : '#10b981';
-        const badgeW = Math.min(nodeW - 2, Math.max(26, n.tag.length * 6.5 + 4));
+        const badgeW = Math.min(nodeW + 8, Math.max(26, String(n.tag).length * 6.5 + 8));
         badgeHtml = `
           <g transform="translate(0, ${nodeH / 2 + 7})">
             <rect x="${-badgeW / 2}" y="-5.5" width="${badgeW}" height="11" rx="3" fill="${tagBg}" />
@@ -1081,8 +1106,9 @@ export class RecursionTreeAdapter {
       let animalHtml = '';
       if (isCurrent) {
         animalHtml = `
-          <g transform="translate(0, ${-nodeH / 2 - 6})">
-            <text x="0" y="0" text-anchor="middle" font-size="${Math.max(12, fontSize + 3)}" class="animal-frog select-none">🐸</text>
+          <g transform="translate(0, ${-nodeH / 2 - 13})">
+            <ellipse cx="0" cy="5" rx="10" ry="3.5" fill="#3b82f6" opacity="0.22" />
+            <text x="0" y="0" text-anchor="middle" font-size="${Math.max(13, fontSize + 3.5)}" class="animal-frog select-none" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));">🐸</text>
           </g>
         `;
       }

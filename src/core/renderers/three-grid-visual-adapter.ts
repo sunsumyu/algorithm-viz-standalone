@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { UniversalStep } from '../universal-stage-engine';
 import { GridRenderOptions } from './grid-visual-adapter';
+import { ThreeActorStateMachine } from './three-actor-state-machine';
 
 interface VoxelCellMesh {
   mesh: THREE.Mesh;
@@ -40,6 +41,10 @@ export class ThreeGridVisualAdapter {
   private adventurer3D: THREE.Group | null = null;
   private activeGlowRing: THREE.Mesh | null = null;
   private riverMesh: THREE.Mesh | null = null;
+  private riverBedMesh: THREE.Mesh | null = null;
+  private riverFoamRings: THREE.Mesh[] = [];
+  private waterSparkles: THREE.Points | null = null;
+  private originalWaterPositions: Float32Array | null = null;
   private transferTubes: THREE.Mesh[] = [];
   private energySparks: EnergySpark[] = [];
   private pointLight: THREE.PointLight | null = null;
@@ -50,9 +55,17 @@ export class ThreeGridVisualAdapter {
   private charCurrentPos: THREE.Vector3 = new THREE.Vector3();
   private charTargetPos: THREE.Vector3 = new THREE.Vector3();
   private charJumpStartPos: THREE.Vector3 = new THREE.Vector3();
+  private charBounceApexPos: THREE.Vector3 | null = null;
+  private isBounceJump: boolean = false;
+  private hasTriggeredMidSplash: boolean = false;
   private charJumpProgress: number = 1.0;
   private charSquash: number = 1.0;
   private charSquashVelocity: number = 0.0;
+  private charCurrentHeading: number = 0;
+  private charTargetHeading: number = 0;
+  private splashTimer: number = 0;
+  private splashX: number = 0;
+  private splashZ: number = 0;
   private clock: THREE.Clock = new THREE.Clock();
 
   public static getInstance(): ThreeGridVisualAdapter {
@@ -305,31 +318,108 @@ export class ThreeGridVisualAdapter {
     this.activeGlowRing.position.set(0, 0.02, 0);
     this.boardGroup.add(this.activeGlowRing);
 
-    // 5. 3D 水晶透光流动深水河 (Crystal Water Trench)
-    if (isGridProblem) {
-      const riverGeo = new THREE.BoxGeometry(baseW, 0.18, 0.55);
-      const riverMat = new THREE.MeshPhysicalMaterial({
-        color: 0x0284c7,
-        emissive: 0x0369a1,
-        emissiveIntensity: 0.2,
-        roughness: 0.08,
-        metalness: 0.1,
-        transmission: 0.7,
-        transparent: true,
-        opacity: 0.9,
-        ior: 1.333
-      });
-      this.riverMesh = new THREE.Mesh(riverGeo, riverMat);
-      this.riverMesh.position.set((n - 1) * stride / 2, -0.06, m * stride - 0.12);
-      this.riverMesh.receiveShadow = true;
-      this.boardGroup.add(this.riverMesh);
+    // 5. 3D 四周环绕高质感水晶流动护岛深水河 (Surrounding Island Crystal River)
+    const riverMargin = 1.35;
+    const riverW = baseW + riverMargin * 2;
+    const riverD = baseD + riverMargin * 2;
+    const centerX = (n - 1) * stride / 2;
+    const centerZ = (m - 1) * stride / 2;
+
+    // 5.1 深邃湛蓝河床底槽 (Deep Riverbed Basin)
+    const bedGeo = new THREE.BoxGeometry(riverW + 0.36, 0.28, riverD + 0.36);
+    const bedMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.6,
+      metalness: 0.1
+    });
+    this.riverBedMesh = new THREE.Mesh(bedGeo, bedMat);
+    this.riverBedMesh.position.set(centerX, -0.26, centerZ);
+    this.riverBedMesh.receiveShadow = true;
+    this.boardGroup.add(this.riverBedMesh);
+
+    // 5.2 河道外侧微光水晶堤岸 (Outer Embankment Rim)
+    const outerBankGeo = new THREE.BoxGeometry(riverW + 0.44, 0.08, riverD + 0.44);
+    const outerBankMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.35,
+      roughness: 0.25,
+      metalness: 0.15
+    });
+    const outerBankMesh = new THREE.Mesh(outerBankGeo, outerBankMat);
+    outerBankMesh.position.set(centerX, -0.16, centerZ);
+    this.boardGroup.add(outerBankMesh);
+
+    // 5.3 物理动态波浪高密度水面 (Dynamic Physical Wave Water Surface)
+    const waterSegs = Math.min(48, Math.max(28, Math.round(Math.max(riverW, riverD) * 3)));
+    const waterGeo = new THREE.PlaneGeometry(riverW, riverD, waterSegs, waterSegs);
+    waterGeo.rotateX(-Math.PI / 2);
+
+    const posAttr = waterGeo.attributes.position;
+    this.originalWaterPositions = new Float32Array(posAttr.array);
+
+    const waterMat = new THREE.MeshPhysicalMaterial({
+      color: 0x06b6d4,            // 清澈电光青蓝
+      emissive: 0x0369a1,         // 水底深层荧光
+      emissiveIntensity: 0.3,
+      roughness: 0.05,
+      metalness: 0.05,
+      transmission: 0.85,         // 水晶通透度
+      transparent: true,
+      opacity: 0.88,
+      ior: 1.333,                 // 真实水体折射率
+      reflectivity: 0.95,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05
+    });
+    this.riverMesh = new THREE.Mesh(waterGeo, waterMat);
+    this.riverMesh.position.set(centerX, -0.05, centerZ);
+    this.riverMesh.receiveShadow = true;
+    this.boardGroup.add(this.riverMesh);
+
+    // 5.4 岛屿岸边白浪波沫圈 (Island Shoreline Foam Rim)
+    const innerFoamGeo = new THREE.BoxGeometry(baseW + 0.14, 0.02, baseD + 0.14);
+    const innerFoamMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.55
+    });
+    const innerFoamMesh = new THREE.Mesh(innerFoamGeo, innerFoamMat);
+    innerFoamMesh.position.set(centerX, -0.04, centerZ);
+    this.boardGroup.add(innerFoamMesh);
+    this.riverFoamRings = [innerFoamMesh];
+
+    // 5.5 水面流动微光星点 (Water Sparkle Glints)
+    const sparkleCount = 40;
+    const sparkleGeo = new THREE.BufferGeometry();
+    const sparklePositions = new Float32Array(sparkleCount * 3);
+    for (let i = 0; i < sparkleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radiusX = (baseW / 2) + 0.15 + Math.random() * (riverMargin - 0.3);
+      const radiusZ = (baseD / 2) + 0.15 + Math.random() * (riverMargin - 0.3);
+      sparklePositions[i * 3] = centerX + Math.cos(angle) * radiusX;
+      sparklePositions[i * 3 + 1] = -0.035;
+      sparklePositions[i * 3 + 2] = centerZ + Math.sin(angle) * radiusZ;
     }
+    sparkleGeo.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
+    const sparkleMat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.075,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+    this.waterSparkles = new THREE.Points(sparkleGeo, sparkleMat);
+    this.boardGroup.add(this.waterSparkles);
 
     // 6. 真正的 3D 萌系体素小人 (Crossy Road / Minecraft Voxel Explorer)
-    if (isGridProblem) {
-      this.adventurer3D = this.createVoxelAdventurerMesh();
-      this.boardGroup.add(this.adventurer3D);
-    }
+    this.adventurer3D = this.createVoxelAdventurerMesh();
+    this.charCurrentPos.set(0, blockHeight / 2 + 0.45, 0);
+    this.charTargetPos.set(0, blockHeight / 2 + 0.45, 0);
+    this.charJumpStartPos.set(0, blockHeight / 2 + 0.45, 0);
+    this.charJumpProgress = 1.0;
+    this.adventurer3D.position.copy(this.charCurrentPos);
+    this.boardGroup.add(this.adventurer3D);
 
     this.scene.add(this.boardGroup);
     this.resetCameraPosition();
@@ -591,7 +681,7 @@ export class ThreeGridVisualAdapter {
    * 响应演化步骤更新 3D 场景状态与物理动画
    */
   public updateStep(step: UniversalStep, options: GridRenderOptions): void {
-    if (!this.boardGroup || this.voxelCells.length === 0) {
+    if (!this.boardGroup || this.voxelCells.length === 0 || this.m !== options.m || this.n !== options.n) {
       this.buildBoard(options.m, options.n, options);
     }
 
@@ -647,25 +737,79 @@ export class ThreeGridVisualAdapter {
     }
 
     // 2. 更新焦点聚光灯与动态光环
-    if (curI !== undefined && curJ !== undefined && curI >= 0 && curJ >= 0) {
+    const isInsideBoard = curI !== undefined && curJ !== undefined && curI >= 0 && curI < m && curJ >= 0 && curJ < n;
+    if (isInsideBoard) {
       if (this.pointLight) {
         this.pointLight.position.set(curJ * stride, 2.2, curI * stride);
         this.pointLight.intensity = 3.0;
+        this.pointLight.visible = true;
       }
       if (this.activeGlowRing) {
         this.activeGlowRing.position.set(curJ * stride, 0.02, curI * stride);
+        this.activeGlowRing.visible = true;
       }
+    } else {
+      if (this.pointLight) this.pointLight.visible = false;
+      if (this.activeGlowRing) this.activeGlowRing.visible = false;
     }
 
-    // 3. 驱动 3D 探险家小人起跳与 Crossy Road 抛物线动画
-    if (this.adventurer3D && curI !== undefined && curJ !== undefined && curI >= 0 && curJ >= 0) {
-      const nextTarget = new THREE.Vector3(curJ * stride, blockBaseH / 2 + 0.45, curI * stride);
-      if (this.charTargetPos.distanceTo(nextTarget) > 0.05) {
+    // 3. 基于有限状态机驱动 3D 探险家小人物理动力学与落水/撞墙/庆祝动画 (FSM Driven Kinematics)
+    if (this.adventurer3D) {
+      const resolution = ThreeActorStateMachine.resolve(step, m, n, stride, blockBaseH);
+      this.adventurer3D.visible = resolution.visible; // 🌟 恒为 true
+
+      const nextTarget = new THREE.Vector3(
+        resolution.targetPosition.x,
+        resolution.targetPosition.y,
+        resolution.targetPosition.z
+      );
+
+      const facingTargetX = resolution.targetFacing ? resolution.targetFacing.x : nextTarget.x;
+      const facingTargetZ = resolution.targetFacing ? resolution.targetFacing.z : nextTarget.z;
+      const dx = facingTargetX - this.charCurrentPos.x;
+      const dz = facingTargetZ - this.charCurrentPos.z;
+      if (Math.hypot(dx, dz) > 0.05) {
+        this.charTargetHeading = Math.atan2(dx, dz);
+      }
+
+      if (resolution.isBounceJump && resolution.bounceApexPosition) {
+        this.charJumpStartPos.set(
+          resolution.targetPosition.x,
+          resolution.targetPosition.y,
+          resolution.targetPosition.z
+        );
+        this.charBounceApexPos = new THREE.Vector3(
+          resolution.bounceApexPosition.x,
+          resolution.bounceApexPosition.y,
+          resolution.bounceApexPosition.z
+        );
+        this.charTargetPos.copy(nextTarget);
+        this.isBounceJump = true;
+        this.charJumpProgress = 0.0;
+        this.hasTriggeredMidSplash = false;
+        this.charSquash = 1.0;
+      } else if (this.charTargetPos.distanceTo(nextTarget) > 0.05) {
         this.charJumpStartPos.copy(this.charCurrentPos);
+        this.charBounceApexPos = null;
+        this.isBounceJump = false;
         this.charTargetPos.copy(nextTarget);
         this.charJumpProgress = 0.0;
-        // 起跳拉伸
-        this.charSquash = 1.25;
+        this.charSquash = resolution.squash;
+
+        if (resolution.splashWater) {
+          this.splashTimer = 1.0;
+          this.splashX = resolution.splashPosition ? resolution.splashPosition.x : nextTarget.x;
+          this.splashZ = resolution.splashPosition ? resolution.splashPosition.z : nextTarget.z;
+        }
+      } else {
+        this.charBounceApexPos = null;
+        this.isBounceJump = false;
+        this.charSquash = resolution.squash;
+        if (resolution.splashWater) {
+          this.splashTimer = 1.0;
+          this.splashX = resolution.splashPosition ? resolution.splashPosition.x : nextTarget.x;
+          this.splashZ = resolution.splashPosition ? resolution.splashPosition.z : nextTarget.z;
+        }
       }
     }
 
@@ -770,22 +914,52 @@ export class ThreeGridVisualAdapter {
 
       // 2. 探险家 3D 物理跳跃与落地挤压弹性形变 (Crossy Road Hop & Squash)
       if (this.adventurer3D) {
+        // 朝向平滑插值
+        this.charCurrentHeading += (this.charTargetHeading - this.charCurrentHeading) * Math.min(delta * 10, 1);
+        this.adventurer3D.rotation.y = this.charCurrentHeading;
+
         if (this.charJumpProgress < 1.0) {
-          this.charJumpProgress = Math.min(1.0, this.charJumpProgress + delta * 3.8);
+          this.charJumpProgress = Math.min(1.0, this.charJumpProgress + delta * 1.6);
           const p = this.charJumpProgress;
 
-          // X-Z 水平平滑位移
-          this.charCurrentPos.lerpVectors(this.charJumpStartPos, this.charTargetPos, p);
-          // Y 轴抛物线弧度
-          const arcY = Math.sin(p * Math.PI) * 0.85;
-          this.adventurer3D.position.copy(this.charCurrentPos);
-          this.adventurer3D.position.y += arcY;
+          if (this.isBounceJump && this.charBounceApexPos) {
+            // 双段抛物线物理动画：第一段飞向水面/高墙，第二段撞水/撞墙弹回陆地
+            if (p <= 0.5) {
+              const t = p / 0.5;
+              this.charCurrentPos.lerpVectors(this.charJumpStartPos, this.charBounceApexPos, t);
+              const arcY = Math.sin(t * Math.PI) * 0.65;
+              this.adventurer3D.position.copy(this.charCurrentPos);
+              this.adventurer3D.position.y += arcY;
 
-          // 空中前倾微姿态
-          this.adventurer3D.rotation.x = Math.sin(p * Math.PI) * 0.25;
+              this.adventurer3D.rotation.x = Math.sin(t * Math.PI) * 0.35;
+              this.adventurer3D.scale.set(0.9, 1.15, 0.9);
 
-          // 空中拉伸
-          this.adventurer3D.scale.set(0.9, 1.15, 0.9);
+              if (p >= 0.45 && !this.hasTriggeredMidSplash) {
+                this.hasTriggeredMidSplash = true;
+                this.splashTimer = 1.0;
+                this.splashX = this.charBounceApexPos.x;
+                this.splashZ = this.charBounceApexPos.z;
+                this.charSquash = 0.65; // 触水压扁
+              }
+            } else {
+              const t = (p - 0.5) / 0.5;
+              this.charCurrentPos.lerpVectors(this.charBounceApexPos, this.charTargetPos, t);
+              const arcY = Math.sin(t * Math.PI) * 0.85;
+              this.adventurer3D.position.copy(this.charCurrentPos);
+              this.adventurer3D.position.y += arcY;
+
+              this.adventurer3D.rotation.x = -Math.sin(t * Math.PI) * 0.25;
+              this.adventurer3D.scale.set(1.1, 0.9, 1.1);
+            }
+          } else {
+            // 正常单段抛物线跳跃
+            this.charCurrentPos.lerpVectors(this.charJumpStartPos, this.charTargetPos, p);
+            const arcY = Math.sin(p * Math.PI) * 0.85;
+            this.adventurer3D.position.copy(this.charCurrentPos);
+            this.adventurer3D.position.y += arcY;
+            this.adventurer3D.rotation.x = Math.sin(p * Math.PI) * 0.25;
+            this.adventurer3D.scale.set(0.9, 1.15, 0.9);
+          }
         } else {
           // 落地挤压与弹簧阻尼回弹 (Squash & Stretch Spring)
           if (this.charSquash > 1.0 || this.charSquash < 1.0) {
@@ -815,9 +989,51 @@ export class ThreeGridVisualAdapter {
         this.activeGlowRing.scale.set(scale, scale, scale);
       }
 
-      // 4. 水晶河流流动微波
-      if (this.riverMesh) {
-        this.riverMesh.position.y = -0.06 + Math.sin(time * 2.8) * 0.018;
+      // 4. 水晶河流物理波浪演化与落水水花扩散
+      if (this.riverMesh && this.originalWaterPositions) {
+        const geo = this.riverMesh.geometry as THREE.BufferGeometry;
+        const pos = geo.attributes.position;
+        const orig = this.originalWaterPositions;
+        const count = pos.count;
+
+        if (this.splashTimer > 0) {
+          this.splashTimer = Math.max(0, this.splashTimer - delta * 1.5);
+        }
+
+        for (let i = 0; i < count; i++) {
+          const vx = orig[i * 3];
+          const vz = orig[i * 3 + 2];
+          const wave1 = Math.sin(vx * 1.8 + time * 2.5) * 0.024;
+          const wave2 = Math.cos(vz * 1.8 + time * 2.0) * 0.020;
+          const ripple = Math.sin((vx + vz) * 3.2 + time * 3.2) * 0.012;
+          const swirl = Math.sin(Math.sqrt(vx * vx + vz * vz) * 2.2 - time * 2.8) * 0.014;
+
+          let splashWave = 0;
+          if (this.splashTimer > 0) {
+            const dist = Math.hypot(vx - this.splashX, vz - this.splashZ);
+            splashWave = Math.sin(dist * 6.0 - (1.0 - this.splashTimer) * 14.0) * Math.exp(-dist * 1.2) * this.splashTimer * 0.06;
+          }
+
+          pos.setY(i, wave1 + wave2 + ripple + swirl + splashWave);
+        }
+        pos.needsUpdate = true;
+        geo.computeVertexNormals();
+      }
+
+      // 4.2 岸边浪花微缩放脉冲
+      for (const foam of this.riverFoamRings) {
+        const fScale = 1.0 + Math.sin(time * 2.6) * 0.015;
+        foam.scale.set(fScale, 1.0, fScale);
+      }
+
+      // 4.3 水花微光浮动
+      if (this.waterSparkles) {
+        const pAttr = this.waterSparkles.geometry.attributes.position;
+        for (let i = 0; i < pAttr.count; i++) {
+          const py = -0.035 + Math.sin(time * 3.2 + i * 1.5) * 0.012;
+          pAttr.setY(i, py);
+        }
+        pAttr.needsUpdate = true;
       }
 
       // 5. 飞行能量火花球更新
@@ -881,6 +1097,11 @@ export class ThreeGridVisualAdapter {
     this.voxelCells = [];
     this.transferTubes = [];
     this.energySparks = [];
+    this.riverMesh = null;
+    this.riverBedMesh = null;
+    this.riverFoamRings = [];
+    this.waterSparkles = null;
+    this.originalWaterPositions = null;
     this.container = null;
   }
 

@@ -310,12 +310,18 @@ export class VisualizerAppController {
   public loadAndReset(): void {
     if (this.isDestroyed || typeof document === 'undefined') return;
 
+    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(this.modelId);
     const inputM = document.getElementById('input-m') as HTMLInputElement | null;
     const inputN = document.getElementById('input-n') as HTMLInputElement | null;
     this.m = parseInt(inputM?.value || String(this.m)) || 3;
     this.n = parseInt(inputN?.value || String(this.n)) || 4;
-    this.m = Math.min(Math.max(this.m, 1), 8);
-    this.n = Math.min(Math.max(this.n, 1), 8);
+    if (isGridProblem) {
+      this.m = Math.min(Math.max(this.m, 1), 8);
+      this.n = Math.min(Math.max(this.n, 1), 8);
+    } else {
+      this.m = Math.min(Math.max(this.m, 1), 16);
+      this.n = Math.min(Math.max(this.n, 1), 32);
+    }
 
     if (inputM) inputM.value = String(this.m);
     if (inputN) inputN.value = String(this.n);

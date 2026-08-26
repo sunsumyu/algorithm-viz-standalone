@@ -13,6 +13,7 @@ export interface UniversalTreeNode {
   r: number;
   c: number;
   val: string;
+  edgeLabel?: string;
   status: 'normal' | 'current' | 'base' | 'pruned' | 'visited';
   tag?: string;
   children: UniversalTreeNode[];
@@ -72,6 +73,7 @@ export class UniversalStageEngine {
       r: node.r,
       c: node.c,
       val: node.val,
+      edgeLabel: node.edgeLabel,
       status: node.status,
       tag: node.tag,
       children: node.children ? node.children.map(UniversalStageEngine.cloneTree as any) : []
@@ -2064,7 +2066,7 @@ export class UniversalStageEngine {
       id: `node-${++nodeIdCounter}`,
       r: 0,
       c: target,
-      val: `canPartition(nums, target=${target})`,
+      val: `dfs(0,${target})`,
       status: 'current',
       children: []
     };
@@ -2205,7 +2207,8 @@ export class UniversalStageEngine {
           id: `node-${++nodeIdCounter}`,
           r: i + 1,
           c: curTarget,
-          val: `不选: dfs(${i + 1},${curTarget})`,
+          val: `dfs(${i + 1},${curTarget})`,
+          edgeLabel: '不选',
           status: 'normal',
           children: []
         };
@@ -2249,7 +2252,8 @@ export class UniversalStageEngine {
           id: `node-${++nodeIdCounter}`,
           r: i + 1,
           c: Math.max(0, curTarget - nums[i]),
-          val: `选入: dfs(${i + 1},${curTarget - nums[i]})`,
+          val: `dfs(${i + 1},${curTarget - nums[i]})`,
+          edgeLabel: '选入',
           status: 'normal',
           children: []
         };

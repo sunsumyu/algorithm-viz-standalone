@@ -348,4 +348,25 @@ describe('RecursionTreeAdapter Deep Module', () => {
     expect(mockContainer.innerHTML).toContain('dfs(1,1)');
     expect(mockContainer.innerHTML).toContain('🐸');
   });
+
+  it('应该正确渲染 edgeLabel 分支边标注与自适应节点宽', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const mockTree = {
+      id: 'root',
+      val: 'dfs(0,11)',
+      status: 'visited',
+      children: [
+        { id: 'c1', val: 'dfs(1,11)', edgeLabel: '不选', status: 'visited', children: [] },
+        { id: 'c2', val: 'dfs(1,6)', edgeLabel: '选入', status: 'current', children: [] }
+      ]
+    };
+
+    RecursionTreeAdapter.renderRecursionTree(container, mockTree, 'c2');
+    const mockContainer = container as unknown as MockHTMLElement;
+    expect(mockContainer.innerHTML).toContain('不选');
+    expect(mockContainer.innerHTML).toContain('选入');
+    expect(mockContainer.innerHTML).toContain('dfs(0,11)');
+    expect(mockContainer.innerHTML).toContain('dfs(1,6)');
+    expect(mockContainer.innerHTML).toContain('🐸');
+  });
 });
