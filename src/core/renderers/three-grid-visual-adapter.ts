@@ -17,6 +17,8 @@ interface VoxelCellMesh {
   status: 'cur' | 'done' | 'top' | 'left' | 'obstacle' | 'trail' | 'empty';
 }
 
+import { IVisualRenderer } from './visual-renderer';
+
 interface EnergySpark {
   mesh: THREE.Mesh;
   curve: THREE.Curve<THREE.Vector3>;
@@ -24,7 +26,8 @@ interface EnergySpark {
   speed: number;
 }
 
-export class ThreeGridVisualAdapter {
+export class ThreeGridVisualAdapter implements IVisualRenderer {
+  public readonly id = 'three-grid-visual-adapter';
   private static instance: ThreeGridVisualAdapter | null = null;
 
   private container: HTMLElement | null = null;

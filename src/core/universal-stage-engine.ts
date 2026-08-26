@@ -7,6 +7,7 @@
  */
 
 import type { IYamlAlgorithmModel } from './interfaces';
+import { AlgorithmStrategyRegistry } from './strategies';
 
 export interface UniversalTreeNode {
   id: string;
@@ -2325,6 +2326,18 @@ export class UniversalStageEngine {
     anchorMap?: Record<string, number>,
     variant: string = 'terminal'
   ): UniversalStep[] {
+    // 🌟 策略模式优先派发 (Strategy Pattern Pipeline)
+    const delegated = AlgorithmStrategyRegistry.tryGenerate(model, {
+      stage: isMemo ? 2 : 1,
+      m: mVal,
+      n: nVal,
+      direction,
+      isMemo,
+      stageVariant: variant,
+      anchorMap
+    });
+    if (delegated) return delegated;
+
     // 1D 模型特化派发
     if (model.id === 'fibonacci' || model.id === 'climb-stairs') {
       return UniversalStageEngine.generate1DStage1or2Steps(model, Math.max(mVal, nVal), isMemo, anchorMap);
@@ -3744,6 +3757,17 @@ export class UniversalStageEngine {
     direction: 'forward' | 'reverse' = 'forward',
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
+    // 🌟 策略模式优先派发 (Strategy Pattern Pipeline)
+    const delegated = AlgorithmStrategyRegistry.tryGenerate(model, {
+      stage: 3,
+      m: mVal,
+      n: nVal,
+      direction,
+      isMemo: false,
+      anchorMap
+    });
+    if (delegated) return delegated;
+
     // 1D 模型特化派发
     if (model.id === 'fibonacci' || model.id === 'climb-stairs') {
       return UniversalStageEngine.generate1DStage3Steps(model, Math.max(mVal, nVal), anchorMap);
@@ -5089,6 +5113,18 @@ export class UniversalStageEngine {
     variant: 'if' | 'for' = 'if',
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
+    // 🌟 策略模式优先派发 (Strategy Pattern Pipeline)
+    const delegated = AlgorithmStrategyRegistry.tryGenerate(model, {
+      stage: 4,
+      m: mVal,
+      n: nVal,
+      direction,
+      isMemo: false,
+      stageVariant: variant,
+      anchorMap
+    });
+    if (delegated) return delegated;
+
     // 1D 模型特化派发
     if (model.id === 'fibonacci' || model.id === 'climb-stairs') {
       return UniversalStageEngine.generate1DStage4Steps(model, Math.max(mVal, nVal), anchorMap);
