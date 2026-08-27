@@ -16,12 +16,33 @@ export interface PlaybackTimelineOptions {
   initialStep?: number;
 }
 
+import { eventHub } from './controllers/visualizer-event-hub';
+import {
+  PlaybackCommandInvoker,
+  StepForwardCommand,
+  StepBackwardCommand,
+  JumpToStepCommand,
+  ResetTimelineCommand,
+  IPlaybackReceiver
+} from './controllers/playback-commands';
+
 export class PlaybackTimelineController {
   private currentStep = 0;
   private isPlaying = false;
   private timer: any = null;
   private speed = 900;
   private options: PlaybackTimelineOptions;
+  private commandInvoker = new PlaybackCommandInvoker();
+
+  private receiver: IPlaybackReceiver = {
+    getCurrentStep: () => this.currentStep,
+    getTotalSteps: () => this.options.getTotalSteps(),
+    setStep: (step: number) => {
+      this.currentStep = step;
+      this.options.onStep(step);
+    },
+    getStepData: (idx: number) => ({ index: idx })
+  };
 
   constructor(options: PlaybackTimelineOptions) {
     this.options = options;
@@ -56,6 +77,7 @@ export class PlaybackTimelineController {
   public setSpeed(speedMs: number): void {
     const validSpeed = Math.max(100, Math.min(3000, speedMs));
     this.speed = validSpeed;
+    eventHub.emit('playback:speed', { speed: validSpeed });
     if (this.isPlaying) {
       this.pause();
       this.play();
@@ -83,6 +105,11 @@ export class PlaybackTimelineController {
       if (this.currentStep < currentTotal - 1) {
         this.currentStep++;
         this.options.onStep(this.currentStep);
+        eventHub.emit('step:change', {
+          currentStep: this.currentStep,
+          totalSteps: currentTotal,
+          stepData: { index: this.currentStep }
+        });
       } else {
         this.pause();
       }
@@ -115,44 +142,52 @@ export class PlaybackTimelineController {
   }
 
   /**
-   * 单步前进
+   * 单步前进 - 基于命令模式 (StepForwardCommand)
    */
   public stepForward(): void {
     this.pause();
-    const total = this.options.getTotalSteps();
-    if (this.currentStep < total - 1) {
-      this.currentStep++;
-      this.options.onStep(this.currentStep);
-    }
+    this.commandInvoker.executeCommand(new StepForwardCommand(this.receiver));
   }
 
   /**
-   * 单步后退
+   * 单步后退 - 基于命令模式 (StepBackwardCommand)
    */
   public stepBackward(): void {
     this.pause();
-    if (this.currentStep > 0) {
-      this.currentStep--;
-      this.options.onStep(this.currentStep);
-    }
+    this.commandInvoker.executeCommand(new StepBackwardCommand(this.receiver));
   }
 
   /**
-   * 定位到指定步数
+   * 定位到指定步数 - 基于命令模式 (JumpToStepCommand)
    */
   public seek(targetIndex: number): void {
     const total = this.options.getTotalSteps();
     const clamped = Math.max(0, Math.min(Math.max(0, total - 1), targetIndex));
-    this.currentStep = clamped;
-    this.options.onStep(this.currentStep);
+    this.commandInvoker.executeCommand(new JumpToStepCommand(this.receiver, clamped));
   }
 
   /**
-   * 重置到初始步
+   * 重置到初始步 - 基于命令模式 (ResetTimelineCommand)
    */
   public reset(): void {
     this.pause();
-    this.seek(0);
+    this.commandInvoker.executeCommand(new ResetTimelineCommand(this.receiver));
+  }
+
+  /**
+   * 撤销上一步操作 (Undo Command)
+   */
+  public undo(): boolean {
+    this.pause();
+    return this.commandInvoker.undo();
+  }
+
+  /**
+   * 重做上一步撤销操作 (Redo Command)
+   */
+  public redo(): boolean {
+    this.pause();
+    return this.commandInvoker.redo();
   }
 
   /**
@@ -160,9 +195,13 @@ export class PlaybackTimelineController {
    */
   public destroy(): void {
     this.pause();
+    this.commandInvoker.clear();
   }
 
   private notifyStateChange(): void {
+    const total = this.options.getTotalSteps();
+    const isFinished = this.currentStep >= total - 1;
+    eventHub.emit('playback:state', { isPlaying: this.isPlaying, isFinished });
     if (this.options.onStateChange) {
       this.options.onStateChange(this.isPlaying);
     }

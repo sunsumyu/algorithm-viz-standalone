@@ -151,4 +151,22 @@ describe('VisualThemeManager (Deep Module)', () => {
     const wrapper = widgetBox.children[0];
     expect(wrapper.children.length).toBe(2); // btn + menu
   });
+
+  it('should return theme-specific voxel palettes for 2D/3D visual renderers', () => {
+    const manager = new VisualThemeManager();
+    const lightPalette = manager.getCurrentVoxelPalette();
+    expect(lightPalette.themeId).toBe('leetcode-light');
+    expect(lightPalette.isDark).toBe(false);
+    expect(lightPalette.cellCurBorder).toBe('#0284c7');
+
+    manager.setTheme('dark-cyberpunk');
+    const cyberPalette = manager.getCurrentVoxelPalette();
+    expect(cyberPalette.themeId).toBe('dark-cyberpunk');
+    expect(cyberPalette.isDark).toBe(true);
+    expect(cyberPalette.cellCurBorder).toBe('#00f0ff');
+
+    const retroPalette = VisualThemeManager.getVoxelPalette('retro-arcade');
+    expect(retroPalette.themeId).toBe('retro-arcade');
+    expect(retroPalette.isDark).toBe(true);
+  });
 });

@@ -1,7 +1,7 @@
 /**
  * 算法模型仓储深度模块 (AlgorithmModelRepository Deep Module)
  * 遵循深度模块原则：通过极其紧凑简洁的外部接口，隐藏所有底层 YAML 解析、
- * 静态模型索引、语法高亮编译与变体锚点索引。
+ * 静态模型索引、语法高亮编译、变体锚点索引与不可变阶段缓存。
  */
 
 import type { IYamlAlgorithmModel } from './interfaces';
@@ -38,6 +38,9 @@ export class AlgorithmModelRepository {
     ['partition-subset', partitionEqualSubsetSumModel as IYamlAlgorithmModel],
   ]);
 
+  // 不可变阶段编译缓存表
+  private static stageCache = new Map<string, CompiledStageViewConfig>();
+
   /**
    * 注册算法模型
    */
@@ -46,6 +49,12 @@ export class AlgorithmModelRepository {
       throw new Error('[AlgorithmModelRepository] 注册参数无效');
     }
     this.registry.set(id, model);
+    // 清除该模型相关的编译缓存
+    for (const key of this.stageCache.keys()) {
+      if (key.startsWith(`${id}:`)) {
+        this.stageCache.delete(key);
+      }
+    }
   }
 
   /**
@@ -74,15 +83,46 @@ export class AlgorithmModelRepository {
   }
 
   /**
-   * 获取指定阶段与方向的已编译视图与代码高亮配置
+   * 获取指定阶段与方向的已编译视图与代码高亮配置 (带 O(1) 瞬时缓存加速)
    */
   public static getCompiledStage(
     id: string,
     stageKey: string,
     direction: 'forward' | 'reverse' = 'forward'
   ): CompiledStageViewConfig {
+    const cacheKey = `${id}:${stageKey}:${direction}`;
+    const cached = this.stageCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const model = this.getModel(id);
-    return YamlModelLoader.getCompiledStageConfig(model, stageKey, direction);
+    const compiled = YamlModelLoader.getCompiledStageConfig(model, stageKey, direction);
+    this.stageCache.set(cacheKey, compiled);
+    return compiled;
+  }
+
+  /**
+   * 预热编译所有已注册模型的全部阶段，实现零延迟运行时切换
+   */
+  public static warmup(targetModelId?: string): void {
+    const ids = targetModelId ? [targetModelId] : this.getAllIds();
+    for (const id of ids) {
+      const model = this.registry.get(id);
+      if (!model || !model.stages) continue;
+      const stageKeys = Object.keys(model.stages);
+      for (const stageKey of stageKeys) {
+        this.getCompiledStage(id, stageKey, 'forward');
+        this.getCompiledStage(id, stageKey, 'reverse');
+      }
+    }
+  }
+
+  /**
+   * 清除编译缓存
+   */
+  public static clearCache(): void {
+    this.stageCache.clear();
   }
 
   /**

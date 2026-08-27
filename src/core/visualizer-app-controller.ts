@@ -15,6 +15,7 @@ import { PlaybackTimelineController } from './playback-timeline-controller';
 import { VisualThemeManager } from './theme/visual-theme-manager';
 import { SplitterEngine } from './splitter-engine';
 import { highlightTokens } from './code-highlighter';
+import { StageViewPresenter } from './renderers/stage-view-presenter';
 import type { IYamlAlgorithmModel } from './interfaces';
 
 export type VisualizerMode = 'lite' | 'full';
@@ -387,18 +388,6 @@ export class VisualizerAppController {
     this.syncStateToHash(index);
   }
 
-  private syncStateToHash(stepIndex?: number): void {
-    const cur = stepIndex !== undefined ? stepIndex : (this.timeline ? this.timeline.getCurrentStep() : 0);
-    VisualizerStateRouter.updateHash({
-      stage: this.currentStage,
-      dir: this.currentDirection,
-      variant: this.currentStageVariant,
-      m: this.m,
-      n: this.n,
-      step: cur,
-      theme: this.themeManager.getCurrentThemeId()
-    });
-  }
 
   /**
    * 销毁控制器
@@ -540,39 +529,24 @@ export class VisualizerAppController {
       });
     }
 
-    // 卡片 2 状态展示 (一维槽位 / 递归树 / 转移等式)
+    // 卡片 2 状态展示 (委托 StageViewPresenter 策略调度器)
     const memoContainer = document.getElementById('memo-array-container') || document.getElementById('memo-slots-container');
     if (memoContainer) {
-      if (this.currentStage === 'stage-4') {
-        GridVisualAdapter.renderLiteMemoSlots(memoContainer, step, this.n);
-      } else if (this.currentStage === 'stage-3') {
-        if (this.stage3SubView === 'tree') {
-          RecursionTreeAdapter.renderRecursionTree(memoContainer, step.treeRoot, step.activeNodeId, true);
-        } else {
-          GridVisualAdapter.renderStage3DPTable(memoContainer, step, { m: this.m, n: this.n, isReverse });
-        }
-      } else if (this.currentStage === 'stage-1' || this.currentStage === 'stage-2') {
-        RecursionTreeAdapter.renderRecursionTree(memoContainer, step.treeRoot, step.activeNodeId, this.currentStage === 'stage-2');
-      }
+      StageViewPresenter.presentStageCard2(memoContainer, {
+        currentStage: this.currentStage,
+        stage3SubView: this.stage3SubView,
+        step,
+        m: this.m,
+        n: this.n,
+        isReverse
+      });
     }
 
-    // 执行日志渲染
+    // 执行日志渲染 (委托 StageViewPresenter)
     const logContainer = document.getElementById('log-container');
     if (logContainer) {
-      logContainer.innerHTML = '';
-      for (let k = 0; k <= index; k++) {
-        const logStep = this.steps[k];
-        const isLatest = k === index;
-        const lineEl = document.createElement('div');
-        lineEl.className = isLatest 
-          ? 'text-blue-700 font-bold bg-blue-50/80 px-2 py-1 rounded border-l-2 border-blue-500' 
-          : 'text-slate-600 px-2 py-0.5';
-        lineEl.textContent = logStep.log || logStep.msg || '';
-        logContainer.appendChild(lineEl);
-      }
-      logContainer.scrollTop = logContainer.scrollHeight;
       const logCountEl = document.getElementById('log-count');
-      if (logCountEl) logCountEl.textContent = `${index + 1} / ${this.steps.length} 记录`;
+      StageViewPresenter.renderStepLogStream(logContainer, this.steps, index, logCountEl);
     }
   }
 

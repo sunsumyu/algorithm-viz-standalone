@@ -1,6 +1,7 @@
 import { AlgorithmStrategyRegistry } from './algorithm-strategy-registry';
 import { GridUniquePathsStrategy } from './grid-unique-paths-strategy';
 import { KnapsackPartitionSubsetStrategy } from './knapsack-partition-subset-strategy';
+import { KnapsackStepMatrixCompiler } from './knapsack-step-matrix-compiler';
 import { SequenceDistinctSubsequencesStrategy } from './sequence-distinct-subsequences-strategy';
 import { SequenceEditDistanceStrategy } from './sequence-edit-distance-strategy';
 import { SequenceDeleteDistanceStrategy } from './sequence-delete-distance-strategy';
@@ -12,6 +13,7 @@ export function registerBuiltinStrategies(): void {
   // Grid DP
   AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('unique-paths'));
   AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('unique-paths-ii'));
+  AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('min-path-sum'));
 
   // Knapsack DP
   AlgorithmStrategyRegistry.register(new KnapsackPartitionSubsetStrategy());
@@ -34,6 +36,7 @@ export {
   AlgorithmStrategyRegistry,
   GridUniquePathsStrategy,
   KnapsackPartitionSubsetStrategy,
+  KnapsackStepMatrixCompiler,
   SequenceDistinctSubsequencesStrategy,
   SequenceEditDistanceStrategy,
   SequenceDeleteDistanceStrategy,
@@ -42,4 +45,5 @@ export {
   Linear1DStrategy
 };
 
+export * from './strategy-helpers';
 export type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';

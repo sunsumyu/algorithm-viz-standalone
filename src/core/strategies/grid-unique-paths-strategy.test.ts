@@ -8,21 +8,39 @@ describe('GridUniquePathsStrategy (不同路径独立策略模块)', () => {
 
   const modelUP: IYamlAlgorithmModel = {
     id: 'unique-paths',
-    title: '不同路径',
+    name: '不同路径',
     category: 'dynamic-programming',
     difficulty: 'medium',
     description: '不同路径测试',
-    stages: [],
+    directions: {
+      forward: {} as any,
+      reverse: {} as any
+    },
+    stages: {
+      'stage-1': {} as any,
+      'stage-2': {} as any,
+      'stage-3': {} as any,
+      'stage-4': {} as any
+    },
     defaultParams: { m: 3, n: 3 }
   };
 
   const modelUPII: IYamlAlgorithmModel = {
     id: 'unique-paths-ii',
-    title: '不同路径 II',
+    name: '不同路径 II',
     category: 'dynamic-programming',
     difficulty: 'medium',
     description: '不同路径 II 测试',
-    stages: [],
+    directions: {
+      forward: {} as any,
+      reverse: {} as any
+    },
+    stages: {
+      'stage-1': {} as any,
+      'stage-2': {} as any,
+      'stage-3': {} as any,
+      'stage-4': {} as any
+    },
     defaultParams: {
       m: 3,
       n: 3,

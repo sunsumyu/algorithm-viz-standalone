@@ -17,6 +17,31 @@ export interface VisualTheme {
   variables: Record<string, string>;
 }
 
+export interface VoxelThemePalette {
+  themeId: string;
+  isDark: boolean;
+  cellEmptyBg: [string, string];
+  cellEmptyBorder: string;
+  cellEmptyText: string;
+  cellCurBg: [string, string];
+  cellCurBorder: string;
+  cellCurText: string;
+  cellTopBg: [string, string];
+  cellTopBorder: string;
+  cellTopText: string;
+  cellLeftBg: [string, string];
+  cellLeftBorder: string;
+  cellLeftText: string;
+  cellDoneBg: [string, string];
+  cellDoneBorder: string;
+  cellDoneText: string;
+  cellObstacleBg: [string, string];
+  cellObstacleBorder: string;
+  cellObstacleText: string;
+  coordColor: string;
+  valColor: string;
+}
+
 export const THEME_PRESETS: Record<string, VisualTheme> = {
   'leetcode-light': {
     id: 'leetcode-light',
@@ -182,3 +207,115 @@ export const THEME_PRESETS: Record<string, VisualTheme> = {
     }
   }
 };
+
+/**
+ * 提取指定主题对应的 3D 体素画布调色板
+ */
+export function getVoxelPaletteForTheme(theme: VisualTheme): VoxelThemePalette {
+  if (theme.id === 'dark-cyberpunk') {
+    return {
+      themeId: theme.id,
+      isDark: true,
+      cellEmptyBg: ['#0f172a', '#1e293b'],
+      cellEmptyBorder: '#334155',
+      cellEmptyText: '#64748b',
+      cellCurBg: ['#083344', '#0e7490'],
+      cellCurBorder: '#00f0ff',
+      cellCurText: '#00f0ff',
+      cellTopBg: ['#3b0764', '#701a75'],
+      cellTopBorder: '#d946ef',
+      cellTopText: '#f0abfc',
+      cellLeftBg: ['#451a03', '#78350f'],
+      cellLeftBorder: '#facc15',
+      cellLeftText: '#fef08a',
+      cellDoneBg: ['#022c22', '#064e3b'],
+      cellDoneBorder: '#10b981',
+      cellDoneText: '#6ee7b7',
+      cellObstacleBg: ['#1e293b', '#0f172a'],
+      cellObstacleBorder: '#475569',
+      cellObstacleText: '#94a3b8',
+      coordColor: '#94a3b8',
+      valColor: '#f1f5f9'
+    };
+  }
+
+  if (theme.id === 'academic-paper') {
+    return {
+      themeId: theme.id,
+      isDark: false,
+      cellEmptyBg: ['#ffffff', '#f4f4f5'],
+      cellEmptyBorder: '#d4d4d8',
+      cellEmptyText: '#a1a1aa',
+      cellCurBg: ['#27272a', '#18181b'],
+      cellCurBorder: '#09090b',
+      cellCurText: '#ffffff',
+      cellTopBg: ['#f4f4f5', '#e4e4e7'],
+      cellTopBorder: '#71717a',
+      cellTopText: '#18181b',
+      cellLeftBg: ['#f4f4f5', '#e4e4e7'],
+      cellLeftBorder: '#71717a',
+      cellLeftText: '#18181b',
+      cellDoneBg: ['#f4f4f5', '#f4f4f5'],
+      cellDoneBorder: '#a1a1aa',
+      cellDoneText: '#27272a',
+      cellObstacleBg: ['#e4e4e7', '#d4d4d8'],
+      cellObstacleBorder: '#a1a1aa',
+      cellObstacleText: '#71717a',
+      coordColor: '#71717a',
+      valColor: '#18181b'
+    };
+  }
+
+  if (theme.id === 'retro-arcade') {
+    return {
+      themeId: theme.id,
+      isDark: true,
+      cellEmptyBg: ['#1e1238', '#28174a'],
+      cellEmptyBorder: '#4c2882',
+      cellEmptyText: '#7e57c2',
+      cellCurBg: ['#c2410c', '#ea580c'],
+      cellCurBorder: '#fdba74',
+      cellCurText: '#ffffff',
+      cellTopBg: ['#581c87', '#7e22ce'],
+      cellTopBorder: '#c084fc',
+      cellTopText: '#faf5ff',
+      cellLeftBg: ['#713f12', '#a16207'],
+      cellLeftBorder: '#fde047',
+      cellLeftText: '#ffffff',
+      cellDoneBg: ['#064e3b', '#047857'],
+      cellDoneBorder: '#6ee7b7',
+      cellDoneText: '#ffffff',
+      cellObstacleBg: ['#3b206e', '#28174a'],
+      cellObstacleBorder: '#6b21a8',
+      cellObstacleText: '#c084fc',
+      coordColor: '#c084fc',
+      valColor: '#ffedd5'
+    };
+  }
+
+  // 默认经典 Light 调色板
+  return {
+    themeId: 'leetcode-light',
+    isDark: false,
+    cellEmptyBg: ['#ffffff', '#f8fafc'],
+    cellEmptyBorder: '#e2e8f0',
+    cellEmptyText: '#94a3b8',
+    cellCurBg: ['#e0f2fe', '#bae6fd'],
+    cellCurBorder: '#0284c7',
+    cellCurText: '#0c4a6e',
+    cellTopBg: ['#faf5ff', '#f3e8ff'],
+    cellTopBorder: '#9333ea',
+    cellTopText: '#581c87',
+    cellLeftBg: ['#fffbeb', '#fef3c7'],
+    cellLeftBorder: '#d97706',
+    cellLeftText: '#78350f',
+    cellDoneBg: ['#ffffff', '#f1f5f9'],
+    cellDoneBorder: '#64748b',
+    cellDoneText: '#0f172a',
+    cellObstacleBg: ['#cbd5e1', '#94a3b8'],
+    cellObstacleBorder: '#334155',
+    cellObstacleText: '#ffffff',
+    coordColor: '#64748b',
+    valColor: '#0f172a'
+  };
+}

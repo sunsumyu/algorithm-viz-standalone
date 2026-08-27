@@ -9,7 +9,7 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
 export class GridUniquePathsStrategy implements IAlgorithmStrategy {
   public readonly modelId: string;
 
-  constructor(modelId: 'unique-paths' | 'unique-paths-ii' = 'unique-paths') {
+  constructor(modelId: 'unique-paths' | 'unique-paths-ii' | 'min-path-sum' = 'unique-paths') {
     this.modelId = modelId;
   }
 
@@ -52,6 +52,7 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
 
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
     const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
+    const isMinPath = model.id === 'min-path-sum' || Boolean(weightsGrid);
 
     const isForward = direction === 'forward';
     const isTerminal = variant === 'terminal';
@@ -142,8 +143,9 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
       // 越界拦截判断 (Terminal Variant)
       if (isTerminal) {
         if (isOutOfBounds(r, c)) {
+          const oobVal = isMinPath ? Infinity : 0;
           currentTreeNode.status = 'pruned';
-          currentTreeNode.tag = '⛔越界=0';
+          currentTreeNode.tag = isMinPath ? '⛔越界=∞' : '⛔越界=0';
 
           const outOfBoundsDir = r >= mVal ? 'river' : (c >= nVal ? 'right-wall' : (r < 0 ? 'top-wall' : 'left-wall'));
 
@@ -164,8 +166,8 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
             visited: [...visitedCells],
             line: lineOutOfBounds,
             tag: '🌊 越界落水/撞墙拦截',
-            log: `| 🌊 【越界触水拦截】dfs(i=${r}, j=${c}) 跳入边界深水河流！水花四溅并立即弹回，return 0`,
-            msg: `🌊 <strong>【越界触水拦截】</strong>探险家跳出边界 (i = ${r}, j = ${c}) 跌入深水，被立即拦截阻断并弹回起点！return <strong>0</strong>。`,
+            log: `| 🌊 【越界触水拦截】dfs(i=${r}, j=${c}) 跳入边界深水河流！水花四溅并立即弹回，return ${isMinPath ? '∞' : '0'}`,
+            msg: `🌊 <strong>【越界触水拦截】</strong>探险家跳出边界 (i = ${r}, j = ${c}) 跌入深水，被立即拦截阻断并弹回起点！return <strong>${isMinPath ? '∞' : '0'}</strong>。`,
             topI: -1,
             topJ: -1,
             leftI: -1,
@@ -175,7 +177,7 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
             treeRoot: UniversalStageEngine.cloneTree(rootNode)
           });
           activeStack.pop();
-          return 0;
+          return oobVal;
         }
 
         // 障碍物阻断
@@ -213,7 +215,7 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
         }
 
         if (isTarget(r, c)) {
-          const targetVal = 1;
+          const targetVal = isMinPath ? (weightsGrid ? weightsGrid[r][c] : 1) : 1;
           gridState[r][c] = targetVal;
           currentTreeNode.status = 'base';
           currentTreeNode.tag = `= ${targetVal}`;
@@ -232,8 +234,8 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
             visited: [...visitedCells],
             line: lineBoundary,
             tag: '🎯 到达目标终点',
-            log: `| 🎯 探险家成功到达目标终点 (${r}, ${c})！发现 1 条完整可行路径，return 1`,
-            msg: `🎯 <strong>【成功触达目标终点】</strong>探险家成功到达目标终点 (${r}, ${c})，记录 1 条通畅路径！return <strong>1</strong>。`,
+            log: `| 🎯 探险家成功到达目标终点 (${r}, ${c})！${isMinPath ? `权重代价为 ${targetVal}` : '发现 1 条完整可行路径'}，return ${targetVal}`,
+            msg: `🎯 <strong>【成功触达目标终点】</strong>探险家成功到达目标终点 (${r}, ${c})，${isMinPath ? `自身权重大小时为 <code>${targetVal}</code>` : '记录 1 条通畅路径'}！return <strong>${targetVal}</strong>。`,
             topI: -1,
             topJ: -1,
             leftI: -1,
@@ -432,7 +434,8 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
       const res2 = dfs(next2R, next2C, child2Node, r, c);
 
       // 合并分支结果
-      const combined = res1 + res2;
+      const cellWeight = isMinPath ? (weightsGrid ? (weightsGrid[r]?.[c] ?? 0) : 0) : 0;
+      const combined = isMinPath ? (Math.min(res1, res2) + cellWeight) : (res1 + res2);
       gridState[r][c] = combined;
       currentTreeNode.status = 'visited';
       currentTreeNode.tag = `= ${combined}`;
@@ -447,16 +450,20 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
         j: c,
         fromI: fromR,
         fromJ: fromC,
-        highlightText: isForward ? 'down + right' : 'left + up',
+        highlightText: isForward ? (isMinPath ? 'min(down, right) + weight' : 'down + right') : (isMinPath ? 'min(left, up) + weight' : 'left + up'),
         obstacleGrid,
         weightsGrid,
         grid: JSON.parse(JSON.stringify(gridState)),
         activeStack: [...activeStack],
         visited: [...visitedCells],
         line: lineCombine,
-        tag: `合并子分支: ${combined}`,
-        log: `| ✨ 汇总分支结果：dfs(${r}, ${c}) = (${res1} + ${res2}) = ${combined}${isMemo ? ' [写入备忘录]' : ''}`,
-        msg: `✨ 汇总子分支：<code>dfs(${r}, ${c}) = ${res1} + ${res2} = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`,
+        tag: isMinPath ? `最小路径和: ${combined}` : `合并子分支: ${combined}`,
+        log: isMinPath
+          ? `| ✨ 汇总分支结果：dfs(${r}, ${c}) = min(${res1}, ${res2}) + ${cellWeight} = ${combined}${isMemo ? ' [写入备忘录]' : ''}`
+          : `| ✨ 汇总分支结果：dfs(${r}, ${c}) = (${res1} + ${res2}) = ${combined}${isMemo ? ' [写入备忘录]' : ''}`,
+        msg: isMinPath
+          ? `✨ 汇总子分支：<code>dfs(${r}, ${c}) = min(${res1}, ${res2}) + ${cellWeight} = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`
+          : `✨ 汇总子分支：<code>dfs(${r}, ${c}) = ${res1} + ${res2} = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`,
         topI: isForward ? r + 1 : r - 1,
         topJ: c,
         leftI: r,
@@ -483,8 +490,10 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
       visited: [...visitedCells],
       line: lineReturn,
       tag: '最终推演答案',
-      log: `| 🏆 演化计算完成！最终路径数: uniquePaths(${mVal}, ${nVal}) = ${total}`,
-      msg: `🏆 演化推导全部完成！从起点到终点的总路径数: <strong>${total}</strong>。`,
+      log: isMinPath
+        ? `| 🏆 演化计算完成！最终最小路径和: minPathSum(${mVal}, ${nVal}) = ${total}`
+        : `| 🏆 演化计算完成！最终路径数: uniquePaths(${mVal}, ${nVal}) = ${total}`,
+      msg: `🏆 演化推导全部完成！${isMinPath ? '从起点到终点的最小路径和为' : '从起点到终点的总路径数'}: <strong>${total}</strong>。`,
       topI: -1,
       topJ: -1,
       leftI: -1,
@@ -509,6 +518,8 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
     const isForward = direction === 'forward';
     const isUniquePathsII = model.id === 'unique-paths-ii';
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
+    const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
+    const isMinPath = model.id === 'min-path-sum' || Boolean(weightsGrid);
 
     const lineInit = anchorMap?.init || (isUniquePathsII ? 4 : (isForward ? 4 : 4));
     const lineInitVal = anchorMap?.init_val || anchorMap?.init_row || (isUniquePathsII ? 7 : (isForward ? 6 : 6));
@@ -526,13 +537,72 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
       i: isForward ? 0 : mVal - 1,
       j: isForward ? 0 : nVal - 1,
       obstacleGrid,
+      weightsGrid,
       grid: JSON.parse(JSON.stringify(dp)),
       tag: '初始化 DP 表格',
       log: `| 📦 创建大小为 ${mVal}×${nVal} 的 DP 表格矩阵`,
       msg: `创建大小为 <code>${mVal} × ${nVal}</code> 的二维 DP 状态表格，初始值全为 0。`
     });
 
-    if (isForward) {
+    if (isMinPath && weightsGrid) {
+      if (isForward) {
+        for (let r = 0; r < mVal; r++) {
+          for (let c = 0; c < nVal; c++) {
+            if (r === 0 && c === 0) {
+              dp[0][0] = weightsGrid[0][0];
+            } else {
+              const topVal = r > 0 ? (dp[r - 1][c] ?? Infinity) : Infinity;
+              const leftVal = c > 0 ? (dp[r][c - 1] ?? Infinity) : Infinity;
+              dp[r][c] = Math.min(topVal, leftVal) + weightsGrid[r][c];
+            }
+            steps.push({
+              type: 'transfer',
+              line: lineTransfer,
+              i: r,
+              j: c,
+              topI: r > 0 ? r - 1 : -1,
+              topJ: r > 0 ? c : -1,
+              leftI: c > 0 ? r : -1,
+              leftJ: c > 0 ? c - 1 : -1,
+              gridHighlight: { i: r, j: c },
+              weightsGrid,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: `dp[${r}][${c}] = ${dp[r][c]}`,
+              log: `| 🔄 状态转移: dp[${r}][${c}] = ${dp[r][c]}`,
+              msg: `状态转移：<code>dp[${r}][${c}] = <strong>${dp[r][c]}</strong></code>。`
+            });
+          }
+        }
+      } else {
+        for (let r = mVal - 1; r >= 0; r--) {
+          for (let c = nVal - 1; c >= 0; c--) {
+            if (r === mVal - 1 && c === nVal - 1) {
+              dp[r][c] = weightsGrid[r][c];
+            } else {
+              const downVal = r < mVal - 1 ? (dp[r + 1][c] ?? Infinity) : Infinity;
+              const rightVal = c < nVal - 1 ? (dp[r][c + 1] ?? Infinity) : Infinity;
+              dp[r][c] = Math.min(downVal, rightVal) + weightsGrid[r][c];
+            }
+            steps.push({
+              type: 'transfer',
+              line: lineTransfer,
+              i: r,
+              j: c,
+              topI: r < mVal - 1 ? r + 1 : -1,
+              topJ: r < mVal - 1 ? c : -1,
+              leftI: c < nVal - 1 ? r : -1,
+              leftJ: c < nVal - 1 ? c + 1 : -1,
+              gridHighlight: { i: r, j: c },
+              weightsGrid,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: `逆推 dp[${r}][${c}] = ${dp[r][c]}`,
+              log: `| 🔄 逆推状态转移: dp[${r}][${c}] = ${dp[r][c]}`,
+              msg: `逆推状态转移：<code>dp[${r}][${c}] = <strong>${dp[r][c]}</strong></code>。`
+            });
+          }
+        }
+      }
+    } else if (isForward) {
       // 顺推二维 DP
       for (let r = 0; r < mVal; r++) {
         for (let c = 0; c < nVal; c++) {
@@ -569,8 +639,8 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
               msg: `🎬 起点 (0, 0) 无障碍，初始化路径数为 1。`
             });
           } else {
-            const topVal = (r > 0) ? dp[r - 1][c] : 0;
-            const leftVal = (c > 0) ? dp[r][c - 1] : 0;
+            const topVal = (r > 0) ? (dp[r - 1][c] ?? 0) : 0;
+            const leftVal = (c > 0) ? (dp[r][c - 1] ?? 0) : 0;
             const sum = topVal + leftVal;
 
             if (lineCalcTop !== undefined) {
@@ -675,8 +745,8 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
               msg: `🎬 终点 (${mVal - 1}, ${nVal - 1}) 无障碍，初始化路径数为 1。`
             });
           } else {
-            const downVal = (r + 1 < mVal) ? dp[r + 1][c] : 0;
-            const rightVal = (c + 1 < nVal) ? dp[r][c + 1] : 0;
+            const downVal = (r + 1 < mVal) ? (dp[r + 1][c] ?? 0) : 0;
+            const rightVal = (c + 1 < nVal) ? (dp[r][c + 1] ?? 0) : 0;
             const sum = downVal + rightVal;
 
             if (lineCalcDown !== undefined) {
@@ -782,6 +852,8 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
     const isForward = direction === 'forward';
     const isUniquePathsII = model.id === 'unique-paths-ii';
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
+    const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
+    const isMinPath = model.id === 'min-path-sum' || Boolean(weightsGrid);
 
     const lineInit = anchorMap?.init || (variant === 'if' ? 4 : 4);
     const lineInitVal = anchorMap?.init_val || anchorMap?.init_row || 8;
@@ -803,6 +875,7 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
       steps.push({
         ...params,
         obstacleGrid,
+        weightsGrid,
         grid: JSON.parse(JSON.stringify(gridState)),
         memo: [...memo],
         memoSnapshot: [...memo]
@@ -822,7 +895,133 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
       msg: `创建长度为 <code>${nVal}</code> 的一维滚动状态数组 <code>memo</code>，初始值全为 0。`
     });
 
-    if (isUniquePathsII && obstacleGrid) {
+    if (isMinPath && weightsGrid) {
+      if (isForward) {
+        memo[0] = weightsGrid[0][0];
+        pushStep({
+          type: 'init-slot',
+          line: lineInitVal,
+          i: 0,
+          j: 0,
+          activeSlot: 0,
+          slotMode: 'updated',
+          memoj: memo[0],
+          tag: `起点初始化 memo[0]=${memo[0]}`,
+          log: `| 🎬 起点初始化 memo[0] = ${memo[0]}`,
+          msg: `起点初始化 <code>memo[0] = ${memo[0]}</code>。`
+        });
+
+        for (let j = 1; j < nVal; j++) {
+          memo[j] = memo[j - 1] + weightsGrid[0][j];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i: 0,
+            j,
+            activeSlot: j,
+            slotMode: 'updated',
+            memoj: memo[j],
+            tag: `首行累加 memo[${j}]=${memo[j]}`,
+            log: `| 🎬 首行 memo[${j}] = ${memo[j]}`,
+            msg: `首行累加 <code>memo[${j}] = ${memo[j]}</code>。`
+          });
+        }
+
+        for (let i = 1; i < mVal; i++) {
+          memo[0] += weightsGrid[i][0];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i,
+            j: 0,
+            activeSlot: 0,
+            slotMode: 'updated',
+            memoj: memo[0],
+            tag: `首列累加 memo[0]=${memo[0]}`,
+            log: `| 🎬 首列 memo[0] = ${memo[0]}`,
+            msg: `首列累加 <code>memo[0] = ${memo[0]}</code>。`
+          });
+
+          for (let j = 1; j < nVal; j++) {
+            memo[j] = Math.min(memo[j], memo[j - 1]) + weightsGrid[i][j];
+            pushStep({
+              type: 'accumulate',
+              line: lineAccumulate,
+              i,
+              j,
+              activeSlot: j,
+              slotMode: 'updated',
+              memoj: memo[j],
+              tag: `memo[${j}] = ${memo[j]}`,
+              log: `| ✨ 滚动更新 memo[${j}] = ${memo[j]}`,
+              msg: `一维状态覆盖：<code>memo[${j}] = <strong>${memo[j]}</strong></code>。`
+            });
+          }
+        }
+      } else {
+        memo[nVal - 1] = weightsGrid[mVal - 1][nVal - 1];
+        pushStep({
+          type: 'init-slot',
+          line: lineInitVal,
+          i: mVal - 1,
+          j: nVal - 1,
+          activeSlot: nVal - 1,
+          slotMode: 'updated',
+          memoj: memo[nVal - 1],
+          tag: `终点初始化 memo[${nVal - 1}]=${memo[nVal - 1]}`,
+          log: `| 🎬 逆推终点 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+          msg: `逆推终点初始化 <code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
+        });
+
+        for (let j = nVal - 2; j >= 0; j--) {
+          memo[j] = memo[j + 1] + weightsGrid[mVal - 1][j];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i: mVal - 1,
+            j,
+            activeSlot: j,
+            slotMode: 'updated',
+            memoj: memo[j],
+            tag: `最末行累加 memo[${j}]=${memo[j]}`,
+            log: `| 🎬 最末行 memo[${j}] = ${memo[j]}`,
+            msg: `最末行累加 <code>memo[${j}] = ${memo[j]}</code>。`
+          });
+        }
+
+        for (let i = mVal - 2; i >= 0; i--) {
+          memo[nVal - 1] += weightsGrid[i][nVal - 1];
+          pushStep({
+            type: 'init-slot',
+            line: lineInitVal,
+            i,
+            j: nVal - 1,
+            activeSlot: nVal - 1,
+            slotMode: 'updated',
+            memoj: memo[nVal - 1],
+            tag: `最右列累加 memo[${nVal - 1}]=${memo[nVal - 1]}`,
+            log: `| 🎬 最右列 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+            msg: `最右列累加 <code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
+          });
+
+          for (let j = nVal - 2; j >= 0; j--) {
+            memo[j] = Math.min(memo[j], memo[j + 1]) + weightsGrid[i][j];
+            pushStep({
+              type: 'accumulate',
+              line: lineAccumulate,
+              i,
+              j,
+              activeSlot: j,
+              slotMode: 'updated',
+              memoj: memo[j],
+              tag: `逆推 memo[${j}] = ${memo[j]}`,
+              log: `| ✨ 逆推滚动更新 memo[${j}] = ${memo[j]}`,
+              msg: `逆推一维状态覆盖：<code>memo[${j}] = <strong>${memo[j]}</strong></code>。`
+            });
+          }
+        }
+      }
+    } else if (isUniquePathsII && obstacleGrid) {
       if (isForward) {
         memo[0] = (obstacleGrid[0][0] === 0) ? 1 : 0;
         pushStep({

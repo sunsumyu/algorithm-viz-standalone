@@ -82,15 +82,16 @@ export type HighlightTarget =
   | Record<string, SingleLangHighlightTarget>
   | { anchor: string };
 
+import { CodePresentationModel } from './code-presentation-model';
+import { ProblemAnalysisViewer } from './problem-analysis-viewer';
+
 /**
  * 代码面板类 — 支持多语言 Tab、逐行代码精解 HUD 与 核心要点讲解视图
  */
 export class CodePanel {
+  public codeModel: CodePresentationModel;
   private container: HTMLElement;
   private title: string;
-  private allLines: Record<string, string[]>;
-  private currentLang: string;
-  private langOrder: string[];
   private contentEl: HTMLElement | null = null;
   private lineElements: HTMLElement[] = [];
   private currentHighlight: Set<number> = new Set();
@@ -99,7 +100,6 @@ export class CodePanel {
   private tabContainer: HTMLElement | null = null;
   private algoKey?: string;
 
-  private lineExplanations?: Record<number, string> | Record<string, Record<number, string>>;
   private keyPoints?: KeyPointsData | string;
   private problemDetail?: ProblemDetail;
   private activeView: 'code' | 'walkthrough' | 'keypoints' | 'problem' = 'code';
@@ -122,31 +122,19 @@ export class CodePanel {
     ensureCodePanelStyles();
     this.container = container;
     this.title = options.title || '代码';
-    this.currentLang = options.language || 'java';
-    this.allLines = {};
-    this.lineExplanations = options.lineExplanations;
     this.keyPoints = options.keyPoints;
     this.problemDetail = options.problemDetail;
     this.scope = options.scope;
     this.algoKey = options.algoKey;
 
-    if (options.languages && Object.keys(options.languages).length > 0) {
-      // 注册并自动剥离 @step 锚点，编译为干净的代码行与行号索引
-      const key = this.algoKey || `panel_${Math.random().toString(36).slice(2, 9)}`;
-      this.algoKey = key;
-      const compiled = codeStepIndexer.register(key, options.languages);
-      this.allLines = { ...compiled.cleanCode };
-      this.langOrder = Object.keys(this.allLines);
-      if (!this.allLines[this.currentLang]) {
-        this.currentLang = this.langOrder[0];
-      }
-    } else {
-      const key = this.algoKey || `panel_${Math.random().toString(36).slice(2, 9)}`;
-      this.algoKey = key;
-      const compiled = codeStepIndexer.register(key, { [this.currentLang]: options.lines });
-      this.allLines[this.currentLang] = compiled.cleanCode[this.currentLang];
-      this.langOrder = [this.currentLang];
-    }
+    this.codeModel = new CodePresentationModel({
+      lines: options.lines,
+      languages: options.languages,
+      language: options.language,
+      algoKey: options.algoKey,
+      lineExplanations: options.lineExplanations,
+    });
+
     this.render();
     this.setupSplitter();
   }
@@ -161,84 +149,26 @@ export class CodePanel {
     }
   }
 
+  private get currentLang(): string {
+    return this.codeModel.getCurrentLanguage();
+  }
+
+  private get langOrder(): string[] {
+    return this.codeModel.getAvailableLanguages();
+  }
+
   private get currentLines(): string[] {
-    return this.allLines[this.currentLang] || this.allLines[this.langOrder[0]] || [];
+    return this.codeModel.getLines();
   }
 
   /** 语言显示名映射 */
-  private static LANG_NAMES: Record<string, string> = {
-    java: 'Java',
-    cpp: 'C++',
-    python: 'Python',
-    javascript: 'JavaScript',
-    typescript: 'TypeScript',
-    ts: 'TypeScript',
-    js: 'JavaScript',
-    java_1d: 'Java (一维数组)',
-    java_2d: 'Java (二维数组)',
-    cpp_1d: 'C++ (一维)',
-    cpp_2d: 'C++ (二维)',
-    python_1d: 'Python (一维)',
-    python_2d: 'Python (二维)',
-    '1d': '一维数组版本',
-    '2d': '二维数组版本',
-  };
+  public static get LANG_NAMES(): Record<string, string> {
+    return CodePresentationModel.LANG_NAMES;
+  }
 
   /** 获取指定行的详细讲解文本 */
   private getLineExplanation(lineNum: number): string {
-    const lines = this.currentLines;
-    const rawLine = lines[lineNum - 1] || '';
-
-    // 1. 尝试从自定义 lineExplanations 中读取
-    if (this.lineExplanations) {
-      // 检查多语言嵌套结构
-      const langMap = (this.lineExplanations as Record<string, Record<number, string>>)[this.currentLang];
-      if (langMap && langMap[lineNum]) {
-        return langMap[lineNum];
-      }
-      // 检查扁平数字键结构（仅在单语言或匹配默认 JS/TS 语言时直接应用，避免 Java/C++ 行号错位）
-      const directMap = this.lineExplanations as Record<number, string>;
-      if (directMap[lineNum]) {
-        if (this.langOrder.length <= 1 || this.currentLang === 'javascript' || this.currentLang === 'js') {
-          return directMap[lineNum];
-        }
-      }
-    }
-
-    // 2. 启发式智能教学讲解生成器
-    const trimmed = rawLine.trim();
-    if (!trimmed) return '空行 / 代码格式分隔。';
-    if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')) {
-      return `<strong>注释说明</strong>：${trimmed.replace(/^\/\/\s*|\/\*\s*|\*\s*/, '')}`;
-    }
-    if (trimmed.startsWith('public') || trimmed.startsWith('private') || trimmed.startsWith('protected') || trimmed.startsWith('function') || trimmed.startsWith('def ')) {
-      return '🎯 <strong>函数主入口</strong>：接收输入参数并定义算法核心函数签名，准备计算并返回最优解。';
-    }
-    if (trimmed.includes('new int[') || trimmed.includes('new boolean[') || trimmed.includes('Array.from') || trimmed.includes('vector<') || trimmed.includes('new Array(')) {
-      return '🗺️ <strong>开辟状态空间</strong>：初始化 DP 状态数组或表格。下标通常包含边界偏移（如 0 表示空前缀/空背包），为自底向上递推计算分配连续内存空间。';
-    }
-    if (trimmed.includes('dp[0]') || trimmed.includes('dp[1]') || trimmed.includes('dp[2]')) {
-      return `🎬 <strong>边界初始化</strong>：设定基础边界状态（<code>${trimmed}</code>），作为自底向上递推填表的初始底座。`;
-    }
-    if (trimmed.startsWith('for ') || trimmed.startsWith('for(')) {
-      return `🔄 <strong>循环状态推进</strong>：控制子问题规模推进（<code>${trimmed}</code>）。确保计算当前状态时，其所依赖的历史前驱状态均已计算就绪。`;
-    }
-    if (trimmed.startsWith('if ') || trimmed.startsWith('if(')) {
-      return `🔍 <strong>条件分支判定</strong>：比对当前元素或检查转移前提（<code>${trimmed}</code>），决定走无代价匹配分支还是多项抉择分支。`;
-    }
-    if (trimmed.startsWith('else if') || trimmed.startsWith('else')) {
-      return '⚔️ <strong>决策分支</strong>：当前条件不满足时执行的备用转移路径或多向取极值操作。';
-    }
-    if (trimmed.includes('dp[') && trimmed.includes('=')) {
-      return `⚡ <strong>状态转移计算与写入</strong>：根据状态转移方程推导当前子问题的最优解并写入状态数组（<code>${trimmed}</code>）。`;
-    }
-    if (trimmed.startsWith('return ')) {
-      return `🏁 <strong>返回全局最优解</strong>：返回整个输入规模对应的最终计算答案（<code>${trimmed}</code>）。`;
-    }
-    if (trimmed === '}' || trimmed === '{' || trimmed === '};') {
-      return '代码块作用域边界。';
-    }
-    return `执行语句：<code>${trimmed}</code>`;
+    return this.codeModel.getLineExplanation(lineNum);
   }
 
   /**
@@ -524,45 +454,14 @@ export class CodePanel {
     });
   }
 
-  /** 渲染核心要点讲解卡片内容 */
+  /** 渲染核心要点讲解卡片内容 - 委托 ProblemAnalysisViewer 深模块 */
   private renderKeyPointsContent(container: HTMLElement): void {
-    container.innerHTML = '';
     if (!this.keyPoints) return;
-
-    if (typeof this.keyPoints === 'string') {
-      const card = document.createElement('div');
-      card.className = 'algo-keypoint-summary-card';
-      card.innerHTML = this.keyPoints;
-      container.appendChild(card);
-      return;
-    }
-
-    const kp = this.keyPoints;
-    if (kp.summary) {
-      const summaryCard = document.createElement('div');
-      summaryCard.className = 'algo-keypoint-summary-card';
-      summaryCard.innerHTML = `<strong>${kp.title || '💡 动态规划 5 步法系统要点'}</strong><div style="margin-top:4px; color:#bac2de;">${kp.summary}</div>`;
-      container.appendChild(summaryCard);
-    }
-
-    kp.points.forEach((pt) => {
-      const card = document.createElement('div');
-      card.className = 'algo-keypoint-card';
-      card.innerHTML = `
-        <div class="algo-keypoint-title">
-          <span>${pt.icon || '📌'}</span>
-          <span>${pt.label}</span>
-          ${pt.badge ? `<span style="font-size:10px; padding:1px 5px; border-radius:3px; background:rgba(137,180,250,0.2); color:#89b4fa; margin-left:auto;">${pt.badge}</span>` : ''}
-        </div>
-        <div class="algo-keypoint-desc">${pt.desc}</div>
-      `;
-      container.appendChild(card);
-    });
+    ProblemAnalysisViewer.renderKeyPoints(container, this.keyPoints);
   }
 
-  /** 渲染原题描述与题目要求 (Problem Statement) */
+  /** 渲染原题描述与题目要求 (Problem Statement) - 委托 ProblemAnalysisViewer 深模块 */
   private renderProblemContent(container: HTMLElement): void {
-    container.innerHTML = '';
     const p = this.problemDetail;
     if (!p) {
       container.innerHTML = `
@@ -578,67 +477,7 @@ export class CodePanel {
       `;
       return;
     }
-
-    const diffColor = p.difficulty === 'easy' ? '#34d399' : p.difficulty === 'hard' ? '#f87171' : '#fbbf24';
-    const diffText = p.difficulty === 'easy' ? '简单 Easy' : p.difficulty === 'hard' ? '困难 Hard' : '中等 Medium';
-    const probTitle = p.title || (p.leetcodeId ? `LeetCode ${p.leetcodeId}. ${this.title}` : this.title);
-
-    const banner = document.createElement('div');
-    banner.className = 'algo-problem-banner';
-    banner.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-        <div style="font-weight: 900; font-size: 13.5px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
-          <span>🎯</span>
-          <span>${probTitle}</span>
-        </div>
-        <span style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: ${diffColor}; border: 1px solid ${diffColor}55;">
-          ${diffText}
-        </span>
-      </div>
-      ${p.tags && p.tags.length > 0 ? `
-        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;">
-          ${p.tags.map(t => `<span style="font-size: 10px; padding: 1.5px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.25); font-weight: 600;">🏷️ ${t}</span>`).join('')}
-        </div>
-      ` : ''}
-    `;
-    container.appendChild(banner);
-
-    // 题目描述主体
-    const descCard = document.createElement('div');
-    descCard.className = 'algo-problem-card';
-    descCard.innerHTML = `
-      <div class="algo-problem-section-title">📜 题目描述</div>
-      <div class="algo-problem-text">${p.description}</div>
-    `;
-    container.appendChild(descCard);
-
-    // 示例列表
-    if (p.examples && p.examples.length > 0) {
-      p.examples.forEach((ex, idx) => {
-        const exCard = document.createElement('div');
-        exCard.className = 'algo-problem-example-card';
-        exCard.innerHTML = `
-          <div class="algo-problem-example-title">🧪 示例 ${idx + 1}</div>
-          <div class="algo-problem-example-row"><span class="algo-problem-label">输入：</span><code>${ex.input}</code></div>
-          <div class="algo-problem-example-row"><span class="algo-problem-label">输出：</span><code>${ex.output}</code></div>
-          ${ex.explanation ? `<div class="algo-problem-example-row"><span class="algo-problem-label">解释：</span><span style="color: #cbd5e1; line-height: 1.5;">${ex.explanation}</span></div>` : ''}
-        `;
-        container.appendChild(exCard);
-      });
-    }
-
-    // 约束条件与提示
-    if (p.constraints && p.constraints.length > 0) {
-      const constCard = document.createElement('div');
-      constCard.className = 'algo-problem-card';
-      constCard.innerHTML = `
-        <div class="algo-problem-section-title">⚠️ 提示与约束条件 (Constraints)</div>
-        <ul style="margin: 6px 0 0 18px; padding: 0; color: #cbd5e1; font-size: 11.5px; line-height: 1.6;">
-          ${p.constraints.map(c => `<li><code>${c}</code></li>`).join('')}
-        </ul>
-      `;
-      container.appendChild(constCard);
-    }
+    ProblemAnalysisViewer.renderProblemDetail(container, p);
   }
 
   /** 动态更新原题描述 */
@@ -692,7 +531,7 @@ export class CodePanel {
   /** 切换语言 */
   private switchLanguage(lang: string): void {
     if (lang === this.currentLang) return;
-    this.currentLang = lang;
+    this.codeModel.setCurrentLanguage(lang);
 
     if (this.tabContainer) {
       this.tabContainer.querySelectorAll('.algo-code-tab').forEach((tab) => {
@@ -908,7 +747,7 @@ export class CodePanel {
 
   updateLines(lines: string[], lang?: string): void {
     const targetLang = lang || this.currentLang;
-    this.allLines[targetLang] = lines;
+    this.codeModel.updateLines(lines, targetLang);
     if (targetLang === this.currentLang) {
       this.render();
     }

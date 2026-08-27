@@ -6,7 +6,8 @@
  * 3. 动态渲染精致的顶栏主题切换控件，向外暴露极简自治接口。
  */
 
-import { THEME_PRESETS, VisualTheme } from './theme-presets';
+import { THEME_PRESETS, VisualTheme, VoxelThemePalette, getVoxelPaletteForTheme } from './theme-presets';
+import { eventHub } from '../controllers/visualizer-event-hub';
 
 export interface VisualThemeManagerOptions {
   defaultTheme?: string;
@@ -55,12 +56,21 @@ export class VisualThemeManager {
     return THEME_PRESETS[themeId] || THEME_PRESETS['leetcode-light'];
   }
 
+  public static getVoxelPalette(themeId: string = 'leetcode-light'): VoxelThemePalette {
+    const theme = this.getTheme(themeId);
+    return getVoxelPaletteForTheme(theme);
+  }
+
   public getCurrentThemeId(): string {
     return this.currentThemeId;
   }
 
   public getCurrentTheme(): VisualTheme {
     return VisualThemeManager.getTheme(this.currentThemeId);
+  }
+
+  public getCurrentVoxelPalette(): VoxelThemePalette {
+    return getVoxelPaletteForTheme(this.getCurrentTheme());
   }
 
   public setTheme(themeId: string, persist: boolean = true): boolean {
@@ -75,6 +85,7 @@ export class VisualThemeManager {
     this.applyThemeToDom();
     const current = this.getCurrentTheme();
     this.listeners.forEach(fn => fn(current));
+    eventHub.emit('theme:change', { themeId });
     return true;
   }
 

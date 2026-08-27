@@ -11,11 +11,20 @@ describe('AlgorithmStrategyRegistry (策略注册表深层模块)', () => {
 
   const mockModel: IYamlAlgorithmModel = {
     id: 'mock-unique-paths',
-    title: '不同路径模拟',
+    name: '不同路径模拟',
     category: 'dynamic-programming',
     difficulty: 'medium',
     description: '测试用例',
-    stages: [],
+    directions: {
+      forward: {} as any,
+      reverse: {} as any
+    },
+    stages: {
+      'stage-1': {} as any,
+      'stage-2': {} as any,
+      'stage-3': {} as any,
+      'stage-4': {} as any
+    },
     defaultParams: { m: 3, n: 3 }
   };
 

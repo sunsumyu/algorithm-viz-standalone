@@ -5,6 +5,7 @@
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { GraphTopologyPresenter } from './graph-topology-presenter';
 import template from './dijkstra-heap.html?raw';
 
 interface DJHHeapItem {
@@ -221,145 +222,39 @@ export class DijkstraHeapVisualizer extends StepVisualizer<DJHStep> {
 
   private renderGraph(step: DJHStep): void {
     if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 540 240');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '540px';
-    svg.style.height = '240px';
 
-    // Draw edges
-    for (const edge of step.edges) {
-      const p1 = DJH_NODE_POSITIONS[edge.from];
-      const p2 = DJH_NODE_POSITIONS[edge.to];
-      const isRelaxEdge = step.relaxEdge !== null &&
-        step.relaxEdge.from === edge.from && step.relaxEdge.to === edge.to;
-      const isFromCurrent = step.currentNode === edge.from;
+    const visualNodes = step.nodes.map((nodeId) => {
+      const pos = DJH_NODE_POSITIONS[nodeId];
+      return {
+        id: nodeId,
+        x: pos.x,
+        y: pos.y,
+        isVisited: step.visited.has(nodeId),
+        isCurrent: step.currentNode === nodeId
+      };
+    });
 
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('djh-edge');
+    const visualEdges = step.edges.map((edge) => {
+      const isRelaxEdge =
+        step.relaxEdge !== null &&
+        step.relaxEdge.from === edge.from &&
+        step.relaxEdge.to === edge.to;
+      return {
+        from: edge.from,
+        to: edge.to,
+        weight: edge.w,
+        isDirected: true,
+        isRelaxing: isRelaxEdge && step.action !== 'relax',
+        isRelaxSuccess: isRelaxEdge && step.action === 'relax',
+        isFromCurrent: step.currentNode === edge.from
+      };
+    });
 
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-
-      if (isRelaxEdge && step.action === 'relax') {
-        line.setAttribute('stroke', '#22c55e');
-        line.setAttribute('stroke-width', '3.5');
-        line.style.animation = 'pathPulse 0.8s infinite';
-      } else if (isRelaxEdge) {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '3');
-      } else if (isFromCurrent) {
-        line.setAttribute('stroke', 'rgba(99, 102, 241, 0.5)');
-        line.setAttribute('stroke-width', '2');
-      } else {
-        line.setAttribute('stroke', 'rgba(99, 102, 241, 0.2)');
-        line.setAttribute('stroke-width', '1.5');
-      }
-      g?.appendChild(line);
-
-      // Arrow head
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const ux = dx / len;
-      const uy = dy / len;
-      const nodeR = 22;
-      const ax = p2.x - ux * (nodeR + 4);
-      const ay = p2.y - uy * (nodeR + 4);
-      const arrowSize = 10;
-      const perpX = -uy;
-      const perpY = ux;
-
-      let strokeColor = 'rgba(99, 102, 241, 0.2)';
-      if (isRelaxEdge && step.action === 'relax') strokeColor = '#22c55e';
-      else if (isRelaxEdge) strokeColor = '#f59e0b';
-      else if (isFromCurrent) strokeColor = 'rgba(99, 102, 241, 0.5)';
-
-      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      arrow.setAttribute('points',
-        `${ax},${ay} ${ax - ux * arrowSize + perpX * arrowSize * 0.4},${ay - uy * arrowSize + perpY * arrowSize * 0.4} ${ax - ux * arrowSize - perpX * arrowSize * 0.4},${ay - uy * arrowSize - perpY * arrowSize * 0.4}`
-      );
-      arrow.setAttribute('fill', strokeColor);
-      g?.appendChild(arrow);
-
-      // Weight label
-      const mx = (p1.x + p2.x) / 2;
-      const my = (p1.y + p2.y) / 2;
-      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(mx - 12));
-      bg.setAttribute('y', String(my - 10));
-      bg.setAttribute('width', '24');
-      bg.setAttribute('height', '20');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('fill', isRelaxEdge && step.action === 'relax' ? 'rgba(34, 197, 94, 0.3)' : isRelaxEdge ? 'rgba(245, 158, 11, 0.3)' : 'rgba(30, 30, 50, 0.8)');
-      bg.setAttribute('stroke', isRelaxEdge && step.action === 'relax' ? '#22c55e' : isRelaxEdge ? '#f59e0b' : 'rgba(156, 163, 175, 0.4)');
-      bg.setAttribute('stroke-width', '1');
-      g?.appendChild(bg);
-
-      const wt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      wt.setAttribute('x', String(mx));
-      wt.setAttribute('y', String(my + 5));
-      wt.setAttribute('text-anchor', 'middle');
-      wt.setAttribute('fill', isRelaxEdge && step.action === 'relax' ? '#22c55e' : isRelaxEdge ? '#f59e0b' : 'rgba(156, 163, 175, 0.7)');
-      wt.setAttribute('font-size', '12');
-      wt.setAttribute('font-weight', '700');
-      wt.setAttribute('font-family', 'ui-monospace, monospace');
-      wt.textContent = String(edge.w);
-      g?.appendChild(wt);
-
-      svg?.appendChild(g);
-    }
-
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = DJH_NODE_POSITIONS[i];
-      const isVisited = step.visited.has(i);
-      const isCurrent = step.currentNode === i;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('djh-node');
-
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
-
-      if (isCurrent) {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.5)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 1s infinite';
-      } else if (isVisited) {
-        circle.setAttribute('fill', 'rgba(34, 197, 94, 0.3)');
-        circle.setAttribute('stroke', '#22c55e');
-        circle.setAttribute('stroke-width', '2');
-      } else {
-        circle.setAttribute('fill', 'rgba(99, 102, 241, 0.12)');
-        circle.setAttribute('stroke', '#6366f1');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      const textColor = isCurrent ? '#fff' : isVisited ? '#22c55e' : '#6366f1';
-      text.setAttribute('fill', textColor);
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
-    }
-
-    this.graphEl?.appendChild(svg);
+    GraphTopologyPresenter.render(this.graphEl, visualNodes, visualEdges, {
+      viewBox: '0 0 540 240',
+      height: '240px',
+      prefix: 'djh'
+    });
   }
 
   private renderHeap(step: DJHStep): void {

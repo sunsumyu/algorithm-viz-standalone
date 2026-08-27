@@ -73,7 +73,7 @@ describe('🛡️ Universal Model Fidelity & Anchor Spec Guard', () => {
                   expect(step.line).toBeGreaterThanOrEqual(1);
                   expect(step.line).toBeLessThanOrEqual(totalLines);
 
-                  const lineText = codeLines[step.line - 1] || '';
+                  const lineText = (step.line !== undefined ? codeLines[step.line - 1] : '') || '';
 
                   // 2. 关键语义检查：越界/障碍阻断步骤绝对不能落在方法声明行（如 private int dfs）
                   if (step.type === 'out-of-bounds' || step.type === 'obstacle-hit') {
@@ -161,9 +161,9 @@ describe('🛡️ Universal Model Fidelity & Anchor Spec Guard', () => {
             if (stageKey === 'stage-1' || stageKey === 'stage-2') {
               steps = UniversalStageEngine.generateStage1or2Steps(model, 3, 3, dir, isMemo, anchorMap, v || 'terminal');
             } else if (stageKey === 'stage-3') {
-              steps = UniversalStageEngine.generateStage3Steps(model, 3, 3, dir, anchorMap, v || 'if');
+              steps = UniversalStageEngine.generateStage3Steps(model, 3, 3, dir, anchorMap);
             } else if (stageKey === 'stage-4') {
-              steps = UniversalStageEngine.generateStage4Steps(model, 3, 3, dir, anchorMap);
+              steps = UniversalStageEngine.generateStage4Steps(model, 3, 3, dir, (v === 'for' ? 'for' : 'if'), anchorMap);
             }
 
             steps.forEach((step, idx) => {

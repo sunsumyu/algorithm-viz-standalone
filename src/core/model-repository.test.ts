@@ -118,4 +118,17 @@ describe('AlgorithmModelRepository Deep Module', () => {
     expect(compiled.name).toBe('阶段 1');
     expect(compiled.anchorMap?.entry).toBe(1);
   });
+
+  it('命中阶段编译缓存并返回一致引用 (Cache Hit)', () => {
+    const first = AlgorithmModelRepository.getCompiledStage('unique-paths', 'stage-3', 'forward');
+    const second = AlgorithmModelRepository.getCompiledStage('unique-paths', 'stage-3', 'forward');
+    expect(first).toBe(second); // 严格对象引用相等，证明走缓存返回
+  });
+
+  it('支持 warmup 预热编译并能清空缓存', () => {
+    AlgorithmModelRepository.clearCache();
+    AlgorithmModelRepository.warmup('fibonacci');
+    const compiled = AlgorithmModelRepository.getCompiledStage('fibonacci', 'stage-1', 'forward');
+    expect(compiled).toBeDefined();
+  });
 });

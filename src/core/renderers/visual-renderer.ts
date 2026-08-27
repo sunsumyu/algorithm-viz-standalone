@@ -1,7 +1,7 @@
 import type { UniversalStep } from '../universal-stage-engine';
 import type { GridRenderOptions } from './grid-visual-adapter';
 
-export type VisualRendererContext = GridRenderOptions & {
+export type VisualRendererContext = Partial<GridRenderOptions> & {
   stage?: number;
   direction?: 'forward' | 'reverse';
   is3D?: boolean;
@@ -34,3 +34,7 @@ export interface IVisualRenderer {
    */
   dispose(): void;
 }
+
+export { DOMGridVisualAdapter } from './dom-grid-visual-adapter';
+export { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
+

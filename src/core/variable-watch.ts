@@ -4,6 +4,7 @@
  */
 
 import type { StepVar } from './interfaces';
+import type { VariableSnapshot } from './code-presentation-model';
 
 export class VariableWatch {
   private containerEl: HTMLElement;
@@ -52,9 +53,11 @@ export class VariableWatch {
     this.containerEl.appendChild(this.bodyEl);
   }
 
-  /** 更新变量列表，对比前一步的值，自动检测变化并触发闪烁动画 */
-  update(vars: StepVar[]): void {
-    if (!vars || vars.length === 0) {
+  /**
+   * 被动视图渲染：接收领域模型计算好的变量快照并刷新 DOM
+   */
+  renderSnapshots(snapshots: VariableSnapshot[]): void {
+    if (!snapshots || snapshots.length === 0) {
       this.containerEl.style.display = 'none';
       return;
     }
@@ -66,7 +69,7 @@ export class VariableWatch {
       this.containerEl.classList.remove('is-collapsed');
       this.containerEl.style.height = '180px';
     }
-    this.countEl.textContent = String(vars.length);
+    this.countEl.textContent = String(snapshots.length);
 
     const existingRows = this.bodyEl.querySelectorAll<HTMLElement>('.algo-code-var-row');
     const existingMap = new Map<string, HTMLElement>();
@@ -75,7 +78,7 @@ export class VariableWatch {
       if (name) existingMap.set(name, row);
     });
 
-    const currentNames = new Set(vars.map((v) => v.name));
+    const currentNames = new Set(snapshots.map((v) => v.name));
 
     // 移除不再存在的行
     existingMap.forEach((row, name) => {
@@ -86,33 +89,30 @@ export class VariableWatch {
     });
 
     // 更新或新增行
-    vars.forEach((v) => {
-      const prevVal = this.prevVarValues.get(v.name);
-      const isChanged = v.changed ?? (prevVal !== undefined && prevVal !== v.value);
+    snapshots.forEach((v) => {
+      let row = existingMap.get(v.name);
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'algo-code-var-row';
+        row.dataset.varName = v.name;
 
-        let row = existingMap.get(v.name);
-        if (!row) {
-          row = document.createElement('div');
-          row.className = 'algo-code-var-row';
-          row.dataset.varName = v.name;
+        const nameWrapper = document.createElement('div');
+        nameWrapper.className = 'algo-code-var-name-box';
 
-          const nameWrapper = document.createElement('div');
-          nameWrapper.className = 'algo-code-var-name-box';
+        const nameEl = document.createElement('span');
+        nameEl.className = 'algo-code-var-name';
+        nameEl.textContent = v.name;
+        nameEl.title = v.name;
+        nameWrapper.appendChild(nameEl);
 
-          const nameEl = document.createElement('span');
-          nameEl.className = 'algo-code-var-name';
-          nameEl.textContent = v.name;
-          nameEl.title = v.name;
-          nameWrapper.appendChild(nameEl);
+        row.appendChild(nameWrapper);
 
-          row.appendChild(nameWrapper);
+        const valueEl = document.createElement('span');
+        valueEl.className = 'algo-code-var-value';
+        row.appendChild(valueEl);
 
-          const valueEl = document.createElement('span');
-          valueEl.className = 'algo-code-var-value';
-          row.appendChild(valueEl);
-
-          this.bodyEl.appendChild(row);
-        }
+        this.bodyEl.appendChild(row);
+      }
 
       const valueEl = row.querySelector('.algo-code-var-value') as HTMLElement;
       if (valueEl) {
@@ -126,13 +126,35 @@ export class VariableWatch {
 
       // 闪烁动画：重新触发 animation
       row.classList.remove('is-changed');
-      if (isChanged) {
+      if (v.isChanged) {
         void row.offsetWidth;
         row.classList.add('is-changed');
       }
 
       this.prevVarValues.set(v.name, v.value);
     });
+  }
+
+  /** 兼容方法：更新变量列表，自动检测变化并触发闪烁动画 */
+  update(vars: StepVar[]): void {
+    if (!vars || vars.length === 0) {
+      this.containerEl.style.display = 'none';
+      return;
+    }
+
+    const snapshots: VariableSnapshot[] = vars.map((v) => {
+      const prevVal = this.prevVarValues.get(v.name);
+      const isChanged = v.changed ?? (prevVal !== undefined && prevVal !== v.value);
+      return {
+        name: v.name,
+        value: v.value,
+        type: v.type,
+        isChanged,
+        prevValue: prevVal
+      };
+    });
+
+    this.renderSnapshots(snapshots);
   }
 
   destroy(): void {
