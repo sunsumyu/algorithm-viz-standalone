@@ -43,6 +43,15 @@ export class BacktrackTreeVisualAdapter {
     return st;
   }
 
+  public static resetContainerViewState(container: HTMLElement | null): void {
+    if (!container) return;
+    const st = this.getContainerViewState(container);
+    st.scale = 1;
+    st.tx = 0;
+    st.ty = 0;
+    st.userTouched = false;
+  }
+
   /**
    * 确保指定 prefix 的决策树样式已注入 document（每个 prefix 只注入一次）
    */
@@ -70,7 +79,7 @@ export class BacktrackTreeVisualAdapter {
     const pfx = cssPrefix;
     const st = this.getContainerViewState(container);
 
-    const bounds = TreeLayoutEngine.computeBounds(nodes, 60, 60, NODE_RADIUS);
+    const bounds = TreeLayoutEngine.computeBounds(nodes, 45, 35, NODE_RADIUS);
     const { vMinX, vMinY, vWidth, vHeight } = bounds;
 
     // Build lookup
@@ -223,11 +232,13 @@ export class BacktrackTreeVisualAdapter {
       const treeCenterX = vMinX + vWidth / 2;
       const treeCenterY = vMinY + vHeight / 2;
 
-      const targetTx = (treeCenterX - curNd.x) * st.scale;
-      const targetTy = (treeCenterY - curNd.y) * st.scale;
+      const targetScale = Math.max(1.15, st.scale);
+      st.scale = targetScale;
+      const targetTx = (treeCenterX - curNd.x) * targetScale;
+      const targetTy = (treeCenterY - curNd.y) * targetScale;
 
-      const maxShiftX = vWidth * 0.35 * st.scale;
-      const maxShiftY = vHeight * 0.25 * st.scale;
+      const maxShiftX = vWidth * 0.45 * targetScale;
+      const maxShiftY = vHeight * 0.45 * targetScale;
 
       st.tx = Math.max(-maxShiftX, Math.min(maxShiftX, targetTx));
       st.ty = Math.max(-maxShiftY, Math.min(maxShiftY, targetTy));
@@ -242,7 +253,7 @@ export class BacktrackTreeVisualAdapter {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `${vMinX} ${vMinY} ${vWidth} ${vHeight}`);
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    svg.style.cssText = `width:100%;height:100%;min-height:360px;display:block;margin:0 auto;`;
+    svg.style.cssText = `width:100%;height:100%;max-height:100%;display:block;margin:0 auto;`;
 
     // Viewport Group for Pan & Zoom
     const viewportG = document.createElementNS('http://www.w3.org/2000/svg', 'g');

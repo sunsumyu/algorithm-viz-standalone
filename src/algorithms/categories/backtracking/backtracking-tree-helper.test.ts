@@ -71,7 +71,7 @@ describe('backtracking-tree-helper (回溯决策树门面模块)', () => {
     flatNodes.forEach(node => {
       expect(typeof node.x).toBe('number');
       expect(typeof node.y).toBe('number');
-      expect(node.y).toBeGreaterThanOrEqual(40);
+      expect(node.y).toBeGreaterThanOrEqual(30);
     });
 
     // 兄弟节点的 x 坐标应不重叠

@@ -24,6 +24,7 @@ import {
   layoutTree,
   flattenTree,
   renderBacktrackTree,
+  resetContainerViewState,
 } from './backtracking-tree-helper';
 import { buildCombinationTree, combinationSteps } from './combination-renderer';
 import {
@@ -551,6 +552,7 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
 
   public reset(): void {
     super.reset();
+    resetContainerViewState(this.treeDisplay);
     if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }

@@ -24,6 +24,7 @@ import {
   layoutTree,
   flattenTree,
   renderBacktrackTree,
+  resetContainerViewState,
 } from './backtracking-tree-helper';
 import {
   COMBINATION_PROBLEM_HTML,
@@ -487,6 +488,7 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
 
   public reset(): void {
     super.reset();
+    resetContainerViewState(this.treeDisplay);
     if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }

@@ -55,9 +55,13 @@ export function isNodeOnPath(
   return TreeLayoutEngine.isNodeOnPath(nodeId, nodeMap, currentNodeId);
 }
 
-/* ── 视口状态存取 ───────────────────────────────────────────── */
+/* ── 视口状态存取与重置 ─────────────────────────────────────── */
 export function getContainerViewState(container: HTMLElement) {
   return BacktrackTreeVisualAdapter.getContainerViewState(container);
+}
+
+export function resetContainerViewState(container: HTMLElement | null): void {
+  BacktrackTreeVisualAdapter.resetContainerViewState(container);
 }
 
 /* ── 确保样式注入 ───────────────────────────────────────────── */

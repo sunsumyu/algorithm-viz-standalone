@@ -50,9 +50,9 @@ export interface TreeBoundingBox {
   vHeight: number;
 }
 
-export const LEVEL_HEIGHT = 110;
-export const NODE_RADIUS = 20;
-export const HORIZONTAL_GAP = 75;
+export const LEVEL_HEIGHT = 95;
+export const NODE_RADIUS = 18;
+export const HORIZONTAL_GAP = 68;
 
 /**
  * 树形决策空间布局引擎 (TreeLayoutEngine) - 深模块 (Deep Module)
@@ -78,7 +78,7 @@ export class TreeLayoutEngine {
   public static layout(root: BacktrackTreeNode, options?: TreeLayoutOptions): void {
     const gap = options?.horizontalGap ?? HORIZONTAL_GAP;
     const levelH = options?.levelHeight ?? LEVEL_HEIGHT;
-    const topPad = options?.topPadding ?? 40;
+    const topPad = options?.topPadding ?? 32;
 
     function assignWidth(n: BacktrackTreeNode): number {
       if (n.children.length === 0) {
@@ -139,8 +139,8 @@ export class TreeLayoutEngine {
    */
   public static computeBounds(
     nodes: BacktrackTreeNode[],
-    padX: number = 60,
-    padY: number = 60,
+    padX: number = 45,
+    padY: number = 35,
     nodeRadius: number = NODE_RADIUS
   ): TreeBoundingBox {
     let minX = Infinity,

@@ -58,9 +58,9 @@ describe('TreeLayoutEngine Deep Module Guard', () => {
       expect(node.y).toBeDefined();
     });
 
-    expect(root.y).toBe(40);
-    expect(root.children[0].y).toBe(150); // 40 + 110
-    expect(root.children[1].y).toBe(150);
+    expect(root.y).toBe(32);
+    expect(root.children[0].y).toBe(127); // 32 + 95
+    expect(root.children[1].y).toBe(127);
     expect(root.children[0].x).toBeLessThan(root.children[1].x!);
   });
 
@@ -72,8 +72,8 @@ describe('TreeLayoutEngine Deep Module Guard', () => {
     const bounds = TreeLayoutEngine.computeBounds(nodes);
     expect(bounds.vWidth).toBeGreaterThan(0);
     expect(bounds.vHeight).toBeGreaterThan(0);
-    expect(bounds.minY).toBe(40);
-    expect(bounds.maxY).toBe(150);
+    expect(bounds.minY).toBe(32);
+    expect(bounds.maxY).toBe(127);
   });
 
   it('should accurately test if a node is on path from currentNode to root', () => {
