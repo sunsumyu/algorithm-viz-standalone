@@ -1,329 +1,390 @@
 /**
- * 划分字母区间可视化器（贪心算法）
- * LeetCode 763: 将字符串划分为尽可能多的片段
+ * 划分字母区间可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 763：记录每个字符最后出现下标，遍历维护最远边界，达到边界即贪心切割
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  PARTITION_LABELS_PROBLEM_HTML,
+  PARTITION_LABELS_ANALYSIS_HTML,
+  PARTITION_LABELS_CODE_LANGUAGES,
+} from './partition-labels-problem-content';
 import template from './partition-labels.html?raw';
 
-export type PlPhase = 'init' | 'scan' | 'contract' | 'mark' | 'cut' | 'done';
-
-interface PartitionLabelsStep {
-  phase: PlPhase;
-  string: string;
+export interface PartitionStep {
+  str: string;
   currentIndex: number;
-  currentEnd: number;
+  currentChar: string;
   lastOccurrence: Record<string, number>;
+  currentEnd: number;
+  partitionStart: number;
   partitions: number[];
+  cutIndices: number[];
+  action: 'init' | 'scan' | 'cut' | 'done';
   message: string;
   codeLine: number;
 }
 
-/**
- * 划分字母区间算法（贪心），生成可视化步骤
- */
-function partitionLabelsSteps(s: string): PartitionLabelsStep[] {
-  const steps: PartitionLabelsStep[] = [];
+export function buildPartitionLabelsSteps(s: string): PartitionStep[] {
+  const steps: PartitionStep[] = [];
+  const n = s.length;
 
-  // 记录每个字符最后出现的位置
+  if (n === 0) {
+    steps.push({
+      str: '',
+      currentIndex: -1,
+      currentChar: '',
+      lastOccurrence: {},
+      currentEnd: 0,
+      partitionStart: 0,
+      partitions: [],
+      cutIndices: [],
+      action: 'done',
+      message: '字符串为空，划分片段数为 0',
+      codeLine: 2,
+    });
+    return steps;
+  }
+
+  // 1. 统计每个字符最后出现的位置
   const lastOccurrence: Record<string, number> = {};
-  for (let i = 0; i < s.length; i++) {
+  for (let i = 0; i < n; i++) {
     lastOccurrence[s[i]] = i;
   }
+
+  steps.push({
+    str: s,
+    currentIndex: -1,
+    currentChar: '',
+    lastOccurrence: { ...lastOccurrence },
+    currentEnd: 0,
+    partitionStart: 0,
+    partitions: [],
+    cutIndices: [],
+    action: 'init',
+    message: `第 1 步：统计所有 ${Object.keys(lastOccurrence).length} 种不同字符的最后出现下标`,
+    codeLine: 7,
+  });
 
   let start = 0;
   let end = 0;
   const partitions: number[] = [];
+  const cutIndices: number[] = [];
 
-  // 初始
-  steps.push({
-    phase: 'init',
-    string: s,
-    currentIndex: -1,
-    currentEnd: 0,
-    lastOccurrence,
-    partitions,
-    message: '计算每个字符的最后出现位置，更新起点与终点',
-    codeLine: 8
-  });
-
-  for (let i = 0; i < s.length; i++) {
+  for (let i = 0; i < n; i++) {
     const char = s[i];
     const lastPos = lastOccurrence[char];
-
-    // 扫描阶段：高亮当前字符
-    steps.push({
-      phase: 'scan',
-      string: s,
-      currentIndex: i,
-      currentEnd: end,
-      lastOccurrence: { ...lastOccurrence },
-      partitions: [...partitions],
-      message: `位置 ${i}: 字符 '${char}' 最后出现位置=${lastPos}`,
-      codeLine: 11
-    });
-
-    // 收缩阶段：更新区间终点
+    const oldEnd = end;
     end = Math.max(end, lastPos);
 
     steps.push({
-      phase: 'contract',
-      string: s,
+      str: s,
       currentIndex: i,
-      currentEnd: end,
+      currentChar: char,
       lastOccurrence: { ...lastOccurrence },
+      currentEnd: end,
+      partitionStart: start,
       partitions: [...partitions],
-      message: `更新区间终点: max(${end === lastPos ? '原终点' : end}, ${lastPos}) = ${end}`,
-      codeLine: 11
+      cutIndices: [...cutIndices],
+      action: 'scan',
+      message: `🔍 扫描 s[${i}]='${char}' (最后出现在 [${lastPos}])，当前片段边界更新为 max(${oldEnd}, ${lastPos}) = ${end}`,
+      codeLine: 12,
     });
 
-    // 划分阶段：到达终点
     if (i === end) {
-      partitions.push(end - start + 1);
+      const len = end - start + 1;
+      partitions.push(len);
+      cutIndices.push(i);
 
       steps.push({
-        phase: 'mark',
-        string: s,
+        str: s,
         currentIndex: i,
-        currentEnd: end,
+        currentChar: char,
         lastOccurrence: { ...lastOccurrence },
+        currentEnd: end,
+        partitionStart: start,
         partitions: [...partitions],
-        message: `到达区间终点 ${i}，标记最大长度=${end - start + 1}`,
-        codeLine: 13
+        cutIndices: [...cutIndices],
+        action: 'cut',
+        message: `✂️ 触碰最远边界 [${i}]！片段 "${s.substring(start, end + 1)}" 内字符后续不再出现，切分出长度为 ${len} 的片段！`,
+        codeLine: 14,
       });
 
       start = i + 1;
-      end = i + 1;
     }
   }
 
-  // 完成
   steps.push({
-    phase: 'done',
-    string: s,
-    currentIndex: s.length,
-    currentEnd: s.length - 1,
+    str: s,
+    currentIndex: n - 1,
+    currentChar: '',
     lastOccurrence: { ...lastOccurrence },
+    currentEnd: n - 1,
+    partitionStart: start,
     partitions: [...partitions],
-    message: `完成！划分结果: [${partitions.join(', ')}]`,
-    codeLine: 15
+    cutIndices: [...cutIndices],
+    action: 'done',
+    message: `🎉 字符串划分完成！共划分为 ${partitions.length} 个片段：[${partitions.join(', ')}]`,
+    codeLine: 18,
   });
 
   return steps;
 }
 
-export class PartitionLabelsVisualizer extends StepVisualizer<PartitionLabelsStep> {
-  protected codeLines = [
-    "public List<Integer> partitionLabels(String s) {",
-    "    // 记录每个字符最后出现的位置",
-    "    int[] lastOcc = new int[26];",
-    "    for (int i = 0; i < s.length(); i++) {",
-    "        lastOcc[s.charAt(i) - 'a'] = i;",
-    "    }",
-    "    ",
-    "    List<Integer> result = new ArrayList<>();",
-    "    int start = 0, end = 0;",
-    "    ",
-    "    for (int i = 0; i < s.length(); i++) {",
-    "        end = Math.max(end, lastOcc[s.charAt(i) - 'a']);",
-    "        if (i == end) {",
-    "            result.add(i - start + 1);",
-    "            start = i + 1;",
-    "        }",
-    "    }",
-    "    return result;",
-    "}"
-  ];
-  protected codePanelTitle = '贪心算法 (Java)';
+/* ── Visualizer class ─────────────────────────────────────── */
+export class PartitionLabelsVisualizer extends StepVisualizer<PartitionStep> {
+  protected codeLanguages = PARTITION_LABELS_CODE_LANGUAGES;
+  protected codeLines = PARTITION_LABELS_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '划分字母区间 代码调试';
 
-  private inputField: HTMLInputElement | null = null;
-  private canvasEl: HTMLElement | null = null;
-  private currentIndexEl: HTMLElement | null = null;
-  private currentEndEl: HTMLElement | null = null;
-  private partitionSizeEl: HTMLElement | null = null;
-  private partitionCountEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private stepMessageEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private lastPosContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
+    this.sandboxContainer = this.root.querySelector('#pl-sandbox-container');
+    this.lastPosContainer = this.root.querySelector('#pl-last-pos-container');
+    this.decisionMonitorContainer = this.root.querySelector('#pl-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#pl-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.inputField = this.root.querySelector('#partition-input');
-    this.canvasEl = this.root.querySelector('#pl-canvas');
-    this.currentIndexEl = this.root.querySelector('#current-index');
-    this.currentEndEl = this.root.querySelector('#current-end');
-    this.partitionSizeEl = this.root.querySelector('#partition-size');
-    this.partitionCountEl = this.root.querySelector('#partition-count');
-    this.resultEl = this.root.querySelector('#pl-result');
-    this.stepMessageEl = this.root.querySelector('#step-message');
-    this.logEl = this.root.querySelector('#pl-log');
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    this.bindPlaybackControls({
-      reset: 'step-reset',
-      prev: 'step-prev',
-      play: 'step-play',
-      next: 'step-next',
-      speed: 'pl-speed',
-      speedLabel: 'pl-speed-label',
-      message: 'partition-status'
-    });
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
 
-    this.root.querySelector('#partition-start')?.addEventListener('click', () => this.start());
-
-    this.root.querySelector('#pl-log-clear')?.addEventListener('click', () => {
-      if (this.logEl) this.logEl.innerHTML = '';
-    });
-  }
-
-  protected buildSteps(): PartitionLabelsStep[] {
-    let s = 'ababcbacadefegdehijhklij';
-
-    if (this.inputField) {
-      const input = this.inputField.value.trim();
-      if (input) {
-        s = input;
-      }
-    }
-
-    return partitionLabelsSteps(s);
-  }
-
-  protected renderStep(step: PartitionLabelsStep): void {
-    const canvasEl = this.canvasEl;
-    if (!canvasEl || !this.currentIndexEl || !this.currentEndEl ||
-        !this.partitionSizeEl || !this.partitionCountEl || !this.resultEl || !this.stepMessageEl) return;
-
-    // 更新统计面板
-    this.currentIndexEl.textContent = step.currentIndex < 0 ? '-' : step.currentIndex.toString();
-    this.currentEndEl.textContent = step.currentEnd < 0 ? '-' : step.currentEnd.toString();
-
-    const currentPartitionStart = step.partitions.reduce((a, b) => a + b, 0);
-    const currentLength = step.currentIndex >= currentPartitionStart && step.currentIndex < step.string.length
-      ? step.currentEnd - currentPartitionStart + 1
-      : 0;
-    this.partitionSizeEl.textContent = currentLength > 0 ? currentLength.toString() : '-';
-    this.partitionCountEl.textContent = step.partitions.length.toString();
-
-    // 更新结果横幅
-    this.resultEl.className = 'pl-result';
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('pl-result--done');
-      this.stepMessageEl.textContent = `✅ ${step.message}`;
-    } else if (step.phase === 'mark') {
-      this.resultEl.classList.add('pl-result--cut');
-      this.stepMessageEl.textContent = `✂ ${step.message}`;
-    } else if (step.currentIndex >= 0) {
-      this.stepMessageEl.textContent = step.message;
-    } else {
-      this.stepMessageEl.textContent = '点击「开始划分」观看扫描 + 追踪 + 切割动画';
-    }
-
-    // 渲染字符网格
-    canvasEl.innerHTML = '';
-
-    // 字符行
-    const track = document.createElement('div');
-    track.className = 'pl-track';
-
-    // 计算每个已划分片段的覆盖区间
-    const partitionRanges: Array<{ start: number; end: number }> = [];
-    let acc = 0;
-    for (const len of step.partitions) {
-      partitionRanges.push({ start: acc, end: acc + len - 1 });
-      acc += len;
-    }
-
-    step.string.split('').forEach((char: string, idx: number) => {
-      const cell = document.createElement('div');
-      cell.className = 'pl-char';
-      cell.dataset.idx = idx.toString();
-
-      // 是否在已划分片段中
-      let inPartition = false;
-      let isPartitionEnd = false;
-      for (const r of partitionRanges) {
-        if (idx >= r.start && idx <= r.end) {
-          inPartition = true;
-          if (idx === r.end) isPartitionEnd = true;
-          break;
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
         }
-      }
-
-      // 当前正在构建的区间
-      const inProgress = step.phase !== 'init' && step.phase !== 'done'
-        && idx >= currentPartitionStart && idx <= step.currentEnd;
-
-      if (step.currentIndex >= 0 && idx === step.currentIndex) {
-        cell.classList.add('pl-char--current');
-      } else if (inPartition) {
-        cell.classList.add('pl-char--partitioned');
-      } else if (inProgress) {
-        cell.classList.add('pl-char--in-partition');
-      }
-
-      // 区间终点高亮
-      if (idx === step.currentEnd && (step.phase === 'contract' || step.phase === 'mark')) {
-        cell.classList.add('pl-char--end');
-      }
-
-      cell.innerHTML = `
-        <span>${char}</span>
-        <span class="pl-idx">${idx}</span>
-      `;
-      track.appendChild(cell);
-
-      // 切割线
-      if (isPartitionEnd && (step.phase === 'mark' || step.phase === 'cut' || step.phase === 'done')) {
-        const cut = document.createElement('div');
-        cut.className = 'pl-cut';
-        cut.style.left = `${(idx + 1) * 36 - 4}px`;
-        track.appendChild(cut);
-      }
-    });
-    canvasEl.appendChild(track);
-
-    // 最后出现位置行
-    const occTrack = document.createElement('div');
-    occTrack.className = 'pl-occ-track';
-    const chars = Object.keys(step.lastOccurrence).sort();
-    const currentChar = step.currentIndex >= 0 ? step.string[step.currentIndex] : '';
-
-    chars.forEach((char: string) => {
-      const item = document.createElement('div');
-      item.className = 'pl-occ-item';
-      item.innerHTML = `<span class="pl-occ-char">${char}</span><span class="pl-occ-pos">${step.lastOccurrence[char]}</span>`;
-      if (char === currentChar) item.classList.add('pl-occ--highlight');
-      occTrack.appendChild(item);
-    });
-    canvasEl.appendChild(occTrack);
-
-    // 渲染日志
-    this.renderLogPanel(step);
-  }
-
-  protected renderLogPanel(step: PartitionLabelsStep): void {
-    const log = this.logEl;
-    if (!log) return;
-
-    const line = document.createElement('div');
-    line.className = 'pl-log-line';
-    if (step.phase === 'scan' || step.phase === 'contract' || step.phase === 'mark') {
-      line.classList.add('pl-log-active');
+      });
     }
 
-    const num = document.createElement('span');
-    num.className = 'pl-log-num';
-    num.textContent = step.codeLine.toString().padStart(2, '0') + ': ';
-    line.appendChild(num);
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
 
-    const msg = document.createElement('span');
-    msg.textContent = step.message;
-    line.appendChild(msg);
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.pl-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sEl = this.root?.querySelector('#input-s') as HTMLInputElement | null;
+        if (sEl && btn.dataset.str) sEl.value = btn.dataset.str;
+        this.start();
+      });
+    });
 
-    log.appendChild(line);
-    log.scrollTop = log.scrollHeight;
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: PARTITION_LABELS_PROBLEM_HTML,
+      analysisHtml: PARTITION_LABELS_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
+  }
+
+  protected buildSteps(): PartitionStep[] {
+    const sEl = this.root?.querySelector('#input-s') as HTMLInputElement | null;
+    const s = sEl?.value?.trim() || 'ababcbacadefegdehijhklij';
+    return buildPartitionLabelsSteps(s);
+  }
+
+  protected renderStep(step: PartitionStep): void {
+    const s = step.str;
+    const n = s.length;
+
+    // 1. 渲染字符切片沙盘 (Card 1)
+    if (this.sandboxContainer && n > 0) {
+      const curIdx = step.currentIndex;
+      const isDone = step.action === 'done';
+
+      const cellsHtml = s
+        .split('')
+        .map((char, idx) => {
+          const isCurrent = idx === curIdx && !isDone;
+          const isEnd = idx === step.currentEnd;
+          const isCut = step.cutIndices.includes(idx);
+          const isWithinCurrentPartition = idx >= step.partitionStart && idx <= step.currentEnd;
+
+          let bg = '#ffffff';
+          let borderColor = '#e2e8f0';
+          let textColor = '#0f172a';
+
+          if (isCurrent) {
+            bg = '#eef2ff';
+            borderColor = '#4f46e5';
+            textColor = '#4f46e5';
+          } else if (isEnd) {
+            bg = '#fef3c7';
+            borderColor = '#f59e0b';
+            textColor = '#b45309';
+          } else if (isWithinCurrentPartition) {
+            bg = '#f8fafc';
+            borderColor = '#c7d2fe';
+            textColor = '#4338ca';
+          }
+
+          return `
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                <span style="font-size: 8.5px; color: ${isCurrent ? '#4f46e5' : isEnd ? '#b45309' : '#94a3b8'}; font-weight: 700;">
+                  ${isCurrent ? '📍' : isEnd ? '🏁' : `[${idx}]`}
+                </span>
+                <div style="width: 32px; height: 36px; border-radius: 8px; background: ${bg}; border: 1.5px solid ${borderColor}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                  ${char}
+                </div>
+              </div>
+              ${isCut ? `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 36px; color: #10b981; font-weight: 800; font-size: 13px;">✂️</div>` : ''}
+            </div>
+          `;
+        })
+        .join('');
+
+      this.sandboxContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- 边界信息 -->
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>当前扫描: <code style="color:#4f46e5;">[${curIdx}]='${step.currentChar || '-'}'</code></span>
+            <span>当前最远边界: <strong style="color: #b45309; font-family: monospace;">[${step.currentEnd}]</strong></span>
+          </div>
+        </div>
+
+        <!-- 字符流水平条 -->
+        <div style="display: flex; gap: 4px; overflow-x: auto; align-items: center; padding: 6px 0;">
+          ${cellsHtml}
+        </div>
+      `;
+    }
+
+    // 2. 渲染字符与最后位置 (Card 2 Left)
+    if (this.lastPosContainer) {
+      const char = step.currentChar;
+      const last = char ? step.lastOccurrence[char] : -1;
+
+      this.lastPosContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>字符 <code style="color:#4f46e5; font-weight:700;">'${char || '-'}'</code> 最后位置:</span>
+            <span style="font-family: monospace; font-weight:700; color: #4f46e5;">[${last >= 0 ? last : '-'}]</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前片段范围:</span>
+            <span style="font-family: monospace; font-weight:700; color: #059669;">[${step.partitionStart} .. ${step.currentEnd}]</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染切割点判定监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      const isCut = step.action === 'cut';
+      const isDone = step.action === 'done';
+
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>切割判定:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isCut ? '#ecfdf5' : isDone ? '#eef2ff' : '#f8fafc'}; color: ${isCut ? '#059669' : isDone ? '#4f46e5' : '#64748b'}; border: 1px solid ${isCut ? '#a7f3d0' : isDone ? '#c7d2fe' : '#e2e8f0'};">
+              ${isCut ? '✂️ 触碰右界 (即刻切割)' : isDone ? '🏁 全部切分完成' : '🔍 扫描扩展右边界'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 准则: <code style="color:#4f46e5; font-family:monospace;">if (i == max(lastOccur)) cut();</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染最终划分结果看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>已划分片段数: <strong style="color: #4f46e5; font-family: monospace; font-size: 13.5px;">${step.partitions.length}</strong> 个</span>
+            <span style="font-family: monospace; font-weight: 700; color: #059669;">片段长度: [${step.partitions.join(', ')}]</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgePart = this.root?.querySelector('#badge-partition-count');
+    if (badgePart) {
+      badgePart.textContent = `片段数: ${step.partitions.length} 个`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '扫描';
+
+        if (st.action === 'cut') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '切割';
+        } else if (st.action === 'done') {
+          badgeColor = '#4f46e5';
+          badgeBg = '#eef2ff';
+          badgeText = '完成';
+        }
+
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -332,11 +393,11 @@ registerAlgorithm({
   name: '划分字母区间',
   viewId: 'algo-partition-labels-view',
   category: 'greedy',
-  description: 'LeetCode 763：贪心算法，将字符串划分为尽可能多的片段',
-  icon: '🔤',
+  description: '统计各字符最后出现位置，贪心更新最远覆盖边界，到达边界即刻切割',
+  icon: '✂️',
   template,
   Visualizer: PartitionLabelsVisualizer,
   difficulty: 2,
-  levelOrder: 15,
-  learningGoal: '掌握字母区间分割的贪心思路',
+  levelOrder: 10,
+  learningGoal: '掌握字符区间最远右边界贪心切分模型，熟练运用贪心寻找自然边界',
 });

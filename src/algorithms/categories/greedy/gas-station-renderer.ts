@@ -1,87 +1,78 @@
 /**
- * 加油站可视化器（贪心算法）
- * LeetCode 134：从某个加油站出发，绕环路一圈返回起点
+ * 加油站可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 134：维护当前候选起点油量 curSum 与全局净油量 totalSum，亏空时贪心重置起点为 i + 1
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  GAS_STATION_PROBLEM_HTML,
+  GAS_STATION_ANALYSIS_HTML,
+  GAS_STATION_CODE_LANGUAGES,
+} from './gas-station-problem-content';
 import template from './gas-station.html?raw';
 
-type GasStationStatus = 'ready' | 'scan' | 'reset' | 'success' | 'failed';
-
-interface GasStationStep {
+export interface GasStationStep {
   gas: number[];
   cost: number[];
   currentIndex: number;
   currentTank: number;
   totalTank: number;
   startStation: number;
-  failedFrom: number;
-  failedTo: number;
-  status: GasStationStatus;
+  failedStations: number[];
+  action: 'init' | 'scan' | 'reset' | 'success' | 'failed';
   message: string;
-  log: string;
-  codeLine: number | number[] | { from: number; to: number };
+  codeLine: number;
 }
 
-function parseNumbers(input: string, fallback: number[]): number[] {
-  const parsed = input
-    .split(',')
-    .map((value) => Number.parseInt(value.trim(), 10))
-    .filter((value) => Number.isFinite(value));
-
-  return parsed.length > 0 ? parsed : fallback;
-}
-
-/**
- * 加油站算法（贪心），生成逐步可视化状态。
- */
-function gasStationSteps(gasInput: number[], costInput: number[]): GasStationStep[] {
+export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasStationStep[] {
   const steps: GasStationStep[] = [];
-  const n = Math.min(gasInput.length, costInput.length);
-  const gas = gasInput.slice(0, n);
-  const cost = costInput.slice(0, n);
+  const n = Math.min(rawGas.length, rawCost.length);
+  const gas = rawGas.slice(0, n);
+  const cost = rawCost.slice(0, n);
 
   if (n === 0) {
-    return [{
+    steps.push({
       gas: [],
       cost: [],
       currentIndex: -1,
       currentTank: 0,
       totalTank: 0,
       startStation: -1,
-      failedFrom: -1,
-      failedTo: -1,
-      status: 'failed',
-      message: '输入为空，请至少输入一个 gas / cost 数据。',
-      log: '❌ 输入为空，无法执行。',
+      failedStations: [],
+      action: 'failed',
+      message: '输入数据为空，返回 -1',
       codeLine: 1,
-    }];
+    });
+    return steps;
   }
 
   let totalTank = 0;
   let currentTank = 0;
-  let startIndex = 0;
+  let startStation = 0;
+  const failedStations: number[] = [];
 
   steps.push({
     gas,
     cost,
     currentIndex: -1,
-    currentTank,
-    totalTank,
-    startStation: startIndex,
-    failedFrom: -1,
-    failedTo: -1,
-    status: 'ready',
-    message: '初始化：totalTank = 0，currentTank = 0，候选起点 startIndex = 0。',
-    log: '🚀 初始化 totalTank = 0，currentTank = 0，startIndex = 0。',
-    codeLine: { from: 3, to: 5 },
+    currentTank: 0,
+    totalTank: 0,
+    startStation: 0,
+    failedStations: [],
+    action: 'init',
+    message: `初始化：共 ${n} 个站点，初始候选起点 start = 0，currentTank = 0，totalTank = 0`,
+    codeLine: 4,
   });
 
   for (let i = 0; i < n; i++) {
     const net = gas[i] - cost[i];
-    totalTank += net;
     currentTank += net;
+    totalTank += net;
 
     steps.push({
       gas,
@@ -89,236 +80,339 @@ function gasStationSteps(gasInput: number[], costInput: number[]): GasStationSte
       currentIndex: i,
       currentTank,
       totalTank,
-      startStation: startIndex,
-      failedFrom: -1,
-      failedTo: -1,
-      status: 'scan',
-      message: `站 ${i}：加油 ${gas[i]}，去下一站消耗 ${cost[i]}，净油量 ${net >= 0 ? '+' : ''}${net}；currentTank=${currentTank}，totalTank=${totalTank}。`,
-      log: `⛽ 到达站 ${i}: net = ${gas[i]} - ${cost[i]} = ${net >= 0 ? '+' : ''}${net}，油箱剩余 ${currentTank}。`,
-      codeLine: { from: 8, to: 10 },
+      startStation,
+      failedStations: [...failedStations],
+      action: 'scan',
+      message: `⛽ 考察站点 [${i}]：加油 ${gas[i]}L，消耗 ${cost[i]}L，净油量 ${net >= 0 ? '+' : ''}${net}L；当前油箱 = ${currentTank}L，全局净油量 = ${totalTank}L`,
+      codeLine: 8,
     });
 
     if (currentTank < 0) {
-      steps.push({
-        gas,
-        cost,
-        currentIndex: i,
-        currentTank,
-        totalTank,
-        startStation: startIndex,
-        failedFrom: startIndex,
-        failedTo: i,
-        status: 'reset',
-        message: `油箱变为负数，候选区间 [${startIndex}, ${i}] 全部失败：从这些站出发都到不了站 ${i + 1}。`,
-        log: `⚠️ currentTank < 0，淘汰候选区间 [${startIndex}, ${i}]。`,
-        codeLine: 12,
-      });
+      for (let f = startStation; f <= i; f++) {
+        if (!failedStations.includes(f)) failedStations.push(f);
+      }
 
+      startStation = i + 1;
       currentTank = 0;
-      startIndex = i + 1;
 
       steps.push({
         gas,
         cost,
         currentIndex: i,
-        currentTank,
+        currentTank: 0,
         totalTank,
-        startStation: startIndex,
-        failedFrom: -1,
-        failedTo: -1,
-        status: 'reset',
-        message: `重置 currentTank = 0，并将候选起点移动到 ${startIndex}。`,
-        log: `🔄 startIndex = ${startIndex}，currentTank 清零，从新候选起点继续验证。`,
-        codeLine: { from: 13, to: 14 },
+        startStation,
+        failedStations: [...failedStations],
+        action: 'reset',
+        message: `⚠️ 油量亏空！在站点 [${i}] 断油 (油量 ${currentTank + net} < 0)！贪心排除区间 [0 .. ${i}]，候选起点重置为 [${startStation}]`,
+        codeLine: 10,
       });
     }
   }
 
-  const result = totalTank >= 0 ? startIndex : -1;
-  steps.push({
-    gas,
-    cost,
-    currentIndex: n,
-    currentTank,
-    totalTank,
-    startStation: result,
-    failedFrom: -1,
-    failedTo: -1,
-    status: totalTank >= 0 ? 'success' : 'failed',
-    message: totalTank >= 0
-      ? `成功跑完闭环！起点为 ${result}`
-      : '总净油量为负，整圈油量不够，无法从任何站点出发完成一周。',
-    log: totalTank >= 0
-      ? `👉 最终返回答案：${result}。`
-      : '👉 最终返回答案：-1。',
-    codeLine: 20,
-  });
+  if (totalTank < 0 || startStation >= n) {
+    steps.push({
+      gas,
+      cost,
+      currentIndex: n - 1,
+      currentTank,
+      totalTank,
+      startStation: -1,
+      failedStations: [...failedStations],
+      action: 'failed',
+      message: `❌ 全局总净油量 totalTank = ${totalTank} < 0，总消耗大于总补给，环行一周必定无法完成，返回 -1`,
+      codeLine: 13,
+    });
+  } else {
+    steps.push({
+      gas,
+      cost,
+      currentIndex: n - 1,
+      currentTank,
+      totalTank,
+      startStation,
+      failedStations: [...failedStations],
+      action: 'success',
+      message: `🎉 全局总净油量 totalTank = ${totalTank} &ge; 0！唯一可行出发加油站起点为 [${startStation}]`,
+      codeLine: 14,
+    });
+  }
 
   return steps;
 }
 
+/* ── Visualizer class ─────────────────────────────────────── */
 export class GasStationVisualizer extends StepVisualizer<GasStationStep> {
-  protected codeLines = [
-    'public int canCompleteCircuit(int[] gas,',
-    '                              int[] cost) {',
-    '    int totalTank = 0;',
-    '    int currentTank = 0;',
-    '    int startIndex = 0;',
-    '',
-    '    for (int i = 0; i < gas.length; i++) {',
-    '        int net = gas[i] - cost[i];',
-    '        totalTank += net;',
-    '        currentTank += net;',
-    '',
-    '        if (currentTank < 0) {',
-    '            startIndex = i + 1;',
-    '            currentTank = 0;',
-    '        }',
-    '    }',
-    '',
-    '    return totalTank >= 0 ? startIndex : -1;',
-    '}',
-  ];
-  protected codePanelTitle = '☕ Java 源码联动执行';
+  protected codeLanguages = GAS_STATION_CODE_LANGUAGES;
+  protected codeLines = GAS_STATION_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '加油站 代码调试';
 
-  private gasInput: HTMLInputElement | null = null;
-  private costInput: HTMLInputElement | null = null;
-  private trackEl: HTMLElement | null = null;
-  private currentStationEl: HTMLElement | null = null;
-  private startStationEl: HTMLElement | null = null;
-  private currentTankEl: HTMLElement | null = null;
-  private totalTankEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
-  private logs: string[] = [];
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private tankContainer: HTMLElement | null = null;
+  private resetMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
+    this.sandboxContainer = this.root.querySelector('#gs-sandbox-container');
+    this.tankContainer = this.root.querySelector('#gs-tank-container');
+    this.resetMonitorContainer = this.root.querySelector('#gs-reset-monitor-container');
+    this.metricsContainer = this.root.querySelector('#gs-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.gasInput = this.root.querySelector('#gas-input');
-    this.costInput = this.root.querySelector('#cost-input');
-    this.trackEl = this.root.querySelector('#gas-station-track');
-    this.currentStationEl = this.root.querySelector('#current-station');
-    this.startStationEl = this.root.querySelector('#start-station');
-    this.currentTankEl = this.root.querySelector('#current-tank');
-    this.totalTankEl = this.root.querySelector('#total-tank');
-    this.logEl = this.root.querySelector('#gas-station-log');
-    this.clearLogBtn = this.root.querySelector('#gas-log-clear');
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    this.bindPlaybackControls({
-      reset: 'gas-station-reset',
-      prev: 'gas-station-prev',
-      play: 'gas-station-play',
-      next: 'gas-station-next',
-      speed: 'gas-station-speed',
-      speedLabel: 'gas-station-speed-label',
-      counter: 'gas-station-step-counter',
-      message: 'gas-station-message',
-    });
-  }
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
 
-  protected setupEvents(): void {
-    if (!this.root) return;
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
 
-    this.root.querySelectorAll<HTMLButtonElement>('.gas-example').forEach((button) => {
-      button.addEventListener('click', () => {
-        if (this.gasInput) this.gasInput.value = button.dataset.gas || '';
-        if (this.costInput) this.costInput.value = button.dataset.cost || '';
-        void this.start();
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.gs-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const gasEl = this.root?.querySelector('#input-gas') as HTMLInputElement | null;
+        const costEl = this.root?.querySelector('#input-cost') as HTMLInputElement | null;
+        if (gasEl && btn.dataset.gas) gasEl.value = btn.dataset.gas;
+        if (costEl && btn.dataset.cost) costEl.value = btn.dataset.cost;
+        this.start();
       });
     });
 
-    this.gasInput?.addEventListener('change', () => void this.start());
-    this.costInput?.addEventListener('change', () => void this.start());
-    this.clearLogBtn?.addEventListener('click', () => {
-      this.logs = [];
-      if (this.logEl) this.logEl.innerHTML = '';
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: GAS_STATION_PROBLEM_HTML,
+      analysisHtml: GAS_STATION_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): GasStationStep[] {
-    const gas = parseNumbers(this.gasInput?.value || '', [1, 2, 3, 4, 5]);
-    const cost = parseNumbers(this.costInput?.value || '', [3, 4, 5, 1, 2]);
-    this.logs = [];
-    return gasStationSteps(gas, cost);
+    const gasEl = this.root?.querySelector('#input-gas') as HTMLInputElement | null;
+    const costEl = this.root?.querySelector('#input-cost') as HTMLInputElement | null;
+
+    const gas = (gasEl?.value || '1,2,3,4,5')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    const cost = (costEl?.value || '3,4,5,1,2')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+
+    return buildGasStationSteps(gas.length ? gas : [1, 2, 3, 4, 5], cost.length ? cost : [3, 4, 5, 1, 2]);
   }
 
   protected renderStep(step: GasStationStep): void {
-    if (!this.trackEl || !this.currentStationEl || !this.startStationEl || !this.currentTankEl || !this.totalTankEl) return;
+    const gas = step.gas;
+    const cost = step.cost;
+    const n = gas.length;
 
-    this.currentStationEl.textContent = this.formatCurrentPosition(step);
-    this.currentStationEl.classList.toggle('word', step.currentIndex < 0 || step.currentIndex >= step.gas.length);
-    this.startStationEl.textContent = step.startStation >= 0 ? String(step.startStation) : '-1';
-    this.currentTankEl.textContent = String(step.currentTank);
-    this.totalTankEl.textContent = String(step.totalTank);
+    // 1. 渲染加油站沙盘 (Card 1)
+    if (this.sandboxContainer && n > 0) {
+      const curIdx = step.currentIndex;
+      const isSuccess = step.action === 'success';
+      const isFailed = step.action === 'failed';
 
-    this.currentTankEl.style.color = step.currentTank < 0 ? '#dc2626' : '#16a34a';
-    this.totalTankEl.style.color = step.totalTank < 0 ? '#dc2626' : '#9333ea';
+      const stationsHtml = gas
+        .map((g, idx) => {
+          const c = cost[idx] ?? 0;
+          const net = g - c;
+          const isCurrent = idx === curIdx && !isSuccess && !isFailed;
+          const isCandidateStart = idx === step.startStation;
+          const isEliminated = step.failedStations.includes(idx);
 
-    this.renderTrack(step);
-    this.renderExecutionLog(step);
-    this.updateResultBanner(step);
-  }
+          let bg = '#ffffff';
+          let borderColor = '#e2e8f0';
+          let textColor = '#0f172a';
 
-  private formatCurrentPosition(step: GasStationStep): string {
-    if (step.status === 'success') return '回到起点';
-    if (step.status === 'failed' && step.currentIndex >= step.gas.length) return '失败';
-    if (step.currentIndex < 0) return '初始化';
-    return String(step.currentIndex);
-  }
+          if (isCurrent) {
+            bg = '#eff6ff';
+            borderColor = '#2563eb';
+            textColor = '#2563eb';
+          } else if (isSuccess && isCandidateStart) {
+            bg = '#ecfdf5';
+            borderColor = '#10b981';
+            textColor = '#059669';
+          } else if (isCandidateStart) {
+            bg = '#fffbeb';
+            borderColor = '#d97706';
+            textColor = '#b45309';
+          } else if (isEliminated) {
+            bg = '#fef2f2';
+            borderColor = '#fca5a5';
+            textColor = '#94a3b8';
+          }
 
-  private renderTrack(step: GasStationStep): void {
-    const trackEl = this.trackEl;
-    if (!trackEl) return;
-    trackEl.innerHTML = '';
+          return `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <span style="font-size: 9px; color: ${isCandidateStart ? '#d97706' : isCurrent ? '#2563eb' : '#94a3b8'}; font-weight: 700;">
+                ${isCandidateStart ? '🚩 起点' : isCurrent ? '📍 当前' : `[${idx}]`}
+              </span>
+              <div style="width: 52px; height: 56px; border-radius: 12px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 4px rgba(0,0,0,0.04); gap: 1px;">
+                <span style="font-size: 10px; color: #64748b;">+${g} / -${c}</span>
+                <span style="font-size: 13px; color: ${net >= 0 ? '#059669' : '#dc2626'};">${net >= 0 ? `+${net}` : net}</span>
+              </div>
+              <span style="font-size: 8.5px; color: ${isEliminated ? '#ef4444' : net >= 0 ? '#059669' : '#64748b'}; font-weight: 700;">
+                ${isEliminated ? '✕ 排除' : net >= 0 ? '盈余' : '亏损'}
+              </span>
+            </div>
+          `;
+        })
+        .join('');
 
-    step.gas.forEach((gasValue, index) => {
-      const costValue = step.cost[index] ?? 0;
-      const net = gasValue - costValue;
-      const station = document.createElement('div');
-      station.className = 'gas-station-box';
+      this.sandboxContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- 总体状况栏 -->
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>当前候选起点: <strong style="color: #d97706; font-family: monospace;">[${step.startStation >= 0 && step.startStation < n ? step.startStation : '-'}]</strong></span>
+            <span>全局净油量: <strong style="color: ${step.totalTank >= 0 ? '#059669' : '#dc2626'}; font-family: monospace;">${step.totalTank >= 0 ? `+${step.totalTank}` : step.totalTank}L</strong></span>
+          </div>
+        </div>
 
-      if (index === step.currentIndex) station.classList.add('current');
-      if (index === step.startStation) station.classList.add('start');
-      if (step.failedFrom >= 0 && index >= step.failedFrom && index <= step.failedTo) station.classList.add('failed');
-
-      const netClass = net > 0 ? 'positive' : net < 0 ? 'negative' : 'zero';
-      station.innerHTML = `
-        <div class="gas-station-head">站 ${index}</div>
-        <div class="gas-station-row"><span>⛽</span><span>${gasValue}</span></div>
-        <div class="gas-station-row"><span>⛽</span><span>-${costValue}</span></div>
-        <div class="gas-net ${netClass}">净: ${net >= 0 ? '+' : ''}${net}</div>
-        <div class="gas-start-marker">▣<br>起点</div>
+        <!-- 站点水平流 -->
+        <div style="display: flex; gap: 8px; overflow-x: auto; justify-content: center; padding: 4px 0;">
+          ${stationsHtml}
+        </div>
       `;
+    }
 
-      trackEl.appendChild(station);
-    });
+    // 2. 渲染当前油箱续航 (Card 2 Left)
+    if (this.tankContainer) {
+      this.tankContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前从起点出发累积油量:</span>
+            <span style="font-family: monospace; font-weight:800; color: ${step.currentTank >= 0 ? '#059669' : '#dc2626'}; font-size: 12.5px;">${step.currentTank} L</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>全局累积净油量 totalSum:</span>
+            <span style="font-family: monospace; font-weight:700; color: #475569;">${step.totalTank} L</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染亏空重置监视器 (Card 2 Center)
+    if (this.resetMonitorContainer) {
+      const isReset = step.action === 'reset';
+      const isSuccess = step.action === 'success';
+      const isFailed = step.action === 'failed';
+
+      this.resetMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>续航状态:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isReset ? '#fef2f2' : isSuccess ? '#ecfdf5' : isFailed ? '#fff1f2' : '#eff6ff'}; color: ${isReset ? '#dc2626' : isSuccess ? '#059669' : isFailed ? '#e11d48' : '#2563eb'}; border: 1px solid ${isReset ? '#fecaca' : isSuccess ? '#a7f3d0' : isFailed ? '#fecdd3' : '#bfdbfe'};">
+              ${isReset ? '⚠️ 亏空断油 (起点移至 i+1)' : isSuccess ? '🎉 环行成功 (锁定起点)' : isFailed ? '❌ 全局油量不足 (返回 -1)' : '⛽ 油箱正常续航'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 贪心准则: <code style="color:#d97706; font-family:monospace;">if (curSum &lt; 0) { start = i + 1; curSum = 0; }</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染全局收支与唯一有效起点看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>可行出发加油站: <strong style="color: #d97706; font-family: monospace; font-size: 13.5px;">${step.startStation >= 0 ? `下标 [${step.startStation}]` : '-1 (无解)'}</strong></span>
+            <span style="font-size: 10.5px; font-weight: 700; color: ${step.totalTank >= 0 ? '#059669' : '#dc2626'};">
+              ${step.totalTank >= 0 ? '✓ 全局油量盈余' : '✕ 全局总补给小于总消耗'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgeStart = this.root?.querySelector('#badge-start-station');
+    if (badgeStart) {
+      badgeStart.textContent = `候选起点: ${step.startStation >= 0 ? `[${step.startStation}]` : '-1'}`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '考察';
+
+        if (st.action === 'reset') {
+          badgeColor = '#dc2626';
+          badgeBg = '#fef2f2';
+          badgeText = '重置';
+        } else if (st.action === 'success') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '成功';
+        } else if (st.action === 'failed') {
+          badgeColor = '#e11d48';
+          badgeBg = '#fff1f2';
+          badgeText = '无解';
+        }
+
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
-  private renderExecutionLog(step: GasStationStep): void {
-    if (!this.logEl) return;
-
-    const prefix = `[${String(this.currentIndex + 1).padStart(2, '0')}/${String(this.steps.length).padStart(2, '0')}]`;
-    const entry = `${prefix} ${step.log}`;
-    this.logs = this.steps.slice(0, this.currentIndex + 1).map((item, index) => {
-      const itemPrefix = `[${String(index + 1).padStart(2, '0')}/${String(this.steps.length).padStart(2, '0')}]`;
-      return `${itemPrefix} ${item.log}`;
-    });
-
-    this.logEl.innerHTML = '';
-    this.logs.forEach((line) => {
-      const lineEl = document.createElement('div');
-      lineEl.className = `gas-log-line${line === entry ? ' active' : ''}`;
-      lineEl.textContent = line;
-      this.logEl!.appendChild(lineEl);
-    });
-
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
-
-  private updateResultBanner(step: GasStationStep): void {
-    if (!this.messageEl) return;
-    this.messageEl.classList.toggle('failed', step.status === 'failed');
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -327,11 +421,11 @@ registerAlgorithm({
   name: '加油站',
   viewId: 'algo-gas-station-view',
   category: 'greedy',
-  description: 'LeetCode 134：贪心算法，从某个加油站出发，绕环路一圈返回起点',
+  description: '求绕环形路线行驶一周的唯一起点，累积净油量亏空即贪心将起点推进至 i + 1',
   icon: '⛽',
   template,
   Visualizer: GasStationVisualizer,
   difficulty: 2,
-  levelOrder: 8,
-  learningGoal: '掌握加油站可行起点的贪心推导',
+  levelOrder: 12,
+  learningGoal: '掌握环形路线贪心跳跃技巧，理解局部亏空排除法与全局收支判定的协同运用',
 });

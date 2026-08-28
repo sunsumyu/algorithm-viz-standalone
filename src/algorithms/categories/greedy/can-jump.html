@@ -1,242 +1,872 @@
 <style>
-  :root {
-    --cj-accent-a: #34d399;
-    --cj-accent-b: #3b82f6;
-    --cj-accent-a-rgb: 52, 211, 153;
-    --cj-accent-b-rgb: 59, 130, 246;
-  }
-  .canjump-viz-container {
-    width: 100%; height: 100%; color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(52, 211, 153, 0.55), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, 0.55), transparent 55%),
-      linear-gradient(135deg, #0f172a, #111827, #0b1220);
-    display: flex; flex-direction: column; overflow: hidden;
+  /* === 跳跃游戏 (LeetCode 55) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
+  #algo-can-jump-view {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
     box-sizing: border-box;
   }
-  .canjump-viz-container .sw-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-  .canjump-viz-container .sw-header {
-    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
-  }
-  .canjump-viz-container .sw-head-left { display: flex; align-items: center; gap: 14px; }
-  .canjump-viz-container .sw-icon-badge {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--cj-accent-a), var(--cj-accent-b));
-    display: flex; align-items: center; justify-content: center; font-size: 22px;
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
-  }
-  .canjump-viz-container h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
-  .canjump-viz-container .sw-desc { margin: 4px 0 0; color: #a6adc8; font-size: 13px; line-height: 1.4; }
-  .canjump-viz-container .sw-legend { display: flex; gap: 14px; font-size: 12px; color: #a6adc8; flex-wrap: wrap; }
-  .canjump-viz-container .sw-legend-item { display: flex; align-items: center; gap: 6px; }
-  .canjump-viz-container .sw-legend-dot { width: 9px; height: 9px; border-radius: 3px; }
-  .canjump-viz-container .sw-main {
-    flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 16px; padding: 0 16px 16px; overflow: hidden;
-  }
-  .canjump-viz-container .sw-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-  .canjump-viz-container .sw-card {
-    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  .canjump-viz-container .sw-card-title {
-    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
-  }
-  .canjump-viz-container .sw-input-row {
-    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  .canjump-viz-container input[type="text"] {
-    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none; font-size: 13px;
-  }
-  .canjump-viz-container input[type="text"]:focus {
-    border-color: var(--cj-accent-a); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
-  }
-  .canjump-viz-container .sw-start-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--cj-accent-a), var(--cj-accent-b)); color: #fff;
-    font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px;
-  }
-  .canjump-viz-container .sw-start-btn:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.45); }
-  .canjump-viz-container .sw-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .canjump-viz-container .sw-stat {
-    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
-  }
-  .canjump-viz-container .sw-stat::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: linear-gradient(180deg, var(--cj-accent-a), var(--cj-accent-b));
-  }
-  .canjump-viz-container .sw-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
-  .canjump-viz-container .sw-stat span {
-    color: var(--cj-accent-a); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-  .canjump-viz-container .sw-visual { flex: 1; min-height: 200px; display: flex; flex-direction: column; }
-  .canjump-viz-container .sw-track {
-    flex: 1; min-height: 0; padding: 28px 18px 22px; overflow: auto;
-    display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
-  }
-  .canjump-viz-container .jump-cell {
-    width: 74px; height: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 2px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(20, 18, 38, 0.5); position: relative;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, background 0.3s, border-color 0.3s;
-    will-change: transform;
-  }
-  .canjump-viz-container .jump-cell .value {
-    font-family: Consolas, monospace; font-size: 22px; font-weight: 800; color: #e6e9f5;
-  }
-  .canjump-viz-container .jump-cell .index { font-size: 11px; color: #7c839c; }
-  .canjump-viz-container .jump-cell .range { font-size: 10px; color: #6c7086; font-family: Consolas, monospace; }
-  .canjump-viz-container .jump-cell.reachable {
-    background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.45);
-  }
-  .canjump-viz-container .jump-cell.blocked {
-    background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.45); opacity: 0.7;
-  }
-  .canjump-viz-container .jump-cell.max-reach {
-    background: rgba(59, 130, 246, 0.18); border-color: var(--cj-accent-b);
-    box-shadow: 0 0 18px rgba(59, 130, 246, 0.45);
-    animation: burst 0.5s ease-out;
-  }
-  .canjump-viz-container .jump-cell.current {
-    background: rgba(52, 211, 153, 0.28); border-color: var(--cj-accent-a);
-    transform: scale(1.18) translateY(-4px);
-    animation: pulse-cj 1.2s infinite, jump-arc 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 5;
-  }
-  .canjump-viz-container .jump-cell.current .value { color: #fff; }
-  .canjump-viz-container .sw-result-banner {
-    margin: 0 16px 16px; padding: 12px 16px; border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5; transition: all 0.3s;
-  }
-  .canjump-viz-container .sw-result-banner.success {
-    background: rgba(52, 211, 153, 0.14); border-color: var(--cj-accent-a); color: #86efac;
-  }
-  .canjump-viz-container .sw-result-banner.fail {
-    background: rgba(248, 113, 113, 0.14); border-color: #f87171; color: #fca5a5;
-    animation: shake 0.4s ease-in-out;
-  }
-  .canjump-viz-container .sw-result-banner .badge { margin-right: 8px; }
-  .canjump-viz-container .sw-code {
-    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .canjump-viz-container .sw-code [data-code-panel] { flex: 1; min-width: 0; }
-  .canjump-viz-container .sw-controls {
-    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
-  }
-  .canjump-viz-container .sw-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-    font-size: 14px; font-weight: 500;
-  }
-  .canjump-viz-container .sw-btn:hover:not(:disabled) { border-color: var(--cj-accent-a); color: #fff; }
-  .canjump-viz-container .sw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .canjump-viz-container .sw-play-btn {
-    border: 1px solid transparent; background: linear-gradient(135deg, var(--cj-accent-a), var(--cj-accent-b));
-    color: #fff; font-weight: 600;
-  }
-  .canjump-viz-container .sw-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(59, 130, 246, 0.45); }
-  .canjump-viz-container .sw-counter { color: #a6adc8; font-size: 13px; min-width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
-  .canjump-viz-container .sw-slider-container { display: flex; align-items: center; gap: 8px; }
-  .canjump-viz-container .sw-slider-container input[type=range] {
-    width: 110px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
-    outline: none; -webkit-appearance: none;
-  }
-  .canjump-viz-container .sw-slider-container input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cj-accent-a);
-    cursor: pointer; box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
-  }
-  .canjump-viz-container .sw-slider-container span { color: #a6adc8; font-size: 13px; min-width: 40px; font-variant-numeric: tabular-nums; }
 
-  @keyframes pulse-cj {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
-    50% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+  #algo-can-jump-view * {
+    box-sizing: border-box;
   }
-  @keyframes pop-in {
-    0% { transform: scale(0); opacity: 0; }
-    60% { transform: scale(1.15); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  @keyframes burst {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.12); filter: brightness(1.25); }
-  }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
-  }
-  @keyframes jump-arc {
-    0% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-18px) scale(1.18); }
-    100% { transform: translateY(-4px) scale(1.18); }
-  }
-  .canjump-viz-container .jump-cell.new { animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-  @media (max-width: 1100px) {
-    .canjump-viz-container .sw-main { grid-template-columns: 1fr; overflow: auto; }
-    .canjump-viz-container .sw-code { min-height: 340px; }
-    .canjump-viz-container .sw-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .canjump-viz-container .sw-stats { grid-template-columns: repeat(2, 1fr); }
+  /* 1. 顶栏 Header */
+  #algo-can-jump-view .cj-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-can-jump-view .cj-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-can-jump-view .cj-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-can-jump-view .cj-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-can-jump-view .cj-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-can-jump-view .cj-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-can-jump-view .cj-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-can-jump-view .cj-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-can-jump-view .cj-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-can-jump-view .cj-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-can-jump-view .cj-input-str {
+    width: 140px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-can-jump-view .cj-input-str:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+  }
+
+  #algo-can-jump-view .cj-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-can-jump-view .cj-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-can-jump-view .cj-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-can-jump-view .cj-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-can-jump-view .cj-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-can-jump-view .cj-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-can-jump-view .cj-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-can-jump-view .cj-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-can-jump-view .cj-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-can-jump-view .cj-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-can-jump-view .cj-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-can-jump-view .cj-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-can-jump-view .cj-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-can-jump-view .cj-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 跳跃覆盖沙盘展示盒 */
+  #algo-can-jump-view #cj-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-can-jump-view .cj-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-can-jump-view .cj-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-can-jump-view .cj-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-can-jump-view .cj-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-can-jump-view .cj-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-can-jump-view .cj-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-can-jump-view .cj-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-can-jump-view .cj-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-can-jump-view .cj-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-can-jump-view .cj-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-can-jump-view .cj-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-can-jump-view .cj-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-can-jump-view .cj-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-can-jump-view .cj-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-can-jump-view .cj-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-can-jump-view .cj-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-can-jump-view .cj-tab-item.active {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  #algo-can-jump-view .cj-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-can-jump-view .cj-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-can-jump-view .cj-lang-btn.active {
+    background: #334155;
+    color: #38bdf8;
+  }
+
+  #algo-can-jump-view .cj-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-can-jump-view .cj-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-can-jump-view .cj-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-can-jump-view .cj-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #38bdf8;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-can-jump-view .cj-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-can-jump-view .cj-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-can-jump-view .cj-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-can-jump-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-can-jump-view .code-line.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-left: 3px solid #3b82f6;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-can-jump-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-can-jump-view .cj-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-can-jump-view .cj-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-can-jump-view .cj-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-can-jump-view .cj-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-can-jump-view .cj-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-can-jump-view .cj-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-can-jump-view .cj-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-can-jump-view .cj-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-can-jump-view .cj-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-can-jump-view .cj-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-can-jump-view .cj-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-can-jump-view .cj-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="canjump-viz-container">
-  <div class="sw-page">
-    <div class="sw-header">
-      <div class="sw-head-left">
-        <div class="sw-icon-badge">🦘</div>
-        <div>
-          <h1>跳跃游戏 I（贪心）</h1>
-          <p class="sw-desc">LeetCode 55：维护最大可达位置，贪心判断能否到达数组末尾</p>
-        </div>
+<div id="algo-can-jump-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="cj-header">
+    <div class="cj-header-left">
+      <div class="cj-icon-btn">🦘</div>
+      <h1 class="cj-main-title">LeetCode 55. 跳跃游戏</h1>
+      <button id="btn-open-problem-modal" class="cj-btn-problem">📋 题目</button>
+      <span class="cj-badge-mode">最大覆盖范围贪心推进</span>
+      <span class="cj-badge-complexity">O(N)</span>
+    </div>
+
+    <!-- 参数与操作工具组 -->
+    <div class="cj-header-right">
+      <div class="cj-input-group">
+        <span>nums:</span>
+        <input type="text" id="input-nums" value="2,3,1,1,4" class="cj-input-str" placeholder="2,3,1,1,4" />
       </div>
-      <div class="sw-legend">
-        <div class="sw-legend-item"><div class="sw-legend-dot" style="background:#34d399;"></div> 当前位置</div>
-        <div class="sw-legend-item"><div class="sw-legend-dot" style="background:#3b82f6;"></div> 最远可达</div>
-        <div class="sw-legend-item"><div class="sw-legend-dot" style="background:#f87171;"></div> 阻塞</div>
+
+      <button id="btn-generate" class="cj-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="cj-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="cj-chip" data-nums="2,3,1,1,4">示例 1 (可达 true)</button>
+        <button class="cj-chip" data-nums="3,2,1,0,4">示例 2 (不可达 false)</button>
+        <button class="cj-chip" data-nums="0">单元素 (true)</button>
       </div>
     </div>
-    <div class="sw-main">
-      <div class="sw-left">
-        <section class="sw-card">
-          <div class="sw-card-title">输入</div>
-          <div class="sw-input-row">
-            <input type="text" id="canjump-input" value="2,3,1,1,4">
-            <button id="canjump-start" class="sw-start-btn">开始跳跃</button>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="cj-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="cj-left-section">
+
+      <!-- 卡片 1: 动态覆盖范围与跳跃沙盘 (Jump Coverage Sandbox) -->
+      <div class="cj-card">
+        <div class="cj-card-header">
+          <div class="cj-card-title">
+            <span>🦘 最大跳跃覆盖范围沙盘 (Jump Coverage Sandbox)</span>
           </div>
-        </section>
-        <div class="sw-stats">
-          <div class="sw-stat"><label>最大可达</label><span id="max-reach">0</span></div>
-          <div class="sw-stat"><label>当前索引</label><span id="current-index">0</span></div>
-          <div class="sw-stat"><label>状态</label><span id="jump-status">进行中</span></div>
-          <div class="sw-stat"><label>策略</label><span>贪心覆盖</span></div>
+          <div class="cj-legend-bar">
+            <div><span class="cj-legend-dot" style="background:#10b981;"></span> 🏁终点目标</div>
+            <div><span class="cj-legend-dot" style="background:#3b82f6;"></span> 📍当前扫描格</div>
+            <div><span class="cj-legend-dot" style="background:#a855f7;"></span> 🌐最大覆盖范围</div>
+          </div>
         </div>
-        <section class="sw-card sw-visual">
-          <div class="sw-card-title">跳跃可视化 <span style="font-weight:400;color:#a6adc8;font-size:12px;">值 → 可跳达</span></div>
-          <div id="canjump-array-display" class="sw-track"></div>
-          <div class="sw-result-banner" id="canjump-status"><span class="badge">💡</span>输入数组后点击开始跳跃</div>
-        </section>
+
+        <!-- 跳跃沙盘居中展示盒 -->
+        <div id="cj-sandbox-container"></div>
       </div>
-      <aside class="sw-code"><div data-code-panel></div></aside>
-    </div>
-    <div class="sw-controls">
-      <button id="canjump-reset" class="sw-btn">⏮重置</button>
-      <button id="canjump-prev" class="sw-btn">◀上一步</button>
-      <button id="canjump-play" class="sw-btn sw-play-btn">▶播放</button>
-      <button id="canjump-next" class="sw-btn">下一步▶</button>
-      <span id="step-counter" class="sw-counter">步骤: 0 / 0</span>
-      <div class="sw-slider-container">
-        <input id="canjump-speed" type="range" min="200" max="2000" step="100" value="800">
-        <span id="canjump-speed-label">0.8s</span>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="cj-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="cj-slider" />
+        <div class="cj-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="cj-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="cj-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="cj-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="cj-card">
+        <div class="cj-card-header">
+          <div>
+            <div class="cj-card-title">📦 覆盖范围状态空间与指标追踪</div>
+            <div class="cj-card-desc">当前跳力、最大覆盖范围更新与能否触达终点判定</div>
+          </div>
+          <span id="badge-cover-reach" class="cj-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">覆盖: 下标 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="cj-state-space-box">
+          <div class="cj-state-columns">
+            <!-- 当前扫描与跳力 -->
+            <div class="cj-subcard">
+              <div class="cj-subcard-title">📍 当前位置与跳力 (Jump Reach)</div>
+              <div id="cj-pointer-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 贪心判定监视器 -->
+            <div class="cj-subcard">
+              <div class="cj-subcard-title">⚖️ 覆盖范围推进监视器 (Cover Extension)</div>
+              <div id="cj-cover-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="cj-subcard" style="flex-shrink: 0;">
+            <div class="cj-subcard-title">🏆 终点可达性判定看板 (Reachability)</div>
+            <div id="cj-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="cj-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="cj-dark-terminal">
+        <div class="cj-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="cj-tab-group">
+            <button id="btn-tab-code" class="cj-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="cj-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="cj-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="cj-lang-group" id="code-lang-tabs">
+            <button class="cj-lang-btn active" data-lang="java">Java</button>
+            <button class="cj-lang-btn" data-lang="cpp">C++</button>
+            <button class="cj-lang-btn" data-lang="python">Python</button>
+            <button class="cj-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="cj-font-tools">
+            <div class="cj-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="cj-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="cj-window-dots">
+              <span class="cj-dot" style="background:#ef4444;"></span>
+              <span class="cj-dot" style="background:#eab308;"></span>
+              <span class="cj-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="cj-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="cj-log-card">
+        <div class="cj-log-header">
+          <div class="cj-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="cj-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="cj-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="cj-modal-backdrop hidden">
+    <div class="cj-modal-content">
+      <div class="cj-modal-header">
+        <div class="cj-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="cj-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="cj-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

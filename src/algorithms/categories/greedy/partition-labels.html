@@ -1,367 +1,873 @@
 <style>
-  /* === 划分字母区间 · 玻璃感 + 连线追踪 + 切割 drop-in === */
+  /* === 划分字母区间 (LeetCode 763) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-partition-labels-view {
-    --accent-a: #ec4899;
-    --accent-b: #8b5cf6;
-    --accent-glow: rgba(139, 92, 246, .45);
-    --current-color: #fbbf24;
-    --end-color: #34d399;
-    --cut-color: #f87171;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 5% 5%, rgba(236, 72, 153, .26), transparent 55%),
-      radial-gradient(ellipse at 95% 90%, rgba(139, 92, 246, .26), transparent 55%),
-      linear-gradient(135deg, #1a0518 0%, #1d1030 50%, #201640 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-partition-labels-view .pl-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-partition-labels-view * {
+    box-sizing: border-box;
   }
-  #algo-partition-labels-view .pl-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-partition-labels-view .pl-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-partition-labels-view .pl-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-partition-labels-view .pl-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-partition-labels-view .pl-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-partition-labels-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-partition-labels-view .pl-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-partition-labels-view .pl-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .08));
-    border: 1px solid rgba(139, 92, 246, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-partition-labels-view .pl-tip strong { color: #c4b5fd; }
-  #algo-partition-labels-view .pl-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-partition-labels-view .pl-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-partition-labels-view .pl-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-partition-labels-view .pl-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-partition-labels-view .pl-tag {
-    font-size: 11px; color: #c4b5fd; background: rgba(139, 92, 246, .14);
-    border: 1px solid rgba(139, 92, 246, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-partition-labels-view .pl-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-partition-labels-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-partition-labels-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(139, 92, 246, .15); }
-  #algo-partition-labels-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-partition-labels-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-partition-labels-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-partition-labels-view .pl-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-partition-labels-view .pl-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(236, 72, 153, .12); border: 1px solid rgba(236, 72, 153, .28);
-    color: #f9a8d4; cursor: pointer; transition: all .2s;
-  }
-  #algo-partition-labels-view .pl-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
-  }
-  #algo-partition-labels-view .pl-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-  }
-  #algo-partition-labels-view .pl-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-partition-labels-view .pl-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-partition-labels-view .pl-stat--idx::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-partition-labels-view .pl-stat--idx .pl-stat-val { color: #fde68a; }
-  #algo-partition-labels-view .pl-stat--end::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-partition-labels-view .pl-stat--end .pl-stat-val { color: #6ee7b7; }
-  #algo-partition-labels-view .pl-stat--size::before { background: linear-gradient(180deg, #f87171, #ef4444); }
-  #algo-partition-labels-view .pl-stat--size .pl-stat-val { color: #fca5a5; }
-  #algo-partition-labels-view .pl-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-partition-labels-view .pl-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* canvas: string chars + last occurrence track */
-  #algo-partition-labels-view .pl-chart-card { flex: 1; min-height: 320px; display: flex; flex-direction: column; }
-  #algo-partition-labels-view .pl-canvas {
-    flex: 1; min-height: 280px; padding: 32px 18px 20px;
-    position: relative; overflow: auto;
-    display: flex; flex-direction: column; gap: 16px;
-  }
-  #algo-partition-labels-view .pl-track {
-    position: relative; display: flex; gap: 8px; flex-wrap: nowrap;
-    justify-content: center; align-items: center;
-  }
-  #algo-partition-labels-view .pl-char {
-    position: relative; width: 36px; height: 44px;
-    display: flex; align-items: center; justify-content: center;
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+
+  #algo-partition-labels-view .pl-icon-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 18px; font-weight: 800; color: #cbd5e1;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-partition-labels-view .pl-char .pl-idx {
-    position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
-    font-size: 10px; color: #64748b; font-weight: 600;
-  }
-  #algo-partition-labels-view .pl-char.pl-char--current {
-    transform: translateY(-8px) scale(1.12);
-    border-color: var(--current-color);
-    background: linear-gradient(180deg, rgba(251, 191, 36, .35), rgba(245, 158, 11, .15));
-    color: #fef3c7;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 8px 22px rgba(251, 191, 36, .4);
-    animation: pl-char-pulse 1.2s ease-in-out infinite;
-  }
-  @keyframes pl-char-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 8px 22px rgba(251, 191, 36, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, .15), 0 10px 28px rgba(251, 191, 36, .55); }
-  }
-  #algo-partition-labels-view .pl-char.pl-char--end {
-    border-color: var(--end-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .28), rgba(16, 185, 129, .08));
-    color: #d1fae5;
-    box-shadow: 0 0 0 2px rgba(52, 211, 153, .2);
-    animation: pl-end-glow 1.2s ease-in-out infinite;
-  }
-  @keyframes pl-end-glow {
-    0%, 100% { box-shadow: 0 0 0 2px rgba(52, 211, 153, .2); }
-    50% { box-shadow: 0 0 0 5px rgba(52, 211, 153, .12), 0 0 20px rgba(52, 211, 153, .4); }
-  }
-  #algo-partition-labels-view .pl-char.pl-char--in-partition {
-    border-color: rgba(236, 72, 153, .45);
-    background: linear-gradient(180deg, rgba(236, 72, 153, .22), rgba(139, 92, 246, .08));
-    color: #f9a8d4;
-  }
-  #algo-partition-labels-view .pl-char.pl-char--partitioned {
-    opacity: .4; filter: grayscale(.4);
-  }
-  #algo-partition-labels-view .pl-cut {
-    position: absolute; top: -18px; bottom: -18px; width: 2px;
-    background: var(--cut-color);
-    box-shadow: 0 0 8px rgba(248, 113, 113, .6);
-    animation: pl-cut-drop .55s cubic-bezier(.34, 1.56, .64, 1);
-    transform-origin: top;
-  }
-  @keyframes pl-cut-drop {
-    0% { transform: scaleY(0); opacity: 0; }
-    60% { transform: scaleY(1.2); opacity: 1; }
-    100% { transform: scaleY(1); opacity: 1; }
-  }
-  #algo-partition-labels-view .pl-cut::after {
-    content: '✂'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-    color: var(--cut-color); font-size: 14px;
-  }
-  /* last occurrence map */
-  #algo-partition-labels-view .pl-occ-track {
-    display: flex; gap: 8px; flex-wrap: nowrap; justify-content: center; padding-top: 28px;
-  }
-  #algo-partition-labels-view .pl-occ-item {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    min-width: 36px;
-    font-family: 'JetBrains Mono', monospace; font-size: 11px;
-  }
-  #algo-partition-labels-view .pl-occ-char {
-    padding: 4px 6px; border-radius: 6px;
-    background: rgba(148, 163, 184, .12);
-    color: #94a3b8; font-weight: 700;
-  }
-  #algo-partition-labels-view .pl-occ-pos {
-    color: #c4b5fd; font-weight: 700;
-  }
-  #algo-partition-labels-view .pl-occ-item.pl-occ--highlight .pl-occ-pos {
-    color: #fbbf24;
-    animation: pl-occ-flash .6s ease-in-out;
-  }
-  @keyframes pl-occ-flash {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.4); color: #fef3c7; }
-    100% { transform: scale(1); }
-  }
-  /* result */
-  #algo-partition-labels-view .pl-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .06));
-    border: 1px solid rgba(139, 92, 246, .28);
-    line-height: 1.55; font-size: 14px; color: #e9d5ff;
-  }
-  #algo-partition-labels-view .pl-result .pl-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-partition-labels-view .pl-result.pl-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-partition-labels-view .pl-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-partition-labels-view .pl-result.pl-result--done .pl-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-partition-labels-view .pl-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-partition-labels-view .pl-result.pl-result--cut {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .18), rgba(239, 68, 68, .06));
-    border-color: rgba(248, 113, 113, .4); color: #fecaca;
+  #algo-partition-labels-view .pl-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-partition-labels-view .pl-result.pl-result--cut .pl-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
-    color: #fff;
+
+  #algo-partition-labels-view .pl-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-partition-labels-view .pl-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
+
+  #algo-partition-labels-view .pl-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-partition-labels-view .pl-log-line { display: flex; gap: 8px; }
-  #algo-partition-labels-view .pl-log-line .pl-log-num { color: #475569; flex-shrink: 0; }
-  #algo-partition-labels-view .pl-log-line.pl-log-active { color: #c4b5fd; font-weight: 600; }
-  #algo-partition-labels-view .pl-log-line.pl-log-active .pl-log-num { color: var(--accent-b); }
-  #algo-partition-labels-view .pl-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-partition-labels-view .pl-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-partition-labels-view .pl-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-partition-labels-view .pl-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-partition-labels-view .pl-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
   }
-  #algo-partition-labels-view .pl-controls .pl-ctrl-btn { min-width: 64px; }
-  #algo-partition-labels-view .pl-controls .pl-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+
+  #algo-partition-labels-view .pl-input-str {
+    width: 200px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
   }
-  #algo-partition-labels-view .pl-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+  #algo-partition-labels-view .pl-input-str:focus {
+    border-color: #4f46e5;
+    background: #ffffff;
   }
-  #algo-partition-labels-view .pl-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-partition-labels-view .pl-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-partition-labels-view #pl-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-partition-labels-view .pl-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-partition-labels-view .pl-code { min-height: 360px; }
+  #algo-partition-labels-view .pl-btn-generate:hover {
+    background: #4338ca;
+  }
+
+  #algo-partition-labels-view .pl-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-partition-labels-view .pl-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-partition-labels-view .pl-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-partition-labels-view .pl-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-partition-labels-view .pl-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-partition-labels-view .pl-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-partition-labels-view .pl-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-partition-labels-view .pl-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-partition-labels-view .pl-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-partition-labels-view .pl-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-partition-labels-view .pl-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-partition-labels-view .pl-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 字符串切片沙盘展示盒 */
+  #algo-partition-labels-view #pl-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-partition-labels-view .pl-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-partition-labels-view .pl-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #4f46e5;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-partition-labels-view .pl-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-partition-labels-view .pl-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-partition-labels-view .pl-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-partition-labels-view .pl-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-partition-labels-view .pl-play-circle-btn:hover {
+    background: #4338ca;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-partition-labels-view .pl-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-partition-labels-view .pl-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-partition-labels-view .pl-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-partition-labels-view .pl-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-partition-labels-view .pl-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-partition-labels-view .pl-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-partition-labels-view .pl-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-partition-labels-view .pl-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-partition-labels-view .pl-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-partition-labels-view .pl-tab-item.active {
+    background: #4f46e5;
+    color: #ffffff;
+  }
+
+  #algo-partition-labels-view .pl-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-partition-labels-view .pl-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-partition-labels-view .pl-lang-btn.active {
+    background: #334155;
+    color: #a5b4fc;
+  }
+
+  #algo-partition-labels-view .pl-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-partition-labels-view .pl-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-partition-labels-view .pl-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-partition-labels-view .pl-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #a5b4fc;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-partition-labels-view .pl-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-partition-labels-view .pl-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-partition-labels-view .pl-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-partition-labels-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-partition-labels-view .code-line.active {
+    background: rgba(79, 70, 229, 0.2);
+    border-left: 3px solid #4f46e5;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-partition-labels-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-partition-labels-view .pl-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-partition-labels-view .pl-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-partition-labels-view .pl-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-partition-labels-view .pl-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-partition-labels-view .pl-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-partition-labels-view .pl-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-partition-labels-view .pl-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-partition-labels-view .pl-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-partition-labels-view .pl-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-partition-labels-view .pl-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-partition-labels-view .pl-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-partition-labels-view .pl-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="pl-shell">
-  <div class="pl-hero">
-    <div class="pl-hero-left">
-      <span class="pl-icon">🔤</span>
-      <div>
-        <h1>划分字母区间（贪心）</h1>
-        <div class="pl-sub">LeetCode 763 · 将字符串划分为尽可能多的片段</div>
-      </div>
+<div id="algo-partition-labels-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="pl-header">
+    <div class="pl-header-left">
+      <div class="pl-icon-btn">✂️</div>
+      <h1 class="pl-main-title">LeetCode 763. 划分字母区间</h1>
+      <button id="btn-open-problem-modal" class="pl-btn-problem">📋 题目</button>
+      <span class="pl-badge-mode">字符最后出现位置 / 最远边界贪心切割</span>
+      <span class="pl-badge-complexity">O(N)</span>
     </div>
-    <div class="pl-tip"><strong>核心动画：</strong>字符从左到右扫描；每个字符<span style="color:#fef3c7">黄色脉冲</span>高亮并显示它的<span style="color:#6ee7b7">最后出现位置</span>；区间推进到终点时<span style="color:#fca5a5">切割线 drop-in</span> 落下，划分新片段。</div>
-  </div>
-  <div class="pl-main">
-    <div class="pl-left">
-      <section class="pl-card">
-        <div class="pl-card-title">输入 <span class="pl-tag">字符串</span></div>
-        <div class="pl-input-row">
-          <input id="partition-input" value="ababcbacadefegdehijhklij">
-          <button id="partition-start">开始划分</button>
-        </div>
-        <div class="pl-examples">
-          <button class="pl-chip" data-val="ababcbacadefegdehijhklij">经典示例</button>
-          <button class="pl-chip" data-val="ababcb">3 段</button>
-          <button class="pl-chip" data-val="aaaaaaa">全相同</button>
-          <button class="pl-chip" data-val="abcdef">全部唯一</button>
-          <button class="pl-chip" data-val="abcadef">首重复</button>
-        </div>
-      </section>
 
-      <div class="pl-stats">
-        <div class="pl-stat pl-stat--idx"><div class="pl-stat-label">当前 idx</div><div class="pl-stat-val" id="current-index">-</div></div>
-        <div class="pl-stat pl-stat--end"><div class="pl-stat-label">区间终点</div><div class="pl-stat-val" id="current-end">-</div></div>
-        <div class="pl-stat pl-stat--size"><div class="pl-stat-label">当前长度</div><div class="pl-stat-val" id="partition-size">-</div></div>
-        <div class="pl-stat"><div class="pl-stat-label">片段数</div><div class="pl-stat-val" id="partition-count">0</div></div>
+    <!-- 参数与操作工具组 -->
+    <div class="pl-header-right">
+      <div class="pl-input-group">
+        <span>s:</span>
+        <input type="text" id="input-s" value="ababcbacadefegdehijhklij" class="pl-input-str" placeholder="ababcbacadefegdehijhklij" />
       </div>
 
-      <section class="pl-card pl-chart-card">
-        <div class="pl-card-title">字符扫描与区间切割 <span class="pl-tag">追踪最后出现位置</span></div>
-        <div class="pl-canvas" id="pl-canvas"></div>
-        <div class="pl-result" id="pl-result">
-          <span class="pl-emoji">🔤</span>
-          <div id="step-message">点击「开始划分」观察字符扫描 + 区间追踪 + 切割动画</div>
-        </div>
-      </section>
+      <button id="btn-generate" class="pl-btn-generate">
+        <span>▶ 运行</span>
+      </button>
 
-      <section class="pl-card">
-        <div class="pl-card-title">执行日志 <button id="pl-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="pl-log" id="pl-log"></div>
-      </section>
+      <button id="btn-reset" class="pl-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="pl-chip" data-str="ababcbacadefegdehijhklij">示例 1 (9,7,8)</button>
+        <button class="pl-chip" data-str="eccbbbbdec">示例 2 (10)</button>
+        <button class="pl-chip" data-str="abcdefg">单字符全切 (1,1,1...)</button>
+      </div>
     </div>
-    <aside class="pl-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="pl-controls">
-    <button id="step-reset" class="pl-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="pl-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="pl-ctrl-btn pl-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="pl-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="pl-counter">步骤: 0 / 0</span>
-    <div class="pl-speed-wrap">
-      <span>速度</span>
-      <input id="pl-speed" type="range" min="200" max="2500" step="100" value="900">
-      <span id="pl-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="pl-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="pl-left-section">
+
+      <!-- 卡片 1: 字符串字符切片沙盘 (String Partition Ribbon Sandbox) -->
+      <div class="pl-card">
+        <div class="pl-card-header">
+          <div class="pl-card-title">
+            <span>✂️ 字符片段划分与最远边界沙盘 (Partition Sandbox)</span>
+          </div>
+          <div class="pl-legend-bar">
+            <div><span class="pl-legend-dot" style="background:#4f46e5;"></span> 📍 当前扫描字符</div>
+            <div><span class="pl-legend-dot" style="background:#f59e0b;"></span> 🏁 片段右边界</div>
+            <div><span class="pl-legend-dot" style="background:#10b981;"></span> ✂️ 切割点</div>
+          </div>
+        </div>
+
+        <!-- 字符切片沙盘展示盒 -->
+        <div id="pl-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="pl-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="pl-slider" />
+        <div class="pl-counter-badge">
+          <span id="step-cur" style="color: #4f46e5;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="pl-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="pl-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="pl-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="pl-card">
+        <div class="pl-card-header">
+          <div>
+            <div class="pl-card-title">📦 切割状态空间与指标追踪</div>
+            <div class="pl-card-desc">字符最后出现位置、当前片段区间与已划分片段长度统计</div>
+          </div>
+          <span id="badge-partition-count" class="pl-counter-badge" style="color:#4f46e5; background:#eef2ff; border-color:#c7d2fe;">片段数: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="pl-state-space-box">
+          <div class="pl-state-columns">
+            <!-- 字符与最后位置 -->
+            <div class="pl-subcard">
+              <div class="pl-subcard-title">🔤 字符最后位置 (Last Occurrence)</div>
+              <div id="pl-last-pos-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 切割判定监视器 -->
+            <div class="pl-subcard">
+              <div class="pl-subcard-title">⚖️ 切割点判定监视器 (Cut Decision)</div>
+              <div id="pl-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="pl-subcard" style="flex-shrink: 0;">
+            <div class="pl-subcard-title">🏆 最终划分结果看板 (Partition Results)</div>
+            <div id="pl-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="pl-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="pl-dark-terminal">
+        <div class="pl-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="pl-tab-group">
+            <button id="btn-tab-code" class="pl-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="pl-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="pl-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="pl-lang-group" id="code-lang-tabs">
+            <button class="pl-lang-btn active" data-lang="java">Java</button>
+            <button class="pl-lang-btn" data-lang="cpp">C++</button>
+            <button class="pl-lang-btn" data-lang="python">Python</button>
+            <button class="pl-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="pl-font-tools">
+            <div class="pl-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="pl-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="pl-window-dots">
+              <span class="pl-dot" style="background:#ef4444;"></span>
+              <span class="pl-dot" style="background:#eab308;"></span>
+              <span class="pl-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="pl-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="pl-log-card">
+        <div class="pl-log-header">
+          <div class="pl-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="pl-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="pl-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="pl-modal-backdrop hidden">
+    <div class="pl-modal-content">
+      <div class="pl-modal-header">
+        <div class="pl-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="pl-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="pl-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

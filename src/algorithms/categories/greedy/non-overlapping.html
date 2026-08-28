@@ -1,229 +1,871 @@
 <style>
-  :root {
-    --no-accent-a: #2dd4bf;
-    --no-accent-b: #34d399;
-  }
-  .non-overlap-viz-container {
-    width: 100%; height: 100%; color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(45, 212, 191, 0.5), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(52, 211, 153, 0.55), transparent 55%),
-      linear-gradient(135deg, #06171a, #0a1f1c, #08160f);
-    display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
-  }
-  .non-overlap-viz-container .sw-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-  .non-overlap-viz-container .sw-header {
-    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
-  }
-  .non-overlap-viz-container .sw-head-left { display: flex; align-items: center; gap: 14px; }
-  .non-overlap-viz-container .sw-icon-badge {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--no-accent-a), var(--no-accent-b));
-    display: flex; align-items: center; justify-content: center; font-size: 22px;
-    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.4);
-  }
-  .non-overlap-viz-container h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
-  .non-overlap-viz-container .sw-desc { margin: 4px 0 0; color: #a6adc8; font-size: 13px; line-height: 1.4; }
-  .non-overlap-viz-container .sw-tip {
-    max-width: 400px; padding: 11px 14px; border-radius: 12px;
-    background: rgba(45, 212, 191, 0.12); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(45, 212, 191, 0.25); color: #bac2de; font-size: 13px; line-height: 1.55;
-  }
-  .non-overlap-viz-container .sw-tip strong { color: var(--no-accent-a); }
-  .non-overlap-viz-container .sw-main {
-    flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 16px; padding: 0 16px 16px; overflow: hidden;
-  }
-  .non-overlap-viz-container .sw-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-  .non-overlap-viz-container .sw-card {
-    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  .non-overlap-viz-container .sw-card-title {
-    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
-  }
-  .non-overlap-viz-container .sw-input-row {
-    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  .non-overlap-viz-container input[type="text"] {
-    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none; font-size: 13px;
-  }
-  .non-overlap-viz-container input[type="text"]:focus {
-    border-color: var(--no-accent-a); box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.2);
-  }
-  .non-overlap-viz-container .sw-start-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--no-accent-a), var(--no-accent-b)); color: #06171a;
-    font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 14px;
-  }
-  .non-overlap-viz-container .sw-start-btn:hover { box-shadow: 0 0 20px rgba(52, 211, 153, 0.45); }
-  .non-overlap-viz-container .sw-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .non-overlap-viz-container .sw-stat {
-    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
-  }
-  .non-overlap-viz-container .sw-stat::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: linear-gradient(180deg, var(--no-accent-a), var(--no-accent-b));
-  }
-  .non-overlap-viz-container .sw-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
-  .non-overlap-viz-container .sw-stat span {
-    color: var(--no-accent-b); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-  .non-overlap-viz-container .sw-visual { flex: 1; min-height: 220px; display: flex; flex-direction: column; }
-  .non-overlap-viz-container .sw-track {
-    flex: 1; min-height: 0; padding: 16px 16px 20px; overflow: auto; display: flex; flex-direction: column; gap: 8px;
-  }
-  .non-overlap-viz-container .interval-row {
-    display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(20, 18, 38, 0.45);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, border-color 0.3s, opacity 0.3s;
-    will-change: transform;
-  }
-  .non-overlap-viz-container .interval-row .interval-index {
-    width: 32px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    background: rgba(45, 212, 191, 0.2); color: #5eead4; font-size: 12px; font-weight: 700; flex-shrink: 0;
-    font-family: Consolas, monospace;
-  }
-  .non-overlap-viz-container .interval-row .interval-range {
-    font-family: Consolas, monospace; font-size: 14px; color: #d8dbee; flex: 1;
-  }
-  .non-overlap-viz-container .interval-row .interval-tag {
-    font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 600;
-  }
-  .non-overlap-viz-container .interval-row .tag-kept { background: rgba(52, 211, 153, 0.3); color: #6ee7b7; }
-  .non-overlap-viz-container .interval-row .tag-removed { background: rgba(248, 113, 113, 0.3); color: #fca5a5; }
-  .non-overlap-viz-container .interval-row.current {
-    background: rgba(45, 212, 191, 0.18); border-color: var(--no-accent-a);
-    transform: scale(1.02); animation: pulse-no 1.2s infinite;
-  }
-  .non-overlap-viz-container .interval-row.kept {
-    background: rgba(52, 211, 153, 0.14); border-color: var(--no-accent-b);
-    animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .non-overlap-viz-container .interval-row.removed {
-    background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.4); opacity: 0.55;
-    animation: shake 0.35s ease-in-out;
-  }
-  .non-overlap-viz-container .sw-result-banner {
-    margin: 0 16px 16px; padding: 12px 16px; border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5; transition: all 0.3s;
-  }
-  .non-overlap-viz-container .sw-result-banner.success {
-    background: rgba(52, 211, 153, 0.14); border-color: var(--no-accent-b); color: #6ee7b7;
-  }
-  .non-overlap-viz-container .sw-result-banner .badge { margin-right: 8px; }
-  .non-overlap-viz-container .sw-code {
-    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .non-overlap-viz-container .sw-code [data-code-panel] { flex: 1; min-width: 0; }
-  .non-overlap-viz-container .sw-controls {
-    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
-  }
-  .non-overlap-viz-container .sw-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-    font-size: 14px; font-weight: 500;
-  }
-  .non-overlap-viz-container .sw-btn:hover:not(:disabled) { border-color: var(--no-accent-a); color: #fff; }
-  .non-overlap-viz-container .sw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .non-overlap-viz-container .sw-play-btn {
-    border: 1px solid transparent; background: linear-gradient(135deg, var(--no-accent-a), var(--no-accent-b));
-    color: #06171a; font-weight: 700;
-  }
-  .non-overlap-viz-container .sw-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(52, 211, 153, 0.45); }
-  .non-overlap-viz-container .sw-counter { color: #a6adc8; font-size: 13px; min-width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
-  .non-overlap-viz-container .sw-slider-container { display: flex; align-items: center; gap: 8px; }
-  .non-overlap-viz-container .sw-slider-container input[type=range] {
-    width: 110px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
-    outline: none; -webkit-appearance: none;
-  }
-  .non-overlap-viz-container .sw-slider-container input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--no-accent-a);
-    cursor: pointer; box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
-  }
-  .non-overlap-viz-container .sw-slider-container span { color: #a6adc8; font-size: 13px; min-width: 40px; font-variant-numeric: tabular-nums; }
-
-  @keyframes pulse-no {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.5); }
-    50% { box-shadow: 0 0 0 8px rgba(45, 212, 191, 0); }
-  }
-  @keyframes pop-in {
-    0% { transform: scale(0.8); opacity: 0; }
-    60% { transform: scale(1.06); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  @keyframes burst {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); filter: brightness(1.25); }
-  }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+  /* === 无重叠区间 (LeetCode 435) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
+  #algo-non-overlapping-view {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  @media (max-width: 1100px) {
-    .non-overlap-viz-container .sw-main { grid-template-columns: 1fr; overflow: auto; }
-    .non-overlap-viz-container .sw-code { min-height: 340px; }
-    .non-overlap-viz-container .sw-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .non-overlap-viz-container .sw-tip { max-width: 100%; }
-    .non-overlap-viz-container .sw-stats { grid-template-columns: repeat(2, 1fr); }
+  #algo-non-overlapping-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-non-overlapping-view .no-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-non-overlapping-view .no-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-non-overlapping-view .no-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-non-overlapping-view .no-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-non-overlapping-view .no-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-non-overlapping-view .no-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-non-overlapping-view .no-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-non-overlapping-view .no-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-non-overlapping-view .no-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-non-overlapping-view .no-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-non-overlapping-view .no-input-str {
+    width: 170px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-non-overlapping-view .no-input-str:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+  }
+
+  #algo-non-overlapping-view .no-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-non-overlapping-view .no-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-non-overlapping-view .no-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-non-overlapping-view .no-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-non-overlapping-view .no-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-non-overlapping-view .no-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-non-overlapping-view .no-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-non-overlapping-view .no-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-non-overlapping-view .no-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-non-overlapping-view .no-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-non-overlapping-view .no-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-non-overlapping-view .no-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-non-overlapping-view .no-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-non-overlapping-view .no-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 区间沙盘展示盒 */
+  #algo-non-overlapping-view #no-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-non-overlapping-view .no-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-non-overlapping-view .no-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-non-overlapping-view .no-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-non-overlapping-view .no-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-non-overlapping-view .no-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-non-overlapping-view .no-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-non-overlapping-view .no-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-non-overlapping-view .no-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-non-overlapping-view .no-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-non-overlapping-view .no-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-non-overlapping-view .no-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-non-overlapping-view .no-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-non-overlapping-view .no-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-non-overlapping-view .no-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-non-overlapping-view .no-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-non-overlapping-view .no-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-non-overlapping-view .no-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-non-overlapping-view .no-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-non-overlapping-view .no-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-non-overlapping-view .no-lang-btn.active {
+    background: #334155;
+    color: #38bdf8;
+  }
+
+  #algo-non-overlapping-view .no-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-non-overlapping-view .no-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-non-overlapping-view .no-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-non-overlapping-view .no-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #38bdf8;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-non-overlapping-view .no-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-non-overlapping-view .no-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-non-overlapping-view .no-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-non-overlapping-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-non-overlapping-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-non-overlapping-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-non-overlapping-view .no-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-non-overlapping-view .no-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-non-overlapping-view .no-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-non-overlapping-view .no-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-non-overlapping-view .no-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-non-overlapping-view .no-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-non-overlapping-view .no-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-non-overlapping-view .no-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-non-overlapping-view .no-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-non-overlapping-view .no-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-non-overlapping-view .no-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-non-overlapping-view .no-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="non-overlap-viz-container">
-  <div class="sw-page">
-    <div class="sw-header">
-      <div class="sw-head-left">
-        <div class="sw-icon-badge">📐</div>
-        <div>
-          <h1>无重叠区间（贪心）</h1>
-          <p class="sw-desc">LeetCode 435：按终点排序贪心保留，求最少移除区间数</p>
-        </div>
-      </div>
-      <div class="sw-tip"><strong>贪心策略：</strong>按终点升序排序，起点 ≥ 当前终点则保留，否则移除。</div>
+<div id="algo-non-overlapping-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="no-header">
+    <div class="no-header-left">
+      <div class="no-icon-btn">✂️</div>
+      <h1 class="no-main-title">LeetCode 435. 无重叠区间</h1>
+      <button id="btn-open-problem-modal" class="no-btn-problem">📋 题目</button>
+      <span class="no-badge-mode">贪心移除重叠区间 / 保留短右界</span>
+      <span class="no-badge-complexity">O(N log N)</span>
     </div>
-    <div class="sw-main">
-      <div class="sw-left">
-        <section class="sw-card">
-          <div class="sw-card-title">输入</div>
-          <div class="sw-input-row">
-            <input type="text" id="non-overlap-input" value="[[1,2],[2,3],[3,4],[1,3]]">
-            <button id="non-overlap-start" class="sw-start-btn">开始筛选</button>
+
+    <!-- 参数与操作工具组 -->
+    <div class="no-header-right">
+      <div class="no-input-group">
+        <span>intervals:</span>
+        <input type="text" id="input-intervals" value="[[1,2],[2,3],[3,4],[1,3]]" class="no-input-str" placeholder="[[1,2],[2,3],[3,4],[1,3]]" />
+      </div>
+
+      <button id="btn-generate" class="no-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="no-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="no-chip" data-intervals="[[1,2],[2,3],[3,4],[1,3]]">示例 1 (移除 1)</button>
+        <button class="no-chip" data-intervals="[[1,2],[1,2],[1,2]]">全重叠 (移除 2)</button>
+        <button class="no-chip" data-intervals="[[1,2],[2,3]]">无重叠 (移除 0)</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="no-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="no-left-section">
+
+      <!-- 卡片 1: 区间条沙盘 (Intervals Sandbox) -->
+      <div class="no-card">
+        <div class="no-card-header">
+          <div class="no-card-title">
+            <span>✂️ 区间重叠与保留/移除沙盘 (Intervals Sandbox)</span>
           </div>
-        </section>
-        <div class="sw-stats">
-          <div class="sw-stat"><label>保留区间</label><span id="kept-count">0</span></div>
-          <div class="sw-stat"><label>移除区间</label><span id="removed-count">0</span></div>
-          <div class="sw-stat"><label>当前终点</label><span id="current-end">-</span></div>
-          <div class="sw-stat"><label>排序依据</label><span>终点↑</span></div>
+          <div class="no-legend-bar">
+            <div><span class="no-legend-dot" style="background:#10b981;"></span> ✓ 保留区间</div>
+            <div><span class="no-legend-dot" style="background:#ef4444;"></span> 🗑️ 移除区间</div>
+            <div><span class="no-legend-dot" style="background:#3b82f6;"></span> 📍 当前考察区间</div>
+          </div>
         </div>
-        <section class="sw-card sw-visual">
-          <div class="sw-card-title">区间可视化</div>
-          <div id="non-overlap-display" class="sw-track"></div>
-          <div class="sw-result-banner" id="non-overlap-status"><span class="badge">💡</span>输入区间数组后点击开始筛选</div>
-        </section>
+
+        <!-- 沙盘展示盒 -->
+        <div id="no-sandbox-container"></div>
       </div>
-      <aside class="sw-code"><div data-code-panel></div></aside>
-    </div>
-    <div class="sw-controls">
-      <button id="non-overlap-reset" class="sw-btn">⏮重置</button>
-      <button id="non-overlap-prev" class="sw-btn">◀上一步</button>
-      <button id="non-overlap-play" class="sw-btn sw-play-btn">▶播放</button>
-      <button id="non-overlap-next" class="sw-btn">下一步▶</button>
-      <span id="step-counter" class="sw-counter">步骤: 0 / 0</span>
-      <div class="sw-slider-container">
-        <input id="non-overlap-speed" type="range" min="200" max="2000" step="100" value="600">
-        <span id="non-overlap-speed-label">0.6s</span>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="no-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="no-slider" />
+        <div class="no-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="no-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="no-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="no-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="no-card">
+        <div class="no-card-header">
+          <div>
+            <div class="no-card-title">📦 区间决策状态空间与指标追踪</div>
+            <div class="no-card-desc">当前重叠判定、右边界收紧决策与需移除区间数统计</div>
+          </div>
+          <span id="badge-removed-count" class="no-counter-badge" style="color:#ef4444; background:#fef2f2; border-color:#fecaca;">移除数: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="no-state-space-box">
+          <div class="no-state-columns">
+            <!-- 区间状态 -->
+            <div class="no-subcard">
+              <div class="no-subcard-title">📐 当前区间与边界 (Interval & End)</div>
+              <div id="no-interval-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 重叠判定监视器 -->
+            <div class="no-subcard">
+              <div class="no-subcard-title">⚖️ 贪心移除判定监视器 (Removal Decision)</div>
+              <div id="no-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="no-subcard" style="flex-shrink: 0;">
+            <div class="no-subcard-title">🏆 最终保留与移除看板 (Non-overlap Metrics)</div>
+            <div id="no-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="no-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="no-dark-terminal">
+        <div class="no-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="no-tab-group">
+            <button id="btn-tab-code" class="no-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="no-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="no-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="no-lang-group" id="code-lang-tabs">
+            <button class="no-lang-btn active" data-lang="java">Java</button>
+            <button class="no-lang-btn" data-lang="cpp">C++</button>
+            <button class="no-lang-btn" data-lang="python">Python</button>
+            <button class="no-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="no-font-tools">
+            <div class="no-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="no-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="no-window-dots">
+              <span class="no-dot" style="background:#ef4444;"></span>
+              <span class="no-dot" style="background:#eab308;"></span>
+              <span class="no-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="no-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="no-log-card">
+        <div class="no-log-header">
+          <div class="no-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="no-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="no-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="no-modal-backdrop hidden">
+    <div class="no-modal-content">
+      <div class="no-modal-header">
+        <div class="no-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="no-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="no-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

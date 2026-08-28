@@ -1,320 +1,879 @@
 <style>
-  /* === 加油站 · 玻璃感 + 站点脉冲 + 油箱动画 === */
+  /* === 加油站 (LeetCode 134) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-gas-station-view {
-    --accent-a: #22c55e;
-    --accent-b: #3b82f6;
-    --accent-glow: rgba(34, 197, 94, .4);
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(34, 197, 94, .22), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, .22), transparent 55%),
-      linear-gradient(135deg, #0a1a0e 0%, #1a0e2a 50%, #1a1a30 100%);
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-gas-station-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-gas-station-view .gs-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-gas-station-view .gs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-gas-station-view .gs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #d97706;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-gas-station-view .gs-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-gas-station-view .gs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-gas-station-view .gs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-gas-station-view .gs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-gas-station-view .gs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-gas-station-view .gs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-gas-station-view .gs-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-gas-station-view .gs-input-str {
+    width: 120px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-gas-station-view .gs-input-str:focus {
+    border-color: #d97706;
+    background: #ffffff;
+  }
+
+  #algo-gas-station-view .gs-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #d97706;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(217, 119, 6, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-gas-station-view .gs-btn-generate:hover {
+    background: #b45309;
+  }
+
+  #algo-gas-station-view .gs-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-gas-station-view .gs-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-gas-station-view .gs-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-gas-station-view .gs-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-gas-station-view .gs-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-gas-station-view .gas-page { width: 100%; height: 100%; display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
-  #algo-gas-station-view .gas-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-gas-station-view .gas-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-gas-station-view .gas-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-gas-station-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-gas-station-view .gas-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-gas-station-view .gas-tip {
-    max-width: 520px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(34, 197, 94, .12), rgba(59, 130, 246, .08));
-    border: 1px solid rgba(34, 197, 94, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-gas-station-view .gas-tip strong { color: #86efac; }
-  #algo-gas-station-view .gas-shell {
-    min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-gas-station-view .gas-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-gas-station-view .gas-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-gas-station-view .gs-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     overflow: hidden;
   }
-  #algo-gas-station-view .gas-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-gas-station-view .gas-tag {
-    font-size: 11px; color: #86efac; background: rgba(34, 197, 94, .14);
-    border: 1px solid rgba(34, 197, 94, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-gas-station-view .gas-input-row {
-    display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-gas-station-view input[type="text"] {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-gas-station-view input[type="text"]:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(34, 197, 94, .15); }
-  #algo-gas-station-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-gas-station-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-gas-station-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-gas-station-view .gas-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-gas-station-view .gas-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(59, 130, 246, .12); border: 1px solid rgba(59, 130, 246, .28);
-    color: #93c5fd; cursor: pointer; transition: all .2s;
-  }
-  #algo-gas-station-view .gas-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
-  }
-  /* 统计 */
-  #algo-gas-station-view .gas-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #algo-gas-station-view .gas-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-gas-station-view .gas-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-gas-station-view .gas-stat--pos::before { background: linear-gradient(180deg, #22c55e, #16a34a); }
-  #algo-gas-station-view .gas-stat--pos .gas-stat-val { color: #86efac; }
-  #algo-gas-station-view .gas-stat--start::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-gas-station-view .gas-stat--start .gas-stat-val { color: #fde68a; }
-  #algo-gas-station-view .gas-stat--tank::before { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-  #algo-gas-station-view .gas-stat--tank .gas-stat-val { color: #93c5fd; }
-  #algo-gas-station-view .gas-stat--total::before { background: linear-gradient(180deg, #a855f7, #9333ea); }
-  #algo-gas-station-view .gas-stat--total .gas-stat-val { color: #e9d5ff; }
-  #algo-gas-station-view .gas-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-gas-station-view .gas-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* 站点轨道 */
-  #algo-gas-station-view .gas-track-card { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-gas-station-view .gas-track-body {
-    flex: 1; min-height: 240px; padding: 24px 18px;
-    overflow: auto; display: flex; align-items: flex-end; gap: 14px;
-  }
-  #algo-gas-station-view .gas-station-box {
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-gas-station-view .gs-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     position: relative;
-    min-width: 96px;
-    padding: 12px 14px;
-    background: rgba(255, 255, 255, .03);
-    border: 1.5px solid rgba(255, 255, 255, .1);
+  }
+
+  #algo-gas-station-view .gs-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-gas-station-view .gs-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-gas-station-view .gs-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-gas-station-view .gs-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-gas-station-view .gs-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 环形油站沙盘展示盒 */
+  #algo-gas-station-view #gs-sandbox-container {
+    background: #f8fafc;
     border-radius: 12px;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
   }
-  #algo-gas-station-view .gas-station-box::after {
-    content: '→';
-    position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
-    color: #64748b; font-weight: 900; font-size: 18px;
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-gas-station-view .gs-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
-  #algo-gas-station-view .gas-station-box:last-child::after {
-    content: '↺';
-    color: var(--accent-a);
+
+  #algo-gas-station-view .gs-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #d97706;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
   }
-  #algo-gas-station-view .gas-station-box.current {
-    z-index: 2;
-    border-color: var(--accent-a);
-    background: linear-gradient(135deg, rgba(34, 197, 94, .3), rgba(16, 185, 129, .12));
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, .25), 0 12px 22px rgba(34, 197, 94, .4);
-    transform: translateY(-10px) scale(1.05);
-    animation: gas-station-pulse 1.2s ease-in-out infinite;
+
+  #algo-gas-station-view .gs-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  @keyframes gas-station-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(34, 197, 94, .25), 0 12px 22px rgba(34, 197, 94, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, .12), 0 14px 28px rgba(34, 197, 94, .55); }
+
+  #algo-gas-station-view .gs-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-gas-station-view .gas-station-box.start {
-    border-color: #fbbf24;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .2), rgba(245, 158, 11, .08));
-    box-shadow: 0 0 12px rgba(251, 191, 36, .3);
+  #algo-gas-station-view .gs-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
-  #algo-gas-station-view .gas-station-box.failed {
-    border-color: rgba(248, 113, 113, .5);
-    background: rgba(248, 113, 113, .08);
-    opacity: .6;
-    animation: gas-fail-shake .4s;
+
+  #algo-gas-station-view .gs-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #d97706;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(217, 119, 6, 0.25);
+    transition: all 0.15s;
   }
-  @keyframes gas-fail-shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
+  #algo-gas-station-view .gs-play-circle-btn:hover {
+    background: #b45309;
+    transform: scale(1.05);
   }
-  #algo-gas-station-view .gas-station-head {
-    padding: 4px 8px; border-radius: 6px;
-    background: rgba(255, 255, 255, .06);
-    color: #cbd5e1; font-size: 12px; font-weight: 700;
+
+  /* Card 2 状态空间 */
+  #algo-gas-station-view .gs-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-gas-station-view .gas-station-row {
-    display: flex; justify-content: space-between; width: 100%;
-    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+
+  #algo-gas-station-view .gs-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
   }
-  #algo-gas-station-view .gas-station-row .gas-label { color: #94a3b8; }
-  #algo-gas-station-view .gas-station-row .gas-val { color: #e2e8f0; }
-  #algo-gas-station-view .gas-net {
-    padding: 4px 10px; border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800;
-    text-align: center; width: 100%;
+
+  #algo-gas-station-view .gs-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
   }
-  #algo-gas-station-view .gas-net.positive { background: rgba(34, 197, 94, .15); color: #86efac; }
-  #algo-gas-station-view .gas-net.negative { background: rgba(248, 113, 113, .15); color: #fca5a5; }
-  #algo-gas-station-view .gas-net.zero { background: rgba(251, 191, 36, .15); color: #fde68a; }
-  #algo-gas-station-view .gas-start-marker {
-    padding: 4px 8px; border-radius: 6px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .3), rgba(245, 158, 11, .12));
-    color: #fde68a; font-size: 11px; font-weight: 700;
-    text-align: center; width: 100%;
+
+  #algo-gas-station-view .gs-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
   }
-  /* 结果 */
-  #algo-gas-station-view .gas-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(34, 197, 94, .12), rgba(59, 130, 246, .06));
-    border: 1px solid rgba(34, 197, 94, .28);
-    line-height: 1.55; font-size: 14px; color: #86efac;
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-gas-station-view .gs-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-gas-station-view .gas-result .gas-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow); flex-shrink: 0;
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-gas-station-view .gs-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-gas-station-view .gas-result.gas-result--success {
-    background: linear-gradient(135deg, rgba(34, 197, 94, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(34, 197, 94, .4); color: #d1fae5;
+
+  #algo-gas-station-view .gs-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
-  #algo-gas-station-view .gas-result.gas-result--success .gas-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-gas-station-view .gs-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-gas-station-view .gas-result.gas-result--fail {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(239, 68, 68, .06));
-    border-color: rgba(248, 113, 113, .35); color: #fecaca;
+
+  #algo-gas-station-view .gs-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-gas-station-view .gas-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
+  #algo-gas-station-view .gs-tab-item.active {
+    background: #d97706;
+    color: #ffffff;
   }
-  #algo-gas-station-view .gas-log-line { padding: 1px 0; color: #94a3b8; }
-  #algo-gas-station-view .gas-log-line.active { color: #86efac; font-weight: 600; }
-  #algo-gas-station-view .gas-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-gas-station-view .gs-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
   }
-  #algo-gas-station-view .gas-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-gas-station-view .gas-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-gas-station-view .gs-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-gas-station-view .gas-controls .gas-ctrl-btn { min-width: 64px; }
-  #algo-gas-station-view .gas-controls .gas-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+  #algo-gas-station-view .gs-lang-btn.active {
+    background: #334155;
+    color: #fde68a;
   }
-  #algo-gas-station-view .gas-counter { color: #94a3b8; font-size: 13px; font-weight: 600; min-width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
-  #algo-gas-station-view .gas-speed-wrap { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px; }
-  #algo-gas-station-view #gas-station-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-gas-station-view .gas-shell { grid-template-columns: 1fr; overflow: auto; }
-    #algo-gas-station-view .gas-code { min-height: 360px; }
+
+  #algo-gas-station-view .gs-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-gas-station-view .gs-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-gas-station-view .gs-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-gas-station-view .gs-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fde68a;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-gas-station-view .gs-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-gas-station-view .gs-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-gas-station-view .gs-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-gas-station-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-gas-station-view .code-line.active {
+    background: rgba(217, 119, 6, 0.2);
+    border-left: 3px solid #d97706;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-gas-station-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-gas-station-view .gs-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-gas-station-view .gs-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-gas-station-view .gs-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-gas-station-view .gs-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-gas-station-view .gs-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-gas-station-view .gs-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-gas-station-view .gs-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-gas-station-view .gs-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-gas-station-view .gs-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-gas-station-view .gs-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-gas-station-view .gs-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-gas-station-view .gs-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="gas-page">
-  <div class="gas-hero">
-    <div class="gas-hero-left">
-      <span class="gas-icon">⛽</span>
-      <div>
-        <h1>加油站（贪心）</h1>
-        <div class="gas-sub">LeetCode 134 · 从某个加油站出发，绕环路一圈返回起点</div>
-      </div>
+<div id="algo-gas-station-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="gs-header">
+    <div class="gs-header-left">
+      <div class="gs-icon-btn">⛽</div>
+      <h1 class="gs-main-title">LeetCode 134. 加油站</h1>
+      <button id="btn-open-problem-modal" class="gs-btn-problem">📋 题目</button>
+      <span class="gs-badge-mode">全局净油量 & 亏空重置起点</span>
+      <span class="gs-badge-complexity">O(N)</span>
     </div>
-    <div class="gas-tip"><strong>核心动画：</strong>当前站<span style="color:#86efac">绿色脉冲</span>；候选起点<span style="color:#fde68a">金色高亮</span>；失败区间<span style="color:#fca5a5">红色 shake</span>；成功时整圈点亮。</div>
-  </div>
-  <div class="gas-shell">
-    <div class="gas-left">
-      <section class="gas-card">
-        <div class="gas-card-title">输入 <span class="gas-tag">gas / cost</span></div>
-        <div class="gas-input-row">
-          <input type="text" id="gas-input" value="1,2,3,4,5" placeholder="加油量 gas">
-          <input type="text" id="cost-input" value="3,4,5,1,2" placeholder="消耗量 cost">
-          <button id="gas-station-reset">初始化</button>
-        </div>
-        <div class="gas-examples">
-          <button class="gas-chip gas-example" data-gas="1,2,3,4,5" data-cost="3,4,5,1,2">示例 1（解: 3）</button>
-          <button class="gas-chip gas-example" data-gas="2,3,4" data-cost="3,4,3">示例 2（解: -1）</button>
-        </div>
-      </section>
 
-      <div class="gas-stats">
-        <div class="gas-stat gas-stat--pos"><div class="gas-stat-label">当前位置</div><div class="gas-stat-val" id="current-station">初始化</div></div>
-        <div class="gas-stat gas-stat--start"><div class="gas-stat-label">候选起点</div><div class="gas-stat-val" id="start-station">0</div></div>
-        <div class="gas-stat gas-stat--tank"><div class="gas-stat-label">循环验证油量</div><div class="gas-stat-val" id="current-tank">0</div></div>
-        <div class="gas-stat gas-stat--total"><div class="gas-stat-label">总净油量</div><div class="gas-stat-val" id="total-tank">0</div></div>
+    <!-- 参数与操作工具组 -->
+    <div class="gs-header-right">
+      <div class="gs-input-group">
+        <span>gas:</span>
+        <input type="text" id="input-gas" value="1,2,3,4,5" class="gs-input-str" placeholder="1,2,3,4,5" />
       </div>
 
-      <section class="gas-card gas-track-card">
-        <div class="gas-card-title">站点轨道 <span class="gas-tag">站点 / 净油 / 起点</span></div>
-        <div class="gas-track-body" id="gas-station-track"></div>
-        <div class="gas-result" id="gas-result-banner">
-          <span class="gas-emoji">⛽</span>
-          <div id="gas-station-message">点击「初始化」观看站点扫描 + 油箱变化动画</div>
-        </div>
-      </section>
+      <div class="gs-input-group">
+        <span>cost:</span>
+        <input type="text" id="input-cost" value="3,4,5,1,2" class="gs-input-str" placeholder="3,4,5,1,2" />
+      </div>
 
-      <section class="gas-card">
-        <div class="gas-card-title">执行日志 <button id="gas-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="gas-log" id="gas-station-log"></div>
-      </section>
+      <button id="btn-generate" class="gs-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="gs-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="gs-chip" data-gas="1,2,3,4,5" data-cost="3,4,5,1,2">示例 1 (起点 3)</button>
+        <button class="gs-chip" data-gas="2,3,4" data-cost="3,4,3">示例 2 (无解 -1)</button>
+        <button class="gs-chip" data-gas="5,1,2,3,4" data-cost="4,4,1,5,1">首站即起点 (起点 0)</button>
+      </div>
     </div>
-    <aside class="gas-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="gas-controls">
-    <button id="gas-station-prev" class="gas-ctrl-btn">⏮ 上一步</button>
-    <button id="gas-station-play" class="gas-ctrl-btn gas-ctrl-primary">▶ 自动播放</button>
-    <button id="gas-station-next" class="gas-ctrl-btn">下一步 ▶</button>
-    <span id="gas-station-step-counter" class="gas-counter">步骤: 0 / 0</span>
-    <div class="gas-speed-wrap">
-      <span>速度</span>
-      <input type="range" id="gas-station-speed" min="400" max="2200" step="100" value="900">
-      <span id="gas-station-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="gs-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="gs-left-section">
+
+      <!-- 卡片 1: 加油站状态沙盘 (Gas Stations Sandbox) -->
+      <div class="gs-card">
+        <div class="gs-card-header">
+          <div class="gs-card-title">
+            <span>⛽ 加油站站点净油量与亏空沙盘 (Stations Sandbox)</span>
+          </div>
+          <div class="gs-legend-bar">
+            <div><span class="gs-legend-dot" style="background:#10b981;"></span> + 净盈余</div>
+            <div><span class="gs-legend-dot" style="background:#ef4444;"></span> - 净亏空</div>
+            <div><span class="gs-legend-dot" style="background:#d97706;"></span> 🚩候选起点</div>
+            <div><span class="gs-legend-dot" style="background:#2563eb;"></span> 📍当前站点</div>
+          </div>
+        </div>
+
+        <!-- 站点沙盘展示盒 -->
+        <div id="gs-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="gs-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="gs-slider" />
+        <div class="gs-counter-badge">
+          <span id="step-cur" style="color: #d97706;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="gs-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="gs-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="gs-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="gs-card">
+        <div class="gs-card-header">
+          <div>
+            <div class="gs-card-title">📦 油箱续航状态空间与指标追踪</div>
+            <div class="gs-card-desc">当前累积油量 curSum、全局净油量 totalSum 与候选起点判断</div>
+          </div>
+          <span id="badge-start-station" class="gs-counter-badge" style="color:#d97706; background:#fffbeb; border-color:#fde68a;">候选起点: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="gs-state-space-box">
+          <div class="gs-state-columns">
+            <!-- 当前油量状态 -->
+            <div class="gs-subcard">
+              <div class="gs-subcard-title">🚗 当前油箱续航 (Fuel Tank)</div>
+              <div id="gs-tank-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 亏空重置监视器 -->
+            <div class="gs-subcard">
+              <div class="gs-subcard-title">⚖️ 贪心亏空重置监视器 (Reset Monitor)</div>
+              <div id="gs-reset-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="gs-subcard" style="flex-shrink: 0;">
+            <div class="gs-subcard-title">🏆 全局收支与唯一有效起点 (Circuit Result)</div>
+            <div id="gs-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="gs-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="gs-dark-terminal">
+        <div class="gs-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="gs-tab-group">
+            <button id="btn-tab-code" class="gs-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="gs-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="gs-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="gs-lang-group" id="code-lang-tabs">
+            <button class="gs-lang-btn active" data-lang="java">Java</button>
+            <button class="gs-lang-btn" data-lang="cpp">C++</button>
+            <button class="gs-lang-btn" data-lang="python">Python</button>
+            <button class="gs-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="gs-font-tools">
+            <div class="gs-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="gs-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="gs-window-dots">
+              <span class="gs-dot" style="background:#ef4444;"></span>
+              <span class="gs-dot" style="background:#eab308;"></span>
+              <span class="gs-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="gs-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="gs-log-card">
+        <div class="gs-log-header">
+          <div class="gs-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="gs-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="gs-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="gs-modal-backdrop hidden">
+    <div class="gs-modal-content">
+      <div class="gs-modal-header">
+        <div class="gs-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="gs-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="gs-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

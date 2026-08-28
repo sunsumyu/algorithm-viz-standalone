@@ -1,10 +1,19 @@
 /**
- * 分发饼干可视化器（贪心算法）
- * LeetCode 455
+ * 分发饼干可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 455：贪心双指针小饼干优先分配
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  ASSIGN_COOKIES_PROBLEM_HTML,
+  ASSIGN_COOKIES_ANALYSIS_HTML,
+  ASSIGN_COOKIES_CODE_LANGUAGES,
+} from './assign-cookies-problem-content';
 import template from './assign-cookies.html?raw';
 
 export type AcPhase = 'init' | 'check' | 'matched' | 'skip' | 'done';
@@ -16,19 +25,13 @@ export interface AssignCookiesStep {
   childIndex: number;
   cookieIndex: number;
   satisfiedCount: number;
-  /** 已被满足的孩子索引集合 */
   satisfiedChildren: number[];
-  /** 已被使用的饼干索引集合 */
   matchedCookies: number[];
-  /** 已被跳过的饼干索引集合 */
   skippedCookies: number[];
   message: string;
   codeLine: number;
 }
 
-/**
- * 分发饼干算法（贪心），生成可视化步骤
- */
 export function assignCookiesSteps(children: number[], cookies: number[]): AssignCookiesStep[] {
   const steps: AssignCookiesStep[] = [];
 
@@ -45,8 +48,8 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
     satisfiedChildren: [],
     matchedCookies: [],
     skippedCookies: [],
-    message: `排序后：孩子需求 [${sortedChildren.join(', ')}]，饼干大小 [${sortedCookies.join(', ')}]`,
-    codeLine: 2
+    message: `升序排序完成：孩子胃口 g=[${sortedChildren.join(', ')}]，饼干尺寸 s=[${sortedCookies.join(', ')}]`,
+    codeLine: 2,
   });
 
   let childIdx = 0;
@@ -57,7 +60,9 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
   const skippedCookies: number[] = [];
 
   while (childIdx < sortedChildren.length && cookieIdx < sortedCookies.length) {
-    // 检查
+    const curG = sortedChildren[childIdx];
+    const curS = sortedCookies[cookieIdx];
+
     steps.push({
       phase: 'check',
       children: [...sortedChildren],
@@ -68,12 +73,11 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
       satisfiedChildren: [...satisfiedChildren],
       matchedCookies: [...matchedCookies],
       skippedCookies: [...skippedCookies],
-      message: `检查：孩子需求 ${sortedChildren[childIdx]}，饼干大小 ${sortedCookies[cookieIdx]}`,
-      codeLine: 5
+      message: `贪心比较：孩子 g[${childIdx}]=${curG} 与 饼干 s[${cookieIdx}]=${curS}`,
+      codeLine: 7,
     });
 
-    if (sortedCookies[cookieIdx] >= sortedChildren[childIdx]) {
-      // 匹配
+    if (curS >= curG) {
       satisfied++;
       satisfiedChildren.push(childIdx);
       matchedCookies.push(cookieIdx);
@@ -90,11 +94,10 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
         satisfiedChildren: [...satisfiedChildren],
         matchedCookies: [...matchedCookies],
         skippedCookies: [...skippedCookies],
-        message: `✓ 饼干 ${sortedCookies[cookieIdx - 1]} 满足孩子 ${sortedChildren[childIdx - 1]}，已满足 ${satisfied} 个`,
-        codeLine: 7
+        message: `✓ 匹配成功！饼干 ${curS} 满足孩子胃口 ${curG}，累计满足 ${satisfied} 人`,
+        codeLine: 8,
       });
     } else {
-      // 跳过
       skippedCookies.push(cookieIdx);
       cookieIdx++;
 
@@ -108,13 +111,12 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
         satisfiedChildren: [...satisfiedChildren],
         matchedCookies: [...matchedCookies],
         skippedCookies: [...skippedCookies],
-        message: `✗ 饼干 ${sortedCookies[cookieIdx - 1]} 太小，跳过此饼干`,
-        codeLine: 10
+        message: `⏭️ 饼干太小：s[${cookieIdx - 1}]=${curS} < g[${childIdx}]=${curG}，无法满足，跳过该饼干`,
+        codeLine: 10,
       });
     }
   }
 
-  // 完成
   steps.push({
     phase: 'done',
     children: [...sortedChildren],
@@ -125,226 +127,314 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
     satisfiedChildren: [...satisfiedChildren],
     matchedCookies: [...matchedCookies],
     skippedCookies: [...skippedCookies],
-    message: `完成！最多可以满足 ${satisfied} 个孩子`,
-    codeLine: 14
+    message: `🎉 贪心扫描结束！最多可以满足 ${satisfied} 个孩子`,
+    codeLine: 12,
   });
 
   return steps;
 }
 
+/* ── Visualizer class ─────────────────────────────────────── */
 export class AssignCookiesVisualizer extends StepVisualizer<AssignCookiesStep> {
-  protected codeLines = [
-    "public int findContentChildren(int[] g, int[] s) {",
-    "    Arrays.sort(g);",
-    "    Arrays.sort(s);",
-    "    ",
-    "    int child = 0, cookie = 0;",
-    "    while (child < g.length && cookie < s.length) {",
-    "        if (s[cookie] >= g[child]) {",
-    "            child++;  // 满足当前孩子",
-    "            cookie++; // 使用当前饼干",
-    "        } else {",
-    "            cookie++; // 饼干太小，尝试更大的",
-    "        }",
-    "    }",
-    "    return child;",
-    "}",
-  ];
-  protected codePanelTitle = '贪心算法 (Java)';
+  protected codeLanguages = ASSIGN_COOKIES_CODE_LANGUAGES;
+  protected codeLines = ASSIGN_COOKIES_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '分发饼干 代码调试';
 
-  private childrenInput: HTMLInputElement | null = null;
-  private cookiesInput: HTMLInputElement | null = null;
-  private arraysEl: HTMLElement | null = null;
-  private satisfiedCountEl: HTMLElement | null = null;
-  private childIndexEl: HTMLElement | null = null;
-  private cookieIndexEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private stepMessageEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private pointersContainer: HTMLElement | null = null;
+  private greedyMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
+    this.sandboxContainer = this.root.querySelector('#ac-sandbox-container');
+    this.pointersContainer = this.root.querySelector('#ac-pointers-container');
+    this.greedyMonitorContainer = this.root.querySelector('#ac-greedy-monitor-container');
+    this.metricsContainer = this.root.querySelector('#ac-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.childrenInput = this.root.querySelector('#children-input');
-    this.cookiesInput = this.root.querySelector('#cookies-input');
-    this.arraysEl = this.root.querySelector('#ac-arrays');
-    this.satisfiedCountEl = this.root.querySelector('#satisfied-count');
-    this.childIndexEl = this.root.querySelector('#child-index');
-    this.cookieIndexEl = this.root.querySelector('#cookie-index');
-    this.resultEl = this.root.querySelector('#ac-result');
-    this.stepMessageEl = this.root.querySelector('#step-message');
-    this.logEl = this.root.querySelector('#ac-log');
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    this.bindPlaybackControls({
-      reset: 'step-reset',
-      prev: 'step-prev',
-      play: 'step-play',
-      next: 'step-next',
-      speed: 'ac-speed',
-      speedLabel: 'ac-speed-label',
-      message: 'assign-status'
-    });
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
 
-    this.root.querySelector('#assign-start')?.addEventListener('click', () => this.start());
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
 
-    this.root.querySelectorAll('.ac-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const children = chip.getAttribute('data-children');
-        const cookies = chip.getAttribute('data-cookies');
-        if (children && this.childrenInput) this.childrenInput.value = children;
-        if (cookies && this.cookiesInput) this.cookiesInput.value = cookies;
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.ac-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const gEl = this.root?.querySelector('#input-g') as HTMLInputElement | null;
+        const sEl = this.root?.querySelector('#input-s') as HTMLInputElement | null;
+        if (gEl && btn.dataset.g) gEl.value = btn.dataset.g;
+        if (sEl && btn.dataset.s) sEl.value = btn.dataset.s;
+        this.start();
       });
     });
 
-    this.root.querySelector('#ac-log-clear')?.addEventListener('click', () => {
-      if (this.logEl) this.logEl.innerHTML = '';
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: ASSIGN_COOKIES_PROBLEM_HTML,
+      analysisHtml: ASSIGN_COOKIES_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): AssignCookiesStep[] {
-    let children = [1, 2, 3];
-    let cookies = [1, 1];
+    const gEl = this.root?.querySelector('#input-g') as HTMLInputElement | null;
+    const sEl = this.root?.querySelector('#input-s') as HTMLInputElement | null;
 
-    if (this.childrenInput) {
-      const input = this.childrenInput.value.trim();
-      if (input) {
-        const parsed = input.split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
-        if (parsed.length > 0) children = parsed;
-      }
-    }
+    const parseArr = (str: string, fallback: number[]) => {
+      const arr = str
+        .split(/[,，\s]+/)
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n));
+      return arr.length > 0 ? arr : fallback;
+    };
 
-    if (this.cookiesInput) {
-      const input = this.cookiesInput.value.trim();
-      if (input) {
-        const parsed = input.split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
-        if (parsed.length > 0) cookies = parsed;
-      }
-    }
+    const children = parseArr(gEl?.value || '1,2,3', [1, 2, 3]);
+    const cookies = parseArr(sEl?.value || '1,1', [1, 1]);
 
     return assignCookiesSteps(children, cookies);
   }
 
   protected renderStep(step: AssignCookiesStep): void {
-    const arraysEl = this.arraysEl;
-    if (!arraysEl || !this.satisfiedCountEl || !this.childIndexEl || !this.cookieIndexEl ||
-        !this.resultEl || !this.stepMessageEl) return;
+    // 1. 渲染贪心双指针数组沙盘 (Card 1)
+    if (this.sandboxContainer) {
+      const isDone = step.phase === 'done';
 
-    // 更新统计面板
-    this.childIndexEl.textContent = step.childIndex.toString();
-    this.cookieIndexEl.textContent = step.cookieIndex.toString();
-    this.satisfiedCountEl.textContent = step.satisfiedCount.toString();
+      // 孩子数组条
+      const childrenHtml = step.children
+        .map((val, idx) => {
+          const isSatisfied = step.satisfiedChildren.includes(idx);
+          const isCurrent = !isDone && idx === step.childIndex;
 
-    // 更新结果横幅
-    this.resultEl.className = 'ac-result';
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('ac-result--done');
-      this.stepMessageEl.textContent = `✅ ${step.message}`;
-    } else if (step.phase === 'matched') {
-      this.resultEl.classList.add('ac-result--match');
-      this.stepMessageEl.textContent = `✅ ${step.message}`;
-    } else if (step.phase === 'skip') {
-      this.resultEl.classList.add('ac-result--skip');
-      this.stepMessageEl.textContent = `❌ ${step.message}`;
-    } else if (step.childIndex >= 0 && step.phase !== 'init') {
-      this.stepMessageEl.textContent = step.message;
-    } else {
-      this.stepMessageEl.textContent = '点击「开始分配」观看双指针扫描 + 匹配爆发动画';
+          let bg = '#ffffff';
+          let borderColor = '#e2e8f0';
+          let textColor = '#0f172a';
+
+          if (isSatisfied) {
+            bg = '#ecfdf5';
+            borderColor = '#10b981';
+            textColor = '#059669';
+          } else if (isCurrent) {
+            bg = '#fff7ed';
+            borderColor = '#ea580c';
+            textColor = '#ea580c';
+          }
+
+          return `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+              <span style="font-size: 9.5px; color: ${isCurrent ? '#ea580c' : '#94a3b8'}; font-weight: 700;">${isCurrent ? '▼ child' : `g[${idx}]`}</span>
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 4px rgba(0,0,0,0.04); transition: all 0.15s;">
+                ${val}
+              </div>
+              <span style="font-size: 9px; color: ${isSatisfied ? '#10b981' : '#94a3b8'}; font-weight: 600;">${isSatisfied ? '✓ 满足' : '待满足'}</span>
+            </div>
+          `;
+        })
+        .join('');
+
+      // 饼干数组条
+      const cookiesHtml = step.cookies
+        .map((val, idx) => {
+          const isMatched = step.matchedCookies.includes(idx);
+          const isSkipped = step.skippedCookies.includes(idx);
+          const isCurrent = !isDone && idx === step.cookieIndex;
+
+          let bg = '#ffffff';
+          let borderColor = '#e2e8f0';
+          let textColor = '#0f172a';
+
+          if (isMatched) {
+            bg = '#ecfdf5';
+            borderColor = '#10b981';
+            textColor = '#059669';
+          } else if (isSkipped) {
+            bg = '#f1f5f9';
+            borderColor = '#cbd5e1';
+            textColor = '#94a3b8';
+          } else if (isCurrent) {
+            bg = '#fff7ed';
+            borderColor = '#ea580c';
+            textColor = '#ea580c';
+          }
+
+          return `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+              <span style="font-size: 9.5px; color: ${isCurrent ? '#ea580c' : '#94a3b8'}; font-weight: 700;">${isCurrent ? '▼ cookie' : `s[${idx}]`}</span>
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 4px rgba(0,0,0,0.04); transition: all 0.15s;">
+                ${val}
+              </div>
+              <span style="font-size: 9px; color: ${isMatched ? '#10b981' : isSkipped ? '#94a3b8' : '#64748b'}; font-weight: 600;">${isMatched ? '🍪 已发' : isSkipped ? '⏭️ 跳过' : '可用'}</span>
+            </div>
+          `;
+        })
+        .join('');
+
+      this.sandboxContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 11px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+            <span>👦 孩子胃口数组 (g, 已排序):</span>
+          </div>
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
+            ${childrenHtml}
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+          <div style="font-size: 11px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+            <span>🍪 饼干尺寸数组 (s, 已排序):</span>
+          </div>
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
+            ${cookiesHtml}
+          </div>
+        </div>
+      `;
     }
 
-    // 渲染双数组
-    arraysEl.innerHTML = '';
+    // 2. 渲染当前双指针与候选值 (Card 2 Left)
+    if (this.pointersContainer) {
+      const curChildVal = step.childIndex < step.children.length ? step.children[step.childIndex] : '越界';
+      const curCookieVal = step.cookieIndex < step.cookies.length ? step.cookies[step.cookieIndex] : '越界';
 
-    // 孩子数组
-    const childRow = document.createElement('div');
-    childRow.className = 'ac-row';
-    const childLabel = document.createElement('span');
-    childLabel.className = 'ac-row-label ac-row-label--child';
-    childLabel.innerHTML = '<span>👨</span> 孩子需求';
-    childRow.appendChild(childLabel);
+      this.pointersContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>孩子指针 <code style="color:#ea580c; font-weight:700;">childIndex</code>:</span>
+            <span style="font-family: monospace; font-weight:700;">${step.childIndex} (需求: ${curChildVal})</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>饼干指针 <code style="color:#ea580c; font-weight:700;">cookieIndex</code>:</span>
+            <span style="font-family: monospace; font-weight:700;">${step.cookieIndex} (尺寸: ${curCookieVal})</span>
+          </div>
+        </div>
+      `;
+    }
 
-    step.children.forEach((value, index) => {
-      const cell = document.createElement('div');
-      cell.className = 'ac-cell';
+    // 3. 渲染局部贪心判定监视器 (Card 2 Center)
+    if (this.greedyMonitorContainer) {
+      const isMatched = step.phase === 'matched';
+      const isSkip = step.phase === 'skip';
 
-      if (index === step.childIndex && (step.phase === 'check' || step.phase === 'matched')) {
-        cell.classList.add('ac-cell--current-child');
-      } else if (step.satisfiedChildren.includes(index)) {
-        cell.classList.add('ac-cell--satisfied');
-      }
+      this.greedyMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>贪心判定:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isMatched ? '#ecfdf5' : isSkip ? '#fef2f2' : '#eff6ff'}; color: ${isMatched ? '#059669' : isSkip ? '#dc2626' : '#2563eb'}; border: 1px solid ${isMatched ? '#a7f3d0' : isSkip ? '#fecaca' : '#bfdbfe'};">
+              ${isMatched ? '✓ 满足分配 (s[j] >= g[i])' : isSkip ? '⏭️ 尺寸不足 (s[j] < g[i])' : '🔍 比较中...'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 贪心准则: 优先消耗能满足当前最小需求的最小饼干</div>
+          </div>
+        </div>
+      `;
+    }
 
-      const cellVal = document.createElement('span');
-      cellVal.className = 'ac-cell-val';
-      cellVal.textContent = value.toString();
-      cell.appendChild(cellVal);
+    // 4. 渲染最终全局最优统计看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      const totalChildren = step.children.length;
+      const percent = totalChildren > 0 ? (step.satisfiedCount / totalChildren) * 100 : 0;
 
-      const cellIdx = document.createElement('span');
-      cellIdx.className = 'ac-cell-idx';
-      cellIdx.textContent = `[${index}]`;
-      cell.appendChild(cellIdx);
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>满足孩子数: <strong style="color: #0f172a; font-family: monospace; font-size: 12.5px;">${step.satisfiedCount}</strong> / ${totalChildren}</span>
+            <span style="font-size: 10.5px; font-weight: 700; color: #059669;">${percent.toFixed(0)}% 满足率</span>
+          </div>
+          <div style="background: #f1f5f9; border-radius: 6px; height: 6px; overflow: hidden;">
+            <div style="background: #10b981; width: ${percent}%; height: 100%; transition: width 0.2s;"></div>
+          </div>
+        </div>
+      `;
+    }
 
-      childRow.appendChild(cell);
-    });
-    arraysEl.appendChild(childRow);
+    const badgeSatisfied = this.root?.querySelector('#badge-satisfied-count');
+    if (badgeSatisfied) {
+      badgeSatisfied.textContent = `满足人数: ${step.satisfiedCount} / ${step.children.length}`;
+    }
 
-    // 饼干数组
-    const cookieRow = document.createElement('div');
-    cookieRow.className = 'ac-row';
-    const cookieLabel = document.createElement('span');
-    cookieLabel.className = 'ac-row-label ac-row-label--cookie';
-    cookieLabel.innerHTML = '<span>🍪</span> 饼干大小';
-    cookieRow.appendChild(cookieLabel);
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
 
-    step.cookies.forEach((value, index) => {
-      const cell = document.createElement('div');
-      cell.className = 'ac-cell';
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
 
-      if (index === step.cookieIndex && (step.phase === 'check' || step.phase === 'skip')) {
-        cell.classList.add('ac-cell--current-cookie');
-      } else if (step.matchedCookies.includes(index)) {
-        cell.classList.add('ac-cell--matched-cookie');
-      } else if (step.skippedCookies.includes(index)) {
-        cell.classList.add('ac-cell--skipped');
-      }
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
 
-      const cellVal = document.createElement('span');
-      cellVal.className = 'ac-cell-val';
-      cellVal.textContent = value.toString();
-      cell.appendChild(cellVal);
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '步骤';
 
-      const cellIdx = document.createElement('span');
-      cellIdx.className = 'ac-cell-idx';
-      cellIdx.textContent = `[${index}]`;
-      cell.appendChild(cellIdx);
+        if (st.phase === 'matched') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '匹配';
+        } else if (st.phase === 'skip') {
+          badgeColor = '#dc2626';
+          badgeBg = '#fef2f2';
+          badgeText = '跳过';
+        } else if (st.phase === 'done') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '完成';
+        }
 
-      cookieRow.appendChild(cell);
-    });
-    arraysEl.appendChild(cookieRow);
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
 
-    // 渲染日志
-    this.renderLogPanel(step);
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
-  protected renderLogPanel(step: AssignCookiesStep): void {
-    const log = this.logEl;
-    if (!log) return;
-
-    const line = document.createElement('div');
-    line.className = 'ac-log-line';
-    if (step.phase === 'check' || step.phase === 'matched') {
-      line.classList.add('ac-log-active');
-    }
-
-    const num = document.createElement('span');
-    num.className = 'ac-log-num';
-    num.textContent = step.codeLine.toString().padStart(2, '0') + ': ';
-    line.appendChild(num);
-
-    const msg = document.createElement('span');
-    msg.textContent = step.message;
-    line.appendChild(msg);
-
-    log.appendChild(line);
-    log.scrollTop = log.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -353,11 +443,11 @@ registerAlgorithm({
   name: '分发饼干',
   viewId: 'algo-assign-cookies-view',
   category: 'greedy',
-  description: 'LeetCode 455：贪心算法，分配饼干满足尽可能多的孩子',
+  description: '贪心双指针小饼干优先分配，最大化满足孩子数量',
   icon: '🍪',
   template,
   Visualizer: AssignCookiesVisualizer,
   difficulty: 1,
   levelOrder: 1,
-  learningGoal: '理解贪心算法的局部最优推导全局最优思想',
+  learningGoal: '掌握贪心算法在排序+双指针场景下的局部最优到全局最优推导',
 });

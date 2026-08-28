@@ -1,404 +1,873 @@
 <style>
-  /* === 根据身高重建队列 · 玻璃感 + 排序飞入 + 位置计数动画 === */
+  /* === 根据身高重建队列 (LeetCode 406) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-reconstruct-queue-view {
-    --accent-a: #06b6d4;
-    --accent-b: #f97316;
-    --accent-glow: rgba(249, 115, 22, .45);
-    --current-color: #fbbf24;
-    --insert-color: #34d399;
-    --sorted-color: #60a5fa;
-    --count-color: #f97316;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 5%, rgba(6, 182, 212, .26), transparent 55%),
-      radial-gradient(ellipse at 92% 90%, rgba(249, 115, 22, .28), transparent 55%),
-      linear-gradient(135deg, #0a1a22 0%, #1a1230 50%, #25151a 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-reconstruct-queue-view .rq-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-reconstruct-queue-view * {
+    box-sizing: border-box;
   }
-  /* hero */
-  #algo-reconstruct-queue-view .rq-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-reconstruct-queue-view .rq-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-reconstruct-queue-view .rq-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-reconstruct-queue-view .rq-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-reconstruct-queue-view .rq-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-reconstruct-queue-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-reconstruct-queue-view .rq-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-reconstruct-queue-view .rq-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(249, 115, 22, .08));
-    border: 1px solid rgba(249, 115, 22, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+
+  #algo-reconstruct-queue-view .rq-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-reconstruct-queue-view .rq-tip strong { color: #fb923c; }
-  /* main */
-  #algo-reconstruct-queue-view .rq-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
+
+  #algo-reconstruct-queue-view .rq-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-reconstruct-queue-view .rq-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-reconstruct-queue-view .rq-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
+
+  #algo-reconstruct-queue-view .rq-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-reconstruct-queue-view .rq-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  #algo-reconstruct-queue-view .rq-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-reconstruct-queue-view .rq-tag {
-    font-size: 11px; color: #fb923c; background: rgba(249, 115, 22, .14);
-    border: 1px solid rgba(249, 115, 22, .3); padding: 2px 8px; border-radius: 999px;
+
+  #algo-reconstruct-queue-view .rq-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  /* input */
-  #algo-reconstruct-queue-view .rq-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
+
+  #algo-reconstruct-queue-view .rq-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-reconstruct-queue-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
+
+  #algo-reconstruct-queue-view .rq-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-reconstruct-queue-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(249, 115, 22, .15); }
-  #algo-reconstruct-queue-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-reconstruct-queue-view .rq-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
   }
-  #algo-reconstruct-queue-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
+
+  #algo-reconstruct-queue-view .rq-input-str {
+    width: 210px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
   }
-  #algo-reconstruct-queue-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-reconstruct-queue-view .rq-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-reconstruct-queue-view .rq-input-str:focus {
+    border-color: #16a34a;
+    background: #ffffff;
+  }
+
+  #algo-reconstruct-queue-view .rq-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-reconstruct-queue-view .rq-btn-generate:hover {
+    background: #15803d;
+  }
+
+  #algo-reconstruct-queue-view .rq-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reconstruct-queue-view .rq-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
   #algo-reconstruct-queue-view .rq-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(249, 115, 22, .12); border: 1px solid rgba(249, 115, 22, .28);
-    color: #fb923c; cursor: pointer; transition: all .2s;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
   }
   #algo-reconstruct-queue-view .rq-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
+    background: #e2e8f0;
+    color: #0f172a;
   }
-  /* stats */
-  #algo-reconstruct-queue-view .rq-stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-reconstruct-queue-view .rq-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
   }
-  #algo-reconstruct-queue-view .rq-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-reconstruct-queue-view .rq-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-reconstruct-queue-view .rq-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-reconstruct-queue-view .rq-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
-  #algo-reconstruct-queue-view .rq-stat--current::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-reconstruct-queue-view .rq-stat--current .rq-stat-val { color: #fde68a; }
-  #algo-reconstruct-queue-view .rq-stat--insert::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-reconstruct-queue-view .rq-stat--insert .rq-stat-val { color: #6ee7b7; }
-  #algo-reconstruct-queue-view .rq-stat--count::before { background: linear-gradient(180deg, #fb923c, #f97316); }
-  #algo-reconstruct-queue-view .rq-stat--count .rq-stat-val { color: #fdba74; }
-  #algo-reconstruct-queue-view .rq-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-reconstruct-queue-view .rq-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+
+  #algo-reconstruct-queue-view .rq-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
   }
-  /* sorted source */
-  #algo-reconstruct-queue-view .rq-source {
-    padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 10px;
-    min-height: 92px; align-items: flex-start;
+
+  #algo-reconstruct-queue-view .rq-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-reconstruct-queue-view .rq-source-empty {
-    color: #64748b; font-size: 13px; padding: 12px;
+
+  #algo-reconstruct-queue-view .rq-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
-  #algo-reconstruct-queue-view .rq-person {
-    position: relative; min-width: 64px;
-    border: 2px solid rgba(255, 255, 255, .12);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .02));
+
+  #algo-reconstruct-queue-view .rq-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-reconstruct-queue-view .rq-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 队列重建双层沙盘展示盒 */
+  #algo-reconstruct-queue-view #rq-sandbox-container {
+    background: #f8fafc;
     border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-reconstruct-queue-view .rq-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-reconstruct-queue-view .rq-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #16a34a;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-reconstruct-queue-view .rq-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-reconstruct-queue-view .rq-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reconstruct-queue-view .rq-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-reconstruct-queue-view .rq-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-reconstruct-queue-view .rq-play-circle-btn:hover {
+    background: #15803d;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-reconstruct-queue-view .rq-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
     padding: 8px 10px;
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    color: #e2e8f0; transition: all .35s cubic-bezier(.4, 0, .2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-reconstruct-queue-view .rq-person-h {
-    font-size: 18px; font-weight: 800; color: #f1f5f9;
+
+  #algo-reconstruct-queue-view .rq-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
   }
-  #algo-reconstruct-queue-view .rq-person-k {
-    font-size: 10.5px; color: #94a3b8;
-    padding: 1px 6px; border-radius: 6px;
-    background: rgba(148, 163, 184, .12);
+
+  #algo-reconstruct-queue-view .rq-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
   }
-  #algo-reconstruct-queue-view .rq-person--current {
-    border-color: var(--current-color);
-    background: linear-gradient(180deg, rgba(251, 191, 36, .25), rgba(245, 158, 11, .08));
-    color: #fef3c7;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 8px 22px rgba(251, 191, 36, .35);
-    transform: translateY(-4px) scale(1.06);
-    animation: rq-pulse-current 1.2s ease-in-out infinite;
+
+  #algo-reconstruct-queue-view .rq-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
   }
-  #algo-reconstruct-queue-view .rq-person--current .rq-person-h { color: #fef3c7; }
-  #algo-reconstruct-queue-view .rq-person--current .rq-person-k { background: rgba(251, 191, 36, .25); color: #fde68a; }
-  @keyframes rq-pulse-current {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 8px 22px rgba(251, 191, 36, .35); }
-    50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, .15), 0 10px 28px rgba(251, 191, 36, .5); }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-reconstruct-queue-view .rq-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-reconstruct-queue-view .rq-person--done {
-    opacity: .35; filter: grayscale(.6);
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-reconstruct-queue-view .rq-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  /* canvas + queue */
-  #algo-reconstruct-queue-view .rq-canvas {
-    padding: 24px 18px; min-height: 160px;
-    position: relative; overflow: auto;
-    display: flex; align-items: center; justify-content: center;
+
+  #algo-reconstruct-queue-view .rq-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
-  #algo-reconstruct-queue-view .rq-canvas::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(249, 115, 22, .12), transparent 60%);
-    pointer-events: none;
+
+  #algo-reconstruct-queue-view .rq-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-reconstruct-queue-view .rq-queue {
-    display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; min-height: 80px;
+
+  #algo-reconstruct-queue-view .rq-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-reconstruct-queue-view .rq-empty-queue {
-    color: #64748b; font-size: 13px; padding: 24px;
-    border: 1.5px dashed rgba(100, 116, 139, .35); border-radius: 12px;
+  #algo-reconstruct-queue-view .rq-tab-item.active {
+    background: #16a34a;
+    color: #ffffff;
   }
-  /* queue person (uses same rq-person base but with queue-state modifiers) */
-  #algo-reconstruct-queue-view .rq-queue .rq-person {
-    animation: rq-pop-in .5s cubic-bezier(.34, 1.56, .64, 1);
+
+  #algo-reconstruct-queue-view .rq-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
   }
-  @keyframes rq-pop-in {
-    0% { transform: scale(.3) translateY(-30px); opacity: 0; }
-    60% { transform: scale(1.12) translateY(4px); opacity: 1; }
-    100% { transform: scale(1) translateY(0); opacity: 1; }
+
+  #algo-reconstruct-queue-view .rq-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-reconstruct-queue-view .rq-person--fresh {
-    border-color: var(--insert-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .28), rgba(16, 185, 129, .08));
-    color: #d1fae5;
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .25), 0 8px 22px rgba(52, 211, 153, .35);
-    animation: rq-pop-in .5s cubic-bezier(.34, 1.56, .64, 1), rq-bounce-land .55s ease-in-out .5s;
+  #algo-reconstruct-queue-view .rq-lang-btn.active {
+    background: #334155;
+    color: #86efac;
   }
-  @keyframes rq-bounce-land {
-    0%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-6px); }
-    60% { transform: translateY(-2px); }
+
+  #algo-reconstruct-queue-view .rq-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #algo-reconstruct-queue-view .rq-person--sorted {
-    border-color: var(--sorted-color);
-    background: linear-gradient(180deg, rgba(96, 165, 250, .22), rgba(59, 130, 246, .06));
-    color: #dbeafe;
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, .15);
+
+  #algo-reconstruct-queue-view .rq-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
   }
-  /* counting pointer above queue */
-  #algo-reconstruct-queue-view .rq-counter-pin {
-    position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
-    font-size: 11px; font-weight: 800;
-    padding: 2px 8px; border-radius: 6px;
-    background: rgba(8, 8, 24, .85);
-    border: 1.5px solid var(--count-color);
-    color: #fdba74;
-    box-shadow: 0 0 12px rgba(249, 115, 22, .5);
-    animation: rq-pin-bounce 1s ease-in-out infinite;
+  #algo-reconstruct-queue-view .rq-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
   }
-  @keyframes rq-pin-bounce {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-3px); }
+  #algo-reconstruct-queue-view .rq-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #86efac;
+    min-width: 14px;
+    text-align: center;
   }
-  #algo-reconstruct-queue-view .rq-person--counting {
-    border-color: var(--count-color);
-    background: linear-gradient(180deg, rgba(249, 115, 22, .25), rgba(249, 115, 22, .05));
-    color: #fed7aa;
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, .25), 0 6px 18px rgba(249, 115, 22, .35);
+
+  #algo-reconstruct-queue-view .rq-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-reconstruct-queue-view .rq-person--target-slot {
-    border-color: var(--insert-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .25), rgba(16, 185, 129, .05));
-    color: #a7f3d0;
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3), 0 8px 24px rgba(52, 211, 153, .45);
-    animation: rq-target-glow 1s ease-in-out infinite;
+  #algo-reconstruct-queue-view .rq-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
-  @keyframes rq-target-glow {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, .3), 0 8px 24px rgba(52, 211, 153, .45); }
-    50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, .15), 0 10px 30px rgba(52, 211, 153, .6); }
+
+  #algo-reconstruct-queue-view .rq-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
-  #algo-reconstruct-queue-view .rq-insert-arrow {
-    position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
-    font-size: 18px; color: var(--insert-color);
-    animation: rq-arrow-down 1s ease-in-out infinite;
+
+  #algo-reconstruct-queue-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
   }
-  @keyframes rq-arrow-down {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(4px); }
+  #algo-reconstruct-queue-view .code-line.active {
+    background: rgba(22, 163, 74, 0.2);
+    border-left: 3px solid #16a34a;
+    color: #ffffff;
+    font-weight: 700;
   }
-  /* result banner */
-  #algo-reconstruct-queue-view .rq-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(249, 115, 22, .06));
-    border: 1px solid rgba(249, 115, 22, .28);
-    line-height: 1.55; font-size: 14px; color: #fed7aa;
+  #algo-reconstruct-queue-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
-  #algo-reconstruct-queue-view .rq-result .rq-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+
+  /* Card 4: 执行日志卡片 */
+  #algo-reconstruct-queue-view .rq-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-reconstruct-queue-view .rq-result.rq-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-reconstruct-queue-view .rq-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-reconstruct-queue-view .rq-result.rq-result--done .rq-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-reconstruct-queue-view .rq-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  /* log */
-  #algo-reconstruct-queue-view .rq-log {
-    min-height: 90px; max-height: 160px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-reconstruct-queue-view .rq-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
-  #algo-reconstruct-queue-view .rq-log-line { display: flex; gap: 8px; }
-  #algo-reconstruct-queue-view .rq-log-line .rq-log-num { color: #475569; flex-shrink: 0; }
-  #algo-reconstruct-queue-view .rq-log-line.rq-log-active { color: #fb923c; font-weight: 600; }
-  #algo-reconstruct-queue-view .rq-log-line.rq-log-active .rq-log-num { color: var(--accent-b); }
-  /* code */
-  #algo-reconstruct-queue-view .rq-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-reconstruct-queue-view .rq-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
   }
-  #algo-reconstruct-queue-view .rq-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-reconstruct-queue-view .rq-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  /* 模态弹窗 */
+  #algo-reconstruct-queue-view .rq-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
   }
-  #algo-reconstruct-queue-view .rq-controls .rq-ctrl-btn { min-width: 64px; }
-  #algo-reconstruct-queue-view .rq-controls .rq-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+  #algo-reconstruct-queue-view .rq-modal-backdrop.hidden {
+    display: none;
   }
-  #algo-reconstruct-queue-view .rq-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-reconstruct-queue-view .rq-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-reconstruct-queue-view .rq-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-reconstruct-queue-view .rq-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
   }
-  #algo-reconstruct-queue-view #rq-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-reconstruct-queue-view .rq-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-reconstruct-queue-view .rq-code { min-height: 360px; }
+  #algo-reconstruct-queue-view .rq-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-reconstruct-queue-view .rq-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-reconstruct-queue-view .rq-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="rq-shell">
-  <div class="rq-hero">
-    <div class="rq-hero-left">
-      <span class="rq-icon">👥</span>
-      <div>
-        <h1>根据身高重建队列（贪心）</h1>
-        <div class="rq-sub">LeetCode 406 · 按 [身高降序, k 升序] 排序后逐个插回 k 位置</div>
-      </div>
+<div id="algo-reconstruct-queue-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="rq-header">
+    <div class="rq-header-left">
+      <div class="rq-icon-btn">👥</div>
+      <h1 class="rq-main-title">LeetCode 406. 根据身高重建队列</h1>
+      <button id="btn-open-problem-modal" class="rq-btn-problem">📋 题目</button>
+      <span class="rq-badge-mode">身高降序 + k 升序 / 按 k 插空重建</span>
+      <span class="rq-badge-complexity">O(N²)</span>
     </div>
-    <div class="rq-tip"><strong>核心动画：</strong>排序后<span style="color:#fde68a">高的人先站好</span>，再依次把矮的人插入 k 位置；插入前会<span style="color:#fdba74">从左扫描计数</span>，找到第 k 个空位，新插入的节点<span style="color:#6ee7b7">弹性 pop-in</span> 落地。</div>
-  </div>
-  <div class="rq-main">
-    <div class="rq-left">
-      <section class="rq-card">
-        <div class="rq-card-title">输入 <span class="rq-tag">people = [[h,k]...]</span></div>
-        <div class="rq-input-row">
-          <input id="rq-input" value="[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]">
-          <button id="rq-start">开始重建</button>
-        </div>
-        <div class="rq-examples">
-          <button class="rq-chip" data-val="[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]">默认 6 人</button>
-          <button class="rq-chip" data-val="[[7,0],[4,2],[5,0]]">简单 3 人</button>
-          <button class="rq-chip" data-val="[[5,0],[5,1],[5,2]]">相同身高</button>
-          <button class="rq-chip" data-val="[[7,0],[6,0],[5,0],[4,0]]">已排序</button>
-          <button class="rq-chip" data-val="[[4,3],[5,2],[6,1],[7,0]]">逆序输入</button>
-        </div>
-      </section>
 
-      <div class="rq-stats">
-        <div class="rq-stat rq-stat--current"><div class="rq-stat-label">处理中</div><div class="rq-stat-val" id="rq-stat-current" style="font-size:16px;">-</div></div>
-        <div class="rq-stat"><div class="rq-stat-label">身高 h</div><div class="rq-stat-val" id="rq-stat-h">-</div></div>
-        <div class="rq-stat rq-stat--count"><div class="rq-stat-label">k 值</div><div class="rq-stat-val" id="rq-stat-k">-</div></div>
-        <div class="rq-stat rq-stat--insert"><div class="rq-stat-label">插入位置</div><div class="rq-stat-val" id="rq-stat-pos">-</div></div>
-        <div class="rq-stat"><div class="rq-stat-label">已处理</div><div class="rq-stat-val" id="rq-stat-done">0</div></div>
+    <!-- 参数与操作工具组 -->
+    <div class="rq-header-right">
+      <div class="rq-input-group">
+        <span>people:</span>
+        <input type="text" id="input-people" value="[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]" class="rq-input-str" placeholder="[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]" />
       </div>
 
-      <section class="rq-card">
-        <div class="rq-card-title">排序后序列 <span class="rq-tag">高 → 矮</span></div>
-        <div class="rq-source" id="rq-source"></div>
-      </section>
+      <button id="btn-generate" class="rq-btn-generate">
+        <span>▶ 运行</span>
+      </button>
 
-      <section class="rq-card">
-        <div class="rq-card-title">重建队列 <span class="rq-tag">逐个插入</span></div>
-        <div class="rq-canvas">
-          <div class="rq-queue" id="rq-queue"></div>
-        </div>
-        <div class="rq-result" id="rq-result">
-          <span class="rq-emoji">👥</span>
-          <div id="step-message">点击「开始重建」观察排序 + 计数 + 插入动画</div>
-        </div>
-      </section>
+      <button id="btn-reset" class="rq-btn-reset">
+        重置
+      </button>
 
-      <section class="rq-card">
-        <div class="rq-card-title">执行日志 <button id="rq-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="rq-log" id="rq-log"></div>
-      </section>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="rq-chip" data-people="[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]">示例 1 (6人)</button>
+        <button class="rq-chip" data-people="[[6,0],[5,0],[4,0],[3,2],[2,2],[1,4]]">示例 2 (6人)</button>
+        <button class="rq-chip" data-people="[[2,4],[3,4],[4,4],[5,0],[6,0],[7,0]]">密集高个 (6人)</button>
+      </div>
     </div>
-    <aside class="rq-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="rq-controls">
-    <button id="step-reset" class="rq-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="rq-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="rq-ctrl-btn rq-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="rq-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="rq-counter">步骤: 0 / 0</span>
-    <div class="rq-speed-wrap">
-      <span>速度</span>
-      <input id="rq-speed" type="range" min="200" max="2500" step="100" value="900">
-      <span id="rq-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="rq-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="rq-left-section">
+
+      <!-- 卡片 1: 排序列表 vs 重建队列插槽沙盘 (Queue Slots Sandbox) -->
+      <div class="rq-card">
+        <div class="rq-card-header">
+          <div class="rq-card-title">
+            <span>👥 待插人员序列 vs 重建队列槽位沙盘 (Queue Slots Sandbox)</span>
+          </div>
+          <div class="rq-legend-bar">
+            <div><span class="rq-legend-dot" style="background:#16a34a;"></span> 📍 当前待插人员</div>
+            <div><span class="rq-legend-dot" style="background:#3b82f6;"></span> 📥 插入目标槽位</div>
+            <div><span class="rq-legend-dot" style="background:#059669;"></span> ✓ 队列就绪成员</div>
+          </div>
+        </div>
+
+        <!-- 队列沙盘展示盒 -->
+        <div id="rq-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="rq-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="rq-slider" />
+        <div class="rq-counter-badge">
+          <span id="step-cur" style="color: #16a34a;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="rq-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="rq-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="rq-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="rq-card">
+        <div class="rq-card-header">
+          <div>
+            <div class="rq-card-title">📦 插入决策状态空间与指标追踪</div>
+            <div class="rq-card-desc">当前人员 [h, k]、目标插入索引与队列已就绪人员看板</div>
+          </div>
+          <span id="badge-queue-size" class="rq-counter-badge" style="color:#16a34a; background:#f0fdf4; border-color:#bbf7d0;">队列人数: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="rq-state-space-box">
+          <div class="rq-state-columns">
+            <!-- 当前处理人员 -->
+            <div class="rq-subcard">
+              <div class="rq-subcard-title">👤 当前待插人员 (Current Person)</div>
+              <div id="rq-person-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 插入槽位监视器 -->
+            <div class="rq-subcard">
+              <div class="rq-subcard-title">⚖️ 贪心插入槽位监视器 (Slot Decision)</div>
+              <div id="rq-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="rq-subcard" style="flex-shrink: 0;">
+            <div class="rq-subcard-title">🏆 最终重建队列快照 (Reconstructed Queue)</div>
+            <div id="rq-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="rq-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="rq-dark-terminal">
+        <div class="rq-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="rq-tab-group">
+            <button id="btn-tab-code" class="rq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="rq-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="rq-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="rq-lang-group" id="code-lang-tabs">
+            <button class="rq-lang-btn active" data-lang="java">Java</button>
+            <button class="rq-lang-btn" data-lang="cpp">C++</button>
+            <button class="rq-lang-btn" data-lang="python">Python</button>
+            <button class="rq-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="rq-font-tools">
+            <div class="rq-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="rq-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="rq-window-dots">
+              <span class="rq-dot" style="background:#ef4444;"></span>
+              <span class="rq-dot" style="background:#eab308;"></span>
+              <span class="rq-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="rq-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="rq-log-card">
+        <div class="rq-log-header">
+          <div class="rq-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="rq-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="rq-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="rq-modal-backdrop hidden">
+    <div class="rq-modal-content">
+      <div class="rq-modal-header">
+        <div class="rq-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="rq-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="rq-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

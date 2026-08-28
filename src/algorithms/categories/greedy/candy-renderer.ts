@@ -1,352 +1,396 @@
 /**
- * 分发糖果可视化器（贪心算法）
- * LeetCode 135
- * 重做：玻璃感设计 + rating 放大 + 糖果堆叠 + drop-in 动画
+ * 分发糖果可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 135：双向两次贪心（左向右 + 右向左取 max），求最少分发糖果数
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  CANDY_PROBLEM_HTML,
+  CANDY_ANALYSIS_HTML,
+  CANDY_CODE_LANGUAGES,
+} from './candy-problem-content';
 import template from './candy.html?raw';
 
-interface CandyStep {
+export interface CandyStep {
   ratings: number[];
   candies: number[];
   currentIndex: number;
-  phase: 'init' | 'left-to-right' | 'right-to-left' | 'sum' | 'done';
+  direction: 'left-to-right' | 'right-to-left' | 'init' | 'done';
+  action: 'init' | 'inc_right' | 'keep_right' | 'inc_left' | 'keep_left' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: number;
 }
 
-/**
- * 生成可视化步骤：两遍扫描，每遍拆分子步骤显示比较和更新
- */
-function candySteps(ratings: number[]): CandyStep[] {
+export function buildCandySteps(rawRatings: number[]): CandyStep[] {
   const steps: CandyStep[] = [];
-  const n = ratings.length;
+  const n = rawRatings.length;
 
   if (n === 0) {
     steps.push({
-      ratings: [], candies: [], currentIndex: -1, phase: 'init',
-      message: '输入为空，返回 0', log: 'init: empty', codeLine: 1,
+      ratings: [],
+      candies: [],
+      currentIndex: -1,
+      direction: 'done',
+      action: 'done',
+      message: '输入为空，最少糖果数为 0',
+      codeLine: 2,
     });
     return steps;
   }
 
   const candies = new Array(n).fill(1);
 
-  // 初始化
   steps.push({
-    ratings: [...ratings], candies: [...candies], currentIndex: -1, phase: 'init',
-    message: '初始化：每个孩子至少得到 1 个糖果',
-    log: `init: n=${n}, candies=[${candies.join(',')}]`,
-    codeLine: [2, 3],
+    ratings: [...rawRatings],
+    candies: [...candies],
+    currentIndex: -1,
+    direction: 'init',
+    action: 'init',
+    message: `第 1 步：初始化全部 ${n} 个孩子糖果数为 1 (每人至少 1 颗)`,
+    codeLine: 3,
   });
 
-  // 从左到右遍历
+  // 1. 从左向右遍历（右孩子评分 > 左孩子评分）
   for (let i = 1; i < n; i++) {
-    const leftRating = ratings[i - 1];
-    const rightRating = ratings[i];
+    const prev = rawRatings[i - 1];
+    const cur = rawRatings[i];
 
-    steps.push({
-      ratings: [...ratings], candies: [...candies], currentIndex: i, phase: 'left-to-right',
-      message: `左→右：比较位置 ${i}（评分 ${rightRating}）和位置 ${i - 1}（评分 ${leftRating}）`,
-      log: `scan L→pos ${i}: compare [${leftRating}] vs [${rightRating}]`,
-      codeLine: 5,
-    });
-
-    if (rightRating > leftRating) {
+    if (cur > prev) {
       candies[i] = candies[i - 1] + 1;
       steps.push({
-        ratings: [...ratings], candies: [...candies], currentIndex: i, phase: 'left-to-right',
-        message: `评分 ${rightRating} > ${leftRating}，右侧孩子糖果增加到 ${candies[i]}（= 左侧 ${candies[i - 1]} + 1）`,
-        log: `upgrade pos ${i}: -> ${candies[i]}`,
+        ratings: [...rawRatings],
+        candies: [...candies],
+        currentIndex: i,
+        direction: 'left-to-right',
+        action: 'inc_right',
+        message: `📈 [左 &rarr; 右] 孩子 [${i}] 评分 ${cur} > 左边 [${i - 1}] 评分 ${prev}，糖果递增为 ${candies[i]} (= ${candies[i - 1]} + 1)`,
+        codeLine: 7,
+      });
+    } else {
+      steps.push({
+        ratings: [...rawRatings],
+        candies: [...candies],
+        currentIndex: i,
+        direction: 'left-to-right',
+        action: 'keep_right',
+        message: `⏩ [左 &rarr; 右] 孩子 [${i}] 评分 ${cur} &le; 左边 ${prev}，保持糖果数 ${candies[i]}`,
         codeLine: 6,
       });
     }
   }
 
-  // 右→左遍历
+  // 2. 从右向左遍历（左孩子评分 > 右孩子评分，取 max）
   for (let i = n - 2; i >= 0; i--) {
-    const leftRating = ratings[i];
-    const rightRating = ratings[i + 1];
+    const cur = rawRatings[i];
+    const next = rawRatings[i + 1];
 
-    steps.push({
-      ratings: [...ratings], candies: [...candies], currentIndex: i, phase: 'right-to-left',
-      message: `右→左：比较位置 ${i}（评分 ${leftRating}）和位置 ${i + 1}（评分 ${rightRating}）`,
-      log: `scan R→pos ${i}: compare [${rightRating}] vs [${leftRating}]`,
-      codeLine: 10,
-    });
-
-    if (leftRating > rightRating) {
-      const oldCandy = candies[i];
+    if (cur > next) {
+      const oldVal = candies[i];
       candies[i] = Math.max(candies[i], candies[i + 1] + 1);
-      if (candies[i] === oldCandy) {
-        steps.push({
-          ratings: [...ratings], candies: [...candies], currentIndex: i, phase: 'right-to-left',
-          message: `评分 ${leftRating} > ${rightRating}，但已有 ${oldCandy} ≥ ${candies[i + 1] + 1}，无需更新`,
-          log: `pos ${i}: ${oldCandy} ≥ ${candies[i + 1] + 1}, skip`,
-          codeLine: 11,
-        });
-      } else {
-        steps.push({
-          ratings: [...ratings], candies: [...candies], currentIndex: i, phase: 'right-to-left',
-          message: `评分 ${leftRating} > ${rightRating}，左侧孩子糖果从 ${oldCandy} 更新为 ${candies[i]}（取 max）`,
-          log: `upgrade pos ${i}: ${oldCandy} -> ${candies[i]}`,
-          codeLine: 11,
-        });
-      }
+
+      steps.push({
+        ratings: [...rawRatings],
+        candies: [...candies],
+        currentIndex: i,
+        direction: 'right-to-left',
+        action: candies[i] > oldVal ? 'inc_left' : 'keep_left',
+        message: `📉 [右 &rarr; 左] 孩子 [${i}] 评分 ${cur} > 右边 [${i + 1}] 评分 ${next}，糖果取 max(${oldVal}, ${candies[i + 1] + 1}) = ${candies[i]}`,
+        codeLine: 13,
+      });
+    } else {
+      steps.push({
+        ratings: [...rawRatings],
+        candies: [...candies],
+        currentIndex: i,
+        direction: 'right-to-left',
+        action: 'keep_left',
+        message: `⏩ [右 &rarr; 左] 孩子 [${i}] 评分 ${cur} &le; 右边 ${next}，保持糖果数 ${candies[i]}`,
+        codeLine: 12,
+      });
     }
   }
 
-  // sum
-  const total = candies.reduce((a, b) => a + b, 0);
-  steps.push({
-    ratings: [...ratings], candies: [...candies], currentIndex: -1, phase: 'sum',
-    message: `计算总糖果数：${candies.join(' + ')} = ${total}`,
-    log: `sum ${candies.join('+')} = ${total}`,
-    codeLine: 15,
-  });
+  const total = candies.reduce((acc, v) => acc + v, 0);
 
-  // done
   steps.push({
-    ratings: [...ratings], candies: [...candies], currentIndex: -1, phase: 'done',
-    message: `✅ 完成！最少需要 ${total} 个糖果`,
-    log: `done: min candies = ${total}`,
-    codeLine: 15,
+    ratings: [...rawRatings],
+    candies: [...candies],
+    currentIndex: -1,
+    direction: 'done',
+    action: 'done',
+    message: `🎉 分发完成！双向贪心满足所有相邻约束，所需最少糖果总数为 ${total} 颗：[${candies.join(', ')}]`,
+    codeLine: 17,
   });
 
   return steps;
 }
 
+/* ── Visualizer class ─────────────────────────────────────── */
 export class CandyVisualizer extends StepVisualizer<CandyStep> {
-  protected codeLines = [
-    "public int candy(int[] ratings) {",
-    "    int n = ratings.length;",
-    "    int[] candies = new int[n]; Arrays.fill(candies, 1);",
-    "    ",
-    "    // 从左到右：保证右侧孩子 > 左侧",
-    "    for (int i = 1; i < n; i++) {",
-    "        if (ratings[i] > ratings[i - 1]) candies[i] = candies[i - 1] + 1;",
-    "    }",
-    "    ",
-    "    // 从右到左：保证左侧孩子 > 右侧（叠加之前的结果）",
-    "    for (int i = n - 2; i >= 0; i--) {",
-    "        if (ratings[i] > ratings[i + 1]) candies[i] = Math.max(candies[i], candies[i + 1] + 1);",
-    "    }",
-    "    ",
-    "    int sum = 0; for (int c : candies) sum += c; return sum;",
-    "}",
-  ];
-  protected codePanelTitle = '贪心算法 · 分发糖果 (Java)';
+  protected codeLanguages = CANDY_CODE_LANGUAGES;
+  protected codeLines = CANDY_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '分发糖果 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
-  private childrenRowEl: HTMLElement | null = null;
-  private phaseEl: HTMLElement | null = null;
-  private scanEl: HTMLElement | null = null;
-  private totalEl: HTMLElement | null = null;
-  private directionEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
-  private exampleBtns: NodeListOf<HTMLButtonElement> | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private childContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#candy-input');
-    this.childrenRowEl = this.root.querySelector('#candy-children-row');
-    this.phaseEl = this.root.querySelector('#candy-stat-phase');
-    this.scanEl = this.root.querySelector('#candy-stat-scan');
-    this.totalEl = this.root.querySelector('#candy-stat-total');
-    this.directionEl = this.root.querySelector('.candy-direction');
-    this.resultEl = this.root.querySelector('#candy-result');
-    this.logEl = this.root.querySelector('#candy-log');
-    this.clearLogBtn = this.root.querySelector('#candy-log-clear');
-    this.exampleBtns = this.root.querySelectorAll('.candy-chip');
+    this.sandboxContainer = this.root.querySelector('#cd-sandbox-container');
+    this.childContainer = this.root.querySelector('#cd-child-container');
+    this.decisionMonitorContainer = this.root.querySelector('#cd-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#cd-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.bindPlaybackControls({ message: 'step-message' });
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    const startBtn = this.root.querySelector('#candy-start');
-    if (startBtn) startBtn.addEventListener('click', () => this.start());
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
 
-    this.exampleBtns?.forEach((btn) => {
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.cd-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.inputEl) this.inputEl.value = btn.dataset.val || '';
+        const ratingsEl = this.root?.querySelector('#input-ratings') as HTMLInputElement | null;
+        if (ratingsEl && btn.dataset.ratings) ratingsEl.value = btn.dataset.ratings;
         this.start();
       });
     });
 
-    if (this.clearLogBtn) {
-      this.clearLogBtn.addEventListener('click', () => {
-        if (this.logEl) this.logEl.innerHTML = '';
-      });
-    }
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: CANDY_PROBLEM_HTML,
+      analysisHtml: CANDY_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
   protected buildSteps(): CandyStep[] {
-    const defaultRatings: number[] = [1, 2, 2];
-    let ratings = defaultRatings;
-    if (this.inputEl) {
-      const input = this.inputEl.value.trim();
-      if (input) {
-        const parsed = input.split(/[,，\s]+/).map((n) => parseInt(n.trim())).filter(Number.isFinite);
-        if (parsed.length > 0) ratings = parsed;
-      }
-    }
-    return candySteps(ratings);
+    const ratingsEl = this.root?.querySelector('#input-ratings') as HTMLInputElement | null;
+    const rawRatings = (ratingsEl?.value || '1,0,2')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+
+    return buildCandySteps(rawRatings.length ? rawRatings : [1, 0, 2]);
   }
 
   protected renderStep(step: CandyStep): void {
-    this.renderStats(step);
-    this.renderChildren(step);
-    this.renderDirection(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel();
-  }
+    const ratings = step.ratings;
+    const candies = step.candies;
+    const n = ratings.length;
 
-  private renderStats(step: CandyStep): void {
-    if (this.phaseEl) {
-      const phaseNames: Record<string, string> = {
-        'init': '准备中',
-        'left-to-right': '左→右遍历',
-        'right-to-left': '右→左遍历',
-        'sum': '计算总和',
-        'done': '完成',
-      };
-      this.phaseEl.textContent = phaseNames[step.phase] || '准备中';
-    }
-    if (this.scanEl) {
-      if (step.phase === 'left-to-right' || step.phase === 'right-to-left') {
-        this.scanEl.textContent = `pos ${step.currentIndex}`;
-      } else if (step.phase === 'sum') {
-        this.scanEl.textContent = '求和';
-      } else {
-        this.scanEl.textContent = '-';
-      }
-    }
-    if (this.totalEl) {
-      const total = step.candies.reduce((a, b) => a + b, 0);
-      this.totalEl.textContent = String(total);
-    }
-  }
+    // 1. 渲染评分与糖果堆叠沙盘 (Card 1)
+    if (this.sandboxContainer && n > 0) {
+      const curIdx = step.currentIndex;
+      const isDone = step.action === 'done';
 
-  private renderDirection(step: CandyStep): void {
-    const dir = this.directionEl;
-    if (!dir) return;
-    let arrow = '—';
-    let text = '准备完成';
-    if (step.phase === 'left-to-right') { arrow = '→'; text = '从左到右遍历'; }
-    else if (step.phase === 'right-to-left') { arrow = '←'; text = '从右到左遍历'; }
-    else if (step.phase === 'sum') { arrow = 'Σ'; text = '求和'; }
-    else if (step.phase === 'done') { arrow = '✓'; text = '完成'; }
-    dir.innerHTML = `<span class="candy-arrow">${arrow}</span><span>${text}</span>`;
-  }
+      const childrenHtml = ratings
+        .map((r, idx) => {
+          const c = candies[idx] ?? 1;
+          const isCurrent = idx === curIdx && !isDone;
 
-  /** 判断某位置在当前步骤相比上一步是否发生过糖果数变化 */
-  private wasJustUpdated(step: CandyStep, idx: number): boolean {
-    if (this.currentIndex <= 0) return false;
-    const prev = this.steps[this.currentIndex - 1];
-    if (!prev || prev.candies[idx] === undefined) return false;
-    return step.candies[idx] !== prev.candies[idx];
-  }
+          let bg = '#ffffff';
+          let borderColor = '#e2e8f0';
+          let textColor = '#0f172a';
 
-  private renderChildren(step: CandyStep): void {
-    const childrenRowEl = this.childrenRowEl;
-    if (!childrenRowEl) return;
-    childrenRowEl.innerHTML = '';
-
-    step.ratings.forEach((rating, index) => {
-      const child = document.createElement('div');
-      child.className = 'candy-child';
-
-      // 1) rating box
-      const ratingBox = document.createElement('div');
-      ratingBox.className = 'candy-rating';
-      ratingBox.textContent = String(rating);
-      if (index === step.currentIndex) {
-        ratingBox.classList.add('candy-rating--current');
-      }
-      if (step.phase === 'left-to-right' && index === step.currentIndex - 1) {
-        ratingBox.classList.add('candy-rating--adjacent-left');
-      } else if (step.phase === 'right-to-left' && index === step.currentIndex + 1) {
-        ratingBox.classList.add('candy-rating--adjacent-right');
-      }
-
-      // 2) candy stack: candyCount layers stacked bottom-up
-      const candyCount = step.candies[index] ?? 0;
-      const justUpdated = this.wasJustUpdated(step, index);
-      const candyStack = document.createElement('div');
-      candyStack.className = 'candy-candy-stack';
-
-      for (let layer = 0; layer < candyCount; layer++) {
-        const layerEl = document.createElement('div');
-        layerEl.className = 'candy-layer';
-        const isTop = layer === candyCount - 1;
-        if (isTop) {
-          // 顶层显示数值
-          const numLabel = document.createElement('span');
-          numLabel.className = 'candy-layer-num';
-          numLabel.textContent = String(candyCount);
-          numLabel.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);';
-          layerEl.appendChild(numLabel);
-          if (justUpdated) {
-            layerEl.classList.add('candy-layer--updated');
-            // 顶部增加一层时，该层是 "new" 的，drop-in 动画
-            layerEl.classList.add('candy-layer--new');
-            const updateTag = document.createElement('span');
-            updateTag.className = 'candy-label candy-label--update';
-            updateTag.textContent = '+1';
-            candyStack.appendChild(updateTag);
-            // 把 updateTag 定位到顶部
-            updateTag.style.position = 'absolute';
-            updateTag.style.top = `${-candyCount * 16 - 8}px`;
+          if (isCurrent) {
+            bg = '#fef2f2';
+            borderColor = '#ef4444';
+            textColor = '#dc2626';
           }
-        } else {
-          // 中间层 / 底层 - 静态
-          layerEl.classList.add('candy-layer--no-change');
+
+          // 糖果堆叠小圆点
+          const candyDots = Array.from({ length: Math.min(c, 6) })
+            .map(() => `<span style="font-size: 10px;">🍬</span>`)
+            .join('');
+
+          return `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <span style="font-size: 9px; color: ${isCurrent ? '#ef4444' : '#94a3b8'}; font-weight: 700;">
+                ${isCurrent ? '📍 当前' : `[${idx}]`}
+              </span>
+              <div style="width: 52px; min-height: 58px; border-radius: 12px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 4px rgba(0,0,0,0.04); gap: 2px;">
+                <span style="font-size: 10px; color: #64748b;">评分: ${r}</span>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; max-width: 44px;">
+                  ${candyDots}
+                </div>
+                <span style="font-size: 11px; color: #ef4444; font-weight: 800;">${c} 颗</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+
+      const totalSoFar = candies.reduce((acc, v) => acc + v, 0);
+
+      this.sandboxContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- 阶段提示与当前总糖果 -->
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>遍历阶段: <strong style="color: #ef4444;">${step.direction === 'left-to-right' ? '➡️ 从左到右 (右 > 左 递增)' : step.direction === 'right-to-left' ? '⬅️ 从右到左 (左 > 右 取 max)' : step.direction === 'done' ? '✓ 完成' : '初始化'}</strong></span>
+            <span>当前糖果总数: <strong style="color: #ef4444; font-family: monospace; font-size: 12.5px;">${totalSoFar} 颗</strong></span>
+          </div>
+        </div>
+
+        <!-- 孩子水平流 -->
+        <div style="display: flex; gap: 8px; overflow-x: auto; justify-content: center; padding: 4px 0;">
+          ${childrenHtml}
+        </div>
+      `;
+    }
+
+    // 2. 渲染当前孩子与相邻评分 (Card 2 Left)
+    if (this.childContainer) {
+      const idx = step.currentIndex;
+      const curRating = idx >= 0 && idx < ratings.length ? ratings[idx] : null;
+
+      this.childContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前扫描孩子:</span>
+            <span style="font-family: monospace; font-weight:700; color: #ef4444;">
+              ${idx >= 0 ? `[${idx}] (评分: ${curRating})` : '-'}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>该孩子当前糖果:</span>
+            <span style="font-family: monospace; font-weight:700; color: #059669;">
+              ${idx >= 0 ? `${candies[idx]} 颗` : '-'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染两次贪心判定监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      const isIncR = step.action === 'inc_right';
+      const isIncL = step.action === 'inc_left';
+
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>贪心判定:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isIncR || isIncL ? '#fef2f2' : '#eff6ff'}; color: ${isIncR || isIncL ? '#dc2626' : '#2563eb'}; border: 1px solid ${isIncR || isIncL ? '#fecaca' : '#bfdbfe'};">
+              ${isIncR ? '📈 右孩子评分高 (+1 奖励)' : isIncL ? '📉 左孩子评分高 (取 max 奖励)' : '⏩ 评分不高于相邻 (保持)'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 准则: <code style="color:#ef4444; font-family:monospace;">左右两侧分开独立贪心，右向左取 max 兼顾两端</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染最少糖果分配方案看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      const total = candies.reduce((acc, v) => acc + v, 0);
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>最少糖果总数: <strong style="color: #ef4444; font-family: monospace; font-size: 13.5px;">${total}</strong> 颗</span>
+            <span style="font-family: monospace; font-weight: 700; color: #059669;">[${candies.join(', ')}]</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgeCandies = this.root?.querySelector('#badge-total-candies');
+    if (badgeCandies) {
+      const total = candies.reduce((acc, v) => acc + v, 0);
+      badgeCandies.textContent = `总糖果: ${total} 颗`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '步骤';
+
+        if (st.action === 'inc_right') {
+          badgeColor = '#ef4444';
+          badgeBg = '#fef2f2';
+          badgeText = '左→右+1';
+        } else if (st.action === 'inc_left') {
+          badgeColor = '#d97706';
+          badgeBg = '#fffbeb';
+          badgeText = '右→左max';
+        } else if (st.action === 'done') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '完成';
         }
-        candyStack.appendChild(layerEl);
-      }
 
-      // 3) child label
-      const idxLabel = document.createElement('div');
-      idxLabel.className = 'candy-label';
-      idxLabel.textContent = `#${index}`;
-      idxLabel.style.position = 'relative';
-      idxLabel.style.top = '0';
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
 
-      child.appendChild(ratingBox);
-      child.appendChild(candyStack);
-      child.appendChild(idxLabel);
-      childrenRowEl.appendChild(child);
-    });
-  }
-
-  private renderResultBanner(step: CandyStep): void {
-    const resultEl = this.resultEl;
-    if (!resultEl) return;
-    resultEl.classList.toggle('candy-result--done', step.phase === 'done');
-    const emoji = resultEl.querySelector('.candy-emoji') as HTMLElement | null;
-    if (emoji) {
-      if (step.phase === 'done') emoji.textContent = '✅';
-      else if (step.phase === 'sum') emoji.textContent = '📝';
-      else if (step.phase === 'right-to-left') emoji.textContent = '↩️';
-      else if (step.phase === 'left-to-right') emoji.textContent = '➡️';
-      else emoji.textContent = '🍬';
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
     }
   }
 
-  private renderLogPanel(): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      line.className = 'candy-log-line' + (i === this.currentIndex ? ' candy-log-active' : '');
-      line.innerHTML = `<span class="candy-log-num">${String(i + 1).padStart(2, '0')}</span><span>${s.log}</span>`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -355,11 +399,11 @@ registerAlgorithm({
   name: '分发糖果',
   viewId: 'algo-candy-view',
   category: 'greedy',
-  description: 'LeetCode 135：贪心算法，每个孩子至少一个糖果，评分更高的孩子必须比相邻孩子糖果多',
+  description: '双向两次贪心遍历，左向右递增与右向左取 max 结合，求最少糖果数',
   icon: '🍬',
   template,
   Visualizer: CandyVisualizer,
   difficulty: 3,
-  levelOrder: 9,
-  learningGoal: '理解两次遍历的糖果分配策略',
+  levelOrder: 13,
+  learningGoal: '掌握双向两次贪心解题范式，学会将双边相邻约束拆解为单向独立推导',
 });

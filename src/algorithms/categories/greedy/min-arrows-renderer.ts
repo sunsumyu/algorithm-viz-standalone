@@ -1,346 +1,386 @@
 /**
- * 用最少数量的箭引爆气球可视化器（贪心算法）
- * LeetCode 452
- * 重做：玻璃感 + 坐标轴气球 + 箭飞入 + burst 爆裂
+ * 用最少数量的箭引爆气球可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 452：左端点升序排序 + 重叠气球右边界收紧 + 不重叠时增加弓箭
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  MIN_ARROWS_PROBLEM_HTML,
+  MIN_ARROWS_ANALYSIS_HTML,
+  MIN_ARROWS_CODE_LANGUAGES,
+} from './min-arrows-problem-content';
 import template from './min-arrows.html?raw';
 
-type MAPhase = 'init' | 'sort' | 'consider' | 'shoot' | 'skip' | 'done';
-
-interface MAStep {
-  /** 排序后的气球列表 */
-  balloons: [number, number][];
-  /** 当前考虑的气球下标；-1 表示无 */
+export interface MAStep {
+  balloons: Array<[number, number]>;
   currentIndex: number;
-  /** 已被射爆的气球下标集合 */
-  hitBalloons: number[];
-  /** 已被当前箭覆盖（重叠）的气球下标集合 */
-  skippedBalloons: number[];
-  /** 已射出箭数 */
   arrowCount: number;
-  /** 当前箭的位置（气球终点）；-1 / Infinity 表示无 */
-  currentEnd: number;
-  /** 本步是否触发新箭射出（用于动画） */
-  justShot: boolean;
-  /** 本步阶段 */
-  phase: MAPhase;
+  arrowPositions: number[];
+  overlapEnd: number;
+  action: 'init' | 'sort' | 'new_arrow' | 'overlap' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: number;
 }
 
-function buildSteps(balloons: [number, number][]): MAStep[] {
+export function buildMinArrowsSteps(rawBalloons: Array<[number, number]>): MAStep[] {
   const steps: MAStep[] = [];
-  if (balloons.length === 0) {
+  const n = rawBalloons.length;
+
+  if (n === 0) {
     steps.push({
-      balloons: [], currentIndex: -1, hitBalloons: [], skippedBalloons: [],
-      arrowCount: 0, currentEnd: -1, justShot: false, phase: 'done',
-      message: '输入为空，返回 0', log: 'init: empty', codeLine: 1,
+      balloons: [],
+      currentIndex: -1,
+      arrowCount: 0,
+      arrowPositions: [],
+      overlapEnd: 0,
+      action: 'done',
+      message: '输入为空，所需弓箭数为 0',
+      codeLine: 2,
     });
     return steps;
   }
 
-  const sorted = [...balloons].sort((a, b) => a[1] - b[1]);
-  let arrowCount = 0;
-  let currentEnd: number = Infinity;
-  const hitBalloons: number[] = [];
-  const skippedBalloons: number[] = [];
+  // 1. 按左边界升序排序
+  const points = rawBalloons.map(([s, e]) => [s, e] as [number, number]).sort((a, b) => a[0] - b[0]);
+  let count = 1;
+  const arrowPositions: number[] = [points[0][1]];
 
   steps.push({
-    balloons: sorted, currentIndex: -1, hitBalloons: [], skippedBalloons: [],
-    arrowCount: 0, currentEnd: -1, justShot: false, phase: 'sort',
-    message: `按气球终点升序排序：${sorted.map(b => `[${b[0]},${b[1]}]`).join(', ')}`,
-    log: `sort by end: ${sorted.map(b => `[${b[0]},${b[1]}]`).join(',')}`,
-    codeLine: [3, 4],
+    balloons: points.map(([s, e]) => [s, e]),
+    currentIndex: 0,
+    arrowCount: 1,
+    arrowPositions: [...arrowPositions],
+    overlapEnd: points[0][1],
+    action: 'sort',
+    message: `第 1 步：按左边界升序排序：${points.map((p) => `[${p[0]},${p[1]}]`).join(', ')}，第 1 支箭预定在 x=${points[0][1]}`,
+    codeLine: 4,
   });
 
-  for (let i = 0; i < sorted.length; i++) {
-    const balloon = sorted[i];
+  for (let i = 1; i < n; i++) {
+    const cur = points[i];
+    const prevEnd = points[i - 1][1];
 
-    // consider 子步骤
-    steps.push({
-      balloons: sorted, currentIndex: i,
-      hitBalloons: [...hitBalloons], skippedBalloons: [...skippedBalloons],
-      arrowCount, currentEnd: currentEnd === Infinity ? -1 : currentEnd,
-      justShot: false, phase: 'consider',
-      message: `考察气球 ${i}：[${balloon[0]}, ${balloon[1]}]`,
-      log: `consider #${i}: [${balloon[0]},${balloon[1]}]`,
-      codeLine: 7,
-    });
+    if (cur[0] > prevEnd) {
+      count++;
+      arrowPositions.push(cur[1]);
 
-    const endSoFar = currentEnd === Infinity ? -1 : currentEnd;
-    if (balloon[0] > endSoFar) {
-      // 需要新箭
-      arrowCount++;
-      currentEnd = balloon[1];
-      hitBalloons.push(i);
       steps.push({
-        balloons: sorted, currentIndex: i,
-        hitBalloons: [...hitBalloons], skippedBalloons: [...skippedBalloons],
-        arrowCount, currentEnd, justShot: true, phase: 'shoot',
-        message: `🎯 起点 ${balloon[0]} > 箭位 ${endSoFar === -1 ? '∅' : endSoFar}，射第 ${arrowCount} 支箭在 x=${currentEnd}`,
-        log: `shoot arrow #${arrowCount} @ x=${currentEnd}, burst #${i}`,
-        codeLine: [9, 10],
+        balloons: points.map(([s, e]) => [s, e]),
+        currentIndex: i,
+        arrowCount: count,
+        arrowPositions: [...arrowPositions],
+        overlapEnd: cur[1],
+        action: 'new_arrow',
+        message: `🏹 气球 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} > 前组右端点 ${prevEnd}，无重叠，增加第 ${count} 支箭 (x=${cur[1]})`,
+        codeLine: 8,
       });
     } else {
-      // 当前气球与已射出的箭重叠，可被一起射爆
-      skippedBalloons.push(i);
+      points[i][1] = Math.min(prevEnd, cur[1]);
+      arrowPositions[arrowPositions.length - 1] = points[i][1];
+
       steps.push({
-        balloons: sorted, currentIndex: i,
-        hitBalloons: [...hitBalloons], skippedBalloons: [...skippedBalloons],
-        arrowCount, currentEnd, justShot: false, phase: 'skip',
-        message: `✓ 起点 ${balloon[0]} ≤ 箭位 ${currentEnd}，被当前箭一起射爆`,
-        log: `skip #${i}: covered by arrow @ ${currentEnd}`,
-        codeLine: 13,
+        balloons: points.map(([s, e]) => [s, e]),
+        currentIndex: i,
+        arrowCount: count,
+        arrowPositions: [...arrowPositions],
+        overlapEnd: points[i][1],
+        action: 'overlap',
+        message: `🎯 气球 [${i}] 与前组重叠 (左界 ${cur[0]} &le; ${prevEnd})！同用一支箭，收紧重叠右界至 x=${points[i][1]}`,
+        codeLine: 11,
       });
     }
   }
 
   steps.push({
-    balloons: sorted, currentIndex: sorted.length,
-    hitBalloons: [...hitBalloons], skippedBalloons: [...skippedBalloons],
-    arrowCount, currentEnd, justShot: false, phase: 'done',
-    message: `✅ 完成！最少需要 ${arrowCount} 支箭`,
-    log: `done: arrows=${arrowCount}`,
-    codeLine: 16,
+    balloons: points.map(([s, e]) => [s, e]),
+    currentIndex: n - 1,
+    arrowCount: count,
+    arrowPositions: [...arrowPositions],
+    overlapEnd: points[n - 1][1],
+    action: 'done',
+    message: `🎉 扫描完成！引爆全部 ${n} 个气球最少需要 ${count} 支箭 (射箭坐标: ${arrowPositions.join(', ')})`,
+    codeLine: 14,
   });
 
   return steps;
 }
 
+/* ── Visualizer class ─────────────────────────────────────── */
 export class MinArrowsVisualizer extends StepVisualizer<MAStep> {
-  protected codeLines = [
-    "public int findMinArrowShots(int[][] points) {",
-    "    if (points.length == 0) return 0;",
-    "    // 按终点升序排序",
-    "    Arrays.sort(points, (a, b) -> Integer.compare(a[1], b[1]));",
-    "    int arrows = 0, end = Integer.MIN_VALUE;",
-    "    for (int i = 0; i < points.length; i++) {",
-    "        int start = points[i][0], balloonEnd = points[i][1];",
-    "        // 当前气球在已有箭的右侧 → 需要新箭",
-    "        if (start > end) {",
-    "            arrows++;",
-    "            end = balloonEnd;",
-    "        }",
-    "        // 否则被当前箭覆盖",
-    "    }",
-    "    return arrows;",
-    "}",
-  ];
-  protected codePanelTitle = '贪心 · 引爆气球 (Java)';
+  protected codeLanguages = MIN_ARROWS_CODE_LANGUAGES;
+  protected codeLines = MIN_ARROWS_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '用最少数量的箭引爆气球 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
-  private axisEl: HTMLElement | null = null;
-  private countEl: HTMLElement | null = null;
-  private endEl: HTMLElement | null = null;
-  private hitCountEl: HTMLElement | null = null;
-  private progressEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
-  private exampleBtns: NodeListOf<HTMLButtonElement> | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private intervalContainer: HTMLElement | null = null;
+  private overlapMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#arrow-input');
-    this.axisEl = this.root.querySelector('#ma-axis');
-    this.countEl = this.root.querySelector('#arrow-count');
-    this.endEl = this.root.querySelector('#current-end');
-    this.hitCountEl = this.root.querySelector('#hit-count');
-    this.progressEl = this.root.querySelector('#progress');
-    this.statusEl = this.root.querySelector('#ma-status');
-    this.resultEl = this.root.querySelector('#ma-result');
-    this.logEl = this.root.querySelector('#ma-log');
-    this.clearLogBtn = this.root.querySelector('#ma-log-clear');
-    this.exampleBtns = this.root.querySelectorAll('.ma-chip');
+    this.sandboxContainer = this.root.querySelector('#ma-sandbox-container');
+    this.intervalContainer = this.root.querySelector('#ma-interval-container');
+    this.overlapMonitorContainer = this.root.querySelector('#ma-overlap-monitor-container');
+    this.metricsContainer = this.root.querySelector('#ma-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.bindPlaybackControls({ message: 'step-message' });
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    const startBtn = this.root.querySelector('#arrow-start');
-    if (startBtn) startBtn.addEventListener('click', () => this.start());
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
 
-    this.exampleBtns?.forEach((btn) => {
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.ma-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.inputEl) this.inputEl.value = btn.dataset.val || '';
+        const ptsEl = this.root?.querySelector('#input-points') as HTMLInputElement | null;
+        if (ptsEl && btn.dataset.points) ptsEl.value = btn.dataset.points;
         this.start();
       });
     });
 
-    if (this.clearLogBtn) {
-      this.clearLogBtn.addEventListener('click', () => {
-        if (this.logEl) this.logEl.innerHTML = '';
-      });
-    }
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: MIN_ARROWS_PROBLEM_HTML,
+      analysisHtml: MIN_ARROWS_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
   protected buildSteps(): MAStep[] {
-    const defaultBalloons: [number, number][] = [[10, 16], [2, 8], [1, 6], [7, 12]];
-    let balloons = defaultBalloons;
-    if (this.inputEl) {
-      const input = this.inputEl.value.trim();
-      if (input) {
-        try {
-          const parsed = JSON.parse(input);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            balloons = parsed.map((b: number[]) => [b[0], b[1]] as [number, number]);
-          }
-        } catch {
-          const nums = input.split(/[,，\s]+/).map((n) => parseInt(n.trim())).filter(Number.isFinite);
-          if (nums.length > 0 && nums.length % 2 === 0) {
-            balloons = [];
-            for (let i = 0; i < nums.length; i += 2) balloons.push([nums[i], nums[i + 1]]);
-          }
-        }
+    const ptsEl = this.root?.querySelector('#input-points') as HTMLInputElement | null;
+    let balloons: Array<[number, number]> = [];
+    try {
+      const parsed = JSON.parse(ptsEl?.value || '[[10,16],[2,8],[1,6],[7,12]]');
+      if (Array.isArray(parsed) && parsed.every((p) => Array.isArray(p) && p.length >= 2)) {
+        balloons = parsed.map((p) => [Number(p[0]), Number(p[1])]);
       }
+    } catch {
+      balloons = [
+        [10, 16],
+        [2, 8],
+        [1, 6],
+        [7, 12],
+      ];
     }
-    return buildSteps(balloons);
+
+    return buildMinArrowsSteps(balloons);
   }
 
   protected renderStep(step: MAStep): void {
-    this.renderStats(step);
-    this.renderAxis(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel();
-  }
+    const balloons = step.balloons;
+    const n = balloons.length;
 
-  private renderStats(step: MAStep): void {
-    if (this.countEl) this.countEl.textContent = String(step.arrowCount);
-    if (this.endEl) this.endEl.textContent = step.currentEnd === -1 ? '-' : String(step.currentEnd);
-    if (this.hitCountEl) this.hitCountEl.textContent = String(step.hitBalloons.length);
-    if (this.progressEl) {
-      const cur = step.currentIndex < 0 ? 0 : Math.min(step.currentIndex + 1, step.balloons.length);
-      this.progressEl.textContent = `${cur}/${step.balloons.length}`;
+    // 1. 渲染气球坐标轴与垂直射箭沙盘 (Card 1)
+    if (this.sandboxContainer && n > 0) {
+      const minX = Math.min(...balloons.map((b) => b[0]));
+      const maxX = Math.max(...balloons.map((b) => b[1]));
+      const xRange = maxX - minX || 1;
+
+      const svgWidth = 420;
+      const svgHeight = 160;
+      const padX = 35;
+      const rowHeight = Math.min(22, (svgHeight - 40) / n);
+
+      const balloonSvgs = balloons
+        .map(([s, e], idx) => {
+          const x1 = padX + ((s - minX) / xRange) * (svgWidth - padX * 2);
+          const x2 = padX + ((e - minX) / xRange) * (svgWidth - padX * 2);
+          const width = Math.max(12, x2 - x1);
+          const y = 20 + idx * rowHeight;
+
+          const isCurrent = idx === step.currentIndex && step.action !== 'done';
+          const fill = isCurrent ? '#f472b6' : '#fbcfe8';
+          const stroke = isCurrent ? '#db2777' : '#ec4899';
+
+          return `
+            <g>
+              <!-- 气球胶囊条 -->
+              <rect x="${x1}" y="${y}" width="${width}" height="${rowHeight - 6}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />
+              <text x="${x1 + width / 2}" y="${y + rowHeight / 2 - 1}" fill="#831843" font-size="9" font-family="JetBrains Mono" font-weight="700" text-anchor="middle" dominant-baseline="middle">
+                [${s}, ${e}]
+              </text>
+            </g>
+          `;
+        })
+        .join('');
+
+      // 垂直箭射线 (绿色垂直虚线与箭头)
+      const arrowsSvg = step.arrowPositions
+        .map((arrowX, aIdx) => {
+          const x = padX + ((arrowX - minX) / xRange) * (svgWidth - padX * 2);
+          return `
+            <g>
+              <line x1="${x}" y1="8" x2="${x}" y2="${svgHeight - 12}" stroke="#10b981" stroke-width="2" stroke-dasharray="4 2" />
+              <circle cx="${x}" cy="${svgHeight - 8}" r="4" fill="#10b981" />
+              <text x="${x}" y="12" fill="#059669" font-size="9" font-family="JetBrains Mono" font-weight="800" text-anchor="middle">
+                🏹#${aIdx + 1}
+              </text>
+            </g>
+          `;
+        })
+        .join('');
+
+      this.sandboxContainer.innerHTML = `
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; height: 100%; overflow: visible;" preserveAspectRatio="xMidYMid meet">
+          <!-- 底部坐标轴 -->
+          <line x1="${padX}" y1="${svgHeight - 15}" x2="${svgWidth - padX}" y2="${svgHeight - 15}" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="${padX}" y="${svgHeight - 2}" fill="#94a3b8" font-size="8.5" font-family="JetBrains Mono">x=${minX}</text>
+          <text x="${svgWidth - padX}" y="${svgHeight - 2}" fill="#94a3b8" font-size="8.5" font-family="JetBrains Mono" text-anchor="end">x=${maxX}</text>
+
+          <!-- 气球区间 -->
+          ${balloonSvgs}
+
+          <!-- 弓箭射线 -->
+          ${arrowsSvg}
+        </svg>
+      `;
     }
-    if (this.statusEl) {
-      const names: Record<MAPhase, string> = {
-        'init': '准备', 'sort': '排序', 'consider': '考察', 'shoot': '射箭', 'skip': '覆盖', 'done': '完成',
-      };
-      this.statusEl.textContent = names[step.phase];
-    }
-  }
 
-  private renderAxis(step: MAStep): void {
-    const axisEl = this.axisEl;
-    if (!axisEl) return;
-    axisEl.innerHTML = '';
+    // 2. 渲染当前考察区间 (Card 2 Left)
+    if (this.intervalContainer) {
+      const curB = step.currentIndex >= 0 && step.currentIndex < balloons.length ? balloons[step.currentIndex] : null;
 
-    const n = step.balloons.length;
-    if (n === 0) {
-      axisEl.innerHTML = '<div style="color:#64748b;padding:24px;text-align:center;">无气球</div>';
-      return;
-    }
-
-    const minStart = Math.min(...step.balloons.map((b) => b[0]));
-    const maxEnd = Math.max(...step.balloons.map((b) => b[1]));
-    const span = Math.max(1, maxEnd - minStart);
-
-    // 计算坐标范围：留出一点边距
-    const axisWidth = Math.max(600, axisEl.clientWidth || 600);
-    const padLeft = 20, padRight = 20;
-    const usable = axisWidth - padLeft - padRight;
-    const xAt = (x: number) => padLeft + ((x - minStart) / span) * usable;
-
-    // 端点 marker（当前箭位置）
-    if (step.currentEnd !== -1 && step.currentEnd !== Infinity && step.phase !== 'done') {
-      const marker = document.createElement('div');
-      marker.className = 'ma-end-marker';
-      marker.style.left = `${xAt(step.currentEnd)}px`;
-      axisEl.appendChild(marker);
+      this.intervalContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前气球区间:</span>
+            <span style="font-family: monospace; font-weight:700; color: #db2777;">
+              ${curB ? `[${curB[0]}, ${curB[1]}]` : '-'}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前组右边界:</span>
+            <span style="font-family: monospace; font-weight:700; color: #059669;">x = ${step.overlapEnd}</span>
+          </div>
+        </div>
+      `;
     }
 
-    // 气球：按终点排序后，下标即垂直堆叠顺序
-    step.balloons.forEach((balloon, idx) => {
-      const el = document.createElement('div');
-      el.className = 'ma-balloon';
-      const startX = xAt(balloon[0]);
-      const endX = xAt(balloon[1]);
-      const width = Math.max(24, endX - startX);
-      el.style.left = `${startX}px`;
-      el.style.width = `${width}px`;
-      // 垂直堆叠：每个气球单独一层
-      el.style.bottom = `${42 + (idx % 4) * 42}px`;
-      el.textContent = `[${balloon[0]},${balloon[1]}]`;
+    // 3. 渲染重叠与加箭监视器 (Card 2 Center)
+    if (this.overlapMonitorContainer) {
+      const isNewArrow = step.action === 'new_arrow';
+      const isOverlap = step.action === 'overlap';
 
-      const isHit = step.hitBalloons.includes(idx);
-      const isSkipped = step.skippedBalloons.includes(idx);
-      const isCurrent = idx === step.currentIndex;
+      this.overlapMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>重叠状态:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isNewArrow ? '#fff1f2' : isOverlap ? '#ecfdf5' : '#eff6ff'}; color: ${isNewArrow ? '#db2777' : isOverlap ? '#059669' : '#2563eb'}; border: 1px solid ${isNewArrow ? '#fbcfe8' : isOverlap ? '#a7f3d0' : '#bfdbfe'};">
+              ${isNewArrow ? '🏹 无交集 (新增 1 箭)' : isOverlap ? '🎯 存在重叠 (同用 1 箭)' : '🔍 初始化排序'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 规则: <code style="color:#db2777; font-family:monospace;">if (s &gt; prevEnd) count++; else prevEnd = min(prevEnd, e);</code></div>
+          </div>
+        </div>
+      `;
+    }
 
-      if (isCurrent && step.phase === 'consider') {
-        el.classList.add('ma-balloon--current');
-      } else if (isSkipped) {
-        el.classList.add('ma-balloon--skipped');
-      }
+    // 4. 渲染最终射箭与引爆看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>所需最少箭数: <strong style="color: #db2777; font-family: monospace; font-size: 13.5px;">${step.arrowCount}</strong> 支</span>
+            <span style="font-family: monospace; font-weight: 700; color: #059669;">射箭位: [${step.arrowPositions.join(', ')}]</span>
+          </div>
+        </div>
+      `;
+    }
 
-      // shoot 阶段：当前气球 + 此前被覆盖的 skip 气球一起 burst
-      if (step.phase === 'shoot' && step.justShot) {
-        if (isCurrent || (isSkipped && !isHit)) {
-          // 此步触发新箭，但被覆盖的 skip 气球也会被这箭射爆
-          // 注意：skip 集合会在后续步骤中保留，这里仅当前气球 burst
+    const badgeArrow = this.root?.querySelector('#badge-arrow-count');
+    if (badgeArrow) {
+      badgeArrow.textContent = `已用箭数: ${step.arrowCount} 支`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '步骤';
+
+        if (st.action === 'new_arrow') {
+          badgeColor = '#db2777';
+          badgeBg = '#fdf2f8';
+          badgeText = '新箭';
+        } else if (st.action === 'overlap') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '重叠';
+        } else if (st.action === 'done') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '完成';
         }
-        if (isCurrent) {
-          el.classList.add('ma-balloon--hit');
-        }
-      }
-      // done 阶段：所有气球都被射爆
-      if (step.phase === 'done') {
-        // 不再 burst，仅显示绿色完成态
-        el.classList.add('ma-balloon--skipped');
-      }
 
-      axisEl.appendChild(el);
-    });
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
 
-    // 箭飞入：shoot 阶段，从 currentEnd 位置上方飞入
-    if (step.phase === 'shoot' && step.justShot && step.currentEnd !== -1) {
-      const arrow = document.createElement('div');
-      arrow.className = 'ma-arrow';
-      arrow.textContent = '🏹';
-      arrow.style.left = `${xAt(step.currentEnd) - 10}px`;
-      // 找到这一步射爆的气球的 bottom（最大的那个）
-      arrow.style.bottom = `${42 + (step.currentIndex % 4) * 42 + 36}px`;
-      axisEl.appendChild(arrow);
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
     }
-
-    // x 轴刻度（min/max/end）
-    [minStart, Math.floor((minStart + maxEnd) / 2), maxEnd].forEach((x) => {
-      const lbl = document.createElement('div');
-      lbl.className = 'ma-axis-label';
-      lbl.textContent = String(x);
-      lbl.style.left = `${xAt(x)}px`;
-      axisEl.appendChild(lbl);
-    });
-  }
-
-  private renderResultBanner(step: MAStep): void {
-    const resultEl = this.resultEl;
-    if (!resultEl) return;
-    resultEl.classList.toggle('ma-result--done', step.phase === 'done');
-    const emoji = resultEl.querySelector('.ma-emoji') as HTMLElement | null;
-    if (emoji) {
-      if (step.phase === 'done') emoji.textContent = '✅';
-      else if (step.phase === 'shoot') emoji.textContent = '🏹';
-      else if (step.phase === 'skip') emoji.textContent = '✓';
-      else if (step.phase === 'consider') emoji.textContent = '🔍';
-      else if (step.phase === 'sort') emoji.textContent = '↕️';
-      else emoji.textContent = '🎯';
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
     }
   }
 
-  private renderLogPanel(): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      line.className = 'ma-log-line' + (i === this.currentIndex ? ' ma-log-active' : '');
-      line.innerHTML = `<span class="ma-log-num">${String(i + 1).padStart(2, '0')}</span><span>${s.log}</span>`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -349,11 +389,11 @@ registerAlgorithm({
   name: '用最少数量的箭引爆气球',
   viewId: 'algo-min-arrows-view',
   category: 'greedy',
-  description: 'LeetCode 452：贪心算法，用最少数量的箭引爆所有气球',
+  description: '按左端点升序排序，贪心收紧重叠区间最小右边界，计算最少所需弓箭数',
   icon: '🎯',
   template,
   Visualizer: MinArrowsVisualizer,
   difficulty: 2,
-  levelOrder: 13,
-  learningGoal: '掌握区间交集贪心求最少箭数',
+  levelOrder: 8,
+  learningGoal: '掌握区间重叠问题的贪心收缩右边界模型，奠定区间调度类问题的求解范式',
 });

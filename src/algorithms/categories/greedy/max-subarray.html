@@ -1,379 +1,872 @@
 <style>
-  /* === 最大子序和 · 玻璃感 + 柱状图 + 子数组滑动 + 重置 shake === */
+  /* === 最大子数组和 (LeetCode 53) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-max-subarray-view {
-    --accent-a: #8b5cf6;
-    --accent-b: #f97316;
-    --accent-glow: rgba(249, 115, 22, .45);
-    --current-color: #fbbf24;
-    --sub-color: #60a5fa;
-    --max-color: #34d399;
-    --reset-color: #f87171;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 5% 5%, rgba(139, 92, 246, .28), transparent 55%),
-      radial-gradient(ellipse at 95% 90%, rgba(249, 115, 22, .26), transparent 55%),
-      linear-gradient(135deg, #12082a 0%, #1a0e14 50%, #2a1406 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-max-subarray-view .ms-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-max-subarray-view * {
+    box-sizing: border-box;
   }
-  #algo-max-subarray-view .ms-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-max-subarray-view .ms-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-max-subarray-view .ms-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-max-subarray-view .ms-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-max-subarray-view .ms-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-max-subarray-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-max-subarray-view .ms-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-max-subarray-view .ms-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, .12), rgba(249, 115, 22, .08));
-    border: 1px solid rgba(249, 115, 22, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+
+  #algo-max-subarray-view .ms-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-max-subarray-view .ms-tip strong { color: #fb923c; }
-  /* main */
-  #algo-max-subarray-view .ms-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+
+  #algo-max-subarray-view .ms-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-max-subarray-view .ms-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-max-subarray-view .ms-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
+
+  #algo-max-subarray-view .ms-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-max-subarray-view .ms-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  #algo-max-subarray-view .ms-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-max-subarray-view .ms-tag {
-    font-size: 11px; color: #fb923c; background: rgba(249, 115, 22, .14);
-    border: 1px solid rgba(249, 115, 22, .3); padding: 2px 8px; border-radius: 999px;
+
+  #algo-max-subarray-view .ms-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  /* input */
-  #algo-max-subarray-view .ms-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
+
+  #algo-max-subarray-view .ms-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-max-subarray-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
+
+  #algo-max-subarray-view .ms-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-max-subarray-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(249, 115, 22, .15); }
-  #algo-max-subarray-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-max-subarray-view .ms-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
   }
-  #algo-max-subarray-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
+
+  #algo-max-subarray-view .ms-input-str {
+    width: 170px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
   }
-  #algo-max-subarray-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-max-subarray-view .ms-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-max-subarray-view .ms-input-str:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+  }
+
+  #algo-max-subarray-view .ms-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-max-subarray-view .ms-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-max-subarray-view .ms-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-subarray-view .ms-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
   #algo-max-subarray-view .ms-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(139, 92, 246, .12); border: 1px solid rgba(139, 92, 246, .28);
-    color: #c4b5fd; cursor: pointer; transition: all .2s;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
   }
   #algo-max-subarray-view .ms-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
+    background: #e2e8f0;
+    color: #0f172a;
   }
-  /* stats */
-  #algo-max-subarray-view .ms-stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-max-subarray-view .ms-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
   }
-  #algo-max-subarray-view .ms-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-max-subarray-view .ms-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-max-subarray-view .ms-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-max-subarray-view .ms-stat--sub::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
-  #algo-max-subarray-view .ms-stat--sub .ms-stat-val { color: #93c5fd; }
-  #algo-max-subarray-view .ms-stat--max::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-max-subarray-view .ms-stat--max .ms-stat-val { color: #6ee7b7; }
-  #algo-max-subarray-view .ms-stat--range::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-max-subarray-view .ms-stat--range .ms-stat-val { color: #fde68a; }
-  #algo-max-subarray-view .ms-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-max-subarray-view .ms-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* chart canvas with bars */
-  #algo-max-subarray-view .ms-chart-card { flex: 1; min-height: 260px; display: flex; flex-direction: column; }
-  #algo-max-subarray-view .ms-canvas {
-    flex: 1; min-height: 220px; padding: 24px 18px 28px;
-    position: relative; overflow: hidden;
-    display: flex; flex-direction: column;
-  }
-  #algo-max-subarray-view .ms-bars {
-    flex: 1; display: flex; align-items: center; gap: 8px; padding-bottom: 8px;
-    border-bottom: 1px dashed rgba(148, 163, 184, .25);
-    position: relative; min-height: 200px;
-  }
-  #algo-max-subarray-view .ms-bars::before {
-    content: ''; position: absolute; left: 0; right: 0; top: 50%;
-    border-top: 1px solid rgba(148, 163, 184, .35);
-  }
-  #algo-max-subarray-view .ms-bar-wrap {
-    flex: 1; position: relative; display: flex; flex-direction: column;
-    min-width: 40px; max-width: 90px; height: 100%;
-    justify-content: center;
-  }
-  #algo-max-subarray-view .ms-bar {
-    width: 100%;
-    border-radius: 8px 8px 0 0;
-    background: linear-gradient(180deg, rgba(148, 163, 184, .45), rgba(100, 116, 139, .15));
-    border: 1px solid rgba(148, 163, 184, .3);
-    display: flex; align-items: flex-start; justify-content: center;
-    padding: 6px 0 0;
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-    color: #e2e8f0;
-    transition: all .4s cubic-bezier(.4, 0, .2, 1);
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-max-subarray-view .ms-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     position: relative;
-    margin-top: auto;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--neg {
-    background: linear-gradient(0deg, rgba(248, 113, 113, .45), rgba(239, 68, 68, .15));
-    border-color: rgba(248, 113, 113, .3);
-    margin-top: 0;
-    margin-bottom: auto;
-    border-radius: 0 0 8px 8px;
-    align-items: flex-end;
-    padding: 0 0 6px;
+
+  #algo-max-subarray-view .ms-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--current {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .65), rgba(245, 158, 11, .2));
-    border-color: rgba(251, 191, 36, .7);
-    color: #fef3c7;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 6px 18px rgba(251, 191, 36, .4);
-    animation: ms-bar-pulse 1.2s ease-in-out infinite;
+
+  #algo-max-subarray-view .ms-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--neg.ms-bar--current {
-    background: linear-gradient(0deg, rgba(251, 191, 36, .65), rgba(245, 158, 11, .2));
+
+  #algo-max-subarray-view .ms-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
-  @keyframes ms-bar-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, .25), 0 6px 18px rgba(251, 191, 36, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, .15), 0 8px 22px rgba(251, 191, 36, .55); }
+
+  #algo-max-subarray-view .ms-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--sub {
-    background: linear-gradient(180deg, rgba(96, 165, 250, .55), rgba(59, 130, 246, .15));
-    border-color: rgba(96, 165, 250, .5);
-    color: #dbeafe;
+  #algo-max-subarray-view .ms-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--neg.ms-bar--sub {
-    background: linear-gradient(0deg, rgba(96, 165, 250, .55), rgba(59, 130, 246, .15));
+
+  /* 柱状图与滑动区间沙盘展示盒 */
+  #algo-max-subarray-view #ms-bars-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--max {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .65), rgba(16, 185, 129, .2));
-    border-color: rgba(52, 211, 153, .55);
-    color: #d1fae5;
-    box-shadow: 0 0 0 2px rgba(52, 211, 153, .2), 0 4px 12px rgba(52, 211, 153, .3);
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-max-subarray-view .ms-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--neg.ms-bar--max {
-    background: linear-gradient(0deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .15));
+
+  #algo-max-subarray-view .ms-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--max.ms-bar--current {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .65), rgba(245, 158, 11, .2));
-    border-color: rgba(251, 191, 36, .7);
+
+  #algo-max-subarray-view .ms-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--reset {
-    animation: ms-shake .55s ease-in-out;
+
+  #algo-max-subarray-view .ms-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  @keyframes ms-shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px) rotate(-1deg); }
-    40% { transform: translateX(4px) rotate(1deg); }
-    60% { transform: translateX(-3px) rotate(-0.5deg); }
-    80% { transform: translateX(3px) rotate(0.5deg); }
+  #algo-max-subarray-view .ms-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
-  #algo-max-subarray-view .ms-bar.ms-bar--bump {
-    animation: ms-bump .6s cubic-bezier(.34, 1.56, .64, 1);
+
+  #algo-max-subarray-view .ms-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
   }
-  @keyframes ms-bump {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.08) translateY(-4px); }
-    100% { transform: scale(1); }
+  #algo-max-subarray-view .ms-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
   }
-  #algo-max-subarray-view .ms-bar-label {
-    font-size: 10.5px; color: #64748b; font-weight: 600;
-    padding-top: 6px; font-variant-numeric: tabular-nums;
+
+  /* Card 2 状态空间 */
+  #algo-max-subarray-view .ms-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-max-subarray-view .ms-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-max-subarray-view .ms-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-max-subarray-view .ms-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-max-subarray-view .ms-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-max-subarray-view .ms-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-max-subarray-view .ms-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-max-subarray-view .ms-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-max-subarray-view .ms-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-subarray-view .ms-tab-item.active {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  #algo-max-subarray-view .ms-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-max-subarray-view .ms-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-subarray-view .ms-lang-btn.active {
+    background: #334155;
+    color: #38bdf8;
+  }
+
+  #algo-max-subarray-view .ms-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-max-subarray-view .ms-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-max-subarray-view .ms-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-max-subarray-view .ms-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #38bdf8;
+    min-width: 14px;
     text-align: center;
   }
-  /* result */
-  #algo-max-subarray-view .ms-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, .12), rgba(249, 115, 22, .06));
-    border: 1px solid rgba(249, 115, 22, .28);
-    line-height: 1.55; font-size: 14px; color: #fdba74;
+
+  #algo-max-subarray-view .ms-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-max-subarray-view .ms-result .ms-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+  #algo-max-subarray-view .ms-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
-  #algo-max-subarray-view .ms-result.ms-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-max-subarray-view .ms-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
-  #algo-max-subarray-view .ms-result.ms-result--done .ms-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-max-subarray-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
   }
-  #algo-max-subarray-view .ms-result.ms-result--reset {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .18), rgba(239, 68, 68, .06));
-    border-color: rgba(248, 113, 113, .4); color: #fecaca;
+  #algo-max-subarray-view .code-line.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-left: 3px solid #3b82f6;
+    color: #ffffff;
+    font-weight: 700;
   }
-  #algo-max-subarray-view .ms-result.ms-result--reset .ms-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .5);
-    color: #fff;
+  #algo-max-subarray-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
-  /* log */
-  #algo-max-subarray-view .ms-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
+
+  /* Card 4: 执行日志卡片 */
+  #algo-max-subarray-view .ms-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-max-subarray-view .ms-log-line { display: flex; gap: 8px; }
-  #algo-max-subarray-view .ms-log-line .ms-log-num { color: #475569; flex-shrink: 0; }
-  #algo-max-subarray-view .ms-log-line.ms-log-active { color: #fdba74; font-weight: 600; }
-  #algo-max-subarray-view .ms-log-line.ms-log-active .ms-log-num { color: var(--accent-b); }
-  /* code */
-  #algo-max-subarray-view .ms-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-max-subarray-view .ms-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-max-subarray-view .ms-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-max-subarray-view .ms-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-max-subarray-view .ms-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-max-subarray-view .ms-controls .ms-ctrl-btn { min-width: 64px; }
-  #algo-max-subarray-view .ms-controls .ms-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+
+  #algo-max-subarray-view .ms-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
-  #algo-max-subarray-view .ms-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-max-subarray-view .ms-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
   }
-  #algo-max-subarray-view .ms-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  /* 模态弹窗 */
+  #algo-max-subarray-view .ms-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
   }
-  #algo-max-subarray-view #ms-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-max-subarray-view .ms-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-max-subarray-view .ms-code { min-height: 360px; }
+  #algo-max-subarray-view .ms-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-max-subarray-view .ms-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-max-subarray-view .ms-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-max-subarray-view .ms-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-max-subarray-view .ms-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-max-subarray-view .ms-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="ms-shell">
-  <div class="ms-hero">
-    <div class="ms-hero-left">
-      <span class="ms-icon">📊</span>
-      <div>
-        <h1>最大子序和（贪心 Kadane）</h1>
-        <div class="ms-sub">LeetCode 53 · 连续子数组的最大和</div>
-      </div>
+<div id="algo-max-subarray-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="ms-header">
+    <div class="ms-header-left">
+      <div class="ms-icon-btn">📊</div>
+      <h1 class="ms-main-title">LeetCode 53. 最大子数组和</h1>
+      <button id="btn-open-problem-modal" class="ms-btn-problem">📋 题目</button>
+      <span class="ms-badge-mode">Kadane 贪心负和清零</span>
+      <span class="ms-badge-complexity">O(N)</span>
     </div>
-    <div class="ms-tip"><strong>核心动画：</strong>柱状图 <span style="color:#93c5fd">蓝色子数组区间</span> 随指针滑动；<span style="color:#fef3c7">当前柱</span>黄色脉冲；<span style="color:#6ee7b7">max 区间</span>绿色常驻；<span style="color:#fca5a5">重置</span>时柱 shake + result banner 变红。</div>
-  </div>
-  <div class="ms-main">
-    <div class="ms-left">
-      <section class="ms-card">
-        <div class="ms-card-title">输入 <span class="ms-tag">nums = [-2,1,...]</span></div>
-        <div class="ms-input-row">
-          <input id="maxsub-input" value="-2,1,-3,4,-1,2,1,-5,4">
-          <button id="maxsub-start">开始求和</button>
-        </div>
-        <div class="ms-examples">
-          <button class="ms-chip" data-val="-2,1,-3,4,-1,2,1,-5,4">经典 9 个</button>
-          <button class="ms-chip" data-val="1,2,3,4,5">全正</button>
-          <button class="ms-chip" data-val="-5,-3,-2,-4,-1">全负</button>
-          <button class="ms-chip" data-val="-1,-2,0,3,-1,5">零穿插</button>
-          <button class="ms-chip" data-val="5,-10,5,-10,15">峰值</button>
-        </div>
-      </section>
 
-      <div class="ms-stats">
-        <div class="ms-stat ms-stat--sub"><div class="ms-stat-label">当前和</div><div class="ms-stat-val" id="maxsub-cursum">0</div></div>
-        <div class="ms-stat ms-stat--max"><div class="ms-stat-label">最大和</div><div class="ms-stat-val" id="maxsub-maxsum">-</div></div>
-        <div class="ms-stat ms-stat--range"><div class="ms-stat-label">max 区间</div><div class="ms-stat-val" id="maxsub-range" style="font-size:16px;">-</div></div>
-        <div class="ms-stat"><div class="ms-stat-label">当前指针</div><div class="ms-stat-val" id="maxsub-idx">-</div></div>
-        <div class="ms-stat"><div class="ms-stat-label">状态</div><div class="ms-stat-val" id="maxsub-status" style="font-size:14px;">-</div></div>
+    <!-- 参数与操作工具组 -->
+    <div class="ms-header-right">
+      <div class="ms-input-group">
+        <span>nums:</span>
+        <input type="text" id="input-nums" value="-2,1,-3,4,-1,2,1,-5,4" class="ms-input-str" placeholder="-2,1,-3,4,-1,2,1,-5,4" />
       </div>
 
-      <section class="ms-card ms-chart-card">
-        <div class="ms-card-title">柱状图与子数组 <span class="ms-tag">Kadane 算法</span></div>
-        <div class="ms-canvas">
-          <div class="ms-bars" id="maxsub-bars"></div>
-        </div>
-        <div class="ms-result" id="maxsub-result">
-          <span class="ms-emoji">📊</span>
-          <div id="step-message">点击「开始求和」观察柱状图 + 子数组滑动</div>
-        </div>
-      </section>
+      <button id="btn-generate" class="ms-btn-generate">
+        <span>▶ 运行</span>
+      </button>
 
-      <section class="ms-card">
-        <div class="ms-card-title">执行日志 <button id="maxsub-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="ms-log" id="maxsub-log"></div>
-      </section>
+      <button id="btn-reset" class="ms-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="ms-chip" data-nums="-2,1,-3,4,-1,2,1,-5,4">示例 1 (和 6)</button>
+        <button class="ms-chip" data-nums="5,4,-1,7,8">示例 3 (和 23)</button>
+        <button class="ms-chip" data-nums="-3,-2,-1,-5">全负数测试 (和 -1)</button>
+      </div>
     </div>
-    <aside class="ms-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="ms-controls">
-    <button id="step-reset" class="ms-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="ms-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="ms-ctrl-btn ms-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="ms-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="ms-counter">步骤: 0 / 0</span>
-    <div class="ms-speed-wrap">
-      <span>速度</span>
-      <input id="maxsub-speed" type="range" min="200" max="2500" step="100" value="900">
-      <span id="maxsub-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="ms-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="ms-left-section">
+
+      <!-- 卡片 1: 柱状图与滑动区间沙盘 (Bars & Subarray Range Sandbox) -->
+      <div class="ms-card">
+        <div class="ms-card-header">
+          <div class="ms-card-title">
+            <span>📊 数组连续求和与历史最优区间沙盘</span>
+          </div>
+          <div class="ms-legend-bar">
+            <div><span class="ms-legend-dot" style="background:#10b981;"></span> 🏆历史最优区间</div>
+            <div><span class="ms-legend-dot" style="background:#3b82f6;"></span> 📍当前累加区间</div>
+            <div><span class="ms-legend-dot" style="background:#ef4444;"></span> ⚠️负数拉低</div>
+          </div>
+        </div>
+
+        <!-- 柱状图沙盘居中展示盒 -->
+        <div id="ms-bars-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="ms-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="ms-slider" />
+        <div class="ms-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="ms-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="ms-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="ms-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="ms-card">
+        <div class="ms-card-header">
+          <div>
+            <div class="ms-card-title">📦 贪心累加状态空间与指标追踪</div>
+            <div class="ms-card-desc">当前累加和、负数清零判定与全局最大子序和统计</div>
+          </div>
+          <span id="badge-max-sum" class="ms-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">最大和: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="ms-state-space-box">
+          <div class="ms-state-columns">
+            <!-- 累加和状态 -->
+            <div class="ms-subcard">
+              <div class="ms-subcard-title">➕ 连续累加和 (Current Sum)</div>
+              <div id="ms-sum-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 贪心判定监视器 -->
+            <div class="ms-subcard">
+              <div class="ms-subcard-title">⚖️ 负数重置判定监视器 (Greedy Reset)</div>
+              <div id="ms-reset-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="ms-subcard" style="flex-shrink: 0;">
+            <div class="ms-subcard-title">🏆 全局最优子数组指标 (Optimal Subarray)</div>
+            <div id="ms-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="ms-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="ms-dark-terminal">
+        <div class="ms-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="ms-tab-group">
+            <button id="btn-tab-code" class="ms-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="ms-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="ms-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="ms-lang-group" id="code-lang-tabs">
+            <button class="ms-lang-btn active" data-lang="java">Java</button>
+            <button class="ms-lang-btn" data-lang="cpp">C++</button>
+            <button class="ms-lang-btn" data-lang="python">Python</button>
+            <button class="ms-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="ms-font-tools">
+            <div class="ms-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="ms-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="ms-window-dots">
+              <span class="ms-dot" style="background:#ef4444;"></span>
+              <span class="ms-dot" style="background:#eab308;"></span>
+              <span class="ms-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="ms-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="ms-log-card">
+        <div class="ms-log-header">
+          <div class="ms-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="ms-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="ms-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="ms-modal-backdrop hidden">
+    <div class="ms-modal-content">
+      <div class="ms-modal-header">
+        <div class="ms-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="ms-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="ms-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

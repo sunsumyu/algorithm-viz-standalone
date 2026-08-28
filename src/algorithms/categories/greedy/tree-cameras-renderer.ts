@@ -1,45 +1,60 @@
 /**
- * 监控二叉树可视化器（贪心算法）
- * LeetCode 968
+ * 监控二叉树可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 968：后序自底向上推导，0=无覆盖, 1=有摄像头, 2=已覆盖；贪心在叶子父节点装摄像头
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  TREE_CAMERAS_PROBLEM_HTML,
+  TREE_CAMERAS_ANALYSIS_HTML,
+  TREE_CAMERAS_CODE_LANGUAGES,
+} from './tree-cameras-problem-content';
 import template from './tree-cameras.html?raw';
 
-interface TreeNode {
+export interface TreeNode {
+  id: number;
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
+  x?: number;
+  y?: number;
 }
 
-type NodeState = 0 | 1 | 2; // 0=未覆盖, 1=有摄像头, 2=已覆盖
-type ActionType = 'enter' | 'place' | 'leave' | 'done';
+export type CameraNodeState = 0 | 1 | 2; // 0=无覆盖, 1=有摄像头, 2=已覆盖
 
-interface CameraStep {
+export interface CameraStep {
   root: TreeNode | null;
-  current: TreeNode | null;
-  state: Map<number, NodeState>;
+  currentNodeId: number | null;
+  nodeStates: Record<number, CameraNodeState>;
   cameraCount: number;
-  action: ActionType;
+  leftState: number | null;
+  rightState: number | null;
+  action: 'enter' | 'place_camera' | 'covered_by_child' | 'wait_parent' | 'root_camera' | 'done';
   message: string;
   codeLine: number;
 }
 
-function buildTree(arr: (number | null)[]): TreeNode | null {
+export function parseTreeFromArray(arr: (number | null)[]): TreeNode | null {
   if (arr.length === 0 || arr[0] === null) return null;
-  const root: TreeNode = { val: arr[0]!, left: null, right: null };
+  let nextId = 1;
+  const root: TreeNode = { id: nextId++, val: arr[0]!, left: null, right: null };
   const queue: TreeNode[] = [root];
   let i = 1;
+
   while (queue.length > 0 && i < arr.length) {
     const node = queue.shift()!;
     if (i < arr.length && arr[i] !== null) {
-      node.left = { val: arr[i]!, left: null, right: null };
+      node.left = { id: nextId++, val: arr[i]!, left: null, right: null };
       queue.push(node.left);
     }
     i++;
     if (i < arr.length && arr[i] !== null) {
-      node.right = { val: arr[i]!, left: null, right: null };
+      node.right = { id: nextId++, val: arr[i]!, left: null, right: null };
       queue.push(node.right);
     }
     i++;
@@ -47,245 +62,462 @@ function buildTree(arr: (number | null)[]): TreeNode | null {
   return root;
 }
 
-function buildCameraSteps(root: TreeNode | null): CameraStep[] {
+export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
   const steps: CameraStep[] = [];
-  const state = new Map<number, NodeState>();
+  const nodeStates: Record<number, CameraNodeState> = {};
   let cameraCount = 0;
 
-  function dfs(node: TreeNode | null): NodeState {
-    if (!node) return 2; // 空节点返回已覆盖
+  if (!root) {
+    steps.push({
+      root: null,
+      currentNodeId: null,
+      nodeStates: {},
+      cameraCount: 0,
+      leftState: null,
+      rightState: null,
+      action: 'done',
+      message: '树为空，最小摄像头数量为 0',
+      codeLine: 2,
+    });
+    return steps;
+  }
+
+  function dfs(node: TreeNode | null): CameraNodeState {
+    if (!node) return 2; // 空节点视为有覆盖
 
     steps.push({
       root,
-      current: node,
-      state: new Map(state),
+      currentNodeId: node.id,
+      nodeStates: { ...nodeStates },
       cameraCount,
+      leftState: null,
+      rightState: null,
       action: 'enter',
-      message: `进入节点 ${node.val}`,
-      codeLine: 6
+      message: `🔽 访问节点 [${node.id}] (val=${node.val})，准备递归后序遍历左右子树`,
+      codeLine: 13,
     });
 
-    // 递归处理左右子树
-    const leftState = dfs(node.left);
-    const rightState = dfs(node.right);
+    const left = dfs(node.left);
+    const right = dfs(node.right);
 
-    // 贪心策略：如果任一子节点未被覆盖，在当前节点放置摄像头
-    if (leftState === 0 || rightState === 0) {
+    // 情况 1：左右孩子只要有一个无覆盖 (0)，当前父节点必须放置摄像头
+    if (left === 0 || right === 0) {
       cameraCount++;
-      state.set(node.val, 1);
+      nodeStates[node.id] = 1;
+
       steps.push({
         root,
-        current: node,
-        state: new Map(state),
+        currentNodeId: node.id,
+        nodeStates: { ...nodeStates },
         cameraCount,
-        action: 'place',
-        message: `在节点 ${node.val} 放置摄像头！摄像头总数=${cameraCount}`,
-        codeLine: 11
+        leftState: left,
+        rightState: right,
+        action: 'place_camera',
+        message: `📷 【情况1】节点 [${node.id}] 的子节点存在无覆盖 (左=${left}, 右=${right})！贪心在此安装第 ${cameraCount} 台摄像头，返回 1 (有摄像头)`,
+        codeLine: 17,
       });
-      return 1; // 当前节点有摄像头，覆盖自己和邻居
+      return 1;
     }
 
-    // 如果子节点有摄像头，当前节点已被覆盖
-    if (leftState === 1 || rightState === 1) {
-      state.set(node.val, 2);
+    // 情况 2：左右孩子至少有一个摄像头 (1)，当前节点被摄像头覆盖
+    if (left === 1 || right === 1) {
+      nodeStates[node.id] = 2;
+
       steps.push({
         root,
-        current: node,
-        state: new Map(state),
+        currentNodeId: node.id,
+        nodeStates: { ...nodeStates },
         cameraCount,
-        action: 'leave',
-        message: `节点 ${node.val} 被子节点的摄像头覆盖`,
-        codeLine: 15
+        leftState: left,
+        rightState: right,
+        action: 'covered_by_child',
+        message: `🛡️ 【情况2】节点 [${node.id}] 的子节点已有摄像头 (左=${left}, 右=${right})，当前节点处于覆盖范围，返回 2 (已覆盖)`,
+        codeLine: 21,
       });
       return 2;
     }
 
-    // 两个子节点都未覆盖且没有摄像头
-    state.set(node.val, 0);
+    // 情况 3：左右孩子都已被覆盖 (2)，当前节点暂时无覆盖，留给上层父节点覆盖
+    nodeStates[node.id] = 0;
     steps.push({
       root,
-      current: node,
-      state: new Map(state),
+      currentNodeId: node.id,
+      nodeStates: { ...nodeStates },
       cameraCount,
-      action: 'leave',
-      message: `节点 ${node.val} 未被覆盖`,
-      codeLine: 18
+      leftState: left,
+      rightState: right,
+      action: 'wait_parent',
+      message: `⚪ 【情况3】节点 [${node.id}] 的子节点均为已覆盖 (左=${left}, 右=${right})，当前节点暂无覆盖，留待上层父节点安装摄像头覆盖，返回 0 (无覆盖)`,
+      codeLine: 24,
     });
     return 0;
   }
 
-  if (root) {
-    dfs(root);
+  const rootStatus = dfs(root);
+
+  // 根节点特判：如果根节点返回 0 (无覆盖)，根节点自身必须放一个摄像头
+  if (rootStatus === 0) {
+    cameraCount++;
+    nodeStates[root.id] = 1;
+
+    steps.push({
+      root,
+      currentNodeId: root.id,
+      nodeStates: { ...nodeStates },
+      cameraCount,
+      leftState: null,
+      rightState: null,
+      action: 'root_camera',
+      message: `📷 【根节点特判】遍历结束，根节点 [${root.id}] 依然处于无覆盖状态 (无上层父节点)！必须在此补装第 ${cameraCount} 台摄像头`,
+      codeLine: 5,
+    });
   }
 
   steps.push({
     root,
-    current: null,
-    state: new Map(state),
+    currentNodeId: null,
+    nodeStates: { ...nodeStates },
     cameraCount,
+    leftState: null,
+    rightState: null,
     action: 'done',
-    message: `完成！最少需要 ${cameraCount} 个摄像头`,
-    codeLine: 20
+    message: `🎉 监控配置完成！监控全树所需最小摄像头数量为 ${cameraCount} 台`,
+    codeLine: 7,
   });
 
   return steps;
 }
 
-export class TreeCamerasVisualizer extends StepVisualizer<CameraStep> {
-  protected codeLines = [
-    "public int minCameraCover(TreeNode root) {",
-    "    int[] count = new int[1];",
-    "    ",
-    "    // 0=未覆盖, 1=有摄像头, 2=已覆盖",
-    "    dfs(root, count);",
-    "    return count[0];",
-    "}",
-    "",
-    "private int dfs(TreeNode node, int[] count) {",
-    "    if (node == null) return 2; // 空节点已覆盖",
-    "    ",
-    "    int left = dfs(node.left, count);",
-    "    int right = dfs(node.right, count);",
-    "    ",
-    "    // 子节点未覆盖，当前节点放摄像头",
-    "    if (left == 0 || right == 0) {",
-    "        count[0]++;",
-    "        return 1;",
-    "    }",
-    "    ",
-    "    // 子节点有摄像头，当前节点已覆盖",
-    "    if (left == 1 || right == 1) {",
-    "        return 2;",
-    "    }",
-    "    ",
-    "    // 否则当前节点未覆盖",
-    "    return 0;",
-    "}"
-  ];
-  protected codePanelTitle = '贪心算法 (Java)';
+/* ── Layout Tree & Render SVG ────────────────────────────── */
+interface LayoutNode {
+  id: number;
+  val: number;
+  x: number;
+  y: number;
+  left: LayoutNode | null;
+  right: LayoutNode | null;
+}
 
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private treeData: (number | null)[] = [0, 0, 0, 0, null, 0, 0];
+function layoutBinaryTree(root: TreeNode | null, width: number, height: number): LayoutNode | null {
+  if (!root) return null;
+
+  function getHeight(n: TreeNode | null): number {
+    if (!n) return 0;
+    return 1 + Math.max(getHeight(n.left), getHeight(n.right));
+  }
+
+  const treeHeight = getHeight(root);
+  const levelHeight = Math.min(85, (height - 60) / Math.max(1, treeHeight));
+
+  function assignCoords(node: TreeNode | null, depth: number, leftBound: number, rightBound: number): LayoutNode | null {
+    if (!node) return null;
+    const x = (leftBound + rightBound) / 2;
+    const y = 35 + depth * levelHeight;
+
+    const layoutLeft = assignCoords(node.left, depth + 1, leftBound, x);
+    const layoutRight = assignCoords(node.right, depth + 1, x, rightBound);
+
+    return {
+      id: node.id,
+      val: node.val,
+      x,
+      y,
+      left: layoutLeft,
+      right: layoutRight,
+    };
+  }
+
+  return assignCoords(root, 0, 20, width - 20);
+}
+
+/* ── Visualizer class ─────────────────────────────────────── */
+export class TreeCamerasVisualizer extends StepVisualizer<CameraStep> {
+  protected codeLanguages = TREE_CAMERAS_CODE_LANGUAGES;
+  protected codeLines = TREE_CAMERAS_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '监控二叉树 代码调试';
+
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private nodeContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
+    this.sandboxContainer = this.root.querySelector('#tc-sandbox-container');
+    this.nodeContainer = this.root.querySelector('#tc-node-container');
+    this.decisionMonitorContainer = this.root.querySelector('#tc-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#tc-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.canvas = this.root.querySelector('#tree-canvas');
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
     }
 
-    this.bindPlaybackControls({
-      reset: 'treecame-reset',
-      prev: 'treecame-prev',
-      play: 'treecame-play',
-      next: 'treecame-next',
-      speed: 'treecame-speed',
-      speedLabel: 'treecame-speed-label',
-      message: 'treecame-status'
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.tc-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tEl = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+        if (tEl && btn.dataset.tree) tEl.value = btn.dataset.tree;
+        this.start();
+      });
     });
 
-    this.root.querySelector('#treecame-start')?.addEventListener('click', () => this.start());
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: TREE_CAMERAS_PROBLEM_HTML,
+      analysisHtml: TREE_CAMERAS_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
   protected buildSteps(): CameraStep[] {
-    const root = buildTree(this.treeData);
-    return buildCameraSteps(root);
+    const tEl = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+    let arr: (number | null)[] = [0, 0, null, 0, 0];
+    try {
+      const parsed = JSON.parse(tEl?.value || '[0,0,null,0,0]');
+      if (Array.isArray(parsed)) {
+        arr = parsed;
+      }
+    } catch {
+      arr = [0, 0, null, 0, 0];
+    }
+
+    const tree = parseTreeFromArray(arr);
+    return buildTreeCameraSteps(tree);
   }
 
   protected renderStep(step: CameraStep): void {
-    if (!this.canvas || !this.ctx) return;
+    const root = step.root;
+    const nodeStates = step.nodeStates;
 
-    const ctx = this.ctx;
-    const canvas = this.canvas;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 1. 渲染二叉树自适应 SVG 沙盘 (Card 1)
+    if (this.sandboxContainer) {
+      if (!root) {
+        this.sandboxContainer.innerHTML = `<span style="color:#94a3b8; font-size:12px;">空二叉树</span>`;
+        return;
+      }
 
-    if (!step.root) return;
+      const svgW = 540;
+      const svgH = 260;
+      const layoutRoot = layoutBinaryTree(root, svgW, svgH);
 
-    // 绘制树
-    const nodePositions = new Map<number, { x: number; y: number }>();
-    this.drawTree(ctx, step.root, canvas.width / 2, 50, canvas.width / 4, nodePositions, step);
+      const linesSvg: string[] = [];
+      const nodesSvg: string[] = [];
 
-    // 更新状态显示
-    const countEl = this.root?.querySelector('#camera-count');
-    if (countEl) countEl.textContent = step.cameraCount.toString();
+      function traverse(n: LayoutNode | null) {
+        if (!n) return;
+
+        if (n.left) {
+          linesSvg.push(`
+            <line x1="${n.x}" y1="${n.y}" x2="${n.left.x}" y2="${n.left.y}" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="none" />
+          `);
+          traverse(n.left);
+        }
+        if (n.right) {
+          linesSvg.push(`
+            <line x1="${n.x}" y1="${n.y}" x2="${n.right.x}" y2="${n.right.y}" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="none" />
+          `);
+          traverse(n.right);
+        }
+
+        const state = nodeStates[n.id]; // 0, 1, 2 or undefined
+        const isCurrent = n.id === step.currentNodeId;
+
+        let fill = '#ffffff';
+        let stroke = '#94a3b8';
+        let stateEmoji = '';
+
+        if (state === 1) {
+          fill = '#fef2f2';
+          stroke = '#ef4444';
+          stateEmoji = '📷';
+        } else if (state === 2) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
+          stateEmoji = '🛡️';
+        } else if (state === 0) {
+          fill = '#f8fafc';
+          stroke = '#94a3b8';
+          stateEmoji = '⚪';
+        }
+
+        const ringSvg = isCurrent
+          ? `<circle cx="${n.x}" cy="${n.y}" r="23" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="4,3" />`
+          : '';
+
+        nodesSvg.push(`
+          <g>
+            ${ringSvg}
+            <circle cx="${n.x}" cy="${n.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
+            <text x="${n.x}" y="${n.y - 1}" text-anchor="middle" dominant-baseline="central" font-size="${stateEmoji ? '11px' : '12px'}" font-weight="800" fill="#0f172a" font-family="'JetBrains Mono', monospace">
+              ${stateEmoji || n.val}
+            </text>
+            <text x="${n.x}" y="${n.y + 26}" text-anchor="middle" font-size="9px" font-weight="700" fill="${isCurrent ? '#ef4444' : '#64748b'}">
+              ${isCurrent ? '📍当前' : `[${n.id}]`}
+            </text>
+          </g>
+        `);
+      }
+
+      traverse(layoutRoot);
+
+      this.sandboxContainer.innerHTML = `
+        <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%; max-height: 250px;">
+          ${linesSvg.join('')}
+          ${nodesSvg.join('')}
+        </svg>
+      `;
+    }
+
+    // 2. 渲染当前后序节点 (Card 2 Left)
+    if (this.nodeContainer) {
+      const curId = step.currentNodeId;
+      const st = curId ? nodeStates[curId] : null;
+
+      this.nodeContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前访问节点:</span>
+            <span style="font-family: monospace; font-weight:800; color: #ef4444; font-size: 12.5px;">
+              ${curId ? `节点 [${curId}]` : '-'}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>子节点状态 (左, 右):</span>
+            <span style="font-family: monospace; font-weight:700; color: #2563eb;">
+              ${step.leftState !== null ? `(左: ${step.leftState}, 右: ${step.rightState})` : '-'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染贪心状态转移决策监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      const isPlace = step.action === 'place_camera' || step.action === 'root_camera';
+      const isCover = step.action === 'covered_by_child';
+      const isWait = step.action === 'wait_parent';
+
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>贪心判定:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isPlace ? '#fef2f2' : isCover ? '#eff6ff' : isWait ? '#f8fafc' : '#ecfdf5'}; color: ${isPlace ? '#dc2626' : isCover ? '#2563eb' : isWait ? '#64748b' : '#059669'}; border: 1px solid ${isPlace ? '#fecaca' : isCover ? '#bfdbfe' : isWait ? '#e2e8f0' : '#a7f3d0'};">
+              ${isPlace ? '📷 安装摄像头 (覆照父子)' : isCover ? '🛡️ 被子节点摄像头覆盖' : isWait ? '⚪ 暂无覆盖 (留待父节点覆盖)' : '✓ 遍历完成'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 准则: <code style="color:#ef4444; font-family:monospace;">后序左右中自底向上，叶子节点的父节点优先装摄像头</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染最小摄像头安装配置看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>最小摄像头数量: <strong style="color: #ef4444; font-family: monospace; font-size: 13.5px;">${step.cameraCount}</strong> 台</span>
+            <span style="font-family: monospace; font-weight: 700; color: #059669;">后序自底向上贪心最优解</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgeCam = this.root?.querySelector('#badge-camera-count');
+    if (badgeCam) {
+      badgeCam.textContent = `摄像头: ${step.cameraCount}`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '访问';
+
+        if (st.action === 'place_camera' || st.action === 'root_camera') {
+          badgeColor = '#dc2626';
+          badgeBg = '#fef2f2';
+          badgeText = '装摄像头';
+        } else if (st.action === 'covered_by_child') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '已覆盖';
+        } else if (st.action === 'wait_parent') {
+          badgeColor = '#d97706';
+          badgeBg = '#fffbeb';
+          badgeText = '留父覆盖';
+        } else if (st.action === 'done') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '完成';
+        }
+
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
-  private drawTree(
-    ctx: CanvasRenderingContext2D,
-    node: TreeNode | null,
-    x: number,
-    y: number,
-    spread: number,
-    positions: Map<number, { x: number; y: number }>,
-    step: CameraStep
-  ): void {
-    if (!node) return;
-
-    positions.set(node.val, { x, y });
-
-    // 绘制边
-    if (node.left) {
-      ctx.beginPath();
-      ctx.moveTo(x, y + 20);
-      ctx.lineTo(x - spread, y + 60);
-      ctx.strokeStyle = step.state.get(node.left.val) === 1 ? '#a6e3a1' : '#45475a';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      this.drawTree(ctx, node.left, x - spread, y + 60, spread / 2, positions, step);
-    }
-
-    if (node.right) {
-      ctx.beginPath();
-      ctx.moveTo(x, y + 20);
-      ctx.lineTo(x + spread, y + 60);
-      ctx.strokeStyle = step.state.get(node.right.val) === 1 ? '#a6e3a1' : '#45475a';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      this.drawTree(ctx, node.right, x + spread, y + 60, spread / 2, positions, step);
-    }
-
-    // 绘制节点
-    const nodeState = step.state.get(node.val) ?? 0;
-    const isCurrent = step.current?.val === node.val;
-
-    ctx.beginPath();
-    ctx.arc(x, y, 20, 0, 2 * Math.PI);
-
-    // 根据状态设置颜色
-    if (nodeState === 1) {
-      ctx.fillStyle = '#a6e3a1'; // 有摄像头 - 绿色
-    } else if (nodeState === 2) {
-      ctx.fillStyle = '#89b4fa'; // 已覆盖 - 蓝色
-    } else {
-      ctx.fillStyle = '#f38ba8'; // 未覆盖 - 红色
-    }
-
-    if (isCurrent) {
-      ctx.strokeStyle = '#f9e2af';
-      ctx.lineWidth = 3;
-    } else {
-      ctx.strokeStyle = '#313244';
-      ctx.lineWidth = 2;
-    }
-
-    ctx.fill();
-    ctx.stroke();
-
-    // 绘制节点值
-    ctx.fillStyle = '#1e1e2e';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(node.val.toString(), x, y);
-
-    // 有摄像头时绘制摄像头图标
-    if (nodeState === 1) {
-      ctx.fillStyle = '#1e1e2e';
-      ctx.font = '10px sans-serif';
-      ctx.fillText('📹', x, y - 25);
-    }
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -294,11 +526,11 @@ registerAlgorithm({
   name: '监控二叉树',
   viewId: 'algo-tree-cameras-view',
   category: 'greedy',
-  description: 'LeetCode 968：贪心算法，计算监控二叉树所需的最少摄像头数量',
-  icon: '📹',
+  description: '后序自底向上贪心遍历，0=无覆盖/1=装摄像头/2=已覆盖，叶子父节点安装摄像头覆盖率最高',
+  icon: '📷',
   template,
   Visualizer: TreeCamerasVisualizer,
   difficulty: 3,
-  levelOrder: 18,
-  learningGoal: '理解树形贪心加状态机的最少监控覆盖',
+  levelOrder: 17,
+  learningGoal: '掌握二叉树后序遍历与状态机的贪心结合，理解自底向上局部最优推导全局最少的解题范式',
 });

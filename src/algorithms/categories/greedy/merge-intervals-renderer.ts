@@ -1,415 +1,387 @@
 /**
- * 合并区间可视化器（排序 + 贪心）
+ * 合并区间可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 56：左端点升序排序 + 重叠时贪心扩展右边界 + 不重叠追加新区间
  */
 
-import { IVisualizer, VisualizerContext } from '../../../core/interfaces';
-import { CodePanel, HighlightTarget } from '../../../core/code-panel';
+import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  MERGE_INTERVALS_PROBLEM_HTML,
+  MERGE_INTERVALS_ANALYSIS_HTML,
+  MERGE_INTERVALS_CODE_LANGUAGES,
+} from './merge-intervals-problem-content';
 import template from './merge-intervals.html?raw';
 
-type Interval = [number, number];
-
-interface MergeStep {
-  intervals: Interval[];
-  result: Interval[];
+export interface MergeStep {
+  intervals: Array<[number, number]>;
+  result: Array<[number, number]>;
   currentIndex: number;
-  status: 'ready' | 'sort' | 'check' | 'merge' | 'append' | 'done';
+  action: 'init' | 'sort' | 'merge' | 'append' | 'done';
   message: string;
-  log: string;
-  codeLine: HighlightTarget;
+  codeLine: number;
 }
 
-function cloneIntervals(intervals: Interval[]): Interval[] {
-  return intervals.map(([start, end]) => [start, end]);
-}
-
-function buildMergeSteps(intervals: Interval[]): MergeStep[] {
+export function buildMergeIntervalsSteps(rawIntervals: Array<[number, number]>): MergeStep[] {
   const steps: MergeStep[] = [];
+  const n = rawIntervals.length;
 
-  if (intervals.length === 0) {
-    return [{
+  if (n === 0) {
+    steps.push({
       intervals: [],
       result: [],
       currentIndex: -1,
-      status: 'done',
-      message: '输入为空，返回空数组。',
-      log: '输入为空。',
+      action: 'done',
+      message: '输入为空，返回空数组',
       codeLine: 2,
-    }];
+    });
+    return steps;
   }
 
-  const sorted = cloneIntervals(intervals).sort((a, b) => a[0] - b[0]);
-  steps.push({
-    intervals: cloneIntervals(sorted),
-    result: [],
-    currentIndex: -1,
-    status: 'sort',
-    message: `先按左端点排序：${sorted.map(([s, e]) => `[${s},${e}]`).join(', ')}`,
-    log: '按左端点从小到大排序。',
-    codeLine: 3,
-  });
+  // 1. 按左边界升序排序
+  const intervals = rawIntervals.map(([s, e]) => [s, e] as [number, number]).sort((a, b) => a[0] - b[0]);
+  const result: Array<[number, number]> = [[intervals[0][0], intervals[0][1]]];
 
-  const result: Interval[] = [];
-  result.push([...sorted[0]] as Interval);
   steps.push({
-    intervals: cloneIntervals(sorted),
-    result: cloneIntervals(result),
+    intervals: intervals.map(([s, e]) => [s, e]),
+    result: result.map(([s, e]) => [s, e]),
     currentIndex: 0,
-    status: 'ready',
-    message: `把第一个区间 [${sorted[0][0]},${sorted[0][1]}] 放入结果数组。`,
-    log: `初始化结果数组：merged = [[${sorted[0][0]},${sorted[0][1]}]]。`,
-    codeLine: 4,
+    action: 'sort',
+    message: `第 1 步：按左边界升序排序：${intervals.map((i) => `[${i[0]},${i[1]}]`).join(', ')}，将首个区间 [${intervals[0][0]}, ${intervals[0][1]}] 放入结果集`,
+    codeLine: 5,
   });
 
-  for (let i = 1; i < sorted.length; i++) {
-    const current = sorted[i];
+  for (let i = 1; i < n; i++) {
+    const cur = intervals[i];
     const last = result[result.length - 1];
 
-    steps.push({
-      intervals: cloneIntervals(sorted),
-      result: cloneIntervals(result),
-      currentIndex: i,
-      status: 'check',
-      message: `比较当前区间 [${current[0]},${current[1]}] 与结果末尾 [${last[0]},${last[1]}]。`,
-      log: `检查 [${current[0]},${current[1]}] 是否与 [${last[0]},${last[1]}] 重叠。`,
-      codeLine: { from: 6, to: 7 },
-    });
+    if (cur[0] <= last[1]) {
+      const oldEnd = last[1];
+      last[1] = Math.max(last[1], cur[1]);
 
-    if (current[0] <= last[1]) {
-      last[1] = Math.max(last[1], current[1]);
       steps.push({
-        intervals: cloneIntervals(sorted),
-        result: cloneIntervals(result),
+        intervals: intervals.map(([s, e]) => [s, e]),
+        result: result.map(([s, e]) => [s, e]),
         currentIndex: i,
-        status: 'merge',
-        message: `发生重叠：${current[0]} <= ${last[1]}，合并后末尾区间变为 [${last[0]},${last[1]}]。`,
-        log: `重叠，更新右边界为 max(lastEnd, currentEnd) = ${last[1]}。`,
-        codeLine: 8,
+        action: 'merge',
+        message: `🧩 发生重叠！区间 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} &le; 末尾右界 ${oldEnd}，贪心扩展右界至 max(${oldEnd}, ${cur[1]}) = ${last[1]}`,
+        codeLine: 9,
       });
     } else {
-      result.push([...current] as Interval);
+      result.push([cur[0], cur[1]]);
+
       steps.push({
-        intervals: cloneIntervals(sorted),
-        result: cloneIntervals(result),
+        intervals: intervals.map(([s, e]) => [s, e]),
+        result: result.map(([s, e]) => [s, e]),
         currentIndex: i,
-        status: 'append',
-        message: `不重叠：${current[0]} > ${last[1]}，把 [${current[0]},${current[1]}] 加入结果数组。`,
-        log: `不重叠，追加新区间 [${current[0]},${current[1]}]。`,
-        codeLine: 10,
+        action: 'append',
+        message: `➕ 不重叠！区间 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} > 末尾右界 ${last[1]}，直接追加到结果集`,
+        codeLine: 11,
       });
     }
   }
 
   steps.push({
-    intervals: cloneIntervals(sorted),
-    result: cloneIntervals(result),
-    currentIndex: sorted.length,
-    status: 'done',
-    message: `合并完成，结果为 ${result.map(([s, e]) => `[${s},${e}]`).join(', ')}。`,
-    log: '返回合并后的结果数组。',
-    codeLine: 13,
+    intervals: intervals.map(([s, e]) => [s, e]),
+    result: result.map(([s, e]) => [s, e]),
+    currentIndex: n - 1,
+    action: 'done',
+    message: `🎉 合并完成！原始 ${n} 个区间最终合并为 ${result.length} 个不重叠区间：${result.map((i) => `[${i[0]},${i[1]}]`).join(', ')}`,
+    codeLine: 14,
   });
 
   return steps;
 }
 
-export class MergeIntervalsVisualizer implements IVisualizer {
-  private root: HTMLElement | null = null;
-  private codePanel: CodePanel | null = null;
-  private steps: MergeStep[] = [];
-  private currentIndex = 0;
-  private isPlaying = false;
-  private timer: number | null = null;
-  private speed = 900;
+/* ── Visualizer class ─────────────────────────────────────── */
+export class MergeIntervalsVisualizer extends StepVisualizer<MergeStep> {
+  protected codeLanguages = MERGE_INTERVALS_CODE_LANGUAGES;
+  protected codeLines = MERGE_INTERVALS_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '合并区间 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
-  private btnStart: HTMLButtonElement | null = null;
-  private btnReset: HTMLButtonElement | null = null;
-  private btnPrev: HTMLButtonElement | null = null;
-  private btnPlay: HTMLButtonElement | null = null;
-  private btnNext: HTMLButtonElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private lanesEl: HTMLElement | null = null;
-  private messageEl: HTMLElement | null = null;
-  private messageTextEl: HTMLElement | null = null;
-  private messageEmojiEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private countEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
-  private counterEl: HTMLElement | null = null;
-  private speedSlider: HTMLInputElement | null = null;
-  private speedLabel: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private intervalContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
-  private codeLines = [
-    'public int[][] merge(int[][] intervals) {',
-    '    if (intervals.length == 0) return new int[0][];',
-    '    Arrays.sort(intervals, (a, b) -> a[0] - b[0]);',
-    '    List<int[]> merged = new ArrayList<>();',
-    '    merged.add(intervals[0]);',
-    '',
-    '    for (int i = 1; i < intervals.length; i++) {',
-    '        int[] last = merged.get(merged.size() - 1);',
-    '        if (intervals[i][0] <= last[1]) {',
-    '            last[1] = Math.max(last[1], intervals[i][1]);',
-    '        } else {',
-    '            merged.add(intervals[i]);',
-    '        }',
-    '    }',
-    '    return merged.toArray(new int[merged.size()][]);',
-    '}',
-  ];
-
-  public async init(context?: VisualizerContext): Promise<void> {
-    this.root = context?.root || document.getElementById('algo-merge-intervals-view');
-    this.initDOMElements();
-    this.initCodePanel();
-    this.setupEvents();
-    if (this.speedLabel) this.speedLabel.textContent = (this.speed / 1000).toFixed(1) + 's';
-    await this.start();
-  }
-
-  private initDOMElements(): void {
+  protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#merge-intervals-input') as HTMLInputElement;
-    this.btnStart = this.root.querySelector('#merge-start') as HTMLButtonElement;
-    this.btnReset = this.root.querySelector('#merge-reset') as HTMLButtonElement;
-    this.btnPrev = this.root.querySelector('#merge-prev') as HTMLButtonElement;
-    this.btnPlay = this.root.querySelector('#merge-play') as HTMLButtonElement;
-    this.btnNext = this.root.querySelector('#merge-next') as HTMLButtonElement;
-    this.exampleButtons = this.root.querySelectorAll('.merge-example-btn') as NodeListOf<HTMLButtonElement>;
-    this.lanesEl = this.root.querySelector('#merge-lanes') as HTMLElement;
-    this.messageEl = this.root.querySelector('#merge-message') as HTMLElement;
-    this.logEl = this.root.querySelector('#merge-log') as HTMLElement;
-    this.currentEl = this.root.querySelector('#merge-current') as HTMLElement;
-    this.countEl = this.root.querySelector('#merge-count') as HTMLElement;
-    this.statusEl = this.root.querySelector('#merge-status') as HTMLElement;
-    this.counterEl = this.root.querySelector('#merge-counter') as HTMLElement;
-    this.speedSlider = this.root.querySelector('#merge-speed') as HTMLInputElement;
-    this.speedLabel = this.root.querySelector('#merge-speed-label') as HTMLElement;
-    this.clearLogBtn = this.root.querySelector('#merge-log-clear') as HTMLButtonElement;
-    if (this.messageEl) {
-      this.messageTextEl = this.messageEl.querySelector('div');
-      this.messageEmojiEl = this.messageEl.querySelector('.merge-emoji');
-    }
-  }
+    this.sandboxContainer = this.root.querySelector('#mi-sandbox-container');
+    this.intervalContainer = this.root.querySelector('#mi-interval-container');
+    this.decisionMonitorContainer = this.root.querySelector('#mi-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#mi-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-  private initCodePanel(): void {
-    const container = this.root?.querySelector('[data-code-panel]') as HTMLElement | null;
-    if (container) {
-      this.codePanel = new CodePanel(container, { lines: this.codeLines, title: '合并区间代码 (Java)' });
-    }
-  }
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-  private setupEvents(): void {
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    if (this.btnReset) this.btnReset.onclick = () => this.reset();
-    if (this.btnPrev) this.btnPrev.onclick = () => this.prevStep();
-    if (this.btnNext) this.btnNext.onclick = () => this.nextStep();
-    if (this.btnPlay) this.btnPlay.onclick = () => this.togglePlay();
-    if (this.speedSlider && this.speedLabel) {
-      this.speedSlider.oninput = () => {
-        this.speed = parseInt(this.speedSlider?.value || '900');
-        if (this.speedLabel) this.speedLabel.textContent = (this.speed / 1000).toFixed(1) + 's';
-      };
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
     }
-    if (this.clearLogBtn) {
-      this.clearLogBtn.onclick = () => {
-        if (this.logEl) this.logEl.innerHTML = '';
-      };
-    }
-    this.exampleButtons?.forEach((button) => {
-      button.onclick = () => {
-        if (this.inputEl) this.inputEl.value = button.dataset.value || '';
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.mi-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const intEl = this.root?.querySelector('#input-intervals') as HTMLInputElement | null;
+        if (intEl && btn.dataset.intervals) intEl.value = btn.dataset.intervals;
         this.start();
-      };
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: MERGE_INTERVALS_PROBLEM_HTML,
+      analysisHtml: MERGE_INTERVALS_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  private async start(): Promise<void> {
-    this.pause();
-    const intervals = this.parseIntervals(this.inputEl?.value || '');
-    const valid = intervals.length > 0 ? intervals : [[1, 3], [2, 6], [8, 10], [15, 18]] as Interval[];
-    if (this.inputEl && intervals.length === 0) this.inputEl.value = '[1,3],[2,6],[8,10],[15,18]';
-    this.steps = buildMergeSteps(valid);
-    this.currentIndex = 0;
-    this.render();
-    this.updateButtons();
-  }
-
-  private parseIntervals(input: string): Interval[] {
-    const matches = input.match(/\[\s*-?\d+\s*,\s*-?\d+\s*\]/g) || [];
-    return matches.map((match) => {
-      const nums = match.match(/-?\d+/g)?.map(Number) || [0, 0];
-      return nums[0] <= nums[1] ? [nums[0], nums[1]] : [nums[1], nums[0]];
-    });
-  }
-
-  private render(): void {
-    if (this.steps.length === 0) return;
-    const step = this.steps[this.currentIndex];
-    if (this.messageTextEl) this.messageTextEl.textContent = step.message;
-    if (this.messageEl) {
-      this.messageEl.classList.remove('merge-result--done', 'merge-result--merge');
-      if (step.status === 'done') this.messageEl.classList.add('merge-result--done');
-      else if (step.status === 'merge') this.messageEl.classList.add('merge-result--merge');
-    }
-    if (this.messageEmojiEl) {
-      const emojiMap: Record<MergeStep['status'], string> = {
-        ready: '🧩', sort: '↕️', check: '🔍', merge: '🔀', append: '➕', done: '✅',
-      };
-      this.messageEmojiEl.textContent = emojiMap[step.status];
-    }
-    if (this.currentEl) this.currentEl.textContent = step.currentIndex >= 0 && step.currentIndex < step.intervals.length ? `[${step.intervals[step.currentIndex].join(',')}]` : '-';
-    if (this.countEl) this.countEl.textContent = String(step.result.length);
-    if (this.statusEl) this.statusEl.textContent = this.statusText(step.status);
-    if (this.counterEl) this.counterEl.textContent = `${this.currentIndex + 1} / ${this.steps.length}`;
-    this.renderLanes(step);
-    this.renderLog();
-    this.codePanel?.highlight(step.codeLine);
-  }
-
-  private renderLanes(step: MergeStep): void {
-    if (!this.lanesEl) return;
-    this.lanesEl.innerHTML = '';
-    const all = [...step.intervals, ...step.result];
-    const min = Math.min(...all.map(([s]) => s), 0);
-    const max = Math.max(...all.map(([, e]) => e), min + 1);
-    this.lanesEl.appendChild(this.createLane('排序后的区间', step.intervals, step.currentIndex, min, max, false, step.status));
-    this.lanesEl.appendChild(this.createLane('当前合并结果', step.result, -1, min, max, true, step.status));
-  }
-
-  private createLane(title: string, intervals: Interval[], currentIndex: number, min: number, max: number, merged: boolean, stepStatus: MergeStep['status']): HTMLElement {
-    const wrapper = document.createElement('div');
-    const titleEl = document.createElement('div');
-    titleEl.className = 'merge-lane-title';
-    titleEl.textContent = title;
-    const axis = document.createElement('div');
-    axis.className = 'merge-axis';
-    const axisLine = document.createElement('div');
-    axisLine.className = 'merge-axis-line';
-    axis.appendChild(axisLine);
-
-    const span = Math.max(1, max - min);
-    intervals.forEach(([start, end], index) => {
-      const segment = document.createElement('div');
-      segment.className = 'merge-segment';
-      if (index === currentIndex) segment.classList.add('current');
-      if (merged) {
-        segment.classList.add('merged');
-        // 最新追加的那一段（最后一项，且 status 为 append）触发 pop-in
-        if (stepStatus === 'append' && index === intervals.length - 1) {
-          segment.classList.add('merge-seg--appended');
-        }
-        // 合并发生时，结果末尾段触发 merge-shake
-        if (stepStatus === 'merge' && index === intervals.length - 1) {
-          segment.classList.add('merge-seg--merged');
-        }
+  protected buildSteps(): MergeStep[] {
+    const intEl = this.root?.querySelector('#input-intervals') as HTMLInputElement | null;
+    let intervals: Array<[number, number]> = [];
+    try {
+      const parsed = JSON.parse(intEl?.value || '[[1,3],[2,6],[8,10],[15,18]]');
+      if (Array.isArray(parsed) && parsed.every((p) => Array.isArray(p) && p.length >= 2)) {
+        intervals = parsed.map((p) => [Number(p[0]), Number(p[1])]);
       }
-      segment.style.left = `${18 + ((start - min) / span) * 86}%`;
-      segment.style.width = `${Math.max(8, ((end - start) / span) * 86)}%`;
-      segment.style.top = `${22 + (index % 2) * 34}px`;
-      segment.textContent = `[${start},${end}]`;
-      axis.appendChild(segment);
-    });
-
-    wrapper.appendChild(titleEl);
-    wrapper.appendChild(axis);
-    return wrapper;
-  }
-
-  private renderLog(): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((step, index) => {
-      const line = document.createElement('div');
-      line.className = 'merge-log-line' + (index === this.currentIndex ? ' active' : '');
-      line.innerHTML = `<span class="merge-log-num">${String(index + 1).padStart(2, '0')}</span><span>${step.log}</span>`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
-
-  private statusText(status: MergeStep['status']): string {
-    const map: Record<MergeStep['status'], string> = {
-      ready: '初始化',
-      sort: '排序',
-      check: '比较',
-      merge: '合并',
-      append: '新增',
-      done: '完成',
-    };
-    return map[status];
-  }
-
-  private togglePlay(): void {
-    if (this.isPlaying) this.pause();
-    else this.play();
-  }
-
-  private play(): void {
-    if (this.currentIndex >= this.steps.length - 1) return;
-    this.isPlaying = true;
-    this.tick();
-    this.updateButtons();
-  }
-
-  public pause(): void {
-    this.isPlaying = false;
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
+    } catch {
+      intervals = [
+        [1, 3],
+        [2, 6],
+        [8, 10],
+        [15, 18],
+      ];
     }
-    this.updateButtons();
+
+    return buildMergeIntervalsSteps(intervals);
   }
 
-  private tick(): void {
-    if (!this.isPlaying) return;
-    this.timer = window.setTimeout(() => {
-      if (this.currentIndex < this.steps.length - 1) {
-        this.nextStep();
-        this.tick();
-      } else {
-        this.pause();
-      }
-    }, this.speed);
+  protected renderStep(step: MergeStep): void {
+    const intervals = step.intervals;
+    const result = step.result;
+    const n = intervals.length;
+
+    // 1. 渲染双轨沙盘 (Card 1)
+    if (this.sandboxContainer && n > 0) {
+      const allNums = [...intervals.flat(), ...(result.length ? result.flat() : [])];
+      const minX = Math.min(...allNums);
+      const maxX = Math.max(...allNums);
+      const xRange = maxX - minX || 1;
+
+      const svgWidth = 420;
+      const svgHeight = 160;
+      const padX = 35;
+
+      // 上轨道：原始区间
+      const origHeight = Math.min(18, 55 / n);
+      const origSvgs = intervals
+        .map(([s, e], idx) => {
+          const x1 = padX + ((s - minX) / xRange) * (svgWidth - padX * 2);
+          const x2 = padX + ((e - minX) / xRange) * (svgWidth - padX * 2);
+          const width = Math.max(10, x2 - x1);
+          const y = 20 + idx * origHeight;
+
+          const isCurrent = idx === step.currentIndex && step.action !== 'done';
+          const fill = isCurrent ? '#dbeafe' : '#f1f5f9';
+          const stroke = isCurrent ? '#2563eb' : '#cbd5e1';
+          const textColor = isCurrent ? '#1d4ed8' : '#64748b';
+
+          return `
+            <g>
+              <rect x="${x1}" y="${y}" width="${width}" height="${origHeight - 4}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />
+              <text x="${x1 + width / 2}" y="${y + origHeight / 2 - 1}" fill="${textColor}" font-size="8.5" font-family="JetBrains Mono" font-weight="700" text-anchor="middle" dominant-baseline="middle">
+                [${s}, ${e}]
+              </text>
+            </g>
+          `;
+        })
+        .join('');
+
+      // 下轨道：合并后结果
+      const resSvgs = result
+        .map(([s, e], idx) => {
+          const x1 = padX + ((s - minX) / xRange) * (svgWidth - padX * 2);
+          const x2 = padX + ((e - minX) / xRange) * (svgWidth - padX * 2);
+          const width = Math.max(12, x2 - x1);
+          const y = 100;
+
+          const isLast = idx === result.length - 1;
+          const fill = isLast ? '#d1fae5' : '#ecfdf5';
+          const stroke = isLast ? '#059669' : '#10b981';
+
+          return `
+            <g>
+              <rect x="${x1}" y="${y}" width="${width}" height="24" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="2" />
+              <text x="${x1 + width / 2}" y="${y + 12}" fill="#065f46" font-size="10" font-family="JetBrains Mono" font-weight="800" text-anchor="middle" dominant-baseline="middle">
+                [${s}, ${e}]
+              </text>
+            </g>
+          `;
+        })
+        .join('');
+
+      this.sandboxContainer.innerHTML = `
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; height: 100%; overflow: visible;" preserveAspectRatio="xMidYMid meet">
+          <!-- 上下分界提示 -->
+          <text x="${padX}" y="12" fill="#64748b" font-size="8.5" font-weight="700">原始输入区间 (待扫描)</text>
+          <text x="${padX}" y="92" fill="#059669" font-size="8.5" font-weight="800">已合并区间集合 (merged)</text>
+
+          <!-- 坐标轴 -->
+          <line x1="${padX}" y1="${svgHeight - 12}" x2="${svgWidth - padX}" y2="${svgHeight - 12}" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="${padX}" y="${svgHeight - 2}" fill="#94a3b8" font-size="8.5" font-family="JetBrains Mono">x=${minX}</text>
+          <text x="${svgWidth - padX}" y="${svgHeight - 2}" fill="#94a3b8" font-size="8.5" font-family="JetBrains Mono" text-anchor="end">x=${maxX}</text>
+
+          <!-- 区间条 -->
+          ${origSvgs}
+          ${resSvgs}
+        </svg>
+      `;
+    }
+
+    // 2. 渲染当前考察与末尾区间 (Card 2 Left)
+    if (this.intervalContainer) {
+      const cur = step.currentIndex >= 0 && step.currentIndex < intervals.length ? intervals[step.currentIndex] : null;
+      const last = result.length ? result[result.length - 1] : null;
+
+      this.intervalContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前考察区间:</span>
+            <span style="font-family: monospace; font-weight:700; color: #2563eb;">
+              ${cur ? `[${cur[0]}, ${cur[1]}]` : '-'}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>结果集末尾区间:</span>
+            <span style="font-family: monospace; font-weight:700; color: #059669;">
+              ${last ? `[${last[0]}, ${last[1]}]` : '-'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染合并/追加决策监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      const isMerge = step.action === 'merge';
+      const isAppend = step.action === 'append';
+
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>操作决策:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isMerge ? '#ecfdf5' : isAppend ? '#eff6ff' : '#f8fafc'}; color: ${isMerge ? '#059669' : isAppend ? '#2563eb' : '#64748b'}; border: 1px solid ${isMerge ? '#a7f3d0' : isAppend ? '#bfdbfe' : '#e2e8f0'};">
+              ${isMerge ? '🧩 发生重叠 (合并扩界)' : isAppend ? '➕ 无重叠 (追加新区间)' : '🔍 初始化'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 准则: <code style="color:#059669; font-family:monospace;">if (s &lt;= lastEnd) lastEnd = max(lastEnd, e); else append();</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染最终合并结果看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>合并后区间数: <strong style="color: #059669; font-family: monospace; font-size: 13.5px;">${result.length}</strong> 个</span>
+            <span style="font-family: monospace; font-weight: 700; color: #334155;">${result.map((i) => `[${i[0]},${i[1]}]`).join(', ')}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgeMerged = this.root?.querySelector('#badge-merged-count');
+    if (badgeMerged) {
+      badgeMerged.textContent = `合并数: ${result.length} 个`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '步骤';
+
+        if (st.action === 'merge') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '合并';
+        } else if (st.action === 'append') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '追加';
+        } else if (st.action === 'done') {
+          badgeColor = '#7c3aed';
+          badgeBg = '#f5f3ff';
+          badgeText = '完成';
+        }
+
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
-  private nextStep(): void {
-    if (this.currentIndex >= this.steps.length - 1) return;
-    this.currentIndex++;
-    this.render();
-    this.updateButtons();
-  }
-
-  private prevStep(): void {
-    if (this.currentIndex <= 0) return;
-    this.currentIndex--;
-    this.render();
-    this.updateButtons();
-  }
-
-  private reset(): void {
-    this.pause();
-    this.currentIndex = 0;
-    this.render();
-    this.updateButtons();
-  }
-
-  private updateButtons(): void {
-    if (!this.btnPrev || !this.btnNext || !this.btnPlay) return;
-    const finished = this.currentIndex >= this.steps.length - 1;
-    this.btnPrev.disabled = this.currentIndex === 0;
-    this.btnNext.disabled = finished;
-    this.btnPlay.disabled = finished;
-    this.btnPlay.textContent = this.isPlaying ? '暂停' : finished ? '完成' : '播放';
-  }
-
-  public destroy(): void {
-    this.pause();
-    this.steps = [];
-    this.currentIndex = 0;
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -418,11 +390,11 @@ registerAlgorithm({
   name: '合并区间',
   viewId: 'algo-merge-intervals-view',
   category: 'greedy',
-  description: 'LeetCode 56：贪心算法，排序后逐个合并重叠区间',
+  description: '按左端点升序排序，遍历合并所有重叠区间，动态扩展当前重叠最大右端点',
   icon: '🧩',
   template,
   Visualizer: MergeIntervalsVisualizer,
   difficulty: 2,
-  levelOrder: 16,
-  learningGoal: '理解区间合并的排序加贪心策略',
+  levelOrder: 11,
+  learningGoal: '掌握区间合并标准贪心流程，学会维护合并结果集末尾区间的动态扩界技巧',
 });

@@ -1,199 +1,870 @@
 <style>
-  :root {
-    --tc-accent-a: #10b981;
-    --tc-accent-b: #2dd4bf;
-  }
-  .treecame-viz-container {
-    width: 100%; height: 100%; color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(16, 185, 129, 0.5), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(45, 212, 191, 0.55), transparent 55%),
-      linear-gradient(135deg, #061b13, #0a2d22, #042518);
-    display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
-  }
-  .treecame-viz-container .sw-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-  .treecame-viz-container .sw-header {
-    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
-  }
-  .treecame-viz-container .sw-head-left { display: flex; align-items: center; gap: 14px; }
-  .treecame-viz-container .sw-icon-badge {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--tc-accent-a), var(--tc-accent-b));
-    display: flex; align-items: center; justify-content: center; font-size: 22px;
-    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.4);
-  }
-  .treecame-viz-container h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
-  .treecame-viz-container .sw-desc { margin: 4px 0 0; color: #a6adc8; font-size: 13px; line-height: 1.4; }
-  .treecame-viz-container .sw-main {
-    flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 16px; padding: 0 16px 16px; overflow: hidden;
-  }
-  .treecame-viz-container .sw-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-  .treecame-viz-container .sw-card {
-    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  .treecame-viz-container .sw-card-title {
-    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
-  }
-  .treecame-viz-container .sw-input-row {
-    display: grid; grid-template-columns: repeat(3, auto); gap: 8px; align-items: center; padding: 12px 16px;
-  }
-  .treecame-viz-container button {
-    padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; cursor: pointer; transition: all 0.2s; font-size: 12px; font-weight: 600;
-  }
-  .treecame-viz-container button:hover { border-color: var(--tc-accent-a); color: #fff; opacity: 0.85; }
-  .treecame-viz-container .sw-start-btn {
-    padding: 9px 16px; border-radius: 10px; border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--tc-accent-a), var(--tc-accent-b)); color: #061b13;
-    font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 13px;
-  }
-  .treecame-viz-container .sw-start-btn:hover { box-shadow: 0 0 20px rgba(45, 212, 191, 0.45); }
-  .treecame-viz-container .sw-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .treecame-viz-container .sw-stat {
-    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
-  }
-  .treecame-viz-container .sw-stat::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: linear-gradient(180deg, var(--tc-accent-a), var(--tc-accent-b));
-  }
-  .treecame-viz-container .sw-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
-  .treecame-viz-container .sw-stat span {
-    color: var(--tc-accent-b); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-  .treecame-viz-container .sw-visual { flex: 1; min-height: 260px; display: flex; flex-direction: column; }
-  .treecame-viz-container .sw-plot {
-    flex: 1; min-height: 0; padding: 20px 18px; overflow: auto;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .treecame-viz-container canvas {
-    background: radial-gradient(ellipse at center, rgba(20, 33, 31, 0.4), rgba(0,0,0,0));
-    border-radius: 14px; max-width: 100%; max-height: 100%;
-  }
-  .treecame-viz-container .sw-result-banner {
-    margin: 0 16px 16px; padding: 12px 16px; border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5; transition: all 0.3s;
-  }
-  .treecame-viz-container .sw-result-banner.success {
-    background: rgba(16, 185, 129, 0.14); border-color: var(--tc-accent-a); color: #6ee7b7;
-  }
-  .treecame-viz-container .sw-result-banner .badge { margin-right: 8px; }
-  .treecame-viz-container .sw-code {
-    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .treecame-viz-container .sw-code [data-code-panel] { flex: 1; min-width: 0; }
-  .treecame-viz-container .sw-controls {
-    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
-  }
-  .treecame-viz-container .sw-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-    font-size: 14px; font-weight: 500;
-  }
-  .treecame-viz-container .sw-btn:hover:not(:disabled) { border-color: var(--tc-accent-a); color: #fff; }
-  .treecame-viz-container .sw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .treecame-viz-container .sw-play-btn {
-    border: 1px solid transparent; background: linear-gradient(135deg, var(--tc-accent-a), var(--tc-accent-b));
-    color: #061b13; font-weight: 700;
-  }
-  .treecame-viz-container .sw-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(45, 212, 191, 0.45); }
-  .treecame-viz-container .sw-counter { color: #a6adc8; font-size: 13px; min-width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
-  .treecame-viz-container .sw-slider-container { display: flex; align-items: center; gap: 8px; }
-  .treecame-viz-container .sw-slider-container input[type=range] {
-    width: 110px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
-    outline: none; -webkit-appearance: none;
-  }
-  .treecame-viz-container .sw-slider-container input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--tc-accent-a);
-    cursor: pointer; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-  }
-  .treecame-viz-container .sw-slider-container span { color: #a6adc8; font-size: 13px; min-width: 40px; font-variant-numeric: tabular-nums; }
-
-  @keyframes pulse-tc {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.5); }
-    50% { box-shadow: 0 0 0 9px rgba(45, 212, 191, 0); }
-  }
-  @keyframes pop-in {
-    0% { transform: scale(0); opacity: 0; }
-    60% { transform: scale(1.15); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  @keyframes burst {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); filter: brightness(1.3); }
-  }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
+  /* === 监控二叉树 (LeetCode 968) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
+  #algo-tree-cameras-view {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  @media (max-width: 1100px) {
-    .treecame-viz-container .sw-main { grid-template-columns: 1fr; overflow: auto; }
-    .treecame-viz-container .sw-code { min-height: 340px; }
-    .treecame-viz-container .sw-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .treecame-viz-container .sw-input-row { grid-template-columns: repeat(2, 1fr); }
-    .treecame-viz-container .sw-stats { grid-template-columns: repeat(2, 1fr); }
+  #algo-tree-cameras-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-tree-cameras-view .tc-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-tree-cameras-view .tc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-tree-cameras-view .tc-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-cameras-view .tc-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-tree-cameras-view .tc-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-tree-cameras-view .tc-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-tree-cameras-view .tc-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-tree-cameras-view .tc-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-tree-cameras-view .tc-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-cameras-view .tc-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-tree-cameras-view .tc-input-str {
+    width: 170px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-tree-cameras-view .tc-input-str:focus {
+    border-color: #ef4444;
+    background: #ffffff;
+  }
+
+  #algo-tree-cameras-view .tc-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-tree-cameras-view .tc-btn-generate:hover {
+    background: #dc2626;
+  }
+
+  #algo-tree-cameras-view .tc-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-cameras-view .tc-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-tree-cameras-view .tc-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-cameras-view .tc-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-tree-cameras-view .tc-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-tree-cameras-view .tc-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-tree-cameras-view .tc-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-tree-cameras-view .tc-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-tree-cameras-view .tc-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-tree-cameras-view .tc-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-tree-cameras-view .tc-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-tree-cameras-view .tc-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 自适应 SVG 树沙盘展示盒 */
+  #algo-tree-cameras-view #tc-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-tree-cameras-view .tc-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-cameras-view .tc-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #ef4444;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-tree-cameras-view .tc-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-tree-cameras-view .tc-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-cameras-view .tc-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-tree-cameras-view .tc-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-tree-cameras-view .tc-play-circle-btn:hover {
+    background: #dc2626;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-tree-cameras-view .tc-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-tree-cameras-view .tc-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-tree-cameras-view .tc-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-tree-cameras-view .tc-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-tree-cameras-view .tc-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-tree-cameras-view .tc-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-tree-cameras-view .tc-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-cameras-view .tc-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-tree-cameras-view .tc-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-cameras-view .tc-tab-item.active {
+    background: #ef4444;
+    color: #ffffff;
+  }
+
+  #algo-tree-cameras-view .tc-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-tree-cameras-view .tc-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-cameras-view .tc-lang-btn.active {
+    background: #334155;
+    color: #fca5a5;
+  }
+
+  #algo-tree-cameras-view .tc-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-tree-cameras-view .tc-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-tree-cameras-view .tc-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-tree-cameras-view .tc-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fca5a5;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-tree-cameras-view .tc-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-tree-cameras-view .tc-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-tree-cameras-view .tc-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-tree-cameras-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-tree-cameras-view .code-line.active {
+    background: rgba(239, 68, 68, 0.2);
+    border-left: 3px solid #ef4444;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-tree-cameras-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-tree-cameras-view .tc-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-tree-cameras-view .tc-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-cameras-view .tc-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-tree-cameras-view .tc-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-tree-cameras-view .tc-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-tree-cameras-view .tc-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-tree-cameras-view .tc-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-tree-cameras-view .tc-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-tree-cameras-view .tc-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-tree-cameras-view .tc-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-tree-cameras-view .tc-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-tree-cameras-view .tc-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="treecame-viz-container">
-  <div class="sw-page">
-    <div class="sw-header">
-      <div class="sw-head-left">
-        <div class="sw-icon-badge">📹</div>
-        <div>
-          <h1>监控二叉树（贪心）</h1>
-          <p class="sw-desc">LeetCode 968：贪心从叶节点向上放置摄像头，覆盖所有节点</p>
+<div id="algo-tree-cameras-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="tc-header">
+    <div class="tc-header-left">
+      <div class="tc-icon-btn">📷</div>
+      <h1 class="tc-main-title">LeetCode 968. 监控二叉树</h1>
+      <button id="btn-open-problem-modal" class="tc-btn-problem">📋 题目</button>
+      <span class="tc-badge-mode">后序自底向上贪心 / 叶子父节点装摄像头</span>
+      <span class="tc-badge-complexity">O(N)</span>
+    </div>
+
+    <!-- 参数与操作工具组 -->
+    <div class="tc-header-right">
+      <div class="tc-input-group">
+        <span>tree:</span>
+        <input type="text" id="input-tree" value="[0,0,null,0,0]" class="tc-input-str" placeholder="[0,0,null,0,0]" />
+      </div>
+
+      <button id="btn-generate" class="tc-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="tc-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="tc-chip" data-tree="[0,0,null,0,0]">示例 1 (1 摄像头)</button>
+        <button class="tc-chip" data-tree="[0,0,null,0,null,0,null,null,1]">示例 2 (2 摄像头)</button>
+        <button class="tc-chip" data-tree="[0,0,0,null,null,null,0]">三层树 (2 摄像头)</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="tc-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="tc-left-section">
+
+      <!-- 卡片 1: 二叉树自适应 SVG 沙盘 (Binary Tree SVG Sandbox) -->
+      <div class="tc-card">
+        <div class="tc-card-header">
+          <div class="tc-card-title">
+            <span>📷 二叉树与摄像头分布自适应沙盘 (Tree SVG Sandbox)</span>
+          </div>
+          <div class="tc-legend-bar">
+            <div><span class="tc-legend-dot" style="background:#ef4444;"></span> 📷 摄像头 (1)</div>
+            <div><span class="tc-legend-dot" style="background:#3b82f6;"></span> 🛡️ 已覆盖 (2)</div>
+            <div><span class="tc-legend-dot" style="background:#94a3b8;"></span> ⚪ 无覆盖 (0)</div>
+          </div>
+        </div>
+
+        <!-- 自适应 SVG 树沙盘展示盒 -->
+        <div id="tc-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="tc-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="tc-slider" />
+        <div class="tc-counter-badge">
+          <span id="step-cur" style="color: #ef4444;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="tc-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="tc-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="tc-ctrl-btn">▶</button>
         </div>
       </div>
-      <div class="sw-tip"><strong>贪心策略：</strong>空节点返回已覆盖(2)，子节点有摄像头则被覆盖再递归，否则在子节点为无效父节点时放置摄像头(1)。</div>
-    </div>
-    <div class="sw-main">
-      <div class="sw-left">
-        <section class="sw-card">
-          <div class="sw-card-title">示例数据</div>
-          <div class="sw-input-row">
-            <button data-id="example1">例1</button>
-            <button data-id="example2">例2</button>
-            <button data-id="example3">例3</button>
-            <button id="treecame-start" class="sw-start-btn">开始布置</button>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="tc-card">
+        <div class="tc-card-header">
+          <div>
+            <div class="tc-card-title">📦 后序贪心决策状态空间与指标追踪</div>
+            <div class="tc-card-desc">当前节点子树覆盖状态、摄像头放置决策与最小摄像头总数看板</div>
           </div>
-        </section>
-        <div class="sw-stats">
-          <div class="sw-stat"><label>已放置摄像头</label><span id="camera-count">0</span></div>
-          <div class="sw-stat"><label>当前节点</label><span id="current-node">-</span></div>
-          <div class="sw-stat"><label>节点总数</label><span>5</span></div>
-          <div class="sw-stat"><label>策略</label><span>逆向贪心</span></div>
+          <span id="badge-camera-count" class="tc-counter-badge" style="color:#ef4444; background:#fef2f2; border-color:#fecaca;">摄像头: 0</span>
         </div>
-        <section class="sw-card sw-visual">
-          <div class="sw-card-title">树可视化</div>
-          <div class="sw-plot">
-            <canvas id="tree-canvas" width="480" height="340"></canvas>
+
+        <!-- 状态空间展示盒 -->
+        <div class="tc-state-space-box">
+          <div class="tc-state-columns">
+            <!-- 当前节点与子树状态 -->
+            <div class="tc-subcard">
+              <div class="tc-subcard-title">🌳 当前后序节点 (Current Node)</div>
+              <div id="tc-node-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 贪心状态转移决策监视器 -->
+            <div class="tc-subcard">
+              <div class="tc-subcard-title">⚖️ 状态转移决策监视器 (Cover Decision)</div>
+              <div id="tc-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
           </div>
-          <div class="sw-result-banner" id="treecame-status"><span class="badge">💡</span>点击开始布置</div>
-        </section>
+          <!-- 统计与进度 -->
+          <div class="tc-subcard" style="flex-shrink: 0;">
+            <div class="tc-subcard-title">🏆 最小摄像头安装配置看板 (Cameras Result)</div>
+            <div id="tc-metrics-container"></div>
+          </div>
+        </div>
       </div>
-      <aside class="sw-code"><div data-code-panel></div></aside>
-    </div>
-    <div class="sw-controls">
-      <button id="treecame-reset" class="sw-btn">⏮重置</button>
-      <button id="treecame-prev" class="sw-btn">◀上一步</button>
-      <button id="treecame-play" class="sw-btn sw-play-btn">▶播放</button>
-      <button id="treecame-next" class="sw-btn">下一步▶</button>
-      <span id="step-counter" class="sw-counter">步骤: 0 / 0</span>
-      <div class="sw-slider-container">
-        <input id="treecame-speed" type="range" min="200" max="2000" step="100" value="800">
-        <span id="treecame-speed-label">0.8s</span>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="tc-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="tc-dark-terminal">
+        <div class="tc-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="tc-tab-group">
+            <button id="btn-tab-code" class="tc-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="tc-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="tc-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="tc-lang-group" id="code-lang-tabs">
+            <button class="tc-lang-btn active" data-lang="java">Java</button>
+            <button class="tc-lang-btn" data-lang="cpp">C++</button>
+            <button class="tc-lang-btn" data-lang="python">Python</button>
+            <button class="tc-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="tc-font-tools">
+            <div class="tc-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="tc-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="tc-window-dots">
+              <span class="tc-dot" style="background:#ef4444;"></span>
+              <span class="tc-dot" style="background:#eab308;"></span>
+              <span class="tc-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="tc-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="tc-log-card">
+        <div class="tc-log-header">
+          <div class="tc-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="tc-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="tc-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="tc-modal-backdrop hidden">
+    <div class="tc-modal-content">
+      <div class="tc-modal-header">
+        <div class="tc-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="tc-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="tc-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

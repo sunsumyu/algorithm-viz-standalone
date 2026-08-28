@@ -1,364 +1,873 @@
 <style>
-  /* === 跳跃游戏 II · 玻璃感 + 跳跃弧 + 边界脉冲 === */
+  /* === 跳跃游戏 II (LeetCode 45) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-jump-game-view {
-    --accent-a: #10b981;
-    --accent-b: #3b82f6;
-    --accent-glow: rgba(59, 130, 246, .45);
-    --current-color: #fbbf24;
-    --range-color: #60a5fa;
-    --destination-color: #34d399;
-    --visited-color: #64748b;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 5% 5%, rgba(16, 185, 129, .26), transparent 55%),
-      radial-gradient(ellipse at 95% 90%, rgba(59, 130, 246, .26), transparent 55%),
-      linear-gradient(135deg, #0a1410 0%, #101a30 50%, #152040 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-jump-game-view .jg-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-jump-game-view * {
+    box-sizing: border-box;
   }
-  #algo-jump-game-view .jg-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-jump-game-view .jg-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-jump-game-view .jg-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-jump-game-view .jg-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-jump-game-view .jg-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-jump-game-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-jump-game-view .jg-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-jump-game-view .jg-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(16, 185, 129, .12), rgba(59, 130, 246, .08));
-    border: 1px solid rgba(59, 130, 246, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+
+  #algo-jump-game-view .jg-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    color: #7c3aed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-jump-game-view .jg-tip strong { color: #93c5fd; }
-  #algo-jump-game-view .jg-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
+
+  #algo-jump-game-view .jg-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-jump-game-view .jg-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-jump-game-view .jg-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
+
+  #algo-jump-game-view .jg-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-jump-game-view .jg-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  #algo-jump-game-view .jg-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-jump-game-view .jg-tag {
-    font-size: 11px; color: #93c5fd; background: rgba(59, 130, 246, .14);
-    border: 1px solid rgba(59, 130, 246, .3); padding: 2px 8px; border-radius: 999px;
+
+  #algo-jump-game-view .jg-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-jump-game-view .jg-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
+
+  #algo-jump-game-view .jg-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-jump-game-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
+
+  #algo-jump-game-view .jg-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-jump-game-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
-  #algo-jump-game-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-jump-game-view .jg-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
   }
-  #algo-jump-game-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
+
+  #algo-jump-game-view .jg-input-str {
+    width: 140px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
   }
-  #algo-jump-game-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-jump-game-view .jg-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  #algo-jump-game-view .jg-input-str:focus {
+    border-color: #7c3aed;
+    background: #ffffff;
+  }
+
+  #algo-jump-game-view .jg-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #7c3aed;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(124, 58, 237, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-jump-game-view .jg-btn-generate:hover {
+    background: #6d28d9;
+  }
+
+  #algo-jump-game-view .jg-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-jump-game-view .jg-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
   #algo-jump-game-view .jg-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(16, 185, 129, .12); border: 1px solid rgba(16, 185, 129, .28);
-    color: #6ee7b7; cursor: pointer; transition: all .2s;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
   }
   #algo-jump-game-view .jg-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
+    background: #e2e8f0;
+    color: #0f172a;
   }
-  #algo-jump-game-view .jg-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-jump-game-view .jg-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
   }
-  #algo-jump-game-view .jg-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-jump-game-view .jg-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-jump-game-view .jg-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-jump-game-view .jg-stat--jumps::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-jump-game-view .jg-stat--jumps .jg-stat-val { color: #fde68a; }
-  #algo-jump-game-view .jg-stat--boundary::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
-  #algo-jump-game-view .jg-stat--boundary .jg-stat-val { color: #93c5fd; }
-  #algo-jump-game-view .jg-stat--farthest::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-jump-game-view .jg-stat--farthest .jg-stat-val { color: #6ee7b7; }
-  #algo-jump-game-view .jg-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-jump-game-view .jg-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* canvas */
-  #algo-jump-game-view .jg-chart-card { flex: 1; min-height: 260px; display: flex; flex-direction: column; }
-  #algo-jump-game-view .jg-canvas {
-    flex: 1; min-height: 220px; padding: 20px 18px 28px;
-    position: relative; overflow: hidden;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-  }
-  #algo-jump-game-view .jg-cells {
-    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-jump-game-view .jg-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     position: relative;
   }
-  #algo-jump-game-view .jg-cell {
-    position: relative; width: 64px; height: 84px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    border-radius: 14px;
+
+  #algo-jump-game-view .jg-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-jump-game-view .jg-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-jump-game-view .jg-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-jump-game-view .jg-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-jump-game-view .jg-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 跳跃沙盘展示盒 */
+  #algo-jump-game-view #jg-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-jump-game-view .jg-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-jump-game-view .jg-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #7c3aed;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-jump-game-view .jg-counter-badge {
+    font-size: 11.5px;
     font-family: 'JetBrains Mono', monospace;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-jump-game-view .jg-cell .jg-val { font-size: 22px; font-weight: 800; color: #e2e8f0; }
-  #algo-jump-game-view .jg-cell .jg-idx {
-    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
-    color: #64748b; font-size: 11px; font-weight: 600;
+
+  #algo-jump-game-view .jg-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-jump-game-view .jg-cell.jg-cell--current {
-    transform: translateY(-14px) scale(1.08);
-    border-color: var(--current-color);
-    background: linear-gradient(180deg, rgba(251, 191, 36, .35), rgba(245, 158, 11, .15));
-    color: #fef3c7;
-    box-shadow: 0 10px 30px rgba(251, 191, 36, .55);
-    animation: jg-cell-bounce 1.2s ease-in-out infinite;
+  #algo-jump-game-view .jg-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
-  @keyframes jg-cell-bounce {
-    0%, 100% { transform: translateY(-14px) scale(1.08); }
-    50% { transform: translateY(-20px) scale(1.12); }
+
+  #algo-jump-game-view .jg-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #7c3aed;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(124, 58, 237, 0.25);
+    transition: all 0.15s;
   }
-  #algo-jump-game-view .jg-cell.jg-cell--range {
-    border-color: var(--range-color);
-    background: linear-gradient(180deg, rgba(96, 165, 250, .25), rgba(59, 130, 246, .08));
-    color: #dbeafe;
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, .18);
+  #algo-jump-game-view .jg-play-circle-btn:hover {
+    background: #6d28d9;
+    transform: scale(1.05);
   }
-  #algo-jump-game-view .jg-cell.jg-cell--destination {
-    border-color: var(--destination-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .28), rgba(16, 185, 129, .1));
-    color: #d1fae5;
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .25), 0 6px 18px rgba(52, 211, 153, .35);
-    animation: jg-dest-glow 1.2s ease-in-out infinite;
+
+  /* Card 2 状态空间 */
+  #algo-jump-game-view .jg-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  @keyframes jg-dest-glow {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, .25), 0 6px 18px rgba(52, 211, 153, .35); }
-    50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, .15), 0 8px 22px rgba(52, 211, 153, .5); }
+
+  #algo-jump-game-view .jg-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
   }
-  #algo-jump-game-view .jg-cell.jg-cell--visited {
-    opacity: .45;
-    transform: scale(.92);
-    filter: grayscale(.4);
+
+  #algo-jump-game-view .jg-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
   }
-  #algo-jump-game-view .jg-cell.jg-cell--jump {
-    animation: jg-cell-jump .6s cubic-bezier(.34, 1.56, .64, 1);
+
+  #algo-jump-game-view .jg-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
   }
-  @keyframes jg-cell-jump {
-    0% { transform: translateY(0); }
-    40% { transform: translateY(-30px) scale(1.1); }
-    100% { transform: translateY(0) scale(1); }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-jump-game-view .jg-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  /* jump arc SVG */
-  #algo-jump-game-view .jg-arc {
-    position: absolute; inset: 0; pointer-events: none;
-    overflow: visible;
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-jump-game-view .jg-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-jump-game-view .jg-arc-path {
-    fill: none; stroke: var(--current-color); stroke-width: 2.5;
-    stroke-dasharray: 4 3;
-    animation: jg-arc-draw .6s ease-out forwards;
+
+  #algo-jump-game-view .jg-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
-  @keyframes jg-arc-draw {
-    from { stroke-dashoffset: 200; opacity: 0; }
-    to { stroke-dashoffset: 0; opacity: 1; }
+
+  #algo-jump-game-view .jg-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-jump-game-view .jg-arc-tip {
-    position: absolute; padding: 3px 8px; border-radius: 6px;
-    background: rgba(251, 191, 36, .15); border: 1px solid rgba(251, 191, 36, .5);
-    color: #fef3c7; font-size: 11px; font-weight: 700;
+
+  #algo-jump-game-view .jg-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-jump-game-view .jg-tab-item.active {
+    background: #7c3aed;
+    color: #ffffff;
+  }
+
+  #algo-jump-game-view .jg-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-jump-game-view .jg-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-jump-game-view .jg-lang-btn.active {
+    background: #334155;
+    color: #c4b5fd;
+  }
+
+  #algo-jump-game-view .jg-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-jump-game-view .jg-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-jump-game-view .jg-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-jump-game-view .jg-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #c4b5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-jump-game-view .jg-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-jump-game-view .jg-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-jump-game-view .jg-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-jump-game-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-jump-game-view .code-line.active {
+    background: rgba(124, 58, 237, 0.2);
+    border-left: 3px solid #7c3aed;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-jump-game-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-jump-game-view .jg-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-jump-game-view .jg-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-jump-game-view .jg-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-jump-game-view .jg-log-count {
+    font-size: 10.5px;
     font-family: 'JetBrains Mono', monospace;
-    transform: translate(-50%, -50%);
-    animation: jg-arc-tip-in .4s ease-out .2s both;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
-  @keyframes jg-arc-tip-in {
-    from { opacity: 0; transform: translate(-50%, -50%) scale(.5); }
-    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  #algo-jump-game-view .jg-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
   }
-  /* result */
-  #algo-jump-game-view .jg-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(16, 185, 129, .12), rgba(59, 130, 246, .06));
-    border: 1px solid rgba(59, 130, 246, .28);
-    line-height: 1.55; font-size: 14px; color: #bfdbfe;
+
+  /* 模态弹窗 */
+  #algo-jump-game-view .jg-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
   }
-  #algo-jump-game-view .jg-result .jg-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+  #algo-jump-game-view .jg-modal-backdrop.hidden {
+    display: none;
   }
-  #algo-jump-game-view .jg-result.jg-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-jump-game-view .jg-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-jump-game-view .jg-result.jg-result--done .jg-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-jump-game-view .jg-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
   }
-  #algo-jump-game-view .jg-result.jg-result--jump {
-    background: linear-gradient(135deg, rgba(251, 191, 36, .18), rgba(245, 158, 11, .08));
-    border-color: rgba(251, 191, 36, .4); color: #fde68a;
+  #algo-jump-game-view .jg-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
   }
-  #algo-jump-game-view .jg-result.jg-result--jump .jg-emoji {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    box-shadow: 0 4px 14px rgba(251, 191, 36, .55);
-    color: #140211;
+  #algo-jump-game-view .jg-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-  #algo-jump-game-view .jg-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
-  }
-  #algo-jump-game-view .jg-log-line { display: flex; gap: 8px; }
-  #algo-jump-game-view .jg-log-line .jg-log-num { color: #475569; flex-shrink: 0; }
-  #algo-jump-game-view .jg-log-line.jg-log-active { color: #93c5fd; font-weight: 600; }
-  #algo-jump-game-view .jg-log-line.jg-log-active .jg-log-num { color: var(--accent-b); }
-  #algo-jump-game-view .jg-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
-  }
-  #algo-jump-game-view .jg-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-jump-game-view .jg-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-  }
-  #algo-jump-game-view .jg-controls .jg-ctrl-btn { min-width: 64px; }
-  #algo-jump-game-view .jg-controls .jg-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
-  }
-  #algo-jump-game-view .jg-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-jump-game-view .jg-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
-  }
-  #algo-jump-game-view #jg-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-jump-game-view .jg-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-jump-game-view .jg-code { min-height: 360px; }
+  #algo-jump-game-view .jg-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="jg-shell">
-  <div class="jg-hero">
-    <div class="jg-hero-left">
-      <span class="jg-icon">🦘</span>
-      <div>
-        <h1>跳跃游戏 II（贪心）</h1>
-        <div class="jg-sub">LeetCode 45 · 最少跳跃次数到达数组末尾</div>
-      </div>
+<div id="algo-jump-game-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="jg-header">
+    <div class="jg-header-left">
+      <div class="jg-icon-btn">🦘</div>
+      <h1 class="jg-main-title">LeetCode 45. 跳跃游戏 II</h1>
+      <button id="btn-open-problem-modal" class="jg-btn-problem">📋 题目</button>
+      <span class="jg-badge-mode">当前边界到达即跳跃 / 最少跳跃次数</span>
+      <span class="jg-badge-complexity">O(N)</span>
     </div>
-    <div class="jg-tip"><strong>核心动画：</strong><span style="color:#fef3c7">当前格</span>弹跳高亮，<span style="color:#93c5fd">可达范围</span>蓝色扩散；到达边界时<strong>跳跃弧线</strong> SVG 路径绘制；<span style="color:#6ee7b7">最远可达</span>绿色发光。</div>
-  </div>
-  <div class="jg-main">
-    <div class="jg-left">
-      <section class="jg-card">
-        <div class="jg-card-title">输入 <span class="jg-tag">nums = [2,3,1,1,4]</span></div>
-        <div class="jg-input-row">
-          <input id="jump-input" value="2,3,1,1,4">
-          <button id="jump-start">开始跳跃</button>
-        </div>
-        <div class="jg-examples">
-          <button class="jg-chip" data-val="2,3,1,1,4">经典 5 个</button>
-          <button class="jg-chip" data-val="2,1">最小示例</button>
-          <button class="jg-chip" data-val="1,2,3">步长递增</button>
-          <button class="jg-chip" data-val="3,2,1,0,1">能跳 0 步</button>
-          <button class="jg-chip" data-val="1,1,1,1,1,1">步长为 1</button>
-        </div>
-      </section>
 
-      <div class="jg-stats">
-        <div class="jg-stat jg-stat--jumps"><div class="jg-stat-label">跳跃次数</div><div class="jg-stat-val" id="jump-count">0</div></div>
-        <div class="jg-stat jg-stat--boundary"><div class="jg-stat-label">当前边界</div><div class="jg-stat-val" id="current-boundary">0</div></div>
-        <div class="jg-stat jg-stat--farthest"><div class="jg-stat-label">最远可达</div><div class="jg-stat-val" id="next-boundary">0</div></div>
-        <div class="jg-stat"><div class="jg-stat-label">当前位置</div><div class="jg-stat-val" id="jg-idx" style="font-size:16px;">-</div></div>
+    <!-- 参数与操作工具组 -->
+    <div class="jg-header-right">
+      <div class="jg-input-group">
+        <span>nums:</span>
+        <input type="text" id="input-nums" value="2,3,1,1,4" class="jg-input-str" placeholder="2,3,1,1,4" />
       </div>
 
-      <section class="jg-card jg-chart-card">
-        <div class="jg-card-title">跳跃轨迹 <span class="jg-tag">弧线可视化</span></div>
-        <div class="jg-canvas">
-          <div class="jg-cells" id="jg-cells"></div>
-        </div>
-        <div class="jg-result" id="jg-result">
-          <span class="jg-emoji">🦘</span>
-          <div id="step-message">点击「开始跳跃」观察跳跃弧 + 边界推进</div>
-        </div>
-      </section>
+      <button id="btn-generate" class="jg-btn-generate">
+        <span>▶ 运行</span>
+      </button>
 
-      <section class="jg-card">
-        <div class="jg-card-title">执行日志 <button id="jg-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="jg-log" id="jg-log"></div>
-      </section>
+      <button id="btn-reset" class="jg-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="jg-chip" data-nums="2,3,1,1,4">示例 1 (2 步)</button>
+        <button class="jg-chip" data-nums="2,3,0,1,4">示例 2 (2 步)</button>
+        <button class="jg-chip" data-nums="1,1,1,1">步步推进 (3 步)</button>
+      </div>
     </div>
-    <aside class="jg-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="jg-controls">
-    <button id="step-reset" class="jg-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="jg-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="jg-ctrl-btn jg-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="jg-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="jg-counter">步骤: 0 / 0</span>
-    <div class="jg-speed-wrap">
-      <span>速度</span>
-      <input id="jg-speed" type="range" min="200" max="2500" step="100" value="900">
-      <span id="jg-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="jg-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="jg-left-section">
+
+      <!-- 卡片 1: 跳跃边界与弧线沙盘 (Jump Boundary Sandbox) -->
+      <div class="jg-card">
+        <div class="jg-card-header">
+          <div class="jg-card-title">
+            <span>🦘 跳跃边界推进沙盘 (Jump Boundary Sandbox)</span>
+          </div>
+          <div class="jg-legend-bar">
+            <div><span class="jg-legend-dot" style="background:#7c3aed;"></span> 🚪当前跳跃右边界</div>
+            <div><span class="jg-legend-dot" style="background:#059669;"></span> 🌐下一步最远边界</div>
+            <div><span class="jg-legend-dot" style="background:#2563eb;"></span> 📍当前扫描格</div>
+          </div>
+        </div>
+
+        <!-- 跳跃沙盘居中展示盒 -->
+        <div id="jg-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="jg-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="jg-slider" />
+        <div class="jg-counter-badge">
+          <span id="step-cur" style="color: #7c3aed;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="jg-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="jg-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="jg-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="jg-card">
+        <div class="jg-card-header">
+          <div>
+            <div class="jg-card-title">📦 跳跃状态空间与边界追踪</div>
+            <div class="jg-card-desc">当前步覆盖范围、下一步最远范围与最小跳跃步数统计</div>
+          </div>
+          <span id="badge-jumps-count" class="jg-counter-badge" style="color:#7c3aed; background:#f5f3ff; border-color:#ddd6fe;">跳跃步数: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="jg-state-space-box">
+          <div class="jg-state-columns">
+            <!-- 边界状态 -->
+            <div class="jg-subcard">
+              <div class="jg-subcard-title">🚪 当前与下一跳边界 (Boundaries)</div>
+              <div id="jg-boundary-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 贪心判定监视器 -->
+            <div class="jg-subcard">
+              <div class="jg-subcard-title">⚖️ 边界触发跳跃判定 (Boundary Trigger)</div>
+              <div id="jg-trigger-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="jg-subcard" style="flex-shrink: 0;">
+            <div class="jg-subcard-title">🏆 最小跳跃次数与终点判定 (Min Jumps)</div>
+            <div id="jg-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="jg-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="jg-dark-terminal">
+        <div class="jg-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="jg-tab-group">
+            <button id="btn-tab-code" class="jg-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="jg-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="jg-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="jg-lang-group" id="code-lang-tabs">
+            <button class="jg-lang-btn active" data-lang="java">Java</button>
+            <button class="jg-lang-btn" data-lang="cpp">C++</button>
+            <button class="jg-lang-btn" data-lang="python">Python</button>
+            <button class="jg-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="jg-font-tools">
+            <div class="jg-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="jg-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="jg-window-dots">
+              <span class="jg-dot" style="background:#ef4444;"></span>
+              <span class="jg-dot" style="background:#eab308;"></span>
+              <span class="jg-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="jg-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="jg-log-card">
+        <div class="jg-log-header">
+          <div class="jg-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="jg-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="jg-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="jg-modal-backdrop hidden">
+    <div class="jg-modal-content">
+      <div class="jg-modal-header">
+        <div class="jg-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="jg-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="jg-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

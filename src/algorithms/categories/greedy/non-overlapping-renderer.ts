@@ -1,227 +1,393 @@
 /**
- * 无重叠区间可视化器（贪心算法）
- * LeetCode 435: 找到最少的区间数量使得剩余区间不重叠
+ * 无重叠区间可视化器（贪心算法）— 4-Card 标准现代架构
+ * LeetCode 435：按左端点升序排序，重叠时贪心移除右端点更大的区间，求最少移除数
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  NON_OVERLAPPING_PROBLEM_HTML,
+  NON_OVERLAPPING_ANALYSIS_HTML,
+  NON_OVERLAPPING_CODE_LANGUAGES,
+} from './non-overlapping-problem-content';
 import template from './non-overlapping.html?raw';
 
-interface NonOverlappingStep {
-  intervals: [number, number][];
+export interface NonOverlappingStep {
+  intervals: Array<[number, number]>;
   currentIndex: number;
-  kept: number[];
-  removed: number[];
+  removedCount: number;
+  removedIndices: number[];
+  keptIndices: number[];
   currentEnd: number;
+  action: 'init' | 'sort' | 'keep' | 'remove' | 'done';
   message: string;
   codeLine: number;
 }
 
-/**
- * 无重叠区间算法（贪心），生成可视化步骤
- */
-function nonOverlappingSteps(intervals: [number, number][]): NonOverlappingStep[] {
+export function buildNonOverlappingSteps(rawIntervals: Array<[number, number]>): NonOverlappingStep[] {
   const steps: NonOverlappingStep[] = [];
+  const n = rawIntervals.length;
 
-  if (intervals.length === 0) {
+  if (n === 0) {
     steps.push({
       intervals: [],
       currentIndex: -1,
-      kept: [],
-      removed: [],
-      currentEnd: -Infinity,
-      message: '输入为空，返回 0',
-      codeLine: 1
+      removedCount: 0,
+      removedIndices: [],
+      keptIndices: [],
+      currentEnd: 0,
+      action: 'done',
+      message: '输入为空，需移除区间数为 0',
+      codeLine: 2,
     });
     return steps;
   }
 
-  // 按终点排序（贪心策略：优先选择终点小的区间）
-  const sorted = [...intervals].sort((a, b) => a[1] - b[1]);
-  let end = -Infinity;
-  const kept: number[] = [];
-  const removed: number[] = [];
+  // 1. 按左边界升序排序
+  const intervals = rawIntervals.map(([s, e]) => [s, e] as [number, number]).sort((a, b) => a[0] - b[0]);
+  let count = 0;
+  const removedIndices: number[] = [];
+  const keptIndices: number[] = [0];
 
-  // 初始状态
   steps.push({
-    intervals: sorted,
-    currentIndex: -1,
-    kept: [],
-    removed: [],
-    currentEnd: end,
-    message: `按区间终点升序排序: ${sorted.map(i => `[${i[0]},${i[1]}]`).join(', ')}`,
-    codeLine: 4
+    intervals: intervals.map(([s, e]) => [s, e]),
+    currentIndex: 0,
+    removedCount: 0,
+    removedIndices: [],
+    keptIndices: [0],
+    currentEnd: intervals[0][1],
+    action: 'sort',
+    message: `第 1 步：按左边界升序排序：${intervals.map((i) => `[${i[0]},${i[1]}]`).join(', ')}，默认保留首个区间`,
+    codeLine: 4,
   });
 
-  for (let i = 0; i < sorted.length; i++) {
-    const interval = sorted[i];
+  for (let i = 1; i < n; i++) {
+    const cur = intervals[i];
+    const prevEnd = intervals[i - 1][1];
 
-    steps.push({
-      intervals: sorted,
-      currentIndex: i,
-      kept: [...kept],
-      removed: [...removed],
-      currentEnd: end,
-      message: `考虑区间 ${i}: [${interval[0]}, ${interval[1]}]，当前终点 = ${end === -Infinity ? '无' : end}`,
-      codeLine: 8
-    });
-
-    if (interval[0] >= end) {
-      // 不重叠，保留该区间
-      kept.push(i);
-      end = interval[1];
+    if (cur[0] < prevEnd) {
+      count++;
+      removedIndices.push(i);
+      intervals[i][1] = Math.min(prevEnd, cur[1]);
 
       steps.push({
-        intervals: sorted,
+        intervals: intervals.map(([s, e]) => [s, e]),
         currentIndex: i,
-        kept: [...kept],
-        removed: [...removed],
-        currentEnd: end,
-        message: `区间起点 ${interval[0]} >= 当前终点 ${end === interval[1] ? end : end}，不重叠，保留该区间`,
-        codeLine: 10
+        removedCount: count,
+        removedIndices: [...removedIndices],
+        keptIndices: [...keptIndices],
+        currentEnd: intervals[i][1],
+        action: 'remove',
+        message: `🗑️ 发生重叠！区间 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} < 前界 ${prevEnd}，贪心移除右界较大者，累计移除 ${count} 个`,
+        codeLine: 8,
       });
     } else {
-      // 重叠，移除该区间
-      removed.push(i);
+      keptIndices.push(i);
 
       steps.push({
-        intervals: sorted,
+        intervals: intervals.map(([s, e]) => [s, e]),
         currentIndex: i,
-        kept: [...kept],
-        removed: [...removed],
-        currentEnd: end,
-        message: `区间起点 ${interval[0]} < 当前终点 ${end}，重叠，移除该区间`,
-        codeLine: 14
+        removedCount: count,
+        removedIndices: [...removedIndices],
+        keptIndices: [...keptIndices],
+        currentEnd: cur[1],
+        action: 'keep',
+        message: `✓ 互不重叠！区间 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} &ge; ${prevEnd}，安全保留`,
+        codeLine: 7,
       });
     }
   }
 
-  // 完成
   steps.push({
-    intervals: sorted,
-    currentIndex: sorted.length,
-    kept: [...kept],
-    removed: [...removed],
-    currentEnd: end,
-    message: `完成！移除 ${removed.length} 个重叠区间`,
-    codeLine: 17
+    intervals: intervals.map(([s, e]) => [s, e]),
+    currentIndex: n - 1,
+    removedCount: count,
+    removedIndices: [...removedIndices],
+    keptIndices: [...keptIndices],
+    currentEnd: intervals[n - 1][1],
+    action: 'done',
+    message: `🎉 扫描完成！最少需要移除 ${count} 个区间，剩余 ${n - count} 个区间互不重叠`,
+    codeLine: 12,
   });
 
   return steps;
 }
 
+/* ── Visualizer class ─────────────────────────────────────── */
 export class NonOverlappingVisualizer extends StepVisualizer<NonOverlappingStep> {
-  protected codeLines = [
-    "public int eraseOverlapIntervals(int[][] intervals) {",
-    "    if (intervals.length == 0) return 0;",
-    "    ",
-    "    // 按终点排序",
-    "    Arrays.sort(intervals, (a, b) -> a[1] - b[1]);",
-    "    int count = 0;",
-    "    int end = Integer.MIN_VALUE;",
-    "    ",
-    "    for (int i = 0; i < intervals.length; i++) {",
-    "        if (intervals[i][0] >= end) {",
-    "            end = intervals[i][1];",
-    "        } else {",
-    "            count++;",
-    "        }",
-    "    }",
-    "    return count;",
-    "}"
-  ];
-  protected codePanelTitle = '贪心算法 (Java)';
+  protected codeLanguages = NON_OVERLAPPING_CODE_LANGUAGES;
+  protected codeLines = NON_OVERLAPPING_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '无重叠区间 代码调试';
 
-  private inputField: HTMLInputElement | null = null;
-  private displayEl: HTMLElement | null = null;
-  private keptCountEl: HTMLElement | null = null;
-  private removedCountEl: HTMLElement | null = null;
-  private currentEndEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private intervalContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
+    this.sandboxContainer = this.root.querySelector('#no-sandbox-container');
+    this.intervalContainer = this.root.querySelector('#no-interval-container');
+    this.decisionMonitorContainer = this.root.querySelector('#no-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#no-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.inputField = this.root.querySelector('#non-overlap-input');
-    this.displayEl = this.root.querySelector('#non-overlap-display');
-    this.keptCountEl = this.root.querySelector('#kept-count');
-    this.removedCountEl = this.root.querySelector('#removed-count');
-    this.currentEndEl = this.root.querySelector('#current-end');
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    this.bindPlaybackControls({
-      reset: 'non-overlap-reset',
-      prev: 'non-overlap-prev',
-      play: 'non-overlap-play',
-      next: 'non-overlap-next',
-      speed: 'non-overlap-speed',
-      speedLabel: 'non-overlap-speed-label',
-      message: 'non-overlap-status'
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.no-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const intEl = this.root?.querySelector('#input-intervals') as HTMLInputElement | null;
+        if (intEl && btn.dataset.intervals) intEl.value = btn.dataset.intervals;
+        this.start();
+      });
     });
 
-    this.root.querySelector('#non-overlap-start')?.addEventListener('click', () => this.start());
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: NON_OVERLAPPING_PROBLEM_HTML,
+      analysisHtml: NON_OVERLAPPING_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
   protected buildSteps(): NonOverlappingStep[] {
-    let intervals: [number, number][] = [[1, 2], [2, 3], [3, 4], [1, 3]];
-
-    if (this.inputField) {
-      const input = this.inputField.value.trim();
-      if (input) {
-        try {
-          const parsed = JSON.parse(input);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            intervals = parsed.map((arr: number[]) => [arr[0], arr[1]] as [number, number]);
-          }
-        } catch {
-          // 尝试逗号分隔解析
-          const nums = input.split(',').map(n => parseInt(n.trim(), 10));
-          if (nums.length > 0 && nums.length % 2 === 0) {
-            intervals = [];
-            for (let i = 0; i < nums.length; i += 2) {
-              intervals.push([nums[i], nums[i + 1]]);
-            }
-          }
-        }
+    const intEl = this.root?.querySelector('#input-intervals') as HTMLInputElement | null;
+    let intervals: Array<[number, number]> = [];
+    try {
+      const parsed = JSON.parse(intEl?.value || '[[1,2],[2,3],[3,4],[1,3]]');
+      if (Array.isArray(parsed) && parsed.every((p) => Array.isArray(p) && p.length >= 2)) {
+        intervals = parsed.map((p) => [Number(p[0]), Number(p[1])]);
       }
+    } catch {
+      intervals = [
+        [1, 2],
+        [2, 3],
+        [3, 4],
+        [1, 3],
+      ];
     }
 
-    return nonOverlappingSteps(intervals);
+    return buildNonOverlappingSteps(intervals);
   }
 
   protected renderStep(step: NonOverlappingStep): void {
-    if (!this.displayEl || !this.keptCountEl || !this.removedCountEl || !this.currentEndEl) return;
+    const intervals = step.intervals;
+    const n = intervals.length;
 
-    // 更新统计
-    this.keptCountEl.textContent = step.kept.length.toString();
-    this.removedCountEl.textContent = step.removed.length.toString();
-    this.currentEndEl.textContent = step.currentEnd === -Infinity ? '-' : step.currentEnd.toString();
+    // 1. 渲染区间沙盘 (Card 1)
+    if (this.sandboxContainer && n > 0) {
+      const minX = Math.min(...intervals.map((b) => b[0]));
+      const maxX = Math.max(...intervals.map((b) => b[1]));
+      const xRange = maxX - minX || 1;
 
-    // 渲染区间
-    this.displayEl.innerHTML = '';
+      const svgWidth = 420;
+      const svgHeight = 160;
+      const padX = 35;
+      const rowHeight = Math.min(24, (svgHeight - 40) / n);
 
-    step.intervals.forEach((interval, index) => {
-      const row = document.createElement('div');
-      row.className = 'interval-row';
+      const intervalSvgs = intervals
+        .map(([s, e], idx) => {
+          const x1 = padX + ((s - minX) / xRange) * (svgWidth - padX * 2);
+          const x2 = padX + ((e - minX) / xRange) * (svgWidth - padX * 2);
+          const width = Math.max(12, x2 - x1);
+          const y = 20 + idx * rowHeight;
 
-      if (index === step.currentIndex) {
-        row.classList.add('current');
-      } else if (step.kept.includes(index)) {
-        row.classList.add('kept');
-      } else if (step.removed.includes(index)) {
-        row.classList.add('removed');
-      }
+          const isCurrent = idx === step.currentIndex && step.action !== 'done';
+          const isRemoved = step.removedIndices.includes(idx);
+          const isKept = step.keptIndices.includes(idx);
 
-      const isKept = step.kept.includes(index);
-      const isRemoved = step.removed.includes(index);
+          let fill = '#f1f5f9';
+          let stroke = '#cbd5e1';
+          let textColor = '#64748b';
+          let dash = '';
 
-      row.innerHTML = `
-        <span class="interval-index">#${index}</span>
-        <span class="interval-range">[${interval[0]}, ${interval[1]}]</span>
-        ${isKept ? '<span class="interval-tag tag-kept">保留</span>' : ''}
-        ${isRemoved ? '<span class="interval-tag tag-removed">移除</span>' : ''}
+          if (isCurrent) {
+            fill = '#dbeafe';
+            stroke = '#2563eb';
+            textColor = '#1d4ed8';
+          } else if (isRemoved) {
+            fill = '#fee2e2';
+            stroke = '#ef4444';
+            textColor = '#dc2626';
+            dash = 'stroke-dasharray="3 2"';
+          } else if (isKept) {
+            fill = '#ecfdf5';
+            stroke = '#10b981';
+            textColor = '#059669';
+          }
+
+          return `
+            <g>
+              <rect x="${x1}" y="${y}" width="${width}" height="${rowHeight - 6}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="1.5" ${dash} />
+              <text x="${x1 + width / 2}" y="${y + rowHeight / 2 - 1}" fill="${textColor}" font-size="9.5" font-family="JetBrains Mono" font-weight="700" text-anchor="middle" dominant-baseline="middle">
+                ${isRemoved ? '❌ ' : isKept ? '✓ ' : ''}[${s}, ${e}]
+              </text>
+            </g>
+          `;
+        })
+        .join('');
+
+      this.sandboxContainer.innerHTML = `
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; height: 100%; overflow: visible;" preserveAspectRatio="xMidYMid meet">
+          <!-- 底部坐标标尺 -->
+          <line x1="${padX}" y1="${svgHeight - 15}" x2="${svgWidth - padX}" y2="${svgHeight - 15}" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="${padX}" y="${svgHeight - 2}" fill="#94a3b8" font-size="8.5" font-family="JetBrains Mono">x=${minX}</text>
+          <text x="${svgWidth - padX}" y="${svgHeight - 2}" fill="#94a3b8" font-size="8.5" font-family="JetBrains Mono" text-anchor="end">x=${maxX}</text>
+
+          <!-- 区间块 -->
+          ${intervalSvgs}
+        </svg>
       `;
+    }
 
-      this.displayEl!.appendChild(row);
-    });
+    // 2. 渲染当前考察区间与右边界 (Card 2 Left)
+    if (this.intervalContainer) {
+      const cur = step.currentIndex >= 0 && step.currentIndex < intervals.length ? intervals[step.currentIndex] : null;
+
+      this.intervalContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前考察区间:</span>
+            <span style="font-family: monospace; font-weight:700; color: #2563eb;">
+              ${cur ? `[${cur[0]}, ${cur[1]}]` : '-'}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>活跃保留右界:</span>
+            <span style="font-family: monospace; font-weight:700; color: #059669;">x = ${step.currentEnd}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染贪心移除判定监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      const isRemove = step.action === 'remove';
+      const isKeep = step.action === 'keep';
+
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>判定决策:</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isRemove ? '#fef2f2' : isKeep ? '#ecfdf5' : '#eff6ff'}; color: ${isRemove ? '#dc2626' : isKeep ? '#059669' : '#2563eb'}; border: 1px solid ${isRemove ? '#fecaca' : isKeep ? '#a7f3d0' : '#bfdbfe'};">
+              ${isRemove ? '🗑️ 发生重叠 (移除右界大者)' : isKeep ? '✓ 无重叠 (保留)' : '🔍 初始化'}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 准则: <code style="color:#2563eb; font-family:monospace;">if (s &lt; prevEnd) { count++; prevEnd = min(prevEnd, e); }</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染最终保留与移除看板 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>最少移除区间数: <strong style="color: #ef4444; font-family: monospace; font-size: 13.5px;">${step.removedCount}</strong> 个</span>
+            <span style="font-family: monospace; font-weight: 700; color: #059669;">最终保留: ${n - step.removedCount} 个</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgeRemoved = this.root?.querySelector('#badge-removed-count');
+    if (badgeRemoved) {
+      badgeRemoved.textContent = `移除数: ${step.removedCount} 个`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '步骤';
+
+        if (st.action === 'remove') {
+          badgeColor = '#dc2626';
+          badgeBg = '#fef2f2';
+          badgeText = '移除';
+        } else if (st.action === 'keep') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '保留';
+        } else if (st.action === 'done') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '完成';
+        }
+
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
@@ -230,11 +396,11 @@ registerAlgorithm({
   name: '无重叠区间',
   viewId: 'algo-non-overlapping-view',
   category: 'greedy',
-  description: 'LeetCode 435：贪心算法，找到最少的区间数量使得剩余区间不重叠',
-  icon: '📐',
+  description: '求使剩余区间互不重叠所需移除的最小区间数量，重叠时贪心淘汰右端点更大者',
+  icon: '✂️',
   template,
   Visualizer: NonOverlappingVisualizer,
   difficulty: 2,
-  levelOrder: 14,
-  learningGoal: '理解区间排序加贪心求不重叠数量',
+  levelOrder: 9,
+  learningGoal: '掌握区间调度与重叠淘汰的贪心思想，建立与射气球问题的双向映射',
 });
