@@ -18,7 +18,7 @@ import {
 import template from './combination.html?raw';
 
 /* ── Step ─────────────────────────────────────────────────── */
-interface CombinationStep extends BacktrackTreeStep {
+export interface CombinationStep extends BacktrackTreeStep {
   startIndex: number;
   i?: number;
   n: number;
@@ -27,7 +27,7 @@ interface CombinationStep extends BacktrackTreeStep {
 }
 
 /* ── Build the full decision tree ─────────────────────────── */
-function buildTree(n: number, k: number): BacktrackTreeNode {
+export function buildCombinationTree(n: number, k: number): BacktrackTreeNode {
   const root: BacktrackTreeNode = {
     id: 'root', value: '', path: [], children: [],
     isLeaf: false, isPruned: false, parentId: null, depth: 0,
@@ -57,8 +57,8 @@ function buildTree(n: number, k: number): BacktrackTreeNode {
 }
 
 /* ── Generate steps by traversing the tree ────────────────── */
-function combinationSteps(n: number, k: number): CombinationStep[] {
-  const root = buildTree(n, k);
+export function combinationSteps(n: number, k: number): CombinationStep[] {
+  const root = buildCombinationTree(n, k);
   layoutTree(root);
   const allNodes = flattenTree(root);
   const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);

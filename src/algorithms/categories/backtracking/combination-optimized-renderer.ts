@@ -18,7 +18,7 @@ import {
 import template from './combination-optimized.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
-function buildTree(n: number, k: number): BacktrackTreeNode {
+export function buildOptimizedTree(n: number, k: number): BacktrackTreeNode {
   const root: BacktrackTreeNode = {
     id: 'root', value: '', path: [], children: [],
     isLeaf: false, isPruned: false, parentId: null, depth: 0,
@@ -56,8 +56,8 @@ function buildTree(n: number, k: number): BacktrackTreeNode {
 }
 
 /* ── Generate steps by traversing the tree ────────────────── */
-function buildSteps(n: number, k: number): BacktrackTreeStep[] {
-  const root = buildTree(n, k);
+export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
+  const root = buildOptimizedTree(n, k);
   layoutTree(root);
   const allNodes = flattenTree(root);
   const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);
@@ -269,7 +269,7 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
     const kEl = this.root?.querySelector('#co-k') as HTMLInputElement | null;
     const n = clampInt(nEl?.value || '5', 5, 1, 9);
     const k = clampInt(kEl?.value || '3', 3, 1, 9);
-    return buildSteps(n, k);
+    return buildOptimizedSteps(n, k);
   }
 
   protected renderStep(step: BacktrackTreeStep): void {

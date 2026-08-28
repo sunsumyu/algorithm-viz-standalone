@@ -122,6 +122,28 @@ describe('AnalysisKnowledgePresenter (解法题解与五步法知识流呈现深
     expect(steps[1].content).toContain('未持有态');
   });
 
+  it('针对回溯算法模型，应智能生成回溯专属 5 步精讲法与树层/树枝去重 FAQ', () => {
+    const btModel = {
+      id: 'combination-sum',
+      name: '组合总和',
+      category: '回溯算法',
+      stages: {}
+    } as unknown as IYamlAlgorithmModel;
+
+    const steps = AnalysisKnowledgePresenter.getFiveStepAnalysis(btModel);
+    expect(steps.length).toBe(5);
+    expect(steps[0].title).toContain('递归函数参数与返回值');
+    expect(steps[1].title).toContain('回溯终止条件');
+    expect(steps[2].title).toContain('单层搜索过程');
+    expect(steps[3].title).toContain('剪枝优化逻辑');
+    expect(steps[4].title).toContain('状态恢复与撤销选择');
+
+    const faqs = AnalysisKnowledgePresenter.getFaqs(btModel);
+    expect(faqs.length).toBeGreaterThan(0);
+    expect(faqs.some(f => f.q.includes('startIndex'))).toBe(true);
+    expect(faqs.some(f => f.q.includes('树层去重'))).toBe(true);
+  });
+
   it('对于 null 容器或 null 模型调用应安全无异常', () => {
     expect(() => AnalysisKnowledgePresenter.renderProblemView(null, mockModel)).not.toThrow();
     expect(() => AnalysisKnowledgePresenter.renderAnalysisView(null, mockModel)).not.toThrow();

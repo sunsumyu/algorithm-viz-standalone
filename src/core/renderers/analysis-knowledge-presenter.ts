@@ -203,9 +203,35 @@ export class AnalysisKnowledgePresenter {
     }
 
     const id = model.id;
+    const isBacktracking = model.category === 'backtracking' || model.category === '回溯算法' || id.includes('combination') || id.includes('nqueen') || id.includes('sudoku') || id.includes('partition') || id.includes('permute') || id.includes('subset');
     const isKnapsack = id.includes('knapsack') || id.includes('target-sum') || id.includes('subset') || id.includes('stone') || id.includes('coin');
     const isSequence = id.includes('sequence') || id.includes('string') || id.includes('distance') || id.includes('subsequence');
     const isStock = id.includes('stock');
+
+    if (isBacktracking) {
+      return [
+        {
+          title: '1. 递归函数参数与返回值',
+          content: '回溯函数返回值通常为 void；参数包括当前候选集、状态游标（如 startIndex / depth / used 数组）、当前路径 path 与结果集 result。'
+        },
+        {
+          title: '2. 回溯终止条件 (Base Case)',
+          content: '当满足题目要求（如 path.size() == k 或到达叶子节点）时，将当前 path 拷贝入 result（res.add(new ArrayList<>(path))）并 return 触发回溯。'
+        },
+        {
+          title: '3. 单层搜索过程 (横向遍历)',
+          content: 'for 循环遍历当前层可选的候选节点，选取一个元素加入路径栈 path.add(item)，然后递归调用深入下一层纵向搜索。'
+        },
+        {
+          title: '4. 剪枝优化逻辑 (Pruning)',
+          content: '在单层 for 循环中，判断后续剩余元素是否足够或是否满足约束（如 i <= n - (k - path.size()) + 1 或 sum + num > target），不满足则提前 break / continue 截断无效子树。'
+        },
+        {
+          title: '5. 状态恢复与撤销选择 (Backtrack)',
+          content: '递归返回后，必须将当前层的选择从路径栈弹出 path.remove(path.size() - 1)，并重置相应 used 标记，确保回退到父节点时状态干净。'
+        }
+      ];
+    }
 
     if (isKnapsack) {
       return [
@@ -316,6 +342,25 @@ export class AnalysisKnowledgePresenter {
     }
 
     const id = model.id;
+    const isBacktracking = model.category === 'backtracking' || model.category === '回溯算法' || id.includes('combination') || id.includes('nqueen') || id.includes('sudoku') || id.includes('partition') || id.includes('permute') || id.includes('subset');
+
+    if (isBacktracking) {
+      return [
+        {
+          q: '什么时候使用 startIndex 控制，什么时候不用？',
+          a: '如果一个集合求组合（元素无序，[1,2] 和 [2,1] 算同一个），需要 startIndex 避免重复选取；如果是全排列问题（[1,2] 和 [2,1] 算不同），每次都从 0 开始，配合 used[] 数组标记已用元素。'
+        },
+        {
+          q: '树层去重与树枝去重有什么核心区别？',
+          a: '树枝去重（纵向递归）允许不同层选择相同数值；树层去重（横向 for 循环）在同一父节点下跳过重复元素（通常在排序后通过 nums[i] == nums[i-1] && !used[i-1] 判定）。'
+        },
+        {
+          q: '为什么收集解时一定要 new ArrayList<>(path) 进行深拷贝？',
+          a: '因为 path 在整个回溯递归过程中是同一个对象引用，后续回溯会进行 pop 弹出操作。如果不拷贝直接放入结果集，最终收集到的都会是空列表。'
+        }
+      ];
+    }
+
     if (id.includes('knapsack') || id.includes('target-sum') || id.includes('subset') || id.includes('stone') || id.includes('coin')) {
       return [
         {
