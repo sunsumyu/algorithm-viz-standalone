@@ -159,7 +159,7 @@
   }
 
   #algo-combination-optimized-view .co-tree-card {
-    flex: 1 1 58%; min-height: 200px; position: relative; overflow: hidden;
+    flex: 1 1 52%; min-height: 0; position: relative; overflow: hidden;
     padding: 8px 12px; gap: 6px;
   }
 
@@ -175,7 +175,7 @@
 
   /* 决策树展示容器 (浅色平滑背景) */
   #algo-combination-optimized-view #combination-optimized-tree-display {
-    flex: 1; width: 100%; height: 100%; min-height: 180px;
+    flex: 1; width: 100%; height: 100%; min-height: 0;
     position: relative; overflow: hidden;
     background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
   }
@@ -188,26 +188,6 @@
 
   #algo-combination-optimized-view .co-legend-item {
     display: inline-flex; align-items: center; gap: 3px; font-weight: 500;
-  }
-
-  /* 回溯状态监视器 (Card 2) */
-  #algo-combination-optimized-view .co-monitor-card {
-    padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;
-    flex: 0 0 auto; max-height: 190px; overflow-y: auto;
-  }
-
-  #algo-combination-optimized-view .co-monitor-section-title {
-    font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase;
-    letter-spacing: 0.04em; margin-bottom: 2px;
-  }
-
-  /* 右侧面板 (CodePanel 承载卡片) */
-  #algo-combination-optimized-view .co-right {
-    flex: 0 0 420px; width: 420px; min-width: 320px; max-width: 600px;
-    min-height: 0; height: 100%;
-    display: flex; flex-direction: column; overflow: hidden;
-    border-radius: 16px; border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); background: #ffffff;
   }
 
   /* 时间轴播放控制器 (对标不同路径播放条) */
@@ -246,6 +226,26 @@
     color: #2563eb; font-size: 11.5px; font-weight: 800;
     padding: 2px 8px; background: #eff6ff; border-radius: 6px; border: 1px solid #dbeafe;
     text-align: center; font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* 回溯状态监视器 (Card 2) - 充裕且对等的高度 */
+  #algo-combination-optimized-view .co-monitor-card {
+    padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;
+    flex: 1 1 45%; min-height: 0; overflow-y: auto;
+  }
+
+  #algo-combination-optimized-view .co-monitor-section-title {
+    font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 2px;
+  }
+
+  /* 右侧面板 (CodePanel 承载卡片) */
+  #algo-combination-optimized-view .co-right {
+    flex: 0 0 420px; width: 420px; min-width: 320px; max-width: 600px;
+    min-height: 0; height: 100%;
+    display: flex; flex-direction: column; overflow: hidden;
+    border-radius: 16px; border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); background: #ffffff;
   }
 </style>
 
@@ -326,23 +326,27 @@
         </div>
       </div>
 
-      <!-- Card 2: 回溯核心状态追踪器 -->
+      <!-- Card 2: 回溯核心状态追踪器 (对等高度空间) -->
       <section class="co-card co-monitor-card">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="co-card-header" style="margin-bottom: 2px;">
+          <span class="co-card-title">📦 回溯状态空间与解集追踪 (State Space & Results)</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1 1 auto; min-height: 0;">
           <!-- 路径栈 -->
-          <div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; overflow-y: auto;">
             <div class="co-monitor-section-title">📦 当前路径栈 (Path Stack)</div>
-            <div id="co-path-stack-container"></div>
+            <div id="co-path-stack-container" style="flex: 1; min-height: 0;"></div>
           </div>
           <!-- 剪枝监视器 -->
-          <div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; overflow-y: auto;">
             <div class="co-monitor-section-title">✂️ 剪枝监视器 (Pruning Monitor)</div>
-            <div id="co-pruning-monitor-container"></div>
+            <div id="co-pruning-monitor-container" style="flex: 1; min-height: 0;"></div>
           </div>
         </div>
 
         <!-- 实时解集箱 -->
-        <div style="margin-top: 2px;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; flex-shrink: 0; margin-top: 4px;">
           <div class="co-monitor-section-title">🏆 解集收集箱 (Result Collection)</div>
           <div id="co-result-collection-container"></div>
         </div>
