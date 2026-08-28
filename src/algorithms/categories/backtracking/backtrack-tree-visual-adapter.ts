@@ -308,7 +308,7 @@ export class BacktrackTreeVisualAdapter {
       const isActive = visitedNodeIds.includes(nd.id);
       const isCurrent = nd.id === currentNodeId;
       const isFound = isFoundNode ? isFoundNode(nd, step) : nd.isLeaf && foundPathIds.includes(nd.id);
-      const isPruned = nd.isPruned;
+      const isPruned = prunedNodeIds.includes(nd.id);
       const isDirectPruned = nd.isDirectPrune ?? (nd.isPruned && nd.parentId === 'root');
 
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');

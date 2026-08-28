@@ -73,11 +73,11 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
   const root = buildOptimizedTree(n, k);
   layoutTree(root);
   const allNodes = flattenTree(root);
-  const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);
 
   const steps: BacktrackTreeStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
+  const dynamicPrunedIds: string[] = [];
 
   const makeVars = (currentPathLen: number) => {
     const need = Math.max(0, k - currentPathLen);
@@ -93,7 +93,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
 
   steps.push({
     nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
-    foundPathIds: [], prunedNodeIds: [...prunedIds],
+    foundPathIds: [], prunedNodeIds: [],
     path: [],
     message: `开始：从 1..${n} 中选 ${k} 个数，剪枝上界 i <= ${n - k + 1}（首层）`,
     codeLine: 3,
@@ -107,7 +107,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
         message: `递归进入：path.size() == ${k} ✓ 满足终止条件`,
         codeLine: 9,
@@ -119,7 +119,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
         message: `找到组合：[${node.path.join(', ')}]，收集并返回`,
         codeLine: { from: 10, to: 11 },
@@ -133,7 +133,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
       nodes: allNodes, currentNodeId: node.id,
       visitedNodeIds: [...visitedIds],
       foundPathIds: [...foundIds],
-      prunedNodeIds: [...prunedIds],
+      prunedNodeIds: [...dynamicPrunedIds],
       path: [...node.path],
       message: `递归进入：path.size() = ${node.path.length} < ${k}，进入 for 循环`,
       codeLine: 9,
@@ -145,11 +145,14 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
       if (child.isPruned) {
         if (child.isDirectPrune) {
           const upper = n - (k - node.path.length) + 1;
+          if (!dynamicPrunedIds.includes(child.id)) {
+            dynamicPrunedIds.push(child.id);
+          }
           steps.push({
             nodes: allNodes, currentNodeId: node.id,
             visitedNodeIds: [...visitedIds],
             foundPathIds: [...foundIds],
-            prunedNodeIds: [...prunedIds],
+            prunedNodeIds: [...dynamicPrunedIds],
             path: [...node.path],
             message: `剪枝：i = ${child.value} > ${upper}（剩余元素不够凑满 ${k} 个），截断循环`,
             codeLine: 13,
@@ -167,7 +170,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         nodes: allNodes, currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...child.path],
         message: `处理节点：path.add(${child.value}) → [${child.path.join(', ')}]`,
         codeLine: 14,
@@ -180,7 +183,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         nodes: allNodes, currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...child.path],
         message: `向下递归：backtrack(${Number(child.value) + 1}, path)`,
         codeLine: 15,
@@ -195,7 +198,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
         message: `回溯撤销：path.remove()，弹出 ${child.value}，恢复路径为 [${node.path.join(', ')}]`,
         codeLine: 16,
@@ -211,7 +214,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
     nodes: allNodes, currentNodeId: 'root',
     visitedNodeIds: [...visitedIds],
     foundPathIds: [...foundIds],
-    prunedNodeIds: [...prunedIds],
+    prunedNodeIds: [...dynamicPrunedIds],
     path: [],
     message: `搜索完成：共找到 ${foundIds.length} 个合法组合（剪枝减少了无效递归分支）`,
     codeLine: 4,
