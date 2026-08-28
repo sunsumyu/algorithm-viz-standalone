@@ -17,7 +17,7 @@ import {
 import template from './combination-sum-ii.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
-function buildTree(nums: number[], target: number): BacktrackTreeNode {
+export function buildCombinationSum2Tree(nums: number[], target: number): BacktrackTreeNode {
   const sorted = [...nums].sort((a, b) => a - b);
   const root: BacktrackTreeNode = {
     id: 'root', value: '', path: [], children: [],
@@ -55,8 +55,8 @@ function buildTree(nums: number[], target: number): BacktrackTreeNode {
 }
 
 /* ── Generate steps by traversing the tree ────────────────── */
-function buildSteps(nums: number[], target: number): BacktrackTreeStep[] {
-  const root = buildTree(nums, target);
+export function buildCombinationSum2Steps(nums: number[], target: number): BacktrackTreeStep[] {
+  const root = buildCombinationSum2Tree(nums, target);
   layoutTree(root);
   const allNodes = flattenTree(root);
   const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);
@@ -270,7 +270,7 @@ export class CombinationSumIIVisualizer extends StepVisualizer<BacktrackTreeStep
     const nums = (numsEl?.value || '10,1,2,7,6,1,5').split(/[,，\s]+/).map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n));
     const target = parseInt(targetEl?.value || '8', 10);
     if (nums.length === 0) nums.push(10, 1, 2, 7, 6, 1, 5);
-    return buildSteps(nums, Number.isFinite(target) ? target : 8);
+    return buildCombinationSum2Steps(nums, Number.isFinite(target) ? target : 8);
   }
 
   protected renderStep(step: BacktrackTreeStep): void {

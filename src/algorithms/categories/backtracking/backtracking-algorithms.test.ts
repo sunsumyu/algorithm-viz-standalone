@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildCombinationTree, combinationSteps } from './combination-renderer';
 import { buildOptimizedTree, buildOptimizedSteps } from './combination-optimized-renderer';
+import { buildCombinationSumTree, buildCombinationSumSteps } from './combination-sum-renderer';
+import { buildCombinationSum2Tree, buildCombinationSum2Steps } from './combination-sum-ii-renderer';
 
 describe('Backtracking Algorithms Step Generation & Tree Construction (回溯核心算法与决策树推导测试)', () => {
   describe('Combination (组合问题 LeetCode 77 - 完整决策树)', () => {
@@ -55,6 +57,25 @@ describe('Backtracking Algorithms Step Generation & Tree Construction (回溯核
       const steps = buildOptimizedSteps(4, 2);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.prunedNodeIds.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Combination Sum (组合总和 LeetCode 39 - 可重复选取与累加剪枝)', () => {
+    it('5. candidates=[2,3,6,7], target=7 收集解 [[2,2,3], [7]]', () => {
+      const steps = buildCombinationSumSteps([2, 3, 6, 7], 7);
+      expect(steps.length).toBeGreaterThan(0);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.foundPathIds.length).toBe(2);
+    });
+  });
+
+  describe('Combination Sum II (组合总和 II LeetCode 40 - 树层去重)', () => {
+    it('6. candidates=[10,1,2,7,6,1,5], target=8 正确去重并收集 4 组解', () => {
+      const steps = buildCombinationSum2Steps([10, 1, 2, 7, 6, 1, 5], 8);
+      expect(steps.length).toBeGreaterThan(0);
+      const lastStep = steps[steps.length - 1];
+      // 8 的解集: [1,1,6], [1,2,5], [1,7], [2,6] -> 4 组
+      expect(lastStep.foundPathIds.length).toBe(4);
     });
   });
 });

@@ -18,7 +18,7 @@ import {
 import template from './combination-sum.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
-function buildTree(sorted: number[], target: number): BacktrackTreeNode {
+export function buildCombinationSumTree(sorted: number[], target: number): BacktrackTreeNode {
   const root: BacktrackTreeNode = {
     id: 'root', value: '', path: [], children: [],
     isLeaf: false, isPruned: false, parentId: null, depth: 0,
@@ -60,8 +60,8 @@ function extractIndexFromId(id: string): number {
   return parseInt(parts[parts.length - 1], 10);
 }
 
-function buildSteps(sorted: number[], target: number): BacktrackTreeStep[] {
-  const root = buildTree(sorted, target);
+export function buildCombinationSumSteps(sorted: number[], target: number): BacktrackTreeStep[] {
+  const root = buildCombinationSumTree(sorted, target);
   layoutTree(root);
   const allNodes = flattenTree(root);
   const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);
@@ -361,7 +361,7 @@ export class CombinationSumVisualizer extends StepVisualizer<BacktrackTreeStep> 
     const target = parseInt(targetEl?.value || '7', 10);
     if (nums.length === 0) nums.push(2, 3, 6, 7);
     const sorted = [...nums].sort((a, b) => a - b);
-    return buildSteps(sorted, Number.isFinite(target) ? target : 7);
+    return buildCombinationSumSteps(sorted, Number.isFinite(target) ? target : 7);
   }
 
   protected renderStep(step: BacktrackTreeStep): void {
