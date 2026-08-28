@@ -1,302 +1,890 @@
 <style>
-  /* === 组合总和 · 玻璃感 + SVG 决策树 === */
+  /* === 组合总和 (LeetCode 39) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-combination-sum-view {
-    --accent-a: #fb923c;
-    --accent-b: #c084fc;
-    --accent-glow: rgba(252, 211, 77, .35);
-    --path-color: #34d399;
-    --prune-color: #f87171;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(251, 146, 60, .22), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(192, 132, 252, .22), transparent 55%),
-      linear-gradient(135deg, #1a0e05 0%, #2a0e1d 50%, #1d1a30 100%);
+    background: #f1f5f9;
     overflow: hidden;
-  }
-  #algo-combination-sum-view .cs-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
-  }
-  #algo-combination-sum-view .cs-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-combination-sum-view .cs-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-combination-sum-view .cs-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-combination-sum-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-combination-sum-view .cs-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-combination-sum-view .cs-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(192, 132, 252, .08));
-    border: 1px solid rgba(251, 146, 60, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-combination-sum-view .cs-tip strong { color: #fdba74; }
-  #algo-combination-sum-view .cs-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-combination-sum-view .cs-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-combination-sum-view .cs-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-combination-sum-view .cs-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-combination-sum-view .cs-tag {
-    font-size: 11px; color: #fdba74; background: rgba(251, 146, 60, .14);
-    border: 1px solid rgba(251, 146, 60, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-combination-sum-view .cs-input-row {
-    display: grid; grid-template-columns: 1fr 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-combination-sum-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-combination-sum-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, .15); }
-  #algo-combination-sum-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-combination-sum-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-combination-sum-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-combination-sum-view .cs-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-combination-sum-view .cs-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(192, 132, 252, .12); border: 1px solid rgba(192, 132, 252, .28);
-    color: #e9d5ff; cursor: pointer; transition: all .2s;
-  }
-  #algo-combination-sum-view .cs-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
-  }
-  /* Stats */
-  #algo-combination-sum-view .cs-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-  }
-  #algo-combination-sum-view .cs-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-combination-sum-view .cs-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-combination-sum-view .cs-stat--remaining::before { background: linear-gradient(180deg, #fb923c, #f97316); }
-  #algo-combination-sum-view .cs-stat--remaining .cs-stat-val { color: #fdba74; }
-  #algo-combination-sum-view .cs-stat--depth::before { background: linear-gradient(180deg, #c084fc, #a855f7); }
-  #algo-combination-sum-view .cs-stat--depth .cs-stat-val { color: #e9d5ff; }
-  #algo-combination-sum-view .cs-stat--count::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-combination-sum-view .cs-stat--count .cs-stat-val { color: #6ee7b7; }
-  #algo-combination-sum-view .cs-stat--path::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-combination-sum-view .cs-stat--path .cs-stat-val { color: #fde68a; }
-  #algo-combination-sum-view .cs-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-combination-sum-view .cs-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  /* Tree display (SVG-based) */
-  #algo-combination-sum-view .cs-tree-card {
-    flex: 1; min-height: 380px; display: flex; flex-direction: column;
-  }
-  #algo-combination-sum-view #combination-tree-display {
-    flex: 1; min-height: 320px; padding: 16px 12px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: auto;
+  #algo-combination-sum-view * {
+    box-sizing: border-box;
   }
 
-  /* Result banner */
-  #algo-combination-sum-view .cs-result-banner {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(192, 132, 252, .06));
-    border: 1px solid rgba(251, 146, 60, .28);
-    line-height: 1.55; font-size: 14px; color: #fef3c7;
+  /* 1. 顶栏 Header */
+  #algo-combination-sum-view .cs-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-combination-sum-view .cs-result-banner .cs-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+
+  #algo-combination-sum-view .cs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-combination-sum-view .cs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
 
-  /* Log */
-  #algo-combination-sum-view .cs-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
+  #algo-combination-sum-view .cs-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  /* SVG tree styles from shared module */
-  .cs-edge { stroke: rgba(255,255,255,0.1); stroke-width: 1.5; transition: all .3s; }
-  .cs-edge-active { stroke: #fb923c; stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(251,146,60,.5)); }
-  .cs-edge-found { stroke: #34d399; stroke-width: 2; }
-  .cs-edge-pruned { stroke: rgba(255,255,255,0.06); stroke-dasharray: 4 3; }
-  .cs-edge-dim { stroke: rgba(255,255,255,0.05); }
-  .cs-edge-label { fill: #94a3b8; font-family: 'JetBrains Mono', monospace; }
-  .cs-node-circle { fill: #1e1e2e; stroke: #45475a; stroke-width: 2; transition: all .3s; }
-  .cs-node-current { fill: rgba(251,146,60,0.3); stroke: #fb923c; stroke-width: 3; animation: cs-tree-pulse 1.2s infinite; }
-  .cs-node-found { fill: rgba(52,211,153,0.3); stroke: #34d399; stroke-width: 2.5; }
-  .cs-node-visited { fill: rgba(192,132,252,0.2); stroke: rgba(192,132,252,0.5); stroke-width: 2; }
-  .cs-node-pruned { fill: rgba(100,100,120,0.15); stroke: rgba(100,100,120,0.3); stroke-width: 1.5; stroke-dasharray: 4 3; }
-  .cs-node-label { fill: #cdd6f4; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
-  .cs-node-check { fill: #34d399; font-size: 14px; font-weight: 900; }
-  .cs-node-pruned-mark { fill: #f87171; font-size: 12px; font-weight: 900; }
-  .cs-log-line { display: flex; gap: 8px; padding: 1px 0; color: #94a3b8; font-size: 12px; line-height: 1.65; }
-  .cs-log-line .cs-log-num { color: #64748b; flex-shrink: 0; }
-  .cs-log-line.cs-log-active { color: #fdba74; font-weight: 600; }
-  .cs-log-line.cs-log-active .cs-log-num { color: #fb923c; }
-  @keyframes cs-tree-pulse {
-    0%, 100% { filter: drop-shadow(0 0 0 rgba(251,146,60,.6)); }
-    50% { filter: drop-shadow(0 0 8px rgba(251,146,60,.8)); }
+  #algo-combination-sum-view .cs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  @keyframes cs-tree-found {
-    0% { transform: scale(0); opacity: 0; }
-    60% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  @keyframes cs-tree-check {
-    0% { transform: scale(0); }
-    60% { transform: scale(1.4); }
-    100% { transform: scale(1); }
+  #algo-combination-sum-view .cs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  /* Code panel */
-  #algo-combination-sum-view .cs-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+  #algo-combination-sum-view .cs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-combination-sum-view .cs-code [data-code-panel] { flex: 1; min-width: 0; }
 
-  /* Controls */
-  #algo-combination-sum-view .cs-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+  #algo-combination-sum-view .cs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-combination-sum-view .cs-controls .cs-ctrl-btn { min-width: 64px; }
-  #algo-combination-sum-view .cs-controls .cs-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
-  }
-  #algo-combination-sum-view .cs-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-combination-sum-view .cs-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
-  }
-  #algo-combination-sum-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  #algo-combination-sum-view #step-speed-label { min-width: 42px; }
 
-  @media (max-width: 1100px) {
-    #algo-combination-sum-view .cs-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-combination-sum-view .cs-code { min-height: 360px; }
+  #algo-combination-sum-view .cs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-sum-view .cs-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-combination-sum-view .cs-input-str {
+    width: 90px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-combination-sum-view .cs-input-str:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+  }
+
+  #algo-combination-sum-view .cs-input-num {
+    width: 44px;
+    padding: 3px 4px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-combination-sum-view .cs-input-num:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+  }
+
+  #algo-combination-sum-view .cs-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-combination-sum-view .cs-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-combination-sum-view .cs-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-sum-view .cs-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-combination-sum-view .cs-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-sum-view .cs-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-combination-sum-view .cs-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-combination-sum-view .cs-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-combination-sum-view .cs-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-combination-sum-view .cs-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-combination-sum-view .cs-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-combination-sum-view .cs-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-combination-sum-view .cs-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-combination-sum-view .cs-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 决策树 SVG 容器 */
+  #algo-combination-sum-view #combination-sum-tree-display {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-combination-sum-view .cs-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-sum-view .cs-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-combination-sum-view .cs-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-combination-sum-view .cs-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-sum-view .cs-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-combination-sum-view .cs-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-combination-sum-view .cs-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-combination-sum-view .cs-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-combination-sum-view .cs-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-combination-sum-view .cs-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-combination-sum-view .cs-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-combination-sum-view .cs-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-combination-sum-view .cs-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-combination-sum-view .cs-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-sum-view .cs-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-combination-sum-view .cs-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-sum-view .cs-tab-item.active {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  #algo-combination-sum-view .cs-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-combination-sum-view .cs-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-sum-view .cs-lang-btn.active {
+    background: #334155;
+    color: #38bdf8;
+  }
+
+  #algo-combination-sum-view .cs-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-combination-sum-view .cs-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-combination-sum-view .cs-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-combination-sum-view .cs-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #38bdf8;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-combination-sum-view .cs-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-combination-sum-view .cs-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-combination-sum-view .cs-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-combination-sum-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-combination-sum-view .code-line.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-left: 3px solid #3b82f6;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-combination-sum-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-combination-sum-view .cs-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-combination-sum-view .cs-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-sum-view .cs-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-combination-sum-view .cs-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-combination-sum-view .cs-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-combination-sum-view .cs-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-combination-sum-view .cs-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-combination-sum-view .cs-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-combination-sum-view .cs-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-combination-sum-view .cs-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-combination-sum-view .cs-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-combination-sum-view .cs-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="cs-shell">
-  <div class="cs-hero">
-    <div class="cs-hero-left">
-      <span class="cs-icon">&#x1F3AF;</span>
-      <div>
-        <h1>组合总和（回溯）</h1>
-        <div class="cs-sub">LeetCode 39 · 无重复元素，元素可重复使用，求所有组合</div>
-      </div>
+<div id="algo-combination-sum-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="cs-header">
+    <div class="cs-header-left">
+      <div class="cs-icon-btn">🎯</div>
+      <h1 class="cs-main-title">LeetCode 39. 组合总和</h1>
+      <button id="btn-open-problem-modal" class="cs-btn-problem">📋 题目</button>
+      <span class="cs-badge-mode">元素可重复使用</span>
+      <span class="cs-badge-complexity">O(N^(target/min))</span>
     </div>
-    <div class="cs-tip"><strong>核心动画：</strong>橙色<span style="color:#fb923c">脉冲</span>为当前节点，紫色为已访问节点，绿色为找到的组合，灰色虚线为剪枝分支。观察决策树的完整搜索过程。</div>
-  </div>
-  <div class="cs-main">
-    <div class="cs-left">
-      <section class="cs-card">
-        <div class="cs-card-title">输入 <span class="cs-tag">数组 / 目标</span></div>
-        <div class="cs-input-row">
-          <input id="cs-nums" value="2,3,6,7" placeholder="候选数字数组">
-          <input id="cs-target" value="7" placeholder="目标总和">
-          <button id="cs-start">生成组合</button>
-        </div>
-        <div class="cs-examples">
-          <button class="cs-chip" data-nums="2,3,6,7" data-target="7">经典示例</button>
-          <button class="cs-chip" data-nums="2,3,5" data-target="8">示例2</button>
-          <button class="cs-chip" data-nums="2,3,6,7" data-target="8">多解</button>
-          <button class="cs-chip" data-nums="1,2" data-target="4">小数组</button>
-        </div>
-      </section>
 
-      <div class="cs-stats">
-        <div class="cs-stat cs-stat--remaining"><div class="cs-stat-label">剩余目标</div><div class="cs-stat-val" id="cs-remaining">0</div></div>
-        <div class="cs-stat cs-stat--depth"><div class="cs-stat-label">递归深度</div><div class="cs-stat-val" id="cs-depth">0</div></div>
-        <div class="cs-stat cs-stat--count"><div class="cs-stat-label">已收集</div><div class="cs-stat-val" id="cs-count">0</div></div>
-        <div class="cs-stat cs-stat--path"><div class="cs-stat-label">路径长度</div><div class="cs-stat-val" id="cs-path-len">0</div></div>
+    <!-- 参数与操作工具组 -->
+    <div class="cs-header-right">
+      <div class="cs-input-group">
+        <span>c:</span>
+        <input type="text" id="input-candidates" value="2,3,6,7" class="cs-input-str" placeholder="2,3,6,7" />
+        <span>target:</span>
+        <input type="number" id="input-target" min="1" max="20" value="7" class="cs-input-num" />
       </div>
 
-      <section class="cs-card cs-tree-card">
-        <div class="cs-card-title">回溯决策树 <span class="cs-tag">SVG</span></div>
-        <div id="combination-tree-display"></div>
-        <div class="cs-result-banner" id="cs-result-banner">
-          <span class="cs-emoji">&#x1F3AF;</span>
-          <div id="step-message">点击「生成组合」观看回溯搜索决策树动画</div>
-        </div>
-      </section>
+      <button id="btn-generate" class="cs-btn-generate">
+        <span>▶ 生成</span>
+      </button>
 
-      <section class="cs-card">
-        <div class="cs-card-title">执行日志 <button id="cs-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="cs-log" id="cs-log"></div>
-      </section>
+      <button id="btn-reset" class="cs-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="cs-chip" data-candidates="2,3,6,7" data-target="7">2,3,6,7 / 7</button>
+        <button class="cs-chip" data-candidates="2,3,5" data-target="8">2,3,5 / 8</button>
+        <button class="cs-chip" data-candidates="2,4,6" data-target="6">2,4,6 / 6</button>
+      </div>
     </div>
-    <aside class="cs-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="cs-controls">
-    <button id="step-reset" class="cs-ctrl-btn">&#x23EE; 重置</button>
-    <button id="step-prev" class="cs-ctrl-btn">&#x25C0; 上一步</button>
-    <button id="step-play" class="cs-ctrl-btn cs-ctrl-primary">&#x25B6; 播放</button>
-    <button id="step-next" class="cs-ctrl-btn">下一步 &#x25B6;</button>
-    <span id="step-counter" class="cs-counter">步骤: 0 / 0</span>
-    <div class="cs-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="200" max="2500" step="100" value="600">
-      <span id="step-speed-label">0.6s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="cs-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="cs-left-section">
+
+      <!-- 卡片 1: 决策树沙盘 (N-ary Decision Tree) -->
+      <div class="cs-card">
+        <div class="cs-card-header">
+          <div class="cs-card-title">
+            <span>🌲 N 叉决策树沙盘 (N-ary Decision Tree)</span>
+          </div>
+          <div class="cs-legend-bar">
+            <div><span class="cs-legend-dot" style="background:#3b82f6;"></span> 📍当前探索</div>
+            <div><span class="cs-legend-dot" style="background:#10b981;"></span> ✅解集命中</div>
+            <div><span class="cs-legend-dot" style="background:#ef4444; border: 1px dashed #b91c1c;"></span> ✂️剪枝截断</div>
+            <div><span class="cs-legend-dot" style="background:#94a3b8;"></span> 🔙已回溯</div>
+          </div>
+        </div>
+
+        <!-- 决策树居中展示盒 -->
+        <div id="combination-sum-tree-display"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="cs-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="cs-slider" />
+        <div class="cs-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="cs-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="cs-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="cs-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 回溯状态空间与解集追踪 -->
+      <div class="cs-card">
+        <div class="cs-card-header">
+          <div>
+            <div class="cs-card-title">📦 回溯状态空间与解集追踪</div>
+            <div class="cs-card-desc">实时累加和推进、剪枝不等式判定与全局解集收集</div>
+          </div>
+          <span id="badge-result-count" class="cs-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">解集: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="cs-state-space-box">
+          <div class="cs-state-columns">
+            <!-- 路径栈 -->
+            <div class="cs-subcard">
+              <div class="cs-subcard-title">📦 当前路径栈 (Path Stack)</div>
+              <div id="cs-path-stack-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 累加和与剪枝监视器 -->
+            <div class="cs-subcard">
+              <div class="cs-subcard-title">✂️ 累加和与剪枝监视器 (Sum & Pruning)</div>
+              <div id="cs-sum-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 解集箱 -->
+          <div class="cs-subcard" style="flex-shrink: 0;">
+            <div class="cs-subcard-title">🏆 实时解集收集箱 (Result Collection)</div>
+            <div id="cs-result-collection-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="cs-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="cs-dark-terminal">
+        <div class="cs-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="cs-tab-group">
+            <button id="btn-tab-code" class="cs-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="cs-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="cs-tab-item">💡 回溯精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="cs-lang-group" id="code-lang-tabs">
+            <button class="cs-lang-btn active" data-lang="java">Java</button>
+            <button class="cs-lang-btn" data-lang="cpp">C++</button>
+            <button class="cs-lang-btn" data-lang="python">Python</button>
+            <button class="cs-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="cs-font-tools">
+            <div class="cs-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="cs-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="cs-window-dots">
+              <span class="cs-dot" style="background:#ef4444;"></span>
+              <span class="cs-dot" style="background:#eab308;"></span>
+              <span class="cs-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="cs-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 回溯精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载回溯精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="cs-log-card">
+        <div class="cs-log-header">
+          <div class="cs-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="cs-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="cs-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="cs-modal-backdrop hidden">
+    <div class="cs-modal-content">
+      <div class="cs-modal-header">
+        <div class="cs-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="cs-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="cs-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>
