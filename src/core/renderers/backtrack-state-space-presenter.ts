@@ -264,7 +264,7 @@ export class BacktrackStateSpacePresenter {
   }
 
   /**
-   * 渲染回溯语义日志流 (Log Stream)
+   * 渲染回溯语义日志流 (Execution Log Stream, 100% 对标 DP 标准模板)
    */
   public static renderBacktrackLogStream(
     container: HTMLElement | null,
@@ -274,60 +274,75 @@ export class BacktrackStateSpacePresenter {
     if (!container) return;
 
     if (!logs || logs.length === 0) {
-      container.innerHTML = '<div style="color: #94a3b8; font-size: 12px; font-style: italic; padding: 4px 8px;">(暂无执行日志)</div>';
+      container.innerHTML = '<div class="text-slate-400 text-xs italic p-2 text-center">(暂无执行日志)</div>';
       return;
     }
 
     const itemsHtml = logs
       .map((item, idx) => {
-        const isCurrent = idx === activeIndex || (activeIndex === -1 && idx === logs.length - 1);
+        const isCurrent = idx === activeIndex;
+        let icon = '▶';
+        let tagName = '执行';
         let tagColor = '#64748b';
         let tagBg = '#f1f5f9';
-        let tagName = '执行';
 
         if (item.type === 'push') {
+          icon = '➕';
+          tagName = '选择';
           tagColor = '#1d4ed8';
           tagBg = '#eff6ff';
-          tagName = '选择';
         } else if (item.type === 'pop') {
+          icon = '🔙';
+          tagName = '撤销';
           tagColor = '#b91c1c';
           tagBg = '#fef2f2';
-          tagName = '撤销';
         } else if (item.type === 'collect') {
+          icon = '🏆';
+          tagName = '解集';
           tagColor = '#047857';
           tagBg = '#ecfdf5';
-          tagName = '解集';
         } else if (item.type === 'prune') {
+          icon = '✂️';
+          tagName = '剪枝';
           tagColor = '#c2410c';
           tagBg = '#fff7ed';
-          tagName = '剪枝';
         }
 
+        const activeClass = isCurrent
+          ? 'bg-blue-50/90 border-blue-200 text-blue-900 font-bold shadow-2xs'
+          : 'text-slate-600 border-transparent hover:bg-slate-50';
+
+        const indicatorColor = isCurrent ? 'bg-blue-600' : 'bg-slate-300';
+
         return `
-          <div style="
-            display: flex; align-items: baseline; gap: 6px;
-            padding: 3px 6px; border-radius: 4px;
-            background: ${isCurrent ? '#eff6ff' : 'transparent'};
-            border-left: ${isCurrent ? '3px solid #2563eb' : '3px solid transparent'};
-            font-size: 11.5px; line-height: 1.5; color: ${isCurrent ? '#0f172a' : '#64748b'};
-          ">
-            <span style="font-size: 9.5px; color: ${tagColor}; background: ${tagBg}; padding: 1px 4px; border-radius: 3px; font-weight: 700;">
-              ${tagName}
-            </span>
-            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; opacity: 0.6;">#${item.stepNumber ?? idx + 1}</span>
-            <span style="flex: 1;">${item.text}</span>
+          <div id="bt-log-item-${idx}" class="log-item flex items-center justify-between p-1.5 rounded-lg border transition font-mono text-[11px] ${activeClass}">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-1 h-3 rounded-full ${indicatorColor} flex-shrink-0"></span>
+              <span style="font-size: 9.5px; color: ${tagColor}; background: ${tagBg}; padding: 1px 4px; border-radius: 4px; font-weight: 700; flex-shrink: 0;">${icon} ${tagName}</span>
+              <span class="truncate">${item.text}</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-sans flex-shrink-0 ml-2">#${item.stepNumber ?? idx + 1}</span>
           </div>
         `;
       })
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 2px;">
+      <div class="space-y-1">
         ${itemsHtml}
       </div>
     `;
 
-    // 自动滚动到最新日志
-    container.scrollTop = container.scrollHeight;
+    // 自动平滑滚动当前活跃项至可视区
+    if (typeof container.querySelector === 'function') {
+      if (activeIndex >= 0) {
+        const activeEl = container.querySelector(`#bt-log-item-${activeIndex}`);
+        if (activeEl && typeof activeEl.scrollIntoView === 'function') {
+          activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
   }
 }
