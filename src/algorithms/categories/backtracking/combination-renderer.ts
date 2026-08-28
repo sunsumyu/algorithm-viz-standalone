@@ -373,10 +373,10 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     const switchTab = (activeTab: Element | null, activeView: Element | null) => {
       [btnTabCode, btnTabProblem, btnTabAnalysis].forEach(b => {
         if (!b) return;
-        b.className = 'tab-btn px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1 cursor-pointer';
+        b.classList.remove('active');
       });
       if (activeTab) {
-        activeTab.className = 'tab-btn active px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold transition bg-blue-600 text-white shadow-2xs flex items-center gap-1 cursor-pointer';
+        activeTab.classList.add('active');
       }
 
       [viewCode, viewProblem, viewAnalysis].forEach(v => {
@@ -392,13 +392,11 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     btnTabAnalysis?.addEventListener('click', () => switchTab(btnTabAnalysis, viewAnalysis));
 
     // 2. 多语言切换
-    const langBtns = this.root.querySelectorAll<HTMLButtonElement>('#code-lang-tabs .lang-btn');
+    const langBtns = this.root.querySelectorAll<HTMLButtonElement>('#code-lang-tabs .cs-lang-btn');
     langBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        langBtns.forEach(b => {
-          b.className = 'lang-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 cursor-pointer';
-        });
-        btn.className = 'lang-btn active px-1.5 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white cursor-pointer';
+        langBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         this.currentLang = btn.dataset.lang || 'java';
         this.renderCodeLines();
         if (this.steps.length > 0) {
@@ -517,28 +515,28 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     const problemBody = this.root?.querySelector('#problem-view-container');
     const modalBody = this.root?.querySelector('#modal-problem-body');
     const problemHtml = `
-      <div class="space-y-3 text-slate-300 text-xs leading-relaxed">
-        <div class="flex items-center gap-2">
-          <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">LeetCode 77</span>
-          <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">Medium</span>
-          <h2 class="text-sm font-bold text-white">组合 (Combinations)</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="padding: 2px 6px; border-radius: 4px; background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: 700; border: 1px solid rgba(59,130,246,0.3);">LeetCode 77</span>
+          <span style="padding: 2px 6px; border-radius: 4px; background: rgba(245,158,11,0.2); color: #fbbf24; font-weight: 700; border: 1px solid rgba(245,158,11,0.3);">Medium</span>
+          <h2 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0;">组合 (Combinations)</h2>
         </div>
-        <p>给定两个整数 <code class="text-amber-300 font-mono">n</code> 和 <code class="text-amber-300 font-mono">k</code>，返回范围 <code class="text-sky-300 font-mono">[1, n]</code> 中所有可能的 <code class="text-amber-300 font-mono">k</code> 个数的组合。</p>
-        <p>你可以按 <strong>任何顺序</strong> 返回答案。</p>
-        <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5 font-mono text-[11px]">
-          <div class="text-emerald-400 font-bold">示例 1:</div>
+        <p style="margin: 0;">给定两个整数 <code style="color: #fde047; font-family: monospace;">n</code> 和 <code style="color: #fde047; font-family: monospace;">k</code>，返回范围 <code style="color: #7dd3fc; font-family: monospace;">[1, n]</code> 中所有可能的 <code style="color: #fde047; font-family: monospace;">k</code> 个数的组合。</p>
+        <p style="margin: 0;">你可以按 <strong>任何顺序</strong> 返回答案。</p>
+        <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 6px; font-family: monospace; font-size: 11px;">
+          <div style="color: #34d399; font-weight: 700;">示例 1:</div>
           <div>输入: n = 4, k = 2</div>
           <div>输出: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]</div>
         </div>
-        <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5 font-mono text-[11px]">
-          <div class="text-emerald-400 font-bold">示例 2:</div>
+        <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 6px; font-family: monospace; font-size: 11px;">
+          <div style="color: #34d399; font-weight: 700;">示例 2:</div>
           <div>输入: n = 1, k = 1</div>
           <div>输出: [[1]]</div>
         </div>
-        <div class="space-y-1 text-slate-400">
-          <div class="font-bold text-slate-300">提示：</div>
-          <div>• 1 <= n <= 20</div>
-          <div>• 1 <= k <= n</div>
+        <div style="display: flex; flex-direction: column; gap: 4px; color: #94a3b8; font-size: 11.5px;">
+          <div style="font-weight: 700; color: #cbd5e1;">提示：</div>
+          <div>• 1 &le; n &le; 20</div>
+          <div>• 1 &le; k &le; n</div>
         </div>
       </div>
     `;
@@ -549,30 +547,30 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     const analysisBody = this.root?.querySelector('#analysis-view-container');
     if (analysisBody) {
       analysisBody.innerHTML = `
-        <div class="space-y-3 text-slate-300 text-xs leading-relaxed">
-          <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
-            <i class="fa-solid fa-lightbulb text-amber-400"></i> 回溯五部曲与核心框架
+        <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
+          <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
+            <span>💡</span> 回溯五部曲与核心框架
           </h3>
-          <div class="space-y-2">
-            <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div class="font-bold text-blue-400 mb-1">① 递归函数签名与参数</div>
-              <p class="text-slate-400">定义 <code class="text-sky-300 font-mono">backtrack(startIndex, path, res, n, k)</code>，其中 <code class="text-amber-300 font-mono">startIndex</code> 控制横向循环遍历的起始位置，避免重复组合。</p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+              <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 递归函数签名与参数</div>
+              <p style="margin: 0; color: #94a3b8;">定义 <code style="color: #7dd3fc; font-family: monospace;">backtrack(startIndex, path, res, n, k)</code>，其中 <code style="color: #fde047; font-family: monospace;">startIndex</code> 控制横向循环遍历的起始位置，避免出现重复组合。</p>
             </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div class="font-bold text-emerald-400 mb-1">② 递归终止条件</div>
-              <p class="text-slate-400">当 <code class="text-sky-300 font-mono">path.size() == k</code> 时，收集当前路径快照并 <code class="text-amber-300 font-mono">return</code>。</p>
+            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+              <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 递归终止条件</div>
+              <p style="margin: 0; color: #94a3b8;">当 <code style="color: #7dd3fc; font-family: monospace;">path.size() == k</code> 时，收集当前路径快照并 <code style="color: #fde047; font-family: monospace;">return</code>。</p>
             </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div class="font-bold text-indigo-400 mb-1">③ 单层搜索逻辑</div>
-              <p class="text-slate-400">通过 <code class="text-sky-300 font-mono">for (int i = startIndex; i <= n; i++)</code> 展开本层可选数字分支。</p>
+            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+              <div style="font-weight: 700; color: #818cf8; margin-bottom: 4px;">③ 单层搜索逻辑</div>
+              <p style="margin: 0; color: #94a3b8;">通过 <code style="color: #7dd3fc; font-family: monospace;">for (int i = startIndex; i <= n; i++)</code> 展开本层可选数字分支。</p>
             </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div class="font-bold text-amber-400 mb-1">④ 为什么下一轮是 i + 1</div>
-              <p class="text-slate-400">组合不考虑顺序且数字不可复用，因此下一层递归起点必须为 <code class="text-emerald-300 font-mono">i + 1</code>。</p>
+            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+              <div style="font-weight: 700; color: #fbbf24; margin-bottom: 4px;">④ 为什么下一轮是 i + 1</div>
+              <p style="margin: 0; color: #94a3b8;">组合不考虑顺序且数字不可复用，因此下一层递归起点必须为 <code style="color: #34d399; font-family: monospace;">i + 1</code>。</p>
             </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div class="font-bold text-rose-400 mb-1">⑤ 回溯撤销对称性</div>
-              <p class="text-slate-400"><code class="text-sky-300 font-mono">path.add(i)</code> 与 <code class="text-rose-300 font-mono">path.remove()</code> 成对出现，保证回溯后现场完全恢复。</p>
+            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+              <div style="font-weight: 700; color: #fb7185; margin-bottom: 4px;">⑤ 回溯撤销对称性</div>
+              <p style="margin: 0; color: #94a3b8;"><code style="color: #7dd3fc; font-family: monospace;">path.add(i)</code> 与 <code style="color: #fb7185; font-family: monospace;">path.remove()</code> 成对出现，保证回溯后现场完全恢复。</p>
             </div>
           </div>
         </div>

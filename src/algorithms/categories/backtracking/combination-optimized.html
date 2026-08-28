@@ -1,43 +1,702 @@
 <style>
-  /* === 组合（剪枝演化） · 100% 对齐 DP 标准模板 === */
+  /* === 组合（剪枝演化） · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-combination-optimized-view {
-    width: 100%; height: 100%; flex: 1; min-width: 0; min-height: 0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
     color: #1e293b;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     background: #f1f5f9;
     overflow: hidden;
-    display: flex; flex-direction: column;
+    display: flex;
+    flex-direction: column;
     padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  /* 代码行暗色主题样式 */
-  #algo-combination-optimized-view .code-line {
-    display: flex; align-items: flex-start;
-    padding: 1.5px 6px; border-radius: 4px;
+  #algo-combination-optimized-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-combination-optimized-view .co-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-combination-optimized-view .co-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-combination-optimized-view .co-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-optimized-view .co-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-combination-optimized-view .co-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-combination-optimized-view .co-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-combination-optimized-view .co-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-combination-optimized-view .co-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  /* 顶栏中间阶段切换胶囊 */
+  #algo-combination-optimized-view .co-stage-switcher {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #f1f5f9;
+    padding: 2.5px 3px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-optimized-view .co-stage-tab {
+    padding: 4px 10px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  #algo-combination-optimized-view .co-stage-tab:hover {
+    color: #0f172a;
+  }
+  #algo-combination-optimized-view .co-stage-tab.active {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+  }
+
+  /* 顶栏右侧控制工具 */
+  #algo-combination-optimized-view .co-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-optimized-view .co-input-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #f8fafc;
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    font-family: monospace;
+  }
+  #algo-combination-optimized-view .co-input-group span {
+    color: #64748b;
+    font-weight: 600;
+  }
+  #algo-combination-optimized-view .co-input-num {
+    width: 28px;
+    height: 22px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 12px;
+    color: #0f172a;
+    outline: none;
+  }
+  #algo-combination-optimized-view .co-input-num:focus {
+    border-color: #2563eb;
+  }
+
+  #algo-combination-optimized-view .co-btn-generate {
+    padding: 4px 12px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  }
+  #algo-combination-optimized-view .co-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-combination-optimized-view .co-btn-reset {
+    padding: 4px 10px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-optimized-view .co-btn-reset:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-combination-optimized-view .co-chip {
+    padding: 2.5px 7px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 10.5px;
+    font-family: monospace;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-optimized-view .co-chip:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+
+  /* 2. 主体双列布局 Main Layout */
+  #algo-combination-optimized-view .co-main-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-combination-optimized-view .co-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-combination-optimized-view .co-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-combination-optimized-view .co-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-combination-optimized-view .co-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-combination-optimized-view .co-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-combination-optimized-view .co-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-combination-optimized-view .co-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 决策树 SVG 容器 */
+  #algo-combination-optimized-view #combination-optimized-tree-display {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-combination-optimized-view .co-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-optimized-view .co-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+    outline: none;
+  }
+
+  #algo-combination-optimized-view .co-counter-badge {
+    font-size: 11.5px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-optimized-view .co-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-combination-optimized-view .co-ctrl-btn:hover {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+  }
+
+  #algo-combination-optimized-view .co-play-circle-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: none;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+    flex-shrink: 0;
+  }
+  #algo-combination-optimized-view .co-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间内部结构 */
+  #algo-combination-optimized-view .co-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  #algo-combination-optimized-view .co-state-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-combination-optimized-view .co-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  #algo-combination-optimized-view .co-subcard-title {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 3. 右侧区域：Top 暗色代码终端 (Card 3) + Bottom 执行日志 (Card 4) */
+  #algo-combination-optimized-view .co-right-section {
+    flex: 1 1 46%;
+    min-width: 340px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Top 暗色终端 Card 3 */
+  #algo-combination-optimized-view .co-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    flex: 1.25;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #algo-combination-optimized-view .co-terminal-header {
+    padding: 6px 12px;
+    background: #020617;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-combination-optimized-view .co-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid #1e293b;
+  }
+
+  #algo-combination-optimized-view .co-tab-item {
+    padding: 2.5px 8px;
+    border-radius: 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  #algo-combination-optimized-view .co-tab-item:hover {
+    color: #f1f5f9;
+    background: #1e293b;
+  }
+  #algo-combination-optimized-view .co-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  #algo-combination-optimized-view .co-lang-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid #1e293b;
+  }
+
+  #algo-combination-optimized-view .co-lang-btn {
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-combination-optimized-view .co-lang-btn:hover {
+    color: #f1f5f9;
+  }
+  #algo-combination-optimized-view .co-lang-btn.active {
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  #algo-combination-optimized-view .co-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-combination-optimized-view .co-font-scaler {
+    display: flex;
+    align-items: center;
+    background: #1e293b;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    padding: 1px 3px;
+    color: #cbd5e1;
+  }
+  #algo-combination-optimized-view .co-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9.5px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 4px;
+  }
+  #algo-combination-optimized-view .co-font-scaler button:hover {
+    color: #ffffff;
+    background: #334155;
+  }
+  #algo-combination-optimized-view .co-font-indicator {
+    font-size: 10px;
+    font-family: monospace;
+    color: #94a3b8;
+    padding: 0 3px;
+  }
+
+  #algo-combination-optimized-view .co-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-combination-optimized-view .co-dot {
+    width: 7.5px;
+    height: 7.5px;
+    border-radius: 999px;
+  }
+
+  #algo-combination-optimized-view .co-terminal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px;
     font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 12px; line-height: 1.45;
+    color: #cbd5e1;
+  }
+
+  /* 代码行高亮 */
+  #algo-combination-optimized-view .code-line {
+    display: flex;
+    align-items: flex-start;
+    padding: 1.5px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.45;
     transition: all 0.15s ease;
   }
   #algo-combination-optimized-view .code-line.active {
-    background: rgba(37, 99, 235, 0.25);
+    background: rgba(37, 99, 235, 0.28);
     border-left: 3px solid #3b82f6;
     color: #ffffff;
     font-weight: 600;
   }
   #algo-combination-optimized-view .code-line-num {
-    width: 26px; text-align: right; margin-right: 12px;
-    color: #64748b; font-size: 11px; user-select: none; flex-shrink: 0;
+    width: 24px;
+    text-align: right;
+    margin-right: 12px;
+    color: #475569;
+    font-size: 11px;
+    user-select: none;
+    flex-shrink: 0;
   }
   #algo-combination-optimized-view .code-line-text {
-    flex: 1; white-space: pre-wrap; word-break: break-all;
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-all;
   }
 
-  /* 日志条目样式 */
-  #algo-combination-optimized-view .log-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 5px 8px; border-radius: 8px;
+  /* Bottom 独立执行日志 Card 4 */
+  #algo-combination-optimized-view .co-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #algo-combination-optimized-view .co-log-header {
+    padding: 6px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #algo-combination-optimized-view .co-log-header-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #algo-combination-optimized-view .co-log-count {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+    color: #94a3b8;
+  }
+
+  #algo-combination-optimized-view .co-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 11.5px; line-height: 1.4;
+  }
+
+  #algo-combination-optimized-view .log-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+    line-height: 1.4;
     transition: all 0.15s ease;
     border: 1px solid transparent;
   }
@@ -47,249 +706,283 @@
     color: #1e40af;
     font-weight: 700;
   }
+
+  /* 4. 力扣原题描述轻量模态弹窗 Modal */
+  #algo-combination-optimized-view .co-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(2, 6, 23, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #algo-combination-optimized-view .co-modal-backdrop.hidden {
+    display: none !important;
+  }
+
+  #algo-combination-optimized-view .co-modal-content {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-combination-optimized-view .co-modal-header {
+    padding: 10px 16px;
+    background: #020617;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #algo-combination-optimized-view .co-modal-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-combination-optimized-view .co-modal-close {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #algo-combination-optimized-view .co-modal-close:hover {
+    background: #1e293b;
+    color: #ffffff;
+  }
+
+  #algo-combination-optimized-view .co-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
 </style>
 
-<div class="w-full h-full mx-auto flex flex-col gap-2 sm:gap-2.5 min-h-0 overflow-hidden px-1.5 sm:px-2.5">
+<!-- 1. 顶栏标题与演化阶段选项卡卡片 (Header & Control Card) -->
+<header class="co-header">
+  <div class="co-header-left">
+    <div class="co-icon-btn" title="回溯算法 · 组合 (优化)">✂️</div>
+    <div class="co-main-title">LeetCode 77. 组合</div>
+    <button id="btn-open-problem-modal" class="co-btn-problem" title="查看力扣原题描述、示例与约束">
+      <span>📋 题目</span>
+    </button>
+    <span id="header-algo-title" class="co-badge-mode">剪枝优化模式</span>
+    <span class="co-badge-complexity">O(C(n,k))</span>
+  </div>
 
-  <!-- 1. 顶栏标题与演化阶段选项卡卡片 (Header & Control Card) -->
-  <header class="bg-white rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 border border-slate-200 shadow-xs flex items-center justify-between gap-1.5 sm:gap-2 flex-shrink-0 w-full">
-    
-    <!-- 1. 左侧：品牌与题号信息 (精简紧凑) -->
-    <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-0">
-      <button id="btn-open-selector-quick" title="切换算法" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 flex items-center justify-center text-xs sm:text-sm transition flex-shrink-0 shadow-xs">
-        <i class="fa-solid fa-table-cells-large"></i>
-      </button>
-      <div class="flex items-center gap-1 min-w-0">
-        <h1 id="header-algo-main-title" class="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight flex-shrink-0">LeetCode 77. 组合</h1>
-        <button id="btn-open-problem-modal" title="点击查看力扣原题描述、示例与约束" class="px-1.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-800 text-[10px] font-bold transition flex items-center gap-1 flex-shrink-0 shadow-2xs">
-          <i class="fa-regular fa-file-lines text-amber-600"></i>
-          <span>题目</span>
+  <!-- 阶段演化选择器 -->
+  <div class="co-stage-switcher" id="stage-tabs-container">
+    <button class="co-stage-tab" id="co-tab-stage1" data-stage="naive">1 完整决策树</button>
+    <button class="co-stage-tab active" id="co-tab-stage2" data-stage="pruned">2 剪枝优化 ⭐</button>
+  </div>
+
+  <!-- 参数与操作工具组 -->
+  <div class="co-header-right">
+    <div class="co-input-group">
+      <span>n:</span>
+      <input type="number" id="input-n" min="1" max="8" value="4" class="co-input-num" />
+      <span>×</span>
+      <span>k:</span>
+      <input type="number" id="input-k" min="1" max="8" value="2" class="co-input-num" />
+    </div>
+
+    <button id="btn-generate" class="co-btn-generate">
+      <span>▶ 生成</span>
+    </button>
+
+    <button id="btn-reset" class="co-btn-reset">
+      重置
+    </button>
+
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <button class="co-chip" data-n="4" data-k="2">4,2</button>
+      <button class="co-chip" data-n="5" data-k="3">5,3</button>
+      <button class="co-chip" data-n="6" data-k="2">6,2</button>
+    </div>
+  </div>
+</header>
+
+<!-- 2. 主演示区：左侧可视化画布 + 右侧代码与日志 -->
+<main class="co-main-layout">
+
+  <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+  <section class="co-left-section">
+
+    <!-- 卡片 1: 决策树沙盘 (N-ary Decision Tree) -->
+    <div class="co-card">
+      <div class="co-card-header">
+        <div class="co-card-title">
+          <span>🌲 N 叉决策树沙盘 (N-ary Decision Tree)</span>
+        </div>
+        <div class="co-legend-bar">
+          <div><span class="co-legend-dot" style="background:#3b82f6;"></span> 📍当前探索</div>
+          <div><span class="co-legend-dot" style="background:#10b981;"></span> ✅解集命中</div>
+          <div><span class="co-legend-dot" style="background:#ef4444; border: 1px dashed #b91c1c;"></span> ✂️剪枝截断</div>
+          <div><span class="co-legend-dot" style="background:#94a3b8;"></span> 🔙已回溯</div>
+        </div>
+      </div>
+
+      <!-- 决策树居中展示盒 -->
+      <div id="combination-optimized-tree-display"></div>
+    </div>
+
+    <!-- 贯穿式 Scrubber 步数进度条与播放控制器 (100% 对齐 DP 标准条) -->
+    <div class="co-playback-bar">
+      <input type="range" id="slider-progress" min="0" max="0" value="0" class="co-slider" />
+      <div class="co-counter-badge">
+        <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+        <button id="btn-step-prev" title="上一步" class="co-ctrl-btn">◀</button>
+        <button id="btn-play-pause" title="自动播放/暂停" class="co-play-circle-btn">
+          <span id="play-icon">▶</span>
         </button>
-        <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden 2xl:inline-block max-w-[140px]">剪枝优化模式</span>
-        <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold font-mono flex-shrink-0 hidden xl:inline-block">O(C(n,k))</span>
+        <button id="btn-step-next" title="下一步" class="co-ctrl-btn">▶</button>
       </div>
     </div>
 
-    <!-- 2. 中间：阶段演化选择器 (Stage Switcher) -->
-    <div class="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200 flex-shrink-0" id="stage-tabs-container">
-      <button class="stage-tab px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer" id="co-tab-stage1" data-stage="naive">1 完整决策树</button>
-      <button class="stage-tab active px-2.5 py-1 rounded-lg text-xs font-bold transition bg-blue-600 text-white shadow-xs cursor-pointer" id="co-tab-stage2" data-stage="pruned">2 剪枝优化 ⭐</button>
+    <!-- 卡片 2: 回溯状态空间与解集追踪 (与 Card 1 对等平分高度) -->
+    <div class="co-card">
+      <div class="co-card-header">
+        <div>
+          <div class="co-card-title">📦 回溯状态空间与解集追踪</div>
+          <div class="co-card-desc">实时路径栈推进、剪枝不等式判定与全局解集收集</div>
+        </div>
+        <span id="badge-result-count" class="co-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">解集: 0</span>
+      </div>
+
+      <!-- 状态空间居中展示盒 -->
+      <div class="co-state-space-box">
+        <div class="co-state-columns">
+          <!-- 路径栈 -->
+          <div class="co-subcard">
+            <div class="co-subcard-title">📦 当前路径栈 (Path Stack)</div>
+            <div id="co-path-stack-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+          </div>
+          <!-- 剪枝监视器 -->
+          <div class="co-subcard">
+            <div class="co-subcard-title">✂️ 剪枝监视器 (Pruning Monitor)</div>
+            <div id="co-pruning-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+          </div>
+        </div>
+        <!-- 解集箱 -->
+        <div class="co-subcard" style="flex-shrink: 0;">
+          <div class="co-subcard-title">🏆 实时解集收集箱 (Result Collection)</div>
+          <div id="co-result-collection-container"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- 3. 右侧：网格/参数与操作工具组 -->
-    <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 justify-end">
-      <div class="flex items-center gap-0.5 sm:gap-1 bg-slate-50 px-1.5 py-0.5 rounded-xl border border-slate-200 text-xs font-mono">
-        <span class="text-slate-500 font-semibold text-[11px]">n:</span>
-        <input type="number" id="input-n" min="1" max="8" value="4" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
-        <span class="text-slate-400 font-bold text-[10px]">×</span>
-        <span class="text-slate-500 font-semibold text-[11px]">k:</span>
-        <input type="number" id="input-k" min="1" max="8" value="2" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
+  </section>
+
+  <!-- ================= 右侧：代码终端 + 执行日志 (100% 对齐 DP 标准双卡片) ================= -->
+  <section class="co-right-section">
+
+    <!-- 卡片 3: 暗色代码终端面板 (flex: 1.25) -->
+    <div class="co-dark-terminal">
+      <div class="co-terminal-header">
+        <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+        <div class="co-tab-group">
+          <button id="btn-tab-code" class="co-tab-item active">💻 代码调试</button>
+          <button id="btn-tab-problem" class="co-tab-item">📋 题目描述</button>
+          <button id="btn-tab-analysis" class="co-tab-item">💡 回溯精讲</button>
+        </div>
+
+        <!-- 2. 多语言切换器 -->
+        <div class="co-lang-group" id="code-lang-tabs">
+          <button class="co-lang-btn active" data-lang="java">Java</button>
+          <button class="co-lang-btn" data-lang="cpp">C++</button>
+          <button class="co-lang-btn" data-lang="python">Python</button>
+          <button class="co-lang-btn" data-lang="javascript">JS</button>
+        </div>
+
+        <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+        <div class="co-font-tools">
+          <div class="co-font-scaler">
+            <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+            <span id="code-font-indicator" class="co-font-indicator">12</span>
+            <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+          </div>
+
+          <div class="co-window-dots">
+            <span class="co-dot" style="background:#ef4444;"></span>
+            <span class="co-dot" style="background:#eab308;"></span>
+            <span class="co-dot" style="background:#22c55e;"></span>
+          </div>
+        </div>
       </div>
 
-      <button id="btn-generate" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer">
-        <i class="fa-solid fa-play text-[9px]"></i> <span class="hidden sm:inline">生成</span>
-      </button>
+      <!-- 容器 1: 源码高亮与单步追踪视图 -->
+      <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="co-terminal-body">
+          <div id="code-lines-wrapper">
+            <!-- 动态装载代码行 -->
+          </div>
+        </div>
+      </div>
 
-      <button id="btn-reset" class="px-1.5 sm:px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200 cursor-pointer">
-        重置
-      </button>
+      <!-- 容器 2: 题目完整描述视图 -->
+      <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+        <!-- 动态装载题目内容 -->
+      </div>
 
-      <div class="flex items-center gap-1 hidden sm:flex">
-        <button class="co-chip px-1.5 py-0.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded text-[10px] font-mono font-bold" data-n="4" data-k="2">4,2</button>
-        <button class="co-chip px-1.5 py-0.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded text-[10px] font-mono font-bold" data-n="5" data-k="3">5,3</button>
-        <button class="co-chip px-1.5 py-0.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded text-[10px] font-mono font-bold" data-n="6" data-k="2">6,2</button>
+      <!-- 容器 3: 回溯精讲视图 -->
+      <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+        <!-- 动态装载回溯精讲内容 -->
       </div>
     </div>
-  </header>
 
-  <!-- 2. 主演示区：左侧可视化画布 + 右侧代码与日志 (对齐 DP 弹性全屏自适应) -->
-  <main id="main-content-layout" class="flex flex-col lg:flex-row gap-2 sm:gap-2.5 flex-1 min-h-0 overflow-hidden w-full relative">
-
-    <!-- ================= 左侧：双看板 + 底部进度条 (自适应宽度) ================= -->
-    <section id="left-visual-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 320px; flex: 1 1 54%;">
-
-      <!-- 卡片 1: 决策树沙盘 (N-ary Decision Tree) -->
-      <div id="card1-wrapper" class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden relative">
-        <div class="flex items-center justify-between flex-shrink-0 gap-2">
-          <div class="flex items-center gap-2">
-            <h2 id="card1-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <i class="fa-solid fa-network-wired text-slate-500"></i> N 叉决策树沙盘 (N-ary Decision Tree)
-            </h2>
-          </div>
-          <div id="tree-legend-bar" class="flex items-center gap-2 sm:gap-2.5 text-[11px] text-slate-500 font-medium overflow-x-auto">
-            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 shadow-xs"></span> 📍当前探索</span>
-            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span> ✅解集命中</span>
-            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-red-400 border border-red-500 border-dashed"></span> ✂️剪枝截断</span>
-            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-400"></span> 🔙已回溯</span>
-          </div>
+    <!-- 卡片 4: 独立执行日志卡片 (Execution Log, 100% 对齐 DP 模板) -->
+    <div class="co-log-card">
+      <div class="co-log-header">
+        <div class="co-log-header-title">
+          <span>📜 执行日志</span>
         </div>
-
-        <!-- 决策树居中展示盒 -->
-        <div id="combination-optimized-tree-display" class="bg-slate-50/70 rounded-xl p-1 border border-slate-200/80 flex-1 min-h-0 overflow-hidden relative">
-        </div>
+        <span id="log-count" class="co-log-count">0 条记录</span>
       </div>
 
-      <!-- 步数进度条与播放控制器 (100% 对标 DP 模板) -->
-      <div class="bg-white rounded-2xl px-2.5 sm:px-3 py-1.5 border border-slate-200 shadow-xs flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
-        <div class="flex-1 flex items-center gap-2 min-w-0">
-          <input type="range" id="slider-progress" min="0" max="0" value="0" class="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none" />
-        </div>
-        <div class="text-xs font-mono-code font-bold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap flex-shrink-0">
-          <span id="step-cur" class="text-blue-600">0</span> / <span id="step-total">0</span>
-        </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button id="btn-step-prev" title="上一步" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer">
-            <i class="fa-solid fa-backward-step text-[12px]"></i>
-          </button>
-          <button id="btn-play-pause" title="自动播放/暂停" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition shadow-sm cursor-pointer">
-            <i class="fa-solid fa-play text-[12px]" id="play-icon"></i>
-          </button>
-          <button id="btn-step-next" title="下一步" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer">
-            <i class="fa-solid fa-forward-step text-[12px]"></i>
-          </button>
-        </div>
+      <div id="log-container" class="co-log-body">
+        <!-- 动态填充日志条目 -->
       </div>
-
-      <!-- 卡片 2: 回溯状态空间与解集追踪 (与卡片1平分高度) -->
-      <div id="card2-wrapper" class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden">
-        <div class="flex items-center justify-between flex-shrink-0">
-          <div>
-            <h2 id="card2-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <i class="fa-solid fa-bars-staggered text-slate-500"></i> 回溯状态空间与解集追踪
-            </h2>
-            <p id="card2-desc" class="text-[11px] text-slate-500 mt-0.5">实时路径栈管理、剪枝不等式计算与全局解集收集</p>
-          </div>
-          <span id="badge-result-count" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">解集: 0</span>
-        </div>
-
-        <!-- 状态空间居中展示盒 -->
-        <div class="bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col gap-2 flex-1 min-h-0 overflow-auto relative">
-          <div class="grid grid-cols-2 gap-2 flex-1 min-h-0">
-            <!-- 路径栈 -->
-            <div class="bg-white rounded-xl p-2 border border-slate-200/90 flex flex-col min-h-0 shadow-2xs overflow-hidden">
-              <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                <i class="fa-solid fa-layer-group text-blue-500"></i> 当前路径栈 (Path Stack)
-              </div>
-              <div id="co-path-stack-container" class="flex-1 min-h-0 overflow-y-auto"></div>
-            </div>
-            <!-- 剪枝监视器 -->
-            <div class="bg-white rounded-xl p-2 border border-slate-200/90 flex flex-col min-h-0 shadow-2xs overflow-hidden">
-              <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                <i class="fa-solid fa-scissors text-amber-500"></i> 剪枝监视器 (Pruning Monitor)
-              </div>
-              <div id="co-pruning-monitor-container" class="flex-1 min-h-0 overflow-y-auto"></div>
-            </div>
-          </div>
-          <!-- 解集箱 -->
-          <div class="bg-white rounded-xl p-2 border border-slate-200/90 shadow-2xs flex-shrink-0">
-            <div class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <i class="fa-solid fa-trophy text-emerald-500"></i> 实时解集收集箱 (Result Collection)
-            </div>
-            <div id="co-result-collection-container"></div>
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- ================= 右侧：代码终端 + 执行日志 (100% 对标 DP 标准双卡片) ================= -->
-    <section id="right-code-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 340px; flex: 1 1 46%;">
-
-      <!-- 卡片 3: 暗色代码终端面板 (flex-[1.25]) -->
-      <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xs overflow-hidden flex flex-col flex-[1.25] min-h-0">
-        <div class="px-2.5 py-1.5 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0 gap-2">
-          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
-          <div class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 flex-shrink-0">
-            <button id="btn-tab-code" class="tab-btn active px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold transition bg-blue-600 text-white shadow-2xs flex items-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-code text-[9px]"></i> <span>代码调试</span>
-            </button>
-            <button id="btn-tab-problem" class="tab-btn px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1 cursor-pointer">
-              <i class="fa-regular fa-file-lines text-[9px]"></i> <span>题目描述</span>
-            </button>
-            <button id="btn-tab-analysis" class="tab-btn px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-lightbulb text-[9px]"></i> <span>回溯精讲</span>
-            </button>
-          </div>
-
-          <!-- 2. 多语言切换器 -->
-          <div id="code-lang-tabs" class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 flex-shrink-0">
-            <button class="lang-btn active px-1.5 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white cursor-pointer" data-lang="java">Java</button>
-            <button class="lang-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 cursor-pointer" data-lang="cpp">C++</button>
-            <button class="lang-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 cursor-pointer" data-lang="python">Python</button>
-            <button class="lang-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 cursor-pointer" data-lang="javascript">JS</button>
-          </div>
-
-          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <div class="flex items-center bg-slate-800/90 rounded-md border border-slate-700/80 p-0.5 text-slate-300">
-              <button id="btn-code-font-dec" title="缩小代码字号 (A-)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1 cursor-pointer">A-</button>
-              <span id="code-font-indicator" class="px-1 text-[10px] font-mono text-slate-400">12</span>
-              <button id="btn-code-font-inc" title="放大代码字号 (A+)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1 cursor-pointer">A+</button>
-            </div>
-
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-              <span class="w-2 h-2 rounded-full bg-red-500/80"></span>
-              <span class="w-2 h-2 rounded-full bg-yellow-500/80"></span>
-              <span class="w-2 h-2 rounded-full bg-green-500/80"></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 容器 1: 源码高亮与单步追踪视图 -->
-        <div id="code-view-container" class="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <div id="code-container-box" class="p-2.5 font-mono text-slate-300 flex-1 min-h-0 overflow-y-auto scroll-smooth">
-            <div id="code-lines-wrapper" class="space-y-0.5">
-              <!-- 动态装载代码行 -->
-            </div>
-          </div>
-        </div>
-
-        <!-- 容器 2: 题目完整描述视图 -->
-        <div id="problem-view-container" class="hidden flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
-          <!-- 动态渲染题目内容 -->
-        </div>
-
-        <!-- 容器 3: 回溯精讲视图 -->
-        <div id="analysis-view-container" class="hidden flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
-          <!-- 动态渲染回溯精讲内容 -->
-        </div>
-      </div>
-
-      <!-- 卡片 4: 执行日志 (Execution Log, 100% 对齐 DP 模板) -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col flex-1 min-h-0">
-        <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-list-ul text-slate-500 text-xs"></i>
-            <span class="text-xs font-bold text-slate-800">执行日志</span>
-          </div>
-          <span id="log-count" class="text-[11px] font-mono font-bold text-slate-400">0 条记录</span>
-        </div>
-
-        <div id="log-container" class="flex-1 min-h-0 p-2.5 overflow-y-auto font-mono text-xs space-y-1.5 text-slate-600 scroll-smooth">
-          <!-- 动态填充日志条目 -->
-        </div>
-      </div>
-
-    </section>
-
-  </main>
-</div>
-
-<!-- 4. 力扣原题描述与用例轻量模态弹窗 (Modal) -->
-<div id="modal-problem" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-  <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-    <div class="px-4 py-3 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
-      <div class="flex items-center gap-2">
-        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-bold">
-          <i class="fa-regular fa-file-lines"></i>
-        </span>
-        <h3 class="text-xs sm:text-sm font-bold text-white">力扣原题描述</h3>
-      </div>
-      <button id="btn-close-problem-modal" title="关闭 (Esc)" class="w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition cursor-pointer">
-        <i class="fa-solid fa-xmark text-sm"></i>
-      </button>
     </div>
-    <div id="modal-problem-body" class="p-4 sm:p-5 overflow-y-auto text-xs leading-relaxed text-slate-300 space-y-4 scroll-smooth">
+
+  </section>
+
+</main>
+
+<!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+<div id="modal-problem" class="co-modal-backdrop hidden">
+  <div class="co-modal-content">
+    <div class="co-modal-header">
+      <div class="co-modal-title">
+        <span>📋 力扣原题描述</span>
+      </div>
+      <button id="btn-close-problem-modal" class="co-modal-close" title="关闭 (Esc)">✕</button>
+    </div>
+    <div id="modal-problem-body" class="co-modal-body">
       <!-- 动态装载题目内容 -->
     </div>
   </div>
