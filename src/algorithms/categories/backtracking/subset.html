@@ -1,242 +1,868 @@
 <style>
+  /* === 子集 (LeetCode 78) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-subset-view {
-    --accent-a: #fbbf24;
-    --accent-b: #fb7185;
-    --accent-glow: rgba(251, 191, 36, .35);
-    --path-color: #34d399;
-    --prune-color: #f87171;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(251, 191, 36, .22), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(251, 113, 133, .22), transparent 55%),
-      linear-gradient(135deg, #1a1605 0%, #4a1128 50%, #1a1605 100%);
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-subset-view .sub-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-subset-view * {
+    box-sizing: border-box;
   }
-  #algo-subset-view .sub-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-subset-view .sb-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-subset-view .sub-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-subset-view .sub-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, #fbbf24, #fb7185);
-    color: #06121f; box-shadow: 0 6px 20px rgba(251, 191, 36, .35);
+
+  #algo-subset-view .sb-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-subset-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-subset-view .sub-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-subset-view .sub-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .12), rgba(251, 113, 133, .08));
-    border: 1px solid rgba(251, 191, 36, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-subset-view .sub-tip strong { color: #fcd34d; }
-  #algo-subset-view .sub-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-subset-view .sub-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-subset-view .sub-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-subset-view .sub-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-subset-view .sub-tag {
-    font-size: 11px; color: #fbbf24; background: rgba(251, 191, 36, .14);
-    border: 1px solid rgba(251, 191, 36, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-subset-view .sub-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-subset-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-subset-view input:focus { border-color: #fbbf24; box-shadow: 0 0 0 3px rgba(251, 191, 36, .15); }
-  #algo-subset-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-subset-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #fbbf24, #fb7185);
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(251, 191, 36, .35);
-  }
-  #algo-subset-view button:disabled { opacity: .4; cursor: not-allowed; }
-  /* 统计 */
-  #algo-subset-view .sub-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-  }
-  #algo-subset-view .sub-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-subset-view .sub-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-subset-view .sub-stat--path::before { background: linear-gradient(180deg, #fbbf24, #f97316); }
-  #algo-subset-view .sub-stat--path .sub-stat-val { color: #fbbf24; }
-  #algo-subset-view .sub-stat--start::before { background: linear-gradient(180deg, #fb7185, #e11d48); }
-  #algo-subset-view .sub-stat--start .sub-stat-val { color: #fda4af; }
-  #algo-subset-view .sub-stat--depth::before { background: linear-gradient(180deg, #a78bfa, #818cf8); }
-  #algo-subset-view .sub-stat--depth .sub-stat-val { color: #e9d5ff; }
-  #algo-subset-view .sub-stat--count::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-subset-view .sub-stat--count .sub-stat-val { color: #6ee7b7; }
-  #algo-subset-view .sub-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-subset-view .sub-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* 决策树展示（SVG） */
-  #algo-subset-view .sub-tree-card { flex: 1; min-height: 220px; display: flex; flex-direction: column; }
-  #algo-subset-view #subset-tree-display {
-    flex: 1; min-height: 180px; padding: 12px 8px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: auto;
-  }
-  #algo-subset-view #subset-tree-display svg {
-    max-width: 100%; max-height: 100%;
-  }
-  /* 结果横幅 */
-  #algo-subset-view .sub-result-banner {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .12), rgba(251, 113, 133, .06));
-    border: 1px solid rgba(251, 191, 36, .28);
-    line-height: 1.55; font-size: 14px; color: #fef3c7;
-  }
-  #algo-subset-view .sub-result-banner .sub-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, #fbbf24, #fb7185);
-    color: #06121f; box-shadow: 0 4px 14px rgba(251, 191, 36, .35);
+
+  #algo-subset-view .sb-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  /* 日志 */
-  #algo-subset-view .sub-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
+
+  #algo-subset-view .sb-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-subset-view .sub-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-subset-view .sb-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-subset-view .sub-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-subset-view .sub-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+  #algo-subset-view .sb-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-subset-view .sub-controls .sub-ctrl-btn { min-width: 64px; }
-  #algo-subset-view .sub-controls .sub-ctrl-primary {
-    background: linear-gradient(135deg, #fbbf24, #fb7185);
-    color: #06121f; border-color: transparent;
+
+  #algo-subset-view .sb-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-subset-view .sub-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-subset-view .sb-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-subset-view .sub-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-subset-view .sb-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-subset-view #step-speed { width: 130px; accent-color: #fbbf24; }
-  @media (max-width: 1100px) {
-    #algo-subset-view .sub-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-subset-view .sub-code { min-height: 360px; }
+
+  #algo-subset-view .sb-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-subset-view .sb-input-str {
+    width: 80px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-subset-view .sb-input-str:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+  }
+
+  #algo-subset-view .sb-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-subset-view .sb-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-subset-view .sb-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-subset-view .sb-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-subset-view .sb-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-subset-view .sb-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-subset-view .sb-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-subset-view .sb-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-subset-view .sb-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-subset-view .sb-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-subset-view .sb-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-subset-view .sb-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-subset-view .sb-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-subset-view .sb-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 决策树 SVG 容器 */
+  #algo-subset-view #subset-tree-display {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-subset-view .sb-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-subset-view .sb-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-subset-view .sb-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-subset-view .sb-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-subset-view .sb-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-subset-view .sb-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-subset-view .sb-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-subset-view .sb-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-subset-view .sb-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-subset-view .sb-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-subset-view .sb-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-subset-view .sb-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-subset-view .sb-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-subset-view .sb-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-subset-view .sb-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-subset-view .sb-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-subset-view .sb-tab-item.active {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  #algo-subset-view .sb-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-subset-view .sb-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-subset-view .sb-lang-btn.active {
+    background: #334155;
+    color: #38bdf8;
+  }
+
+  #algo-subset-view .sb-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-subset-view .sb-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-subset-view .sb-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-subset-view .sb-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #38bdf8;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-subset-view .sb-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-subset-view .sb-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-subset-view .sb-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-subset-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-subset-view .code-line.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-left: 3px solid #3b82f6;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-subset-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-subset-view .sb-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-subset-view .sb-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-subset-view .sb-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-subset-view .sb-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-subset-view .sb-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-subset-view .sb-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-subset-view .sb-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-subset-view .sb-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-subset-view .sb-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-subset-view .sb-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-subset-view .sb-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-subset-view .sb-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="sub-shell">
-  <div class="sub-hero">
-    <div class="sub-hero-left">
-      <span class="sub-icon">📦</span>
-      <div>
-        <h1>子集（回溯）</h1>
-        <div class="sub-sub">LeetCode 78 · 生成 1...n 的所有可能的子集</div>
+<div id="algo-subset-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="sb-header">
+    <div class="sb-header-left">
+      <div class="sb-icon-btn">📦</div>
+      <h1 class="sb-main-title">LeetCode 78. 子集</h1>
+      <button id="btn-open-problem-modal" class="sb-btn-problem">📋 题目</button>
+      <span class="sb-badge-mode">全树节点收集</span>
+      <span class="sb-badge-complexity">O(2^N)</span>
+    </div>
+
+    <!-- 参数与操作工具组 -->
+    <div class="sb-header-right">
+      <div class="sb-input-group">
+        <span>nums:</span>
+        <input type="text" id="input-nums" value="1,2,3" class="sb-input-str" placeholder="1,2,3" />
+      </div>
+
+      <button id="btn-generate" class="sb-btn-generate">
+        <span>▶ 生成</span>
+      </button>
+
+      <button id="btn-reset" class="sb-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="sb-chip" data-nums="1,2,3">1,2,3</button>
+        <button class="sb-chip" data-nums="1,2">1,2</button>
+        <button class="sb-chip" data-nums="1,2,3,4">1,2,3,4</button>
       </div>
     </div>
-    <div class="sub-tip"><strong>核心动画：</strong>黄色<span style="color:#fbbf24">脉冲</span>为当前节点，紫色为已访问节点，绿色为已收集子集。子集问题不剪枝，每个节点都收集为一个子集。</div>
-  </div>
-  <div class="sub-main">
-    <div class="sub-left">
-      <section class="sub-card">
-        <div class="sub-card-title">输入数组 <span class="sub-tag">数字种子</span></div>
-        <div class="sub-input-row">
-          <input id="subset-input" type="text" value="1,2,3" placeholder="逗号分隔数字">
-          <button id="subset-start">生成子集</button>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="sb-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="sb-left-section">
+
+      <!-- 卡片 1: 决策树沙盘 (N-ary Decision Tree) -->
+      <div class="sb-card">
+        <div class="sb-card-header">
+          <div class="sb-card-title">
+            <span>🌲 N 叉决策树沙盘 (N-ary Decision Tree)</span>
+          </div>
+          <div class="sb-legend-bar">
+            <div><span class="sb-legend-dot" style="background:#3b82f6;"></span> 📍当前探索</div>
+            <div><span class="sb-legend-dot" style="background:#10b981;"></span> ✅子集收集节点</div>
+            <div><span class="sb-legend-dot" style="background:#94a3b8;"></span> 🔙已回溯</div>
+          </div>
         </div>
-      </section>
 
-      <div class="sub-stats">
-        <div class="sub-stat sub-stat--path"><div class="sub-stat-label">路径长度</div><div class="sub-stat-val" id="sub-path-len">0</div></div>
-        <div class="sub-stat sub-stat--start"><div class="sub-stat-label">递归深度</div><div class="sub-stat-val" id="sub-depth">0</div></div>
-        <div class="sub-stat sub-stat--depth"><div class="sub-stat-label">已收集</div><div class="sub-stat-val" id="sub-count">0</div></div>
-        <div class="sub-stat sub-stat--count"><div class="sub-stat-label">节点总数</div><div class="sub-stat-val" id="sub-total">0</div></div>
-      </div>
-
-      <section class="sub-card sub-tree-card">
-        <div class="sub-card-title">回溯决策树 <span class="sub-tag">SVG</span></div>
+        <!-- 决策树居中展示盒 -->
         <div id="subset-tree-display"></div>
-        <div class="sub-result-banner" id="subset-results-banner">
-          <span class="sub-emoji">📦</span>
-          <div id="step-message">点击「生成子集」观看回溯搜索决策树动画</div>
-        </div>
-      </section>
+      </div>
 
-      <section class="sub-card">
-        <div class="sub-card-title">执行日志 <button id="sub-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="sub-log" id="sub-log"></div>
-      </section>
-    </div>
-    <aside class="sub-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="sub-controls">
-    <button id="step-reset" class="sub-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="sub-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="sub-ctrl-btn sub-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="sub-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="sub-counter">步骤: 0 / 0</span>
-    <div class="sub-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="200" max="2500" step="100" value="700">
-      <span id="step-speed-label" style="min-width:42px;">0.7s</span>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="sb-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="sb-slider" />
+        <div class="sb-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="sb-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="sb-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="sb-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 回溯状态空间与解集追踪 -->
+      <div class="sb-card">
+        <div class="sb-card-header">
+          <div>
+            <div class="sb-card-title">📦 回溯状态空间与解集追踪</div>
+            <div class="sb-card-desc">全树节点逐个收集、幂集 2^N 收集进度与全局解集收集</div>
+          </div>
+          <span id="badge-result-count" class="sb-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">解集: 0 / 2^N</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="sb-state-space-box">
+          <div class="sb-state-columns">
+            <!-- 路径栈 -->
+            <div class="sb-subcard">
+              <div class="sb-subcard-title">📦 当前子集路径栈 (Current Subset)</div>
+              <div id="sb-path-stack-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 全节点收集监视器 -->
+            <div class="sb-subcard">
+              <div class="sb-subcard-title">📊 幂集全节点收集进度 (Power Set Collector)</div>
+              <div id="sb-collector-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 解集箱 -->
+          <div class="sb-subcard" style="flex-shrink: 0;">
+            <div class="sb-subcard-title">🏆 实时子集收集箱 (Result Collection)</div>
+            <div id="sb-result-collection-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="sb-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="sb-dark-terminal">
+        <div class="sb-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="sb-tab-group">
+            <button id="btn-tab-code" class="sb-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sb-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sb-tab-item">💡 回溯精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="sb-lang-group" id="code-lang-tabs">
+            <button class="sb-lang-btn active" data-lang="java">Java</button>
+            <button class="sb-lang-btn" data-lang="cpp">C++</button>
+            <button class="sb-lang-btn" data-lang="python">Python</button>
+            <button class="sb-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="sb-font-tools">
+            <div class="sb-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="sb-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="sb-window-dots">
+              <span class="sb-dot" style="background:#ef4444;"></span>
+              <span class="sb-dot" style="background:#eab308;"></span>
+              <span class="sb-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="sb-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 回溯精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载回溯精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="sb-log-card">
+        <div class="sb-log-header">
+          <div class="sb-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="sb-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="sb-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="sb-modal-backdrop hidden">
+    <div class="sb-modal-content">
+      <div class="sb-modal-header">
+        <div class="sb-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="sb-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="sb-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

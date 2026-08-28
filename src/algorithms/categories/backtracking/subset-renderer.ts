@@ -1,41 +1,66 @@
 /**
- * 子集可视化器（回溯算法）- 回溯决策树版本
+ * 子集可视化器（回溯算法）— 4-Card 标准现代架构
  * LeetCode 78：给定不含重复数字的整数数组，返回所有可能的子集
- * 子集问题不剪枝，每条路径都收集，每个节点都是叶子（结果收集点）
+ * 核心：全树节点收集 (收集树上的每一个状态)
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BacktrackStateSpacePresenter,
+  BacktrackLogItem,
+} from '../../../core/renderers/backtrack-state-space-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
   layoutTree,
   flattenTree,
   renderBacktrackTree,
-  renderBacktrackLog,
+  resetContainerViewState,
 } from './backtracking-tree-helper';
+import {
+  SUBSET_PROBLEM_HTML,
+  SUBSET_ANALYSIS_HTML,
+  SUBSET_CODE_LANGUAGES,
+} from './subset-problem-content';
 import template from './subset.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
-function buildTree(nums: number[]): BacktrackTreeNode {
+export function buildSubsetTree(nums: number[]): BacktrackTreeNode {
+  let nodeIdCounter = 0;
   const root: BacktrackTreeNode = {
-    id: 'root', value: '', path: [], children: [],
-    isLeaf: true, isPruned: false, parentId: null, depth: 0,
+    id: 'root',
+    value: '[]',
+    path: [],
+    children: [],
+    isLeaf: true,
+    isPruned: false,
+    parentId: null,
+    depth: 0,
   };
 
   function dfs(startIdx: number, path: number[], parent: BacktrackTreeNode): void {
     for (let i = startIdx; i < nums.length; i++) {
+      nodeIdCounter++;
       const candidate = nums[i];
       const childPath = [...path, candidate];
-      const childId = `${parent.id}-${i}`;
+      const childId = `${parent.id}-${candidate}-${nodeIdCounter}`;
 
       const node: BacktrackTreeNode = {
-        id: childId, value: String(candidate), path: childPath,
-        children: [], isLeaf: true, isPruned: false,
-        parentId: parent.id, depth: parent.depth + 1,
+        id: childId,
+        value: String(candidate),
+        path: childPath,
+        children: [],
+        isLeaf: true,
+        isPruned: false,
+        parentId: parent.id,
+        depth: parent.depth + 1,
       };
       parent.children.push(node);
-      // Subset: i+1 (no reuse), no pruning — every path is collected
       dfs(i + 1, childPath, node);
     }
   }
@@ -45,106 +70,135 @@ function buildTree(nums: number[]): BacktrackTreeNode {
 }
 
 /* ── Generate steps by traversing the tree ────────────────── */
-function buildSteps(nums: number[]): BacktrackTreeStep[] {
-  const root = buildTree(nums);
+export function buildSubsetSteps(nums: number[]): BacktrackTreeStep[] {
+  const root = buildSubsetTree(nums);
   layoutTree(root);
   const allNodes = flattenTree(root);
-  const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);
 
   const steps: BacktrackTreeStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
+  const solutions: number[][] = [];
+  const totalPowerSet = Math.pow(2, nums.length);
 
   // Start step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
-    foundPathIds: [], prunedNodeIds: [...prunedIds],
+    nodes: allNodes,
+    currentNodeId: 'root',
+    visitedNodeIds: ['root'],
+    foundPathIds: [],
+    prunedNodeIds: [],
     path: [],
-    message: `开始：nums=[${nums.join(',')}]，生成所有子集（每个节点都收集）`,
+    message: `开始搜索：nums = [${nums.join(', ')}]，子集问题收集树上的每一个节点（总计 2^${nums.length} = ${totalPowerSet} 个子集）`,
     codeLine: 3,
-    stats: { depth: 0, count: 0, pathLen: 0 },
+    stats: { remaining: nums.length, depth: 0, count: 0 },
+    vars: [
+      { name: 'nums', value: `[${nums.join(', ')}]`, type: 'array' },
+      { name: 'startIndex', value: '0', type: 'number' },
+      { name: 'path', value: '[]', type: 'array' },
+      { name: 'res.size()', value: '0', type: 'number' },
+    ],
   });
 
-  function traverse(node: BacktrackTreeNode): void {
-    // Every node is a collection point (subset problem collects all paths)
+  function traverse(node: BacktrackTreeNode, startIndex: number): void {
+    // 1. 子集问题：节点入口处直接无条件收集
     foundIds.push(node.id);
+    solutions.push([...(node.path as number[])]);
+
     steps.push({
-      nodes: allNodes, currentNodeId: node.id,
+      nodes: allNodes,
+      currentNodeId: node.id,
       visitedNodeIds: [...visitedIds],
       foundPathIds: [...foundIds],
-      prunedNodeIds: [...prunedIds],
+      prunedNodeIds: [],
       path: [...node.path],
-      message: `收集子集：[${node.path.join(', ')}]`,
+      message: `🎉 收集子集：[${node.path.join(', ')}]（当前进度: ${solutions.length}/${totalPowerSet}）`,
       codeLine: 8,
-      stats: { depth: node.depth, count: foundIds.length, pathLen: node.path.length },
+      stats: { remaining: nums.length - startIndex, depth: node.depth, count: solutions.length },
+      vars: [
+        { name: 'res.add()', value: `[${node.path.join(', ')}]`, type: 'array' },
+        { name: 'res.size()', value: String(solutions.length), type: 'number' },
+        { name: 'path', value: `[${node.path.join(', ')}]`, type: 'array' },
+      ],
     });
 
-    for (const child of node.children) {
-      // iterate: for 循环取到候选值 nums[i]，高亮循环头
-      steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds],
-        foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path],
-        message: `for 循环：i = ${child.value}，尝试加入子集`,
-        codeLine: 9,
-        stats: { depth: node.depth, count: foundIds.length, pathLen: node.path.length },
-      });
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i];
+      const childVal = parseInt(child.value, 10);
+      const actualIndex = startIndex + i;
 
-      // Step A: path.add(i)
+      // 做选择
       visitedIds.push(child.id);
       steps.push({
-        nodes: allNodes, currentNodeId: child.id,
+        nodes: allNodes,
+        currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [],
         path: [...child.path],
-        message: `path.add(${child.value})：当前路径变为 [${child.path.join(', ')}]`,
-        codeLine: 10,
-        stats: { depth: child.depth, count: foundIds.length, pathLen: child.path.length },
-      });
-      // Step B: backtrack(...)
-      const childStart = parseInt(child.value, 10) + 1;
-      steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds],
-        foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...child.path],
-        message: `backtrack(${childStart}, ...)：start = i + 1，递归深入`,
+        message: `做选择：path.add(${childVal})，当前子集: [${child.path.join(', ')}]`,
         codeLine: 11,
-        stats: { depth: child.depth, count: foundIds.length, pathLen: child.path.length },
+        stats: { remaining: nums.length - (actualIndex + 1), depth: child.depth, count: solutions.length },
+        vars: [
+          { name: 'nums[i]', value: String(childVal), type: 'number' },
+          { name: 'path', value: `[${child.path.join(', ')}]`, type: 'array' },
+        ],
       });
 
-      traverse(child);
-
-      // pop: backtrack
+      // 向下递归
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
+        nodes: allNodes,
+        currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path],
-        message: `撤销 ${child.value}，回溯到：[${node.path.join(', ') || '空'}]`,
+        prunedNodeIds: [],
+        path: [...child.path],
+        message: `向下递归：backtrack(nums, startIndex=${actualIndex + 1}, path, res)`,
         codeLine: 12,
-        stats: { depth: node.depth, count: foundIds.length, pathLen: node.path.length },
+        stats: { remaining: nums.length - (actualIndex + 1), depth: child.depth, count: solutions.length },
+        vars: [
+          { name: 'startIndex', value: String(actualIndex + 1), type: 'number' },
+        ],
+      });
+
+      traverse(child, actualIndex + 1);
+
+      // 回溯撤销
+      steps.push({
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [],
+        path: [...node.path],
+        message: `🔙 回溯撤销：path.remove(${childVal})，恢复子集至: [${node.path.join(', ') || '空'}]`,
+        codeLine: 13,
+        stats: { remaining: nums.length - startIndex, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'path.remove()', value: String(childVal), type: 'number' },
+          { name: 'path', value: `[${node.path.join(', ')}]`, type: 'array' },
+        ],
       });
     }
   }
 
-  traverse(root);
+  traverse(root, 0);
 
   // End step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root',
+    nodes: allNodes,
+    currentNodeId: 'root',
     visitedNodeIds: [...visitedIds],
     foundPathIds: [...foundIds],
-    prunedNodeIds: [...prunedIds],
+    prunedNodeIds: [],
     path: [],
-    message: `完成！共收集 ${foundIds.length} 个子集`,
+    message: `🎉 搜索完成！共找到 2^${nums.length} = ${solutions.length} 个子集`,
     codeLine: 4,
-    stats: { depth: 0, count: foundIds.length, pathLen: 0 },
+    stats: { remaining: 0, depth: 0, count: solutions.length },
+    vars: [
+      { name: 'nums', value: `[${nums.join(', ')}]`, type: 'array' },
+      { name: 'res.size()', value: String(solutions.length), type: 'number' },
+    ],
   });
 
   return steps;
@@ -152,92 +206,228 @@ function buildSteps(nums: number[]): BacktrackTreeStep[] {
 
 /* ── Visualizer class ─────────────────────────────────────── */
 export class SubsetVisualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLines = [
-    'public List<List<Integer>> subsets(int[] nums) {',
-    '    List<List<Integer>> result = new ArrayList<>();',
-    '    backtrack(nums, 0, new ArrayList<>(), result);',
-    '    return result;',
-    '}',
-    '',
-    'void backtrack(int[] nums, int start, List<Integer> path, List<List<Integer>> result) {',
-    '    result.add(new ArrayList<>(path));',
-    '    for (int i = start; i < nums.length; i++) {',
-    '        path.add(nums[i]);',
-    '        backtrack(nums, i + 1, path, result);',
-    '        path.remove(path.size() - 1);',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '子集 Java 代码';
+  protected codeLanguages = SUBSET_CODE_LANGUAGES;
+  protected codeLines = SUBSET_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '子集 代码调试';
 
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private treeDisplay: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private inputField: HTMLInputElement | null = null;
+  private pathStackContainer: HTMLElement | null = null;
+  private collectorMonitorContainer: HTMLElement | null = null;
+  private resultCollectionContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
+  private cachedLogs: BacktrackLogItem[] = [];
 
   protected initDOMElements(): void {
     if (!this.root) return;
     this.treeDisplay = this.root.querySelector('#subset-tree-display');
-    this.logEl = this.root.querySelector('#sub-log');
-    this.inputField = this.root.querySelector('#subset-input');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#subset-start')?.addEventListener('click', () => this.start());
+    this.pathStackContainer = this.root.querySelector('#sb-path-stack-container');
+    this.collectorMonitorContainer = this.root.querySelector('#sb-collector-monitor-container');
+    this.resultCollectionContainer = this.root.querySelector('#sb-result-collection-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    // Clear log
-    this.root.querySelector('#sub-log-clear')?.addEventListener('click', () => {
-      if (this.logEl) this.logEl.innerHTML = '';
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 绑定生成与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.sb-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
+        if (numsEl) numsEl.value = btn.dataset.nums || '';
+        this.start();
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: SUBSET_PROBLEM_HTML,
+      analysisHtml: SUBSET_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): BacktrackTreeStep[] {
-    const inputArray = [1, 2, 3];
-    if (this.inputField) {
-      const input = this.inputField.value.trim();
-      if (input) {
-        const parsed = input.split(/[,，\s]+/).map((n) => parseInt(n.trim(), 10)).filter((n) => !isNaN(n));
-        if (parsed.length > 0) inputArray.splice(0, inputArray.length, ...parsed);
-      }
-    }
-    return buildSteps(inputArray);
+    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
+    const rawNums = (numsEl?.value || '1,2,3')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+
+    const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
+    if (nums.length > 5) nums.length = 5; // 防止组合爆炸
+
+    const steps = buildSubsetSteps(nums);
+
+    // 预计算日志流
+    this.cachedLogs = steps.map((st, idx) => {
+      let type: BacktrackLogItem['type'] = 'info';
+      if (st.message.includes('做选择')) type = 'push';
+      else if (st.message.includes('回溯撤销')) type = 'pop';
+      else if (st.message.includes('收集子集')) type = 'collect';
+
+      return {
+        stepIndex: idx + 1,
+        type,
+        text: st.message,
+      };
+    });
+
+    return steps;
   }
 
   protected renderStep(step: BacktrackTreeStep): void {
-    // Stats
-    const depthEl = this.root?.querySelector('#sub-depth');
-    if (depthEl) depthEl.textContent = String(step.stats?.depth ?? 0);
-    const countEl = this.root?.querySelector('#sub-count');
-    if (countEl) countEl.textContent = String(step.stats?.count ?? 0);
-    const pathLenEl = this.root?.querySelector('#sub-path-len');
-    if (pathLenEl) pathLenEl.textContent = String(step.path.length);
+    const index = this.currentIndex;
 
-    // Tree
+    // 1. 渲染 SVG 决策树沙盘
     if (this.treeDisplay) {
       renderBacktrackTree({
         container: this.treeDisplay,
         step,
-        cssPrefix: 'sub',
+        cssPrefix: 'sb',
+        nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
       });
     }
 
-    // Log
-    renderBacktrackLog(this.logEl, this.steps, this.currentIndex, 'sub');
+    // 2. 渲染当前路径栈 (Card 2 Left)
+    if (this.pathStackContainer) {
+      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
+    }
+
+    // 3. 渲染全节点收集监视器 (Card 2 Center)
+    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
+    const rawNums = (numsEl?.value || '1,2,3')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
+    const totalPowerSet = Math.pow(2, nums.length);
+
+    const solutionsUpToNow: Array<Array<number | string>> = [];
+    for (let i = 0; i <= index; i++) {
+      const st = this.steps[i];
+      if (st.message.includes('收集子集')) {
+        solutionsUpToNow.push([...st.path]);
+      }
+    }
+
+    if (this.collectorMonitorContainer) {
+      const percent = Math.min(100, (solutionsUpToNow.length / totalPowerSet) * 100);
+      this.collectorMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>幂集收集: <strong style="color: #0f172a; font-family: monospace; font-size: 12px;">${solutionsUpToNow.length}</strong> / 2^${nums.length} = ${totalPowerSet}</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+              ${percent.toFixed(0)}% 完成
+            </span>
+          </div>
+          <div style="background: #f1f5f9; border-radius: 6px; height: 6px; overflow: hidden; position: relative;">
+            <div style="background: #10b981; width: ${percent}%; height: 100%; transition: width 0.2s;"></div>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4;">
+            <div>• 特征: 每一个节点进入即 <code style="color:#b45309; font-family:monospace;">res.add(path)</code></div>
+            <div>• 无需剪枝，全树展开遍历所有路径</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染实时解集箱 (Card 2 Bottom)
+    if (this.resultCollectionContainer) {
+      BacktrackStateSpacePresenter.renderResultCollection(
+        this.resultCollectionContainer,
+        solutionsUpToNow,
+        -1,
+        (solIdx: number) => {
+          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
+            if (
+              this.steps[stepIdx].message.includes('收集子集') &&
+              JSON.stringify(this.steps[stepIdx].path) === JSON.stringify(solutionsUpToNow[solIdx])
+            ) {
+              this.goToStep(stepIdx);
+              break;
+            }
+          }
+        }
+      );
+    }
+
+    const badgeCount = this.root?.querySelector('#badge-result-count');
+    if (badgeCount) {
+      badgeCount.textContent = `解集: ${solutionsUpToNow.length} / ${totalPowerSet}`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      BacktrackStateSpacePresenter.renderBacktrackLogStream(
+        this.logContainer,
+        this.cachedLogs.slice(0, this.currentIndex + 1),
+        this.currentIndex
+      );
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
   public reset(): void {
     super.reset();
+    resetContainerViewState(this.treeDisplay);
     if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }
 
 registerAlgorithm({
   id: 'subset',
-  name: '子集（回溯）',
+  name: '子集',
   viewId: 'algo-subset-view',
   category: 'backtracking',
-  description: '使用回溯算法生成所有子集',
+  description: '求无重复数组的所有子集（幂集），全节点收集',
   icon: '📦',
   template,
   Visualizer: SubsetVisualizer,
-  difficulty: 1,
-  levelOrder: 10,
-  learningGoal: '理解子集生成的回溯方法（每层都收集）',
+  difficulty: 2,
+  levelOrder: 9,
+  learningGoal: '掌握子集问题的全节点收集特性与 2^N 幂集回溯模型',
 });
