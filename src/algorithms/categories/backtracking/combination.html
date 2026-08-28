@@ -1,5 +1,5 @@
 <style>
-  /* === 组合（基础版） · 统一现代化浅色/明快 Slate 风格回溯沙盘 === */
+  /* === 组合（基础版） · 统一现代化 Light Slate 标准沙盘 === */
   #algo-combination-view {
     --accent-primary: #2563eb;
     --accent-orange: #f97316;
@@ -164,42 +164,58 @@
     display: inline-flex; align-items: center; gap: 3px; font-weight: 500;
   }
 
-  /* 时间轴播放控制器 */
-  #algo-combination-view .cs-controls {
-    padding: 6px 12px;
+  /* 贯穿式 Scrubber 进度条与播放控制器 */
+  #algo-combination-view .cs-playback-card {
     background: #ffffff;
     border: 1px solid var(--border-color);
-    border-radius: 14px;
+    border-radius: 16px;
+    padding: 6px 14px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    display: flex; align-items: center; gap: 10px;
     flex-shrink: 0;
   }
 
-  #algo-combination-view .cs-ctrl-btn {
-    padding: 4px 10px; border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    color: #334155; cursor: pointer; font-weight: 700; font-size: 11.5px;
-    transition: all 0.15s;
+  #algo-combination-view .cs-progress-slider {
+    flex: 1; min-width: 60px; height: 6px;
+    accent-color: #2563eb; cursor: pointer;
+    background: #e2e8f0; border-radius: 999px;
   }
 
-  #algo-combination-view .cs-ctrl-btn:hover:not(:disabled) {
-    background: #e2e8f0; color: #0f172a; transform: translateY(-1px);
+  #algo-combination-view .cs-counter-badge {
+    font-size: 11.5px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+    color: #475569; background: #f8fafc;
+    border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 7px;
+    white-space: nowrap; flex-shrink: 0;
   }
 
-  #algo-combination-view .cs-ctrl-play {
-    background: #2563eb; color: #ffffff; border-color: transparent;
-    padding: 4px 14px;
+  #algo-combination-view .cs-btn-circle {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 1px solid #e2e8f0; background: #f8fafc;
+    color: #475569; font-size: 11px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; flex-shrink: 0;
   }
 
-  #algo-combination-view .cs-ctrl-play:hover {
-    background: #1d4ed8; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  #algo-combination-view .cs-btn-circle:hover:not(:disabled) {
+    background: #eff6ff; color: #2563eb; border-color: #bfdbfe; transform: translateY(-1px);
   }
 
-  #algo-combination-view .cs-counter {
-    color: #2563eb; font-size: 11.5px; font-weight: 800;
-    padding: 2px 8px; background: #eff6ff; border-radius: 6px; border: 1px solid #dbeafe;
-    text-align: center; font-family: 'JetBrains Mono', monospace;
+  #algo-combination-view .cs-btn-play-circle {
+    width: 32px; height: 32px; border-radius: 999px;
+    border: none; background: #2563eb;
+    color: #ffffff; font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.18s; flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  }
+
+  #algo-combination-view .cs-btn-play-circle:hover {
+    background: #1d4ed8; transform: scale(1.05);
+  }
+
+  #algo-combination-view .cs-speed-box {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: #64748b; font-weight: 600; flex-shrink: 0;
   }
 
   /* 回溯状态监视器 (Card 2) - 对等高度 */
@@ -256,7 +272,7 @@
     <!-- 左侧双卡片联动沙盘 -->
     <div class="cs-left">
       <!-- Card 1: 决策树沙盘 -->
-      <section class="cs-card cs-tree-card">
+      <section class="co-card cs-tree-card">
         <div class="cs-card-header">
           <span class="cs-card-title">🌲 完整决策树 (Full Decision Tree)</span>
           <!-- 图例栏 -->
@@ -271,21 +287,24 @@
         <div id="combination-tree-display"></div>
       </section>
 
-      <!-- 时间轴播放控制器 -->
-      <div class="cs-controls">
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <button id="step-reset" class="cs-ctrl-btn">⏮ 重置</button>
-          <button id="step-prev" class="cs-ctrl-btn">◀ 上一步</button>
-          <button id="step-play" class="cs-ctrl-btn cs-ctrl-play">▶ 播放</button>
-          <button id="step-next" class="cs-ctrl-btn">下一步 ▶</button>
+      <!-- 贯穿式 Scrubber 进度条与播放控制器 -->
+      <div class="cs-playback-card">
+        <button id="step-reset" title="重置" class="cs-btn-circle">⏮</button>
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="cs-progress-slider">
+        <div class="cs-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
         </div>
-
-        <span id="step-counter" class="cs-counter">步骤: 0 / 0</span>
-
-        <div style="display: flex; align-items: center; gap: 6px; color: #64748b; font-size: 11px;">
-          <span style="font-weight: 600;">速度</span>
-          <input id="step-speed" type="range" min="200" max="2000" step="100" value="600" style="width: 90px; accent-color: #2563eb;">
-          <span id="step-speed-label" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a;">0.6s</span>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="step-prev" title="上一步" class="cs-btn-circle">◀</button>
+          <button id="step-play" title="自动播放/暂停" class="cs-btn-play-circle">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="step-next" title="下一步" class="cs-btn-circle">▶</button>
+        </div>
+        <div class="cs-speed-box">
+          <span>速度</span>
+          <input id="step-speed" type="range" min="200" max="2000" step="100" value="600" style="width: 70px; accent-color: #2563eb;">
+          <span id="step-speed-label" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; min-width: 28px;">0.6s</span>
         </div>
       </div>
 

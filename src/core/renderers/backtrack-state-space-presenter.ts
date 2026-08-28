@@ -25,7 +25,8 @@ export interface PruningMonitorOptions {
 }
 
 export interface VariableWatchItem {
-  label: string;
+  label?: string;
+  name?: string;
   value: string | number;
   highlight?: boolean;
 }
@@ -237,26 +238,26 @@ export class BacktrackStateSpacePresenter {
 
     const itemsHtml = variables
       .map((v) => {
-        const border = v.highlight ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255, 255, 255, 0.08)';
-        const bg = v.highlight ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.04)';
-        const valueColor = v.highlight ? '#fcd34d' : '#38bdf8';
+        const border = v.highlight ? '#fde68a' : '#e2e8f0';
+        const bg = v.highlight ? '#fffbeb' : '#f8fafc';
+        const valueColor = v.highlight ? '#d97706' : '#2563eb';
 
         return `
           <div style="
-            display: flex; flex-direction: column; gap: 2px;
-            padding: 6px 10px; border-radius: 6px;
+            display: flex; flex-direction: column; gap: 1px;
+            padding: 4px 8px; border-radius: 6px;
             background: ${bg}; border: 1px solid ${border};
-            min-width: 60px; text-align: center;
+            min-width: 54px; text-align: center;
           ">
-            <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">${v.label}</span>
-            <span style="font-size: 13px; font-weight: bold; color: ${valueColor}; font-family: monospace;">${v.value}</span>
+            <span style="font-size: 9.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">${v.label || v.name || 'VAR'}</span>
+            <span style="font-size: 12px; font-weight: 800; color: ${valueColor}; font-family: 'JetBrains Mono', monospace;">${v.value}</span>
           </div>
         `;
       })
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 4px 6px;">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 2px 4px;">
         ${itemsHtml}
       </div>
     `;
@@ -273,47 +274,47 @@ export class BacktrackStateSpacePresenter {
     if (!container) return;
 
     if (!logs || logs.length === 0) {
-      container.innerHTML = '<div style="color: #64748b; font-size: 12px;">(暂无执行日志)</div>';
+      container.innerHTML = '<div style="color: #94a3b8; font-size: 12px; font-style: italic; padding: 4px 8px;">(暂无执行日志)</div>';
       return;
     }
 
     const itemsHtml = logs
       .map((item, idx) => {
         const isCurrent = idx === activeIndex || (activeIndex === -1 && idx === logs.length - 1);
-        let tagColor = '#94a3b8';
-        let tagBg = 'rgba(255,255,255,0.06)';
+        let tagColor = '#64748b';
+        let tagBg = '#f1f5f9';
         let tagName = '执行';
 
         if (item.type === 'push') {
-          tagColor = '#60a5fa';
-          tagBg = 'rgba(59, 130, 246, 0.15)';
+          tagColor = '#1d4ed8';
+          tagBg = '#eff6ff';
           tagName = '选择';
         } else if (item.type === 'pop') {
-          tagColor = '#f87171';
-          tagBg = 'rgba(239, 68, 68, 0.15)';
+          tagColor = '#b91c1c';
+          tagBg = '#fef2f2';
           tagName = '撤销';
         } else if (item.type === 'collect') {
-          tagColor = '#34d399';
-          tagBg = 'rgba(16, 185, 129, 0.15)';
+          tagColor = '#047857';
+          tagBg = '#ecfdf5';
           tagName = '解集';
         } else if (item.type === 'prune') {
-          tagColor = '#fbbf24';
-          tagBg = 'rgba(245, 158, 11, 0.15)';
+          tagColor = '#c2410c';
+          tagBg = '#fff7ed';
           tagName = '剪枝';
         }
 
         return `
           <div style="
-            display: flex; align-items: baseline; gap: 8px;
-            padding: 4px 8px; border-radius: 4px;
-            background: ${isCurrent ? 'rgba(59, 130, 246, 0.12)' : 'transparent'};
-            border-left: ${isCurrent ? '3px solid #3b82f6' : '3px solid transparent'};
-            font-size: 12px; line-height: 1.5; color: ${isCurrent ? '#f8fafc' : '#94a3b8'};
+            display: flex; align-items: baseline; gap: 6px;
+            padding: 3px 6px; border-radius: 4px;
+            background: ${isCurrent ? '#eff6ff' : 'transparent'};
+            border-left: ${isCurrent ? '3px solid #2563eb' : '3px solid transparent'};
+            font-size: 11.5px; line-height: 1.5; color: ${isCurrent ? '#0f172a' : '#64748b'};
           ">
-            <span style="font-size: 10px; color: ${tagColor}; background: ${tagBg}; padding: 1px 4px; border-radius: 3px; font-weight: 700;">
+            <span style="font-size: 9.5px; color: ${tagColor}; background: ${tagBg}; padding: 1px 4px; border-radius: 3px; font-weight: 700;">
               ${tagName}
             </span>
-            <span style="font-family: monospace; font-size: 11px; opacity: 0.5;">#${item.stepNumber ?? idx + 1}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; opacity: 0.6;">#${item.stepNumber ?? idx + 1}</span>
             <span style="flex: 1;">${item.text}</span>
           </div>
         `;
@@ -321,7 +322,7 @@ export class BacktrackStateSpacePresenter {
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 4px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
         ${itemsHtml}
       </div>
     `;

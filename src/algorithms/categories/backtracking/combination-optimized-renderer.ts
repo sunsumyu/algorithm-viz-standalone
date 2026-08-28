@@ -67,6 +67,18 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
 
+  const makeVars = (currentPathLen: number) => {
+    const need = Math.max(0, k - currentPathLen);
+    const upper = n - need + 1;
+    return [
+      { name: 'n', value: String(n), type: 'number' as const },
+      { name: 'k', value: String(k), type: 'number' as const },
+      { name: 'path.size()', value: String(currentPathLen), type: 'number' as const },
+      { name: '需补元素', value: String(need), type: 'number' as const },
+      { name: '遍历上界', value: String(upper), type: 'number' as const },
+    ];
+  };
+
   steps.push({
     nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
     foundPathIds: [], prunedNodeIds: [...prunedIds],
@@ -74,6 +86,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
     message: `开始：从 1..${n} 中选 ${k} 个数，剪枝上界 i <= ${n - k + 1}（首层）`,
     codeLine: 3,
     stats: { depth: 0, count: 0, need: k, remain: 0 },
+    vars: makeVars(0),
   });
 
   function traverse(node: BacktrackTreeNode): void {
@@ -87,6 +100,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         message: `递归进入：path.size() == ${k} ✓ 满足终止条件`,
         codeLine: 9,
         stats: { depth: node.depth, count: foundIds.length, need: 0, remain: node.path.length },
+        vars: makeVars(node.path.length),
       });
       foundIds.push(node.id);
       steps.push({
@@ -98,6 +112,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         message: `找到组合：[${node.path.join(', ')}]，收集并返回`,
         codeLine: { from: 10, to: 11 },
         stats: { depth: node.depth, count: foundIds.length, need: 0, remain: node.path.length },
+        vars: makeVars(node.path.length),
       });
       return;
     }
@@ -111,6 +126,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
       message: `递归进入：path.size() = ${node.path.length} < ${k}，进入 for 循环`,
       codeLine: 9,
       stats: { depth: node.depth, count: foundIds.length, need: k - node.path.length, remain: node.path.length },
+      vars: makeVars(node.path.length),
     });
 
     for (const child of node.children) {
@@ -126,6 +142,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
             message: `剪枝：i = ${child.value} > ${upper}（剩余元素不够凑满 ${k} 个），循环终止`,
             codeLine: 13,
             stats: { depth: node.depth, count: foundIds.length, need: k - node.path.length, remain: node.path.length },
+            vars: makeVars(node.path.length),
           });
         }
         continue;
@@ -143,6 +160,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         message: `处理节点：path.add(${child.value}) → [${child.path.join(', ')}]`,
         codeLine: 15,
         stats: { depth: child.depth, count: foundIds.length, need: k - child.path.length, remain: child.path.length },
+        vars: makeVars(child.path.length),
       });
 
       // Recurse
@@ -155,6 +173,7 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         message: `向下递归：backtrack(${Number(child.value) + 1}, path)`,
         codeLine: 16,
         stats: { depth: child.depth, count: foundIds.length, need: k - child.path.length, remain: child.path.length },
+        vars: makeVars(child.path.length),
       });
 
       traverse(child);
@@ -166,9 +185,10 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
         foundPathIds: [...foundIds],
         prunedNodeIds: [...prunedIds],
         path: [...node.path],
-        message: `回溯撤销：path.remove(${child.value}) 恢复至 [${node.path.join(', ')}]`,
+        message: `回溯撤销：path.remove()，弹出 ${child.value}，恢复路径为 [${node.path.join(', ')}]`,
         codeLine: 17,
         stats: { depth: node.depth, count: foundIds.length, need: k - node.path.length, remain: node.path.length },
+        vars: makeVars(node.path.length),
       });
     }
   }
@@ -181,9 +201,10 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
     foundPathIds: [...foundIds],
     prunedNodeIds: [...prunedIds],
     path: [],
-    message: `完成！共找到 ${foundIds.length} 个组合`,
-    codeLine: 4,
+    message: `搜索完成：共找到 ${foundIds.length} 个合法组合（剪枝减少了无效递归分支）`,
+    codeLine: 5,
     stats: { depth: 0, count: foundIds.length, need: 0, remain: 0 },
+    vars: makeVars(0),
   });
 
   return steps;
@@ -276,6 +297,17 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
 
     this.bindPlaybackControls();
     this.root.querySelector('#co-start')?.addEventListener('click', () => this.start());
+
+    // 绑定 Scrubber 进度条拖拽交互
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
 
     // Stage Tab switching
     const stage1Tab = this.root.querySelector('#co-tab-stage1');
@@ -383,6 +415,20 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
         results.length - 1
       );
     }
+
+    // 5. Update Scrubber Progress & Counters
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) playIcon.textContent = this.isPlaying ? '❚❚' : '▶';
   }
 
   public reset(): void {
