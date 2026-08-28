@@ -49,7 +49,7 @@ export class BacktrackStateSpacePresenter {
 
     if (!path || path.length === 0) {
       container.innerHTML = `
-        <div class="empty-path-placeholder" style="color: rgba(255,255,255,0.35); font-size: 13px; font-style: italic; padding: 8px 12px; text-align: center;">
+        <div class="empty-path-placeholder" style="color: #94a3b8; font-size: 12px; font-style: italic; padding: 6px 10px;">
           (当前路径栈为空 [ ])
         </div>
       `;
@@ -61,36 +61,36 @@ export class BacktrackStateSpacePresenter {
       .map((val, idx) => {
         const isLast = idx === path.length - 1;
         let actionClass = '';
-        let badgeColor = 'rgba(59, 130, 246, 0.2)';
-        let borderColor = 'rgba(96, 165, 250, 0.4)';
-        let textColor = '#93c5fd';
+        let badgeBg = '#eff6ff';
+        let borderColor = '#93c5fd';
+        let textColor = '#1e40af';
 
         if (isLast && highlightLast) {
           if (action === 'push') {
             actionClass = 'path-node-push';
-            badgeColor = 'rgba(16, 185, 129, 0.25)';
+            badgeBg = '#ecfdf5';
             borderColor = '#10b981';
-            textColor = '#6ee7b7';
+            textColor = '#047857';
           } else if (action === 'pop') {
             actionClass = 'path-node-pop';
-            badgeColor = 'rgba(239, 68, 68, 0.25)';
+            badgeBg = '#fef2f2';
             borderColor = '#ef4444';
-            textColor = '#fca5a5';
+            textColor = '#b91c1c';
           } else if (action === 'collect') {
             actionClass = 'path-node-collect';
-            badgeColor = 'rgba(234, 179, 8, 0.25)';
+            badgeBg = '#fefce8';
             borderColor = '#eab308';
-            textColor = '#fde047';
+            textColor = '#854d0e';
           }
         }
 
         return `
           <div class="path-stack-node ${actionClass}" style="
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 4px 10px; border-radius: 8px;
-            background: ${badgeColor}; border: 1px solid ${borderColor};
-            color: ${textColor}; font-weight: 600; font-family: monospace; font-size: 13px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 9px; border-radius: 7px;
+            background: ${badgeBg}; border: 1px solid ${borderColor};
+            color: ${textColor}; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           ">
             <span style="font-size: 10px; opacity: 0.6; font-weight: normal;">#${idx}</span>
@@ -98,10 +98,10 @@ export class BacktrackStateSpacePresenter {
           </div>
         `;
       })
-      .join('<span style="color: rgba(255,255,255,0.3); font-weight: bold; margin: 0 2px;">→</span>');
+      .join('<span style="color: #94a3b8; font-weight: bold; margin: 0 2px;">→</span>');
 
     container.innerHTML = `
-      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 4px 6px;">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 2px 4px;">
         ${itemsHtml}
       </div>
     `;
@@ -118,7 +118,7 @@ export class BacktrackStateSpacePresenter {
 
     if (!options.enabled) {
       container.innerHTML = `
-        <div style="color: rgba(255,255,255,0.35); font-size: 12px; padding: 6px 10px;">
+        <div style="color: #94a3b8; font-size: 12px; padding: 6px 8px;">
           当前阶段未启用剪枝（朴素回溯全搜索）
         </div>
       `;
@@ -126,15 +126,15 @@ export class BacktrackStateSpacePresenter {
     }
 
     const isPruned = !!options.conditionMet;
-    const statusBg = isPruned ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)';
-    const statusBorder = isPruned ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)';
-    const statusText = isPruned ? '#f87171' : '#34d399';
+    const statusBg = isPruned ? '#fef2f2' : '#ecfdf5';
+    const statusBorder = isPruned ? '#fca5a5' : '#a7f3d0';
+    const statusText = isPruned ? '#b91c1c' : '#047857';
     const statusBadge = isPruned ? '✂️ 触发剪枝 (跳过后续搜索)' : '✅ 条件合法 (继续探索)';
 
     let formulaHtml = '';
     if (options.formula) {
       formulaHtml = `
-        <div style="font-family: monospace; font-size: 12px; color: #cbd5e1; margin-bottom: 4px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #334155; margin-bottom: 2px;">
           <strong>剪枝判定:</strong> <code>${options.formula}</code>
         </div>
       `;
@@ -143,9 +143,9 @@ export class BacktrackStateSpacePresenter {
     let detailHtml = '';
     if (options.remainingCapacity !== undefined || options.neededElements !== undefined) {
       detailHtml = `
-        <div style="display: flex; gap: 12px; font-size: 12px; color: #94a3b8; margin-top: 4px;">
-          ${options.remainingCapacity !== undefined ? `<span>剩余可选数: <strong style="color: #e2e8f0;">${options.remainingCapacity}</strong></span>` : ''}
-          ${options.neededElements !== undefined ? `<span>还需元素: <strong style="color: #e2e8f0;">${options.neededElements}</strong></span>` : ''}
+        <div style="display: flex; gap: 12px; font-size: 11.5px; color: #64748b; margin-top: 2px;">
+          ${options.remainingCapacity !== undefined ? `<span>剩余可选数: <strong style="color: #0f172a;">${options.remainingCapacity}</strong></span>` : ''}
+          ${options.neededElements !== undefined ? `<span>还需元素: <strong style="color: #0f172a;">${options.neededElements}</strong></span>` : ''}
         </div>
       `;
     }
@@ -153,15 +153,15 @@ export class BacktrackStateSpacePresenter {
     container.innerHTML = `
       <div style="
         background: ${statusBg}; border: 1px solid ${statusBorder};
-        border-radius: 8px; padding: 8px 12px;
+        border-radius: 8px; padding: 6px 10px;
       ">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
           ${formulaHtml}
-          <span style="color: ${statusText}; font-size: 11px; font-weight: 700; border-radius: 4px; padding: 2px 6px; background: rgba(0,0,0,0.2);">
+          <span style="color: ${statusText}; font-size: 10.5px; font-weight: 700; border-radius: 4px; padding: 1.5px 6px; background: rgba(255,255,255,0.7); border: 1px solid ${statusBorder}; flex-shrink: 0;">
             ${statusBadge}
           </span>
         </div>
-        ${options.message ? `<div style="font-size: 12px; color: #e2e8f0; line-height: 1.4;">${options.message}</div>` : ''}
+        ${options.message ? `<div style="font-size: 11.5px; color: ${statusText}; line-height: 1.4; margin-top: 2px;">${options.message}</div>` : ''}
         ${detailHtml}
       </div>
     `;
@@ -180,7 +180,7 @@ export class BacktrackStateSpacePresenter {
 
     if (!results || results.length === 0) {
       container.innerHTML = `
-        <div style="color: rgba(255,255,255,0.35); font-size: 12px; font-style: italic; padding: 6px 10px;">
+        <div style="color: #94a3b8; font-size: 12px; font-style: italic; padding: 4px 8px;">
           (暂未找到合法解集)
         </div>
       `;
@@ -190,19 +190,20 @@ export class BacktrackStateSpacePresenter {
     const cardsHtml = results
       .map((res, idx) => {
         const isActive = idx === activeIndex || (activeIndex === -1 && idx === results.length - 1);
-        const bg = isActive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.05)';
-        const border = isActive ? '#10b981' : 'rgba(255, 255, 255, 0.12)';
-        const color = isActive ? '#6ee7b7' : '#e2e8f0';
+        const bg = isActive ? '#ecfdf5' : '#f8fafc';
+        const border = isActive ? '#10b981' : '#e2e8f0';
+        const color = isActive ? '#047857' : '#334155';
+        const weight = isActive ? '700' : '600';
 
         return `
           <button class="result-solution-chip" data-index="${idx}" style="
             display: inline-flex; align-items: center; gap: 4px;
-            padding: 4px 8px; border-radius: 6px;
+            padding: 3px 8px; border-radius: 6px;
             background: ${bg}; border: 1px solid ${border};
-            color: ${color}; font-size: 12px; font-family: monospace; font-weight: 600;
-            cursor: pointer; transition: all 0.2s; outline: none;
+            color: ${color}; font-size: 11.5px; font-family: 'JetBrains Mono', monospace; font-weight: ${weight};
+            cursor: pointer; transition: all 0.15s; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
           ">
-            <span style="opacity: 0.5; font-size: 10px;">#${idx + 1}</span>
+            <span style="opacity: 0.6; font-size: 10px;">#${idx + 1}</span>
             <span>[${res.join(', ')}]</span>
           </button>
         `;
@@ -210,7 +211,7 @@ export class BacktrackStateSpacePresenter {
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 4px 6px;">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 2px 4px;">
         ${cardsHtml}
       </div>
     `;
