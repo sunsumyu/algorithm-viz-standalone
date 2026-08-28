@@ -1,843 +1,890 @@
 <style>
-    #algo-top-k-frequent-view .tkf-viz-container {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        color: #e2e8f0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        padding: 0;
-        gap: 0;
-        box-sizing: border-box;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container,
-    #algo-top-k-frequent-view .tkf-viz-container .viz-header,
-    #algo-top-k-frequent-view .tkf-viz-container .viz-footer {
-        background: rgba(24, 24, 37, 0.9);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container {
-        background:
-            radial-gradient(ellipse at 8% 6%, rgba(236, 72, 153, 0.18), transparent 55%),
-            radial-gradient(ellipse at 92% 94%, rgba(168, 85, 247, 0.18), transparent 55%),
-            linear-gradient(135deg, #181229, #1a162c, #11131d);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .viz-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.6rem 1.2rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        flex-shrink: 0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .header-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .icon-badge {
-        width: 44px;
-        height: 44px;
-        border-radius: 11px;
-        background: linear-gradient(135deg, #ec4899, #a855f7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        flex-shrink: 0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .header-title {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .header-title h1 {
-        font-size: 22px;
-        font-weight: 800;
-        margin: 0;
-        background: linear-gradient(135deg, #ec4899, #a855f7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .header-title .subtitle {
-        font-size: 13px;
-        color: #94a3b8;
-        margin: 0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .header-tip {
-        max-width: 360px;
-        padding: 9px 12px;
-        border-radius: 10px;
-        background: rgba(236, 72, 153, 0.1);
-        border: 1px solid rgba(236, 72, 153, 0.24);
-        color: #f9a8d4;
-        font-size: 13px;
-        line-height: 1.55;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .header-tip strong { color: #ec4899; }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-icon {
-        background: rgba(100, 116, 139, 0.2);
-        border: 1px solid rgba(100, 116, 139, 0.3);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        color: #e2e8f0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-icon:hover:not(:disabled) {
-        background: rgba(100, 116, 139, 0.3);
-        transform: translateY(-1px);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-icon:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .viz-main-content {
-        display: flex;
-        flex-direction: row;
-        flex: 1;
-        gap: 0;
-        overflow: hidden;
-        width: 100%;
-        min-height: 0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .col-code {
-        width: 380px;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        border-left: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .col-viz {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .col-state {
-        width: 240px;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        border-left: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .panel {
-        background: transparent;
-        overflow: hidden;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .panel-title {
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        padding: 0.6rem 0.9rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    /* Code Panel */
-    #algo-top-k-frequent-view .tkf-viz-container .code-panel {
-        background: rgba(17, 17, 27, 0.8);
-        color: #e2e8f0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .code-content {
-        flex: 1;
-        overflow: auto;
-        padding: 0.75rem;
-        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        font-size: 0.8rem;
-        line-height: 1.5;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .code-line {
-        padding: 1px 0;
-        padding-left: 0.5rem;
-        transition: background-color 0.2s;
-        border-radius: 0.2rem;
-        white-space: pre;
-        display: flex;
-        align-items: center;
-        min-height: 1.4em;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .code-line.current {
-        background: rgba(236, 72, 153, 0.15);
-        border-left: 3px solid #ec4899;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .code-line-number {
-        color: #64748b;
-        user-select: none;
-        margin-right: 1rem;
-        display: inline-block;
-        width: 1.2rem;
-        text-align: right;
-        font-size: 0.7rem;
-        opacity: 0.5;
-        flex-shrink: 0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .code-keyword { color: #c084fc; }
-    #algo-top-k-frequent-view .tkf-viz-container .code-type { color: #fbbf24; }
-    #algo-top-k-frequent-view .tkf-viz-container .code-string { color: #ec4899; }
-    #algo-top-k-frequent-view .tkf-viz-container .code-comment { color: #64748b; font-style: italic; }
-
-    /* Viz Panel */
-    #algo-top-k-frequent-view .tkf-viz-container .viz-container {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 1.5rem;
-        flex: 1;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .array-display {
-        display: flex;
-        gap: 0.4rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        position: relative;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .array-cell {
-        width: 2.8rem;
-        height: 2.8rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(17, 17, 27, 0.7);
-        border: 2px solid rgba(100, 116, 139, 0.3);
-        border-radius: 10px;
-        font-family: 'Consolas', monospace;
-        font-size: 1.1rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        color: #e2e8f0;
-        will-change: transform, box-shadow;
-        position: relative;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .array-cell.current {
-        border-color: #ec4899;
-        background: rgba(236, 72, 153, 0.2);
-        color: #ec4899;
-        transform: translateY(-3px);
-        box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.2);
-        animation: tkf-pulse-current 1.2s infinite;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .array-cell.processed {
-        border-color: rgba(168, 85, 247, 0.4);
-        background: rgba(168, 85, 247, 0.08);
-        color: rgba(168, 85, 247, 0.7);
-        opacity: 0.7;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .pointer-arrow {
-        position: absolute;
-        bottom: -24px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-bottom: 8px solid #ec4899;
-        filter: drop-shadow(0 0 4px rgba(236, 72, 153, 0.6));
-    }
-
-    /* Frequency Map */
-    #algo-top-k-frequent-view .tkf-viz-container .freq-map-container {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        min-height: 60px;
-        padding: 0.75rem;
-        background: rgba(17, 17, 27, 0.4);
-        border-radius: 12px;
-        border: 1px solid rgba(168, 85, 247, 0.2);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .freq-entry {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        padding: 0.4rem 0.6rem;
-        background: rgba(168, 85, 247, 0.15);
-        border: 1px solid rgba(168, 85, 247, 0.3);
-        border-radius: 8px;
-        font-family: 'Consolas', monospace;
-        font-size: 0.9rem;
-        animation: tkf-fade-in 0.3s ease;
-        transition: all 0.3s ease;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .freq-entry.updated {
-        border-color: #ec4899;
-        background: rgba(236, 72, 153, 0.2);
-        box-shadow: 0 0 8px rgba(236, 72, 153, 0.3);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .freq-entry .freq-key {
-        color: #e2e8f0;
-        font-weight: 600;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .freq-entry .freq-arrow {
-        color: #64748b;
-        font-size: 0.8rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .freq-entry .freq-val {
-        color: #ec4899;
-        font-weight: 700;
-    }
-
-    /* Bucket Display */
-    #algo-top-k-frequent-view .tkf-viz-container .bucket-container {
-        display: flex;
-        gap: 0.6rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: flex-end;
-        min-height: 80px;
-        padding: 0.75rem;
-        background: rgba(17, 17, 27, 0.4);
-        border-radius: 12px;
-        border: 1px solid rgba(236, 72, 153, 0.2);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .bucket-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.3rem;
-        animation: tkf-slide-up 0.4s ease;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .bucket-label {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        font-family: 'Consolas', monospace;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .bucket-chips {
-        display: flex;
-        gap: 0.2rem;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .bucket-chip {
-        padding: 0.3rem 0.5rem;
-        background: rgba(168, 85, 247, 0.2);
-        border: 1px solid rgba(168, 85, 247, 0.4);
-        border-radius: 6px;
-        font-family: 'Consolas', monospace;
-        font-size: 0.85rem;
-        color: #c084fc;
-        font-weight: 600;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .bucket-chip.collected {
-        background: rgba(236, 72, 153, 0.25);
-        border-color: rgba(236, 72, 153, 0.5);
-        color: #f9a8d4;
-        animation: tkf-glow 0.5s ease;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .bucket-bar {
-        width: 32px;
-        background: linear-gradient(180deg, rgba(168, 85, 247, 0.4), rgba(168, 85, 247, 0.1));
-        border-radius: 4px 4px 0 0;
-        transition: height 0.4s ease;
-        border: 1px solid rgba(168, 85, 247, 0.3);
-        border-bottom: none;
-    }
-
-    /* Result Display */
-    #algo-top-k-frequent-view .tkf-viz-container .result-display {
-        display: flex;
-        gap: 0.4rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        min-height: 50px;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .result-chip {
-        padding: 0.4rem 0.7rem;
-        background: linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(168, 85, 247, 0.3));
-        border: 2px solid rgba(236, 72, 153, 0.5);
-        border-radius: 8px;
-        font-family: 'Consolas', monospace;
-        font-size: 1rem;
-        font-weight: 700;
-        color: #f9a8d4;
-        animation: tkf-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    /* Phase label */
-    #algo-top-k-frequent-view .tkf-viz-container .phase-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
-        background: rgba(236, 72, 153, 0.15);
-        border: 1px solid rgba(236, 72, 153, 0.3);
-        color: #f9a8d4;
-    }
-
-    /* State Panel */
-    #algo-top-k-frequent-view .tkf-viz-container .state-grid {
-        padding: 1rem;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .state-card {
-        position: relative;
-        overflow: hidden;
-        padding: 0.75rem 0.75rem 0.75rem 1.1rem;
-        backdrop-filter: blur(18px) saturate(160%);
-        background: rgba(20, 18, 38, 0.55);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .state-card::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 4px;
-        background: linear-gradient(180deg, #ec4899, #a855f7);
-        border-radius: 2px 0 0 2px;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .state-label {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        color: #64748b;
-        margin-bottom: 0.3rem;
-        letter-spacing: 0.5px;
-        font-weight: 600;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .state-value {
-        font-family: 'Consolas', monospace;
-        font-size: 1.1rem;
-        color: #e2e8f0;
-        font-variant-numeric: tabular-nums;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .state-value.highlight {
-        color: #ec4899;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .state-value.purple {
-        color: #a855f7;
-    }
-
-    /* Result banner */
-    #algo-top-k-frequent-view .tkf-viz-container .result-banner {
-        margin: 0 1rem 1rem;
-        padding: 0.7rem 1rem;
-        border-radius: 10px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        text-align: center;
-        background: rgba(100, 116, 139, 0.15);
-        border: 1px solid rgba(100, 116, 139, 0.3);
-        color: #94a3b8;
-    }
-    #algo-top-k-frequent-view .tkf-viz-container .result-banner.success {
-        background: rgba(236, 72, 153, 0.12);
-        border-color: rgba(236, 72, 153, 0.4);
-        color: #f9a8d4;
-    }
-    #algo-top-k-frequent-view .tkf-viz-container .result-banner.fail {
-        background: rgba(248, 113, 113, 0.12);
-        border-color: rgba(248, 113, 113, 0.4);
-        color: #fca5a5;
-    }
-
-    /* Controls Footer */
-    #algo-top-k-frequent-view .tkf-viz-container .viz-footer {
-        background: rgba(24, 24, 37, 0.9);
-        padding: 0.6rem 1.2rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .control-group {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-primary {
-        background: linear-gradient(135deg, #ec4899, #a855f7);
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        padding: 0.45rem 1rem;
-        color: #fff;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-primary:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.25);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-primary:disabled {
-        background: rgba(100, 116, 139, 0.3);
-        color: #64748b;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-secondary {
-        background: rgba(100, 116, 139, 0.2);
-        border: 1px solid rgba(100, 116, 139, 0.3);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        padding: 0.45rem 1rem;
-        color: #e2e8f0;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-secondary:hover:not(:disabled) {
-        background: rgba(100, 116, 139, 0.3);
-        transform: translateY(-1px);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-secondary:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-example {
-        background: rgba(168, 85, 247, 0.15);
-        border: 1px solid rgba(168, 85, 247, 0.3);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        padding: 0.4rem 0.8rem;
-        color: #c084fc;
-        font-weight: 600;
-        font-size: 0.8rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .btn-example:hover {
-        background: rgba(168, 85, 247, 0.25);
-        transform: translateY(-1px);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .input-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: rgba(17, 17, 27, 0.7);
-        padding: 0.3rem 0.6rem;
-        border-radius: 10px;
-        border: 1px solid rgba(100, 116, 139, 0.3);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container input[type="text"] {
-        border: none;
-        background: transparent;
-        font-family: 'Consolas', monospace;
-        font-size: 0.8rem;
-        width: 160px;
-        outline: none;
-        color: #e2e8f0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container input[type="number"] {
-        border: none;
-        background: transparent;
-        font-family: 'Consolas', monospace;
-        font-size: 0.8rem;
-        width: 40px;
-        outline: none;
-        color: #e2e8f0;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container input[type="range"] {
-        width: 100px;
-        accent-color: #ec4899;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .control-divider {
-        width: 1px;
-        height: 24px;
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .step-counter {
-        font-size: 0.85rem;
-        color: #94a3b8;
-        font-family: 'Consolas', monospace;
-        text-align: center;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .speed-label {
-        font-size: 0.8rem;
-        color: #94a3b8;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container #step-message {
-        padding: 0.7rem 1rem;
-        text-align: center;
-        color: #94a3b8;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        font-size: 0.9rem;
-        background: rgba(17, 17, 27, 0.5);
-    }
-
-    /* Log panel */
-    #algo-top-k-frequent-view .tkf-viz-container .log-panel {
-        max-height: 80px;
-        overflow-y: auto;
-        padding: 0.5rem 0.75rem;
-        background: rgba(17, 17, 27, 0.6);
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        font-family: 'Consolas', monospace;
-        font-size: 0.75rem;
-        color: #94a3b8;
-        line-height: 1.5;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .log-entry {
-        padding: 0.1rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .log-entry .log-step {
-        color: #64748b;
-        margin-right: 0.5rem;
-    }
-
-    #algo-top-k-frequent-view .tkf-viz-container .log-entry .log-text {
-        color: #c084fc;
-    }
-
-    /* Keyframe animations */
-    @keyframes tkf-pulse-current {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4); }
-        50% { box-shadow: 0 0 0 10px rgba(236, 72, 153, 0); }
-    }
-
-    @keyframes tkf-fade-in {
-        from { opacity: 0; transform: scale(0.9); }
-        to { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes tkf-slide-up {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes tkf-glow {
-        0% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.5); }
-        50% { box-shadow: 0 0 8px 2px rgba(236, 72, 153, 0.3); }
-        100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
-    }
-
-    @keyframes tkf-pop-in {
-        from { transform: scale(0.5); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
-
-    @media (max-width: 1100px) {
-        #algo-top-k-frequent-view .tkf-viz-container .viz-main-content {
-            flex-direction: column;
-            overflow: auto;
-        }
-        #algo-top-k-frequent-view .tkf-viz-container .col-code,
-        #algo-top-k-frequent-view .tkf-viz-container .col-state {
-            width: 100%;
-            border-left: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        #algo-top-k-frequent-view .tkf-viz-container .col-code {
-            min-height: 360px;
-        }
-    }
+  /* === 前 K 个高频元素 (LeetCode 347) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
+  #algo-top-k-frequent-view {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-top-k-frequent-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-top-k-frequent-view .tkf-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-top-k-frequent-view .tkf-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #d97706;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-top-k-frequent-view .tkf-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-top-k-frequent-view .tkf-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-top-k-frequent-view .tkf-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-top-k-frequent-view .tkf-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #d97706;
+    background: #fffbeb;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #fde68a;
+    white-space: nowrap;
+  }
+
+  #algo-top-k-frequent-view .tkf-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-top-k-frequent-view .tkf-input-str {
+    width: 150px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-input-k {
+    width: 44px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-input-str:focus,
+  #algo-top-k-frequent-view .tkf-input-k:focus {
+    border-color: #d97706;
+    background: #ffffff;
+  }
+
+  #algo-top-k-frequent-view .tkf-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #d97706;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(217, 119, 6, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-btn-generate:hover {
+    background: #b45309;
+  }
+
+  #algo-top-k-frequent-view .tkf-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-top-k-frequent-view .tkf-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-top-k-frequent-view .tkf-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-top-k-frequent-view .tkf-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-top-k-frequent-view .tkf-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-top-k-frequent-view .tkf-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-top-k-frequent-view .tkf-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-top-k-frequent-view .tkf-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-top-k-frequent-view .tkf-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-top-k-frequent-view .tkf-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 频率沙盘展示盒 */
+  #algo-top-k-frequent-view #tkf-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-top-k-frequent-view .tkf-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #d97706;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-top-k-frequent-view .tkf-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-top-k-frequent-view .tkf-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-top-k-frequent-view .tkf-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #d97706;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(217, 119, 6, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-play-circle-btn:hover {
+    background: #b45309;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-top-k-frequent-view .tkf-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-top-k-frequent-view .tkf-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-top-k-frequent-view .tkf-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-top-k-frequent-view .tkf-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-top-k-frequent-view .tkf-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-top-k-frequent-view .tkf-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-tab-item.active {
+    background: #d97706;
+    color: #ffffff;
+  }
+
+  #algo-top-k-frequent-view .tkf-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-top-k-frequent-view .tkf-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-top-k-frequent-view .tkf-lang-btn.active {
+    background: #334155;
+    color: #fde68a;
+  }
+
+  #algo-top-k-frequent-view .tkf-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-top-k-frequent-view .tkf-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-top-k-frequent-view .tkf-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-top-k-frequent-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fde68a;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-top-k-frequent-view .tkf-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-top-k-frequent-view .tkf-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-top-k-frequent-view .tkf-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-top-k-frequent-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-top-k-frequent-view .code-line.active {
+    background: rgba(217, 119, 6, 0.2);
+    border-left: 3px solid #d97706;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-top-k-frequent-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-top-k-frequent-view .tkf-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-top-k-frequent-view .tkf-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-top-k-frequent-view .tkf-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-top-k-frequent-view .tkf-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-top-k-frequent-view .tkf-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-top-k-frequent-view .tkf-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-top-k-frequent-view .tkf-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-top-k-frequent-view .tkf-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-top-k-frequent-view .tkf-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-top-k-frequent-view .tkf-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-top-k-frequent-view .tkf-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-top-k-frequent-view .tkf-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+  }
 </style>
 
-<div class="tkf-viz-container">
-    <div class="viz-header">
-        <div class="header-left">
-            <div class="icon-badge">🏆</div>
-            <div class="header-title">
-                <h1>前K个高频元素（桶排序）</h1>
-                <p class="subtitle">LeetCode 347 · 统计频率后桶排序取前 k 个</p>
-            </div>
-        </div>
-        <div class="header-tip"><strong>桶排序思路：</strong>先统计每个元素的频率，再将元素按频率放入桶中（桶下标=频率），最后从高频率到低频率收集 k 个元素。</div>
+<div id="algo-top-k-frequent-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="tkf-header">
+    <div class="tkf-header-left">
+      <div class="tkf-icon-btn">📊</div>
+      <h1 class="tkf-main-title">LeetCode 347. 前 K 个高频元素</h1>
+      <button id="btn-open-problem-modal" class="tkf-btn-problem">📋 题目</button>
+      <span class="tkf-badge-mode">小顶堆维护 Top-K / 超过 k 淘汰最小频率堆顶</span>
+      <span class="tkf-badge-complexity">O(N log K)</span>
     </div>
 
-    <div class="viz-main-content">
-        <div class="col-viz">
-            <div class="panel">
-                <div class="panel-title">可视化</div>
-                <div class="viz-container">
-                    <div id="tkf-phase-label" class="phase-label">准备就绪</div>
+    <!-- 参数与操作工具组 -->
+    <div class="tkf-header-right">
+      <div class="tkf-input-group">
+        <span>nums:</span>
+        <input type="text" id="input-nums" value="1,1,1,2,2,3" class="tkf-input-str" placeholder="1,1,1,2,2,3" />
+        <span>k:</span>
+        <input type="number" id="input-k" value="2" min="1" max="10" class="tkf-input-k" />
+      </div>
 
-                    <!-- Array Display -->
-                    <div id="tkf-array-display" class="array-display"></div>
+      <button id="btn-generate" class="tkf-btn-generate">
+        <span>▶ 运行</span>
+      </button>
 
-                    <!-- Frequency Map -->
-                    <div id="tkf-freq-map" class="freq-map-container" style="display:none;"></div>
+      <button id="btn-reset" class="tkf-btn-reset">
+        重置
+      </button>
 
-                    <!-- Buckets -->
-                    <div id="tkf-bucket-container" class="bucket-container" style="display:none;"></div>
-
-                    <!-- Result -->
-                    <div id="tkf-result-display" class="result-display" style="display:none;"></div>
-                </div>
-                <div id="step-message">就绪</div>
-                <div id="tkf-log-panel" class="log-panel" style="display:none;"></div>
-            </div>
-        </div>
-        <div class="col-state">
-            <div class="panel">
-                <div class="panel-title">状态</div>
-                <div class="state-grid">
-                    <div class="state-card">
-                        <div class="state-label">当前索引</div>
-                        <div id="tkf-state-index" class="state-value">-</div>
-                    </div>
-                    <div class="state-card">
-                        <div class="state-label">当前元素</div>
-                        <div id="tkf-state-element" class="state-value">-</div>
-                    </div>
-                    <div class="state-card">
-                        <div class="state-label">当前频率</div>
-                        <div id="tkf-state-freq" class="state-value">-</div>
-                    </div>
-                    <div class="state-card">
-                        <div class="state-label">k 值</div>
-                        <div id="tkf-state-k" class="state-value highlight">-</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-code">
-            <div class="panel code-panel">
-                <div class="panel-title">代码</div>
-                <div data-code-panel></div>
-            </div>
-        </div>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="tkf-chip" data-nums="1,1,1,2,2,3" data-k="2">示例 1 (k=2)</button>
+        <button class="tkf-chip" data-nums="4,1,-1,2,-1,2,3" data-k="2">负数与重复 (k=2)</button>
+        <button class="tkf-chip" data-nums="1,2,2,3,3,3,4,4,4,4" data-k="3">阶梯频率 (k=3)</button>
+      </div>
     </div>
+  </header>
 
-    <div class="viz-footer">
-        <div class="control-group">
-            <div class="input-wrapper">
-                <span class="speed-label">数组:</span>
-                <input type="text" id="tkf-input-arr" value="1,1,1,2,2,3">
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="tkf-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="tkf-left-section">
+
+      <!-- 卡片 1: 频率统计与小顶堆沙盘 (Frequency & Min-Heap Sandbox) -->
+      <div class="tkf-card">
+        <div class="tkf-card-header">
+          <div class="tkf-card-title">
+            <span>📊 频率统计与小顶堆沙盘 (Frequency & Min-Heap Sandbox)</span>
+          </div>
+          <div class="tkf-legend-bar">
+            <div><span class="tkf-legend-dot" style="background:#d97706;"></span> 📊 哈希频次</div>
+            <div><span class="tkf-legend-dot" style="background:#10b981;"></span> 🥞 小顶堆保留项 (Top-K)</div>
+            <div><span class="tkf-legend-dot" style="background:#ef4444;"></span> 💥 淘汰低频堆顶</div>
+          </div>
+        </div>
+
+        <!-- 沙盘展示盒 -->
+        <div id="tkf-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="tkf-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="tkf-slider" />
+        <div class="tkf-counter-badge">
+          <span id="step-cur" style="color: #d97706;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="tkf-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="tkf-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="tkf-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="tkf-card">
+        <div class="tkf-card-header">
+          <div>
+            <div class="tkf-card-title">📦 小顶堆状态空间与前 K 高频看板</div>
+            <div class="tkf-card-desc">当前处理元素、小顶堆堆顶与最终前 K 高频结果</div>
+          </div>
+          <span id="badge-heap-size" class="tkf-counter-badge" style="color:#d97706; background:#fffbeb; border-color:#fde68a;">堆容量: 0 / k</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="tkf-state-space-box">
+          <div class="tkf-state-columns">
+            <!-- 堆状态 -->
+            <div class="tkf-subcard">
+              <div class="tkf-subcard-title">🥞 小顶堆状态 (Min-Heap Status)</div>
+              <div id="tkf-heap-status-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
             </div>
-            <div class="input-wrapper">
-                <span class="speed-label">k:</span>
-                <input type="number" id="tkf-input-k" value="2" min="1">
+            <!-- 堆维护决策监视器 -->
+            <div class="tkf-subcard">
+              <div class="tkf-subcard-title">⚖️ 堆化与淘汰决策 (Heap Decision)</div>
+              <div id="tkf-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
             </div>
-            <button id="tkf-start" class="btn-primary">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 3l14 9-14 9V3z" />
-                </svg>
-                开始
-            </button>
-            <button class="btn-example" data-id="ex1" data-arr="1,1,1,2,2,3" data-k="2">示例1</button>
-            <button class="btn-example" data-id="ex2" data-arr="1" data-k="1">示例2</button>
-            <button class="btn-example" data-id="ex3" data-arr="4,1,-1,2,-1,2,3" data-k="2">示例3</button>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="tkf-subcard" style="flex-shrink: 0;">
+            <div class="tkf-subcard-title">🏆 前 K 个高频元素最终结果 (Top-K Result)</div>
+            <div id="tkf-metrics-container"></div>
+          </div>
         </div>
-        <div class="control-group">
-            <button id="step-reset" class="btn-secondary" title="重置">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                </svg>
-                重置
-            </button>
-            <button id="step-prev" class="btn-icon" title="上一步">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m15 18-6-6 6-6" />
-                </svg>
-            </button>
-            <button id="step-play" class="btn-primary" style="min-width:90px;">播放</button>
-            <button id="step-next" class="btn-icon" title="下一步">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m9 18 6-6-6-6" />
-                </svg>
-            </button>
-            <div class="control-divider"></div>
-            <span id="step-counter" class="step-counter" style="min-width:90px;">步骤: 1 / 1</span>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="tkf-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="tkf-dark-terminal">
+        <div class="tkf-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="tkf-tab-group">
+            <button id="btn-tab-code" class="tkf-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="tkf-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="tkf-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="tkf-lang-group" id="code-lang-tabs">
+            <button class="tkf-lang-btn active" data-lang="java">Java</button>
+            <button class="tkf-lang-btn" data-lang="cpp">C++</button>
+            <button class="tkf-lang-btn" data-lang="python">Python</button>
+            <button class="tkf-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="tkf-font-tools">
+            <div class="tkf-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="algo-top-k-frequent-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="tkf-window-dots">
+              <span class="tkf-dot" style="background:#ef4444;"></span>
+              <span class="tkf-dot" style="background:#eab308;"></span>
+              <span class="tkf-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
         </div>
-        <div class="control-group">
-            <span class="speed-label">速度</span>
-            <input type="range" id="step-speed" min="200" max="3000" step="100" value="1000">
-            <span id="step-speed-label" class="speed-label" style="min-width:35px;text-align:right;">1.0s</span>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="tkf-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
         </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="tkf-log-card">
+        <div class="tkf-log-header">
+          <div class="tkf-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="tkf-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="tkf-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="tkf-modal-backdrop hidden">
+    <div class="tkf-modal-content">
+      <div class="tkf-modal-header">
+        <div class="tkf-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="tkf-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="tkf-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
+  </div>
 </div>

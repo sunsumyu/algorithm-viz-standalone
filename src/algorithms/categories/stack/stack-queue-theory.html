@@ -1,564 +1,847 @@
 <style>
-  /* === 栈与队列理论基础 · 玻璃感 + 紫色主题 === */
+  /* === 栈与队列理论基础 · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-stack-queue-theory-view {
-    --accent-a: #a78bfa;
-    --accent-b: #6366f1;
-    --accent-glow: rgba(167, 139, 250, .45);
-    --stack-color: #a78bfa;
-    --queue-color: #38bdf8;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(167, 139, 250, .25), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(99, 102, 241, .25), transparent 55%),
-      linear-gradient(135deg, #0f0620 0%, #1a1238 50%, #14102a 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-stack-queue-theory-view .sqt-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-stack-queue-theory-view * {
+    box-sizing: border-box;
   }
-  #algo-stack-queue-theory-view .sqt-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-stack-queue-theory-view .sqt-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-stack-queue-theory-view .sqt-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-stack-queue-theory-view .sqt-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-stack-queue-theory-view .sqt-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-stack-queue-theory-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-stack-queue-theory-view .sqt-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-stack-queue-theory-view .sqt-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(99, 102, 241, .08));
-    border: 1px solid rgba(167, 139, 250, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-stack-queue-theory-view .sqt-tip strong { color: #c4b5fd; }
-  #algo-stack-queue-theory-view .sqt-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-stack-queue-theory-view .sqt-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-stack-queue-theory-view .sqt-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-stack-queue-theory-view .sqt-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-stack-queue-theory-view .sqt-tag {
-    font-size: 11px; color: #c4b5fd; background: rgba(167, 139, 250, .14);
-    border: 1px solid rgba(167, 139, 250, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  /* 可滚动理论区 */
-  #algo-stack-queue-theory-view .sqt-scroll {
-    flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 14px;
-    padding-right: 2px;
-  }
-  #algo-stack-queue-theory-view .sqt-scroll::-webkit-scrollbar { width: 6px; }
-  #algo-stack-queue-theory-view .sqt-scroll::-webkit-scrollbar-thumb { background: rgba(167, 139, 250, .3); border-radius: 3px; }
-  #algo-stack-queue-theory-view .sqt-body {
-    padding: 16px 18px; color: #cbd5e1; font-size: 13px; line-height: 1.75;
-  }
-  #algo-stack-queue-theory-view .sqt-body h3 {
-    margin: 0 0 8px; font-size: 14px; color: #e9d5ff; font-weight: 800; letter-spacing: .02em;
-  }
-  #algo-stack-queue-theory-view .sqt-body p { margin: 0 0 10px; }
-  #algo-stack-queue-theory-view .sqt-body code {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    padding: 2px 6px; border-radius: 6px;
-    background: rgba(167, 139, 250, .14); color: #c4b5fd; font-size: 12px;
-  }
-  /* 栈垂直可视化 */
-  #algo-stack-queue-theory-view .sqt-stack-visual {
-    display: flex; align-items: center; justify-content: center; gap: 18px;
-    padding: 16px 8px; margin: 8px 0;
-    background: rgba(8, 8, 24, .45); border-radius: 12px;
-    border: 1px dashed rgba(167, 139, 250, .3);
-  }
-  #algo-stack-queue-theory-view .sqt-stack-column {
-    display: flex; flex-direction: column-reverse; gap: 4px;
-    padding: 8px; border-radius: 10px;
-    border: 1.5px solid rgba(167, 139, 250, .4);
-    background: rgba(167, 139, 250, .06);
-    min-height: 180px; min-width: 80px;
-  }
-  #algo-stack-queue-theory-view .sqt-stack-item {
-    padding: 10px 16px; border-radius: 8px;
-    background: linear-gradient(135deg, rgba(167, 139, 250, .3), rgba(99, 102, 241, .1));
-    border: 1px solid rgba(167, 139, 250, .5);
-    font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
-    color: #e9d5ff; text-align: center;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-stack-queue-theory-view .sqt-stack-item.sqt-top {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
-  }
-  #algo-stack-queue-theory-view .sqt-stack-label {
-    display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #94a3b8;
-  }
-  #algo-stack-queue-theory-view .sqt-stack-label .sqt-arrow-up {
-    color: var(--accent-a); font-weight: 700; font-size: 14px;
-  }
-  /* 队列水平可视化 */
-  #algo-stack-queue-theory-view .sqt-queue-visual {
-    display: flex; align-items: center; justify-content: center; gap: 18px;
-    padding: 16px 8px; margin: 8px 0;
-    background: rgba(8, 8, 24, .45); border-radius: 12px;
-    border: 1px dashed rgba(56, 189, 248, .3);
-  }
-  #algo-stack-queue-theory-view .sqt-queue-row {
-    display: flex; gap: 4px; align-items: center;
-    padding: 8px; border-radius: 10px;
-    border: 1.5px solid rgba(56, 189, 248, .4);
-    background: rgba(56, 189, 248, .06);
-    min-height: 70px;
-  }
-  #algo-stack-queue-theory-view .sqt-queue-item {
-    padding: 10px 16px; border-radius: 8px;
-    background: linear-gradient(135deg, rgba(56, 189, 248, .25), rgba(56, 189, 248, .08));
-    border: 1px solid rgba(56, 189, 248, .45);
-    font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
-    color: #bae6fd; text-align: center;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-stack-queue-theory-view .sqt-queue-item.sqt-front {
-    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-    color: #06121f; box-shadow: 0 4px 14px rgba(56, 189, 248, .45);
-  }
-  #algo-stack-queue-theory-view .sqt-queue-label {
-    display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #94a3b8; text-align: center;
-  }
-  #algo-stack-queue-theory-view .sqt-queue-label .sqt-arrow-right {
-    color: #38bdf8; font-weight: 700; font-size: 14px;
-  }
-  /* 应用场景对比 */
-  #algo-stack-queue-theory-view .sqt-compare {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px;
-  }
-  #algo-stack-queue-theory-view .sqt-compare-item {
-    padding: 12px 14px; border-radius: 12px;
-    background: rgba(8, 8, 24, .45);
-    border: 1px solid rgba(255, 255, 255, .08);
-  }
-  #algo-stack-queue-theory-view .sqt-compare-item h4 {
-    margin: 0 0 6px; font-size: 13px; color: #c4b5fd; font-weight: 700;
-  }
-  #algo-stack-queue-theory-view .sqt-compare-item.queue-col h4 { color: #7dd3fc; }
-  #algo-stack-queue-theory-view .sqt-compare-item p { margin: 0; font-size: 12px; line-height: 1.65; color: #94a3b8; }
-  #algo-stack-queue-theory-view .sqt-compare-item code { font-size: 11px; }
-  /* 复杂度表 */
-  #algo-stack-queue-theory-view .sqt-table-wrap { padding: 0 18px 16px; }
-  #algo-stack-queue-theory-view table.sqt-table {
-    width: 100%; border-collapse: collapse; font-size: 12.5px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  #algo-stack-queue-theory-view table.sqt-table th, #algo-stack-queue-theory-view table.sqt-table td {
-    padding: 8px 12px; text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-  }
-  #algo-stack-queue-theory-view table.sqt-table th {
-    color: #c4b5fd; font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em;
-    background: rgba(167, 139, 250, .08);
-  }
-  #algo-stack-queue-theory-view table.sqt-table td { color: #cbd5e1; }
-  #algo-stack-queue-theory-view table.sqt-table tr:last-child td { border-bottom: none; }
-  #algo-stack-queue-theory-view .sqt-o1 { color: #6ee7b7; font-weight: 700; }
-  /* JS 类型卡片 */
-  #algo-stack-queue-theory-view .sqt-js-types {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    padding: 0 18px 16px;
-  }
-  #algo-stack-queue-theory-view .sqt-js-card {
-    padding: 12px 14px; border-radius: 12px;
-    background: rgba(8, 8, 24, .45);
-    border: 1px solid rgba(255, 255, 255, .08);
-    transition: all .25s;
-  }
-  #algo-stack-queue-theory-view .sqt-js-card:hover {
-    border-color: rgba(167, 139, 250, .4); transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(167, 139, 250, .2);
-  }
-  #algo-stack-queue-theory-view .sqt-js-card h5 {
-    margin: 0 0 4px; font-size: 13px; color: #e9d5ff; font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  #algo-stack-queue-theory-view .sqt-js-card p { margin: 0; font-size: 11.5px; line-height: 1.55; color: #94a3b8; }
-  /* 交互可视化 */
-  #algo-stack-queue-theory-view .sqt-visual { min-height: 200px; display: flex; flex-direction: column; }
-  #algo-stack-queue-theory-view .sqt-demo-controls {
-    display: flex; gap: 10px; align-items: center; padding: 14px 16px; flex-wrap: wrap;
-  }
-  #algo-stack-queue-theory-view .sqt-mode-toggle {
-    display: flex; border-radius: 10px; overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, .12);
-  }
-  #algo-stack-queue-theory-view .sqt-mode-btn {
-    padding: 7px 16px; font-size: 12px; font-weight: 600;
-    background: rgba(255, 255, 255, .04); color: #94a3b8;
-    border: none; cursor: pointer; transition: all .25s;
-    border-radius: 0;
-  }
-  #algo-stack-queue-theory-view .sqt-mode-btn:hover {
-    background: rgba(255, 255, 255, .08); color: #cbd5e1;
-  }
-  #algo-stack-queue-theory-view .sqt-mode-btn.active {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f;
-  }
-  #algo-stack-queue-theory-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-stack-queue-theory-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(167, 139, 250, .15); }
-  #algo-stack-queue-theory-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-stack-queue-theory-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-stack-queue-theory-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-stack-queue-theory-view .sqt-action-btns {
-    display: flex; gap: 8px;
-  }
-  #algo-stack-queue-theory-view .sqt-action-btns button {
-    padding: 7px 14px; font-size: 12px; border-radius: 8px;
-  }
-  /* 交互演示轨道 */
-  #algo-stack-queue-theory-view .sqt-track {
-    flex: 1; min-height: 160px; padding: 20px 18px;
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
-  }
-  /* 栈轨道 */
-  #algo-stack-queue-theory-view .sqt-track-stack {
-    display: flex; flex-direction: column-reverse; gap: 6px; align-items: center;
-  }
-  #algo-stack-queue-theory-view .sqt-track-stack .sqt-t-item {
-    padding: 10px 24px; border-radius: 10px;
-    background: linear-gradient(135deg, rgba(167, 139, 250, .3), rgba(99, 102, 241, .1));
-    border: 1.5px solid rgba(167, 139, 250, .5);
-    font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700;
-    color: #e9d5ff; text-align: center; min-width: 80px;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-stack-queue-theory-view .sqt-track-stack .sqt-t-item.sqt-t-top {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 0 0 3px rgba(167, 139, 250, .25), 0 8px 22px rgba(167, 139, 250, .4);
-    animation: sqt-pulse 1.2s ease-in-out infinite;
-  }
-  @keyframes sqt-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(167, 139, 250, .25), 0 8px 22px rgba(167, 139, 250, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(167, 139, 250, .12), 0 10px 28px rgba(167, 139, 250, .55); }
-  }
-  #algo-stack-queue-theory-view .sqt-track-stack .sqt-t-item.sqt-t-entering {
-    animation: sqt-stack-enter .4s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes sqt-stack-enter {
-    0% { opacity: 0; transform: translateY(-30px) scale(0.8); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  #algo-stack-queue-theory-view .sqt-empty-msg {
-    color: #64748b; font-size: 13px; font-style: italic;
-  }
-  /* 队列轨道 */
-  #algo-stack-queue-theory-view .sqt-track-queue {
-    display: flex; gap: 8px; align-items: center;
-  }
-  #algo-stack-queue-theory-view .sqt-track-queue .sqt-t-item {
-    padding: 10px 20px; border-radius: 10px;
-    background: linear-gradient(135deg, rgba(56, 189, 248, .25), rgba(56, 189, 248, .08));
-    border: 1.5px solid rgba(56, 189, 248, .45);
-    font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700;
-    color: #bae6fd; text-align: center;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-stack-queue-theory-view .sqt-track-queue .sqt-t-item.sqt-t-front {
-    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-    color: #06121f; box-shadow: 0 0 0 3px rgba(56, 189, 248, .25), 0 8px 22px rgba(56, 189, 248, .4);
-    animation: sqt-pulse-queue 1.2s ease-in-out infinite;
-  }
-  @keyframes sqt-pulse-queue {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(56, 189, 248, .25), 0 8px 22px rgba(56, 189, 248, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(56, 189, 248, .12), 0 10px 28px rgba(56, 189, 248, .55); }
-  }
-  #algo-stack-queue-theory-view .sqt-track-queue .sqt-t-item.sqt-t-entering {
-    animation: sqt-queue-enter .4s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes sqt-queue-enter {
-    0% { opacity: 0; transform: translateX(30px) scale(0.8); }
-    100% { opacity: 1; transform: translateX(0) scale(1); }
-  }
-  /* 方向标签 */
-  #algo-stack-queue-theory-view .sqt-direction-labels {
-    display: flex; justify-content: center; gap: 4px; margin-top: 8px;
-    font-size: 10px; color: #64748b;
-  }
-  #algo-stack-queue-theory-view .sqt-dir-label {
-    padding: 2px 8px; border-radius: 4px;
-    background: rgba(255, 255, 255, .04);
-    border: 1px solid rgba(255, 255, 255, .08);
-  }
-  /* 结果横幅 */
-  #algo-stack-queue-theory-view .sqt-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(99, 102, 241, .06));
-    border: 1px solid rgba(167, 139, 250, .28);
-    line-height: 1.55; font-size: 14px; color: #e9d5ff;
-  }
-  #algo-stack-queue-theory-view .sqt-result .sqt-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+
+  #algo-stack-queue-theory-view .sqt-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  /* 日志 */
-  #algo-stack-queue-theory-view .sqt-log {
-    min-height: 80px; max-height: 120px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-stack-queue-theory-view .sqt-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-stack-queue-theory-view .sqt-log .active { color: #c4b5fd; font-weight: 600; }
-  /* 代码 */
-  #algo-stack-queue-theory-view .sqt-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-stack-queue-theory-view .sqt-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-stack-queue-theory-view .sqt-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* 控制栏 */
-  #algo-stack-queue-theory-view .sqt-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+  #algo-stack-queue-theory-view .sqt-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-stack-queue-theory-view .sqt-controls .sqt-ctrl-btn { min-width: 64px; }
-  #algo-stack-queue-theory-view .sqt-controls .sqt-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+
+  #algo-stack-queue-theory-view .sqt-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-stack-queue-theory-view .sqt-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-stack-queue-theory-view .sqt-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-stack-queue-theory-view .sqt-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-stack-queue-theory-view .sqt-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-stack-queue-theory-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-stack-queue-theory-view .sqt-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-stack-queue-theory-view .sqt-code { min-height: 360px; }
+
+  #algo-stack-queue-theory-view .sqt-mode-selector {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 2px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-mode-btn {
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-stack-queue-theory-view .sqt-mode-btn.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-stack-queue-theory-view .sqt-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-stack-queue-theory-view .sqt-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-stack-queue-theory-view .sqt-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-stack-queue-theory-view .sqt-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-stack-queue-theory-view .sqt-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-stack-queue-theory-view .sqt-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-stack-queue-theory-view .sqt-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-stack-queue-theory-view .sqt-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-stack-queue-theory-view .sqt-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 沙盘展示盒 */
+  #algo-stack-queue-theory-view #sqt-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-stack-queue-theory-view .sqt-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-stack-queue-theory-view .sqt-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-stack-queue-theory-view .sqt-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-stack-queue-theory-view .sqt-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-stack-queue-theory-view .sqt-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-stack-queue-theory-view .sqt-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-stack-queue-theory-view .sqt-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-stack-queue-theory-view .sqt-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-stack-queue-theory-view .sqt-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-stack-queue-theory-view .sqt-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-stack-queue-theory-view .sqt-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-stack-queue-theory-view .sqt-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-stack-queue-theory-view .sqt-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-stack-queue-theory-view .sqt-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-stack-queue-theory-view .sqt-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-stack-queue-theory-view .sqt-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-stack-queue-theory-view .sqt-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-stack-queue-theory-view .sqt-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-stack-queue-theory-view .sqt-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-stack-queue-theory-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-stack-queue-theory-view .sqt-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-stack-queue-theory-view .sqt-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-stack-queue-theory-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-stack-queue-theory-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-stack-queue-theory-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-stack-queue-theory-view .sqt-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-stack-queue-theory-view .sqt-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-stack-queue-theory-view .sqt-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-stack-queue-theory-view .sqt-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-stack-queue-theory-view .sqt-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-stack-queue-theory-view .sqt-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-stack-queue-theory-view .sqt-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-stack-queue-theory-view .sqt-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-stack-queue-theory-view .sqt-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-stack-queue-theory-view .sqt-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-stack-queue-theory-view .sqt-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="sqt-shell">
-  <div class="sqt-hero">
-    <div class="sqt-hero-left">
-      <span class="sqt-icon">📖</span>
-      <div>
-        <h1>栈与队列理论基础</h1>
-        <div class="sqt-sub">理解 LIFO 和 FIFO 两种数据结构</div>
-      </div>
+<div id="algo-stack-queue-theory-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="sqt-header">
+    <div class="sqt-header-left">
+      <div class="sqt-icon-btn">🥞</div>
+      <h1 class="sqt-main-title">栈与队列理论基础 (Stack & Queue Theory)</h1>
+      <button id="btn-open-problem-modal" class="sqt-btn-problem">📋 理论精讲</button>
+      <span class="sqt-badge-mode">LIFO vs FIFO / 容器适配器机制</span>
+      <span class="sqt-badge-complexity">O(1) 核心操作</span>
     </div>
-    <div class="sqt-tip"><strong>核心概念：</strong>栈是后进先出（LIFO），队列是先进先出（FIFO）。切换模式观察两种结构在 push/pop 和 enqueue/dequeue 操作下的差异。</div>
-  </div>
-  <div class="sqt-main">
-    <div class="sqt-left">
-      <div class="sqt-scroll">
-        <!-- 1. 栈 -->
-        <section class="sqt-card">
-          <div class="sqt-card-title">1. 栈 (Stack) <span class="sqt-tag">LIFO</span></div>
-          <div class="sqt-body">
-            <p>栈是一种<strong style="color:#c4b5fd">后进先出（LIFO, Last In First Out）</strong>的线性数据结构。只能在一端（栈顶）进行插入和删除操作。</p>
-            <p>核心操作：<code>push(x)</code> 将元素压入栈顶，<code>pop()</code> 弹出栈顶元素，<code>top()</code> 查看栈顶元素，<code>empty()</code> 判断栈是否为空。</p>
-            <div class="sqt-stack-visual">
-              <div class="sqt-stack-label">
-                <span>栈顶 (top)</span>
-                <span class="sqt-arrow-up">↑ push / pop</span>
-              </div>
-              <div class="sqt-stack-column">
-                <div class="sqt-stack-item sqt-top">3 ← top</div>
-                <div class="sqt-stack-item">2</div>
-                <div class="sqt-stack-item">1</div>
-              </div>
-              <div class="sqt-stack-label">
-                <span>栈底 (bottom)</span>
-                <span style="color:#64748b">固定端</span>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- 2. 队列 -->
-        <section class="sqt-card">
-          <div class="sqt-card-title">2. 队列 (Queue) <span class="sqt-tag">FIFO</span></div>
-          <div class="sqt-body">
-            <p>队列是一种<strong style="color:#7dd3fc">先进先出（FIFO, First In First Out）</strong>的线性数据结构。一端入队（队尾），另一端出队（队头）。</p>
-            <p>核心操作：<code>enqueue(x)</code> 将元素加入队尾，<code>dequeue()</code> 从队头移除元素，<code>front()</code> 查看队头元素，<code>empty()</code> 判断队列是否为空。</p>
-            <div class="sqt-queue-visual">
-              <div class="sqt-queue-label">
-                <span>队头 (front)</span>
-                <span style="color:#64748b">出队端</span>
-              </div>
-              <div class="sqt-queue-row">
-                <div class="sqt-queue-item sqt-front">1 ← front</div>
-                <div class="sqt-queue-item">2</div>
-                <div class="sqt-queue-item">3</div>
-              </div>
-              <div class="sqt-queue-label">
-                <span>队尾 (rear)</span>
-                <span class="sqt-arrow-right">enqueue →</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 3. 应用场景 -->
-        <section class="sqt-card">
-          <div class="sqt-card-title">3. 应用场景 <span class="sqt-tag">Applications</span></div>
-          <div class="sqt-body">
-            <p>栈和队列在计算机科学中有着广泛的应用场景：</p>
-            <div class="sqt-compare">
-              <div class="sqt-compare-item">
-                <h4>栈的典型应用</h4>
-                <p>
-                  • <strong style="color:#c4b5fd">函数调用栈</strong> —— 递归调用与返回<br>
-                  • <strong style="color:#c4b5fd">浏览器历史</strong> —— 前进 / 后退<br>
-                  • <strong style="color:#c4b5fd">括号匹配</strong> —— 编译器语法检查<br>
-                  • <strong style="color:#c4b5fd">撤销操作</strong> —— 编辑器 Undo
-                </p>
-              </div>
-              <div class="sqt-compare-item queue-col">
-                <h4>队列的典型应用</h4>
-                <p>
-                  • <strong style="color:#7dd3fc">BFS 广度优先搜索</strong> —— 层序遍历<br>
-                  • <strong style="color:#7dd3fc">任务调度</strong> —— 操作系统进程队列<br>
-                  • <strong style="color:#7dd3fc">消息队列</strong> —— 异步处理<br>
-                  • <strong style="color:#7dd3fc">打印机队列</strong> —— 先来先服务
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 4. 时间复杂度 -->
-        <section class="sqt-card">
-          <div class="sqt-card-title">4. 时间复杂度 <span class="sqt-tag">Complexity</span></div>
-          <div class="sqt-body" style="padding-bottom: 6px;">
-            <p>栈和队列的所有基本操作都是 <strong style="color:#6ee7b7">O(1)</strong>，因为操作只发生在固定位置，不需要遍历或搜索。</p>
-          </div>
-          <div class="sqt-table-wrap">
-            <table class="sqt-table">
-              <thead>
-                <tr><th>操作</th><th>栈 Stack</th><th>队列 Queue</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>插入</td><td class="sqt-o1">push O(1)</td><td class="sqt-o1">enqueue O(1)</td></tr>
-                <tr><td>删除</td><td class="sqt-o1">pop O(1)</td><td class="sqt-o1">dequeue O(1)</td></tr>
-                <tr><td>查看顶端/前端</td><td class="sqt-o1">top O(1)</td><td class="sqt-o1">front O(1)</td></tr>
-                <tr><td>判空</td><td class="sqt-o1">empty O(1)</td><td class="sqt-o1">empty O(1)</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- 5. JS 中的栈和队列 -->
-        <section class="sqt-card">
-          <div class="sqt-card-title">5. JS 中的栈和队列 <span class="sqt-tag">Array / LinkedList</span></div>
-          <div class="sqt-js-types">
-            <div class="sqt-js-card">
-              <h5>Array 作为栈</h5>
-              <p><code style="font-size:11px">arr.push(x)</code> 入栈，<code style="font-size:11px">arr.pop()</code> 出栈，均在尾部操作，O(1)。</p>
-            </div>
-            <div class="sqt-js-card">
-              <h5>Array 作为队列</h5>
-              <p><code style="font-size:11px">arr.push(x)</code> 入队，<code style="font-size:11px">arr.shift()</code> 出队。shift 为 O(n)。</p>
-            </div>
-            <div class="sqt-js-card">
-              <h5>LinkedList 队列</h5>
-              <p>用链表实现队列，入队和出队均为 <code style="font-size:11px">O(1)</code>，避免 shift 的性能问题。</p>
-            </div>
-            <div class="sqt-js-card">
-              <h5>双端队列</h5>
-              <p><code style="font-size:11px">deque.push/pop/shift/unshift</code> 均可 O(1)（链表实现），灵活支持两端操作。</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- 6. 交互演示 -->
-        <section class="sqt-card sqt-visual">
-          <div class="sqt-card-title">交互演示 <span class="sqt-tag">Stack & Queue</span></div>
-          <div class="sqt-demo-controls">
-            <div class="sqt-mode-toggle">
-              <button class="sqt-mode-btn active" id="sqt-mode-stack" data-mode="stack">Stack (LIFO)</button>
-              <button class="sqt-mode-btn" id="sqt-mode-queue" data-mode="queue">Queue (FIFO)</button>
-            </div>
-            <div class="sqt-action-btns">
-              <button id="sqt-btn-push">Push / Enqueue</button>
-              <button id="sqt-btn-pop">Pop / Dequeue</button>
-              <button id="sqt-btn-peek">Peek</button>
-            </div>
-            <input id="sqt-value-input" value="1" placeholder="输入值" style="width:80px;">
-            <button id="sqt-start-demo">开始模拟</button>
-          </div>
-          <div class="sqt-track" id="sqt-track"></div>
-          <div class="sqt-result" id="sqt-result-banner">
-            <span class="sqt-emoji">📖</span>
-            <div id="step-message">点击「开始模拟」观看栈和队列的操作过程</div>
-          </div>
-        </section>
-
-        <!-- 7. 日志 -->
-        <section class="sqt-card">
-          <div class="sqt-card-title">执行日志</div>
-          <div class="sqt-log" id="sqt-log"></div>
-        </section>
+    <!-- 参数与操作工具组 -->
+    <div class="sqt-header-right">
+      <div class="sqt-mode-selector">
+        <button id="btn-mode-stack" class="sqt-mode-btn active" data-mode="stack">🥞 栈演示 (LIFO)</button>
+        <button id="btn-mode-queue" class="sqt-mode-btn" data-mode="queue">🔄 队列演示 (FIFO)</button>
       </div>
+
+      <button id="btn-generate" class="sqt-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="sqt-btn-reset">
+        重置
+      </button>
     </div>
-    <aside class="sqt-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="sqt-controls">
-    <button id="step-reset" class="sqt-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="sqt-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="sqt-ctrl-btn sqt-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="sqt-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="sqt-counter">步骤: 0 / 0</span>
-    <div class="sqt-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="sqt-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="sqt-left-section">
+
+      <!-- 卡片 1: 容器结构沙盘 (Container Sandbox) -->
+      <div class="sqt-card">
+        <div class="sqt-card-header">
+          <div class="sqt-card-title">
+            <span id="sqt-sandbox-title">🥞 栈 (Stack - LIFO) 容器沙盘</span>
+          </div>
+          <div class="sqt-legend-bar">
+            <div><span class="sqt-legend-dot" style="background:#2563eb;"></span> 🥇 操作端 (栈顶 / 队头)</div>
+            <div><span class="sqt-legend-dot" style="background:#94a3b8;"></span> 📦 容器内部元素</div>
+            <div><span class="sqt-legend-dot" style="background:#10b981;"></span> ⚡ 当前变动元素</div>
+          </div>
+        </div>
+
+        <!-- 容器沙盘展示盒 -->
+        <div id="sqt-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="sqt-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="sqt-slider" />
+        <div class="sqt-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="sqt-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="sqt-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="sqt-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="sqt-card">
+        <div class="sqt-card-header">
+          <div>
+            <div class="sqt-card-title">📦 容器语义状态空间与操作看板</div>
+            <div class="sqt-card-desc">当前指令、端点受控访问约束与操作历史记录</div>
+          </div>
+          <span id="badge-sqt-size" class="sqt-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">元素: 0 个</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="sqt-state-space-box">
+          <div class="sqt-state-columns">
+            <!-- 容器状态 -->
+            <div class="sqt-subcard">
+              <div class="sqt-subcard-title">🥞 端点状态 (Top / Front)</div>
+              <div id="sqt-endpoint-status-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 操作决策监视器 -->
+            <div class="sqt-subcard">
+              <div class="sqt-subcard-title">⚖️ 访问约束监视器 (Access Constraint)</div>
+              <div id="sqt-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="sqt-subcard" style="flex-shrink: 0;">
+            <div class="sqt-subcard-title">🏆 基础理论核心结论 (Theory Summary)</div>
+            <div id="sqt-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="sqt-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="sqt-dark-terminal">
+        <div class="sqt-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="sqt-tab-group">
+            <button id="btn-tab-code" class="sqt-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sqt-tab-item">📋 基础概念</button>
+            <button id="btn-tab-analysis" class="sqt-tab-item">💡 STL/Java剖析</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="sqt-lang-group" id="code-lang-tabs">
+            <button class="sqt-lang-btn active" data-lang="java">Java</button>
+            <button class="sqt-lang-btn" data-lang="cpp">C++</button>
+            <button class="sqt-lang-btn" data-lang="python">Python</button>
+            <button class="sqt-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="sqt-font-tools">
+            <div class="sqt-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="algo-stack-queue-theory-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="sqt-window-dots">
+              <span class="sqt-dot" style="background:#ef4444;"></span>
+              <span class="sqt-dot" style="background:#eab308;"></span>
+              <span class="sqt-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="sqt-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="sqt-log-card">
+        <div class="sqt-log-header">
+          <div class="sqt-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="sqt-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="sqt-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 理论原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="sqt-modal-backdrop hidden">
+    <div class="sqt-modal-content">
+      <div class="sqt-modal-header">
+        <div class="sqt-modal-title">
+          <span>📋 理论知识精讲</span>
+        </div>
+        <button id="btn-close-problem-modal" class="sqt-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="sqt-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

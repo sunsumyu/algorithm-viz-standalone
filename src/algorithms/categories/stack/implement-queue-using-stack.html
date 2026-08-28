@@ -1,779 +1,873 @@
 <style>
-    #algo-my-queue-view .mq-viz-container {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        color: #e2e8f0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        padding: 0;
-        gap: 0;
-        box-sizing: border-box;
-    }
-
-    #algo-my-queue-view .mq-viz-container,
-    #algo-my-queue-view .mq-viz-container .viz-header,
-    #algo-my-queue-view .mq-viz-container .viz-footer {
-        background: rgba(24, 24, 37, 0.9);
-    }
-
-    #algo-my-queue-view .mq-viz-container {
-        background:
-            radial-gradient(ellipse at 8% 6%, rgba(34, 211, 238, 0.18), transparent 55%),
-            radial-gradient(ellipse at 92% 94%, rgba(45, 212, 191, 0.18), transparent 55%),
-            linear-gradient(135deg, #0f172a, #131a2b, #111827);
-    }
-
-    #algo-my-queue-view .mq-viz-container .viz-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.6rem 1.2rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        flex-shrink: 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .header-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    #algo-my-queue-view .mq-viz-container .icon-badge {
-        width: 44px;
-        height: 44px;
-        border-radius: 11px;
-        background: linear-gradient(135deg, #22d3ee, #2dd4bf);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        flex-shrink: 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .header-title {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-    }
-
-    #algo-my-queue-view .mq-viz-container .header-title h1 {
-        font-size: 22px;
-        font-weight: 800;
-        margin: 0;
-        background: linear-gradient(135deg, #22d3ee, #2dd4bf);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    #algo-my-queue-view .mq-viz-container .header-title .subtitle {
-        font-size: 13px;
-        color: #94a3b8;
-        margin: 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .header-tip {
-        max-width: 360px;
-        padding: 9px 12px;
-        border-radius: 10px;
-        background: rgba(34, 211, 238, 0.1);
-        border: 1px solid rgba(34, 211, 238, 0.24);
-        color: #a5f3fc;
-        font-size: 13px;
-        line-height: 1.55;
-    }
-
-    #algo-my-queue-view .mq-viz-container .header-tip strong { color: #22d3ee; }
-
-    #algo-my-queue-view .mq-viz-container .viz-main-content {
-        display: flex;
-        flex-direction: row;
-        flex: 1;
-        gap: 0;
-        overflow: hidden;
-        width: 100%;
-        min-height: 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .col-code {
-        width: 380px;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        border-left: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #algo-my-queue-view .mq-viz-container .col-viz {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .col-state {
-        width: 240px;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        border-left: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #algo-my-queue-view .mq-viz-container .panel {
-        background: transparent;
-        overflow: hidden;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-    }
-
-    #algo-my-queue-view .mq-viz-container .panel-title {
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        padding: 0.6rem 0.9rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    /* Code Panel */
-    #algo-my-queue-view .mq-viz-container .code-panel {
-        background: rgba(17, 17, 27, 0.8);
-        color: #e2e8f0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .code-content {
-        flex: 1;
-        overflow: auto;
-        padding: 0.75rem;
-        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        font-size: 0.8rem;
-        line-height: 1.5;
-    }
-
-    #algo-my-queue-view .mq-viz-container .code-line {
-        padding: 1px 0;
-        padding-left: 0.5rem;
-        transition: background-color 0.2s;
-        border-radius: 0.2rem;
-        white-space: pre;
-        display: flex;
-        align-items: center;
-        min-height: 1.4em;
-    }
-
-    #algo-my-queue-view .mq-viz-container .code-line.current {
-        background: rgba(34, 211, 238, 0.15);
-        border-left: 3px solid #22d3ee;
-    }
-
-    #algo-my-queue-view .mq-viz-container .code-line-number {
-        color: #64748b;
-        user-select: none;
-        margin-right: 1rem;
-        display: inline-block;
-        width: 1.2rem;
-        text-align: right;
-        font-size: 0.7rem;
-        opacity: 0.5;
-        flex-shrink: 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .code-keyword { color: #c084fc; }
-    #algo-my-queue-view .mq-viz-container .code-type { color: #fbbf24; }
-    #algo-my-queue-view .mq-viz-container .code-string { color: #22d3ee; }
-    #algo-my-queue-view .mq-viz-container .code-comment { color: #64748b; font-style: italic; }
-
-    /* Viz Panel */
-    #algo-my-queue-view .mq-viz-container .viz-container {
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-        flex: 1;
-    }
-
-    #algo-my-queue-view .mq-viz-container .example-bar {
-        display: flex;
-        gap: 0.4rem;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    #algo-my-queue-view .mq-viz-container .example-btn {
-        padding: 0.35rem 0.75rem;
-        border-radius: 8px;
-        background: rgba(34, 211, 238, 0.08);
-        border: 1px solid rgba(34, 211, 238, 0.24);
-        color: #a5f3fc;
-        font-size: 0.75rem;
-        font-family: 'Consolas', monospace;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    #algo-my-queue-view .mq-viz-container .example-btn:hover {
-        background: rgba(34, 211, 238, 0.18);
-        border-color: rgba(34, 211, 238, 0.5);
-        transform: translateY(-1px);
-    }
-
-    #algo-my-queue-view .mq-viz-container .dual-stack-wrapper {
-        display: flex;
-        align-items: stretch;
-        justify-content: center;
-        gap: 2.5rem;
-        flex: 1;
-        padding: 0.5rem 0;
-        position: relative;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-column {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        flex: 1;
-        max-width: 180px;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #22d3ee;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-label.out-label {
-        color: #2dd4bf;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-desc {
-        font-size: 0.7rem;
-        color: #64748b;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-container {
-        width: 120px;
-        min-height: 220px;
-        border-left: 3px solid rgba(100, 116, 139, 0.5);
-        border-right: 3px solid rgba(100, 116, 139, 0.5);
-        border-bottom: 3px solid rgba(100, 116, 139, 0.5);
-        border-radius: 0 0 0.5rem 0.5rem;
-        display: flex;
-        flex-direction: column-reverse;
-        align-items: center;
-        padding: 0.5rem;
-        gap: 0.35rem;
-        background: rgba(17, 17, 27, 0.4);
-        backdrop-filter: blur(12px);
-        position: relative;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-container.in-stack {
-        border-color: rgba(34, 211, 238, 0.5);
-        box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-container.out-stack {
-        border-color: rgba(45, 212, 191, 0.5);
-        box-shadow: inset 0 0 20px rgba(45, 212, 191, 0.05);
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-container .stack-empty {
-        color: #475569;
-        font-size: 0.75rem;
-        font-style: italic;
-        padding: 1rem 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-item {
-        width: 85%;
-        height: 2rem;
-        background: linear-gradient(135deg, #22d3ee, #2dd4bf);
-        color: #0f172a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0.3rem;
-        font-family: 'Consolas', monospace;
-        font-size: 1rem;
-        font-weight: bold;
-        animation: mqStackPush 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        will-change: transform, opacity;
-        box-shadow: 0 4px 10px rgba(34, 211, 238, 0.2);
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-item.in-item {
-        background: linear-gradient(135deg, #22d3ee, #06b6d4);
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-item.out-item {
-        background: linear-gradient(135deg, #2dd4bf, #14b8a6);
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-item.pushing {
-        animation: mqPush 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-item.popping {
-        animation: mqPop 0.35s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
-    }
-
-    #algo-my-queue-view .mq-viz-container .stack-item.transferring {
-        animation: mqTransfer 0.6s ease;
-    }
-
-    /* Transfer arrow */
-    #algo-my-queue-view .mq-viz-container .transfer-arrow {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.25rem;
-        color: #22d3ee;
-        opacity: 0.4;
-        transition: opacity 0.3s;
-    }
-
-    #algo-my-queue-view .mq-viz-container .transfer-arrow.active {
-        opacity: 1;
-        animation: mqArrowPulse 0.8s infinite;
-    }
-
-    #algo-my-queue-view .mq-viz-container .transfer-arrow .arrow-line {
-        width: 80px;
-        height: 2px;
-        background: linear-gradient(90deg, #22d3ee, #2dd4bf);
-        position: relative;
-    }
-
-    #algo-my-queue-view .mq-viz-container .transfer-arrow .arrow-line::after {
-        content: '';
-        position: absolute;
-        right: -2px;
-        top: 50%;
-        transform: translateY(-50%);
-        border: 6px solid transparent;
-        border-left: 8px solid #2dd4bf;
-    }
-
-    #algo-my-queue-view .mq-viz-container .transfer-arrow .arrow-label {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        font-style: italic;
-    }
-
-    /* Result banner */
-    #algo-my-queue-view .mq-viz-container .result-banner {
-        margin: 0 1rem 0.5rem;
-        padding: 0.55rem 1rem;
-        border-radius: 10px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        text-align: center;
-        background: rgba(34, 211, 238, 0.1);
-        border: 1px solid rgba(34, 211, 238, 0.3);
-        color: #a5f3fc;
-    }
-
-    #algo-my-queue-view .mq-viz-container .result-banner.success {
-        background: rgba(34, 211, 238, 0.12);
-        border-color: rgba(34, 211, 238, 0.4);
-        color: #a5f3fc;
-    }
-
-    /* State Panel */
-    #algo-my-queue-view .mq-viz-container .state-grid {
-        padding: 1rem;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
-    }
-
-    #algo-my-queue-view .mq-viz-container .state-card {
-        position: relative;
-        overflow: hidden;
-        padding: 0.75rem 0.75rem 0.75rem 1.1rem;
-        backdrop-filter: blur(18px) saturate(160%);
-        background: rgba(20, 18, 38, 0.55);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    }
-
-    #algo-my-queue-view .mq-viz-container .state-card::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 4px;
-        background: linear-gradient(180deg, #22d3ee, #2dd4bf);
-        border-radius: 2px 0 0 2px;
-    }
-
-    #algo-my-queue-view .mq-viz-container .state-label {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        color: #64748b;
-        margin-bottom: 0.3rem;
-        letter-spacing: 0.5px;
-        font-weight: 600;
-    }
-
-    #algo-my-queue-view .mq-viz-container .state-value {
-        font-family: 'Consolas', monospace;
-        font-size: 1.1rem;
-        color: #e2e8f0;
-        font-variant-numeric: tabular-nums;
-    }
-
-    #algo-my-queue-view .mq-viz-container .state-value.highlight {
-        color: #22d3ee;
-    }
-
-    /* Controls Footer */
-    #algo-my-queue-view .mq-viz-container .viz-footer {
-        background: rgba(24, 24, 37, 0.9);
-        padding: 0.6rem 1.2rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-
-    #algo-my-queue-view .mq-viz-container .control-group {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-primary {
-        background: linear-gradient(135deg, #22d3ee, #2dd4bf);
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        padding: 0.45rem 1rem;
-        color: #0f172a;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-primary:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(34, 211, 238, 0.25);
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-primary:disabled {
-        background: rgba(100, 116, 139, 0.3);
-        color: #64748b;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-secondary {
-        background: rgba(100, 116, 139, 0.2);
-        border: 1px solid rgba(100, 116, 139, 0.3);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        padding: 0.45rem 1rem;
-        color: #e2e8f0;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-secondary:hover:not(:disabled) {
-        background: rgba(100, 116, 139, 0.3);
-        transform: translateY(-1px);
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-secondary:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    #algo-my-queue-view .mq-viz-container .input-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: rgba(17, 17, 27, 0.7);
-        padding: 0.3rem 0.6rem;
-        border-radius: 10px;
-        border: 1px solid rgba(100, 116, 139, 0.3);
-    }
-
-    #algo-my-queue-view .mq-viz-container input[type="text"] {
-        border: none;
-        background: transparent;
-        font-family: 'Consolas', monospace;
-        font-size: 0.8rem;
-        width: 320px;
-        outline: none;
-        color: #e2e8f0;
-    }
-
-    #algo-my-queue-view .mq-viz-container input[type="range"] {
-        width: 100px;
-        accent-color: #22d3ee;
-    }
-
-    #algo-my-queue-view .mq-viz-container .control-divider {
-        width: 1px;
-        height: 24px;
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    #algo-my-queue-view .mq-viz-container .step-counter {
-        font-size: 0.85rem;
-        color: #94a3b8;
-        font-family: 'Consolas', monospace;
-        text-align: center;
-    }
-
-    #algo-my-queue-view .mq-viz-container .speed-label {
-        font-size: 0.8rem;
-        color: #94a3b8;
-    }
-
-    #algo-my-queue-view .mq-viz-container #step-message {
-        padding: 0.7rem 1rem;
-        text-align: center;
-        color: #94a3b8;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        font-size: 0.9rem;
-        background: rgba(17, 17, 27, 0.5);
-    }
-
-    /* Log panel */
-    #algo-my-queue-view .mq-viz-container .log-panel {
-        background: rgba(17, 17, 27, 0.6);
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        padding: 0.5rem 0.9rem;
-        max-height: 90px;
-        overflow-y: auto;
-        font-family: 'Consolas', monospace;
-        font-size: 0.75rem;
-        color: #94a3b8;
-        line-height: 1.6;
-    }
-
-    #algo-my-queue-view .mq-viz-container .log-entry {
-        padding: 1px 0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .log-entry .log-op {
-        color: #22d3ee;
-        font-weight: 600;
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-icon {
-        background: rgba(100, 116, 139, 0.2);
-        border: 1px solid rgba(100, 116, 139, 0.3);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        color: #e2e8f0;
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-icon:hover:not(:disabled) {
-        background: rgba(100, 116, 139, 0.3);
-        transform: translateY(-1px);
-    }
-
-    #algo-my-queue-view .mq-viz-container .btn-icon:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
-    /* Keyframe animations */
-    @keyframes mqStackPush {
-        from { transform: translateY(-25px) scale(0.7); opacity: 0; }
-        to { transform: translateY(0) scale(1); opacity: 1; }
-    }
-    @keyframes mqPush {
-        0% { transform: translateY(-60px) scale(0.5); opacity: 0; }
-        60% { transform: translateY(5px) scale(1.05); opacity: 1; }
-        100% { transform: translateY(0) scale(1); opacity: 1; }
-    }
-    @keyframes mqPop {
-        0% { transform: translateY(0) scale(1); opacity: 1; }
-        100% { transform: translateY(-40px) scale(0.5); opacity: 0; }
-    }
-    @keyframes mqTransfer {
-        0% { transform: translateX(0) scale(1); opacity: 1; }
-        50% { transform: translateX(80px) translateY(-30px) scale(0.8); opacity: 0.6; }
-        100% { transform: translateX(0) scale(1); opacity: 1; }
-    }
-    @keyframes mqArrowPulse {
-        0%, 100% { filter: drop-shadow(0 0 0 rgba(34, 211, 238, 0)); }
-        50% { filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.8)); }
-    }
-
-    @media (max-width: 1100px) {
-        #algo-my-queue-view .mq-viz-container .viz-main-content {
-            flex-direction: column;
-            overflow: auto;
-        }
-        #algo-my-queue-view .mq-viz-container .col-code,
-        #algo-my-queue-view .mq-viz-container .col-state {
-            width: 100%;
-            border-left: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        #algo-my-queue-view .mq-viz-container .col-code {
-            min-height: 360px;
-        }
-    }
+  /* === 用栈实现队列 (LeetCode 232) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
+  #algo-implement-queue-using-stack-view {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-implement-queue-using-stack-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-implement-queue-using-stack-view .mq-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-implement-queue-using-stack-view .mq-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-input-str {
+    width: 220px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-input-str:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-implement-queue-using-stack-view .mq-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-implement-queue-using-stack-view .mq-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-implement-queue-using-stack-view .mq-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-implement-queue-using-stack-view .mq-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 双栈交互沙盘展示盒 */
+  #algo-implement-queue-using-stack-view #mq-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-implement-queue-using-stack-view .mq-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-implement-queue-using-stack-view .mq-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-implement-queue-using-stack-view .mq-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-implement-queue-using-stack-view .mq-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-implement-queue-using-stack-view .mq-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-implement-queue-using-stack-view .mq-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-implement-queue-using-stack-view .mq-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-implement-queue-using-stack-view .mq-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-implement-queue-using-stack-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-implement-queue-using-stack-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-implement-queue-using-stack-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-implement-queue-using-stack-view .mq-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-implement-queue-using-stack-view .mq-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-implement-queue-using-stack-view .mq-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-implement-queue-using-stack-view .mq-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-implement-queue-using-stack-view .mq-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-implement-queue-using-stack-view .mq-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-implement-queue-using-stack-view .mq-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+  }
 </style>
 
-<div class="mq-viz-container">
-    <div class="viz-header">
-        <div class="header-left">
-            <div class="icon-badge">🔄</div>
-            <div class="header-title">
-                <h1>用栈实现队列（双栈转移）</h1>
-                <p class="subtitle">LeetCode 232 · 两个 LIFO 栈组合出 FIFO 队列</p>
-            </div>
-        </div>
-        <div class="header-tip"><strong>双栈技巧：</strong>push 总是入 inStack；pop/peek 时若 outStack 为空，则将 inStack 全部倒入 outStack，一次转移即可反转顺序，得到 FIFO。</div>
+<div id="algo-implement-queue-using-stack-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="mq-header">
+    <div class="mq-header-left">
+      <div class="mq-icon-btn">🔄</div>
+      <h1 class="mq-main-title">LeetCode 232. 用栈实现队列</h1>
+      <button id="btn-open-problem-modal" class="mq-btn-problem">📋 题目</button>
+      <span class="mq-badge-mode">双栈架构 / inStack 负责入 / outStack 负责出</span>
+      <span class="mq-badge-complexity">均摊 O(1)</span>
     </div>
 
-    <div class="viz-main-content">
-        <div class="col-viz">
-            <div class="panel">
-                <div class="panel-title">可视化</div>
-                <div class="viz-container">
-                    <div class="example-bar">
-                        <button class="example-btn" data-ops="push 1,push 2,pop,push 3,pop,pop">[1,2,3]</button>
-                        <button class="example-btn" data-ops="push 1,push 2,push 3,pop,pop,pop">[1,2,3]</button>
-                        <button class="example-btn" data-ops="push 10,pop,push 20,push 30,pop,pop">[10,20,30]</button>
-                    </div>
-                    <div class="dual-stack-wrapper">
-                        <div class="stack-column">
-                            <div class="stack-label">inStack</div>
-                            <div class="stack-desc">push 端</div>
-                            <div class="stack-container in-stack" id="mq-in-stack">
-                                <div class="stack-empty">(empty)</div>
-                            </div>
-                        </div>
-                        <div class="transfer-arrow" id="mq-transfer-arrow">
-                            <div class="arrow-label">transfer</div>
-                            <div class="arrow-line"></div>
-                        </div>
-                        <div class="stack-column">
-                            <div class="stack-label out-label">outStack</div>
-                            <div class="stack-desc">pop/peek 端</div>
-                            <div class="stack-container out-stack" id="mq-out-stack">
-                                <div class="stack-empty">(empty)</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="mq-result-banner" class="result-banner" style="display:none;"></div>
-                </div>
-                <div id="step-message">就绪</div>
-                <div class="log-panel" id="mq-log"></div>
-            </div>
-        </div>
-        <div class="col-state">
-            <div class="panel">
-                <div class="panel-title">状态</div>
-                <div class="state-grid">
-                    <div class="state-card">
-                        <div class="state-label">inStack 大小</div>
-                        <div id="mq-state-in" class="state-value">0</div>
-                    </div>
-                    <div class="state-card">
-                        <div class="state-label">outStack 大小</div>
-                        <div id="mq-state-out" class="state-value">0</div>
-                    </div>
-                    <div class="state-card">
-                        <div class="state-label">操作索引</div>
-                        <div id="mq-state-op-index" class="state-value">0</div>
-                    </div>
-                    <div class="state-card">
-                        <div class="state-label">当前操作</div>
-                        <div id="mq-state-op" class="state-value">-</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-code">
-            <div class="panel code-panel">
-                <div class="panel-title">代码</div>
-                <div data-code-panel></div>
-            </div>
-        </div>
-    </div>
+    <!-- 参数与操作工具组 -->
+    <div class="mq-header-right">
+      <div class="mq-input-group">
+        <span>操作序列:</span>
+        <input type="text" id="input-ops" value="push 1, push 2, peek, pop, empty" class="mq-input-str" placeholder="push 1, push 2, peek, pop, empty" />
+      </div>
 
-    <div class="viz-footer">
-        <div class="control-group">
-            <div class="input-wrapper">
-                <span class="speed-label">操作序列:</span>
-                <input type="text" id="mq-ops-input" value="push 1,push 2,pop,push 3,pop,pop">
-            </div>
-            <button id="mq-start" class="btn-primary">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 3l14 9-14 9V3z" />
-                </svg>
-                开始
-            </button>
-        </div>
-        <div class="control-group">
-            <button id="step-reset" class="btn-secondary" title="重置">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                </svg>
-                重置
-            </button>
-            <button id="step-prev" class="btn-icon" title="上一步">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m15 18-6-6 6-6" />
-                </svg>
-            </button>
-            <button id="step-play" class="btn-primary" style="min-width:90px;">播放</button>
-            <button id="step-next" class="btn-icon" title="下一步">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m9 18 6-6-6-6" />
-                </svg>
-            </button>
-            <div class="control-divider"></div>
-            <span id="step-counter" class="step-counter" style="min-width:90px;">步骤: 1 / 1</span>
-        </div>
-        <div class="control-group">
-            <span class="speed-label">速度</span>
-            <input type="range" id="step-speed" min="200" max="3000" step="100" value="1000">
-            <span id="step-speed-label" class="speed-label" style="min-width:35px;text-align:right;">1.0s</span>
-        </div>
+      <button id="btn-generate" class="mq-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="mq-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="mq-chip" data-val="push 1, push 2, peek, pop, empty">经典示例</button>
+        <button class="mq-chip" data-val="push 1, push 2, push 3, pop, push 4, pop, pop, pop">交替出入队</button>
+        <button class="mq-chip" data-val="push 10, push 20, push 30, peek, pop, peek">连续窥探</button>
+      </div>
     </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="mq-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="mq-left-section">
+
+      <!-- 卡片 1: 双栈交互与队列逻辑流沙盘 (Dual-Stack Queue Sandbox) -->
+      <div class="mq-card">
+        <div class="mq-card-header">
+          <div class="mq-card-title">
+            <span>🔄 双栈交互与队列逻辑流沙盘 (Dual-Stack Queue Sandbox)</span>
+          </div>
+          <div class="mq-legend-bar">
+            <div><span class="mq-legend-dot" style="background:#2563eb;"></span> 📥 输入栈 inStack</div>
+            <div><span class="mq-legend-dot" style="background:#10b981;"></span> 📤 输出栈 outStack</div>
+            <div><span class="mq-legend-dot" style="background:#f59e0b;"></span> 🔀 倾倒倒置流</div>
+          </div>
+        </div>
+
+        <!-- 双栈交互沙盘展示盒 -->
+        <div id="mq-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="mq-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="mq-slider" />
+        <div class="mq-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="mq-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="mq-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="mq-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="mq-card">
+        <div class="mq-card-header">
+          <div>
+            <div class="mq-card-title">📦 队列逻辑状态空间与出队输出看板</div>
+            <div class="mq-card-desc">当前操作指令、是否触发倾倒转移与出队结果序列</div>
+          </div>
+          <span id="badge-queue-size" class="mq-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">队列元素: 0 个</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="mq-state-space-box">
+          <div class="mq-state-columns">
+            <!-- 栈状态 -->
+            <div class="mq-subcard">
+              <div class="mq-subcard-title">🥞 双栈容量与状态 (Stacks Status)</div>
+              <div id="mq-stacks-status-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 出入队决策监视器 -->
+            <div class="mq-subcard">
+              <div class="mq-subcard-title">⚖️ 队列操作与倒栈监视器 (Queue Decision)</div>
+              <div id="mq-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="mq-subcard" style="flex-shrink: 0;">
+            <div class="mq-subcard-title">🏆 出队与窥探结果记录看板 (Pop & Peek Outputs)</div>
+            <div id="mq-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="mq-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="mq-dark-terminal">
+        <div class="mq-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="mq-tab-group">
+            <button id="btn-tab-code" class="mq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="mq-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="mq-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="mq-lang-group" id="code-lang-tabs">
+            <button class="mq-lang-btn active" data-lang="java">Java</button>
+            <button class="mq-lang-btn" data-lang="cpp">C++</button>
+            <button class="mq-lang-btn" data-lang="python">Python</button>
+            <button class="mq-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="mq-font-tools">
+            <div class="mq-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="mq-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="mq-window-dots">
+              <span class="mq-dot" style="background:#ef4444;"></span>
+              <span class="mq-dot" style="background:#eab308;"></span>
+              <span class="mq-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="mq-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="mq-log-card">
+        <div class="mq-log-header">
+          <div class="mq-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="mq-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="mq-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="mq-modal-backdrop hidden">
+    <div class="mq-modal-content">
+      <div class="mq-modal-header">
+        <div class="mq-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="mq-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="mq-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
+    </div>
+  </div>
 </div>
