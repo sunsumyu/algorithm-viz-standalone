@@ -7,9 +7,9 @@
     --accent-emerald: #10b981;
     --accent-rose: #f43f5e;
     --bg-dark: #090d16;
-    --card-bg: rgba(15, 23, 42, 0.7);
+    --card-bg: rgba(15, 23, 42, 0.75);
     --border-color: rgba(255, 255, 255, 0.08);
-    width: 100%; height: 100%;
+    width: 100%; height: 100%; flex: 1; min-width: 0; min-height: 0;
     color: #e2e8f0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     background:
@@ -17,11 +17,12 @@
       radial-gradient(ellipse at 90% 92%, rgba(192, 132, 252, 0.16), transparent 55%),
       linear-gradient(135deg, #090d16 0%, #111827 50%, #0b1120 100%);
     overflow: hidden;
+    display: flex; flex-direction: column;
   }
 
   #algo-combination-optimized-view .co-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+    width: 100%; height: 100%; flex: 1; min-width: 0; min-height: 0;
+    display: flex; flex-direction: column; overflow: hidden;
   }
 
   /* 顶部导航与阶段选项卡 */
@@ -29,7 +30,7 @@
     padding: 10px 18px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     border-bottom: 1px solid var(--border-color);
-    background: rgba(11, 17, 32, 0.75);
+    background: rgba(11, 17, 32, 0.8);
     backdrop-filter: blur(16px) saturate(180%);
     flex-shrink: 0;
   }
@@ -136,15 +137,15 @@
     background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd;
   }
 
-  /* 主体双列网格 */
+  /* 主体双列 Flex 布局（确保左侧沙盘与右侧代码 100% 铺满且不塌陷） */
   #algo-combination-optimized-view .co-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(380px, 0.8fr);
+    flex: 1; min-height: 0; min-width: 0;
+    display: flex; flex-direction: row;
     gap: 14px; padding: 12px 18px; overflow: hidden; width: 100%; height: 100%;
   }
 
   #algo-combination-optimized-view .co-left {
-    min-width: 0; min-height: 0; height: 100%;
+    flex: 1 1 auto; min-width: 0; min-height: 0; height: 100%;
     display: flex; flex-direction: column;
     gap: 12px; overflow: hidden;
   }
@@ -159,7 +160,7 @@
   }
 
   #algo-combination-optimized-view .co-tree-card {
-    flex: 1; min-height: 240px; position: relative; overflow: hidden;
+    flex: 1 1 60%; min-height: 200px; position: relative; overflow: hidden;
   }
 
   #algo-combination-optimized-view .co-card-header {
@@ -195,7 +196,7 @@
   /* 回溯状态监视器 (Card 2) */
   #algo-combination-optimized-view .co-monitor-card {
     padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;
-    flex-shrink: 0; max-height: 210px; overflow-y: auto;
+    flex: 0 0 auto; max-height: 220px; overflow-y: auto;
   }
 
   #algo-combination-optimized-view .co-monitor-section-title {
@@ -205,7 +206,8 @@
 
   /* 右侧面板 (CodePanel 承载卡片) */
   #algo-combination-optimized-view .co-right {
-    min-width: 0; min-height: 0; height: 100%;
+    flex: 0 0 420px; width: 420px; min-width: 320px; max-width: 600px;
+    min-height: 0; height: 100%;
     display: flex; flex-direction: column; overflow: hidden;
     border-radius: 14px; border: 1px solid var(--border-color);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
