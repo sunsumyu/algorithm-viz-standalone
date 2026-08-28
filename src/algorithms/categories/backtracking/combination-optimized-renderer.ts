@@ -8,7 +8,6 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import { BacktrackStateSpacePresenter } from '../../../core/renderers/backtrack-state-space-presenter';
-import { AnalysisKnowledgePresenter } from '../../../core/renderers/analysis-knowledge-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -221,13 +220,52 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
   ];
   protected codePanelTitle = '组合（优化）Java 源码';
 
+  protected lineExplanations = {
+    1: '主入口函数：接收总可选范围 1..n 与目标选取数量 k',
+    2: '初始化全局二维结果集 res 用于收集所有叶子组合',
+    3: '启动首层回溯递归：从数字 1 开始，初始路径为空 ArrayList',
+    4: '回溯遍历完成，返回全部合法解集',
+    8: '回溯核心递归函数：start 为当前层可选起点，path 维护当前决策栈',
+    9: '【终止条件】当前路径已收集满 k 个元素',
+    10: '【收集结果】必须深拷贝 new ArrayList<>(path) 并加入结果集',
+    11: '递归回退到上一层',
+    14: '【剪枝优化循环】：上界计算 i <= n - (k - path.size()) + 1，剩余不足 k 个直接跳出',
+    15: '【做选择】：将当前候选数字 i 加入路径栈',
+    16: '【向下递归】：进入下一层树，下一轮可选起点为 i + 1',
+    17: '【撤销选择】：递归返回后弹出末尾元素，恢复栈现场',
+  };
+
+  protected keyPoints = {
+    title: '回溯 5 步精讲与剪枝核心',
+    summary: '组合问题（LeetCode 77）经典回溯 + 剩余候选剪枝模型',
+    points: [
+      { label: '1. 递归函数参数', desc: '除了 n, k 和 res，关键是 start 参数控制横向遍历的起始位置，防止出现 [1, 2] 与 [2, 1] 的重复组合。', icon: '📥' },
+      { label: '2. 终止条件', desc: '当 path.size() == k 时，说明找到一个合法长度的子集，收集深拷贝后 return。', icon: '🛑' },
+      { label: '3. 单层搜索逻辑', desc: 'for 循环横向枚举本层可选数字，递归深入纵向探索，并在递归返回后撤销选择。', icon: '🔁' },
+      { label: '4. 剪枝优化原理', desc: '还需 (k - path.size()) 个元素，列表中剩余 (n - i + 1) 个元素。若 n - i + 1 < k - path.size() 则无解，由此推出循环上界 i <= n - (k - path.size()) + 1。', icon: '✂️' },
+      { label: '5. 状态撤销回溯', desc: 'path.remove(path.size() - 1) 是回溯法的灵魂，确保深入探索后原路恢复，不污染兄弟分支。', icon: '🔙' },
+    ],
+  };
+
+  protected problemDetail = {
+    title: 'LeetCode 77. 组合 (Combinations)',
+    leetcodeId: 77,
+    leetcodeUrl: 'https://leetcode.cn/problems/combinations/',
+    difficulty: 'medium' as const,
+    description: '给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合。\n\n你可以按任何顺序返回答案。\n\n**剪枝优化核心**：\n如果后续剩余的元素数量加上当前 path 中的元素数量不足 k 个，即 `(n - i + 1) < (k - path.size())`，则无需继续循环遍历，可直接将循环上界收紧为 `i <= n - (k - path.size()) + 1`。',
+    examples: [
+      { input: 'n = 4, k = 2', output: '[[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]' },
+      { input: 'n = 1, k = 1', output: '[[1]]' },
+    ],
+    constraints: ['1 <= n <= 20', '1 <= k <= n'],
+    tags: ['回溯算法', '剪枝优化', '深度优先搜索'],
+  };
+
   private currentStage: 'naive' | 'pruned' = 'pruned';
   private treeDisplay: HTMLElement | null = null;
   private pathStackContainer: HTMLElement | null = null;
   private pruningMonitorContainer: HTMLElement | null = null;
   private resultCollectionContainer: HTMLElement | null = null;
-  private analysisContainer: HTMLElement | null = null;
-  private problemContainer: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
@@ -235,10 +273,8 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
     this.pathStackContainer = this.root.querySelector('#co-path-stack-container');
     this.pruningMonitorContainer = this.root.querySelector('#co-pruning-monitor-container');
     this.resultCollectionContainer = this.root.querySelector('#co-result-collection-container');
-    this.analysisContainer = this.root.querySelector('#co-analysis-container');
-    this.problemContainer = this.root.querySelector('#co-problem-container');
 
-    this.bindPlaybackControls({ message: 'step-message' });
+    this.bindPlaybackControls();
     this.root.querySelector('#co-start')?.addEventListener('click', () => this.start());
 
     // Stage Tab switching
@@ -262,25 +298,8 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
       this.start();
     });
 
-    // Right Panel Tabs (Code, Analysis, Problem)
-    const tabBtns = this.root.querySelectorAll<HTMLButtonElement>('.bt-tab-btn');
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const tabType = btn.dataset.tab;
-        const codeTab = this.root?.querySelector('#co-tab-content-code');
-        const analysisTab = this.root?.querySelector('#co-tab-content-analysis');
-        const problemTab = this.root?.querySelector('#co-tab-content-problem');
-
-        codeTab?.classList.toggle('active', tabType === 'code');
-        analysisTab?.classList.toggle('active', tabType === 'analysis');
-        problemTab?.classList.toggle('active', tabType === 'problem');
-      });
-    });
-
     // Example Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.bt-chip').forEach(btn => {
+    this.root.querySelectorAll<HTMLButtonElement>('.co-chip').forEach(btn => {
       btn.addEventListener('click', () => {
         const nEl = this.root?.querySelector('#co-n') as HTMLInputElement | null;
         const kEl = this.root?.querySelector('#co-k') as HTMLInputElement | null;
@@ -289,47 +308,6 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
         this.start();
       });
     });
-
-    // Initialize Problem View & Analysis View
-    this.initKnowledgePresenters();
-  }
-
-  private initKnowledgePresenters(): void {
-    const model = {
-      id: 'combination-optimized',
-      name: '组合（优化）',
-      viewId: 'algo-combination-optimized-view',
-      category: '回溯算法',
-      difficulty: 1 as const,
-      description: '给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合。可按任何顺序返回答案。通过上界剪枝避免无效递归分支。',
-      directions: [],
-      stages: [],
-      problem: {
-        title: '组合（剪枝优化）',
-        leetcodeId: 77,
-        leetcodeUrl: 'https://leetcode.cn/problems/combinations/',
-        difficulty: 'medium' as const,
-        description: '给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合。\n\n**剪枝优化核心**：\n如果后续剩余的元素数量加上当前 path 中的元素数量不足 k 个，即 `(n - i + 1) < (k - path.size())`，则无需继续循环遍历，可直接将循环上界收紧为 `i <= n - (k - path.size()) + 1`。',
-        examples: [
-          { input: 'n = 4, k = 2', output: '[[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]' },
-          { input: 'n = 1, k = 1', output: '[[1]]' },
-        ],
-        constraints: [
-          '1 <= n <= 20',
-          '1 <= k <= n',
-        ],
-        tags: ['回溯算法', '剪枝优化', '组合问题', '深度优先搜索'],
-      },
-    };
-
-    if (this.problemContainer) {
-      AnalysisKnowledgePresenter.renderProblemView(this.problemContainer, model as any);
-    }
-    if (this.analysisContainer) {
-      AnalysisKnowledgePresenter.renderAnalysisView(this.analysisContainer, model as any, {
-        currentStage: this.currentStage,
-      });
-    }
   }
 
   protected buildSteps(): BacktrackTreeStep[] {

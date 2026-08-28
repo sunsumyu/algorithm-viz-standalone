@@ -7,7 +7,7 @@
     --accent-emerald: #10b981;
     --accent-rose: #f43f5e;
     --bg-dark: #090d16;
-    --card-bg: rgba(15, 23, 42, 0.65);
+    --card-bg: rgba(15, 23, 42, 0.7);
     --border-color: rgba(255, 255, 255, 0.08);
     width: 100%; height: 100%;
     color: #e2e8f0;
@@ -19,81 +19,137 @@
     overflow: hidden;
   }
 
-  #algo-combination-optimized-view .bt-shell {
+  #algo-combination-optimized-view .co-shell {
     width: 100%; height: 100%;
     display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
   }
 
   /* 顶部导航与阶段选项卡 */
-  #algo-combination-optimized-view .bt-hero {
-    padding: 12px 20px;
+  #algo-combination-optimized-view .co-hero {
+    padding: 10px 18px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     border-bottom: 1px solid var(--border-color);
-    background: rgba(11, 17, 32, 0.7);
+    background: rgba(11, 17, 32, 0.75);
     backdrop-filter: blur(16px) saturate(180%);
-    z-index: 10;
+    flex-shrink: 0;
   }
 
-  #algo-combination-optimized-view .bt-hero-left {
-    display: flex; align-items: center; gap: 12px;
+  #algo-combination-optimized-view .co-hero-left {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
   }
 
-  #algo-combination-optimized-view .bt-icon {
-    width: 40px; height: 40px; border-radius: 10px;
+  #algo-combination-optimized-view .co-icon {
+    width: 36px; height: 36px; border-radius: 10px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 22px;
+    font-size: 20px;
     background: linear-gradient(135deg, #fb923c, #c084fc);
-    color: #06121f; box-shadow: 0 4px 16px rgba(251, 146, 60, 0.35);
+    color: #06121f; box-shadow: 0 4px 14px rgba(251, 146, 60, 0.35);
   }
 
-  #algo-combination-optimized-view .bt-title-area h1 {
-    margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc;
+  #algo-combination-optimized-view .co-title-area h1 {
+    margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc;
     display: flex; align-items: center; gap: 8px;
   }
 
-  #algo-combination-optimized-view .bt-sub {
-    color: #94a3b8; font-size: 12px; margin-top: 2px;
+  #algo-combination-optimized-view .co-sub {
+    color: #94a3b8; font-size: 11.5px; margin-top: 2px;
+  }
+
+  #algo-combination-optimized-view .co-tag {
+    font-size: 11px; color: #60a5fa; background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 8px; border-radius: 999px;
   }
 
   /* 阶段演化选项卡 */
-  #algo-combination-optimized-view .bt-stage-tabs {
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(0, 0, 0, 0.3);
+  #algo-combination-optimized-view .co-stage-tabs {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(0, 0, 0, 0.35);
     padding: 3px; border-radius: 10px;
     border: 1px solid var(--border-color);
   }
 
-  #algo-combination-optimized-view .bt-stage-tab {
-    padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  #algo-combination-optimized-view .co-stage-tab {
+    padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
     color: #94a3b8; background: transparent; border: none; cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
   }
 
-  #algo-combination-optimized-view .bt-stage-tab:hover {
+  #algo-combination-optimized-view .co-stage-tab:hover {
     color: #e2e8f0; background: rgba(255, 255, 255, 0.05);
   }
 
-  #algo-combination-optimized-view .bt-stage-tab.active {
+  #algo-combination-optimized-view .co-stage-tab.active {
     color: #ffffff;
     background: linear-gradient(135deg, #3b82f6, #6366f1);
     box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
   }
 
-  /* 主体双列网格 */
-  #algo-combination-optimized-view .bt-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.95fr);
-    gap: 14px; padding: 14px 18px; overflow: hidden;
+  /* 参数配置栏 */
+  #algo-combination-optimized-view .co-config-bar {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   }
 
-  #algo-combination-optimized-view .bt-left {
-    min-width: 0; min-height: 0; display: grid;
-    grid-template-rows: minmax(0, 1.15fr) auto;
+  #algo-combination-optimized-view .co-config-group {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  #algo-combination-optimized-view .co-config-label {
+    font-size: 12px; color: #94a3b8; font-weight: 600;
+  }
+
+  #algo-combination-optimized-view input.co-input-num {
+    width: 38px; padding: 3px 4px; border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(8, 8, 24, 0.6);
+    color: #f8fafc; font-family: monospace; font-size: 12px;
+    text-align: center; outline: none; transition: all 0.2s;
+  }
+
+  #algo-combination-optimized-view input.co-input-num:focus {
+    border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  }
+
+  #algo-combination-optimized-view .co-btn-primary {
+    padding: 4px 10px; border-radius: 6px; border: none;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #ffffff; font-weight: 600; font-size: 11.5px; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+
+  #algo-combination-optimized-view .co-btn-primary:hover {
+    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  }
+
+  #algo-combination-optimized-view .co-chips {
+    display: inline-flex; gap: 4px; align-items: center;
+  }
+
+  #algo-combination-optimized-view .co-chip {
+    padding: 2px 7px; border-radius: 999px; font-size: 10.5px;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+
+  #algo-combination-optimized-view .co-chip:hover {
+    background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd;
+  }
+
+  /* 主体双列网格 */
+  #algo-combination-optimized-view .co-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(380px, 0.8fr);
+    gap: 14px; padding: 12px 18px; overflow: hidden; width: 100%; height: 100%;
+  }
+
+  #algo-combination-optimized-view .co-left {
+    min-width: 0; min-height: 0; height: 100%;
+    display: flex; flex-direction: column;
     gap: 12px; overflow: hidden;
   }
 
-  #algo-combination-optimized-view .bt-card {
+  #algo-combination-optimized-view .co-card {
     background: var(--card-bg);
     backdrop-filter: blur(18px) saturate(160%);
     border: 1px solid var(--border-color);
@@ -102,150 +158,70 @@
     display: flex; flex-direction: column; overflow: hidden;
   }
 
-  #algo-combination-optimized-view .bt-card-header {
+  #algo-combination-optimized-view .co-tree-card {
+    flex: 1; min-height: 240px; position: relative; overflow: hidden;
+  }
+
+  #algo-combination-optimized-view .co-card-header {
     padding: 8px 14px;
     border-bottom: 1px solid var(--border-color);
     display: flex; justify-content: space-between; align-items: center;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.02); flex-shrink: 0;
   }
 
-  #algo-combination-optimized-view .bt-card-title {
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  #algo-combination-optimized-view .co-card-title {
+    color: #cbd5e1; font-weight: 700; font-size: 12.5px;
     display: flex; align-items: center; gap: 8px;
-  }
-
-  #algo-combination-optimized-view .bt-tag {
-    font-size: 11px; color: #60a5fa; background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 8px; border-radius: 999px;
-  }
-
-  /* 参数配置栏 */
-  #algo-combination-optimized-view .bt-config-bar {
-    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
-    background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid var(--border-color);
-    flex-wrap: wrap;
-  }
-
-  #algo-combination-optimized-view .bt-config-group {
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-
-  #algo-combination-optimized-view .bt-config-label {
-    font-size: 12px; color: #94a3b8; font-weight: 600;
-  }
-
-  #algo-combination-optimized-view input.bt-input-num {
-    width: 44px; padding: 4px 6px; border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(8, 8, 24, 0.6);
-    color: #f8fafc; font-family: monospace; font-size: 13px;
-    text-align: center; outline: none; transition: all 0.2s;
-  }
-
-  #algo-combination-optimized-view input.bt-input-num:focus {
-    border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-  }
-
-  #algo-combination-optimized-view .bt-btn-primary {
-    padding: 4px 12px; border-radius: 6px; border: none;
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    color: #ffffff; font-weight: 600; font-size: 12px; cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  #algo-combination-optimized-view .bt-btn-primary:hover {
-    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
-  }
-
-  #algo-combination-optimized-view .bt-chips {
-    display: inline-flex; gap: 4px; align-items: center; margin-left: auto;
-  }
-
-  #algo-combination-optimized-view .bt-chip {
-    padding: 3px 8px; border-radius: 999px; font-size: 11px;
-    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1; cursor: pointer; transition: all 0.15s;
-  }
-
-  #algo-combination-optimized-view .bt-chip:hover {
-    background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd;
   }
 
   /* 决策树展示容器 */
   #algo-combination-optimized-view #combination-optimized-tree-display {
-    flex: 1; min-height: 220px;
+    flex: 1; width: 100%; height: 100%; min-height: 180px;
     position: relative; overflow: hidden;
     background: radial-gradient(circle at center, rgba(30, 41, 59, 0.2), transparent 70%);
   }
 
   /* 图例栏 */
-  #algo-combination-optimized-view .bt-legend-bar {
+  #algo-combination-optimized-view .co-legend-bar {
     display: flex; align-items: center; gap: 12px; padding: 6px 14px;
     background: rgba(0, 0, 0, 0.25); border-top: 1px solid var(--border-color);
-    font-size: 11px; color: #94a3b8; flex-wrap: wrap;
+    font-size: 11px; color: #94a3b8; flex-wrap: wrap; flex-shrink: 0;
   }
 
-  #algo-combination-optimized-view .bt-legend-item {
+  #algo-combination-optimized-view .co-legend-item {
     display: inline-flex; align-items: center; gap: 4px;
   }
 
   /* 回溯状态监视器 (Card 2) */
-  #algo-combination-optimized-view .bt-monitor-card {
+  #algo-combination-optimized-view .co-monitor-card {
     padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;
-    max-height: 220px; overflow-y: auto;
+    flex-shrink: 0; max-height: 210px; overflow-y: auto;
   }
 
-  #algo-combination-optimized-view .bt-monitor-section-title {
+  #algo-combination-optimized-view .co-monitor-section-title {
     font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
     letter-spacing: 0.04em; margin-bottom: 2px;
   }
 
-  /* 右侧面板 (代码 / 题目 / 精讲 选项卡) */
-  #algo-combination-optimized-view .bt-right {
-    min-width: 0; min-height: 0; display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-
-  #algo-combination-optimized-view .bt-tab-header {
-    display: flex; border-bottom: 1px solid var(--border-color);
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  #algo-combination-optimized-view .bt-tab-btn {
-    flex: 1; padding: 10px; font-size: 12.5px; font-weight: 600;
-    color: #94a3b8; background: transparent; border: none; cursor: pointer;
-    transition: all 0.2s; text-align: center;
-    border-bottom: 2px solid transparent;
-  }
-
-  #algo-combination-optimized-view .bt-tab-btn:hover {
-    color: #e2e8f0; background: rgba(255, 255, 255, 0.03);
-  }
-
-  #algo-combination-optimized-view .bt-tab-btn.active {
-    color: #38bdf8; border-bottom-color: #38bdf8;
-    background: rgba(56, 189, 248, 0.06);
-  }
-
-  #algo-combination-optimized-view .bt-tab-content {
-    flex: 1; min-height: 0; overflow-y: auto; display: none; padding: 12px;
-  }
-
-  #algo-combination-optimized-view .bt-tab-content.active {
-    display: flex; flex-direction: column;
+  /* 右侧面板 (CodePanel 承载卡片) */
+  #algo-combination-optimized-view .co-right {
+    min-width: 0; min-height: 0; height: 100%;
+    display: flex; flex-direction: column; overflow: hidden;
+    border-radius: 14px; border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   }
 
   /* 时间轴播放控制器 */
-  #algo-combination-optimized-view .bt-controls {
+  #algo-combination-optimized-view .co-controls {
     padding: 10px 18px;
     background: rgba(11, 17, 32, 0.85);
     backdrop-filter: blur(16px) saturate(180%);
     border-top: 1px solid var(--border-color);
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    z-index: 10;
+    flex-shrink: 0;
   }
 
-  #algo-combination-optimized-view .bt-ctrl-btn {
+  #algo-combination-optimized-view .co-ctrl-btn {
     padding: 6px 14px; border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
@@ -253,155 +229,130 @@
     transition: all 0.2s;
   }
 
-  #algo-combination-optimized-view .bt-ctrl-btn:hover:not(:disabled) {
+  #algo-combination-optimized-view .co-ctrl-btn:hover:not(:disabled) {
     background: rgba(59, 130, 246, 0.25); border-color: #3b82f6; color: #ffffff;
     transform: translateY(-1px);
   }
 
-  #algo-combination-optimized-view .bt-ctrl-play {
+  #algo-combination-optimized-view .co-ctrl-play {
     background: linear-gradient(135deg, #3b82f6, #6366f1);
     color: #ffffff; border-color: transparent;
     padding: 6px 18px;
   }
 
-  #algo-combination-optimized-view .bt-ctrl-play:hover {
+  #algo-combination-optimized-view .co-ctrl-play:hover {
     box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
   }
 
-  #algo-combination-optimized-view .bt-counter {
+  #algo-combination-optimized-view .co-counter {
     color: #94a3b8; font-size: 12.5px; font-weight: 600;
     min-width: 90px; text-align: center; font-family: monospace;
   }
 </style>
 
-<div class="bt-shell">
-  <!-- 顶部导航 & 阶段演化选项卡 -->
-  <header class="bt-hero">
-    <div class="bt-hero-left">
-      <span class="bt-icon">✂️</span>
-      <div class="bt-title-area">
-        <h1>组合问题 (回溯演化) <span class="bt-tag">LeetCode 77</span></h1>
-        <div class="bt-sub">从 1..n 中选 k 个数的所有组合 · 双卡片联动沙盘</div>
+<div class="co-shell">
+  <!-- 顶部导航 & 阶段演化选项卡 & 参数控制 -->
+  <header class="co-hero">
+    <div class="co-hero-left">
+      <span class="co-icon">✂️</span>
+      <div class="co-title-area">
+        <h1>组合问题 (剪枝演化) <span class="co-tag">LeetCode 77</span></h1>
+        <div class="co-sub">从 1..n 中选 k 个数的所有组合 · 回溯专属双卡片沙盘</div>
       </div>
     </div>
 
     <!-- 演化选项卡 -->
-    <div class="bt-stage-tabs">
-      <button class="bt-stage-tab" id="co-tab-stage1" data-stage="naive">
+    <div class="co-stage-tabs">
+      <button class="co-stage-tab" id="co-tab-stage1" data-stage="naive">
         <span>🌱 阶段 1：完整回溯决策树</span>
       </button>
-      <button class="bt-stage-tab active" id="co-tab-stage2" data-stage="pruned">
+      <button class="co-stage-tab active" id="co-tab-stage2" data-stage="pruned">
         <span>✂️ 阶段 2：剪枝优化决策树</span>
       </button>
     </div>
+
+    <!-- 参数控制 -->
+    <div class="co-config-bar">
+      <div class="co-config-group">
+        <span class="co-config-label">n:</span>
+        <input id="co-n" class="co-input-num" value="4">
+      </div>
+      <div class="co-config-group">
+        <span class="co-config-label">k:</span>
+        <input id="co-k" class="co-input-num" value="2">
+      </div>
+      <button id="co-start" class="co-btn-primary">生成决策树</button>
+
+      <div class="co-chips">
+        <button class="co-chip" data-n="4" data-k="2">4,2</button>
+        <button class="co-chip" data-n="5" data-k="3">5,3</button>
+        <button class="co-chip" data-n="6" data-k="2">6,2</button>
+      </div>
+    </div>
   </header>
 
-  <!-- 主体工作区 -->
-  <main class="bt-main">
+  <!-- 主体工作区 (左沙盘 + 右代码) -->
+  <main class="co-main">
     <!-- 左侧双卡片联动沙盘 -->
-    <div class="bt-left">
+    <div class="co-left">
       <!-- Card 1: 决策树沙盘 -->
-      <section class="bt-card">
-        <div class="bt-card-header">
-          <span class="bt-card-title">🌲 决策树沙盘 (N-ary Decision Tree)</span>
-          <span class="bt-tag" id="co-current-mode-tag">剪枝优化模式</span>
-        </div>
-
-        <!-- 参数控制 -->
-        <div class="bt-config-bar">
-          <div class="bt-config-group">
-            <span class="bt-config-label">n:</span>
-            <input id="co-n" class="bt-input-num" value="4">
-          </div>
-          <div class="bt-config-group">
-            <span class="bt-config-label">k:</span>
-            <input id="co-k" class="bt-input-num" value="2">
-          </div>
-          <button id="co-start" class="bt-btn-primary">生成决策树</button>
-
-          <div class="bt-chips">
-            <button class="bt-chip" data-n="4" data-k="2">经典 4,2</button>
-            <button class="bt-chip" data-n="5" data-k="3">进阶 5,3</button>
-            <button class="bt-chip" data-n="6" data-k="2">剪枝 6,2</button>
-          </div>
+      <section class="co-card co-tree-card">
+        <div class="co-card-header">
+          <span class="co-card-title">🌲 决策树沙盘 (N-ary Decision Tree)</span>
+          <span class="co-tag" id="co-current-mode-tag">剪枝优化模式</span>
         </div>
 
         <!-- SVG 树显示区域 -->
         <div id="combination-optimized-tree-display"></div>
 
         <!-- 图例栏 -->
-        <div class="bt-legend-bar">
-          <div class="bt-legend-item"><span style="color:#fb923c;">●</span> 📍当前探索</div>
-          <div class="bt-legend-item"><span style="color:#10b981;">●</span> ✅解集命中</div>
-          <div class="bt-legend-item"><span style="color:#f87171;">✁</span> ✂️剪枝截断</div>
-          <div class="bt-legend-item"><span style="color:#c084fc;">●</span> 🔙已回溯</div>
+        <div class="co-legend-bar">
+          <div class="co-legend-item"><span style="color:#fb923c;">●</span> 📍当前探索</div>
+          <div class="co-legend-item"><span style="color:#10b981;">●</span> ✅解集命中</div>
+          <div class="co-legend-item"><span style="color:#f87171;">✁</span> ✂️剪枝截断</div>
+          <div class="co-legend-item"><span style="color:#c084fc;">●</span> 🔙已回溯</div>
         </div>
       </section>
 
       <!-- Card 2: 回溯核心状态追踪器 -->
-      <section class="bt-card bt-monitor-card">
+      <section class="co-card co-monitor-card">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <!-- 路径栈 -->
           <div>
-            <div class="bt-monitor-section-title">📦 当前路径栈 (Path Stack)</div>
+            <div class="co-monitor-section-title">📦 当前路径栈 (Path Stack)</div>
             <div id="co-path-stack-container"></div>
           </div>
           <!-- 剪枝监视器 -->
           <div>
-            <div class="bt-monitor-section-title">✂️ 剪枝监视器 (Pruning Monitor)</div>
+            <div class="co-monitor-section-title">✂️ 剪枝监视器 (Pruning Monitor)</div>
             <div id="co-pruning-monitor-container"></div>
           </div>
         </div>
 
         <!-- 实时解集箱 -->
         <div style="margin-top: 4px;">
-          <div class="bt-monitor-section-title">🏆 解集收集箱 (Result Collection)</div>
+          <div class="co-monitor-section-title">🏆 解集收集箱 (Result Collection)</div>
           <div id="co-result-collection-container"></div>
         </div>
       </section>
     </div>
 
-    <!-- 右侧面板 (代码 / 题目 / 回溯 5 步法) -->
-    <aside class="bt-card bt-right">
-      <div class="bt-tab-header">
-        <button class="bt-tab-btn active" data-tab="code">💻 代码与调试</button>
-        <button class="bt-tab-btn" data-tab="analysis">🎯 回溯 5 步精讲</button>
-        <button class="bt-tab-btn" data-tab="problem">📖 题目描述</button>
-      </div>
-
-      <!-- Tab 1: 代码联动 -->
-      <div class="bt-tab-content active" id="co-tab-content-code">
-        <div data-code-panel style="flex: 1; min-height: 0;"></div>
-        <div style="padding: 8px 12px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); border-radius: 0 0 12px 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">执行语句:</div>
-          <div id="step-message" style="font-size: 12px; color: #fb923c; font-family: monospace; font-weight: 600; margin-top: 2px;">
-            点击播放开始回溯探索
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 2: 回溯 5 步精讲法 -->
-      <div class="bt-tab-content" id="co-tab-content-analysis">
-        <div id="co-analysis-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
-      </div>
-
-      <!-- Tab 3: 题目描述 -->
-      <div class="bt-tab-content" id="co-tab-content-problem">
-        <div id="co-problem-container"></div>
-      </div>
+    <!-- 右侧面板 (由 CodePanel 原生渲染 Tabs、多语言、逐行精讲与题目描述) -->
+    <aside class="co-right">
+      <div data-code-panel style="flex: 1; min-height: 0; width: 100%; height: 100%;"></div>
     </aside>
   </main>
 
   <!-- 底部时间轴控制器 -->
-  <footer class="bt-controls">
+  <footer class="co-controls">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <button id="step-reset" class="bt-ctrl-btn">⏮ 重置</button>
-      <button id="step-prev" class="bt-ctrl-btn">◀ 上一步</button>
-      <button id="step-play" class="bt-ctrl-btn bt-ctrl-play">▶ 播放</button>
-      <button id="step-next" class="bt-ctrl-btn">下一步 ▶</button>
+      <button id="step-reset" class="co-ctrl-btn">⏮ 重置</button>
+      <button id="step-prev" class="co-ctrl-btn">◀ 上一步</button>
+      <button id="step-play" class="co-ctrl-btn co-ctrl-play">▶ 播放</button>
+      <button id="step-next" class="co-ctrl-btn">下一步 ▶</button>
     </div>
 
-    <span id="step-counter" class="bt-counter">步骤: 0 / 0</span>
+    <span id="step-counter" class="co-counter">步骤: 0 / 0</span>
 
     <div style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;">
       <span>速度</span>

@@ -7,7 +7,7 @@
     --accent-emerald: #10b981;
     --accent-rose: #f43f5e;
     --bg-dark: #090d16;
-    --card-bg: rgba(15, 23, 42, 0.65);
+    --card-bg: rgba(15, 23, 42, 0.7);
     --border-color: rgba(255, 255, 255, 0.08);
     width: 100%; height: 100%;
     color: #e2e8f0;
@@ -19,61 +19,111 @@
     overflow: hidden;
   }
 
-  #algo-combination-view .bt-shell {
+  #algo-combination-view .cs-shell {
     width: 100%; height: 100%;
     display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
   }
 
   /* 顶部导航 */
-  #algo-combination-view .bt-hero {
-    padding: 12px 20px;
+  #algo-combination-view .cs-hero {
+    padding: 10px 18px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     border-bottom: 1px solid var(--border-color);
-    background: rgba(11, 17, 32, 0.7);
+    background: rgba(11, 17, 32, 0.75);
     backdrop-filter: blur(16px) saturate(180%);
-    z-index: 10;
+    flex-shrink: 0;
   }
 
-  #algo-combination-view .bt-hero-left {
-    display: flex; align-items: center; gap: 12px;
+  #algo-combination-view .cs-hero-left {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
   }
 
-  #algo-combination-view .bt-icon {
-    width: 40px; height: 40px; border-radius: 10px;
+  #algo-combination-view .cs-icon {
+    width: 36px; height: 36px; border-radius: 10px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 22px;
+    font-size: 20px;
     background: linear-gradient(135deg, #fb923c, #c084fc);
-    color: #06121f; box-shadow: 0 4px 16px rgba(251, 146, 60, 0.35);
+    color: #06121f; box-shadow: 0 4px 14px rgba(251, 146, 60, 0.35);
   }
 
-  #algo-combination-view .bt-title-area h1 {
-    margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc;
+  #algo-combination-view .cs-title-area h1 {
+    margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc;
     display: flex; align-items: center; gap: 8px;
   }
 
-  #algo-combination-view .bt-sub {
-    color: #94a3b8; font-size: 12px; margin-top: 2px;
+  #algo-combination-view .cs-sub {
+    color: #94a3b8; font-size: 11.5px; margin-top: 2px;
   }
 
-  #algo-combination-view .bt-tag {
+  #algo-combination-view .cs-tag {
     font-size: 11px; color: #60a5fa; background: rgba(59, 130, 246, 0.15);
     border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 8px; border-radius: 999px;
   }
 
-  /* 主体双列网格 */
-  #algo-combination-view .bt-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.95fr);
-    gap: 14px; padding: 14px 18px; overflow: hidden;
+  /* 参数配置栏 */
+  #algo-combination-view .cs-config-bar {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   }
 
-  #algo-combination-view .bt-left {
-    min-width: 0; min-height: 0; display: grid;
-    grid-template-rows: minmax(0, 1.15fr) auto;
+  #algo-combination-view .cs-config-group {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  #algo-combination-view .cs-config-label {
+    font-size: 12px; color: #94a3b8; font-weight: 600;
+  }
+
+  #algo-combination-view input.cs-input-num {
+    width: 38px; padding: 3px 4px; border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(8, 8, 24, 0.6);
+    color: #f8fafc; font-family: monospace; font-size: 12px;
+    text-align: center; outline: none; transition: all 0.2s;
+  }
+
+  #algo-combination-view input.cs-input-num:focus {
+    border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  }
+
+  #algo-combination-view .cs-btn-primary {
+    padding: 4px 10px; border-radius: 6px; border: none;
+    background: linear-gradient(135deg, #fb923c, #c084fc);
+    color: #ffffff; font-weight: 600; font-size: 11.5px; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+
+  #algo-combination-view .cs-btn-primary:hover {
+    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(251, 146, 60, 0.35);
+  }
+
+  #algo-combination-view .cs-chips {
+    display: inline-flex; gap: 4px; align-items: center;
+  }
+
+  #algo-combination-view .cs-chip {
+    padding: 2px 7px; border-radius: 999px; font-size: 10.5px;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+
+  #algo-combination-view .cs-chip:hover {
+    background: rgba(251, 146, 60, 0.2); border-color: #fb923c; color: #fdba74;
+  }
+
+  /* 主体双列网格 */
+  #algo-combination-view .cs-main {
+    min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(380px, 0.8fr);
+    gap: 14px; padding: 12px 18px; overflow: hidden; width: 100%; height: 100%;
+  }
+
+  #algo-combination-view .cs-left {
+    min-width: 0; min-height: 0; height: 100%;
+    display: flex; flex-direction: column;
     gap: 12px; overflow: hidden;
   }
 
-  #algo-combination-view .bt-card {
+  #algo-combination-view .cs-card {
     background: var(--card-bg);
     backdrop-filter: blur(18px) saturate(160%);
     border: 1px solid var(--border-color);
@@ -82,145 +132,70 @@
     display: flex; flex-direction: column; overflow: hidden;
   }
 
-  #algo-combination-view .bt-card-header {
+  #algo-combination-view .cs-tree-card {
+    flex: 1; min-height: 240px; position: relative; overflow: hidden;
+  }
+
+  #algo-combination-view .cs-card-header {
     padding: 8px 14px;
     border-bottom: 1px solid var(--border-color);
     display: flex; justify-content: space-between; align-items: center;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.02); flex-shrink: 0;
   }
 
-  #algo-combination-view .bt-card-title {
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  #algo-combination-view .cs-card-title {
+    color: #cbd5e1; font-weight: 700; font-size: 12.5px;
     display: flex; align-items: center; gap: 8px;
-  }
-
-  /* 参数配置栏 */
-  #algo-combination-view .bt-config-bar {
-    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
-    background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid var(--border-color);
-    flex-wrap: wrap;
-  }
-
-  #algo-combination-view .bt-config-group {
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-
-  #algo-combination-view .bt-config-label {
-    font-size: 12px; color: #94a3b8; font-weight: 600;
-  }
-
-  #algo-combination-view input.bt-input-num {
-    width: 44px; padding: 4px 6px; border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(8, 8, 24, 0.6);
-    color: #f8fafc; font-family: monospace; font-size: 13px;
-    text-align: center; outline: none; transition: all 0.2s;
-  }
-
-  #algo-combination-view input.bt-input-num:focus {
-    border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-  }
-
-  #algo-combination-view .bt-btn-primary {
-    padding: 4px 12px; border-radius: 6px; border: none;
-    background: linear-gradient(135deg, #fb923c, #c084fc);
-    color: #ffffff; font-weight: 600; font-size: 12px; cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  #algo-combination-view .bt-btn-primary:hover {
-    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(251, 146, 60, 0.35);
-  }
-
-  #algo-combination-view .bt-chips {
-    display: inline-flex; gap: 4px; align-items: center; margin-left: auto;
-  }
-
-  #algo-combination-view .bt-chip {
-    padding: 3px 8px; border-radius: 999px; font-size: 11px;
-    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1; cursor: pointer; transition: all 0.15s;
-  }
-
-  #algo-combination-view .bt-chip:hover {
-    background: rgba(251, 146, 60, 0.2); border-color: #fb923c; color: #fdba74;
   }
 
   /* 决策树展示容器 */
   #algo-combination-view #combination-tree-display {
-    flex: 1; min-height: 220px;
+    flex: 1; width: 100%; height: 100%; min-height: 180px;
     position: relative; overflow: hidden;
     background: radial-gradient(circle at center, rgba(30, 41, 59, 0.2), transparent 70%);
   }
 
   /* 图例栏 */
-  #algo-combination-view .bt-legend-bar {
+  #algo-combination-view .cs-legend-bar {
     display: flex; align-items: center; gap: 12px; padding: 6px 14px;
     background: rgba(0, 0, 0, 0.25); border-top: 1px solid var(--border-color);
-    font-size: 11px; color: #94a3b8; flex-wrap: wrap;
+    font-size: 11px; color: #94a3b8; flex-wrap: wrap; flex-shrink: 0;
   }
 
-  #algo-combination-view .bt-legend-item {
+  #algo-combination-view .cs-legend-item {
     display: inline-flex; align-items: center; gap: 4px;
   }
 
   /* 回溯状态监视器 (Card 2) */
-  #algo-combination-view .bt-monitor-card {
+  #algo-combination-view .cs-monitor-card {
     padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;
-    max-height: 220px; overflow-y: auto;
+    flex-shrink: 0; max-height: 210px; overflow-y: auto;
   }
 
-  #algo-combination-view .bt-monitor-section-title {
+  #algo-combination-view .cs-monitor-section-title {
     font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
     letter-spacing: 0.04em; margin-bottom: 2px;
   }
 
-  /* 右侧面板 (代码 / 题目 / 精讲 选项卡) */
-  #algo-combination-view .bt-right {
-    min-width: 0; min-height: 0; display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-
-  #algo-combination-view .bt-tab-header {
-    display: flex; border-bottom: 1px solid var(--border-color);
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  #algo-combination-view .bt-tab-btn {
-    flex: 1; padding: 10px; font-size: 12.5px; font-weight: 600;
-    color: #94a3b8; background: transparent; border: none; cursor: pointer;
-    transition: all 0.2s; text-align: center;
-    border-bottom: 2px solid transparent;
-  }
-
-  #algo-combination-view .bt-tab-btn:hover {
-    color: #e2e8f0; background: rgba(255, 255, 255, 0.03);
-  }
-
-  #algo-combination-view .bt-tab-btn.active {
-    color: #fb923c; border-bottom-color: #fb923c;
-    background: rgba(251, 146, 60, 0.06);
-  }
-
-  #algo-combination-view .bt-tab-content {
-    flex: 1; min-height: 0; overflow-y: auto; display: none; padding: 12px;
-  }
-
-  #algo-combination-view .bt-tab-content.active {
-    display: flex; flex-direction: column;
+  /* 右侧面板 (CodePanel 承载卡片) */
+  #algo-combination-view .cs-right {
+    min-width: 0; min-height: 0; height: 100%;
+    display: flex; flex-direction: column; overflow: hidden;
+    border-radius: 14px; border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   }
 
   /* 时间轴播放控制器 */
-  #algo-combination-view .bt-controls {
+  #algo-combination-view .cs-controls {
     padding: 10px 18px;
     background: rgba(11, 17, 32, 0.85);
     backdrop-filter: blur(16px) saturate(180%);
     border-top: 1px solid var(--border-color);
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    z-index: 10;
+    flex-shrink: 0;
   }
 
-  #algo-combination-view .bt-ctrl-btn {
+  #algo-combination-view .cs-ctrl-btn {
     padding: 6px 14px; border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
@@ -228,144 +203,119 @@
     transition: all 0.2s;
   }
 
-  #algo-combination-view .bt-ctrl-btn:hover:not(:disabled) {
+  #algo-combination-view .cs-ctrl-btn:hover:not(:disabled) {
     background: rgba(251, 146, 60, 0.25); border-color: #fb923c; color: #ffffff;
     transform: translateY(-1px);
   }
 
-  #algo-combination-view .bt-ctrl-play {
+  #algo-combination-view .cs-ctrl-play {
     background: linear-gradient(135deg, #fb923c, #c084fc);
     color: #ffffff; border-color: transparent;
     padding: 6px 18px;
   }
 
-  #algo-combination-view .bt-ctrl-play:hover {
+  #algo-combination-view .cs-ctrl-play:hover {
     box-shadow: 0 4px 14px rgba(251, 146, 60, 0.4);
   }
 
-  #algo-combination-view .bt-counter {
+  #algo-combination-view .cs-counter {
     color: #94a3b8; font-size: 12.5px; font-weight: 600;
     min-width: 90px; text-align: center; font-family: monospace;
   }
 </style>
 
-<div class="bt-shell">
-  <!-- 顶部导航 -->
-  <header class="bt-hero">
-    <div class="bt-hero-left">
-      <span class="bt-icon">🔢</span>
-      <div class="bt-title-area">
-        <h1>组合问题 (完整回溯搜索) <span class="bt-tag">LeetCode 77</span></h1>
-        <div class="bt-sub">从 1..n 中选 k 个数的所有组合 · 完整解空间树与状态沙盘</div>
+<div class="cs-shell">
+  <!-- 顶部导航 & 参数控制 -->
+  <header class="cs-hero">
+    <div class="cs-hero-left">
+      <span class="cs-icon">🔢</span>
+      <div class="cs-title-area">
+        <h1>组合问题 (完整回溯搜索) <span class="cs-tag">LeetCode 77</span></h1>
+        <div class="cs-sub">从 1..n 中选 k 个数的所有组合 · 完整解空间树与状态沙盘</div>
+      </div>
+    </div>
+
+    <!-- 参数控制 -->
+    <div class="cs-config-bar">
+      <div class="cs-config-group">
+        <span class="cs-config-label">n:</span>
+        <input id="cs-n" class="cs-input-num" value="4">
+      </div>
+      <div class="cs-config-group">
+        <span class="cs-config-label">k:</span>
+        <input id="cs-k" class="cs-input-num" value="2">
+      </div>
+      <button id="cs-start" class="cs-btn-primary">生成决策树</button>
+
+      <div class="cs-chips">
+        <button class="cs-chip" data-n="4" data-k="2">4,2</button>
+        <button class="cs-chip" data-n="4" data-k="3">4,3</button>
+        <button class="cs-chip" data-n="3" data-k="2">3,2</button>
       </div>
     </div>
   </header>
 
   <!-- 主体工作区 -->
-  <main class="bt-main">
+  <main class="cs-main">
     <!-- 左侧双卡片联动沙盘 -->
-    <div class="bt-left">
+    <div class="cs-left">
       <!-- Card 1: 决策树沙盘 -->
-      <section class="bt-card">
-        <div class="bt-card-header">
-          <span class="bt-card-title">🌲 完整决策树 (Full Decision Tree)</span>
-          <span class="bt-tag">全空间搜索</span>
-        </div>
-
-        <!-- 参数控制 -->
-        <div class="bt-config-bar">
-          <div class="bt-config-group">
-            <span class="bt-config-label">n:</span>
-            <input id="cs-n" class="bt-input-num" value="4">
-          </div>
-          <div class="bt-config-group">
-            <span class="bt-config-label">k:</span>
-            <input id="cs-k" class="bt-input-num" value="2">
-          </div>
-          <button id="cs-start" class="bt-btn-primary">生成决策树</button>
-
-          <div class="bt-chips">
-            <button class="bt-chip" data-n="4" data-k="2">经典 4,2</button>
-            <button class="bt-chip" data-n="4" data-k="3">深入 4,3</button>
-            <button class="bt-chip" data-n="3" data-k="2">简单 3,2</button>
-          </div>
+      <section class="cs-card cs-tree-card">
+        <div class="cs-card-header">
+          <span class="cs-card-title">🌲 完整决策树 (Full Decision Tree)</span>
+          <span class="cs-tag">全空间搜索</span>
         </div>
 
         <!-- SVG 树显示区域 -->
         <div id="combination-tree-display"></div>
 
         <!-- 图例栏 -->
-        <div class="bt-legend-bar">
-          <div class="bt-legend-item"><span style="color:#fb923c;">●</span> 📍当前探索</div>
-          <div class="bt-legend-item"><span style="color:#10b981;">●</span> ✅解集命中</div>
-          <div class="bt-legend-item"><span style="color:#c084fc;">●</span> 🔙已回溯</div>
+        <div class="cs-legend-bar">
+          <div class="cs-legend-item"><span style="color:#fb923c;">●</span> 📍当前探索</div>
+          <div class="cs-legend-item"><span style="color:#10b981;">●</span> ✅解集命中</div>
+          <div class="cs-legend-item"><span style="color:#c084fc;">●</span> 🔙已回溯</div>
         </div>
       </section>
 
       <!-- Card 2: 回溯核心状态追踪器 -->
-      <section class="bt-card bt-monitor-card">
+      <section class="cs-card cs-monitor-card">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <!-- 路径栈 -->
           <div>
-            <div class="bt-monitor-section-title">📦 当前路径栈 (Path Stack)</div>
+            <div class="cs-monitor-section-title">📦 当前路径栈 (Path Stack)</div>
             <div id="cs-path-stack-container"></div>
           </div>
           <!-- 搜索状态 -->
           <div>
-            <div class="bt-monitor-section-title">🔍 搜索状态 (Search State)</div>
+            <div class="cs-monitor-section-title">🔍 搜索状态 (Search State)</div>
             <div id="cs-search-state-container"></div>
           </div>
         </div>
 
         <!-- 实时解集箱 -->
         <div style="margin-top: 4px;">
-          <div class="bt-monitor-section-title">🏆 解集收集箱 (Result Collection)</div>
+          <div class="cs-monitor-section-title">🏆 解集收集箱 (Result Collection)</div>
           <div id="cs-result-collection-container"></div>
         </div>
       </section>
     </div>
 
-    <!-- 右侧面板 (代码 / 题目 / 回溯 5 步法) -->
-    <aside class="bt-card bt-right">
-      <div class="bt-tab-header">
-        <button class="bt-tab-btn active" data-tab="code">💻 代码与调试</button>
-        <button class="bt-tab-btn" data-tab="analysis">🎯 回溯 5 步精讲</button>
-        <button class="bt-tab-btn" data-tab="problem">📖 题目描述</button>
-      </div>
-
-      <!-- Tab 1: 代码联动 -->
-      <div class="bt-tab-content active" id="cs-tab-content-code">
-        <div data-code-panel style="flex: 1; min-height: 0;"></div>
-        <div style="padding: 8px 12px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); border-radius: 0 0 12px 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">执行语句:</div>
-          <div id="step-message" style="font-size: 12px; color: #fb923c; font-family: monospace; font-weight: 600; margin-top: 2px;">
-            点击播放开始回溯探索
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 2: 回溯 5 步精讲法 -->
-      <div class="bt-tab-content" id="cs-tab-content-analysis">
-        <div id="cs-analysis-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
-      </div>
-
-      <!-- Tab 3: 题目描述 -->
-      <div class="bt-tab-content" id="cs-tab-content-problem">
-        <div id="cs-problem-container"></div>
-      </div>
+    <!-- 右侧面板 (CodePanel 承载卡片) -->
+    <aside class="cs-right">
+      <div data-code-panel style="flex: 1; min-height: 0; width: 100%; height: 100%;"></div>
     </aside>
   </main>
 
   <!-- 底部时间轴控制器 -->
-  <footer class="bt-controls">
+  <footer class="cs-controls">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <button id="step-reset" class="bt-ctrl-btn">⏮ 重置</button>
-      <button id="step-prev" class="bt-ctrl-btn">◀ 上一步</button>
-      <button id="step-play" class="bt-ctrl-btn bt-ctrl-play">▶ 播放</button>
-      <button id="step-next" class="bt-ctrl-btn">下一步 ▶</button>
+      <button id="step-reset" class="cs-ctrl-btn">⏮ 重置</button>
+      <button id="step-prev" class="cs-ctrl-btn">◀ 上一步</button>
+      <button id="step-play" class="cs-ctrl-btn cs-ctrl-play">▶ 播放</button>
+      <button id="step-next" class="cs-ctrl-btn">下一步 ▶</button>
     </div>
 
-    <span id="step-counter" class="bt-counter">步骤: 0 / 0</span>
+    <span id="step-counter" class="cs-counter">步骤: 0 / 0</span>
 
     <div style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;">
       <span>速度</span>
