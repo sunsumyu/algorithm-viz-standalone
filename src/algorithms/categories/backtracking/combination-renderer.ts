@@ -11,6 +11,10 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/code-panel';
 import { registerAlgorithm } from '../../../core/registry';
 import {
+  DarkCodeTerminalPresenter,
+  type DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
   BacktrackStateSpacePresenter,
   BacktrackLogItem,
 } from '../../../core/renderers/backtrack-state-space-presenter';
@@ -21,6 +25,10 @@ import {
   flattenTree,
   renderBacktrackTree,
 } from './backtracking-tree-helper';
+import {
+  COMBINATION_PROBLEM_HTML,
+  COMBINATION_ANALYSIS_HTML,
+} from './combination-problem-content';
 import template from './combination.html?raw';
 
 /* ── Step ─────────────────────────────────────────────────── */
@@ -301,8 +309,7 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     ],
   };
 
-  private currentLang: string = 'java';
-  private codeFontSize: number = 12;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private treeDisplay: HTMLElement | null = null;
   private pathStackContainer: HTMLElement | null = null;
   private searchStateContainer: HTMLElement | null = null;
@@ -354,236 +361,13 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
       });
     });
 
-    // 初始化右侧代码终端组件与 Tab
-    this.initDarkCodePanel();
-  }
-
-  private initDarkCodePanel(): void {
-    if (!this.root) return;
-
-    // 1. Tab 切换
-    const btnTabCode = this.root.querySelector('#btn-tab-code');
-    const btnTabProblem = this.root.querySelector('#btn-tab-problem');
-    const btnTabAnalysis = this.root.querySelector('#btn-tab-analysis');
-
-    const viewCode = this.root.querySelector('#code-view-container');
-    const viewProblem = this.root.querySelector('#problem-view-container');
-    const viewAnalysis = this.root.querySelector('#analysis-view-container');
-
-    const switchTab = (activeTab: Element | null, activeView: Element | null) => {
-      [btnTabCode, btnTabProblem, btnTabAnalysis].forEach(b => {
-        if (!b) return;
-        b.classList.remove('active');
-      });
-      if (activeTab) {
-        activeTab.classList.add('active');
-      }
-
-      [viewCode, viewProblem, viewAnalysis].forEach(v => {
-        if (v) (v as HTMLElement).style.display = 'none';
-      });
-      if (activeView) {
-        (activeView as HTMLElement).style.display = 'flex';
-      }
-    };
-
-    btnTabCode?.addEventListener('click', () => switchTab(btnTabCode, viewCode));
-    btnTabProblem?.addEventListener('click', () => switchTab(btnTabProblem, viewProblem));
-    btnTabAnalysis?.addEventListener('click', () => switchTab(btnTabAnalysis, viewAnalysis));
-
-    // 2. 多语言切换
-    const langBtns = this.root.querySelectorAll<HTMLButtonElement>('#code-lang-tabs .cs-lang-btn');
-    langBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        langBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.currentLang = btn.dataset.lang || 'java';
-        this.renderCodeLines();
-        if (this.steps.length > 0) {
-          this.highlightCodeLine(this.steps[this.currentIndex]?.codeLine);
-        }
-      });
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: COMBINATION_PROBLEM_HTML,
+      analysisHtml: COMBINATION_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-
-    // 3. 字号调整
-    const btnFontDec = this.root.querySelector('#btn-code-font-dec');
-    const btnFontInc = this.root.querySelector('#btn-code-font-inc');
-    const fontIndicator = this.root.querySelector('#code-font-indicator');
-
-    btnFontDec?.addEventListener('click', () => {
-      this.codeFontSize = Math.max(9, this.codeFontSize - 1);
-      if (fontIndicator) fontIndicator.textContent = String(this.codeFontSize);
-      this.updateCodeFontSize();
-    });
-
-    btnFontInc?.addEventListener('click', () => {
-      this.codeFontSize = Math.min(18, this.codeFontSize + 1);
-      if (fontIndicator) fontIndicator.textContent = String(this.codeFontSize);
-      this.updateCodeFontSize();
-    });
-
-    // 4. 模态弹窗控制
-    const modalProblem = this.root.querySelector('#modal-problem');
-    const btnOpenModal = this.root.querySelector('#btn-open-problem-modal');
-    const btnCloseModal = this.root.querySelector('#btn-close-problem-modal');
-
-    btnOpenModal?.addEventListener('click', () => {
-      if (modalProblem) modalProblem.classList.remove('hidden');
-    });
-    btnCloseModal?.addEventListener('click', () => {
-      if (modalProblem) modalProblem.classList.add('hidden');
-    });
-
-    // 渲染题目与精讲视图内容
-    this.renderStaticContent();
-    this.renderCodeLines();
-  }
-
-  private updateCodeFontSize(): void {
-    const wrapper = this.root?.querySelector('#code-lines-wrapper') as HTMLElement | null;
-    if (wrapper) {
-      wrapper.querySelectorAll<HTMLElement>('.code-line').forEach(el => {
-        el.style.fontSize = `${this.codeFontSize}px`;
-      });
-    }
-  }
-
-  private renderCodeLines(): void {
-    const wrapper = this.root?.querySelector('#code-lines-wrapper');
-    if (!wrapper) return;
-
-    const lines = this.codeLanguages[this.currentLang] || this.codeLanguages['java'];
-    const linesHtml = lines
-      .map((line, idx) => {
-        const lineNum = idx + 1;
-        return `
-          <div class="code-line" data-line="${lineNum}" style="font-size: ${this.codeFontSize}px;">
-            <span class="code-line-num">${lineNum}</span>
-            <span class="code-line-text">${this.escapeHtml(line)}</span>
-          </div>
-        `;
-      })
-      .join('');
-
-    wrapper.innerHTML = linesHtml;
-  }
-
-  private highlightCodeLine(target: HighlightTarget | null | undefined): void {
-    const wrapper = this.root?.querySelector('#code-lines-wrapper');
-    if (!wrapper) return;
-
-    wrapper.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
-
-    if (target == null) return;
-
-    if (typeof target === 'number') {
-      const lineEl = wrapper.querySelector(`.code-line[data-line="${target}"]`);
-      if (lineEl) {
-        lineEl.classList.add('active');
-        lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    } else if (typeof target === 'string') {
-      const num = parseInt(target, 10);
-      if (!isNaN(num)) {
-        const lineEl = wrapper.querySelector(`.code-line[data-line="${num}"]`);
-        lineEl?.classList.add('active');
-        lineEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    } else if (typeof target === 'object') {
-      if ('from' in target && 'to' in target && typeof target.from === 'number' && typeof target.to === 'number') {
-        for (let l = target.from; l <= target.to; l++) {
-          const lineEl = wrapper.querySelector(`.code-line[data-line="${l}"]`);
-          lineEl?.classList.add('active');
-        }
-        const firstEl = wrapper.querySelector(`.code-line[data-line="${target.from}"]`);
-        firstEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      } else if (Array.isArray(target)) {
-        target.forEach(l => {
-          const lineEl = wrapper.querySelector(`.code-line[data-line="${l}"]`);
-          lineEl?.classList.add('active');
-        });
-        if (target.length > 0) {
-          const firstEl = wrapper.querySelector(`.code-line[data-line="${target[0]}"]`);
-          firstEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-      }
-    }
-  }
-
-  private renderStaticContent(): void {
-    // 题目描述
-    const problemBody = this.root?.querySelector('#problem-view-container');
-    const modalBody = this.root?.querySelector('#modal-problem-body');
-    const problemHtml = `
-      <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="padding: 2px 6px; border-radius: 4px; background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: 700; border: 1px solid rgba(59,130,246,0.3);">LeetCode 77</span>
-          <span style="padding: 2px 6px; border-radius: 4px; background: rgba(245,158,11,0.2); color: #fbbf24; font-weight: 700; border: 1px solid rgba(245,158,11,0.3);">Medium</span>
-          <h2 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0;">组合 (Combinations)</h2>
-        </div>
-        <p style="margin: 0;">给定两个整数 <code style="color: #fde047; font-family: monospace;">n</code> 和 <code style="color: #fde047; font-family: monospace;">k</code>，返回范围 <code style="color: #7dd3fc; font-family: monospace;">[1, n]</code> 中所有可能的 <code style="color: #fde047; font-family: monospace;">k</code> 个数的组合。</p>
-        <p style="margin: 0;">你可以按 <strong>任何顺序</strong> 返回答案。</p>
-        <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 6px; font-family: monospace; font-size: 11px;">
-          <div style="color: #34d399; font-weight: 700;">示例 1:</div>
-          <div>输入: n = 4, k = 2</div>
-          <div>输出: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]</div>
-        </div>
-        <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 6px; font-family: monospace; font-size: 11px;">
-          <div style="color: #34d399; font-weight: 700;">示例 2:</div>
-          <div>输入: n = 1, k = 1</div>
-          <div>输出: [[1]]</div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px; color: #94a3b8; font-size: 11.5px;">
-          <div style="font-weight: 700; color: #cbd5e1;">提示：</div>
-          <div>• 1 &le; n &le; 20</div>
-          <div>• 1 &le; k &le; n</div>
-        </div>
-      </div>
-    `;
-    if (problemBody) problemBody.innerHTML = problemHtml;
-    if (modalBody) modalBody.innerHTML = problemHtml;
-
-    // 回溯精讲
-    const analysisBody = this.root?.querySelector('#analysis-view-container');
-    if (analysisBody) {
-      analysisBody.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
-          <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
-            <span>💡</span> 回溯五部曲与核心框架
-          </h3>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-              <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 递归函数签名与参数</div>
-              <p style="margin: 0; color: #94a3b8;">定义 <code style="color: #7dd3fc; font-family: monospace;">backtrack(startIndex, path, res, n, k)</code>，其中 <code style="color: #fde047; font-family: monospace;">startIndex</code> 控制横向循环遍历的起始位置，避免出现重复组合。</p>
-            </div>
-            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-              <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 递归终止条件</div>
-              <p style="margin: 0; color: #94a3b8;">当 <code style="color: #7dd3fc; font-family: monospace;">path.size() == k</code> 时，收集当前路径快照并 <code style="color: #fde047; font-family: monospace;">return</code>。</p>
-            </div>
-            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-              <div style="font-weight: 700; color: #818cf8; margin-bottom: 4px;">③ 单层搜索逻辑</div>
-              <p style="margin: 0; color: #94a3b8;">通过 <code style="color: #7dd3fc; font-family: monospace;">for (int i = startIndex; i <= n; i++)</code> 展开本层可选数字分支。</p>
-            </div>
-            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-              <div style="font-weight: 700; color: #fbbf24; margin-bottom: 4px;">④ 为什么下一轮是 i + 1</div>
-              <p style="margin: 0; color: #94a3b8;">组合不考虑顺序且数字不可复用，因此下一层递归起点必须为 <code style="color: #34d399; font-family: monospace;">i + 1</code>。</p>
-            </div>
-            <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-              <div style="font-weight: 700; color: #fb7185; margin-bottom: 4px;">⑤ 回溯撤销对称性</div>
-              <p style="margin: 0; color: #94a3b8;"><code style="color: #7dd3fc; font-family: monospace;">path.add(i)</code> 与 <code style="color: #fb7185; font-family: monospace;">path.remove()</code> 成对出现，保证回溯后现场完全恢复。</p>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  private escapeHtml(str: string): string {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 
   protected buildSteps(): CombinationStep[] {
@@ -686,7 +470,7 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     }
 
     // 6. Highlight Dark Terminal Code Line
-    this.highlightCodeLine(step.codeLine);
+    this.terminalInstance?.highlightLine(step.codeLine);
 
     // 7. Render Execution Log Stream (Card 4)
     if (this.logContainer) {

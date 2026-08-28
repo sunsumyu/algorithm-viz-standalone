@@ -83,6 +83,14 @@
 - **定义**：负责将播放控制、尺寸预设、3D 透视、视口模式路由与快捷键/弹窗事件统一绑定的深模块。
 - **职责**：对外暴露 `bind(actions)`，实现声明式交互分发，彻底从控制器中消除手写 `addEventListener` 杂乱样板代码。
 
+### DarkCodeTerminalPresenter (暗色代码终端表现器深模块)
+- **定义**：统合右侧 Card 3 暗色代码终端交互的深模块。
+- **职责**：对外暴露极简的高杠杆接口 `mount(container, config): DarkCodeTerminalInstance`，内部完全封装 Tab 状态机 (Code / Problem / Analysis)、Java/C++/Python/JS 4 语种瞬时切换、字号无缝缩放器 (A- 12 A+)、macOS 红黄绿窗口圆点、单步代码物理行高亮平滑滚动与力扣原题模态弹窗。
+
+### BacktrackTraceEngine (回溯决策追踪推导引擎深模块)
+- **定义**：负责根据声明式 `BacktrackSpec` 规则，运行回溯决策树搜索与分支剪枝，生成原子单步领域事件序列的 DDD 核心引擎。
+- **职责**：纯算法数学与状态推导，0 DOM 依赖。对外暴露统一接口 `compile(spec): BacktrackTraceResult`，自动计算树坐标布局、路径栈差分与动态剪枝发现追踪。
+
 ### ViewMountEngine (算法视图挂载与生命周期引擎)
 - **定义**：管理单一活动算法舞台（Single Active Stage Container）的完整生命周期接缝。
 - **职责**：在切换算法时彻底注销上一个算法的定时器、事件监听器并清空 DOM 树，干净挂载新算法实例，从根本上杜绝 DOM 节点堆积、内存泄漏与全局 ID 冲突。
