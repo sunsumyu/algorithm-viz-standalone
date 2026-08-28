@@ -8,7 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import { GraphTopologyPresenter } from './graph-topology-presenter';
 import template from './dijkstra-basic.html?raw';
 
-interface DJBStep extends StepBase {
+export interface DJBStep extends StepBase {
   nodes: number[];
   edges: { from: number; to: number; w: number }[];
   dist: number[];
@@ -44,7 +44,7 @@ const DJB_NODE_POSITIONS: { x: number; y: number }[] = [
 
 const INF = Infinity;
 
-function buildDJBSteps(): DJBStep[] {
+export function buildDJBSteps(): DJBStep[] {
   const steps: DJBStep[] = [];
   const n = DJB_NODES.length;
   const source = 0;

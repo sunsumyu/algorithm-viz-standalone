@@ -9,7 +9,7 @@ import template from './binary-search.html?raw';
 
 type Phase = 'init' | 'search' | 'narrow-left' | 'narrow-right' | 'found' | 'not-found';
 
-interface BSStep {
+export interface BSStep {
   array: number[];
   left: number;
   right: number;
@@ -30,7 +30,7 @@ function parseArray(input: string): number[] {
     .filter((n) => Number.isFinite(n));
 }
 
-function binarySearchSteps(raw: number[], target: number): BSStep[] {
+export function binarySearchSteps(raw: number[], target: number): BSStep[] {
   const steps: BSStep[] = [];
   const array = [...raw].sort((a, b) => a - b);
   let left = 0;

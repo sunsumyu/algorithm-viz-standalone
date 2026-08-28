@@ -9,7 +9,7 @@ import template from './islands.html?raw';
 
 type CellState = 'water' | 'land' | 'visited';
 
-interface IslandsStep {
+export interface IslandsStep {
   grid: number[][];                 // 原始网格
   states: CellState[][];            // 每格状态
   current: [number, number] | null; // 当前 DFS 访问格
@@ -30,7 +30,7 @@ function parseGrid(input: string): number[][] {
   return grid.filter((r) => r.length > 0);
 }
 
-function buildIslandsSteps(grid: number[][]): IslandsStep[] {
+export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
   const steps: IslandsStep[] = [];
   const m = grid.length;
   if (m === 0) return steps;

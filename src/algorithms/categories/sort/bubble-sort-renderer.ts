@@ -9,7 +9,7 @@ import template from './bubble-sort.html?raw';
 
 type Phase = 'init' | 'compare' | 'swap' | 'pass-done' | 'done';
 
-interface BSStep {
+export interface BSStep {
   array: number[];
   pass: number;                 // 当前轮数（-1 = 未开始）
   j: number;                    // 当前比较的左索引
@@ -31,7 +31,7 @@ function parseArray(input: string): number[] {
     .filter((n) => Number.isFinite(n));
 }
 
-function bubbleSortSteps(input: number[]): BSStep[] {
+export function bubbleSortSteps(input: number[]): BSStep[] {
   const steps: BSStep[] = [];
   const array = [...input];
   const n = array.length;

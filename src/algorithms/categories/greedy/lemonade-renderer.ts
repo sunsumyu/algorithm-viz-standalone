@@ -9,7 +9,7 @@ import template from './lemonade.html?raw';
 
 export type LemonadePhase = 'init' | 'receive' | 'change' | 'fail' | 'done';
 
-interface LemonadeStep {
+export interface LemonadeStep {
   phase: LemonadePhase;
   bills: number[];
   currentIndex: number;
@@ -25,7 +25,7 @@ interface LemonadeStep {
 /**
  * 柠檬水找零算法（贪心），生成可视化步骤
  */
-function lemonadeSteps(bills: number[]): LemonadeStep[] {
+export function lemonadeSteps(bills: number[]): LemonadeStep[] {
   const steps: LemonadeStep[] = [];
 
   if (bills.length === 0) {

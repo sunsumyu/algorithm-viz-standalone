@@ -9,7 +9,7 @@ import template from './assign-cookies.html?raw';
 
 export type AcPhase = 'init' | 'check' | 'matched' | 'skip' | 'done';
 
-interface AssignCookiesStep {
+export interface AssignCookiesStep {
   phase: AcPhase;
   children: number[];
   cookies: number[];
@@ -29,7 +29,7 @@ interface AssignCookiesStep {
 /**
  * 分发饼干算法（贪心），生成可视化步骤
  */
-function assignCookiesSteps(children: number[], cookies: number[]): AssignCookiesStep[] {
+export function assignCookiesSteps(children: number[], cookies: number[]): AssignCookiesStep[] {
   const steps: AssignCookiesStep[] = [];
 
   const sortedChildren = [...children].sort((a, b) => a - b);

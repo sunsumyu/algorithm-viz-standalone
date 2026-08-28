@@ -26,7 +26,7 @@ interface RangeInfo {
   status: 'active' | 'sorted';
 }
 
-interface QStep {
+export interface QStep {
   array: number[];
   lo: number;               // 当前子数组下界
   hi: number;               // 当前子数组上界
@@ -51,7 +51,7 @@ function parseArray(input: string): number[] {
     .filter((n) => Number.isFinite(n));
 }
 
-function quickSortSteps(input: number[]): QStep[] {
+export function quickSortSteps(input: number[]): QStep[] {
   const steps: QStep[] = [];
   const array = [...input];
   const n = array.length;
