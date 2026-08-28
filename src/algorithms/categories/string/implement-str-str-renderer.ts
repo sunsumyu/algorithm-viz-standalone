@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './implement-str-str.html?raw';
 
-interface SSStep {
+export interface SSStep {
   haystack: string;
   needle: string;
   i: number;
@@ -20,7 +20,7 @@ interface SSStep {
   codeLine: number | number[];
 }
 
-function buildSSSteps(haystack: string, needle: string): SSStep[] {
+export function buildSSSteps(haystack: string, needle: string): SSStep[] {
   const steps: SSStep[] = [];
 
   // Handle empty needle edge case (LeetCode: needle.length === 0 returns 0)

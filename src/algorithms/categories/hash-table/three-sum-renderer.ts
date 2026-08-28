@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './three-sum.html?raw';
 
-interface ThreeSumStep {
+export interface ThreeSumStep {
   array: number[];
   i: number;
   left: number;
@@ -20,7 +20,7 @@ interface ThreeSumStep {
   codeLine: number | number[];
 }
 
-function buildThreeSumSteps(input: number[]): ThreeSumStep[] {
+export function buildThreeSumSteps(input: number[]): ThreeSumStep[] {
   const steps: ThreeSumStep[] = [];
   const nums = [...input].sort((a, b) => a - b);
   const results: number[][] = [];

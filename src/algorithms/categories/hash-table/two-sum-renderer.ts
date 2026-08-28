@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './two-sum.html?raw';
 
-interface TwoSumStep {
+export interface TwoSumStep {
   array: number[];
   i: number;
   map: Array<[number, number]>; // [value, index]
@@ -20,7 +20,7 @@ interface TwoSumStep {
   codeLine: number | number[];
 }
 
-function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
+export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
   const steps: TwoSumStep[] = [];
   const map = new Map<number, number>();
 

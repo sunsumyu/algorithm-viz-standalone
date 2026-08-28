@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './repeated-substring.html?raw';
 
-interface RPSStep {
+export interface RPSStep {
   s: string;
   patternLen: number;
   patternCount: number;
@@ -21,7 +21,7 @@ interface RPSStep {
   chunkOk?: boolean;
 }
 
-function buildRPSSteps(input: string): RPSStep[] {
+export function buildRPSSteps(input: string): RPSStep[] {
   const steps: RPSStep[] = [];
   const n = input.length;
 
