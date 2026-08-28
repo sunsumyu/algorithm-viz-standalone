@@ -217,8 +217,9 @@ export class CodePanel {
     if (this.keyPoints) {
       const btnPoints = document.createElement('button');
       btnPoints.className = `algo-code-view-tab ${this.activeView === 'keypoints' ? 'is-active' : ''}`;
-      btnPoints.innerHTML = '💡 5步动规法';
-      btnPoints.title = '查看 5 步动态规划法系统推导与要点';
+      const title = typeof this.keyPoints === 'object' && this.keyPoints.title ? this.keyPoints.title : '💡 核心要点';
+      btnPoints.innerHTML = title;
+      btnPoints.title = `查看 ${title}`;
       btnPoints.addEventListener('click', () => {
         this.switchView('keypoints');
       });
