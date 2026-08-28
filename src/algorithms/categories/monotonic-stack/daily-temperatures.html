@@ -1,351 +1,873 @@
 <style>
-  /* === 每日温度 · 玻璃感 + 柱状图 + 栈可视化 === */
+  /* === 每日温度 (LeetCode 739) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-daily-temperatures-view {
-    --accent-a: #fb923c;
-    --accent-b: #f87171;
-    --accent-glow: rgba(251, 146, 60, .4);
-    --warm-color: #fb923c;
-    --cool-color: #60a5fa;
-    --stack-color: #fbbf24;
-    --resolve-color: #34d399;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(251, 146, 60, .22), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(248, 113, 113, .22), transparent 55%),
-      linear-gradient(135deg, #1a0e05 0%, #2a0e0e 50%, #2a1a14 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-daily-temperatures-view .dt-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+  #algo-daily-temperatures-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
   #algo-daily-temperatures-view .dt-header {
-    padding: 18px 24px 12px;
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; gap: 18px; align-items: center;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-daily-temperatures-view .dt-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-daily-temperatures-view .dt-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-daily-temperatures-view .dt-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-daily-temperatures-view h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-daily-temperatures-view .dt-desc { margin: 4px 0 0; color: #94a3b8; font-size: 12.5px; line-height: 1.5; }
-  #algo-daily-temperatures-view .dt-tip {
-    max-width: 460px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(248, 113, 113, .08));
-    border: 1px solid rgba(251, 146, 60, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+
+  #algo-daily-temperatures-view .dt-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #ea580c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-daily-temperatures-view .dt-tip strong { color: #fdba74; }
-  #algo-daily-temperatures-view .dt-main {
-    flex: 1; min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
+
+  #algo-daily-temperatures-view .dt-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-daily-temperatures-view .dt-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-daily-temperatures-view .dt-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+
+  #algo-daily-temperatures-view .dt-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-daily-temperatures-view .dt-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-daily-temperatures-view .dt-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-daily-temperatures-view .dt-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-daily-temperatures-view .dt-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-daily-temperatures-view .dt-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-daily-temperatures-view .dt-input-str {
+    width: 200px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-input-str:focus {
+    border-color: #ea580c;
+    background: #ffffff;
+  }
+
+  #algo-daily-temperatures-view .dt-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #ea580c;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(234, 88, 12, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-btn-generate:hover {
+    background: #c2410c;
+  }
+
+  #algo-daily-temperatures-view .dt-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-daily-temperatures-view .dt-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-daily-temperatures-view .dt-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-daily-temperatures-view .dt-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-daily-temperatures-view .dt-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-daily-temperatures-view .dt-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
   #algo-daily-temperatures-view .dt-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-daily-temperatures-view .dt-tag {
-    font-size: 11px; color: #fdba74; background: rgba(251, 146, 60, .14);
-    border: 1px solid rgba(251, 146, 60, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-daily-temperatures-view .dt-input-row {
-    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-daily-temperatures-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-daily-temperatures-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, .15); }
-  #algo-daily-temperatures-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-daily-temperatures-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-daily-temperatures-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-daily-temperatures-view .dt-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-daily-temperatures-view .dt-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(248, 113, 113, .12); border: 1px solid rgba(248, 113, 113, .28);
-    color: #fca5a5; cursor: pointer; transition: all .2s;
-  }
-  #algo-daily-temperatures-view .dt-example-btn:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
-  }
-  /* 统计 */
-  #algo-daily-temperatures-view .dt-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #algo-daily-temperatures-view .dt-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-daily-temperatures-view .dt-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-daily-temperatures-view .dt-stat--i::before { background: linear-gradient(180deg, #fb923c, #f97316); }
-  #algo-daily-temperatures-view .dt-stat--i span { color: #fdba74; }
-  #algo-daily-temperatures-view .dt-stat--cur::before { background: linear-gradient(180deg, #f87171, #ef4444); }
-  #algo-daily-temperatures-view .dt-stat--cur span { color: #fca5a5; }
-  #algo-daily-temperatures-view .dt-stat--top::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-daily-temperatures-view .dt-stat--top span { color: #fde68a; }
-  #algo-daily-temperatures-view .dt-stat--fill::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-daily-temperatures-view .dt-stat--fill span { color: #6ee7b7; }
-  #algo-daily-temperatures-view .dt-stat label {
-    display: block; margin-bottom: 4px; color: #94a3b8;
-    font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-  }
-  #algo-daily-temperatures-view .dt-stat span {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums;
-  }
-  /* 柱状图 */
-  #algo-daily-temperatures-view .dt-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-daily-temperatures-view .dt-bars {
-    flex: 1; min-height: 220px; padding: 24px 18px;
-    overflow: auto; display: flex; align-items: flex-end; gap: 10px;
-  }
-  #algo-daily-temperatures-view .dt-bar-col {
-    display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; min-width: 32px;
-  }
-  #algo-daily-temperatures-view .dt-bar {
-    width: 100%; border-radius: 8px 8px 0 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-    display: flex; align-items: flex-start; justify-content: center;
-    color: #cbd5e1; font-weight: 800; font-size: 14px; padding-top: 6px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  #algo-daily-temperatures-view .dt-bar.current {
-    background: linear-gradient(180deg, rgba(251, 146, 60, .45), rgba(249, 115, 22, .15));
-    border-color: var(--accent-a);
-    color: #fed7aa;
-    transform: translateY(-6px) scale(1.05);
-    box-shadow: 0 0 0 3px rgba(251, 146, 60, .25), 0 8px 22px rgba(251, 146, 60, .4);
-    animation: dt-bar-pulse 1.2s ease-in-out infinite;
-  }
-  @keyframes dt-bar-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 146, 60, .25), 0 8px 22px rgba(251, 146, 60, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(251, 146, 60, .12), 0 10px 28px rgba(251, 146, 60, .55); }
-  }
-  #algo-daily-temperatures-view .dt-bar.instack {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .3), rgba(245, 158, 11, .1));
-    border-color: rgba(251, 191, 36, .5);
-    color: #fde68a;
-  }
-  #algo-daily-temperatures-view .dt-bar.popping {
-    animation: dt-pop-shake .5s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes dt-pop-shake {
-    0% { transform: translateX(0) scale(1); }
-    30% { transform: translateX(-4px) scale(1.08); }
-    60% { transform: translateX(4px) scale(1.05); }
-    100% { transform: translateX(0) scale(1); }
-  }
-  #algo-daily-temperatures-view .dt-bar.resolved {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
-    border-color: rgba(52, 211, 153, .5);
-    color: #6ee7b7;
-    animation: dt-resolve-pop .5s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes dt-resolve-pop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.12); box-shadow: 0 0 16px rgba(52, 211, 153, .5); }
-    100% { transform: scale(1); }
-  }
-  #algo-daily-temperatures-view .dt-ans {
-    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+
+  #algo-daily-temperatures-view .dt-card-desc {
+    font-size: 11px;
     color: #64748b;
-    padding: 4px 8px; border-radius: 6px;
-    background: rgba(255, 255, 255, .04);
+    margin-top: 1px;
   }
-  #algo-daily-temperatures-view .dt-ans.filled {
-    color: #6ee7b7;
-    background: rgba(52, 211, 153, .12);
+
+  #algo-daily-temperatures-view .dt-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
   }
-  /* 栈区 */
-  #algo-daily-temperatures-view .dt-stack-area {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    border-top: 1px solid rgba(255, 255, 255, .06);
+  #algo-daily-temperatures-view .dt-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
-  #algo-daily-temperatures-view .dt-stack-title {
-    color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 10px;
-    letter-spacing: .03em;
+
+  /* 温度柱状图与单调栈沙盘展示盒 */
+  #algo-daily-temperatures-view #dt-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
   }
-  #algo-daily-temperatures-view .dt-stack-items {
-    display: flex; gap: 8px; flex-wrap: wrap-reverse; flex-direction: column-reverse;
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-daily-temperatures-view .dt-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-daily-temperatures-view .dt-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #ea580c;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-daily-temperatures-view .dt-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-daily-temperatures-view .dt-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-daily-temperatures-view .dt-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #ea580c;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(234, 88, 12, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-play-circle-btn:hover {
+    background: #c2410c;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-daily-temperatures-view .dt-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-daily-temperatures-view .dt-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-daily-temperatures-view .dt-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-daily-temperatures-view .dt-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-daily-temperatures-view .dt-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-daily-temperatures-view .dt-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-daily-temperatures-view .dt-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-daily-temperatures-view .dt-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-daily-temperatures-view .dt-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-tab-item.active {
+    background: #ea580c;
+    color: #ffffff;
+  }
+
+  #algo-daily-temperatures-view .dt-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-daily-temperatures-view .dt-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-daily-temperatures-view .dt-lang-btn.active {
+    background: #334155;
+    color: #fed7aa;
+  }
+
+  #algo-daily-temperatures-view .dt-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-daily-temperatures-view .dt-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-daily-temperatures-view .dt-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-daily-temperatures-view .dt-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fed7aa;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-daily-temperatures-view .dt-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-daily-temperatures-view .dt-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-daily-temperatures-view .dt-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-daily-temperatures-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
     align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
   }
-  #algo-daily-temperatures-view .dt-stack-item {
-    padding: 6px 12px; border-radius: 8px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .25), rgba(245, 158, 11, .1));
-    border: 1px solid rgba(251, 191, 36, .5);
-    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
-    color: #fde68a;
-    animation: dt-stack-push .4s cubic-bezier(.34, 1.56, .64, 1);
+  #algo-daily-temperatures-view .code-line.active {
+    background: rgba(234, 88, 12, 0.2);
+    border-left: 3px solid #ea580c;
+    color: #ffffff;
+    font-weight: 700;
   }
-  @keyframes dt-stack-push {
-    0% { transform: translateX(-20px) scale(.6); opacity: 0; }
-    60% { transform: translateX(2px) scale(1.1); opacity: 1; }
-    100% { transform: translateX(0) scale(1); opacity: 1; }
+  #algo-daily-temperatures-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
-  #algo-daily-temperatures-view .dt-stack-item.dt-stack-top {
-    border-color: var(--accent-a);
-    background: linear-gradient(135deg, rgba(251, 146, 60, .3), rgba(248, 113, 113, .12));
-    color: #fdba74;
+
+  /* Card 4: 执行日志卡片 */
+  #algo-daily-temperatures-view .dt-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  /* 结果 */
-  #algo-daily-temperatures-view .dt-message {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(248, 113, 113, .06));
-    border: 1px solid rgba(251, 146, 60, .28);
-    line-height: 1.55; font-size: 14px; color: #fed7aa;
+
+  #algo-daily-temperatures-view .dt-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-daily-temperatures-view .dt-message .dt-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow); flex-shrink: 0;
+
+  #algo-daily-temperatures-view .dt-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-daily-temperatures-view .dt-message.dt-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-daily-temperatures-view .dt-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
-  #algo-daily-temperatures-view .dt-message.dt-result--done .dt-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-daily-temperatures-view .dt-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
   }
-  #algo-daily-temperatures-view .dt-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
+
+  /* 模态弹窗 */
+  #algo-daily-temperatures-view .dt-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
   }
-  #algo-daily-temperatures-view .dt-log div { padding: 1px 0; color: #94a3b8; }
-  #algo-daily-temperatures-view .dt-log div.active { color: #fdba74; font-weight: 600; }
-  #algo-daily-temperatures-view .dt-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+  #algo-daily-temperatures-view .dt-modal-backdrop.hidden {
+    display: none;
   }
-  #algo-daily-temperatures-view .dt-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-daily-temperatures-view .dt-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-daily-temperatures-view .dt-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-daily-temperatures-view .dt-controls .dt-ctrl-btn { min-width: 64px; }
-  #algo-daily-temperatures-view .dt-controls .dt-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+
+  #algo-daily-temperatures-view .dt-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
   }
-  #algo-daily-temperatures-view .dt-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center; font-variant-numeric: tabular-nums;
+  #algo-daily-temperatures-view .dt-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
   }
-  #algo-daily-temperatures-view .dt-speed-wrap { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px; }
-  #algo-daily-temperatures-view #dt-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-daily-temperatures-view .dt-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-daily-temperatures-view .dt-code { min-height: 360px; }
+  #algo-daily-temperatures-view .dt-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-daily-temperatures-view .dt-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="dt-page">
-  <div class="dt-header">
-    <div class="dt-hero-left">
-      <span class="dt-icon">🌡️</span>
-      <div>
-        <h2>每日温度（单调栈）</h2>
-        <div class="dt-desc">LeetCode 739 · 对每天求下一个更高温度出现在几天后</div>
-      </div>
+<div id="algo-daily-temperatures-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="dt-header">
+    <div class="dt-header-left">
+      <div class="dt-icon-btn">🌡️</div>
+      <h1 class="dt-main-title">LeetCode 739. 每日温度</h1>
+      <button id="btn-open-problem-modal" class="dt-btn-problem">📋 题目</button>
+      <span class="dt-badge-mode">单调递增栈 (栈头到栈底) / 寻找右侧首个更高温度</span>
+      <span class="dt-badge-complexity">O(N)</span>
     </div>
-    <div class="dt-tip"><strong>核心动画：</strong>当前柱<span style="color:#fdba74">橙色脉冲</span>；栈内柱<span style="color:#fde68a">金色高亮</span>；弹栈时<span style="color:#fca5a5">shake</span>；填答案时<span style="color:#6ee7b7">绿色 pop</span>。</div>
-  </div>
-  <div class="dt-main">
-    <div class="dt-left">
-      <section class="dt-card">
-        <div class="dt-card-title">输入温度 <span class="dt-tag">°C 序列</span></div>
-        <div class="dt-input-row">
-          <input id="dt-input" value="73,74,75,71,69,72,76,73">
-          <button id="dt-start">开始查找</button>
-        </div>
-        <div class="dt-examples">
-          <button class="dt-example-btn" data-val="73,74,75,71,69,72,76,73">经典示例</button>
-          <button class="dt-example-btn" data-val="30,40,50,60">递增</button>
-          <button class="dt-example-btn" data-val="60,50,40,30">递减</button>
-          <button class="dt-example-btn" data-val="50,40,60,30,70">波动</button>
-        </div>
-      </section>
 
-      <div class="dt-stats">
-        <div class="dt-stat dt-stat--i"><label>当前 i</label><span id="dt-i">0</span></div>
-        <div class="dt-stat dt-stat--cur"><label>当前温度</label><span id="dt-cur">-</span></div>
-        <div class="dt-stat dt-stat--top"><label>栈顶温度</label><span id="dt-top">-</span></div>
-        <div class="dt-stat dt-stat--fill"><label>已填答案数</label><span id="dt-filled">0</span></div>
+    <!-- 参数与操作工具组 -->
+    <div class="dt-header-right">
+      <div class="dt-input-group">
+        <span>temperatures:</span>
+        <input type="text" id="input-temperatures" value="73,74,75,71,69,72,76,73" class="dt-input-str" placeholder="73,74,75,71,69,72,76,73" />
       </div>
 
-      <section class="dt-card dt-visual">
-        <div class="dt-card-title">温度柱状图 <span class="dt-tag">栈内 / 已解</span></div>
-        <div class="dt-bars" id="dt-bars"></div>
-        <div class="dt-stack-area">
-          <div class="dt-stack-title">📦 单调递减栈（存下标，温度递减）</div>
-          <div class="dt-stack-items" id="dt-stack"></div>
-        </div>
-        <div class="dt-message" id="dt-result">
-          <span class="dt-emoji">🌡️</span>
-          <div id="step-message">点击「开始查找」观看柱状图 + 弹栈动画</div>
-        </div>
-      </section>
+      <button id="btn-generate" class="dt-btn-generate">
+        <span>▶ 运行</span>
+      </button>
 
-      <section class="dt-card">
-        <div class="dt-card-title">执行日志</div>
-        <div class="dt-log" id="dt-log"></div>
-      </section>
+      <button id="btn-reset" class="dt-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="dt-chip" data-temperatures="73,74,75,71,69,72,76,73">示例 1 (8天)</button>
+        <button class="dt-chip" data-temperatures="30,40,50,60">示例 2 (单调递增)</button>
+        <button class="dt-chip" data-temperatures="89,62,70,58,47,76,100">波谷反弹</button>
+      </div>
     </div>
-    <aside class="dt-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="dt-controls">
-    <button id="step-reset" class="dt-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="dt-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="dt-ctrl-btn dt-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="dt-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="dt-counter">步骤: 0 / 0</span>
-    <div class="dt-speed-wrap">
-      <span>速度</span>
-      <input id="dt-speed" type="range" min="200" max="2500" step="100" value="900">
-      <span id="dt-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="dt-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="dt-left-section">
+
+      <!-- 卡片 1: 温度柱状图与单调栈沙盘 (Temperatures & Stack Sandbox) -->
+      <div class="dt-card">
+        <div class="dt-card-header">
+          <div class="dt-card-title">
+            <span>🌡️ 温度序列柱状图与单调栈沙盘 (Temperatures & Monotonic Stack)</span>
+          </div>
+          <div class="dt-legend-bar">
+            <div><span class="dt-legend-dot" style="background:#ea580c;"></span> 📍 当前考察日</div>
+            <div><span class="dt-legend-dot" style="background:#fbbf24;"></span> 🥞 栈内待破纪录</div>
+            <div><span class="dt-legend-dot" style="background:#10b981;"></span> ✓ 已结算等待天数</div>
+          </div>
+        </div>
+
+        <!-- 温度柱状图与单调栈展示盒 -->
+        <div id="dt-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="dt-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="dt-slider" />
+        <div class="dt-counter-badge">
+          <span id="step-cur" style="color: #ea580c;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="dt-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="dt-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="dt-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="dt-card">
+        <div class="dt-card-header">
+          <div>
+            <div class="dt-card-title">📦 单调栈状态空间与结算追踪</div>
+            <div class="dt-card-desc">当前温度与栈顶比对、出栈跨度计算与各天等待天数看板</div>
+          </div>
+          <span id="badge-resolved-count" class="dt-counter-badge" style="color:#ea580c; background:#fff7ed; border-color:#fed7aa;">已结算: 0 天</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="dt-state-space-box">
+          <div class="dt-state-columns">
+            <!-- 当前扫描与栈顶 -->
+            <div class="dt-subcard">
+              <div class="dt-subcard-title">📅 当前日与栈顶温度 (Day & Top)</div>
+              <div id="dt-day-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 单调栈结算决策监视器 -->
+            <div class="dt-subcard">
+              <div class="dt-subcard-title">⚖️ 单调栈出入栈决策监视器 (Stack Decision)</div>
+              <div id="dt-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="dt-subcard" style="flex-shrink: 0;">
+            <div class="dt-subcard-title">🏆 各天更高温度等待天数数组 (Answer Array)</div>
+            <div id="dt-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="dt-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="dt-dark-terminal">
+        <div class="dt-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="dt-tab-group">
+            <button id="btn-tab-code" class="dt-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="dt-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="dt-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="dt-lang-group" id="code-lang-tabs">
+            <button class="dt-lang-btn active" data-lang="java">Java</button>
+            <button class="dt-lang-btn" data-lang="cpp">C++</button>
+            <button class="dt-lang-btn" data-lang="python">Python</button>
+            <button class="dt-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="dt-font-tools">
+            <div class="dt-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="dt-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="dt-window-dots">
+              <span class="dt-dot" style="background:#ef4444;"></span>
+              <span class="dt-dot" style="background:#eab308;"></span>
+              <span class="dt-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="dt-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="dt-log-card">
+        <div class="dt-log-header">
+          <div class="dt-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="dt-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="dt-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="dt-modal-backdrop hidden">
+    <div class="dt-modal-content">
+      <div class="dt-modal-header">
+        <div class="dt-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="dt-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="dt-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

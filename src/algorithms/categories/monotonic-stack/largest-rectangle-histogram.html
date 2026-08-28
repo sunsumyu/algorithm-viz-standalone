@@ -1,402 +1,873 @@
 <style>
-  /* === 柱状图中最大的矩形 · 玻璃感 + 柱状图 + 矩形叠加 + 栈可视化 === */
+  /* === 柱状图中最大的矩形 (LeetCode 84) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-largest-rectangle-histogram-view {
-    --accent-a: #f43f5e;
-    --accent-b: #e11d48;
-    --accent-glow: rgba(244, 63, 94, .4);
-    --stack-color: #fbbf24;
-    --rect-color: rgba(244, 63, 94, .25);
-    --rect-border: rgba(244, 63, 94, .7);
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(244, 63, 94, .18), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(225, 29, 72, .18), transparent 55%),
-      linear-gradient(135deg, #1a0610 0%, #2a0e1a 50%, #1f0a14 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  #algo-largest-rectangle-histogram-view .lrh-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  #algo-largest-rectangle-histogram-view * {
+    box-sizing: border-box;
+  }
 
+  /* 1. 顶栏 Header */
   #algo-largest-rectangle-histogram-view .lrh-header {
-    padding: 18px 24px 12px;
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; gap: 18px; align-items: center;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-largest-rectangle-histogram-view .lrh-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-largest-rectangle-histogram-view .lrh-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-largest-rectangle-histogram-view h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-largest-rectangle-histogram-view .lrh-desc { margin: 4px 0 0; color: #94a3b8; font-size: 12.5px; line-height: 1.5; }
-  #algo-largest-rectangle-histogram-view .lrh-tip {
-    max-width: 460px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(244, 63, 94, .12), rgba(225, 29, 72, .08));
-    border: 1px solid rgba(244, 63, 94, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-tip strong { color: #fda4af; }
 
-  #algo-largest-rectangle-histogram-view .lrh-main {
-    flex: 1; min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
+  #algo-largest-rectangle-histogram-view .lrh-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-largest-rectangle-histogram-view .lrh-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
 
-  #algo-largest-rectangle-histogram-view .lrh-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+  #algo-largest-rectangle-histogram-view .lrh-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-input-str {
+    width: 150px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-input-str:focus {
+    border-color: #ef4444;
+    background: #ffffff;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-btn-generate:hover {
+    background: #dc2626;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-largest-rectangle-histogram-view .lrh-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-largest-rectangle-histogram-view .lrh-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-tag {
-    font-size: 11px; color: #fda4af; background: rgba(244, 63, 94, .14);
-    border: 1px solid rgba(244, 63, 94, .3); padding: 2px 8px; border-radius: 999px;
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-largest-rectangle-histogram-view .lrh-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  #algo-largest-rectangle-histogram-view .lrh-input-row {
-    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-largest-rectangle-histogram-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-largest-rectangle-histogram-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(244, 63, 94, .15); }
-  #algo-largest-rectangle-histogram-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-largest-rectangle-histogram-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-largest-rectangle-histogram-view button:disabled { opacity: .4; cursor: not-allowed; }
-
-  #algo-largest-rectangle-histogram-view .lrh-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-largest-rectangle-histogram-view .lrh-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(244, 63, 94, .12); border: 1px solid rgba(244, 63, 94, .28);
-    color: #fda4af; cursor: pointer; transition: all .2s;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-example-btn:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
-  }
-
-  /* 统计 */
-  #algo-largest-rectangle-histogram-view .lrh-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #algo-largest-rectangle-histogram-view .lrh-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-stat--i::before { background: linear-gradient(180deg, #f43f5e, #e11d48); }
-  #algo-largest-rectangle-histogram-view .lrh-stat--i span { color: #fda4af; }
-  #algo-largest-rectangle-histogram-view .lrh-stat--pop::before { background: linear-gradient(180deg, #fb923c, #f97316); }
-  #algo-largest-rectangle-histogram-view .lrh-stat--pop span { color: #fdba74; }
-  #algo-largest-rectangle-histogram-view .lrh-stat--area::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-largest-rectangle-histogram-view .lrh-stat--area span { color: #fde68a; }
-  #algo-largest-rectangle-histogram-view .lrh-stat--max::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-largest-rectangle-histogram-view .lrh-stat--max span { color: #6ee7b7; }
-  #algo-largest-rectangle-histogram-view .lrh-stat label {
-    display: block; margin-bottom: 4px; color: #94a3b8;
-    font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-stat span {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums;
-  }
-
-  /* 柱状图 + 栈 */
-  #algo-largest-rectangle-histogram-view .lrh-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-largest-rectangle-histogram-view .lrh-bars {
-    flex: 1; min-height: 220px; padding: 24px 18px;
-    overflow: auto; display: flex; align-items: flex-end; gap: 6px;
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-largest-rectangle-histogram-view .lrh-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     position: relative;
   }
-  #algo-largest-rectangle-histogram-view .lrh-col {
-    display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 28px;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-ptr {
-    height: 16px; font-size: 11px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-ptr.lrh-current { color: #fda4af; animation: lrh-ptr-bounce .8s ease-in-out infinite; }
-  #algo-largest-rectangle-histogram-view .lrh-ptr.lrh-in-stack { color: #fbbf24; font-size: 14px; }
-  @keyframes lrh-ptr-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-  }
-  #algo-largest-rectangle-histogram-view .lrh-bar-wrap {
-    display: flex; justify-content: center; width: 100%;
-    height: 220px; align-items: flex-end;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-bar {
-    width: 100%; border-radius: 6px 6px 0 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-    display: flex; align-items: flex-start; justify-content: center;
-    color: #cbd5e1; font-weight: 800; font-size: 13px; padding-top: 4px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-bar.current {
-    background: linear-gradient(180deg, rgba(244, 63, 94, .5), rgba(225, 29, 72, .2));
-    border-color: var(--accent-a);
-    color: #fecdd3;
-    transform: translateY(-4px) scale(1.04);
-    box-shadow: 0 0 0 3px rgba(244, 63, 94, .25), 0 8px 22px rgba(244, 63, 94, .4);
-    animation: lrh-bar-pulse 1.2s ease-in-out infinite;
-  }
-  @keyframes lrh-bar-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(244, 63, 94, .25), 0 8px 22px rgba(244, 63, 94, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(244, 63, 94, .12), 0 10px 28px rgba(244, 63, 94, .55); }
-  }
-  #algo-largest-rectangle-histogram-view .lrh-bar.in-stack {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .25), rgba(245, 158, 11, .08));
-    border-color: rgba(251, 191, 36, .45);
-    color: #fde68a;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-bar.popping {
-    animation: lrh-pop-shake .5s cubic-bezier(.34, 1.56, .64, 1);
-    background: linear-gradient(180deg, rgba(251, 146, 60, .4), rgba(248, 113, 113, .15));
-    border-color: #fb923c;
-    color: #fed7aa;
-  }
-  @keyframes lrh-pop-shake {
-    0% { transform: translateX(0) scale(1); }
-    30% { transform: translateX(-4px) scale(1.08); }
-    60% { transform: translateX(4px) scale(1.05); }
-    100% { transform: translateX(0) scale(1); }
-  }
-  #algo-largest-rectangle-histogram-view .lrh-idx {
-    font-size: 11px; color: rgba(204, 214, 244, .6);
-    margin-top: 2px; font-family: 'JetBrains Mono', monospace;
+
+  #algo-largest-rectangle-histogram-view .lrh-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
   }
 
-  /* 矩形叠加层 */
-  #algo-largest-rectangle-histogram-view .lrh-rect-overlay {
-    position: absolute;
-    background: linear-gradient(180deg, rgba(244, 63, 94, .3), rgba(225, 29, 72, .15));
-    border: 2px solid var(--accent-a);
-    border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    color: #fecdd3; font-weight: 800; font-size: 16px;
-    font-family: 'JetBrains Mono', monospace;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, .6);
-    animation: lrh-rect-appear .4s cubic-bezier(.34, 1.56, .64, 1);
-    box-shadow: 0 0 20px var(--accent-glow);
-    pointer-events: none;
-    z-index: 5;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-rect-overlay.lrh-rect-final {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .25), rgba(16, 185, 129, .12));
-    border-color: #34d399;
-    color: #d1fae5;
-    box-shadow: 0 0 24px rgba(52, 211, 153, .4);
-    animation: lrh-rect-final .6s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes lrh-rect-appear {
-    0% { transform: scaleY(0); opacity: 0; }
-    100% { transform: scaleY(1); opacity: 1; }
-  }
-  @keyframes lrh-rect-final {
-    0% { transform: scale(.8); opacity: 0; }
-    60% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
+  #algo-largest-rectangle-histogram-view .lrh-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  /* 栈区 */
-  #algo-largest-rectangle-histogram-view .lrh-stack-area {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-  }
-  #algo-largest-rectangle-histogram-view .lrh-stack-title {
-    color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 10px;
-    letter-spacing: .03em;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-stack-items {
-    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-stack-item {
-    padding: 6px 12px; border-radius: 8px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .25), rgba(245, 158, 11, .1));
-    border: 1px solid rgba(251, 191, 36, .5);
-    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
-    color: #fde68a;
-    animation: lrh-stack-push .4s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes lrh-stack-push {
-    0% { transform: translateY(-10px) scale(.6); opacity: 0; }
-    60% { transform: translateY(2px) scale(1.1); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  #algo-largest-rectangle-histogram-view .lrh-stack-item.lrh-stack-top {
-    border-color: var(--accent-a);
-    background: linear-gradient(135deg, rgba(244, 63, 94, .3), rgba(225, 29, 72, .12));
-    color: #fda4af;
+  #algo-largest-rectangle-histogram-view .lrh-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* 结果消息 */
-  #algo-largest-rectangle-histogram-view .lrh-message {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(244, 63, 94, .12), rgba(225, 29, 72, .06));
-    border: 1px solid rgba(244, 63, 94, .28);
-    line-height: 1.55; font-size: 14px; color: #fecdd3;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-message .lrh-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow); flex-shrink: 0;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-message.lrh-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-message.lrh-result--done .lrh-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
-  }
-
-  /* 日志 */
-  #algo-largest-rectangle-histogram-view .lrh-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-log div { padding: 1px 0; color: #94a3b8; }
-  #algo-largest-rectangle-histogram-view .lrh-log div.active { color: #fda4af; font-weight: 600; }
-
-  /* 代码面板 */
-  #algo-largest-rectangle-histogram-view .lrh-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-code [data-code-panel] { flex: 1; min-width: 0; }
-
-  /* 底部控制栏 */
-  #algo-largest-rectangle-histogram-view .lrh-controls {
-    padding: 14px 18px;
-    background: rgba(20, 18, 38, .5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+  #algo-largest-rectangle-histogram-view .lrh-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
     flex-wrap: wrap;
   }
-  #algo-largest-rectangle-histogram-view .lrh-ctrl-btn { min-width: 64px; }
-  #algo-largest-rectangle-histogram-view .lrh-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+  #algo-largest-rectangle-histogram-view .lrh-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
-  #algo-largest-rectangle-histogram-view .lrh-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center; font-variant-numeric: tabular-nums;
-  }
-  #algo-largest-rectangle-histogram-view .lrh-speed-wrap { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px; }
-  #algo-largest-rectangle-histogram-view #lrh-speed { width: 130px; accent-color: var(--accent-a); }
 
-  @media (max-width: 1100px) {
-    #algo-largest-rectangle-histogram-view .lrh-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-largest-rectangle-histogram-view .lrh-code { min-height: 360px; }
+  /* 柱状直方图沙盘展示盒 */
+  #algo-largest-rectangle-histogram-view #lrh-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-largest-rectangle-histogram-view .lrh-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #ef4444;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-play-circle-btn:hover {
+    background: #dc2626;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-largest-rectangle-histogram-view .lrh-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-largest-rectangle-histogram-view .lrh-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-largest-rectangle-histogram-view .lrh-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-tab-item.active {
+    background: #ef4444;
+    color: #ffffff;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-lang-btn.active {
+    background: #334155;
+    color: #fca5a5;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fca5a5;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-largest-rectangle-histogram-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-largest-rectangle-histogram-view .code-line.active {
+    background: rgba(239, 68, 68, 0.2);
+    border-left: 3px solid #ef4444;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-largest-rectangle-histogram-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-largest-rectangle-histogram-view .lrh-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-largest-rectangle-histogram-view .lrh-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-largest-rectangle-histogram-view .lrh-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-largest-rectangle-histogram-view .lrh-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="lrh-page">
-  <div class="lrh-header">
-    <div class="lrh-hero-left">
-      <span class="lrh-icon">📊</span>
-      <div>
-        <h2>柱状图中最大的矩形（单调栈）</h2>
-        <div class="lrh-desc">LeetCode 84 · 用单调栈找直方图中的最大矩形面积</div>
-      </div>
+<div id="algo-largest-rectangle-histogram-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="lrh-header">
+    <div class="lrh-header-left">
+      <div class="lrh-icon-btn">📊</div>
+      <h1 class="lrh-main-title">LeetCode 84. 柱状图中最大的矩形</h1>
+      <button id="btn-open-problem-modal" class="lrh-btn-problem">📋 题目</button>
+      <span class="lrh-badge-mode">首尾哨兵 0 + 单调递增栈 (栈底到栈顶) / 寻左右首个更矮柱</span>
+      <span class="lrh-badge-complexity">O(N)</span>
     </div>
-    <div class="lrh-tip"><strong>核心思想：</strong>维护高度递增的单调栈。当遇到比栈顶矮的柱子时，弹出栈顶并以弹出柱的高度为矩形高度，计算能形成的最大矩形面积。</div>
-  </div>
 
-  <div class="lrh-main">
-    <div class="lrh-left">
-      <section class="lrh-card">
-        <div class="lrh-card-title">输入高度数组 <span class="lrh-tag">heights 序列</span></div>
-        <div class="lrh-input-row">
-          <input id="lrh-input" value="2,1,5,6,2,3">
-          <button id="lrh-start">开始计算</button>
-        </div>
-        <div class="lrh-examples">
-          <button class="lrh-example-btn" data-val="2,1,5,6,2,3">经典示例</button>
-          <button class="lrh-example-btn" data-val="1,2,3,4,5">递增</button>
-          <button class="lrh-example-btn" data-val="5,4,3,2,1">递减</button>
-          <button class="lrh-example-btn" data-val="3,3,3,3">全相同</button>
-        </div>
-      </section>
-
-      <div class="lrh-stats">
-        <div class="lrh-stat lrh-stat--i"><label>当前 i</label><span id="lrh-i">0</span></div>
-        <div class="lrh-stat lrh-stat--pop"><label>弹出高度</label><span id="lrh-pop-h">-</span></div>
-        <div class="lrh-stat lrh-stat--area"><label>当前面积</label><span id="lrh-cur-area">-</span></div>
-        <div class="lrh-stat lrh-stat--max"><label>最大面积</label><span id="lrh-max-area">0</span></div>
+    <!-- 参数与操作工具组 -->
+    <div class="lrh-header-right">
+      <div class="lrh-input-group">
+        <span>heights:</span>
+        <input type="text" id="input-heights" value="2,1,5,6,2,3" class="lrh-input-str" placeholder="2,1,5,6,2,3" />
       </div>
 
-      <section class="lrh-card lrh-visual">
-        <div class="lrh-card-title">直方图 + 矩形叠加 <span class="lrh-tag">栈内高亮</span></div>
-        <div class="lrh-bars" id="lrh-bars"></div>
-        <div class="lrh-stack-area">
-          <div class="lrh-stack-title">📦 单调递增栈（存下标，高度递增）</div>
-          <div class="lrh-stack-items" id="lrh-stack"></div>
-        </div>
-        <div class="lrh-message" id="lrh-result">
-          <span class="lrh-emoji">📊</span>
-          <div id="step-message">点击「开始计算」观看单调栈计算最大矩形面积的过程</div>
-        </div>
-      </section>
+      <button id="btn-generate" class="lrh-btn-generate">
+        <span>▶ 运行</span>
+      </button>
 
-      <section class="lrh-card">
-        <div class="lrh-card-title">执行日志</div>
-        <div class="lrh-log" id="lrh-log"></div>
-      </section>
+      <button id="btn-reset" class="lrh-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="lrh-chip" data-heights="2,1,5,6,2,3">示例 1 (面积 10)</button>
+        <button class="lrh-chip" data-heights="2,4">示例 2 (面积 4)</button>
+        <button class="lrh-chip" data-heights="6,7,5,2,4,5,9,3">多峰波谷 (面积 16)</button>
+      </div>
     </div>
-    <aside class="lrh-code"><div data-code-panel></div></aside>
-  </div>
+  </header>
 
-  <div class="lrh-controls">
-    <button id="step-reset" class="lrh-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="lrh-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="lrh-ctrl-btn lrh-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="lrh-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="lrh-counter">步骤: 0 / 0</span>
-    <div class="lrh-speed-wrap">
-      <span>速度</span>
-      <input id="lrh-speed" type="range" min="200" max="2500" step="100" value="900">
-      <span id="lrh-speed-label" style="min-width:42px;font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,.7);margin-left:4px;">0.9s</span>
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="lrh-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="lrh-left-section">
+
+      <!-- 卡片 1: 柱状图与最大矩形覆盖沙盘 (Histogram & Max Rect Sandbox) -->
+      <div class="lrh-card">
+        <div class="lrh-card-header">
+          <div class="lrh-card-title">
+            <span>📊 柱状直方图与最大矩形覆盖沙盘 (Histogram Sandbox)</span>
+          </div>
+          <div class="lrh-legend-bar">
+            <div><span class="lrh-legend-dot" style="background:#ef4444;"></span> 🟥 当前计算矩形</div>
+            <div><span class="lrh-legend-dot" style="background:#fbbf24;"></span> 🥞 单调栈内递增柱</div>
+            <div><span class="lrh-legend-dot" style="background:#cbd5e1;"></span> ⚪ 首尾哨兵 0</div>
+          </div>
+        </div>
+
+        <!-- 直方图沙盘展示盒 -->
+        <div id="lrh-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="lrh-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="lrh-slider" />
+        <div class="lrh-counter-badge">
+          <span id="step-cur" style="color: #ef4444;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="lrh-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="lrh-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="lrh-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="lrh-card">
+        <div class="lrh-card-header">
+          <div>
+            <div class="lrh-card-title">📦 矩形展开状态空间与指标追踪</div>
+            <div class="lrh-card-desc">左矮壁 left、基准柱 mid、右矮壁 right 与矩形面积 (w &times; h) 计算</div>
+          </div>
+          <span id="badge-max-area" class="lrh-counter-badge" style="color:#ef4444; background:#fef2f2; border-color:#fecaca;">最大面积: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="lrh-state-space-box">
+          <div class="lrh-state-columns">
+            <!-- 矩形三要素 -->
+            <div class="lrh-subcard">
+              <div class="lrh-subcard-title">📐 矩形三要素 (Left, Mid, Right)</div>
+              <div id="lrh-rect-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 矩形展开面积监视器 -->
+            <div class="lrh-subcard">
+              <div class="lrh-subcard-title">⚖️ 矩形展开面积监视器 (Area Calculation)</div>
+              <div id="lrh-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="lrh-subcard" style="flex-shrink: 0;">
+            <div class="lrh-subcard-title">🏆 全局最大矩形最优解看板 (Max Rectangle)</div>
+            <div id="lrh-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="lrh-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="lrh-dark-terminal">
+        <div class="lrh-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="lrh-tab-group">
+            <button id="btn-tab-code" class="lrh-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="lrh-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="lrh-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="lrh-lang-group" id="code-lang-tabs">
+            <button class="lrh-lang-btn active" data-lang="java">Java</button>
+            <button class="lrh-lang-btn" data-lang="cpp">C++</button>
+            <button class="lrh-lang-btn" data-lang="python">Python</button>
+            <button class="lrh-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="lrh-font-tools">
+            <div class="lrh-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="lrh-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="lrh-window-dots">
+              <span class="lrh-dot" style="background:#ef4444;"></span>
+              <span class="lrh-dot" style="background:#eab308;"></span>
+              <span class="lrh-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="lrh-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="lrh-log-card">
+        <div class="lrh-log-header">
+          <div class="lrh-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="lrh-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="lrh-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="lrh-modal-backdrop hidden">
+    <div class="lrh-modal-content">
+      <div class="lrh-modal-header">
+        <div class="lrh-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="lrh-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="lrh-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

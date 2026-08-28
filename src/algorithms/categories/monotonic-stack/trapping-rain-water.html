@@ -1,597 +1,872 @@
 <style>
+  /* === 接雨水 (LeetCode 42) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-trapping-rain-water-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
-  }
-
-  #algo-trapping-rain-water-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 8% 6%, #3b82f6ee, transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #22d3ee55, transparent 55%),
-                linear-gradient(135deg, #1e3a8a 0%, #1e40af 25%, #1e3a8a 50%, #1e40af 75%, #1e3a8a 100%);
-    z-index: -2;
-  }
-
-  #algo-trapping-rain-water-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(30, 58, 138, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-trapping-rain-water-view .trw-page {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .trw-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
+  #algo-trapping-rain-water-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-trapping-rain-water-view .trw-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .trw-hero .trw-title-wrapper {
+  #algo-trapping-rain-water-view .trw-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .trw-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+  #algo-trapping-rain-water-view .trw-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #0284c7;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .trw-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
+  #algo-trapping-rain-water-view .trw-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #3b82f6, #22d3ee);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .trw-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
+  #algo-trapping-rain-water-view .trw-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-trapping-rain-water-view .trw-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .trw-tip {
-    max-width: 500px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-trapping-rain-water-view .trw-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .trw-tip strong {
-    color: #3b82f6;
+  #algo-trapping-rain-water-view .trw-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-trapping-rain-water-view .trw-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-trapping-rain-water-view .trw-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-trapping-rain-water-view .trw-input-str {
+    width: 170px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-input-str:focus {
+    border-color: #0284c7;
+    background: #ffffff;
+  }
+
+  #algo-trapping-rain-water-view .trw-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #0284c7;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(2, 132, 199, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-btn-generate:hover {
+    background: #0369a1;
+  }
+
+  #algo-trapping-rain-water-view .trw-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
     font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  #algo-trapping-rain-water-view .trw-layout {
+  #algo-trapping-rain-water-view .trw-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-trapping-rain-water-view .trw-main-layout {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-trapping-rain-water-view .trw-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .trw-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .trw-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .trw-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-trapping-rain-water-view .trw-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-trapping-rain-water-view .trw-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-trapping-rain-water-view .trw-card-header {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-trapping-rain-water-view .trw-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-trapping-rain-water-view .trw-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-trapping-rain-water-view .trw-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
     flex-wrap: wrap;
   }
-
-  .trw-input {
-    flex: 1;
-    min-width: 200px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(11, 10, 23, 0.8);
-    color: #cdd6f4;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .trw-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-  }
-
-  .trw-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #3b82f6, #22d3ee);
-    color: #1e3a8a;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-  }
-
-  .trw-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-  }
-
-  .trw-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .trw-example {
-    padding: 8px 16px;
+  #algo-trapping-rain-water-view .trw-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
     border-radius: 999px;
-    border: 1px solid rgba(110, 203, 192, 0.3);
-    background: rgba(59, 130, 246, 0.1);
-    color: #cdd6f4;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
+    margin-right: 3px;
   }
 
-  .trw-example:hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #3b82f6;
-  }
-
-  .trw-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .trw-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .trw-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #22d3ee);
-  }
-
-  .trw-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .trw-stat-val {
-    color: #3b82f6;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .trw-cols {
-    padding: 18px;
-    background: rgba(11, 10, 23, 0.6);
-    min-height: 240px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 3px;
-  }
-
-  .trw-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-  }
-
-  .trw-bar-wrap {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    width: 24px;
-    height: 200px;
-    position: relative;
-  }
-
-  .trw-water {
-    width: 100%;
-    background: rgba(34, 211, 238, 0.5);
-    border-radius: 2px 2px 0 0;
-    transition: height 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .trw-water.new {
-    animation: rise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .trw-bar {
-    width: 100%;
-    background: rgba(45, 55, 72, 0.7);
-    border-radius: 2px 2px 0 0;
-    border-top: 2px solid #3b82f6;
-    transition: background 0.3s, box-shadow 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .trw-bar.left-pointer {
-    background: rgba(132, 204, 146, 0.6);
-    border-top-color: #34d399;
-    box-shadow: 0 4px 15px rgba(132, 204, 146, 0.4);
-  }
-
-  .trw-bar.right-pointer {
-    background: rgba(248, 113, 113, 0.6);
-    border-top-color: #f87171;
-    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.4);
-  }
-
-  .trw-bar.new {
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .trw-bar.match {
-    animation: burst 0.4s ease;
-  }
-
-  .trw-bar.zero {
-    background: transparent;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-    box-shadow: none;
-  }
-
-  .trw-idx {
-    font-size: 11px;
-    color: rgba(204, 214, 244, 0.6);
-    margin-top: 2px;
-  }
-
-  .trw-ptr {
-    font-size: 11px;
-    font-weight: 700;
-    height: 12px;
-  }
-
-  .trw-ptr.l {
-    color: #34d399;
-  }
-
-  .trw-ptr.r {
-    color: #f87171;
-  }
-
-  .trw-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
+  /* 蓄水池沙盘展示盒 */
+  #algo-trapping-rain-water-view #trw-sandbox-container {
+    background: #f8fafc;
     border-radius: 12px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    background: rgba(59, 130, 246, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .trw-log {
+    border: 1px solid #e2e8f0;
+    flex: 1;
     min-height: 0;
-    max-height: 130px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .trw-log div {
-    padding: 2px 0;
-  }
-
-  .trw-log div.active {
-    color: #3b82f6;
-    font-weight: 600;
-  }
-
-  .trw-right {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-  }
-
-  .trw-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .trw-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .trw-pb-row {
-    display: flex;
+    justify-content: center;
+    padding: 12px 14px;
     gap: 10px;
-    align-items: center;
   }
 
-  .trw-pb-btn {
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-trapping-rain-water-view .trw-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-trapping-rain-water-view .trw-slider {
     flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(59, 130, 246, 0.1);
-    color: #cdd6f4;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #0284c7;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    background: #e2e8f0;
+    border-radius: 999px;
   }
 
-  .trw-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  #algo-trapping-rain-water-view .trw-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .trw-pb-btn:not(:disabled):hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #3b82f6;
-    transform: translateY(-1px);
+  #algo-trapping-rain-water-view .trw-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  .trw-pb-btn.play {
-    background: linear-gradient(135deg, #3b82f6, #22d3ee);
+  #algo-trapping-rain-water-view .trw-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #0284c7;
+    color: #ffffff;
     border: none;
-    color: #1e3a8a;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-play-circle-btn:hover {
+    background: #0369a1;
+    transform: scale(1.05);
   }
 
-  .trw-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  /* Card 2 状态空间 */
+  #algo-trapping-rain-water-view .trw-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .trw-speed-row {
+  #algo-trapping-rain-water-view .trw-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-trapping-rain-water-view .trw-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-trapping-rain-water-view .trw-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
   }
 
-  .trw-speed-row input {
-    flex: 1;
-    accent-color: #3b82f6;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-trapping-rain-water-view .trw-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .trw-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
+  /* Card 3: 暗色代码终端面板 */
+  #algo-trapping-rain-water-view .trw-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-trapping-rain-water-view .trw-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-trapping-rain-water-view .trw-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-trapping-rain-water-view .trw-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-tab-item.active {
+    background: #0284c7;
+    color: #ffffff;
+  }
+
+  #algo-trapping-rain-water-view .trw-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-trapping-rain-water-view .trw-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-trapping-rain-water-view .trw-lang-btn.active {
+    background: #334155;
+    color: #7dd3fc;
+  }
+
+  #algo-trapping-rain-water-view .trw-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-trapping-rain-water-view .trw-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-trapping-rain-water-view .trw-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-trapping-rain-water-view .trw-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #7dd3fc;
+    min-width: 14px;
     text-align: center;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
   }
 
-  /* Animations */
-  @keyframes pulse {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
-    }
+  #algo-trapping-rain-water-view .trw-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-trapping-rain-water-view .trw-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
 
-  @keyframes popIn {
-    0% {
-      transform: scale(0) rotate(-10deg);
-      opacity: 0;
-    }
-    100% {
-      transform: scale(1) rotate(0deg);
-      opacity: 1;
-    }
+  #algo-trapping-rain-water-view .trw-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
 
-  @keyframes burst {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.15);
-      opacity: 0.8;
-    }
+  #algo-trapping-rain-water-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-trapping-rain-water-view .code-line.active {
+    background: rgba(2, 132, 199, 0.2);
+    border-left: 3px solid #0284c7;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-trapping-rain-water-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
 
-  @keyframes shake {
-    0%, 100% {
-      transform: translateX(0);
-    }
-    20%, 60% {
-      transform: translateX(-5px);
-    }
-    40%, 80% {
-      transform: translateX(5px);
-    }
+  /* Card 4: 执行日志卡片 */
+  #algo-trapping-rain-water-view .trw-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  @keyframes rise {
-    from {
-      transform: scaleY(0);
-      opacity: 0;
-    }
-    to {
-      transform: scaleY(1);
-      opacity: 1;
-    }
+  #algo-trapping-rain-water-view .trw-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
 
-  .trw-pb-btn#play.play {
-    animation: pulse 1.2s infinite;
+  #algo-trapping-rain-water-view .trw-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
-  .trw-water.new {
-    animation: rise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  #algo-trapping-rain-water-view .trw-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
 
-  .trw-bar.new {
-    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  #algo-trapping-rain-water-view .trw-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
   }
 
-  .trw-bar.match {
-    animation: burst 0.4s ease;
+  /* 模态弹窗 */
+  #algo-trapping-rain-water-view .trw-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-trapping-rain-water-view .trw-modal-backdrop.hidden {
+    display: none;
   }
 
-  @media (max-width: 1100px) {
-    .trw-main {
-      overflow: visible;
-    }
+  #algo-trapping-rain-water-view .trw-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-trapping-rain-water-view .trw-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-trapping-rain-water-view .trw-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-trapping-rain-water-view .trw-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-trapping-rain-water-view .trw-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="trw-page">
-  <div class="trw-hero">
-    <div class="trw-title-wrapper">
-      <div class="trw-hero-icon">💧</div>
-      <div class="trw-hero-text">
-        <h2>接雨水（双指针）</h2>
-        <p>LeetCode 42 · 用左右双指针从两端向中间收敛，维护左侧最大值 leftMax 与右侧最大值 rightMax，处理较矮的一侧即可累加雨水。</p>
+<div id="algo-trapping-rain-water-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="trw-header">
+    <div class="trw-header-left">
+      <div class="trw-icon-btn">💧</div>
+      <h1 class="trw-main-title">LeetCode 42. 接雨水</h1>
+      <button id="btn-open-problem-modal" class="trw-btn-problem">📋 题目</button>
+      <span class="trw-badge-mode">单调递减栈 / 凹槽横向切片按层累加</span>
+      <span class="trw-badge-complexity">O(N)</span>
+    </div>
+
+    <!-- 参数与操作工具组 -->
+    <div class="trw-header-right">
+      <div class="trw-input-group">
+        <span>height:</span>
+        <input type="text" id="input-height" value="0,1,0,2,1,0,1,3,2,1,2,1" class="trw-input-str" placeholder="0,1,0,2,1,0,1,3,2,1,2,1" />
+      </div>
+
+      <button id="btn-generate" class="trw-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="trw-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="trw-chip" data-height="0,1,0,2,1,0,1,3,2,1,2,1">示例 1 (6滴水)</button>
+        <button class="trw-chip" data-height="4,2,0,3,2,5">示例 2 (9滴水)</button>
+        <button class="trw-chip" data-height="5,4,1,2">单边陡降</button>
       </div>
     </div>
-    <div class="trw-tip"><strong>左右双指针：</strong>维护两侧最大值 leftMax/rightMax，每次处理较矮的一侧，计算该位置能接多少雨水。</div>
-  </div>
+  </header>
 
-  <div class="trw-layout">
-    <div class="trw-main">
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="trw-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="trw-left-section">
+
+      <!-- 卡片 1: 柱状地形与凹槽蓄水沙盘 (Terrain & Water Sandbox) -->
       <div class="trw-card">
-        <div class="trw-controls">
-          <input id="trw-input" class="trw-input" value="0,1,0,2,1,0,1,3,2,1,2,1" />
-          <button id="trw-start" class="trw-btn">开始接雨水</button>
-          <button class="trw-example" data-val="0,1,0,2,1,0,1,3,2,1,2,1">示例1</button>
-          <button class="trw-example" data-val="4,2,0,3,2,5">示例2</button>
-          <button class="trw-example" data-val="3,0,2,0,1,4">示例3</button>
+        <div class="trw-card-header">
+          <div class="trw-card-title">
+            <span>💧 柱状地形与凹槽蓄水沙盘 (Water Basin Sandbox)</span>
+          </div>
+          <div class="trw-legend-bar">
+            <div><span class="trw-legend-dot" style="background:#0284c7;"></span> 🌊 蓝色蓄水池</div>
+            <div><span class="trw-legend-dot" style="background:#475569;"></span> 🧱 黑色实体柱</div>
+            <div><span class="trw-legend-dot" style="background:#fbbf24;"></span> 🥞 凹槽支撑栈</div>
+          </div>
         </div>
 
-        <div class="trw-stats">
-          <div class="trw-stat"><div class="trw-stat-label">左指针 L</div><div class="trw-stat-val" id="trw-l">0</div></div>
-          <div class="trw-stat"><div class="trw-stat-label">右指针 R</div><div class="trw-stat-val" id="trw-r">-</div></div>
-          <div class="trw-stat"><div class="trw-stat-label">leftMax / rightMax</div><div class="trw-stat-val" id="trw-max">0 / 0</div></div>
-          <div class="trw-stat"><div class="trw-stat-label">累计雨水</div><div class="trw-stat-val" id="trw-sum">0</div></div>
-        </div>
-
-        <div class="trw-cols" id="trw-cols"></div>
-
-        <div class="trw-message" id="step-message">点击「开始接雨水」查看接雨水的双指针过程。</div>
-
-        <div class="trw-log" id="trw-log"></div>
+        <!-- 蓄水沙盘展示盒 -->
+        <div id="trw-sandbox-container"></div>
       </div>
-    </div>
 
-    <div class="trw-right">
-      <div data-code-panel class="trw-code-card"></div>
-      <div class="trw-playback">
-        <div class="trw-pb-row">
-          <button id="step-reset" class="trw-pb-btn">重置</button>
-          <button id="step-prev" class="trw-pb-btn">上一步</button>
-          <button id="step-play" class="trw-pb-btn play">播放</button>
-          <button id="step-next" class="trw-pb-btn">下一步</button>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="trw-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="trw-slider" />
+        <div class="trw-counter-badge">
+          <span id="step-cur" style="color: #0284c7;">0</span> / <span id="step-total">0</span>
         </div>
-        <div class="trw-speed-row">
-          <span>速度</span>
-          <input id="step-speed" type="range" min="200" max="2000" step="100" value="900" />
-          <span id="step-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.9s</span>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="trw-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="trw-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="trw-ctrl-btn">▶</button>
         </div>
-        <div id="step-counter" class="trw-counter">步骤: 1 / 1</div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="trw-card">
+        <div class="trw-card-header">
+          <div>
+            <div class="trw-card-title">📦 凹槽横向蓄水状态空间与指标追踪</div>
+            <div class="trw-card-desc">左壁、凹槽底 mid、右壁坐标与本层横向雨水 (h &times; w) 计算</div>
+          </div>
+          <span id="badge-total-water" class="trw-counter-badge" style="color:#0284c7; background:#eff6ff; border-color:#bfdbfe;">累计接水: 0 单位</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="trw-state-space-box">
+          <div class="trw-state-columns">
+            <!-- 凹槽三要素 -->
+            <div class="trw-subcard">
+              <div class="trw-subcard-title">📐 凹槽三要素 (Left, Mid, Right)</div>
+              <div id="trw-groove-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 横向切片蓄水监视器 -->
+            <div class="trw-subcard">
+              <div class="trw-subcard-title">⚖️ 横向切片蓄水监视器 (Layer Calculation)</div>
+              <div id="trw-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 统计与进度 -->
+          <div class="trw-subcard" style="flex-shrink: 0;">
+            <div class="trw-subcard-title">🏆 最终累计雨水总量看板 (Total Trapped Water)</div>
+            <div id="trw-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="trw-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="trw-dark-terminal">
+        <div class="trw-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="trw-tab-group">
+            <button id="btn-tab-code" class="trw-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="trw-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="trw-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="trw-lang-group" id="code-lang-tabs">
+            <button class="trw-lang-btn active" data-lang="java">Java</button>
+            <button class="trw-lang-btn" data-lang="cpp">C++</button>
+            <button class="trw-lang-btn" data-lang="python">Python</button>
+            <button class="trw-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="trw-font-tools">
+            <div class="trw-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="trw-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="trw-window-dots">
+              <span class="trw-dot" style="background:#ef4444;"></span>
+              <span class="trw-dot" style="background:#eab308;"></span>
+              <span class="trw-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="trw-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="trw-log-card">
+        <div class="trw-log-header">
+          <div class="trw-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="trw-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="trw-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="trw-modal-backdrop hidden">
+    <div class="trw-modal-content">
+      <div class="trw-modal-header">
+        <div class="trw-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="trw-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="trw-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>
