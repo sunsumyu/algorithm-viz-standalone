@@ -1,306 +1,412 @@
 <style>
-  /* === 组合（优化） · 玻璃感 + SVG 决策树 === */
+  /* === 组合（优化） · 现代玻璃拟态与回溯演化沙盘 === */
   #algo-combination-optimized-view {
-    --accent-a: #fb923c;
-    --accent-b: #c084fc;
-    --accent-glow: rgba(251, 146, 60, .35);
-    --path-color: #34d399;
-    --prune-color: #f87171;
+    --accent-primary: #3b82f6;
+    --accent-orange: #fb923c;
+    --accent-purple: #c084fc;
+    --accent-emerald: #10b981;
+    --accent-rose: #f43f5e;
+    --bg-dark: #090d16;
+    --card-bg: rgba(15, 23, 42, 0.65);
+    --border-color: rgba(255, 255, 255, 0.08);
     width: 100%; height: 100%;
     color: #e2e8f0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     background:
-      radial-gradient(ellipse at 8% 6%, rgba(251, 146, 60, .22), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(192, 132, 252, .22), transparent 55%),
-      linear-gradient(135deg, #1a0e05 0%, #2a0e1d 50%, #1d1a30 100%);
+      radial-gradient(ellipse at 10% 8%, rgba(59, 130, 246, 0.18), transparent 55%),
+      radial-gradient(ellipse at 90% 92%, rgba(192, 132, 252, 0.16), transparent 55%),
+      linear-gradient(135deg, #090d16 0%, #111827 50%, #0b1120 100%);
     overflow: hidden;
   }
-  #algo-combination-optimized-view .co-shell {
+
+  #algo-combination-optimized-view .bt-shell {
     width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+    display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
   }
-  #algo-combination-optimized-view .co-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 顶部导航与阶段选项卡 */
+  #algo-combination-optimized-view .bt-hero {
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(11, 17, 32, 0.7);
+    backdrop-filter: blur(16px) saturate(180%);
+    z-index: 10;
   }
-  #algo-combination-optimized-view .co-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-combination-optimized-view .co-icon {
-    width: 44px; height: 44px; border-radius: 12px;
+
+  #algo-combination-optimized-view .bt-hero-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  #algo-combination-optimized-view .bt-icon {
+    width: 40px; height: 40px; border-radius: 10px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+    font-size: 22px;
+    background: linear-gradient(135deg, #fb923c, #c084fc);
+    color: #06121f; box-shadow: 0 4px 16px rgba(251, 146, 60, 0.35);
   }
-  #algo-combination-optimized-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-combination-optimized-view .co-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-combination-optimized-view .co-tip {
-    max-width: 560px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(192, 132, 252, .08));
-    border: 1px solid rgba(251, 146, 60, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+
+  #algo-combination-optimized-view .bt-title-area h1 {
+    margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc;
+    display: flex; align-items: center; gap: 8px;
   }
-  #algo-combination-optimized-view .co-tip strong { color: #fdba74; }
-  #algo-combination-optimized-view .co-main {
+
+  #algo-combination-optimized-view .bt-sub {
+    color: #94a3b8; font-size: 12px; margin-top: 2px;
+  }
+
+  /* 阶段演化选项卡 */
+  #algo-combination-optimized-view .bt-stage-tabs {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 3px; border-radius: 10px;
+    border: 1px solid var(--border-color);
+  }
+
+  #algo-combination-optimized-view .bt-stage-tab {
+    padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    color: #94a3b8; background: transparent; border: none; cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  #algo-combination-optimized-view .bt-stage-tab:hover {
+    color: #e2e8f0; background: rgba(255, 255, 255, 0.05);
+  }
+
+  #algo-combination-optimized-view .bt-stage-tab.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+  }
+
+  /* 主体双列网格 */
+  #algo-combination-optimized-view .bt-main {
     min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; overflow: hidden;
+    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.95fr);
+    gap: 14px; padding: 14px 18px; overflow: hidden;
   }
-  #algo-combination-optimized-view .co-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-combination-optimized-view .co-card {
-    background: rgba(20, 18, 38, .55);
+
+  #algo-combination-optimized-view .bt-left {
+    min-width: 0; min-height: 0; display: grid;
+    grid-template-rows: minmax(0, 1.15fr) auto;
+    gap: 12px; overflow: hidden;
+  }
+
+  #algo-combination-optimized-view .bt-card {
+    background: var(--card-bg);
     backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  #algo-combination-optimized-view .bt-card-header {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  #algo-combination-optimized-view .bt-card-title {
+    color: #cbd5e1; font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  #algo-combination-optimized-view .bt-tag {
+    font-size: 11px; color: #60a5fa; background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 8px; border-radius: 999px;
+  }
+
+  /* 参数配置栏 */
+  #algo-combination-optimized-view .bt-config-bar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+  }
+
+  #algo-combination-optimized-view .bt-config-group {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  #algo-combination-optimized-view .bt-config-label {
+    font-size: 12px; color: #94a3b8; font-weight: 600;
+  }
+
+  #algo-combination-optimized-view input.bt-input-num {
+    width: 44px; padding: 4px 6px; border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(8, 8, 24, 0.6);
+    color: #f8fafc; font-family: monospace; font-size: 13px;
+    text-align: center; outline: none; transition: all 0.2s;
+  }
+
+  #algo-combination-optimized-view input.bt-input-num:focus {
+    border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  }
+
+  #algo-combination-optimized-view .bt-btn-primary {
+    padding: 4px 12px; border-radius: 6px; border: none;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #ffffff; font-weight: 600; font-size: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  #algo-combination-optimized-view .bt-btn-primary:hover {
+    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  }
+
+  #algo-combination-optimized-view .bt-chips {
+    display: inline-flex; gap: 4px; align-items: center; margin-left: auto;
+  }
+
+  #algo-combination-optimized-view .bt-chip {
+    padding: 3px 8px; border-radius: 999px; font-size: 11px;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1; cursor: pointer; transition: all 0.15s;
+  }
+
+  #algo-combination-optimized-view .bt-chip:hover {
+    background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd;
+  }
+
+  /* 决策树展示容器 */
+  #algo-combination-optimized-view #combination-optimized-tree-display {
+    flex: 1; min-height: 220px;
+    position: relative; overflow: hidden;
+    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.2), transparent 70%);
+  }
+
+  /* 图例栏 */
+  #algo-combination-optimized-view .bt-legend-bar {
+    display: flex; align-items: center; gap: 12px; padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.25); border-top: 1px solid var(--border-color);
+    font-size: 11px; color: #94a3b8; flex-wrap: wrap;
+  }
+
+  #algo-combination-optimized-view .bt-legend-item {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  /* 回溯状态监视器 (Card 2) */
+  #algo-combination-optimized-view .bt-monitor-card {
+    padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;
+    max-height: 220px; overflow-y: auto;
+  }
+
+  #algo-combination-optimized-view .bt-monitor-section-title {
+    font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 2px;
+  }
+
+  /* 右侧面板 (代码 / 题目 / 精讲 选项卡) */
+  #algo-combination-optimized-view .bt-right {
+    min-width: 0; min-height: 0; display: flex; flex-direction: column;
     overflow: hidden;
   }
-  #algo-combination-optimized-view .co-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-combination-optimized-view .co-tag {
-    font-size: 11px; color: #fdba74; background: rgba(251, 146, 60, .14);
-    border: 1px solid rgba(251, 146, 60, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-combination-optimized-view .co-input-row {
-    display: flex; gap: 10px; align-items: center; padding: 14px 16px; flex-wrap: wrap;
-  }
-  #algo-combination-optimized-view .co-input-label {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-  }
-  #algo-combination-optimized-view input {
-    padding: 9px 12px; border-radius: 10px; width: 60px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s; text-align: center;
-  }
-  #algo-combination-optimized-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, .15); }
-  #algo-combination-optimized-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-combination-optimized-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-combination-optimized-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-combination-optimized-view .co-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-combination-optimized-view .co-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(192, 132, 252, .12); border: 1px solid rgba(192, 132, 252, .28);
-    color: #e9d5ff; cursor: pointer; transition: all .2s;
-  }
-  #algo-combination-optimized-view .co-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
-  }
-  /* Stats */
-  #algo-combination-optimized-view .co-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-  }
-  #algo-combination-optimized-view .co-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-combination-optimized-view .co-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-combination-optimized-view .co-stat--depth::before { background: linear-gradient(180deg, #c084fc, #a855f7); }
-  #algo-combination-optimized-view .co-stat--depth .co-stat-val { color: #e9d5ff; }
-  #algo-combination-optimized-view .co-stat--count::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-combination-optimized-view .co-stat--count .co-stat-val { color: #6ee7b7; }
-  #algo-combination-optimized-view .co-stat--need::before { background: linear-gradient(180deg, #fb923c, #f97316); }
-  #algo-combination-optimized-view .co-stat--need .co-stat-val { color: #fdba74; }
-  #algo-combination-optimized-view .co-stat--remain::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-combination-optimized-view .co-stat--remain .co-stat-val { color: #fde68a; }
-  #algo-combination-optimized-view .co-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-combination-optimized-view .co-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+
+  #algo-combination-optimized-view .bt-tab-header {
+    display: flex; border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
   }
 
-  /* Tree display (SVG-based) */
-  #algo-combination-optimized-view .co-tree-card {
-    flex: 1; min-height: 380px; display: flex; flex-direction: column;
-  }
-  #algo-combination-optimized-view #combination-optimized-tree-display {
-    flex: 1; min-height: 320px; padding: 16px 12px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: auto;
+  #algo-combination-optimized-view .bt-tab-btn {
+    flex: 1; padding: 10px; font-size: 12.5px; font-weight: 600;
+    color: #94a3b8; background: transparent; border: none; cursor: pointer;
+    transition: all 0.2s; text-align: center;
+    border-bottom: 2px solid transparent;
   }
 
-  /* Result banner */
-  #algo-combination-optimized-view .co-result-banner {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(251, 146, 60, .12), rgba(192, 132, 252, .06));
-    border: 1px solid rgba(251, 146, 60, .28);
-    line-height: 1.55; font-size: 14px; color: #fef3c7;
-  }
-  #algo-combination-optimized-view .co-result-banner .co-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
-    flex-shrink: 0;
+  #algo-combination-optimized-view .bt-tab-btn:hover {
+    color: #e2e8f0; background: rgba(255, 255, 255, 0.03);
   }
 
-  /* Log */
-  #algo-combination-optimized-view .co-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.65; color: #94a3b8;
+  #algo-combination-optimized-view .bt-tab-btn.active {
+    color: #38bdf8; border-bottom-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.06);
   }
 
-  /* SVG tree styles from shared module (inlined for safety) */
-  .co-edge { stroke: rgba(255,255,255,0.1); stroke-width: 1.5; transition: all .3s; }
-  .co-edge-active { stroke: #fb923c; stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(251,146,60,.5)); }
-  .co-edge-found { stroke: #34d399; stroke-width: 2; }
-  .co-edge-pruned { stroke: rgba(255,255,255,0.06); stroke-dasharray: 4 3; }
-  .co-edge-dim { stroke: rgba(255,255,255,0.05); }
-  .co-edge-label { fill: #94a3b8; font-family: 'JetBrains Mono', monospace; }
-  .co-node-circle { fill: #1e1e2e; stroke: #45475a; stroke-width: 2; transition: all .3s; }
-  .co-node-current { fill: rgba(251,146,60,0.3); stroke: #fb923c; stroke-width: 3; animation: co-tree-pulse 1.2s infinite; }
-  .co-node-found { fill: rgba(52,211,153,0.3); stroke: #34d399; stroke-width: 2.5; filter: drop-shadow(0 0 6px rgba(52,211,153,0.4)); }
-  .co-node-visited { fill: rgba(192,132,252,0.2); stroke: rgba(192,132,252,0.5); stroke-width: 2; }
-  .co-node-pruned { fill: rgba(100,100,120,0.15); stroke: rgba(100,100,120,0.3); stroke-width: 1.5; stroke-dasharray: 4 3; }
-  .co-node-label { fill: #cdd6f4; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
-  .co-node-check { fill: #34d399; font-size: 14px; font-weight: 900; }
-  .co-node-pruned-mark { fill: #f87171; font-size: 12px; font-weight: 900; }
-  .co-log-line { display: flex; gap: 8px; padding: 1px 0; color: #94a3b8; font-size: 12px; line-height: 1.65; }
-  .co-log-line .co-log-num { color: #64748b; flex-shrink: 0; }
-  .co-log-line.co-log-active { color: #fdba74; font-weight: 600; }
-  .co-log-line.co-log-active .co-log-num { color: #fb923c; }
-  @keyframes co-tree-pulse {
-    0%, 100% { filter: drop-shadow(0 0 0 rgba(251,146,60,.6)); }
-    50% { filter: drop-shadow(0 0 8px rgba(251,146,60,.8)); }
-  }
-  @keyframes co-tree-found {
-    0% { transform: scale(0); opacity: 0; }
-    60% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  @keyframes co-tree-check {
-    0% { transform: scale(0); }
-    60% { transform: scale(1.4); }
-    100% { transform: scale(1); }
+  #algo-combination-optimized-view .bt-tab-content {
+    flex: 1; min-height: 0; overflow-y: auto; display: none; padding: 12px;
   }
 
-  /* Code panel */
-  #algo-combination-optimized-view .co-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+  #algo-combination-optimized-view .bt-tab-content.active {
+    display: flex; flex-direction: column;
   }
-  #algo-combination-optimized-view .co-code [data-code-panel] { flex: 1; min-width: 0; }
 
-  /* Controls */
-  #algo-combination-optimized-view .co-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+  /* 时间轴播放控制器 */
+  #algo-combination-optimized-view .bt-controls {
+    padding: 10px 18px;
+    background: rgba(11, 17, 32, 0.85);
+    backdrop-filter: blur(16px) saturate(180%);
+    border-top: 1px solid var(--border-color);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    z-index: 10;
   }
-  #algo-combination-optimized-view .co-controls .co-ctrl-btn { min-width: 64px; }
-  #algo-combination-optimized-view .co-controls .co-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
-  }
-  #algo-combination-optimized-view .co-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-combination-optimized-view .co-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
-  }
-  #algo-combination-optimized-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  #algo-combination-optimized-view #step-speed-label { min-width: 42px; }
 
-  @media (max-width: 1100px) {
-    #algo-combination-optimized-view .co-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-combination-optimized-view .co-code { min-height: 360px; }
+  #algo-combination-optimized-view .bt-ctrl-btn {
+    padding: 6px 14px; border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 12.5px;
+    transition: all 0.2s;
+  }
+
+  #algo-combination-optimized-view .bt-ctrl-btn:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.25); border-color: #3b82f6; color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  #algo-combination-optimized-view .bt-ctrl-play {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #ffffff; border-color: transparent;
+    padding: 6px 18px;
+  }
+
+  #algo-combination-optimized-view .bt-ctrl-play:hover {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+  }
+
+  #algo-combination-optimized-view .bt-counter {
+    color: #94a3b8; font-size: 12.5px; font-weight: 600;
+    min-width: 90px; text-align: center; font-family: monospace;
   }
 </style>
 
-<div class="co-shell">
-  <div class="co-hero">
-    <div class="co-hero-left">
-      <span class="co-icon">&#x2702;&#xFE0F;</span>
-      <div>
-        <h1>组合（优化）</h1>
-        <div class="co-sub">LeetCode 77 · 从 1..n 选 k 个数，剩余数量剪枝 i &lt;= n - (k - path.length) + 1</div>
+<div class="bt-shell">
+  <!-- 顶部导航 & 阶段演化选项卡 -->
+  <header class="bt-hero">
+    <div class="bt-hero-left">
+      <span class="bt-icon">✂️</span>
+      <div class="bt-title-area">
+        <h1>组合问题 (回溯演化) <span class="bt-tag">LeetCode 77</span></h1>
+        <div class="bt-sub">从 1..n 中选 k 个数的所有组合 · 双卡片联动沙盘</div>
       </div>
     </div>
-    <div class="co-tip"><strong>核心动画：</strong>橙色<span style="color:#fb923c">脉冲</span>为当前节点，紫色为已访问，绿色为找到的组合，灰色虚线为剪枝分支（剩余数量不足凑够 k 个）。</div>
-  </div>
-  <div class="co-main">
-    <div class="co-left">
-      <section class="co-card">
-        <div class="co-card-title">输入 <span class="co-tag">n / k</span></div>
-        <div class="co-input-row">
-          <span class="co-input-label">n</span>
-          <input id="co-n" value="5">
-          <span class="co-input-label">k</span>
-          <input id="co-k" value="3">
-          <button id="co-start">生成组合</button>
-        </div>
-        <div class="co-examples">
-          <button class="co-chip" data-n="5" data-k="3">经典 5,3</button>
-          <button class="co-chip" data-n="6" data-k="2">示例 6,2</button>
-          <button class="co-chip" data-n="4" data-k="4">示例 4,4</button>
-          <button class="co-chip" data-n="9" data-k="3">示例 9,3</button>
-        </div>
-      </section>
 
-      <div class="co-stats">
-        <div class="co-stat co-stat--depth"><div class="co-stat-label">递归深度</div><div class="co-stat-val" id="co-depth">0</div></div>
-        <div class="co-stat co-stat--count"><div class="co-stat-label">已收集</div><div class="co-stat-val" id="co-count">0</div></div>
-        <div class="co-stat co-stat--need"><div class="co-stat-label">还需</div><div class="co-stat-val" id="co-need">0</div></div>
-        <div class="co-stat co-stat--remain"><div class="co-stat-label">路径长度</div><div class="co-stat-val" id="co-remain">0</div></div>
-      </div>
+    <!-- 演化选项卡 -->
+    <div class="bt-stage-tabs">
+      <button class="bt-stage-tab" id="co-tab-stage1" data-stage="naive">
+        <span>🌱 阶段 1：完整回溯决策树</span>
+      </button>
+      <button class="bt-stage-tab active" id="co-tab-stage2" data-stage="pruned">
+        <span>✂️ 阶段 2：剪枝优化决策树</span>
+      </button>
+    </div>
+  </header>
 
-      <section class="co-card co-tree-card">
-        <div class="co-card-title">回溯决策树 <span class="co-tag">SVG</span></div>
+  <!-- 主体工作区 -->
+  <main class="bt-main">
+    <!-- 左侧双卡片联动沙盘 -->
+    <div class="bt-left">
+      <!-- Card 1: 决策树沙盘 -->
+      <section class="bt-card">
+        <div class="bt-card-header">
+          <span class="bt-card-title">🌲 决策树沙盘 (N-ary Decision Tree)</span>
+          <span class="bt-tag" id="co-current-mode-tag">剪枝优化模式</span>
+        </div>
+
+        <!-- 参数控制 -->
+        <div class="bt-config-bar">
+          <div class="bt-config-group">
+            <span class="bt-config-label">n:</span>
+            <input id="co-n" class="bt-input-num" value="4">
+          </div>
+          <div class="bt-config-group">
+            <span class="bt-config-label">k:</span>
+            <input id="co-k" class="bt-input-num" value="2">
+          </div>
+          <button id="co-start" class="bt-btn-primary">生成决策树</button>
+
+          <div class="bt-chips">
+            <button class="bt-chip" data-n="4" data-k="2">经典 4,2</button>
+            <button class="bt-chip" data-n="5" data-k="3">进阶 5,3</button>
+            <button class="bt-chip" data-n="6" data-k="2">剪枝 6,2</button>
+          </div>
+        </div>
+
+        <!-- SVG 树显示区域 -->
         <div id="combination-optimized-tree-display"></div>
-        <div class="co-result-banner" id="co-result-banner">
-          <span class="co-emoji">&#x2702;&#xFE0F;</span>
-          <div id="step-message">点击「生成组合」观看回溯搜索决策树动画</div>
+
+        <!-- 图例栏 -->
+        <div class="bt-legend-bar">
+          <div class="bt-legend-item"><span style="color:#fb923c;">●</span> 📍当前探索</div>
+          <div class="bt-legend-item"><span style="color:#10b981;">●</span> ✅解集命中</div>
+          <div class="bt-legend-item"><span style="color:#f87171;">✁</span> ✂️剪枝截断</div>
+          <div class="bt-legend-item"><span style="color:#c084fc;">●</span> 🔙已回溯</div>
         </div>
       </section>
 
-      <section class="co-card">
-        <div class="co-card-title">执行日志 <button id="co-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="co-log" id="co-log"></div>
+      <!-- Card 2: 回溯核心状态追踪器 -->
+      <section class="bt-card bt-monitor-card">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <!-- 路径栈 -->
+          <div>
+            <div class="bt-monitor-section-title">📦 当前路径栈 (Path Stack)</div>
+            <div id="co-path-stack-container"></div>
+          </div>
+          <!-- 剪枝监视器 -->
+          <div>
+            <div class="bt-monitor-section-title">✂️ 剪枝监视器 (Pruning Monitor)</div>
+            <div id="co-pruning-monitor-container"></div>
+          </div>
+        </div>
+
+        <!-- 实时解集箱 -->
+        <div style="margin-top: 4px;">
+          <div class="bt-monitor-section-title">🏆 解集收集箱 (Result Collection)</div>
+          <div id="co-result-collection-container"></div>
+        </div>
       </section>
     </div>
-    <aside class="co-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="co-controls">
-    <button id="step-reset" class="co-ctrl-btn">&#x23EE; 重置</button>
-    <button id="step-prev" class="co-ctrl-btn">&#x25C0; 上一步</button>
-    <button id="step-play" class="co-ctrl-btn co-ctrl-primary">&#x25B6; 播放</button>
-    <button id="step-next" class="co-ctrl-btn">下一步 &#x25B6;</button>
-    <span id="step-counter" class="co-counter">步骤: 0 / 0</span>
-    <div class="co-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="200" max="2500" step="100" value="600">
-      <span id="step-speed-label">0.6s</span>
+
+    <!-- 右侧面板 (代码 / 题目 / 回溯 5 步法) -->
+    <aside class="bt-card bt-right">
+      <div class="bt-tab-header">
+        <button class="bt-tab-btn active" data-tab="code">💻 代码与调试</button>
+        <button class="bt-tab-btn" data-tab="analysis">🎯 回溯 5 步精讲</button>
+        <button class="bt-tab-btn" data-tab="problem">📖 题目描述</button>
+      </div>
+
+      <!-- Tab 1: 代码联动 -->
+      <div class="bt-tab-content active" id="co-tab-content-code">
+        <div data-code-panel style="flex: 1; min-height: 0;"></div>
+        <div style="padding: 8px 12px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); border-radius: 0 0 12px 12px;">
+          <div style="font-size: 11px; color: #94a3b8;">执行语句:</div>
+          <div id="step-message" style="font-size: 12px; color: #fb923c; font-family: monospace; font-weight: 600; margin-top: 2px;">
+            点击播放开始回溯探索
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: 回溯 5 步精讲法 -->
+      <div class="bt-tab-content" id="co-tab-content-analysis">
+        <div id="co-analysis-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      </div>
+
+      <!-- Tab 3: 题目描述 -->
+      <div class="bt-tab-content" id="co-tab-content-problem">
+        <div id="co-problem-container"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- 底部时间轴控制器 -->
+  <footer class="bt-controls">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="step-reset" class="bt-ctrl-btn">⏮ 重置</button>
+      <button id="step-prev" class="bt-ctrl-btn">◀ 上一步</button>
+      <button id="step-play" class="bt-ctrl-btn bt-ctrl-play">▶ 播放</button>
+      <button id="step-next" class="bt-ctrl-btn">下一步 ▶</button>
     </div>
-  </div>
+
+    <span id="step-counter" class="bt-counter">步骤: 0 / 0</span>
+
+    <div style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;">
+      <span>速度</span>
+      <input id="step-speed" type="range" min="200" max="2000" step="100" value="600" style="width: 110px; accent-color: #3b82f6;">
+      <span id="step-speed-label" style="font-family: monospace;">0.6s</span>
+    </div>
+  </footer>
 </div>

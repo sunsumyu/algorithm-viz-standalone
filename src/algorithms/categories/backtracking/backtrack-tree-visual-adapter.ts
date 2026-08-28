@@ -351,49 +351,63 @@ export class BacktrackTreeVisualAdapter {
     return `
       .${prefix}-tree-toolbar {
         position: absolute;
-        top: 10px;
-        right: 10px;
+        top: 12px;
+        right: 12px;
         display: flex;
         align-items: center;
         gap: 6px;
-        background: rgba(255, 255, 255, 0.92);
-        backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(12px) saturate(180%);
         padding: 4px 8px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-        z-index: 10;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        z-index: 20;
       }
       .${prefix}-tb-btn {
-        background: #f8fafc;
-        border: 1px solid #cbd5e1;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 6px;
-        padding: 2px 6px;
-        font-size: 11px;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        color: #e2e8f0 !important;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.2s ease;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: auto !important;
+        height: 26px !important;
+        line-height: 1 !important;
       }
       .${prefix}-tb-btn:hover {
-        background: #eff6ff;
-        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.3) !important;
+        border-color: #3b82f6 !important;
+        color: #ffffff !important;
+        transform: translateY(-1px);
       }
       .${prefix}-tb-badge {
         font-size: 11px;
-        font-weight: 600;
-        color: #64748b;
-        min-width: 36px;
+        font-weight: 700;
+        color: #94a3b8;
+        min-width: 40px;
         text-align: center;
+        font-family: monospace;
       }
       .${prefix}-keyboard-tip {
         position: absolute;
         bottom: 8px;
         right: 12px;
-        font-size: 10px;
+        font-size: 11px;
         color: #94a3b8;
-        background: rgba(255, 255, 255, 0.7);
-        padding: 2px 6px;
-        border-radius: 4px;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(8px);
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         pointer-events: none;
+        z-index: 10;
       }
       .${prefix}-edge {
         stroke: #e2e8f0;

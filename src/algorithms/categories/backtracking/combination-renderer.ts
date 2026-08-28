@@ -7,13 +7,14 @@
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { BacktrackStateSpacePresenter } from '../../../core/renderers/backtrack-state-space-presenter';
+import { AnalysisKnowledgePresenter } from '../../../core/renderers/analysis-knowledge-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
   layoutTree,
   flattenTree,
   renderBacktrackTree,
-  renderBacktrackLog,
 } from './backtracking-tree-helper';
 import template from './combination.html?raw';
 
@@ -61,135 +62,117 @@ export function combinationSteps(n: number, k: number): CombinationStep[] {
   const root = buildCombinationTree(n, k);
   layoutTree(root);
   const allNodes = flattenTree(root);
-  const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);
 
   const steps: CombinationStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
 
-  // Start step
   steps.push({
     nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
-    foundPathIds: [], prunedNodeIds: [...prunedIds],
-    path: [], startIndex: 1, n, k,
+    foundPathIds: [], prunedNodeIds: [],
+    path: [],
+    startIndex: 1, n, k,
     action: 'start',
-    message: `开始：从 1...${n} 中选择 ${k} 个数的组合`,
+    message: `开始回溯搜索：从 1..${n} 中选 ${k} 个数，进入根节点`,
     codeLine: 3,
   });
 
-  function traverse(node: BacktrackTreeNode): void {
-    const nodeStart = node.id === 'root' ? 1 : Number(node.value) + 1;
-
+  function traverse(node: BacktrackTreeNode, start: number): void {
     if (node.isLeaf) {
-      // 递归进入：先执行 if (path.size() == k) 判断 —— 成立
       steps.push({
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], startIndex: nodeStart, n, k,
+        prunedNodeIds: [],
+        path: [...node.path],
+        startIndex: start, n, k,
         action: 'check',
         message: `递归进入：path.size() == ${k} ✓ 满足终止条件`,
         codeLine: 9,
       });
-      // 进入 if 块：收集结果并 return
+
       foundIds.push(node.id);
       steps.push({
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], startIndex: nodeStart, n, k,
+        prunedNodeIds: [],
+        path: [...node.path],
+        startIndex: start, n, k,
         action: 'found',
-        message: `找到组合：[${node.path.join(', ')}]，收集并返回`,
+        message: `找到合法组合：[${node.path.join(', ')}]，加入结果集并 return`,
         codeLine: { from: 10, to: 11 },
       });
       return;
     }
 
-    // 递归进入非叶子：每次 backtrack 调用都先执行 if 判断 —— 不成立
     steps.push({
       nodes: allNodes, currentNodeId: node.id,
       visitedNodeIds: [...visitedIds],
       foundPathIds: [...foundIds],
-      prunedNodeIds: [...prunedIds],
-      path: [...node.path], startIndex: nodeStart, n, k,
+      prunedNodeIds: [],
+      path: [...node.path],
+      startIndex: start, n, k,
       action: 'check',
-      message: `递归进入：path.size() = ${node.path.length} < ${k}，进入 for 循环`,
+      message: `递归进入：path.size() = ${node.path.length} < ${k}，从 startIndex=${start} 开始横向遍历`,
       codeLine: 9,
     });
 
     for (const child of node.children) {
-      const childVal = parseInt(child.value, 10);
-
-      // iterate: for 循环取到本次候选值 i，高亮循环头（行 13），
-      // 让"走到下一个节点"时代码联动真实流动 13 -> 14 -> 15 -> 16
-      steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds],
-        foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], startIndex: nodeStart, i: childVal, n, k,
-        action: 'iterate',
-        message: `for 循环：i = ${child.value}，尝试加入`,
-        codeLine: 13,
-      });
-
-      // 1) path.add(i)：把 i 加进当前路径，start 尚未变更
+      const iVal = Number(child.value);
       visitedIds.push(child.id);
+
       steps.push({
         nodes: allNodes, currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [],
         path: [...child.path],
-        startIndex: nodeStart, i: childVal, n, k,
+        startIndex: start, i: iVal, n, k,
         action: 'push',
-        message: `path.add(${child.value})：当前路径变为 [${child.path.join(', ')}]`,
+        message: `做选择：path.add(${iVal}) → [${child.path.join(', ')}]`,
         codeLine: 14,
       });
 
-      // 2) backtrack(i + 1, ...)：当前层 start 仍为 nodeStart，准备将 i + 1 = childStart 传给下一层
-      const childStart = childVal + 1;
       steps.push({
         nodes: allNodes, currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [],
         path: [...child.path],
-        startIndex: nodeStart, i: childVal, n, k,
-        action: 'push',
-        message: `调用 backtrack(i + 1)：当前 i = ${childVal}，向下一层传入 start = ${childVal} + 1 = ${childStart}`,
+        startIndex: iVal + 1, i: iVal, n, k,
+        action: 'iterate',
+        message: `深入递归：backtrack(startIndex = ${iVal + 1}, path)`,
         codeLine: 15,
       });
 
-      traverse(child);
+      traverse(child, iVal + 1);
 
-      // pop (backtrack)
       steps.push({
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], startIndex: nodeStart, i: childVal, n, k,
+        prunedNodeIds: [],
+        path: [...node.path],
+        startIndex: start, i: iVal, n, k,
         action: 'pop',
-        message: `撤销选择 ${child.value}，回溯到：[${node.path.join(', ')}]`,
+        message: `撤销选择：path.remove(${iVal}) 状态恢复为 [${node.path.join(', ')}]`,
         codeLine: 16,
       });
     }
   }
 
-  traverse(root);
+  traverse(root, 1);
 
-  // End step
   steps.push({
     nodes: allNodes, currentNodeId: 'root',
     visitedNodeIds: [...visitedIds],
     foundPathIds: [...foundIds],
-    prunedNodeIds: [...prunedIds],
-    path: [], startIndex: n + 1, n, k,
+    prunedNodeIds: [],
+    path: [],
+    startIndex: 1, n, k,
     action: 'end',
-    message: `完成！共找到 ${foundIds.length} 个组合`,
+    message: `搜索完成！共找到 ${foundIds.length} 个组合`,
     codeLine: 4,
   });
 
@@ -200,59 +183,117 @@ export function combinationSteps(n: number, k: number): CombinationStep[] {
 export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
   protected codeLines = [
     'public List<List<Integer>> combine(int n, int k) {',
-    '    List<List<Integer>> result = new ArrayList<>();',
-    '    backtrack(1, new ArrayList<>(), result, n, k);',
-    '    return result;',
+    '    List<List<Integer>> res = new ArrayList<>();',
+    '    backtrack(1, new ArrayList<>(), res, n, k);',
+    '    return res;',
     '}',
     '',
     'void backtrack(int start, List<Integer> path,',
-    '               List<List<Integer>> result, int n, int k) {',
+    '               List<List<Integer>> res, int n, int k) {',
     '    if (path.size() == k) {',
-    '        result.add(new ArrayList<>(path));',
+    '        res.add(new ArrayList<>(path));',
     '        return;',
     '    }',
     '    for (int i = start; i <= n; i++) {',
     '        path.add(i);',
-    '        backtrack(i + 1, path, result, n, k);',
+    '        backtrack(i + 1, path, res, n, k);',
     '        path.remove(path.size() - 1);',
     '    }',
     '}',
   ];
-  protected codePanelTitle = '组合问题 Java 代码';
+  protected codePanelTitle = '组合问题 Java 源码';
 
-  private inputN: HTMLInputElement | null = null;
-  private inputK: HTMLInputElement | null = null;
   private treeDisplay: HTMLElement | null = null;
+  private pathStackContainer: HTMLElement | null = null;
+  private searchStateContainer: HTMLElement | null = null;
+  private resultCollectionContainer: HTMLElement | null = null;
+  private analysisContainer: HTMLElement | null = null;
+  private problemContainer: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputN = this.root.querySelector('#combination-n');
-    this.inputK = this.root.querySelector('#combination-k');
     this.treeDisplay = this.root.querySelector('#combination-tree-display');
+    this.pathStackContainer = this.root.querySelector('#cs-path-stack-container');
+    this.searchStateContainer = this.root.querySelector('#cs-search-state-container');
+    this.resultCollectionContainer = this.root.querySelector('#cs-result-collection-container');
+    this.analysisContainer = this.root.querySelector('#cs-analysis-container');
+    this.problemContainer = this.root.querySelector('#cs-problem-container');
+
     this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#combination-start')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#cs-start')?.addEventListener('click', () => this.start());
+
+    // Right Panel Tabs
+    const tabBtns = this.root.querySelectorAll<HTMLButtonElement>('.bt-tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tabType = btn.dataset.tab;
+        const codeTab = this.root?.querySelector('#cs-tab-content-code');
+        const analysisTab = this.root?.querySelector('#cs-tab-content-analysis');
+        const problemTab = this.root?.querySelector('#cs-tab-content-problem');
+
+        codeTab?.classList.toggle('active', tabType === 'code');
+        analysisTab?.classList.toggle('active', tabType === 'analysis');
+        problemTab?.classList.toggle('active', tabType === 'problem');
+      });
+    });
 
     // Example chips
-    this.root.querySelectorAll<HTMLButtonElement>('.cs-chip').forEach(btn => {
+    this.root.querySelectorAll<HTMLButtonElement>('.bt-chip').forEach(btn => {
       btn.addEventListener('click', () => {
-        const nVal = btn.dataset.n;
-        const kVal = btn.dataset.k;
-        if (nVal && this.inputN) this.inputN.value = nVal;
-        if (kVal && this.inputK) this.inputK.value = kVal;
+        const nEl = this.root?.querySelector('#cs-n') as HTMLInputElement | null;
+        const kEl = this.root?.querySelector('#cs-k') as HTMLInputElement | null;
+        if (nEl) nEl.value = btn.dataset.n || '';
+        if (kEl) kEl.value = btn.dataset.k || '';
         this.start();
       });
     });
 
-    // Clear log
-    this.root.querySelector('#cs-log-clear')?.addEventListener('click', () => {
-      const logEl = this.root?.querySelector('#cs-log');
-      if (logEl) logEl.innerHTML = '';
-    });
+    this.initKnowledgePresenters();
+  }
+
+  private initKnowledgePresenters(): void {
+    const model = {
+      id: 'combination',
+      name: '组合问题（回溯）',
+      viewId: 'algo-combination-view',
+      category: '回溯算法',
+      difficulty: 1 as const,
+      description: '给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合。利用回溯法搜索全空间解。',
+      directions: [],
+      stages: [],
+      problem: {
+        title: '组合问题',
+        leetcodeId: 77,
+        leetcodeUrl: 'https://leetcode.cn/problems/combinations/',
+        difficulty: 'medium' as const,
+        description: '给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合。\n\n**回溯核心思路**：\n将问题抽象为一棵 N 叉树，树的深度由 k 决定，树的宽度由 n 决定。通过递归深入、回溯撤销选择探索所有可能。',
+        examples: [
+          { input: 'n = 4, k = 2', output: '[[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]' },
+          { input: 'n = 1, k = 1', output: '[[1]]' },
+        ],
+        constraints: [
+          '1 <= n <= 20',
+          '1 <= k <= n',
+        ],
+        tags: ['回溯算法', '递归', '深度优先搜索', '组合问题'],
+      },
+    };
+
+    if (this.problemContainer) {
+      AnalysisKnowledgePresenter.renderProblemView(this.problemContainer, model as any);
+    }
+    if (this.analysisContainer) {
+      AnalysisKnowledgePresenter.renderAnalysisView(this.analysisContainer, model as any);
+    }
   }
 
   protected buildSteps(): CombinationStep[] {
-    let n = parseInt(this.inputN?.value || '4', 10);
-    let k = parseInt(this.inputK?.value || '2', 10);
+    const nEl = this.root?.querySelector('#cs-n') as HTMLInputElement | null;
+    const kEl = this.root?.querySelector('#cs-k') as HTMLInputElement | null;
+    let n = parseInt(nEl?.value || '4', 10);
+    let k = parseInt(kEl?.value || '2', 10);
     if (!Number.isFinite(n)) n = 4;
     if (!Number.isFinite(k)) k = 2;
     if (k <= 0) k = 1;
@@ -261,23 +302,7 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
   }
 
   protected renderStep(step: CombinationStep): void {
-    // Real-time Variables Monitor
-    const varIEI = this.root?.querySelector('#combination-var-i');
-    if (varIEI) varIEI.textContent = step.i != null ? String(step.i) : '-';
-
-    const startEl = this.root?.querySelector('#combination-start-index');
-    if (startEl) startEl.textContent = String(step.startIndex);
-
-    const pathVarEl = this.root?.querySelector('#combination-var-path');
-    if (pathVarEl) pathVarEl.textContent = step.path.length > 0 ? `[${step.path.join(', ')}]` : '[]';
-
-    const countEl = this.root?.querySelector('#combination-count');
-    if (countEl) countEl.textContent = String(step.path.length);
-
-    const totalEl = this.root?.querySelector('#combination-total');
-    if (totalEl) totalEl.textContent = String(step.foundPathIds.length);
-
-    // Tree (复用共享 helper)
+    // 1. Render Tree SVG
     if (this.treeDisplay) {
       renderBacktrackTree({
         container: this.treeDisplay,
@@ -286,9 +311,49 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
       });
     }
 
-    // Log (复用共享 helper)
-    const logEl = this.root?.querySelector<HTMLElement>('#cs-log') || null;
-    renderBacktrackLog(logEl, this.steps, this.currentIndex, 'cs');
+    // 2. Render Path Stack in Card 2
+    if (this.pathStackContainer) {
+      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path, {
+        highlightLast: true,
+        action: step.action === 'push' ? 'push' : step.action === 'pop' ? 'pop' : step.action === 'found' ? 'collect' : 'idle',
+      });
+    }
+
+    // 3. Render Search State in Card 2
+    if (this.searchStateContainer) {
+      BacktrackStateSpacePresenter.renderVariableWatch(this.searchStateContainer, [
+        { label: 'startIndex', value: step.startIndex, highlight: true },
+        { label: '当前 i', value: step.i ?? '-' },
+        { label: '目标 k', value: step.k },
+        { label: '还需元素', value: Math.max(0, step.k - step.path.length), highlight: step.path.length === step.k },
+      ]);
+    }
+
+    // 4. Render Result Collection in Card 2
+    if (this.resultCollectionContainer) {
+      const results: Array<number[]> = [];
+      const foundIds = step.foundPathIds || [];
+      const nodeMap = new Map<string, BacktrackTreeNode>();
+      step.nodes.forEach(nd => nodeMap.set(nd.id, nd));
+      
+      foundIds.forEach(id => {
+        const nd = nodeMap.get(id);
+        if (nd && nd.path.length === step.k) {
+          results.push([...nd.path] as number[]);
+        }
+      });
+
+      BacktrackStateSpacePresenter.renderResultCollection(
+        this.resultCollectionContainer,
+        results,
+        results.length - 1
+      );
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }
 
@@ -298,7 +363,7 @@ registerAlgorithm({
   viewId: 'algo-combination-view',
   category: 'backtracking',
   description: '使用回溯算法生成所有组合',
-  icon: '\uD83C\uDFAF',
+  icon: '🎯',
   template,
   Visualizer: CombinationVisualizer,
   difficulty: 1,
