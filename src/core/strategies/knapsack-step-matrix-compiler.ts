@@ -1,6 +1,6 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine';
-import { cloneTree } from './strategy-helpers';
+import { cloneTree, buildKnapsackDPDependencyTree, findNodeIdByCoord } from './strategy-helpers';
 
 /**
  * 背包问题领域实体与值对象 (Knapsack Domain Models & Value Objects)
@@ -143,7 +143,7 @@ export class KnapsackStepMatrixCompiler {
       if (curTarget === 0) {
         if (currentTreeNode) {
           currentTreeNode.status = 'base';
-          currentTreeNode.tag = kind === 'partition-subset' ? '🎯=true' : '🎯=0';
+          currentTreeNode.tag = kind === 'partition-subset' ? '🎯=true' : (kind === 'target-sum' ? '🎯=1' : '🎯=0');
         }
         if (shouldRecord && currentTreeNode) {
           generated.push({
@@ -163,7 +163,7 @@ export class KnapsackStepMatrixCompiler {
           });
         }
         activeStack.pop();
-        return kind === 'partition-subset' ? true : 0;
+        return kind === 'partition-subset' ? true : (kind === 'target-sum' ? 1 : 0);
       }
 
       // Base Case 2: 物品耗尽 或 容量超扣
@@ -300,7 +300,11 @@ export class KnapsackStepMatrixCompiler {
       }
       const takeRes = dfs(i + 1, curTarget - itemW, childTake);
 
-      const finalRes = kind === 'partition-subset' ? (notTakeRes || takeRes) : Math.max(notTakeRes, (takeRes || 0) + items[i].value);
+      const finalRes = kind === 'partition-subset'
+        ? (notTakeRes || takeRes)
+        : kind === 'target-sum'
+        ? ((notTakeRes || 0) + (takeRes || 0))
+        : Math.max(notTakeRes, (takeRes || 0) + items[i].value);
       if (isMemo) memoCache[key] = finalRes;
       gridState[i][curTarget] = typeof finalRes === 'boolean' ? (finalRes ? 1 : 0) : finalRes;
 
@@ -361,11 +365,11 @@ export class KnapsackStepMatrixCompiler {
     const steps: UniversalStep[] = [];
 
     const lineOddCheck = anchorMap?.odd_check || 4;
-    const lineInit = anchorMap?.init || 8;
-    const lineInitRow = anchorMap?.init_row || 11;
-    const lineCond = anchorMap?.cond || 20;
-    const lineTransferMax = anchorMap?.transfer_max || 23;
-    const lineReturn = anchorMap?.return || 28;
+    const lineInit = anchorMap?.init || 4;
+    const lineInitRow = anchorMap?.init_row || anchorMap?.init_val || 5;
+    const lineCond = anchorMap?.cond || anchorMap?.init_val || 9;
+    const lineTransferMax = anchorMap?.transfer_max || anchorMap?.transfer || 11;
+    const lineReturn = anchorMap?.return || 15;
 
     if (oddCheck?.hasOddFail) {
       steps.push({
@@ -381,14 +385,7 @@ export class KnapsackStepMatrixCompiler {
       return steps;
     }
 
-    const dp: number[][] = Array.from({ length: n }, () => new Array(capacity + 1).fill(0));
-
-    // 1. 初始化第 0 件物品行
-    const w0 = items[0].weight;
-    const v0 = items[0].value;
-    for (let j = w0; j <= capacity; j++) {
-      dp[0][j] = v0;
-    }
+    const dp: (number | null)[][] = Array.from({ length: n }, () => new Array(capacity + 1).fill(null));
 
     steps.push({
       type: 'init',
@@ -397,9 +394,26 @@ export class KnapsackStepMatrixCompiler {
       j: 0,
       grid: JSON.parse(JSON.stringify(dp)),
       tag: '创建二维 DP 表',
-      log: `| 📋 初始化 dp[${n}][${capacity + 1}] 二维表格，全部初始化为 0`,
-      msg: `创建 <code>${n} × ${capacity + 1}</code> 的二维 DP 状态表，默认填充 0。`
+      log: `| 📋 初始化 dp[${n}][${capacity + 1}] 二维表格`,
+      msg: `创建 <code>${n} × ${capacity + 1}</code> 的二维 DP 状态表。`
     });
+
+    // 1. 初始化第 0 件物品行
+    const w0 = items[0].weight;
+    const v0 = items[0].value;
+    const isCountKind = kind === 'target-sum';
+    if (isCountKind) {
+      // 计数型背包：dp[0][0] = 1（不选有 1 种方案），dp[0][w0] += 1（选了也有 1 种方案）
+      for (let j = 0; j <= capacity; j++) {
+        dp[0][j] = 0;
+      }
+      dp[0][0] = 1;
+      if (w0 <= capacity) dp[0][w0] = (dp[0][w0] ?? 0) + 1;
+    } else {
+      for (let j = 0; j <= capacity; j++) {
+        dp[0][j] = j >= w0 ? v0 : 0;
+      }
+    }
 
     steps.push({
       type: 'init-row',
@@ -418,9 +432,9 @@ export class KnapsackStepMatrixCompiler {
       const wi = items[i].weight;
       const vi = items[i].value;
 
-      for (let j = 1; j <= capacity; j++) {
+      for (let j = 0; j <= capacity; j++) {
         if (j < wi) {
-          dp[i][j] = dp[i - 1][j];
+          dp[i][j] = dp[i - 1][j] ?? 0;
           steps.push({
             type: 'update',
             line: lineCond,
@@ -435,9 +449,9 @@ export class KnapsackStepMatrixCompiler {
             msg: `容量不足 (<code>${j} < ${wi}</code>)：无法装入第 <code>${i}</code> 件物品，继承上方状态 <code>dp[${i - 1}][${j}] = <strong>${dp[i][j]}</strong></code>。`
           });
         } else {
-          const valNotTake = dp[i - 1][j];
-          const valTake = dp[i - 1][j - wi] + vi;
-          dp[i][j] = Math.max(valNotTake, valTake);
+          const valNotTake = dp[i - 1][j] ?? 0;
+          const valTake = (dp[i - 1][j - wi] ?? 0) + (isCountKind ? 0 : vi);
+          dp[i][j] = isCountKind ? (valNotTake + (dp[i - 1][j - wi] ?? 0)) : Math.max(valNotTake, valTake);
 
           steps.push({
             type: 'update',
@@ -473,6 +487,11 @@ export class KnapsackStepMatrixCompiler {
       msg: `🏆 计算完成！最终结果 <code>dp[${n - 1}][${capacity}] = <strong>${finalAnswer}</strong></code>${kind === 'partition-subset' ? (isTargetMatched ? '（与目标容量相等，判定为 <strong>true</strong>）' : '（无法达到目标容量，判定为 <strong>false</strong>）') : ''}。`
     });
 
+    steps.forEach(step => {
+      step.treeRoot = buildKnapsackDPDependencyTree(items, capacity, step.grid, step.i, step.j);
+      step.activeNodeId = findNodeIdByCoord(step.treeRoot, step.i, step.j);
+    });
+
     return steps;
   }
 
@@ -485,11 +504,11 @@ export class KnapsackStepMatrixCompiler {
     const steps: UniversalStep[] = [];
 
     const lineOddCheck = anchorMap?.odd_check || 4;
-    const lineInit = anchorMap?.init || 8;
-    const lineOuter = anchorMap?.outer_loop || 10;
-    const lineInner = anchorMap?.inner_loop || 12;
-    const lineTransfer = anchorMap?.transfer || 14;
-    const lineReturn = anchorMap?.return || 18;
+    const lineInit = anchorMap?.init || 3;
+    const lineOuter = anchorMap?.outer_loop || anchorMap?.loop_i || 4;
+    const lineInner = anchorMap?.inner_loop || anchorMap?.loop_j || 5;
+    const lineTransfer = anchorMap?.transfer || anchorMap?.accumulate || 6;
+    const lineReturn = anchorMap?.return || 9;
 
     if (oddCheck?.hasOddFail) {
       steps.push({
@@ -506,7 +525,9 @@ export class KnapsackStepMatrixCompiler {
       return steps;
     }
 
+    const isCountKind = kind === 'target-sum';
     const dp: number[] = new Array(capacity + 1).fill(0);
+    if (isCountKind) dp[0] = 1;
 
     steps.push({
       type: 'init',
@@ -544,8 +565,8 @@ export class KnapsackStepMatrixCompiler {
       if (isReverse) {
         for (let j = capacity; j >= wi; j--) {
           const oldVal = dp[j];
-          const candidateVal = dp[j - wi] + vi;
-          dp[j] = Math.max(oldVal, candidateVal);
+          const candidateVal = isCountKind ? dp[j - wi] : (dp[j - wi] + vi);
+          dp[j] = isCountKind ? (oldVal + candidateVal) : Math.max(oldVal, candidateVal);
 
           steps.push({
             type: 'update-1d',

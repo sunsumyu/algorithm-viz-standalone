@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './min-subarray-len.html?raw';
 
-interface SWStep {
+export interface SWStep {
   array: number[];
   left: number;
   right: number;
@@ -17,6 +17,55 @@ interface SWStep {
   message: string;
   log: string;
   codeLine: number | number[];
+}
+
+export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep[] {
+  const steps: SWStep[] = [];
+  let left = 0, sum = 0, minLen = Infinity;
+
+  steps.push({
+    array: nums, left: 0, right: 0, sum: 0, minLen, status: 'expand',
+    message: `初始化 left=0, sum=0, minLen=∞，target=${target}。右指针开始扩展窗口。`,
+    log: '初始化滑动窗口变量。',
+    codeLine: 1,
+  });
+
+  for (let right = 0; right < nums.length; right++) {
+    sum += nums[right];
+    steps.push({
+      array: nums, left, right, sum, minLen, status: 'expand',
+      message: `right=${right}：加入 nums[${right}]=${nums[right]}，窗口和 sum=${sum}。`,
+      log: `扩展 right=${right}，sum -> ${sum}。`,
+      codeLine: [3, 4],
+    });
+
+    while (sum >= target) {
+      const len = right - left + 1;
+      minLen = Math.min(minLen, len);
+      steps.push({
+        array: nums, left, right, sum, minLen, status: 'shrink',
+        message: `sum=${sum} ≥ ${target}，记录窗口长度 ${len}，minLen 更新为 ${minLen}。准备收缩左边界。`,
+        log: `命中！长度 ${len}，minLen -> ${minLen}。`,
+        codeLine: [5, 6],
+      });
+      sum -= nums[left];
+      left++;
+      steps.push({
+        array: nums, left, right, sum, minLen, status: 'shrink',
+        message: `收缩左边界：移除 nums[${left - 1}]=${nums[left - 1]}，left -> ${left}，sum=${sum}。`,
+        log: `收缩 left -> ${left}，sum -> ${sum}。`,
+        codeLine: [7, 8],
+      });
+    }
+  }
+
+  steps.push({
+    array: nums, left, right: nums.length, sum, minLen, status: 'done',
+    message: minLen === Infinity ? `无满足条件的子数组，返回 0。` : `遍历结束，最小长度 = ${minLen}。`,
+    log: `返回 ${minLen === Infinity ? 0 : minLen}。`,
+    codeLine: 10,
+  });
+  return steps;
 }
 
 export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
@@ -78,52 +127,7 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
   protected buildSteps(): SWStep[] {
     const nums = this.parseArray(this.arrayInput?.value || '2,3,1,2,4,3');
     const target = parseInt(this.targetInput?.value || '7', 10) || 7;
-    const steps: SWStep[] = [];
-    let left = 0, sum = 0, minLen = Infinity;
-
-    steps.push({
-      array: nums, left: 0, right: 0, sum: 0, minLen, status: 'expand',
-      message: `初始化 left=0, sum=0, minLen=∞，target=${target}。右指针开始扩展窗口。`,
-      log: '初始化滑动窗口变量。',
-      codeLine: 1,
-    });
-
-    for (let right = 0; right < nums.length; right++) {
-      sum += nums[right];
-      steps.push({
-        array: nums, left, right, sum, minLen, status: 'expand',
-        message: `right=${right}：加入 nums[${right}]=${nums[right]}，窗口和 sum=${sum}。`,
-        log: `扩展 right=${right}，sum -> ${sum}。`,
-        codeLine: [3, 4],
-      });
-
-      while (sum >= target) {
-        const len = right - left + 1;
-        minLen = Math.min(minLen, len);
-        steps.push({
-          array: nums, left, right, sum, minLen, status: 'shrink',
-          message: `sum=${sum} ≥ ${target}，记录窗口长度 ${len}，minLen 更新为 ${minLen}。准备收缩左边界。`,
-          log: `命中！长度 ${len}，minLen -> ${minLen}。`,
-          codeLine: [5, 6],
-        });
-        sum -= nums[left];
-        left++;
-        steps.push({
-          array: nums, left, right, sum, minLen, status: 'shrink',
-          message: `收缩左边界：移除 nums[${left - 1}]=${nums[left - 1]}，left -> ${left}，sum=${sum}。`,
-          log: `收缩 left -> ${left}，sum -> ${sum}。`,
-          codeLine: [7, 8],
-        });
-      }
-    }
-
-    steps.push({
-      array: nums, left, right: nums.length, sum, minLen, status: 'done',
-      message: minLen === Infinity ? `无满足条件的子数组，返回 0。` : `遍历结束，最小长度 = ${minLen}。`,
-      log: `返回 ${minLen === Infinity ? 0 : minLen}。`,
-      codeLine: 10,
-    });
-    return steps;
+    return buildMinSubarrayLenSteps(nums, target);
   }
 
   private parseArray(input: string): number[] {

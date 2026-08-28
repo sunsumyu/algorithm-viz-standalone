@@ -7,9 +7,9 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './remove-nth-from-end.html?raw';
 
-type Phase = 'init' | 'fast-advance' | 'together' | 'remove' | 'done';
+export type Phase = 'init' | 'fast-advance' | 'together' | 'remove' | 'done';
 
-interface RNSstep {
+export interface RNSstep {
   values: number[];
   fast: number;        // -1 = dummy, values.length = null
   slow: number;        // -1 = dummy
@@ -22,11 +22,11 @@ interface RNSstep {
   codeLine: number | number[];
 }
 
-function parseValues(input: string): number[] {
+export function parseValues(input: string): number[] {
   return input.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
 }
 
-function buildRNSteps(values: number[], n: number): RNSstep[] {
+export function buildRNSteps(values: number[], n: number): RNSstep[] {
   const steps: RNSstep[] = [];
   const len = values.length;
 

@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './remove-adjacent-duplicates.html?raw';
 
-interface RDStep {
+export interface RDStep {
   s: string;
   stack: string[];
   i: number;
@@ -18,7 +18,7 @@ interface RDStep {
   codeLine: number | number[];
 }
 
-interface RDResult {
+export interface RDResult {
   steps: RDStep[];
   finalString: string;
 }
@@ -27,7 +27,7 @@ interface RDResult {
  * 纯 JavaScript 实现的删除相邻重复项算法
  * 生成每一步的可视化数据，并绑定代码行号
  */
-function removeDuplicatesSteps(input: string): RDResult {
+export function removeDuplicatesSteps(input: string): RDResult {
   const steps: RDStep[] = [];
   const stack: string[] = [];
   let removedCount = 0;

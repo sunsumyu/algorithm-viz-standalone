@@ -113,6 +113,146 @@ export function build2DDPDependencyTree(
 }
 
 /**
+ * 构建背包 DP 状态依赖树 (Knapsack DP Dependency Tree)
+ */
+export function buildKnapsackDPDependencyTree(
+  items: Array<{ weight: number; value: number }>,
+  capacity: number,
+  currentGrid?: (number | null)[][],
+  currentI?: number,
+  currentJ?: number
+): UniversalTreeNode {
+  let nodeIdCounter = 0;
+  const n = items.length;
+  const targetI = currentI !== undefined && currentI >= 0 ? currentI : n - 1;
+  const targetJ = currentJ !== undefined && currentJ >= 0 ? currentJ : capacity;
+  const MAX_TREE_DEPTH = 4;
+  const MAX_NODES = 40;
+
+  function buildNode(i: number, j: number, depth: number = 0, labelPrefix?: string): UniversalTreeNode {
+    const id = `knap-dp-node-${i}-${j}-${++nodeIdCounter}`;
+    const isCurrent = currentI === i && currentJ === j;
+    const val = currentGrid?.[i]?.[j] ?? null;
+
+    let status: 'normal' | 'current' | 'base' | 'pruned' | 'visited' = 'normal';
+    let tag: string | undefined = undefined;
+
+    if (i === 0) {
+      status = val !== null ? 'base' : (isCurrent ? 'current' : 'normal');
+      tag = val !== null ? `= ${val}` : '初始行';
+    } else if (val !== null) {
+      status = 'visited';
+      tag = `= ${val}`;
+    }
+
+    if (isCurrent) {
+      status = 'current';
+      tag = val !== null ? `= ${val}` : '当前计算';
+    }
+
+    const nodeName = labelPrefix ? `${labelPrefix} dp[${i}][${j}]` : `dp[${i}][${j}]`;
+
+    const node: UniversalTreeNode = {
+      id,
+      r: i,
+      c: j,
+      val: nodeName,
+      status,
+      tag,
+      children: []
+    };
+
+    if (i <= 0 || depth >= MAX_TREE_DEPTH || nodeIdCounter >= MAX_NODES) {
+      return node;
+    }
+
+    const wi = items[i]?.weight ?? 0;
+    // 1. 不放物品 i 分支：依赖 dp[i - 1][j]
+    node.children.push(buildNode(i - 1, j, depth + 1, '不放'));
+
+    // 2. 放物品 i 分支：依赖 dp[i - 1][j - wi] (当 j >= wi)
+    if (j >= wi && nodeIdCounter < MAX_NODES) {
+      node.children.push(buildNode(i - 1, j - wi, depth + 1, `放(+${items[i]?.value ?? 0})`));
+    }
+
+    return node;
+  }
+
+  return buildNode(targetI, targetJ, 0);
+}
+
+/**
+ * 构建一维 DP 状态依赖树 (1D DP Dependency Tree)
+ */
+export function build1DDPDependencyTree(
+  n: number,
+  modelId: string,
+  dpArray?: (number | null)[],
+  currentIdx?: number,
+  customData?: any
+): UniversalTreeNode {
+  let nodeIdCounter = 0;
+  const targetK = currentIdx !== undefined && currentIdx >= 0 ? currentIdx : n;
+  const MAX_TREE_DEPTH = 4;
+  const MAX_NODES = 40;
+
+  function buildNode(k: number, depth: number = 0, labelPrefix?: string): UniversalTreeNode {
+    const id = `linear-dp-node-${k}-${++nodeIdCounter}`;
+    const isCurrent = currentIdx === k;
+    const val = dpArray?.[k] ?? null;
+
+    let status: 'normal' | 'current' | 'base' | 'pruned' | 'visited' = 'normal';
+    let tag: string | undefined = undefined;
+
+    if (k <= 1) {
+      status = val !== null ? 'base' : (isCurrent ? 'current' : 'normal');
+      tag = val !== null ? `= ${val}` : 'Base';
+    } else if (val !== null) {
+      status = 'visited';
+      tag = `= ${val}`;
+    }
+
+    if (isCurrent) {
+      status = 'current';
+      tag = val !== null ? `= ${val}` : '当前计算';
+    }
+
+    const nodeName = labelPrefix ? `${labelPrefix} dp[${k}]` : `dp[${k}]`;
+
+    const node: UniversalTreeNode = {
+      id,
+      r: 0,
+      c: k,
+      val: nodeName,
+      status,
+      tag,
+      children: []
+    };
+
+    if (k <= 1 || depth >= MAX_TREE_DEPTH || nodeIdCounter >= MAX_NODES) {
+      return node;
+    }
+
+    if (modelId === 'tribonacci') {
+      if (k >= 1) node.children.push(buildNode(k - 1, depth + 1, '-1步'));
+      if (k >= 2 && nodeIdCounter < MAX_NODES) node.children.push(buildNode(k - 2, depth + 1, '-2步'));
+      if (k >= 3 && nodeIdCounter < MAX_NODES) node.children.push(buildNode(k - 3, depth + 1, '-3步'));
+    } else if (modelId.startsWith('house-robber')) {
+      if (k >= 1) node.children.push(buildNode(k - 1, depth + 1, '不偷'));
+      if (k >= 2 && nodeIdCounter < MAX_NODES) node.children.push(buildNode(k - 2, depth + 1, '偷(+val)'));
+    } else {
+      // 默认双分支 (Fibonacci, ClimbStairs, MinCost, etc.)
+      if (k >= 1) node.children.push(buildNode(k - 1, depth + 1, '-1步'));
+      if (k >= 2 && nodeIdCounter < MAX_NODES) node.children.push(buildNode(k - 2, depth + 1, '-2步'));
+    }
+
+    return node;
+  }
+
+  return buildNode(targetK, 0);
+}
+
+/**
  * 按坐标在树中查找对应节点 ID
  */
 export function findNodeIdByCoord(root: any, r?: number, c?: number): string | undefined {

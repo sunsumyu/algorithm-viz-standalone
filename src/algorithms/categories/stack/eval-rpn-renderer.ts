@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './eval-rpn.html?raw';
 
-interface RPNStep {
+export interface RPNStep {
   tokens: string[];
   stack: number[];
   i: number;
@@ -25,7 +25,7 @@ interface RPNStep {
 /**
  * 生成逆波兰表达式求值的每一步可视化数据
  */
-function evalRPNSteps(tokens: string[]): RPNStep[] {
+export function evalRPNSteps(tokens: string[]): RPNStep[] {
   const steps: RPNStep[] = [];
   const stack: number[] = [];
 

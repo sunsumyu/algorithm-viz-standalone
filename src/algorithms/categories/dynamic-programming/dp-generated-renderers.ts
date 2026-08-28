@@ -222,15 +222,9 @@ export const STOCK_DP_CODES: Record<string, any> = LINEAR_DP_CODES;
 // 注册与装配逻辑 (Algorithm Registration & Facades)
 // ---------------------------------------------------------------------------
 
+import { UniversalStageVisualizer } from './unique-paths-renderer';
+
 function registerDemo(def: DemoDef): void {
-  const spec = DpStepEngine.get(def.id);
-
-  const finalCodeLanguages = spec?.code?.languages ?? def.codeLanguages;
-  const finalCodeLines = spec?.code?.languages?.javascript ?? def.codeLines ?? [];
-  const finalLineExplanations = spec?.code?.lineExplanations ?? def.lineExplanations;
-  const finalKeyPoints = spec?.code?.keyPoints ?? def.keyPoints;
-  const finalProblemDetail = spec?.problem ?? def.problemDetail;
-
   registerAlgorithm({
     id: def.id,
     name: def.name,
@@ -241,28 +235,8 @@ function registerDemo(def: DemoDef): void {
     difficulty: def.difficulty ?? 1,
     levelOrder: def.levelOrder ?? 1,
     learningGoal: def.learningGoal,
-    template,
-    Visualizer: createDpDemoVisualizer({
-      title: def.title || def.name,
-      description: def.description,
-      inputs: def.inputs,
-      examples: def.examples,
-      metrics: def.metrics || [
-        { key: 'i', label: '当前 i' },
-        { key: 'j', label: '当前 j' },
-        { key: 'answer', label: '当前最优答案' },
-        { key: 'status', label: '计算状态' },
-      ],
-      codeLines: finalCodeLines,
-      codeLanguages: finalCodeLanguages,
-      codePanelTitle: def.codePanelTitle || `${def.name} 解题代码`,
-      lineExplanations: finalLineExplanations,
-      keyPoints: finalKeyPoints,
-      problemDetail: finalProblemDetail,
-      faqList: def.faqList,
-      parseParams: (root: HTMLElement) => root,
-      buildSteps: (root: HTMLElement, mode?: any) => def.build(root, mode),
-    }),
+    template: `<div id="${def.id}" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+    Visualizer: UniversalStageVisualizer,
   });
 }
 

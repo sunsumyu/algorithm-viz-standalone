@@ -18,8 +18,11 @@ export class UniquePathsVisualizer implements IVisualizer {
   private modelId = 'unique-paths';
 
   public async init(context?: VisualizerContext): Promise<void> {
-    this.modelId = context?.algorithmId || 'unique-paths';
-    const container = context?.root || document.getElementById(this.modelId) || document.getElementById('unique-paths') || document.body;
+    if (!context?.algorithmId) {
+      throw new Error('[UniversalStageVisualizer] 必须在 context 中提供 algorithmId！禁止默认回退。');
+    }
+    this.modelId = context.algorithmId;
+    const container = context.root || document.getElementById(this.modelId) || document.body;
     container.innerHTML = '';
     container.style.width = '100%';
     container.style.height = '100%';

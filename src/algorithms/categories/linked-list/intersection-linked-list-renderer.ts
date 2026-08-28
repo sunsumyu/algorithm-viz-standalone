@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './intersection-linked-list.html?raw';
 
-interface ILLStep {
+export interface ILLStep {
   listA: number[];
   listB: number[];
   /** skipA / skipB：相交时公共区间的起点下标（-1 = 无） */
@@ -27,12 +27,12 @@ interface ILLStep {
   codeLine: number | number[];
 }
 
-const LIST_A_MEET = [4, 1, 8, 4, 5];   // 公共区间 8,4,5 (skipA = 2)
-const LIST_B_MEET = [5, 6, 1, 8, 4, 5]; // 公共区间 8,4,5 (skipB = 3)
-const LIST_A_MISS = [2, 6, 4];
-const LIST_B_MISS = [1, 5];
+export const LIST_A_MEET = [4, 1, 8, 4, 5];   // 公共区间 8,4,5 (skipA = 2)
+export const LIST_B_MEET = [5, 6, 1, 8, 4, 5]; // 公共区间 8,4,5 (skipB = 3)
+export const LIST_A_MISS = [2, 6, 4];
+export const LIST_B_MISS = [1, 5];
 
-function buildSteps(intersect: boolean): ILLStep[] {
+export function buildIntersectionSteps(intersect: boolean): ILLStep[] {
   const steps: ILLStep[] = [];
   const listA = intersect ? LIST_A_MEET : LIST_A_MISS;
   const listB = intersect ? LIST_B_MEET : LIST_B_MISS;
@@ -107,18 +107,43 @@ function buildSteps(intersect: boolean): ILLStep[] {
     // 推进
     paJumped = false; pbJumped = false;
     if (paOnList === 'A') {
-      if (pa + 1 >= listA.length) { pa = 0; paOnList = 'B'; paJumped = true; }
-      else pa++;
+      if (pa + 1 < listA.length) {
+        pa++;
+      } else {
+        pa = -1;
+        paOnList = 'null';
+      }
+    } else if (paOnList === 'null') {
+      pa = 0;
+      paOnList = 'B';
+      paJumped = true;
     } else if (paOnList === 'B') {
-      if (pa + 1 >= listB.length) { pa = 0; paOnList = 'A'; paJumped = true; }
-      else pa++;
+      if (pa + 1 < listB.length) {
+        pa++;
+      } else {
+        pa = -1;
+        paOnList = 'null';
+      }
     }
+
     if (pbOnList === 'B') {
-      if (pb + 1 >= listB.length) { pb = 0; pbOnList = 'A'; pbJumped = true; }
-      else pb++;
+      if (pb + 1 < listB.length) {
+        pb++;
+      } else {
+        pb = -1;
+        pbOnList = 'null';
+      }
+    } else if (pbOnList === 'null') {
+      pb = 0;
+      pbOnList = 'A';
+      pbJumped = true;
     } else if (pbOnList === 'A') {
-      if (pb + 1 >= listA.length) { pb = 0; pbOnList = 'B'; pbJumped = true; }
-      else pb++;
+      if (pb + 1 < listA.length) {
+        pb++;
+      } else {
+        pb = -1;
+        pbOnList = 'null';
+      }
     }
   }
 
@@ -178,7 +203,7 @@ export class IntersectionLinkedListVisualizer extends StepVisualizer<ILLStep> {
   }
 
   protected buildSteps(): ILLStep[] {
-    return buildSteps(this.mode === 'miss' ? false : true);
+    return buildIntersectionSteps(this.mode === 'miss' ? false : true);
   }
 
   protected renderStep(step: ILLStep): void {

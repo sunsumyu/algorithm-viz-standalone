@@ -1521,6 +1521,11 @@ export class SequenceStepMatrixCompiler {
       msg: `🏆 二维填表全部完成！在 <code>"${s}"</code> 中匹配 <code>"${t}"</code> 的不同子序列数为: <strong>${dp[m][n]}</strong>。`
     });
 
+    for (const step of steps) {
+      step.treeRoot = build2DDPDependencyTree(m + 1, n + 1, 'forward', undefined, step.grid, step.i, step.j);
+      step.activeNodeId = findNodeIdByCoord(step.treeRoot, step.i, step.j);
+    }
+
     return steps;
   }
 

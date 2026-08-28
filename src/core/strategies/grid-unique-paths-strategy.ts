@@ -514,7 +514,7 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
     const steps: UniversalStep[] = [];
-    const dp: (number | null)[][] = Array.from({ length: mVal }, () => new Array(nVal).fill(0));
+    const dp: (number | null)[][] = Array.from({ length: mVal }, () => new Array(nVal).fill(null));
     const isForward = direction === 'forward';
     const isUniquePathsII = model.id === 'unique-paths-ii';
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);

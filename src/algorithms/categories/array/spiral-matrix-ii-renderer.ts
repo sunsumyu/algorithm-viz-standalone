@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './spiral-matrix-ii.html?raw';
 
-interface SpiralStep {
+export interface SpiralStep {
   n: number;
   matrix: number[][];
   currentRow: number;
@@ -24,14 +24,11 @@ interface SpiralStep {
   codeLine: number | number[];
 }
 
-function buildSpiralSteps(n: number): SpiralStep[] {
+export function buildSpiralSteps(n: number): SpiralStep[] {
   const steps: SpiralStep[] = [];
   const matrix: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
   let top = 0, bottom = n - 1, left = 0, right = n - 1;
   let num = 1;
-  const dirs: Array<[string, number, number]> = [
-    ['右', 0, 1], ['下', 1, 0], ['左', 0, -1], ['上', -1, 0],
-  ];
 
   steps.push({
     n, matrix: clone(matrix), currentRow: -1, currentCol: -1, num: 0, dir: '准备', top, bottom, left, right, status: 'fill',
@@ -41,35 +38,68 @@ function buildSpiralSteps(n: number): SpiralStep[] {
   });
 
   while (num <= n * n) {
-    for (let d = 0; d < 4; d++) {
-      const [dirName, dr, dc] = dirs[d];
-      let r: number, c: number;
-      if (dirName === '右') { r = top; c = left; }
-      else if (dirName === '下') { r = top + 1; c = right; }
-      else if (dirName === '左') { r = bottom; c = right - 1; }
-      else { r = bottom - 1; c = left; }
+    // 1. 向右填充 [top, left] -> [top, right]
+    for (let c = left; c <= right && num <= n * n; c++) {
+      matrix[top][c] = num;
+      steps.push({
+        n, matrix: clone(matrix), currentRow: top, currentCol: c, num, dir: '右', top, bottom, left, right, status: 'fill',
+        message: `向右填入 ${num} 到位置 (${top},${c})。`,
+        log: `填 matrix[${top}][${c}] = ${num}。`,
+        codeLine: [4, 5],
+      });
+      num++;
+    }
+    top++;
+    if (num <= n * n) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '右', 'top++ -> ' + top, [12]));
+    }
 
-      while (true) {
-        if (r < top || r > bottom || c < left || c > right) break;
-        if (num > n * n) break;
-        matrix[r][c] = num;
-        steps.push({
-          n, matrix: clone(matrix), currentRow: r, currentCol: c, num, dir: dirName, top, bottom, left, right, status: 'fill',
-          message: `向${dirName}填入 ${num} 到位置 (${r},${c})。`,
-          log: `填 matrix[${r}][${c}] = ${num}。`,
-          codeLine: dirName === '右' ? [4, 5] : dirName === '下' ? [6, 7] : dirName === '左' ? [8, 9] : [10, 11],
-        });
-        num++;
-        r += dr;
-        c += dc;
-      }
+    // 2. 向下填充 [top, right] -> [bottom, right]
+    for (let r = top; r <= bottom && num <= n * n; r++) {
+      matrix[r][right] = num;
+      steps.push({
+        n, matrix: clone(matrix), currentRow: r, currentCol: right, num, dir: '下', top, bottom, left, right, status: 'fill',
+        message: `向下填入 ${num} 到位置 (${r},${right})。`,
+        log: `填 matrix[${r}][${right}] = ${num}。`,
+        codeLine: [6, 7],
+      });
+      num++;
+    }
+    right--;
+    if (num <= n * n) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '下', 'right-- -> ' + right, [13]));
+    }
 
-      // 收缩边界
-      if (dirName === '右') { top++; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '右', 'top++ -> ' + top, [12])); }
-      else if (dirName === '下') { right--; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '下', 'right-- -> ' + right, [13])); }
-      else if (dirName === '左') { bottom--; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '左', 'bottom-- -> ' + bottom, [14])); }
-      else { left++; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '上', 'left++ -> ' + left, [15])); }
-      if (num > n * n) break;
+    // 3. 向左填充 [bottom, right] -> [bottom, left]
+    for (let c = right; c >= left && num <= n * n; c--) {
+      matrix[bottom][c] = num;
+      steps.push({
+        n, matrix: clone(matrix), currentRow: bottom, currentCol: c, num, dir: '左', top, bottom, left, right, status: 'fill',
+        message: `向左填入 ${num} 到位置 (${bottom},${c})。`,
+        log: `填 matrix[${bottom}][${c}] = ${num}。`,
+        codeLine: [8, 9],
+      });
+      num++;
+    }
+    bottom--;
+    if (num <= n * n) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '左', 'bottom-- -> ' + bottom, [14]));
+    }
+
+    // 4. 向上填充 [bottom, left] -> [top, left]
+    for (let r = bottom; r >= top && num <= n * n; r--) {
+      matrix[r][left] = num;
+      steps.push({
+        n, matrix: clone(matrix), currentRow: r, currentCol: left, num, dir: '上', top, bottom, left, right, status: 'fill',
+        message: `向上填入 ${num} 到位置 (${r},${left})。`,
+        log: `填 matrix[${r}][${left}] = ${num}。`,
+        codeLine: [10, 11],
+      });
+      num++;
+    }
+    left++;
+    if (num <= n * n) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '上', 'left++ -> ' + left, [15]));
     }
   }
 

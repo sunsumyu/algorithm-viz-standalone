@@ -136,18 +136,20 @@ export class GridVisualAdapter {
 
     const activeStandingI = isStepBlocked
       ? step.fromI
-      : (isStepOutOfBounds ? Math.min(m - 1, Math.max(0, step.i)) : step.i);
+      : (isStepOutOfBounds ? Math.min(m - 1, Math.max(0, step.i)) : (m === 1 ? 0 : (step.i ?? 0)));
     const activeStandingJ = isStepBlocked
       ? step.fromJ
-      : (isStepOutOfBounds ? Math.min(n - 1, Math.max(0, step.j)) : step.j);
+      : (isStepOutOfBounds ? Math.min(n - 1, Math.max(0, step.j)) : (m === 1 ? (step.j ?? step.currentJ ?? step.activeSlot ?? step.highlightSlots?.[0] ?? step.currentI ?? step.i ?? 0) : (step.j ?? 0)));
 
     const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
     const activeTrailSet = new Set<string>(activeStackList);
 
+    const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
+
     for (let r = 0; r < m; r++) {
       for (let c = 0; c < n; c++) {
         const key = `${r},${c}`;
-        const cellVal = step.grid?.[r]?.[c] ?? null;
+        const cellVal = step.grid?.[r]?.[c] ?? (m === 1 && r === 0 ? (step.dp1d?.[c] ?? step.memo?.[c] ?? step.memoSnapshot?.[c] ?? null) : null);
         const isStandingCell = (r === activeStandingI && c === activeStandingJ);
         const isTop = step.topI === r && step.topJ === c;
         const isLeft = step.leftI === r && step.leftJ === c;
@@ -165,6 +167,13 @@ export class GridVisualAdapter {
 
         const cellEl = document.createElement('div');
         cellEl.setAttribute('data-coord', `${r},${c}`);
+        if (isStairs) {
+          cellEl.style.transform = `translateY(${(n - 1 - c) * 6}px)`;
+        }
+
+        const coordText = isStairs
+          ? (c === 0 ? '0阶' : (c === n - 1 ? `${c}阶` : `${c}阶`))
+          : `${r},${c}`;
 
         if (isObstacleOrigin) {
           const isObstacleDown = step.i > (step.fromI ?? -1);
@@ -188,7 +197,7 @@ export class GridVisualAdapter {
                 ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
               </div>
             </div>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
             <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] pointer-events-none z-30 font-bold px-1.5 py-0.5 rounded-full bg-amber-600 text-white shadow whitespace-nowrap border border-white">
               🚧 遇障弹回 ${step.type === 'obstacle-cell' ? '置 0' : 'return 0'}
@@ -203,7 +212,7 @@ export class GridVisualAdapter {
                 ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
               </div>
             </div>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="text-base font-bold mt-2 z-10">🚧</span>
             <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] pointer-events-none z-30 font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-white shadow whitespace-nowrap border border-white">
               🚧 障碍格置 0
@@ -219,7 +228,7 @@ export class GridVisualAdapter {
                   ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
                 </div>
               </div>
-              <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+              <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
               <span class="text-base font-bold mt-2 z-10">🚧</span>
               <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] pointer-events-none z-30 font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-white shadow whitespace-nowrap border border-white">
                 🚧 障碍格置 0
@@ -228,7 +237,7 @@ export class GridVisualAdapter {
           } else {
             cellEl.className = `viz-cell is-obstacle is-target ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border bg-slate-100/90 border-slate-300`;
             cellEl.innerHTML = `
-              <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+              <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
               <span class="text-base font-bold mt-2 z-10">🚧</span>
             `;
           }
@@ -236,7 +245,7 @@ export class GridVisualAdapter {
           // 静态障碍物格子 (非当前活动点)
           cellEl.className = `viz-cell is-obstacle ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border bg-slate-100/90 border-slate-300`;
           cellEl.innerHTML = `
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="text-base font-bold mt-2 z-10">🚧</span>
           `;
         } else if (isRiverOrigin) {
@@ -247,7 +256,7 @@ export class GridVisualAdapter {
                 ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
               </div>
             </div>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isRightWallOrigin) {
@@ -263,7 +272,7 @@ export class GridVisualAdapter {
                 🚧 撞墙 return 0
               </span>
             </div>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isTopWallOrigin || isLeftWallOrigin) {
@@ -274,7 +283,7 @@ export class GridVisualAdapter {
                 ${this.getAdventurerSvgHtml({ state: 'blocked', isFinish: false })}
               </div>
             </div>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
             <div class="absolute ${isTopWallOrigin ? '-top-3' : '-left-3'} left-1/2 -translate-x-1/2 text-[10px] pointer-events-none z-30 font-bold text-red-600">
               🚫 越界 return 0
@@ -282,60 +291,45 @@ export class GridVisualAdapter {
           `;
         } else if (isCur) {
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-blue-50/90 border-blue-500 shadow-sm`;
-          cellEl.innerHTML = isGridProblem ? `
+          cellEl.innerHTML = `
             <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
               ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
             </div>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
-          ` : `
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-blue-700">${r},${c}</span>
-            <span class="text-[9px] font-extrabold px-1 py-0.2 rounded bg-blue-600 text-white shadow-2xs absolute top-0.5 right-1 whitespace-nowrap leading-none">当前</span>
-            <span class="cell-val text-sm font-extrabold mt-2 z-10 text-blue-900">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isTrail) {
           cellEl.className = `viz-cell is-trail ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-sky-50/80 border-sky-400 border-dashed text-sky-700 shadow-2xs`;
-          cellEl.innerHTML = isGridProblem ? `
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-sky-600">${r},${c}</span>
+          cellEl.innerHTML = `
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-sky-600">${coordText}</span>
             <span class="text-sm select-none animate-pulse">👣</span>
             <span class="cell-val text-xs font-extrabold mt-0.5 z-10 text-sky-700">${cellVal !== null ? cellVal : ''}</span>
-          ` : `
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-sky-600">${r},${c}</span>
-            <span class="cell-val text-sm font-extrabold mt-2 z-10 text-sky-700">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isTop) {
           cellEl.className = `viz-cell is-top ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-purple-50/90 border-purple-400 shadow-2xs`;
-          cellEl.innerHTML = isGridProblem ? `
+          cellEl.innerHTML = `
             <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
-          ` : `
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-purple-700">${r},${c}</span>
-            <span class="text-[9px] font-extrabold px-1 py-0.2 rounded bg-purple-100 text-purple-700 border border-purple-300 absolute top-0.5 right-1 whitespace-nowrap leading-none">↑上</span>
-            <span class="cell-val text-sm font-extrabold mt-2 z-10 text-purple-900">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isLeft) {
           cellEl.className = `viz-cell is-left ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-amber-50/90 border-amber-400 shadow-2xs`;
-          cellEl.innerHTML = isGridProblem ? `
+          cellEl.innerHTML = `
             <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${r},${c}</span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
-          ` : `
-            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1 text-amber-700">${r},${c}</span>
-            <span class="text-[9px] font-extrabold px-1 py-0.2 rounded bg-amber-100 text-amber-700 border border-amber-300 absolute top-0.5 right-1 whitespace-nowrap leading-none">←左</span>
-            <span class="cell-val text-sm font-extrabold mt-2 z-10 text-amber-900">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (cellVal !== null) {
           cellEl.className = `viz-cell is-done ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-slate-50 border-slate-300 text-slate-800`;
           cellEl.innerHTML = `
-            <span class="cell-coord text-[9px] absolute top-0.5 left-1 text-slate-500">${r},${c}</span>
+            <span class="cell-coord text-[9px] absolute top-0.5 left-1 text-slate-500">${coordText}</span>
             <span class="cell-val text-sm font-bold mt-2 z-10">${cellVal}</span>
           `;
         } else {
           cellEl.className = `viz-cell is-empty ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border border-slate-200 text-slate-400`;
           cellEl.innerHTML = `
-            <span class="cell-coord text-[9px] absolute top-0.5 left-1 text-slate-400">${r},${c}</span>
-            ${isFinish && isGridProblem ? `<span class="text-xs absolute bottom-1 right-1 opacity-70">🏁</span>` : ''}
+            <span class="cell-coord text-[9px] absolute top-0.5 left-1 text-slate-400">${coordText}</span>
+            ${isFinish ? `<span class="text-xs absolute bottom-1 right-1 opacity-70">🏁</span>` : ''}
             <span class="cell-val text-sm font-medium mt-2">-</span>
           `;
         }
@@ -343,18 +337,16 @@ export class GridVisualAdapter {
       }
     }
 
-    if (isGridProblem) {
-      const hasAdventurer = container.querySelector('.adventurer-char') !== null;
-      if (!hasAdventurer) {
-        const targetR = Math.min(m - 1, Math.max(0, activeStandingI ?? 0));
-        const targetC = Math.min(n - 1, Math.max(0, activeStandingJ ?? 0));
-        const targetCell = container.querySelector(`[data-coord="${targetR},${targetC}"]`) || container.firstElementChild;
-        if (targetCell) {
-          const advHolder = document.createElement('div');
-          advHolder.className = 'adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30';
-          advHolder.innerHTML = this.getAdventurerSvgHtml({ state: 'walking', isFinish: false });
-          targetCell.appendChild(advHolder);
-        }
+    const hasAdventurer = container.querySelector('.adventurer-char') !== null;
+    if (!hasAdventurer) {
+      const targetR = Math.min(m - 1, Math.max(0, activeStandingI ?? 0));
+      const targetC = Math.min(n - 1, Math.max(0, activeStandingJ ?? 0));
+      const targetCell = container.querySelector(`[data-coord="${targetR},${targetC}"]`) || container.firstElementChild;
+      if (targetCell) {
+        const advHolder = document.createElement('div');
+        advHolder.className = 'adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30';
+        advHolder.innerHTML = this.getAdventurerSvgHtml({ state: 'walking', isFinish: false });
+        targetCell.appendChild(advHolder);
       }
     }
 

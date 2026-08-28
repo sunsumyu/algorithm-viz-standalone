@@ -33,15 +33,22 @@ export class AlgorithmStrategyRegistry {
    */
   public static get(modelId: string): IAlgorithmStrategy | undefined {
     this.ensureDefaults();
-    return this.strategies.get(modelId);
+    const direct = this.strategies.get(modelId);
+    if (direct) return direct;
+    for (const strategy of this.strategies.values()) {
+      if (strategy.canHandle(modelId)) {
+        this.strategies.set(modelId, strategy);
+        return strategy;
+      }
+    }
+    return undefined;
   }
 
   /**
    * 检查是否已注册策略
    */
   public static has(modelId: string): boolean {
-    this.ensureDefaults();
-    return this.strategies.has(modelId);
+    return this.get(modelId) !== undefined;
   }
 
   /**

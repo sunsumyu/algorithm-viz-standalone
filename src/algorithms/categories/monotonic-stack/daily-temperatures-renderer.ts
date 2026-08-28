@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './daily-temperatures.html?raw';
 
-interface DTStep {
+export interface DTStep {
   temps: number[];
   answer: number[];      // 答案数组，0 表示未填
   stack: number[];       // 栈存下标
@@ -19,7 +19,7 @@ interface DTStep {
   codeLine: number | number[];
 }
 
-function buildDTSteps(temps: number[]): DTStep[] {
+export function buildDTSteps(temps: number[]): DTStep[] {
   const steps: DTStep[] = [];
   const n = temps.length;
   const answer = new Array(n).fill(0);

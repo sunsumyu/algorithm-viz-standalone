@@ -7,9 +7,9 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './reverse-linked-list.html?raw';
 
-type Phase = 'init' | 'cache' | 'reverse' | 'advance' | 'done';
+export type Phase = 'init' | 'cache' | 'reverse' | 'advance' | 'done';
 
-interface RLStep {
+export interface RLStep {
   values: number[];
   /** nextDir[i] = i.next 指向的下标（-1 表示 null） */
   nextDir: number[];
@@ -23,12 +23,12 @@ interface RLStep {
   codeLine: number | number[];
 }
 
-function parseValues(input: string): number[] {
+export function parseValues(input: string): number[] {
   const arr = input.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
   return arr.length > 0 ? arr : [1, 2, 3, 4, 5];
 }
 
-function buildReverseSteps(values: number[]): RLStep[] {
+export function buildReverseSteps(values: number[]): RLStep[] {
   const steps: RLStep[] = [];
   const n = values.length;
   const nextDir = values.map((_, i) => (i + 1 < n ? i + 1 : -1));

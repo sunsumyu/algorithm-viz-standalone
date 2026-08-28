@@ -84,7 +84,7 @@
       <section id="left-visual-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 320px; flex: 1 1 50%;">
 
         <!-- 卡片 1: 二维网格 (虚拟地图 m×n, 比例紧凑, 播放控制器位于右下角) -->
-        <div class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden relative">
+        <div id="card1-wrapper" class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden relative">
           <div class="flex items-center justify-between flex-shrink-0 gap-2">
             <div class="flex items-center gap-2">
               <h2 id="card1-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -152,24 +152,32 @@
                 </span>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- 播放主按钮组 (悬浮于二维网格右下角) -->
-            <div class="absolute bottom-2 right-2 z-20 flex items-center gap-1 p-0.5 sm:p-1 bg-white/95 backdrop-blur-sm rounded-xl border border-slate-200 shadow-md">
-              <button id="btn-step-prev" title="上一步" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
-                <i class="fa-solid fa-backward-step text-[11px]"></i>
-              </button>
-              <button id="btn-play-pause" title="自动播放/暂停" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition shadow-sm">
-                <i class="fa-solid fa-play text-[11px]" id="play-icon"></i>
-              </button>
-              <button id="btn-step-next" title="下一步" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
-                <i class="fa-solid fa-forward-step text-[11px]"></i>
-              </button>
-            </div>
+        <!-- 步数进度条与播放控制器 (紧贴二维网格下方，按钮靠右) -->
+        <div class="bg-white rounded-2xl px-2.5 sm:px-3 py-1.5 border border-slate-200 shadow-xs flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+          <div class="flex-1 flex items-center gap-2 min-w-0">
+            <input type="range" id="slider-progress" min="0" max="0" value="0" class="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none" />
+          </div>
+          <div class="text-xs font-mono-code font-bold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap flex-shrink-0">
+            <span id="step-cur" class="text-blue-600">0</span> / <span id="step-total">0</span>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button id="btn-step-prev" title="上一步" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+              <i class="fa-solid fa-backward-step text-[12px]"></i>
+            </button>
+            <button id="btn-play-pause" title="自动播放/暂停" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition shadow-sm">
+              <i class="fa-solid fa-play text-[12px]" id="play-icon"></i>
+            </button>
+            <button id="btn-step-next" title="下一步" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+              <i class="fa-solid fa-forward-step text-[12px]"></i>
+            </button>
           </div>
         </div>
 
         <!-- 卡片 2: 状态展示区 (针对当前演化阶段动态定制, 阶段1/2展示递归树, 与卡片1对等 flex-1 平分) -->
-        <div class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden">
+        <div id="card2-wrapper" class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden">
           <div class="flex items-center justify-between flex-shrink-0">
             <div>
               <h2 id="card2-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -196,16 +204,6 @@
             <div id="memo-slots-container" class="w-full h-full flex items-center justify-center m-auto">
               <!-- 动态构建状态槽位或递归树 -->
             </div>
-          </div>
-        </div>
-
-        <!-- 步数进度条 (左侧最底部) -->
-        <div class="bg-white rounded-2xl px-3 py-1.5 border border-slate-200 shadow-xs flex items-center gap-2.5 flex-shrink-0">
-          <div class="flex-1 flex items-center gap-2">
-            <input type="range" id="slider-progress" min="0" max="0" value="0" class="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none" />
-          </div>
-          <div class="text-xs font-mono-code font-bold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap flex-shrink-0">
-            <span id="step-cur" class="text-blue-600">0</span> / <span id="step-total">0</span>
           </div>
         </div>
 

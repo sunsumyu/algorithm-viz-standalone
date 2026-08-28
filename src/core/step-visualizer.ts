@@ -335,7 +335,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
 
   protected tick(): void {
     if (!this.isPlaying) return;
-    this.timer = window.setTimeout(() => {
+    this.timer = setTimeout(() => {
       // 在回调中再次检查，防止 pause() 在 timer 触发和回调执行之间被调用
       if (!this.isPlaying) return;
       if (this.currentIndex < this.steps.length - 1) {
@@ -344,7 +344,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
       } else {
         this.pause();
       }
-    }, this.playbackSpeed);
+    }, this.playbackSpeed) as unknown as number;
   }
 
   protected nextStep(): void {

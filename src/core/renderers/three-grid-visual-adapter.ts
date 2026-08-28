@@ -182,7 +182,10 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
     const { baseMesh, rimMesh } = VoxelSceneComposer.buildIslandBase(baseW, baseD, centerX, centerZ);
     this.boardGroup.add(baseMesh, rimMesh);
 
-    // 2. 构建 3D 倒角体素方块阵列
+    const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
+    const stepRise = isStairs ? 0.32 : 0;
+
+    // 2. 构建 3D 倒角体素方块阵列 (阶梯式动规算法具有自底向上真实阶梯立体高程)
     for (let r = 0; r < m; r++) {
       this.voxelCells[r] = [];
       for (let c = 0; c < n; c++) {
@@ -217,11 +220,13 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
           sideMaterial
         ];
 
-        const geo = new THREE.BoxGeometry(cellSize, blockHeight, cellSize);
+        const stairElevation = c * stepRise;
+        const actualBlockHeight = blockHeight + stairElevation;
+        const geo = new THREE.BoxGeometry(cellSize, actualBlockHeight, cellSize);
         const mesh = new THREE.Mesh(geo, materials);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        mesh.position.set(c * stride, blockHeight / 2, r * stride);
+        mesh.position.set(c * stride, actualBlockHeight / 2, r * stride);
 
         this.boardGroup.add(mesh);
 
@@ -233,8 +238,8 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
           materials,
           r,
           c,
-          targetY: blockHeight / 2,
-          currentY: blockHeight / 2,
+          targetY: actualBlockHeight / 2,
+          currentY: actualBlockHeight / 2,
           status: 'empty'
         };
       }
@@ -292,7 +297,8 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
     r: number,
     c: number,
     val: number | null,
-    status: 'cur' | 'done' | 'top' | 'left' | 'obstacle' | 'trail' | 'empty'
+    status: 'cur' | 'done' | 'top' | 'left' | 'obstacle' | 'trail' | 'empty',
+    modelId?: string
   ): void {
     ctx.clearRect(0, 0, 512, 512);
 
@@ -357,7 +363,11 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
     ctx.font = 'bold 64px "JetBrains Mono", monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`${r},${c}`, 44, 40);
+    const isStairs = (modelId === 'climb-stairs' || modelId === 'min-cost' || modelId === 'min-cost-climbing-stairs');
+    const coordLabel = isStairs
+      ? (c === 0 ? '0阶(地面)' : (c === this.n - 1 ? `${c}阶 🏆` : `${c} 阶`))
+      : `${r},${c}`;
+    ctx.fillText(coordLabel, 44, 40);
 
     // 3. 状态徽章 (右上角胶囊)
     if (status === 'cur') {
@@ -422,6 +432,8 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
     const { m, n } = options;
     const stride = 1.0 + 0.14;
     const blockBaseH = 0.42;
+    const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
+    const stepRise = isStairs ? 0.32 : 0;
 
     const curI = step.i;
     const curJ = step.j;
@@ -443,43 +455,47 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
         const isLeft = leftI !== undefined && leftI === r && leftJ === c;
         const isObstacle = (step.obstacleGrid?.[r]?.[c] === 1);
 
+        const stairElevation = c * stepRise;
+        const actualBlockH = blockBaseH + stairElevation;
+
         let status: 'cur' | 'done' | 'top' | 'left' | 'obstacle' | 'trail' | 'empty' = 'empty';
-        let targetY = blockBaseH / 2;
+        let targetY = actualBlockH / 2;
 
         if (isObstacle) {
           status = 'obstacle';
-          targetY = blockBaseH / 2 + 0.28;
+          targetY = actualBlockH / 2 + 0.28;
         } else if (isCur) {
           status = 'cur';
-          targetY = blockBaseH / 2 + 0.45; // 当前活动格向上悬浮
+          targetY = actualBlockH / 2 + 0.28; // 当前活动阶梯微微悬浮点亮
         } else if (isTop) {
           status = 'top';
-          targetY = blockBaseH / 2 + 0.22;
+          targetY = actualBlockH / 2 + 0.14;
         } else if (isLeft) {
           status = 'left';
-          targetY = blockBaseH / 2 + 0.22;
+          targetY = actualBlockH / 2 + 0.14;
         } else if (val !== null) {
           status = 'done';
-          targetY = blockBaseH / 2;
+          targetY = actualBlockH / 2;
         }
 
         cell.status = status;
         cell.targetY = targetY;
-        this.drawTileTopTexture(cell.topCtx, r, c, val, status);
+        this.drawTileTopTexture(cell.topCtx, r, c, val, status, options.modelId);
         cell.topTexture.needsUpdate = true;
       }
     }
 
     // 2. 更新焦点聚光灯与动态光环
     const isInsideBoard = curI !== undefined && curJ !== undefined && curI >= 0 && curI < m && curJ >= 0 && curJ < n;
+    const activeStairElevation = (curJ !== undefined ? curJ : 0) * stepRise;
     if (isInsideBoard) {
       if (this.pointLight) {
-        this.pointLight.position.set(curJ * stride, 2.2, curI * stride);
+        this.pointLight.position.set(curJ * stride, 2.2 + activeStairElevation, curI * stride);
         this.pointLight.intensity = 3.0;
         this.pointLight.visible = true;
       }
       if (this.activeGlowRing) {
-        this.activeGlowRing.position.set(curJ * stride, 0.02, curI * stride);
+        this.activeGlowRing.position.set(curJ * stride, 0.02 + activeStairElevation, curI * stride);
         this.activeGlowRing.visible = true;
       }
     } else {
@@ -489,7 +505,7 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
 
     // 3. 基于有限状态机驱动 3D 探险家小人物理动力学与落水/撞墙/庆祝动画 (FSM Driven Kinematics)
     if (this.adventurer3D) {
-      const resolution = ThreeActorStateMachine.resolve(step, m, n, stride, blockBaseH);
+      const resolution = ThreeActorStateMachine.resolve(step, m, n, stride, blockBaseH, options.modelId);
       this.adventurer3D.visible = resolution.visible; // 🌟 恒为 true
 
       const nextTarget = new THREE.Vector3(

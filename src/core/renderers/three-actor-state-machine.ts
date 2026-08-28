@@ -31,8 +31,12 @@ export class ThreeActorStateMachine {
     m: number,
     n: number,
     stride: number = 1.14,
-    blockBaseH: number = 0.42
+    blockBaseH: number = 0.42,
+    modelId?: string
   ): ActorResolution {
+    const isStairs = (modelId === 'climb-stairs' || modelId === 'min-cost' || modelId === 'min-cost-climbing-stairs');
+    const stepRise = isStairs ? 0.32 : 0;
+
     const curI = step.i !== undefined ? step.i : 0;
     const curJ = step.j !== undefined ? step.j : 0;
     const fromI = step.fromI !== undefined ? Math.max(0, Math.min(step.fromI, m - 1)) : Math.max(0, Math.min(curI, m - 1));
@@ -42,6 +46,9 @@ export class ThreeActorStateMachine {
     const isObstacle = step.type === 'obstacle-hit' || (step.obstacleGrid?.[curI]?.[curJ] === 1);
     const isGoal = step.type === 'boundary' || step.type === 'return';
 
+    const curElevation = curJ * stepRise;
+    const fromElevation = fromJ * stepRise;
+
     // 1. 越界拦截分支（函数入口稳立岸边探视 -> 拦截步执行“跳向水面->触水激起水花->弹回陆地”完整双段抛物线）
     if (isOutOfBounds) {
       const dir = step.outOfBoundsDir || (curI >= m ? 'river' : (curJ >= n ? 'right-wall' : (curI < 0 ? 'top-wall' : 'left-wall')));
@@ -49,12 +56,12 @@ export class ThreeActorStateMachine {
 
       // 陆地安全起跳/落脚方块坐标 (fromI, fromJ)
       const safePosX = fromJ * stride;
-      const safePosY = blockBaseH / 2 + 0.45;
+      const safePosY = blockBaseH / 2 + fromElevation + 0.45;
       const safePosZ = fromI * stride;
 
       // 探测落水接触点/撞墙接触点坐标 (curJ, curI)
       const probedTargetX = curJ * stride;
-      const probedTargetY = isRiver ? -0.05 : blockBaseH / 2 + 0.15;
+      const probedTargetY = isRiver ? -0.05 : blockBaseH / 2 + curElevation + 0.15;
       const probedTargetZ = curI * stride;
 
       const isReturnInterceptionStep = step.type === 'out-of-bounds';
@@ -94,7 +101,7 @@ export class ThreeActorStateMachine {
         state: ActorVisualState.OBSTACLE_BLOCKED,
         targetPosition: {
           x: curJ * stride,
-          y: blockBaseH / 2 + 0.28 + 0.45,
+          y: blockBaseH / 2 + curElevation + 0.28 + 0.45,
           z: curI * stride
         },
         squash: 1.15,
@@ -110,7 +117,7 @@ export class ThreeActorStateMachine {
         state: ActorVisualState.CELEBRATING_GOAL,
         targetPosition: {
           x: curJ * stride,
-          y: blockBaseH / 2 + 0.45,
+          y: blockBaseH / 2 + curElevation + 0.45,
           z: curI * stride
         },
         squash: 1.0,
@@ -125,7 +132,7 @@ export class ThreeActorStateMachine {
       state: ActorVisualState.ON_CELL,
       targetPosition: {
         x: curJ * stride,
-        y: blockBaseH / 2 + 0.45,
+        y: blockBaseH / 2 + curElevation + 0.45,
         z: curI * stride
       },
       squash: 1.0,

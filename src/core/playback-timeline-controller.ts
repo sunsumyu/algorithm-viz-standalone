@@ -17,6 +17,7 @@ export interface PlaybackTimelineOptions {
 }
 
 import { eventHub } from './controllers/visualizer-event-hub';
+import { PlaybackCoordinator } from './controllers/playback-coordinator';
 import {
   PlaybackCommandInvoker,
   StepForwardCommand,
@@ -27,118 +28,94 @@ import {
 } from './controllers/playback-commands';
 
 export class PlaybackTimelineController {
-  private currentStep = 0;
-  private isPlaying = false;
-  private timer: any = null;
-  private speed = 900;
+  private coordinator: PlaybackCoordinator;
   private options: PlaybackTimelineOptions;
   private commandInvoker = new PlaybackCommandInvoker();
 
   private receiver: IPlaybackReceiver = {
-    getCurrentStep: () => this.currentStep,
+    getCurrentStep: () => this.coordinator.getCurrentStep(),
     getTotalSteps: () => this.options.getTotalSteps(),
     setStep: (step: number) => {
-      this.currentStep = step;
-      this.options.onStep(step);
+      this.coordinator.seek(step);
     },
     getStepData: (idx: number) => ({ index: idx })
   };
 
   constructor(options: PlaybackTimelineOptions) {
     this.options = options;
-    this.speed = options.defaultSpeed ?? 900;
-    this.currentStep = options.initialStep ?? 0;
+    this.coordinator = new PlaybackCoordinator({
+      totalSteps: () => options.getTotalSteps(),
+      initialStep: options.initialStep ?? 0,
+      speedMs: options.defaultSpeed ?? 900,
+      onStepChange: (stepIndex, isAuto) => {
+        this.options.onStep(stepIndex);
+        if (isAuto) {
+          eventHub.emit('step:change', {
+            currentStep: stepIndex,
+            totalSteps: this.options.getTotalSteps(),
+            stepData: { index: stepIndex }
+          });
+        }
+      },
+      onStatusChange: (status) => {
+        const isPlaying = status === 'playing';
+        const total = this.options.getTotalSteps();
+        const isFinished = this.coordinator.getCurrentStep() >= total - 1;
+        this.options.onStateChange?.(isPlaying);
+        eventHub.emit('playback:state', { isPlaying, isFinished });
+      }
+    });
   }
 
   /**
    * 获取当前步骤索引
    */
   public getCurrentStep(): number {
-    return this.currentStep;
+    return this.coordinator.getCurrentStep();
   }
 
   /**
    * 获取播放状态
    */
   public getIsPlaying(): boolean {
-    return this.isPlaying;
+    return this.coordinator.isPlaying();
   }
 
   /**
    * 获取当前播放间隔 (ms)
    */
   public getSpeed(): number {
-    return this.speed;
+    return (this.coordinator as any).speedMs ?? 600;
   }
 
   /**
    * 设置播放速度
    */
   public setSpeed(speedMs: number): void {
-    const validSpeed = Math.max(100, Math.min(3000, speedMs));
-    this.speed = validSpeed;
+    const validSpeed = Math.max(50, Math.min(3000, speedMs));
+    this.coordinator.setSpeed(validSpeed);
     eventHub.emit('playback:speed', { speed: validSpeed });
-    if (this.isPlaying) {
-      this.pause();
-      this.play();
-    }
   }
 
   /**
    * 开始自动播放
    */
   public play(): void {
-    if (this.isPlaying) return;
-    const total = this.options.getTotalSteps();
-    if (total <= 0) return;
-
-    // 如果已经在最后一步，从头开始
-    if (this.currentStep >= total - 1) {
-      this.seek(0);
-    }
-
-    this.isPlaying = true;
-    this.notifyStateChange();
-
-    this.timer = setInterval(() => {
-      const currentTotal = this.options.getTotalSteps();
-      if (this.currentStep < currentTotal - 1) {
-        this.currentStep++;
-        this.options.onStep(this.currentStep);
-        eventHub.emit('step:change', {
-          currentStep: this.currentStep,
-          totalSteps: currentTotal,
-          stepData: { index: this.currentStep }
-        });
-      } else {
-        this.pause();
-      }
-    }, this.speed);
+    this.coordinator.play();
   }
 
   /**
    * 暂停自动播放
    */
   public pause(): void {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
-    if (this.isPlaying) {
-      this.isPlaying = false;
-      this.notifyStateChange();
-    }
+    this.coordinator.pause();
   }
 
   /**
    * 切换播放/暂停
    */
   public toggle(): void {
-    if (this.isPlaying) {
-      this.pause();
-    } else {
-      this.play();
-    }
+    this.coordinator.togglePlay();
   }
 
   /**
@@ -175,6 +152,13 @@ export class PlaybackTimelineController {
   }
 
   /**
+   * 动态更新总步数并可选重置当前指针
+   */
+  public setTotalSteps(total: number, resetToStart = false): void {
+    this.coordinator.setTotalSteps(total, resetToStart);
+  }
+
+  /**
    * 撤销上一步操作 (Undo Command)
    */
   public undo(): boolean {
@@ -191,19 +175,17 @@ export class PlaybackTimelineController {
   }
 
   /**
-   * 销毁控制器，清理所有定时器
+   * 销毁控制器与解绑
    */
   public destroy(): void {
-    this.pause();
-    this.commandInvoker.clear();
+    this.coordinator.destroy();
   }
 
   private notifyStateChange(): void {
+    const isPlaying = this.coordinator.isPlaying();
     const total = this.options.getTotalSteps();
-    const isFinished = this.currentStep >= total - 1;
-    eventHub.emit('playback:state', { isPlaying: this.isPlaying, isFinished });
-    if (this.options.onStateChange) {
-      this.options.onStateChange(this.isPlaying);
-    }
+    const isFinished = this.coordinator.getCurrentStep() >= total - 1;
+    this.options.onStateChange?.(isPlaying);
+    eventHub.emit('playback:state', { isPlaying, isFinished });
   }
 }

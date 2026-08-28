@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './trapping-rain-water.html?raw';
 
-interface TRWStep {
+export interface TRWStep {
   heights: number[];
   left: number;
   right: number;
@@ -21,7 +21,7 @@ interface TRWStep {
   codeLine: number | number[];
 }
 
-function buildTRWSteps(heights: number[]): TRWStep[] {
+export function buildTRWSteps(heights: number[]): TRWStep[] {
   const steps: TRWStep[] = [];
   const n = heights.length;
   const water = new Array(n).fill(0);

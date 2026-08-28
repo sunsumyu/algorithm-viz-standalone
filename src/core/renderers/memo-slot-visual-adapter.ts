@@ -34,31 +34,43 @@ export class MemoSlotVisualAdapter {
     // 强制重置容器为竖向列式居中容器，杜绝与上层 HTML 任何 flex-row 冲突
     container.className = 'w-full h-full flex flex-col items-center justify-center gap-2 p-1 relative overflow-auto';
     
-    const memoArr = step.memoSnapshot || step.memo || [];
+    const memoArr = step.memoSnapshot || step.memo || step.dp1d || (step.grid && step.grid[0]) || [];
 
     // 1. 顶层状态转移等式 / 解释卡片
     const equationWrapper = document.createElement('div');
     equationWrapper.className = 'w-full max-w-md mx-auto mb-1 px-1';
 
+    const activeSlotIdx = step.activeSlot !== undefined
+      ? step.activeSlot
+      : (Array.isArray(step.highlightSlots) && step.highlightSlots.length > 0)
+      ? step.highlightSlots[0]
+      : step.currentJ !== undefined
+      ? step.currentJ
+      : step.j !== undefined
+      ? step.j
+      : step.currentI !== undefined
+      ? step.currentI
+      : undefined;
+
     if (step.slotMode === 'down') {
       const isKeep = step.type === 'keep-val';
       const label = isKeep ? '首列保持旧值 (Down):' : '读取上方旧值 (Down):';
-      const val = step.down ?? step.memoj ?? memoArr[step.activeSlot];
+      const val = step.down ?? step.memoj ?? (activeSlotIdx !== undefined ? memoArr[activeSlotIdx] : 0);
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold text-purple-700 bg-purple-50/90 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center justify-between shadow-xs animate-pulse">
           <span class="flex items-center gap-1.5"><span class="animal-cat">🐱</span> <span>${label}</span></span>
-          <span class="font-extrabold bg-purple-200/80 px-2 py-0.5 rounded text-purple-900">memo[${step.activeSlot}] = ${val}</span>
+          <span class="font-extrabold bg-purple-200/80 px-2 py-0.5 rounded text-purple-900">memo[${activeSlotIdx ?? 0}] = ${val}</span>
         </div>
       `;
     } else if (step.slotMode === 'right') {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold text-amber-700 bg-amber-50/90 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-between shadow-xs animate-pulse">
           <span class="flex items-center gap-1.5"><span class="animal-cat">🐱</span> <span>读取左侧新值 (Right):</span></span>
-          <span class="font-extrabold bg-amber-200/80 px-2 py-0.5 rounded text-amber-900">right = memo[${step.activeSlot}] = ${step.right ?? step.memoj}</span>
+          <span class="font-extrabold bg-amber-200/80 px-2 py-0.5 rounded text-amber-900">right = memo[${activeSlotIdx ?? 0}] = ${step.right ?? step.memoj}</span>
         </div>
       `;
     } else if (step.slotMode === 'updated') {
-      const sumVal = step.memoj !== undefined ? step.memoj : memoArr[step.activeSlot];
+      const sumVal = step.memoj !== undefined ? step.memoj : (activeSlotIdx !== undefined ? memoArr[activeSlotIdx] : 0);
       const isBlocked = step.type === 'obstacle-cell';
       const icon = isBlocked ? '🚧' : '<span class="animal-frog">🐸</span>';
       const label = isBlocked ? '障碍物清零覆盖:' : '滚动覆盖累加:';
@@ -67,7 +79,20 @@ export class MemoSlotVisualAdapter {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold ${color} px-3 py-1.5 rounded-lg border flex items-center justify-between shadow-xs">
           <span class="flex items-center gap-1.5">${icon} <span>${label}</span></span>
-          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">memo[${step.activeSlot}] = ${sumVal}</span>
+          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">memo[${activeSlotIdx ?? 0}] = ${sumVal}</span>
+        </div>
+      `;
+    } else if (activeSlotIdx !== undefined && step.type?.includes('update')) {
+      const sumVal = step.memoj !== undefined ? step.memoj : (activeSlotIdx !== undefined ? memoArr[activeSlotIdx] : 0);
+      const isBlocked = step.type === 'obstacle-cell';
+      const icon = isBlocked ? '🚧' : '<span class="animal-frog">🐸</span>';
+      const label = isBlocked ? '障碍物清零覆盖:' : (step.tag || '状态转移更新:');
+      const color = isBlocked ? 'text-amber-800 bg-amber-50/90 border-amber-300' : 'text-emerald-700 bg-emerald-50/90 border-emerald-200';
+      const badgeColor = isBlocked ? 'bg-amber-200 text-amber-900' : 'bg-emerald-200/80 text-emerald-900';
+      equationWrapper.innerHTML = `
+        <div class="text-xs font-mono font-bold ${color} px-3 py-1.5 rounded-lg border flex items-center justify-between shadow-xs">
+          <span class="flex items-center gap-1.5">${icon} <span>${label}</span></span>
+          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">dp[${activeSlotIdx ?? 0}] = ${sumVal}</span>
         </div>
       `;
     } else {
@@ -83,9 +108,16 @@ export class MemoSlotVisualAdapter {
     const slotsRow = document.createElement('div');
     slotsRow.className = 'w-full flex items-center justify-center gap-3 sm:gap-4 flex-nowrap py-1 overflow-x-auto';
 
-    for (let j = 0; j < n; j++) {
-      const val = memoArr[j] !== undefined ? memoArr[j] : 0;
-      const isCur = step.activeSlot === j;
+    const activeSet = new Set<number>();
+    if (activeSlotIdx !== undefined) activeSet.add(activeSlotIdx);
+    if (Array.isArray(step.highlightSlots)) {
+      for (const idx of step.highlightSlots) activeSet.add(idx);
+    }
+
+    const slotCount = Math.max(n, memoArr.length);
+    for (let j = 0; j < slotCount; j++) {
+      const val = memoArr[j] !== undefined && memoArr[j] !== null ? memoArr[j] : 0;
+      const isCur = activeSet.has(j);
       const mode = isCur ? step.slotMode : undefined;
 
       const slotBox = document.createElement('div');
@@ -114,7 +146,11 @@ export class MemoSlotVisualAdapter {
         slotClass += ' bg-amber-100 border-amber-500 text-amber-900 font-extrabold ring-2 ring-amber-400 scale-105 shadow-md';
         iconBadge = '<span class="absolute -top-3.5 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
         bottomTag = '<span class="text-[9px] px-1 rounded bg-amber-600 text-white font-sans font-semibold">左侧新</span>';
-      } else if (val > 0) {
+      } else if (isCur) {
+        slotClass += ' bg-blue-100 border-blue-500 text-blue-900 font-extrabold ring-2 ring-blue-400 scale-105 shadow-md';
+        iconBadge = '<span class="absolute -top-3.5 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
+        bottomTag = '<span class="text-[9px] px-1 rounded bg-blue-600 text-white font-sans font-semibold">当前</span>';
+      } else if (val !== 0 && val !== null) {
         slotClass += ' bg-slate-50 border-slate-300 text-slate-800 font-bold';
         bottomTag = `<span class="text-[9px] text-slate-400 font-sans">就绪</span>`;
       } else {

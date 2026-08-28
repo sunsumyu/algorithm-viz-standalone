@@ -15,6 +15,9 @@ export class DpTableVisualAdapter {
   ): void {
     if (!container || !step) return;
     const { m, n, isReverse = false } = options;
+    const gridRows = (step.grid && step.grid.length > 0) ? step.grid.length : m;
+    const gridCols = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
+
     container.innerHTML = '';
     container.className = 'w-full h-full flex flex-col items-center justify-start gap-1.5 p-1 overflow-auto relative';
 
@@ -61,7 +64,7 @@ export class DpTableVisualAdapter {
     } else {
       equationWrapper.innerHTML = `
         <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
-          <span>📊 二维 DP 状态表 <code>dp[0..${m - 1}][0..${n - 1}]</code>，准备逐格填表</span>
+          <span>📊 二维 DP 状态表 <code>dp[0..${gridRows - 1}][0..${gridCols - 1}]</code>，准备逐格填表</span>
         </div>
       `;
     }
@@ -77,14 +80,14 @@ export class DpTableVisualAdapter {
     let tableHtml = '<table class="border-collapse font-mono-code text-xs">';
     // 表头：列索引
     tableHtml += '<thead><tr><th class="p-0.5 text-[10px] text-slate-400 font-normal">i\\j</th>';
-    for (let c = 0; c < n; c++) {
+    for (let c = 0; c < gridCols; c++) {
       tableHtml += `<th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-center">j=${c}</th>`;
     }
     tableHtml += '</tr></thead><tbody>';
 
-    for (let r = 0; r < m; r++) {
+    for (let r = 0; r < gridRows; r++) {
       tableHtml += `<tr><th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-right">i=${r}</th>`;
-      for (let c = 0; c < n; c++) {
+      for (let c = 0; c < gridCols; c++) {
         const isCur = step.i === r && step.j === c;
         const isTop = step.topI === r && step.topJ === c;
         const isLeft = step.leftI === r && step.leftJ === c;

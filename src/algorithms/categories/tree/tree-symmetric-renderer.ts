@@ -6,15 +6,10 @@
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import template from './tree-symmetric.html?raw';
 
-interface TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-}
-
-interface TSStep {
+export interface TSStep {
   tree: TreeNode | null;
   leftNode: number | null;   // 左对比节点
   rightNode: number | null;  // 右对比节点
@@ -28,28 +23,7 @@ interface TSStep {
   codeLine: number | number[];
 }
 
-function buildTree(arr: (number | null)[]): TreeNode | null {
-  if (arr.length === 0 || arr[0] === null) return null;
-  const root: TreeNode = { val: arr[0]!, left: null, right: null };
-  const queue: TreeNode[] = [root];
-  let i = 1;
-  while (queue.length > 0 && i < arr.length) {
-    const node = queue.shift()!;
-    if (i < arr.length && arr[i] !== null) {
-      node.left = { val: arr[i]!, left: null, right: null };
-      queue.push(node.left);
-    }
-    i++;
-    if (i < arr.length && arr[i] !== null) {
-      node.right = { val: arr[i]!, left: null, right: null };
-      queue.push(node.right);
-    }
-    i++;
-  }
-  return root;
-}
-
-function buildTSSteps(root: TreeNode | null): TSStep[] {
+export function buildTSSteps(root: TreeNode | null): TSStep[] {
   const steps: TSStep[] = [];
   let compared = 0;
   let matches = 0;

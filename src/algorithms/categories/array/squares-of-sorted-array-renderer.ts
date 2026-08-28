@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './squares-of-sorted-array.html?raw';
 
-interface SSQStep {
+export interface SSQStep {
   arr: number[];
   result: number[];
   left: number;
@@ -17,6 +17,61 @@ interface SSQStep {
   message: string;
   log: string;
   codeLine: number | number[];
+}
+
+export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
+  const steps: SSQStep[] = [];
+  const n = arr.length;
+  const result: number[] = new Array(n).fill(null);
+  let left = 0;
+  let right = n - 1;
+
+  steps.push({
+    arr: [...arr], result: [...result], left, right, writeIdx: n - 1, status: 'init',
+    message: `初始化 left=0, right=${n - 1}，结果数组从右端 (i=${n - 1}) 开始填充。`,
+    log: '初始化首尾双指针。',
+    codeLine: [1, 2, 3, 4],
+  });
+
+  for (let i = n - 1; i >= 0; i--) {
+    const lsq = arr[left] * arr[left];
+    const rsq = arr[right] * arr[right];
+
+    steps.push({
+      arr: [...arr], result: [...result], left, right, writeIdx: i, status: 'compare',
+      message: `比较 nums[left=${left}]² = ${lsq} 与 nums[right=${right}]² = ${rsq}，将较大者填入 result[i=${i}]。`,
+      log: `比较 left²=${lsq} 与 right²=${rsq}。`,
+      codeLine: [5, 6, 7],
+    });
+
+    if (lsq > rsq) {
+      result[i] = lsq;
+      steps.push({
+        arr: [...arr], result: [...result], left, right, writeIdx: i, status: 'write-left',
+        message: `${lsq} > ${rsq}，取左侧平方 result[${i}] = ${lsq}，left++ → ${left + 1}。`,
+        log: `result[${i}] = ${lsq}（来自 left=${left}），left -> ${left + 1}。`,
+        codeLine: [8, 9, 10],
+      });
+      left++;
+    } else {
+      result[i] = rsq;
+      steps.push({
+        arr: [...arr], result: [...result], left, right, writeIdx: i, status: 'write-right',
+        message: `${lsq} <= ${rsq}，取右侧平方 result[${i}] = ${rsq}，right-- → ${right - 1}。`,
+        log: `result[${i}] = ${rsq}（来自 right=${right}），right -> ${right - 1}。`,
+        codeLine: [11, 12, 13],
+      });
+      right--;
+    }
+  }
+
+  steps.push({
+    arr: [...arr], result: [...result], left, right, writeIdx: -1, status: 'done',
+    message: `填充完成，结果数组为 [${result.join(', ')}]。`,
+    log: `返回 result = [${result.join(', ')}]。`,
+    codeLine: 15,
+  });
+  return steps;
 }
 
 export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
@@ -84,59 +139,7 @@ export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
   protected buildSteps(): SSQStep[] {
     const arr = this.parseArray(this.arrayInput?.value || '-4,-1,0,3,10');
     this.currentArray = [...arr];
-
-    const steps: SSQStep[] = [];
-    const n = arr.length;
-    const result: number[] = new Array(n).fill(null);
-    let left = 0;
-    let right = n - 1;
-
-    steps.push({
-      arr: [...arr], result: [...result], left, right, writeIdx: n - 1, status: 'init',
-      message: `初始化 left=0, right=${n - 1}，结果数组从右端 (i=${n - 1}) 开始填充。`,
-      log: '初始化首尾双指针。',
-      codeLine: [1, 2, 3, 4],
-    });
-
-    for (let i = n - 1; i >= 0; i--) {
-      const lsq = arr[left] * arr[left];
-      const rsq = arr[right] * arr[right];
-
-      steps.push({
-        arr: [...arr], result: [...result], left, right, writeIdx: i, status: 'compare',
-        message: `比较 nums[left=${left}]² = ${lsq} 与 nums[right=${right}]² = ${rsq}，将较大者填入 result[i=${i}]。`,
-        log: `比较 left²=${lsq} 与 right²=${rsq}。`,
-        codeLine: [5, 6, 7],
-      });
-
-      if (lsq > rsq) {
-        result[i] = lsq;
-        steps.push({
-          arr: [...arr], result: [...result], left, right, writeIdx: i, status: 'write-left',
-          message: `${lsq} > ${rsq}，取左侧平方 result[${i}] = ${lsq}，left++ → ${left + 1}。`,
-          log: `result[${i}] = ${lsq}（来自 left=${left}），left -> ${left + 1}。`,
-          codeLine: [8, 9, 10],
-        });
-        left++;
-      } else {
-        result[i] = rsq;
-        steps.push({
-          arr: [...arr], result: [...result], left, right, writeIdx: i, status: 'write-right',
-          message: `${lsq} <= ${rsq}，取右侧平方 result[${i}] = ${rsq}，right-- → ${right - 1}。`,
-          log: `result[${i}] = ${rsq}（来自 right=${right}），right -> ${right - 1}。`,
-          codeLine: [11, 12, 13],
-        });
-        right--;
-      }
-    }
-
-    steps.push({
-      arr: [...arr], result: [...result], left, right, writeIdx: -1, status: 'done',
-      message: `填充完成，结果数组为 [${result.join(', ')}]。`,
-      log: `返回 result = [${result.join(', ')}]。`,
-      codeLine: 15,
-    });
-    return steps;
+    return buildSortedSquaresSteps(this.currentArray);
   }
 
   private parseArray(input: string): number[] {

@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './sudoku.html?raw';
 
-interface SudokuStep {
+export interface SudokuStep {
   board: string[][];
   fixed: boolean[][];
   row: number | null;
@@ -22,11 +22,11 @@ interface SudokuStep {
   codeLine: number | number[];
 }
 
-const DEFAULT_PUZZLE = '53..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79';
-const EASY_PUZZLE = '..3.2.6..\n9..3.5..1\n..18.64..\n..81.29..\n7.......8\n..67.82..\n..26.95..\n8..2.3..9\n..5.1.3..';
-const MAX_STEPS = 2200;
+export const DEFAULT_PUZZLE = '53..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79';
+export const EASY_PUZZLE = '..3.2.6..\n9..3.5..1\n..18.64..\n..81.29..\n7.......8\n..67.82..\n..26.95..\n8..2.3..9\n..5.1.3..';
+export const MAX_STEPS = 2200;
 
-function parsePuzzle(text: string): string[][] {
+export function parsePuzzle(text: string): string[][] {
   const chars = text.replace(/[^0-9.]/g, '').slice(0, 81).padEnd(81, '.');
   const board: string[][] = [];
   for (let r = 0; r < 9; r++) {
@@ -35,7 +35,7 @@ function parsePuzzle(text: string): string[][] {
   return board;
 }
 
-function buildSudokuSteps(initial: string[][]): SudokuStep[] {
+export function buildSudokuSteps(initial: string[][]): SudokuStep[] {
   const board = initial.map((row) => [...row]);
   const fixed = initial.map((row) => row.map((cell) => cell !== '.'));
   const steps: SudokuStep[] = [];

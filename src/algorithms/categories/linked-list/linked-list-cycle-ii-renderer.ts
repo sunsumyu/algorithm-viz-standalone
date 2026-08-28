@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './linked-list-cycle-ii.html?raw';
 
-interface CycleStep {
+export interface CycleStep {
   values: number[];
   pos: number;           // 入环下标，-1 无环
   fast: number;          // fast 当前下标
@@ -20,7 +20,7 @@ interface CycleStep {
   codeLine: number | number[];
 }
 
-function buildCycleSteps(values: number[], pos: number): CycleStep[] {
+export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
   const steps: CycleStep[] = [];
   const n = values.length;
 

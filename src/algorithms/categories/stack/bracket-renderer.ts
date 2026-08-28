@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './bracket.html?raw';
 
-interface BracketStep {
+export interface BracketStep {
   step: number;
   description: string;
   stack: string[];
@@ -20,7 +20,7 @@ interface BracketStep {
   codeLine: number;
 }
 
-interface BracketResult {
+export interface BracketResult {
   steps: BracketStep[];
   isValid: boolean;
   reason: string;
@@ -30,7 +30,7 @@ interface BracketResult {
  * 纯 JavaScript 实现的括号匹配算法
  * 生成每一步的可视化数据，并绑定代码行号
  */
-function bracketMatchingSteps(input: string): BracketResult {
+export function bracketMatchingSteps(input: string): BracketResult {
   const steps: BracketStep[] = [];
   const stack: string[] = [];
   const pairs: Record<string, string> = { ')': '(', ']': '[', '}': '{' };

@@ -45,9 +45,10 @@ export class VisualizerMediator {
 
   constructor(options: VisualizerMediatorOptions = {}) {
     const defaultModelId = options.modelId || 'unique-paths';
-    const model = AlgorithmModelRepository.hasModel(defaultModelId)
-      ? AlgorithmModelRepository.getModel(defaultModelId)
-      : (AlgorithmModelRepository.hasModel('unique-paths') ? AlgorithmModelRepository.getModel('unique-paths') : null);
+    if (!AlgorithmModelRepository.hasModel(defaultModelId)) {
+      throw new Error(`[VisualizerMediator] 未在仓储中找到模型: "${defaultModelId}"`);
+    }
+    const model = AlgorithmModelRepository.getModel(defaultModelId);
 
     const initialDims = this.extractDimensions(model, options.m, options.n);
     const initialStage = this.normalizeStage(options.stage || model?.defaultStage || 'stage-1');

@@ -8,7 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import { HighlightTarget } from '../../../core/code-panel';
 import template from './nqueen.html?raw';
 
-interface NQueenStep {
+export interface NQueenStep {
   board: number[][];
   row: number;
   col: number | null;
@@ -21,9 +21,9 @@ interface NQueenStep {
   codeLine: HighlightTarget;
 }
 
-const MAX_STEPS = 1600;
+export const MAX_STEPS = 1600;
 
-function buildNQueenSteps(n: number): NQueenStep[] {
+export function buildNQueenSteps(n: number): NQueenStep[] {
   const steps: NQueenStep[] = [];
   const board: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
   let attempts = 0;

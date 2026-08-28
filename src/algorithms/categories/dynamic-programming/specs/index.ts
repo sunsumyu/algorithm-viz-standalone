@@ -54,6 +54,7 @@ export * from './knapsack/ones-and-zeroes.spec';
 export * from './knapsack/combination-sum-iv.spec';
 export * from './knapsack/perfect-squares.spec';
 export * from './knapsack/word-break.spec';
+export * from './knapsack/multiple-knapsack.spec';
 
 import { Knapsack01Spec } from './knapsack/01-knapsack.spec';
 import { CompleteKnapsackSpec } from './knapsack/complete-knapsack.spec';
@@ -66,6 +67,7 @@ import { OnesAndZeroesSpec } from './knapsack/ones-and-zeroes.spec';
 import { CombinationSumIvSpec } from './knapsack/combination-sum-iv.spec';
 import { PerfectSquaresSpec } from './knapsack/perfect-squares.spec';
 import { WordBreakSpec } from './knapsack/word-break.spec';
+import { MultipleKnapsackSpec } from './knapsack/multiple-knapsack.spec';
 
 // Grid DP specs
 export * from './grid/unique-paths.spec';
@@ -133,6 +135,7 @@ DpStepEngine.register(OnesAndZeroesSpec);
 DpStepEngine.register(CombinationSumIvSpec);
 DpStepEngine.register(PerfectSquaresSpec);
 DpStepEngine.register(WordBreakSpec);
+DpStepEngine.register(MultipleKnapsackSpec);
 
 DpStepEngine.register(UniquePathsSpec);
 DpStepEngine.register(UniquePathsIiSpec);

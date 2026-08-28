@@ -115,6 +115,35 @@ export class UniversalStageEngine {
   }
 
   /**
+   * 统一生成多阶段演化步骤主入口
+   */
+  public static generateSteps(
+    model: IYamlAlgorithmModel,
+    params: {
+      stage: number;
+      m?: number;
+      n?: number;
+      direction?: 'forward' | 'reverse';
+      isMemo?: boolean;
+      stageVariant?: string;
+      anchorMap?: Record<string, number>;
+    }
+  ): UniversalStep[] {
+    const steps = AlgorithmStrategyRegistry.tryGenerate(model, {
+      stage: params.stage,
+      m: params.m ?? 3,
+      n: params.n ?? 3,
+      direction: params.direction ?? 'forward',
+      isMemo: Boolean(params.isMemo),
+      stageVariant: params.stageVariant ?? 'terminal',
+      anchorMap: params.anchorMap
+    });
+    if (steps) return steps;
+
+    throw new Error(`[UniversalStageEngine] 算法 "${model?.id || 'unknown'}" (阶段 ${params.stage}) 暂无匹配的推导计算策略！禁止静默回退至其他算法。`);
+  }
+
+  /**
    * 生成阶段 1 (朴素递归) 或阶段 2 (记忆化搜索) 的完整演化步骤
    */
   public static generateStage1or2Steps(
@@ -126,7 +155,7 @@ export class UniversalStageEngine {
     anchorMap?: Record<string, number>,
     variant: string = 'terminal'
   ): UniversalStep[] {
-    const params = {
+    return this.generateSteps(model, {
       stage: isMemo ? 2 : 1,
       m: mVal,
       n: nVal,
@@ -134,13 +163,7 @@ export class UniversalStageEngine {
       isMemo,
       stageVariant: variant,
       anchorMap
-    };
-
-    const steps = AlgorithmStrategyRegistry.tryGenerate(model, params);
-    if (steps) return steps;
-
-    const fallback = AlgorithmStrategyRegistry.get('unique-paths');
-    return fallback ? fallback.generateSteps(model, params) : [];
+    });
   }
 
   /**
@@ -153,20 +176,14 @@ export class UniversalStageEngine {
     direction: 'forward' | 'reverse' = 'forward',
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
-    const params = {
+    return this.generateSteps(model, {
       stage: 3,
       m: mVal,
       n: nVal,
       direction,
       isMemo: false,
       anchorMap
-    };
-
-    const steps = AlgorithmStrategyRegistry.tryGenerate(model, params);
-    if (steps) return steps;
-
-    const fallback = AlgorithmStrategyRegistry.get('unique-paths');
-    return fallback ? fallback.generateSteps(model, params) : [];
+    });
   }
 
   /**
@@ -180,7 +197,7 @@ export class UniversalStageEngine {
     variant: 'if' | 'for' = 'if',
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
-    const params = {
+    return this.generateSteps(model, {
       stage: 4,
       m: mVal,
       n: nVal,
@@ -188,99 +205,6 @@ export class UniversalStageEngine {
       isMemo: false,
       stageVariant: variant,
       anchorMap
-    };
-
-    const steps = AlgorithmStrategyRegistry.tryGenerate(model, params);
-    if (steps) return steps;
-
-    const fallback = AlgorithmStrategyRegistry.get('unique-paths');
-    return fallback ? fallback.generateSteps(model, params) : [];
-  }
-
-  // =========================================================================
-  // 向后兼容辅助转发入口 (Deprecated: 请优先使用 AlgorithmStrategyRegistry)
-  // =========================================================================
-  public static generate1DStage1or2Steps(model: IYamlAlgorithmModel, nVal: number, isMemo?: boolean, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage1or2Steps(model, nVal, nVal, 'forward', isMemo, anchorMap);
-  }
-
-  public static generate1DStage3Steps(model: IYamlAlgorithmModel, nVal: number, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage3Steps(model, nVal, nVal, 'forward', anchorMap);
-  }
-
-  public static generate1DStage4Steps(model: IYamlAlgorithmModel, nVal: number, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage4Steps(model, nVal, nVal, 'forward', 'if', anchorMap);
-  }
-
-  public static generateDistinctSubsequencesStage1or2Steps(model: IYamlAlgorithmModel, isMemo?: boolean, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage1or2Steps(model, 3, 3, 'forward', isMemo, anchorMap);
-  }
-
-  public static generateDistinctSubsequencesStage3Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage3Steps(model, 3, 3, 'forward', anchorMap);
-  }
-
-  public static generateDistinctSubsequencesStage4Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage4Steps(model, 3, 3, 'forward', 'if', anchorMap);
-  }
-
-  public static generateDeleteDistanceStage1or2Steps(model: IYamlAlgorithmModel, isMemo?: boolean, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage1or2Steps(model, 3, 3, 'forward', isMemo, anchorMap);
-  }
-
-  public static generateDeleteDistanceStage3Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage3Steps(model, 3, 3, 'forward', anchorMap);
-  }
-
-  public static generateDeleteDistanceStage4Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage4Steps(model, 3, 3, 'forward', 'if', anchorMap);
-  }
-
-  public static generateEditDistanceStage1or2Steps(model: IYamlAlgorithmModel, isMemo?: boolean, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage1or2Steps(model, 3, 3, 'forward', isMemo, anchorMap);
-  }
-
-  public static generateEditDistanceStage3Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage3Steps(model, 3, 3, 'forward', anchorMap);
-  }
-
-  public static generateEditDistanceStage4Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage4Steps(model, 3, 3, 'forward', 'if', anchorMap);
-  }
-
-  public static generatePalindromicSubstringsStage1or2Steps(model: IYamlAlgorithmModel, isMemo?: boolean, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage1or2Steps(model, 3, 3, 'forward', isMemo, anchorMap);
-  }
-
-  public static generatePalindromicSubstringsStage3Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage3Steps(model, 3, 3, 'forward', anchorMap);
-  }
-
-  public static generatePalindromicSubstringsStage4Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage4Steps(model, 3, 3, 'forward', 'if', anchorMap);
-  }
-
-  public static generateLongestPalindromicSubsequenceStage1or2Steps(model: IYamlAlgorithmModel, isMemo?: boolean, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage1or2Steps(model, 3, 3, 'forward', isMemo, anchorMap);
-  }
-
-  public static generateLongestPalindromicSubsequenceStage3Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage3Steps(model, 3, 3, 'forward', anchorMap);
-  }
-
-  public static generateLongestPalindromicSubsequenceStage4Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage4Steps(model, 3, 3, 'forward', 'if', anchorMap);
-  }
-
-  public static generatePartitionSubsetStage1or2Steps(model: IYamlAlgorithmModel, isMemo?: boolean, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage1or2Steps(model, 3, 3, 'forward', isMemo, anchorMap);
-  }
-
-  public static generatePartitionSubsetStage3Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage3Steps(model, 3, 3, 'forward', anchorMap);
-  }
-
-  public static generatePartitionSubsetStage4Steps(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return this.generateStage4Steps(model, 3, 3, 'forward', 'if', anchorMap);
+    });
   }
 }

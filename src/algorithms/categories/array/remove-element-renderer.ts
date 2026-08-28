@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './remove-element.html?raw';
 
-interface RemoveStep {
+export interface RemoveStep {
   array: number[];
   fast: number;
   slow: number;
@@ -16,6 +16,55 @@ interface RemoveStep {
   message: string;
   log: string;
   codeLine: number | number[];
+}
+
+export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[] {
+  const steps: RemoveStep[] = [];
+  let slow = 0;
+  const work = [...arr];
+
+  steps.push({
+    array: [...work], fast: 0, slow: 0, val, status: 'check',
+    message: `初始化 slow=0，fast 从 0 开始遍历，要移除的值 val=${val}。`,
+    log: '初始化快慢指针。',
+    codeLine: [1, 2],
+  });
+
+  for (let fast = 0; fast < work.length; fast++) {
+    steps.push({
+      array: [...work], fast, slow, val, status: 'check',
+      message: `fast=${fast}，检查 nums[fast]=${work[fast]} 是否等于 val=${val}。`,
+      log: `检查 nums[${fast}]=${work[fast]}。`,
+      codeLine: 3,
+    });
+
+    if (work[fast] !== val) {
+      const prevVal = work[slow];
+      work[slow] = work[fast];
+      steps.push({
+        array: [...work], fast, slow, val, status: 'copy',
+        message: `nums[fast]=${work[fast]} ≠ val，复制到 slow=${slow} 位置（原值 ${prevVal}），slow++ → ${slow + 1}。`,
+        log: `保留：nums[${slow}] = ${work[fast]}（原值 ${prevVal}），slow -> ${slow + 1}。`,
+        codeLine: [4, 5, 6],
+      });
+      slow++;
+    } else {
+      steps.push({
+        array: [...work], fast, slow, val, status: 'skip',
+        message: `nums[fast]=${work[fast]} == val，跳过，不复制。`,
+        log: `等于 val，跳过。`,
+        codeLine: 3,
+      });
+    }
+  }
+
+  steps.push({
+    array: [...work], fast: work.length, slow, val, status: 'done',
+    message: `遍历结束，新长度 = slow = ${slow}（前 ${slow} 个元素为移除后的结果）。`,
+    log: `返回 slow = ${slow}。`,
+    codeLine: 8,
+  });
+  return steps;
 }
 
 export class RemoveElementVisualizer extends StepVisualizer<RemoveStep> {
@@ -78,53 +127,7 @@ export class RemoveElementVisualizer extends StepVisualizer<RemoveStep> {
     const val = parseInt(this.valInput?.value || '3', 10);
     this.currentArray = [...arr];
     this.currentVal = Number.isFinite(val) ? val : 3;
-
-    const steps: RemoveStep[] = [];
-    let slow = 0;
-    const work = [...arr];
-
-    steps.push({
-      array: [...work], fast: 0, slow: 0, val: this.currentVal, status: 'check',
-      message: `初始化 slow=0，fast 从 0 开始遍历，要移除的值 val=${this.currentVal}。`,
-      log: '初始化快慢指针。',
-      codeLine: [1, 2],
-    });
-
-    for (let fast = 0; fast < work.length; fast++) {
-      steps.push({
-        array: [...work], fast, slow, val: this.currentVal, status: 'check',
-        message: `fast=${fast}，检查 nums[fast]=${work[fast]} 是否等于 val=${this.currentVal}。`,
-        log: `检查 nums[${fast}]=${work[fast]}。`,
-        codeLine: 3,
-      });
-
-      if (work[fast] !== this.currentVal) {
-        const prevVal = work[slow];
-        work[slow] = work[fast];
-        steps.push({
-          array: [...work], fast, slow, val: this.currentVal, status: 'copy',
-          message: `nums[fast]=${work[fast]} ≠ val，复制到 slow=${slow} 位置（原值 ${prevVal}），slow++ → ${slow + 1}。`,
-          log: `保留：nums[${slow}] = ${work[fast]}（原值 ${prevVal}），slow -> ${slow + 1}。`,
-          codeLine: [4, 5, 6],
-        });
-        slow++;
-      } else {
-        steps.push({
-          array: [...work], fast, slow, val: this.currentVal, status: 'skip',
-          message: `nums[fast]=${work[fast]} == val，跳过，不复制。`,
-          log: `等于 val，跳过。`,
-          codeLine: 3,
-        });
-      }
-    }
-
-    steps.push({
-      array: [...work], fast: work.length, slow, val: this.currentVal, status: 'done',
-      message: `遍历结束，新长度 = slow = ${slow}（前 ${slow} 个元素为移除后的结果）。`,
-      log: `返回 slow = ${slow}。`,
-      codeLine: 8,
-    });
-    return steps;
+    return buildRemoveElementSteps(this.currentArray, this.currentVal);
   }
 
   private parseArray(input: string): number[] {

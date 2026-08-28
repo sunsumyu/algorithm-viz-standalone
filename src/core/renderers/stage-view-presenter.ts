@@ -26,13 +26,17 @@ export class StageViewPresenter {
   ): void {
     const { currentStage, stage3SubView, step, m, n, isReverse } = options;
 
-    if (currentStage === 'stage-4') {
-      // 阶段 4: 一维滚动数组压缩槽位
+    if (currentStage === 'stage-4' || currentStage === 'stage-5') {
+      // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位
       GridVisualAdapter.renderLiteMemoSlots(container, step, n);
     } else if (currentStage === 'stage-3') {
-      // 阶段 3: 二维状态转移表 / 状态依赖树
-      if (stage3SubView === 'tree') {
+      const is2DGrid = (m > 1 || (step.grid && step.grid.length > 1));
+      if (stage3SubView === 'tree' && step.treeRoot) {
         RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
+      } else if (is2DGrid && step.grid && step.grid.length > 1) {
+        GridVisualAdapter.renderStage3DPTable(container, step, { m, n, isReverse });
+      } else if (step.dp1d && step.dp1d.length > 0) {
+        GridVisualAdapter.renderLiteMemoSlots(container, step, n);
       } else {
         GridVisualAdapter.renderStage3DPTable(container, step, { m, n, isReverse });
       }

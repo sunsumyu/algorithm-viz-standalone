@@ -7,7 +7,7 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './next-greater-element-i.html?raw';
 
-interface NGE1Step {
+export interface NGE1Step {
   nums1: number[];
   nums2: number[];
   stack: number[];           // 单调栈，存 nums2 的下标
@@ -21,7 +21,7 @@ interface NGE1Step {
   codeLine: number | number[];
 }
 
-function buildNGE1Steps(nums1: number[], nums2: number[]): NGE1Step[] {
+export function buildNGE1Steps(nums1: number[], nums2: number[]): NGE1Step[] {
   const steps: NGE1Step[] = [];
   const n = nums2.length;
   const stack: number[] = [];
