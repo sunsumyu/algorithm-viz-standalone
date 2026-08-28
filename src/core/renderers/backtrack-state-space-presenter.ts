@@ -280,7 +280,7 @@ export class BacktrackStateSpacePresenter {
 
     const itemsHtml = logs
       .map((item, idx) => {
-        const isCurrent = idx === activeIndex;
+        const isCurrent = idx === activeIndex || (activeIndex >= logs.length - 1 && idx === logs.length - 1);
         let icon = '▶';
         let tagName = '执行';
         let tagColor = '#64748b';
@@ -309,7 +309,7 @@ export class BacktrackStateSpacePresenter {
         }
 
         const activeClass = isCurrent
-          ? 'bg-blue-50/90 border-blue-200 text-blue-900 font-bold shadow-2xs'
+          ? 'bg-blue-50/90 border-blue-200 text-blue-900 font-bold shadow-2xs active'
           : 'text-slate-600 border-transparent hover:bg-slate-50';
 
         const indicatorColor = isCurrent ? 'bg-blue-600' : 'bg-slate-300';
@@ -333,13 +333,11 @@ export class BacktrackStateSpacePresenter {
       </div>
     `;
 
-    // 自动平滑滚动当前活跃项至可视区
+    // 自动平滑滚动当前活跃项至可视区 / 滚动到底部
     if (typeof container.querySelector === 'function') {
-      if (activeIndex >= 0) {
-        const activeEl = container.querySelector(`#bt-log-item-${activeIndex}`);
-        if (activeEl && typeof activeEl.scrollIntoView === 'function') {
-          activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
+      const activeEl = container.querySelector('.log-item.active') || container.querySelector(`#bt-log-item-${activeIndex}`);
+      if (activeEl && typeof activeEl.scrollIntoView === 'function') {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       } else {
         container.scrollTop = container.scrollHeight;
       }

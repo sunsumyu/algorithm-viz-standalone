@@ -691,14 +691,15 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
       const upper = n - need + 1;
       const isPruningEnabled = this.currentStage === 'pruned';
       const lastVal = Number(step.path[step.path.length - 1] ?? 0);
+      const isCurrentlyPruning = isPruningEnabled && (step.message.startsWith('剪枝：') || step.message.includes('截断循环'));
       BacktrackStateSpacePresenter.renderPruningMonitor(this.pruningMonitorContainer, {
         enabled: isPruningEnabled,
         formula: isPruningEnabled ? `i <= ${n} - (${k} - ${step.path.length}) + 1 = ${upper}` : '无剪枝：i <= n (全空间搜索)',
         neededElements: Math.max(0, need),
         remainingCapacity: Math.max(0, n - lastVal),
-        conditionMet: isPruningEnabled && step.message.includes('剪枝'),
+        conditionMet: isCurrentlyPruning,
         message: isPruningEnabled
-          ? (step.message.includes('剪枝') ? `⚠️ 触发剪枝：剩余候选不足 ${need} 个` : `当前所需: ${need} 个，遍历上界: ${upper}`)
+          ? (isCurrentlyPruning ? `⚠️ 触发剪枝：剩余候选不足 ${need} 个` : `当前所需: ${need} 个，遍历上界: ${upper}`)
           : '当前阶段搜索全解空间，不截断任何分支',
       });
     }
@@ -752,7 +753,7 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
     if (this.logContainer) {
       BacktrackStateSpacePresenter.renderBacktrackLogStream(
         this.logContainer,
-        this.cachedLogs,
+        this.cachedLogs.slice(0, this.currentIndex + 1),
         this.currentIndex
       );
     }

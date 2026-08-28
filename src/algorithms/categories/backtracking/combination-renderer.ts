@@ -692,7 +692,7 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     if (this.logContainer) {
       BacktrackStateSpacePresenter.renderBacktrackLogStream(
         this.logContainer,
-        this.cachedLogs,
+        this.cachedLogs.slice(0, this.currentIndex + 1),
         this.currentIndex
       );
     }
