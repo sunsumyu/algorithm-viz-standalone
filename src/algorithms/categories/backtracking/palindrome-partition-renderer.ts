@@ -1,24 +1,35 @@
 /**
- * 分割回文串可视化器（回溯决策树 SVG 版本）
+ * 分割回文串可视化器（回溯决策树 SVG 版本）— 4-Card 标准现代架构
  * LeetCode 131：把字符串分割成若干子串，要求每个子串都是回文串
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './palindrome-partition.html?raw';
-
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BacktrackStateSpacePresenter,
+  BacktrackLogItem,
+} from '../../../core/renderers/backtrack-state-space-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
   layoutTree,
   flattenTree,
   renderBacktrackTree,
-  renderBacktrackLog,
-  getBacktrackTreeCSS,
+  resetContainerViewState,
 } from './backtracking-tree-helper';
+import {
+  PALINDROME_PARTITION_PROBLEM_HTML,
+  PALINDROME_PARTITION_ANALYSIS_HTML,
+  PALINDROME_PARTITION_CODE_LANGUAGES,
+} from './palindrome-partition-problem-content';
+import template from './palindrome-partition.html?raw';
 
 /* ── Helpers ────────────────────────────────────────────────── */
-function isPalindrome(text: string): boolean {
+export function isPalindrome(text: string): boolean {
   let left = 0;
   let right = text.length - 1;
   while (left < right) {
@@ -30,10 +41,17 @@ function isPalindrome(text: string): boolean {
 }
 
 /* ── Build decision tree ──────────────────────────────────── */
-function buildPalTree(s: string): BacktrackTreeNode {
+export function buildPalTree(s: string): BacktrackTreeNode {
+  let nodeIdCounter = 0;
   const root: BacktrackTreeNode = {
-    id: 'root', value: '', path: [], children: [],
-    isLeaf: false, isPruned: false, parentId: null, depth: 0,
+    id: 'root',
+    value: '""',
+    path: [],
+    children: [],
+    isLeaf: false,
+    isPruned: false,
+    parentId: null,
+    depth: 0,
   };
 
   function dfs(startIndex: number, path: string[], parent: BacktrackTreeNode): void {
@@ -43,25 +61,37 @@ function buildPalTree(s: string): BacktrackTreeNode {
     }
 
     for (let end = startIndex; end < s.length; end++) {
+      nodeIdCounter++;
       const substring = s.slice(startIndex, end + 1);
+      const isPal = isPalindrome(substring);
+      const childId = `${parent.id}-${substring}-${nodeIdCounter}`;
 
-      if (!isPalindrome(substring)) {
+      if (!isPal) {
         // Prune: not a palindrome
         const pruneNode: BacktrackTreeNode = {
-          id: `${parent.id}-${substring}`, value: substring,
-          path: [...path, substring], children: [],
-          isLeaf: false, isPruned: true,
-          parentId: parent.id, depth: parent.depth + 1,
+          id: childId,
+          value: `"${substring}"`,
+          path: [...path, substring],
+          children: [],
+          isLeaf: false,
+          isPruned: true,
+          isDirectPrune: true,
+          parentId: parent.id,
+          depth: parent.depth + 1,
         };
         parent.children.push(pruneNode);
         continue;
       }
 
       const childNode: BacktrackTreeNode = {
-        id: `${parent.id}-${substring}`, value: substring,
-        path: [...path, substring], children: [],
-        isLeaf: false, isPruned: false,
-        parentId: parent.id, depth: parent.depth + 1,
+        id: childId,
+        value: `"${substring}"`,
+        path: [...path, substring],
+        children: [],
+        isLeaf: false,
+        isPruned: false,
+        parentId: parent.id,
+        depth: parent.depth + 1,
       };
       parent.children.push(childNode);
       dfs(end + 1, [...path, substring], childNode);
@@ -73,210 +103,400 @@ function buildPalTree(s: string): BacktrackTreeNode {
 }
 
 /* ── Generate steps ───────────────────────────────────────── */
-interface PalStep extends BacktrackTreeStep {
-  startIndex: number;
-  depth: number;
-  count: number;
-}
-
-function palPartitionSteps(s: string): PalStep[] {
+export function buildPalindromePartitionSteps(s: string): BacktrackTreeStep[] {
   const root = buildPalTree(s);
   layoutTree(root);
   const allNodes = flattenTree(root);
-  const prunedIds = allNodes.filter(n => n.isPruned).map(n => n.id);
 
-  const steps: PalStep[] = [];
+  const steps: BacktrackTreeStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
+  const dynamicPrunedIds: string[] = [];
+  const solutions: string[][] = [];
 
+  // Start step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
-    foundPathIds: [], prunedNodeIds: [...prunedIds],
-    path: [], message: `开始：分割回文串 "${s}"`, codeLine: 4,
-    startIndex: 0, depth: 0, count: 0,
+    nodes: allNodes,
+    currentNodeId: 'root',
+    visitedNodeIds: ['root'],
+    foundPathIds: [],
+    prunedNodeIds: [],
+    path: [],
+    message: `开始搜索：分割字符串 s = "${s}"，要求每段子串均为回文串`,
+    codeLine: 4,
+    stats: { remaining: s.length, depth: 0, count: 0 },
+    vars: [
+      { name: 's', value: `"${s}"`, type: 'string' },
+      { name: 'startIndex', value: '0', type: 'number' },
+      { name: 'path', value: '[]', type: 'array' },
+      { name: 'res.size()', value: '0', type: 'number' },
+    ],
   });
 
-  function traverse(node: BacktrackTreeNode): void {
-    if (node.isLeaf) {
-      // 递归进入：先执行 if (startIndex == s.length()) 判断 —— 成立
+  function traverse(node: BacktrackTreeNode, startIndex: number): void {
+    if (startIndex >= s.length) {
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `递归进入：startIndex == ${s.length} ✓ 到达末尾`, codeLine: 10,
-        startIndex: s.length, depth: node.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...node.path],
+        message: `递归进入：startIndex (${startIndex}) >= s.length (${s.length})，切割线已达末尾 ✓ 找到全回文分割`,
+        codeLine: 9,
+        stats: { remaining: 0, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'startIndex', value: String(startIndex), type: 'number' },
+          { name: 'path', value: `[${node.path.map((p) => `"${p}"`).join(', ')}]`, type: 'array' },
+        ],
       });
-      // 进入 if 块：收集并 return
+
       foundIds.push(node.id);
-      const partition = (node.path as string[]).join(' | ');
+      solutions.push([...(node.path as string[])]);
+
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `找到方案：[${partition}]，收集并返回`, codeLine: { from: 11, to: 12 },
-        startIndex: s.length, depth: node.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...node.path],
+        message: `🎉 收集回文分割方案：[${node.path.map((p) => `"${p}"`).join(', ')}]，收集并返回`,
+        codeLine: 10,
+        stats: { remaining: 0, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'res.add()', value: `[${node.path.map((p) => `"${p}"`).join(', ')}]`, type: 'array' },
+          { name: 'res.size()', value: String(solutions.length), type: 'number' },
+        ],
       });
       return;
     }
 
-    // 递归进入非叶子：每次 backtrack 调用都先执行 if 判断 —— 不成立
-    steps.push({
-      nodes: allNodes, currentNodeId: node.id,
-      visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-      prunedNodeIds: [...prunedIds],
-      path: [...node.path], message: `递归进入：startIndex = ${(node.path as string[]).join('').length} < ${s.length}，继续分割`, codeLine: 10,
-      startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
-    });
+    for (let i = startIndex; i < s.length; i++) {
+      const sub = s.slice(startIndex, i + 1);
+      const isPal = isPalindrome(sub);
+      const childNode = node.children.find((c) => c.value === `"${sub}"`);
 
-    for (const child of node.children) {
-      if (child.isPruned) {
-        visitedIds.push(child.id);
+      // 1. 判断是否回文
+      if (!isPal) {
+        if (childNode && !dynamicPrunedIds.includes(childNode.id)) {
+          dynamicPrunedIds.push(childNode.id);
+        }
         steps.push({
-          nodes: allNodes, currentNodeId: node.id,
-          visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-          prunedNodeIds: [...prunedIds],
-          path: [...node.path], message: `剪枝："${child.value}" 不是回文（跳过，未下潜）`, codeLine: 16,
-          startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
+          nodes: allNodes,
+          currentNodeId: node.id,
+          visitedNodeIds: [...visitedIds],
+          foundPathIds: [...foundIds],
+          prunedNodeIds: [...dynamicPrunedIds],
+          path: [...node.path],
+          message: `✂️ 非回文剪枝：子串 s[${startIndex}..${i}] = "${sub}" 不是回文串，continue 跳过该分支`,
+          codeLine: 14,
+          stats: { remaining: s.length - startIndex, depth: node.depth, count: solutions.length },
+          vars: [
+            { name: 'sub', value: `"${sub}"`, type: 'string' },
+            { name: 'isPalindrome', value: 'false', type: 'boolean' },
+          ],
         });
         continue;
       }
 
-      // iterate
+      if (!childNode) continue;
+
+      // 2. 做选择
+      visitedIds.push(childNode.id);
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `for 循环：取到 "${child.value}"，检查回文`, codeLine: 14,
-        startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: childNode.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...childNode.path],
+        message: `做选择：截取回文子串 path.add("${sub}")，当前路径：[${childNode.path.map((p) => `"${p}"`).join(', ')}]`,
+        codeLine: 16,
+        stats: { remaining: s.length - (i + 1), depth: childNode.depth, count: solutions.length },
+        vars: [
+          { name: 'str', value: `"${sub}"`, type: 'string' },
+          { name: 'path', value: `[${childNode.path.map((p) => `"${p}"`).join(', ')}]`, type: 'array' },
+        ],
       });
 
-      // Step A: path.add(str)
-      visitedIds.push(child.id);
+      // 3. 向下递归
       steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...child.path], message: `path.add("${child.value}")：path 添加回文串`, codeLine: 17,
-        startIndex: (node.path as string[]).join('').length, depth: child.path.length, count: foundIds.length,
-      });
-      // Step B: backtrack(...)
-      steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...child.path], message: `backtrack(${(child.path as string[]).join('').length}, ...)：进入下一层分割`, codeLine: 18,
-        startIndex: (node.path as string[]).join('').length, depth: child.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: childNode.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...childNode.path],
+        message: `向下递归：backtrack(s, startIndex=${i + 1}, path, res)`,
+        codeLine: 17,
+        stats: { remaining: s.length - (i + 1), depth: childNode.depth, count: solutions.length },
+        vars: [
+          { name: 'startIndex', value: String(i + 1), type: 'number' },
+        ],
       });
 
-      traverse(child);
+      traverse(childNode, i + 1);
 
-      // pop
+      // 4. 回溯撤销
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `撤销 "${child.value}"，回溯`, codeLine: 19,
-        startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...node.path],
+        message: `🔙 回溯撤销：path.remove("${sub}")，恢复路径至：[${node.path.map((p) => `"${p}"`).join(', ') || '空'}]`,
+        codeLine: 18,
+        stats: { remaining: s.length - startIndex, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'path.remove()', value: `"${sub}"`, type: 'string' },
+          { name: 'path', value: `[${node.path.map((p) => `"${p}"`).join(', ')}]`, type: 'array' },
+        ],
       });
     }
   }
 
-  traverse(root);
+  traverse(root, 0);
 
+  // End step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root',
-    visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-    prunedNodeIds: [...prunedIds],
-    path: [], message: `完成！共找到 ${foundIds.length} 个分割方案`, codeLine: 5,
-    startIndex: s.length, depth: 0, count: foundIds.length,
+    nodes: allNodes,
+    currentNodeId: 'root',
+    visitedNodeIds: [...visitedIds],
+    foundPathIds: [...foundIds],
+    prunedNodeIds: [...dynamicPrunedIds],
+    path: [],
+    message: `🎉 搜索完成！共找到 ${solutions.length} 种全回文分割方案`,
+    codeLine: 5,
+    stats: { remaining: 0, depth: 0, count: solutions.length },
+    vars: [
+      { name: 's', value: `"${s}"`, type: 'string' },
+      { name: 'res.size()', value: String(solutions.length), type: 'number' },
+    ],
   });
 
   return steps;
 }
 
-/* ── Visualizer ───────────────────────────────────────────── */
-export class PalindromePartitionVisualizer extends StepVisualizer<PalStep> {
-  protected codeLines = [
-    'public List<List<String>> partition(String s) {',
-    '    List<List<String>> result = new ArrayList<>();',
-    '    List<String> path = new ArrayList<>();',
-    '    backtrack(s, 0, path, result);',
-    '    return result;',
-    '}',
-    '',
-    'void backtrack(String s, int startIndex, List<String> path,',
-    '               List<List<String>> result) {',
-    '    if (startIndex == s.length()) {',
-    '        result.add(new ArrayList<>(path));',
-    '        return;',
-    '    }',
-    '    for (int i = startIndex; i < s.length(); i++) {',
-    '        String str = s.substring(startIndex, i + 1);',
-    '        if (!isPalindrome(str)) continue;',
-    '        path.add(str);',
-    '        backtrack(s, i + 1, path, result);',
-    '        path.remove(path.size() - 1);',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '分割回文串 Java 代码';
+/* ── Visualizer class ─────────────────────────────────────── */
+export class PalindromePartitionVisualizer extends StepVisualizer<BacktrackTreeStep> {
+  protected codeLanguages = PALINDROME_PARTITION_CODE_LANGUAGES;
+  protected codeLines = PALINDROME_PARTITION_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '分割回文串 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private treeDisplay: HTMLElement | null = null;
+  private pathStackContainer: HTMLElement | null = null;
+  private palindromeMonitorContainer: HTMLElement | null = null;
+  private resultCollectionContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
+  private cachedLogs: BacktrackLogItem[] = [];
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    // Inject shared tree CSS
-    const styleEl = this.root.querySelector('#cs-tree-style');
-    if (styleEl) styleEl.textContent = getBacktrackTreeCSS('cs');
-    this.inputEl = this.root.querySelector('#pal-input');
-    this.treeDisplay = this.root.querySelector('#pal-tree-display');
-    this.bindPlaybackControls({ message: 'pal-message' });
-    this.root.querySelector('#pal-start')?.addEventListener('click', () => this.start());
+    this.treeDisplay = this.root.querySelector('#palindrome-partition-tree-display');
+    this.pathStackContainer = this.root.querySelector('#pp-path-stack-container');
+    this.palindromeMonitorContainer = this.root.querySelector('#pp-palindrome-monitor-container');
+    this.resultCollectionContainer = this.root.querySelector('#pp-result-collection-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelectorAll<HTMLButtonElement>('.pal-example-btn').forEach(btn => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 绑定生成与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.pp-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const val = btn.dataset.value;
-        if (val && this.inputEl) this.inputEl.value = val;
+        const strEl = this.root?.querySelector('#input-str') as HTMLInputElement | null;
+        if (strEl) strEl.value = btn.dataset.s || '';
         this.start();
       });
     });
 
-    this.root.querySelector('#pal-log-clear')?.addEventListener('click', () => {
-      const logEl = this.root?.querySelector('#pal-log');
-      if (logEl) logEl.innerHTML = '';
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: PALINDROME_PARTITION_PROBLEM_HTML,
+      analysisHtml: PALINDROME_PARTITION_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  protected buildSteps(): PalStep[] {
-    let source = (this.inputEl?.value || 'aab').trim();
-    source = source.replace(/\s+/g, '').slice(0, 8) || 'aab';
-    if (this.inputEl) this.inputEl.value = source;
-    return palPartitionSteps(source);
+  protected buildSteps(): BacktrackTreeStep[] {
+    const strEl = this.root?.querySelector('#input-str') as HTMLInputElement | null;
+    let s = (strEl?.value || 'aab').trim();
+    if (!s) s = 'aab';
+    if (s.length > 8) s = s.slice(0, 8); // 防止爆炸
+
+    const steps = buildPalindromePartitionSteps(s);
+
+    // 预计算日志流
+    this.cachedLogs = steps.map((st, idx) => {
+      let type: BacktrackLogItem['type'] = 'info';
+      if (st.message.includes('做选择')) type = 'push';
+      else if (st.message.includes('回溯撤销')) type = 'pop';
+      else if (st.message.includes('收集回文分割方案')) type = 'collect';
+      else if (st.message.includes('剪枝')) type = 'prune';
+
+      return {
+        stepIndex: idx + 1,
+        type,
+        text: st.message,
+      };
+    });
+
+    return steps;
   }
 
-  protected renderStep(step: PalStep): void {
-    const startEl = this.root?.querySelector('#pal-start-index');
-    const pathSizeEl = this.root?.querySelector('#pal-path-size');
-    const depthEl = this.root?.querySelector('#pal-depth');
-    const resultSizeEl = this.root?.querySelector('#pal-result-size');
+  protected renderStep(step: BacktrackTreeStep): void {
+    const index = this.currentIndex;
 
-    if (startEl) startEl.textContent = String(step.startIndex);
-    if (pathSizeEl) pathSizeEl.textContent = String(step.path.length);
-    if (depthEl) depthEl.textContent = String(step.depth);
-    if (resultSizeEl) resultSizeEl.textContent = String(step.count);
-
+    // 1. 渲染 SVG 决策树沙盘
     if (this.treeDisplay) {
       renderBacktrackTree({
         container: this.treeDisplay,
         step,
-        cssPrefix: 'cs',
-        nodeLabel: (nd) => nd.id === 'root' ? '[]' : nd.value,
+        cssPrefix: 'pp',
+        nodeLabel: (nd) => (nd.id === 'root' ? '""' : nd.value),
       });
     }
 
-    const logEl = this.root?.querySelector('#pal-log');
-    renderBacktrackLog(logEl as HTMLElement | null, this.steps, this.currentIndex, 'cs');
+    // 2. 渲染当前路径栈 (Card 2 Left)
+    if (this.pathStackContainer) {
+      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
+    }
+
+    // 3. 渲染回文判定监视器 (Card 2 Center)
+    if (this.palindromeMonitorContainer) {
+      const strEl = this.root?.querySelector('#input-str') as HTMLInputElement | null;
+      const s = strEl?.value || 'aab';
+      const lastSlice = step.path.length > 0 ? String(step.path[step.path.length - 1]) : '';
+      const isPal = lastSlice ? isPalindrome(lastSlice) : true;
+
+      let subDisplay = '';
+      if (step.message.includes('剪枝') || step.message.includes('做选择')) {
+        const match = step.message.match(/"([^"]+)"/);
+        const examinedStr = match ? match[1] : lastSlice;
+        const valid = isPalindrome(examinedStr);
+
+        subDisplay = `
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span>当前探测子串: <strong style="color: #0f172a; font-family: monospace; font-size: 13px;">"${examinedStr}"</strong></span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; background: ${valid ? '#ecfdf5' : '#fef2f2'}; color: ${valid ? '#059669' : '#dc2626'}; border: 1px solid ${valid ? '#a7f3d0' : '#fecaca'};">
+              ${valid ? '✓ 是回文串' : '✕ 非回文串 (剪枝)'}
+            </span>
+          </div>
+        `;
+      } else {
+        subDisplay = `
+          <div style="color: #64748b; font-size: 11px;">
+            原串: <code style="color: #0f172a; font-family: monospace; font-weight: 700;">"${s}"</code> (长度 ${s.length})
+          </div>
+        `;
+      }
+
+      this.palindromeMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          ${subDisplay}
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 切割区间: <code style="color:#b45309; font-family:monospace;">s[startIndex..i]</code></div>
+            <div>• 回文判定: <code style="color:#b45309; font-family:monospace;">!isPalindrome(sub) => continue</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染实时解集箱 (Card 2 Bottom)
+    const solutionsUpToNow: Array<Array<number | string>> = [];
+    for (let i = 0; i <= index; i++) {
+      const st = this.steps[i];
+      if (st.message.includes('收集回文分割方案')) {
+        solutionsUpToNow.push([...st.path]);
+      }
+    }
+
+    if (this.resultCollectionContainer) {
+      BacktrackStateSpacePresenter.renderResultCollection(
+        this.resultCollectionContainer,
+        solutionsUpToNow,
+        -1,
+        (solIdx: number) => {
+          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
+            if (
+              this.steps[stepIdx].message.includes('收集回文分割方案') &&
+              JSON.stringify(this.steps[stepIdx].path) === JSON.stringify(solutionsUpToNow[solIdx])
+            ) {
+              this.goToStep(stepIdx);
+              break;
+            }
+          }
+        }
+      );
+    }
+
+    const badgeCount = this.root?.querySelector('#badge-result-count');
+    if (badgeCount) {
+      badgeCount.textContent = `解集: ${solutionsUpToNow.length}`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      BacktrackStateSpacePresenter.renderBacktrackLogStream(
+        this.logContainer,
+        this.cachedLogs.slice(0, this.currentIndex + 1),
+        this.currentIndex
+      );
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    resetContainerViewState(this.treeDisplay);
+    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }
 
@@ -285,11 +505,11 @@ registerAlgorithm({
   name: '分割回文串',
   viewId: 'algo-palindrome-partition-view',
   category: 'backtracking',
-  description: 'LeetCode 131：回溯算法，通过回溯枚举所有回文切割方案',
-  icon: '\uD83E\uDE9F',
+  description: '将字符串分割为若干回文子串，回文判定剪枝',
+  icon: '✂️',
   template,
   Visualizer: PalindromePartitionVisualizer,
   difficulty: 2,
-  levelOrder: 8,
-  learningGoal: '理解回文分割的回溯搜索策略',
+  levelOrder: 6,
+  learningGoal: '理解字符串切割问题到树形回溯的建模与即时回文剪枝',
 });

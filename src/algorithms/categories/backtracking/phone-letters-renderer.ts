@@ -1,33 +1,57 @@
 /**
- * 电话号码字母组合可视化器（回溯决策树 SVG 版本）
+ * 电话号码字母组合可视化器（回溯决策树 SVG 版本）— 4-Card 标准现代架构
  * LeetCode 17：给定数字字符串，返回所有可能的字母组合
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './phone-letters.html?raw';
-
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BacktrackStateSpacePresenter,
+  BacktrackLogItem,
+} from '../../../core/renderers/backtrack-state-space-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
   layoutTree,
   flattenTree,
   renderBacktrackTree,
-  renderBacktrackLog,
-  getBacktrackTreeCSS,
+  resetContainerViewState,
 } from './backtracking-tree-helper';
+import {
+  PHONE_LETTERS_PROBLEM_HTML,
+  PHONE_LETTERS_ANALYSIS_HTML,
+  PHONE_LETTERS_CODE_LANGUAGES,
+} from './phone-letters-problem-content';
+import template from './phone-letters.html?raw';
 
 /* ── Phone digit mapping ──────────────────────────────────── */
-const PHONE_MAP: Record<string, string> = {
-  '2': 'ABC', '3': 'DEF', '4': 'GHI', '5': 'JKL',
-  '6': 'MNO', '7': 'PQRS', '8': 'TUV', '9': 'WXYZ',
+export const PHONE_MAP: Record<string, string> = {
+  '2': 'abc',
+  '3': 'def',
+  '4': 'ghi',
+  '5': 'jkl',
+  '6': 'mno',
+  '7': 'pqrs',
+  '8': 'tuv',
+  '9': 'wxyz',
 };
 
 /* ── Build decision tree ──────────────────────────────────── */
-function buildPhoneTree(digits: string): BacktrackTreeNode {
+export function buildPhoneTree(digits: string): BacktrackTreeNode {
+  let nodeIdCounter = 0;
   const root: BacktrackTreeNode = {
-    id: 'root', value: '', path: [], children: [],
-    isLeaf: false, isPruned: false, parentId: null, depth: 0,
+    id: 'root',
+    value: '""',
+    path: [],
+    children: [],
+    isLeaf: false,
+    isPruned: false,
+    parentId: null,
+    depth: 0,
   };
 
   function dfs(index: number, path: string[], parent: BacktrackTreeNode): void {
@@ -40,11 +64,16 @@ function buildPhoneTree(digits: string): BacktrackTreeNode {
     const letters = PHONE_MAP[digit] || '';
 
     for (const letter of letters) {
+      nodeIdCounter++;
       const childNode: BacktrackTreeNode = {
-        id: `${parent.id}-${letter}`, value: letter,
-        path: [...path, letter], children: [],
-        isLeaf: false, isPruned: false,
-        parentId: parent.id, depth: parent.depth + 1,
+        id: `${parent.id}-${letter}-${nodeIdCounter}`,
+        value: letter,
+        path: [...path, letter],
+        children: [],
+        isLeaf: false,
+        isPruned: false,
+        parentId: parent.id,
+        depth: parent.depth + 1,
       };
       parent.children.push(childNode);
       dfs(index + 1, [...path, letter], childNode);
@@ -56,296 +85,393 @@ function buildPhoneTree(digits: string): BacktrackTreeNode {
 }
 
 /* ── Generate steps ───────────────────────────────────────── */
-interface PhoneStep extends BacktrackTreeStep {
-  currentDigitIndex: number;
-  currentLetter: string | null;
-}
-
-function phoneSteps(digits: string): PhoneStep[] {
+export function buildPhoneLettersSteps(digits: string): BacktrackTreeStep[] {
   if (digits.length === 0) {
-    return [{
-      nodes: [], currentNodeId: 'root', visitedNodeIds: ['root'],
-      foundPathIds: [], prunedNodeIds: [],
-      path: [], message: '输入为空，返回空列表', codeLine: 2,
-      currentDigitIndex: -1, currentLetter: null,
-    }];
+    return [
+      {
+        nodes: [],
+        currentNodeId: 'root',
+        visitedNodeIds: ['root'],
+        foundPathIds: [],
+        prunedNodeIds: [],
+        path: [],
+        message: '输入为空，直接返回空组合列表 []',
+        codeLine: 7,
+        stats: { remaining: 0, depth: 0, count: 0 },
+        vars: [
+          { name: 'digits', value: '""', type: 'string' },
+          { name: 'res', value: '[]', type: 'array' },
+        ],
+      },
+    ];
   }
 
   const root = buildPhoneTree(digits);
   layoutTree(root);
   const allNodes = flattenTree(root);
 
-  const steps: PhoneStep[] = [];
+  const steps: BacktrackTreeStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
+  const solutions: string[] = [];
 
+  // Start step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
-    foundPathIds: [], prunedNodeIds: [],
-    path: [], message: `开始：处理数字串 "${digits}"`, codeLine: 8,
-    currentDigitIndex: 0, currentLetter: null,
+    nodes: allNodes,
+    currentNodeId: 'root',
+    visitedNodeIds: ['root'],
+    foundPathIds: [],
+    prunedNodeIds: [],
+    path: [],
+    message: `开始搜索：输入 digits = "${digits}"，跨集合展开回溯`,
+    codeLine: 8,
+    stats: { remaining: digits.length, depth: 0, count: 0 },
+    vars: [
+      { name: 'digits', value: `"${digits}"`, type: 'string' },
+      { name: 'index', value: '0', type: 'number' },
+      { name: 'path', value: '""', type: 'string' },
+      { name: 'res.size()', value: '0', type: 'number' },
+    ],
   });
 
-  function traverse(node: BacktrackTreeNode): void {
-    if (node.isLeaf) {
-      // 递归进入：先执行 if (index == digits.length()) 判断 —— 成立
-      steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [],
-        path: [...node.path], message: `递归进入：index == ${digits.length} ✓ 处理完所有数字`, codeLine: 14,
-        currentDigitIndex: digits.length, currentLetter: null,
-      });
-      // 进入 if 块：收集并 return
-      foundIds.push(node.id);
+  function traverse(node: BacktrackTreeNode, index: number): void {
+    if (index === digits.length) {
       const combo = (node.path as string[]).join('');
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
         prunedNodeIds: [],
-        path: [...node.path], message: `找到组合："${combo}"，收集并返回`, codeLine: { from: 15, to: 16 },
-        currentDigitIndex: digits.length, currentLetter: null,
+        path: [...node.path],
+        message: `递归进入：index == digits.length (${digits.length}) ✓ 字母组合构造完毕: "${combo}"`,
+        codeLine: 13,
+        stats: { remaining: 0, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'index', value: String(index), type: 'number' },
+          { name: 'path', value: `"${combo}"`, type: 'string' },
+        ],
+      });
+
+      foundIds.push(node.id);
+      solutions.push(combo);
+
+      steps.push({
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [],
+        path: [...node.path],
+        message: `🎉 收集字母组合: "${combo}"，收集并返回`,
+        codeLine: 14,
+        stats: { remaining: 0, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'res.add()', value: `"${combo}"`, type: 'string' },
+          { name: 'res.size()', value: String(solutions.length), type: 'number' },
+        ],
       });
       return;
     }
 
-    // 递归进入非叶子：每次 backtrack 调用都先执行 if 判断 —— 不成立
-    steps.push({
-      nodes: allNodes, currentNodeId: node.id,
-      visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-      prunedNodeIds: [],
-      path: [...node.path], message: `递归进入：index = ${node.path.length} < ${digits.length}，处理下一个数字`, codeLine: 14,
-      currentDigitIndex: node.path.length, currentLetter: null,
-    });
+    const curDigit = digits[index];
+    const letters = PHONE_MAP[curDigit] || '';
 
-    for (const child of node.children) {
-      // iterate
+    for (let i = 0; i < letters.length; i++) {
+      const char = letters[i];
+      const childNode = node.children.find((c) => c.value === char);
+      if (!childNode) continue;
+
+      // 做选择
+      visitedIds.push(childNode.id);
+      const curPathStr = (childNode.path as string[]).join('');
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
+        nodes: allNodes,
+        currentNodeId: childNode.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
         prunedNodeIds: [],
-        path: [...node.path], message: `for 循环：数字 ${digits[child.depth - 1]} 的字母 "${child.value}"`, codeLine: 19,
-        currentDigitIndex: child.depth - 1, currentLetter: child.value,
+        path: [...childNode.path],
+        message: `做选择：按键 '${curDigit}' 选取字母 '${char}'，当前组合: "${curPathStr}"`,
+        codeLine: 18,
+        stats: { remaining: digits.length - (index + 1), depth: childNode.depth, count: solutions.length },
+        vars: [
+          { name: 'digit', value: `'${curDigit}'`, type: 'string' },
+          { name: 'letter', value: `'${char}'`, type: 'string' },
+          { name: 'path', value: `"${curPathStr}"`, type: 'string' },
+        ],
       });
 
-      // Step A: path.append(c)
-      visitedIds.push(child.id);
+      // 向下递归
       steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
+        nodes: allNodes,
+        currentNodeId: childNode.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
         prunedNodeIds: [],
-        path: [...child.path], message: `path.append('${child.value}')：路径变为 "${(child.path as string[]).join('')}"`, codeLine: 20,
-        currentDigitIndex: child.depth - 1, currentLetter: child.value,
-      });
-      // Step B: backtrack(...)
-      steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [],
-        path: [...child.path], message: `backtrack(..., index + 1)：递归处理下一个数字`, codeLine: 21,
-        currentDigitIndex: child.depth - 1, currentLetter: child.value,
+        path: [...childNode.path],
+        message: `向下递归：backtrack(digits, index=${index + 1}, path, res)`,
+        codeLine: 19,
+        stats: { remaining: digits.length - (index + 1), depth: childNode.depth, count: solutions.length },
+        vars: [
+          { name: 'index', value: String(index + 1), type: 'number' },
+        ],
       });
 
-      traverse(child);
+      traverse(childNode, index + 1);
 
-      // pop (backtrack)
-      if (child.depth < digits.length) {
-        steps.push({
-          nodes: allNodes, currentNodeId: node.id,
-          visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-          prunedNodeIds: [],
-          path: [...node.path], message: `撤销 "${child.value}"，回溯`, codeLine: 22,
-          currentDigitIndex: node.depth, currentLetter: child.value,
-        });
-      }
+      // 回溯撤销
+      const restoredPathStr = (node.path as string[]).join('');
+      steps.push({
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [],
+        path: [...node.path],
+        message: `🔙 回溯撤销：path.deleteCharAt('${char}')，恢复组合: "${restoredPathStr || '空'}"`,
+        codeLine: 20,
+        stats: { remaining: digits.length - index, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'path.delete()', value: `'${char}'`, type: 'string' },
+          { name: 'path', value: `"${restoredPathStr}"`, type: 'string' },
+        ],
+      });
     }
   }
 
-  traverse(root);
+  traverse(root, 0);
 
+  // End step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root',
-    visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
+    nodes: allNodes,
+    currentNodeId: 'root',
+    visitedNodeIds: [...visitedIds],
+    foundPathIds: [...foundIds],
     prunedNodeIds: [],
-    path: [], message: `完成！共找到 ${foundIds.length} 个组合`, codeLine: 9,
-    currentDigitIndex: digits.length, currentLetter: null,
+    path: [],
+    message: `🎉 搜索完成！共生成 ${solutions.length} 种字母组合`,
+    codeLine: 9,
+    stats: { remaining: 0, depth: 0, count: solutions.length },
+    vars: [
+      { name: 'digits', value: `"${digits}"`, type: 'string' },
+      { name: 'res.size()', value: String(solutions.length), type: 'number' },
+    ],
   });
 
   return steps;
 }
 
-/* ── Visualizer ───────────────────────────────────────────── */
-export class PhoneLettersVisualizer extends StepVisualizer<PhoneStep> {
-  protected codeLines = [
-    'public List<String> letterCombinations(String digits) {',
-    '    if (digits.isEmpty()) return new ArrayList<>();',
-    '    Map<Character, String> map = Map.of(',
-    '        \'2\', "ABC", \'3\', "DEF", \'4\', "GHI",',
-    '        \'5\', "JKL", \'6\', "MNO", \'7\', "PQRS",',
-    '        \'8\', "TUV", \'9\', "WXYZ");',
-    '    List<String> result = new ArrayList<>();',
-    '    backtrack(digits, map, 0, new StringBuilder(), result);',
-    '    return result;',
-    '}',
-    '',
-    'void backtrack(String digits, Map<Character, String> map,',
-    '               int index, StringBuilder path, List<String> result) {',
-    '    if (index == digits.length()) {',
-    '        result.add(path.toString());',
-    '        return;',
-    '    }',
-    '    String letters = map.get(digits.charAt(index));',
-    '    for (char c : letters.toCharArray()) {',
-    '        path.append(c);',
-    '        backtrack(digits, map, index + 1, path, result);',
-    '        path.deleteCharAt(path.length() - 1);',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '电话号码字母组合 Java 代码';
+/* ── Visualizer class ─────────────────────────────────────── */
+export class PhoneLettersVisualizer extends StepVisualizer<BacktrackTreeStep> {
+  protected codeLanguages = PHONE_LETTERS_CODE_LANGUAGES;
+  protected codeLines = PHONE_LETTERS_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '电话号码字母组合 代码调试';
 
-  private inputField: HTMLInputElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private treeDisplay: HTMLElement | null = null;
-  private currentDigitEl: HTMLElement | null = null;
-  private currentLettersEl: HTMLElement | null = null;
-  private keypad: HTMLElement | null = null;
+  private pathStackContainer: HTMLElement | null = null;
+  private keypadContainer: HTMLElement | null = null;
+  private resultCollectionContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
+  private cachedLogs: BacktrackLogItem[] = [];
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    // Inject shared tree CSS
-    const styleEl = this.root.querySelector('#cs-tree-style');
-    if (styleEl) styleEl.textContent = getBacktrackTreeCSS('cs');
-    this.inputField = this.root.querySelector('#phone-input');
-    this.treeDisplay = this.root.querySelector('#phone-tree-display');
-    this.currentDigitEl = this.root.querySelector('#phone-current-digit');
-    this.currentLettersEl = this.root.querySelector('#phone-current-letters');
-    this.keypad = this.root.querySelector('#phone-keypad');
-    this.bindPlaybackControls({
-      reset: 'phone-reset',
-      prev: 'phone-prev',
-      play: 'phone-play',
-      next: 'phone-next',
-      speed: 'phone-speed',
-      speedLabel: 'phone-speed-label',
-      counter: 'phone-counter',
-      message: 'step-message',
-    });
-    this.root.querySelector('#phone-start')?.addEventListener('click', () => this.start());
+    this.treeDisplay = this.root.querySelector('#phone-letters-tree-display');
+    this.pathStackContainer = this.root.querySelector('#pl-path-stack-container');
+    this.keypadContainer = this.root.querySelector('#pl-keypad-container');
+    this.resultCollectionContainer = this.root.querySelector('#pl-result-collection-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    // Interactive Keypad Keys Click
-    if (this.keypad) {
-      this.keypad.querySelectorAll<HTMLElement>('.phone-key').forEach(k => {
-        k.addEventListener('click', () => {
-          const digit = k.dataset.digit;
-          if (digit && this.inputField) {
-            let current = this.inputField.value.replace(/[^2-9]/g, '');
-            if (current.length >= 6) current = digit;
-            else current += digit;
-            this.inputField.value = current;
-            this.start();
-          }
-        });
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 绑定生成与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
       });
     }
 
-    this.root.querySelectorAll<HTMLButtonElement>('.phone-example-btn').forEach(btn => {
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.pl-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const val = btn.dataset.value;
-        if (val && this.inputField) this.inputField.value = val;
+        const digEl = this.root?.querySelector('#input-digits') as HTMLInputElement | null;
+        if (digEl) digEl.value = btn.dataset.digits || '';
         this.start();
       });
     });
 
-    this.root.querySelector('#phone-log-clear')?.addEventListener('click', () => {
-      const logEl = this.root?.querySelector('#phone-log');
-      if (logEl) logEl.innerHTML = '';
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: PHONE_LETTERS_PROBLEM_HTML,
+      analysisHtml: PHONE_LETTERS_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
+  }
+
+  protected buildSteps(): BacktrackTreeStep[] {
+    const digEl = this.root?.querySelector('#input-digits') as HTMLInputElement | null;
+    let digits = (digEl?.value || '23').trim().replace(/[^2-9]/g, '');
+    if (!digits) digits = '23';
+    if (digits.length > 4) digits = digits.slice(0, 4);
+
+    const steps = buildPhoneLettersSteps(digits);
+
+    // 预计算日志流
+    this.cachedLogs = steps.map((st, idx) => {
+      let type: BacktrackLogItem['type'] = 'info';
+      if (st.message.includes('做选择')) type = 'push';
+      else if (st.message.includes('回溯撤销')) type = 'pop';
+      else if (st.message.includes('收集字母组合')) type = 'collect';
+
+      return {
+        stepIndex: idx + 1,
+        type,
+        text: st.message,
+      };
     });
 
-    const speedSlider = this.root.querySelector('#phone-speed') as HTMLInputElement | null;
-    if (speedSlider) {
-      this.playbackSpeed = parseInt(speedSlider.value, 10) || 700;
-      const speedLabel = this.root.querySelector('#phone-speed-label');
-      if (speedLabel) speedLabel.textContent = (this.playbackSpeed / 1000).toFixed(1) + 's';
-    }
+    return steps;
   }
 
-  protected buildSteps(): PhoneStep[] {
-    let digits = (this.inputField?.value || '23').trim().replace(/[^2-9]/g, '');
-    if (digits.length === 0) {
-      digits = '23';
-      if (this.inputField) this.inputField.value = '23';
-    }
-    return phoneSteps(digits);
-  }
+  protected renderStep(step: BacktrackTreeStep): void {
+    const index = this.currentIndex;
 
-  protected renderStep(step: PhoneStep): void {
-    const pathValEl = this.root?.querySelector('#phone-path-val');
-    const digitValEl = this.root?.querySelector('#phone-digit-val');
-    const availValEl = this.root?.querySelector('#phone-avail-val');
-    const collectedEl = this.root?.querySelector('#phone-collected');
-
-    const digits = (this.inputField?.value || '23').trim().replace(/[^2-9]/g, '');
-
-    if (pathValEl) pathValEl.textContent = `"${(step.path as string[]).join('')}"`;
-    if (digitValEl) {
-      const d = step.currentDigitIndex >= 0 && step.currentDigitIndex < digits.length
-        ? digits[step.currentDigitIndex]
-        : '-';
-      digitValEl.textContent = d;
-    }
-    if (availValEl) {
-      const d = step.currentDigitIndex >= 0 && step.currentDigitIndex < digits.length
-        ? digits[step.currentDigitIndex]
-        : '-';
-      availValEl.textContent = PHONE_MAP[d] ? `(${PHONE_MAP[d]})` : '(-)';
-    }
-    if (collectedEl) collectedEl.textContent = String(step.foundPathIds.length);
-
-    // Highlight keypad key
-    if (this.keypad) {
-      this.keypad.querySelectorAll('.phone-key').forEach(k => k.classList.remove('current'));
-      if (step.currentDigitIndex >= 0 && step.currentDigitIndex < digits.length) {
-        const currentDigit = digits[step.currentDigitIndex];
-        const key = this.keypad.querySelector(`[data-digit="${currentDigit}"]`);
-        if (key) key.classList.add('current');
-      }
-    }
-
-    if (this.currentDigitEl) {
-      const d = step.currentDigitIndex >= 0 && step.currentDigitIndex < digits.length
-        ? digits[step.currentDigitIndex] : '-';
-      this.currentDigitEl.textContent = d;
-    }
-    if (this.currentLettersEl) {
-      const d = step.currentDigitIndex >= 0 && step.currentDigitIndex < digits.length
-        ? digits[step.currentDigitIndex] : '-';
-      this.currentLettersEl.textContent = PHONE_MAP[d] || '-';
-    }
-
+    // 1. 渲染 SVG 决策树沙盘
     if (this.treeDisplay) {
       renderBacktrackTree({
         container: this.treeDisplay,
         step,
-        cssPrefix: 'cs',
-        nodeLabel: (nd) => nd.id === 'root' ? '[]' : nd.value,
+        cssPrefix: 'pl',
+        nodeLabel: (nd) => (nd.id === 'root' ? '""' : nd.value),
       });
     }
 
-    const logEl = this.root?.querySelector('#phone-log');
-    renderBacktrackLog(logEl as HTMLElement | null, this.steps, this.currentIndex, 'cs');
+    // 2. 渲染当前路径栈 (Card 2 Left)
+    if (this.pathStackContainer) {
+      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
+    }
+
+    // 3. 高亮九宫格按键 (Card 2 Center)
+    if (this.keypadContainer) {
+      const digEl = this.root?.querySelector('#input-digits') as HTMLInputElement | null;
+      const digits = digEl?.value || '23';
+      const curDepth = (step.path || []).length;
+      const activeDigit = curDepth < digits.length ? digits[curDepth] : null;
+
+      this.keypadContainer.querySelectorAll('.pl-key-btn').forEach((btn) => {
+        const key = btn.getAttribute('data-key');
+        if (key && key === activeDigit) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    // 4. 渲染实时解集箱 (Card 2 Bottom)
+    const solutionsUpToNow: Array<Array<number | string>> = [];
+    for (let i = 0; i <= index; i++) {
+      const st = this.steps[i];
+      if (st.message.includes('收集字母组合')) {
+        const match = st.message.match(/"([^"]+)"/);
+        if (match) {
+          solutionsUpToNow.push([match[1]]);
+        }
+      }
+    }
+
+    if (this.resultCollectionContainer) {
+      BacktrackStateSpacePresenter.renderResultCollection(
+        this.resultCollectionContainer,
+        solutionsUpToNow,
+        -1,
+        (solIdx: number) => {
+          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
+            if (
+              this.steps[stepIdx].message.includes('收集字母组合') &&
+              this.steps[stepIdx].message.includes(String(solutionsUpToNow[solIdx][0]))
+            ) {
+              this.goToStep(stepIdx);
+              break;
+            }
+          }
+        }
+      );
+    }
+
+    const badgeCount = this.root?.querySelector('#badge-result-count');
+    if (badgeCount) {
+      badgeCount.textContent = `解集: ${solutionsUpToNow.length}`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      BacktrackStateSpacePresenter.renderBacktrackLogStream(
+        this.logContainer,
+        this.cachedLogs.slice(0, this.currentIndex + 1),
+        this.currentIndex
+      );
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    resetContainerViewState(this.treeDisplay);
+    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }
 
 registerAlgorithm({
   id: 'phone-letters',
-  name: '电话号码字母组合',
+  name: '电话号码的字母组合',
   viewId: 'algo-phone-letters-view',
   category: 'backtracking',
-  description: 'LeetCode 17：回溯算法，给定数字字符串，返回所有可能的字母组合',
-  icon: '\uD83D\uDCDE',
+  description: '经典电话按键九宫格跨集合字母回溯组合',
+  icon: '📱',
   template,
   Visualizer: PhoneLettersVisualizer,
   difficulty: 2,
-  levelOrder: 4,
-  learningGoal: '掌握多组字符组合的回溯展开',
+  levelOrder: 8,
+  learningGoal: '理解跨多个独立集合枚举与深度递进的回溯遍历范式',
 });

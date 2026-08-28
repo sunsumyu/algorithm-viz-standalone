@@ -1,27 +1,45 @@
 /**
- * 复原 IP 地址可视化器（回溯决策树 SVG 版本）
- * LeetCode 93：给定字符串，返回所有有效的 IP 地址
+ * 复原 IP 地址可视化器（回溯决策树 SVG 版本）— 4-Card 标准现代架构
+ * LeetCode 93：给定数字字符串，返回所有有效的 IP 地址
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './restore-ip.html?raw';
-
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BacktrackStateSpacePresenter,
+  BacktrackLogItem,
+} from '../../../core/renderers/backtrack-state-space-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
   layoutTree,
   flattenTree,
   renderBacktrackTree,
-  renderBacktrackLog,
-  getBacktrackTreeCSS,
+  resetContainerViewState,
 } from './backtracking-tree-helper';
+import {
+  RESTORE_IP_PROBLEM_HTML,
+  RESTORE_IP_ANALYSIS_HTML,
+  RESTORE_IP_CODE_LANGUAGES,
+} from './restore-ip-problem-content';
+import template from './restore-ip.html?raw';
 
 /* ── Build decision tree ──────────────────────────────────── */
-function buildIPTree(s: string): BacktrackTreeNode {
+export function buildIPTree(s: string): BacktrackTreeNode {
+  let nodeIdCounter = 0;
   const root: BacktrackTreeNode = {
-    id: 'root', value: '', path: [], children: [],
-    isLeaf: false, isPruned: false, parentId: null, depth: 0,
+    id: 'root',
+    value: '""',
+    path: [],
+    children: [],
+    isLeaf: false,
+    isPruned: false,
+    parentId: null,
+    depth: 0,
   };
 
   function dfs(startIdx: number, segments: string[], parent: BacktrackTreeNode): void {
@@ -32,37 +50,37 @@ function buildIPTree(s: string): BacktrackTreeNode {
 
     for (let len = 1; len <= 3; len++) {
       if (startIdx + len > s.length) break;
+      nodeIdCounter++;
       const seg = s.substring(startIdx, startIdx + len);
       const val = parseInt(seg, 10);
+      const childId = `${parent.id}-${seg}-${nodeIdCounter}`;
 
-      // Prune: value > 255
-      if (val > 255) break;
-
-      // Prune: leading zero
-      if (seg.length > 1 && seg[0] === '0') break;
-
-      // Prune: remaining digits cannot form valid segments
+      // 剪枝判定
+      const isExceed = val > 255;
+      const isLeadingZero = seg.length > 1 && seg[0] === '0';
       const remaining = s.length - startIdx - len;
       const neededSegments = 3 - segments.length;
-      if (remaining > neededSegments * 3 || remaining < neededSegments) {
-        const pruneNode: BacktrackTreeNode = {
-          id: `${parent.id}-${seg}`, value: seg,
-          path: [...segments, seg], children: [],
-          isLeaf: false, isPruned: true,
-          parentId: parent.id, depth: parent.depth + 1,
-        };
-        parent.children.push(pruneNode);
-        continue;
-      }
+      const isLengthInvalid = remaining > neededSegments * 3 || remaining < neededSegments;
 
-      const childNode: BacktrackTreeNode = {
-        id: `${parent.id}-${seg}`, value: seg,
-        path: [...segments, seg], children: [],
-        isLeaf: false, isPruned: false,
-        parentId: parent.id, depth: parent.depth + 1,
+      const isDirectPrune = !parent.isPruned && (isExceed || isLeadingZero || isLengthInvalid);
+      const isPruned = parent.isPruned || isDirectPrune;
+
+      const node: BacktrackTreeNode = {
+        id: childId,
+        value: seg,
+        path: [...segments, seg],
+        children: [],
+        isLeaf: false,
+        isPruned,
+        isDirectPrune,
+        parentId: parent.id,
+        depth: parent.depth + 1,
       };
-      parent.children.push(childNode);
-      dfs(startIdx + len, [...segments, seg], childNode);
+      parent.children.push(node);
+
+      if (!isPruned) {
+        dfs(startIdx + len, [...segments, seg], node);
+      }
     }
   }
 
@@ -71,227 +89,481 @@ function buildIPTree(s: string): BacktrackTreeNode {
 }
 
 /* ── Generate steps ───────────────────────────────────────── */
-interface IPStep extends BacktrackTreeStep {
-  startIndex: number;
-  depth: number;
-  count: number;
-}
-
-function ipSteps(s: string): IPStep[] {
+export function buildRestoreIPSteps(s: string): BacktrackTreeStep[] {
   const root = buildIPTree(s);
   layoutTree(root);
   const allNodes = flattenTree(root);
-  const prunedIds = allNodes.filter(n => n.isPruned).map(n => n.id);
 
-  const steps: IPStep[] = [];
+  const steps: BacktrackTreeStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
+  const dynamicPrunedIds: string[] = [];
+  const solutions: string[] = [];
 
+  // Start step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
-    foundPathIds: [], prunedNodeIds: [...prunedIds],
-    path: [], message: `开始：复原 IP 地址 "${s}"`, codeLine: 3,
-    startIndex: 0, depth: 0, count: 0,
+    nodes: allNodes,
+    currentNodeId: 'root',
+    visitedNodeIds: ['root'],
+    foundPathIds: [],
+    prunedNodeIds: [],
+    path: [],
+    message: `开始搜索：复原 IP 地址 s = "${s}"，要求恰好分成 4 段且每段 0~255`,
+    codeLine: 4,
+    stats: { remaining: s.length, depth: 0, count: 0 },
+    vars: [
+      { name: 's', value: `"${s}"`, type: 'string' },
+      { name: 'segments', value: '[]', type: 'array' },
+      { name: 'startIndex', value: '0', type: 'number' },
+      { name: 'res.size()', value: '0', type: 'number' },
+    ],
   });
 
-  function traverse(node: BacktrackTreeNode): void {
-    if (node.isLeaf) {
-      // 递归进入：先执行 if (dots == 3) 判断 —— 成立
-      steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `递归进入：dots == 3 ✓ 凑齐 4 段`, codeLine: 9,
-        startIndex: s.length, depth: node.path.length, count: foundIds.length,
-      });
-      // 进入 if 块：校验末段 + 收集
-      foundIds.push(node.id);
-      const ip = (node.path as string[]).join('.');
-      steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `找到 IP: ${ip}，校验末段并收集`, codeLine: { from: 10, to: 12 },
-        startIndex: s.length, depth: node.path.length, count: foundIds.length,
-      });
+  function traverse(node: BacktrackTreeNode, startIdx: number): void {
+    const segments = node.path as string[];
+
+    if (segments.length === 4) {
+      if (startIdx === s.length) {
+        const ipStr = segments.join('.');
+        steps.push({
+          nodes: allNodes,
+          currentNodeId: node.id,
+          visitedNodeIds: [...visitedIds],
+          foundPathIds: [...foundIds],
+          prunedNodeIds: [...dynamicPrunedIds],
+          path: [...segments],
+          message: `递归进入：segments.size() == 4 且已用尽字符串 ✓ 组成有效 IP: ${ipStr}`,
+          codeLine: 9,
+          stats: { remaining: 0, depth: node.depth, count: solutions.length },
+          vars: [
+            { name: 'IP 地址', value: `"${ipStr}"`, type: 'string' },
+            { name: 'segments', value: `[${segments.map((seg) => `"${seg}"`).join(', ')}]`, type: 'array' },
+          ],
+        });
+
+        foundIds.push(node.id);
+        solutions.push(ipStr);
+
+        steps.push({
+          nodes: allNodes,
+          currentNodeId: node.id,
+          visitedNodeIds: [...visitedIds],
+          foundPathIds: [...foundIds],
+          prunedNodeIds: [...dynamicPrunedIds],
+          path: [...segments],
+          message: `🎉 收集有效 IP: "${ipStr}"，收集并返回`,
+          codeLine: 10,
+          stats: { remaining: 0, depth: node.depth, count: solutions.length },
+          vars: [
+            { name: 'res.add()', value: `"${ipStr}"`, type: 'string' },
+            { name: 'res.size()', value: String(solutions.length), type: 'number' },
+          ],
+        });
+      } else {
+        steps.push({
+          nodes: allNodes,
+          currentNodeId: node.id,
+          visitedNodeIds: [...visitedIds],
+          foundPathIds: [...foundIds],
+          prunedNodeIds: [...dynamicPrunedIds],
+          path: [...segments],
+          message: `递归终止：已切出 4 段但字符串尚未耗尽 (剩余 ${s.length - startIdx} 字符)，直接返回`,
+          codeLine: 11,
+          stats: { remaining: s.length - startIdx, depth: node.depth, count: solutions.length },
+          vars: [
+            { name: 'segments.size()', value: '4', type: 'number' },
+            { name: 'startIndex', value: String(startIdx), type: 'number' },
+          ],
+        });
+      }
       return;
     }
 
-    // 递归进入非叶子：每次 backtrack 调用都先执行 if 判断 —— 不成立
-    steps.push({
-      nodes: allNodes, currentNodeId: node.id,
-      visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-      prunedNodeIds: [...prunedIds],
-      path: [...node.path], message: `递归进入：dots = ${node.path.length} < 3，继续分段`, codeLine: 9,
-      startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
-    });
+    for (let len = 1; len <= 3; len++) {
+      if (startIdx + len > s.length) break;
+      const seg = s.substring(startIdx, startIdx + len);
+      const val = parseInt(seg, 10);
+      const childNode = node.children.find((c) => c.value === seg);
 
-    for (const child of node.children) {
-      if (child.isPruned) {
-        visitedIds.push(child.id);
+      // 1. 数值超出 255
+      if (val > 255) {
+        if (childNode && !dynamicPrunedIds.includes(childNode.id)) dynamicPrunedIds.push(childNode.id);
         steps.push({
-          nodes: allNodes, currentNodeId: node.id,
-          visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-          prunedNodeIds: [...prunedIds],
-          path: [...node.path], message: `剪枝：段 "${child.value}" 无效或后续无法凑成4段（跳过，未下潜）`, codeLine: 16,
-          startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
+          nodes: allNodes,
+          currentNodeId: node.id,
+          visitedNodeIds: [...visitedIds],
+          foundPathIds: [...foundIds],
+          prunedNodeIds: [...dynamicPrunedIds],
+          path: [...segments],
+          message: `✂️ 数值超额剪枝：段 "${seg}" (${val}) > 255，break 终止本层`,
+          codeLine: 16,
+          stats: { remaining: s.length - startIdx, depth: node.depth, count: solutions.length },
+          vars: [
+            { name: 'seg', value: `"${seg}"`, type: 'string' },
+            { name: 'val > 255', value: 'true', type: 'boolean' },
+          ],
+        });
+        break;
+      }
+
+      // 2. 前导零
+      if (seg.length > 1 && seg[0] === '0') {
+        if (childNode && !dynamicPrunedIds.includes(childNode.id)) dynamicPrunedIds.push(childNode.id);
+        steps.push({
+          nodes: allNodes,
+          currentNodeId: node.id,
+          visitedNodeIds: [...visitedIds],
+          foundPathIds: [...foundIds],
+          prunedNodeIds: [...dynamicPrunedIds],
+          path: [...segments],
+          message: `✂️ 前导零剪枝：段 "${seg}" 含前导零非法，break 终止本层`,
+          codeLine: 17,
+          stats: { remaining: s.length - startIdx, depth: node.depth, count: solutions.length },
+          vars: [
+            { name: 'seg', value: `"${seg}"`, type: 'string' },
+            { name: 'leadingZero', value: 'true', type: 'boolean' },
+          ],
+        });
+        break;
+      }
+
+      // 3. 剩余字符数量约束
+      const remaining = s.length - startIdx - len;
+      const neededSegments = 3 - segments.length;
+      if (remaining > neededSegments * 3 || remaining < neededSegments) {
+        if (childNode && !dynamicPrunedIds.includes(childNode.id)) dynamicPrunedIds.push(childNode.id);
+        steps.push({
+          nodes: allNodes,
+          currentNodeId: node.id,
+          visitedNodeIds: [...visitedIds],
+          foundPathIds: [...foundIds],
+          prunedNodeIds: [...dynamicPrunedIds],
+          path: [...segments],
+          message: `✂️ 长度剪枝：剩余 ${remaining} 字符无法恰好填满剩余 ${neededSegments} 段，continue 跳过`,
+          codeLine: 21,
+          stats: { remaining: s.length - startIdx, depth: node.depth, count: solutions.length },
+          vars: [
+            { name: 'rem', value: String(remaining), type: 'number' },
+            { name: 'need', value: String(neededSegments), type: 'number' },
+          ],
         });
         continue;
       }
 
-      // iterate
+      if (!childNode) continue;
+
+      // 4. 做选择
+      visitedIds.push(childNode.id);
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `for 循环：尝试段 "${child.value}"，检查有效性`, codeLine: 14,
-        startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: childNode.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...childNode.path],
+        message: `做选择：segments.add("${seg}")，当前段组合：[${childNode.path.map((p) => `"${p}"`).join(', ')}]`,
+        codeLine: 22,
+        stats: { remaining, depth: childNode.depth, count: solutions.length },
+        vars: [
+          { name: 'seg', value: `"${seg}"`, type: 'string' },
+          { name: 'segments', value: `[${childNode.path.map((p) => `"${p}"`).join(', ')}]`, type: 'array' },
+        ],
       });
 
-      // Step A: path.add(seg)
-      visitedIds.push(child.id);
+      // 5. 向下递归
       steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...child.path], message: `path.add("${child.value}")：添加网段`, codeLine: 17,
-        startIndex: (node.path as string[]).join('').length, depth: child.path.length, count: foundIds.length,
-      });
-      // Step B: backtrack(...)
-      steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...child.path], message: `backtrack(...)：进入下一层`, codeLine: 18,
-        startIndex: (node.path as string[]).join('').length, depth: child.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: childNode.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...childNode.path],
+        message: `向下递归：backtrack(s, startIndex=${startIdx + len}, segments, res)`,
+        codeLine: 23,
+        stats: { remaining, depth: childNode.depth, count: solutions.length },
+        vars: [
+          { name: 'startIndex', value: String(startIdx + len), type: 'number' },
+        ],
       });
 
-      traverse(child);
+      traverse(childNode, startIdx + len);
 
-      // pop (backtrack)
+      // 6. 回溯撤销
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
-        visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path], message: `撤销 "${child.value}"，回溯`, codeLine: 19,
-        startIndex: (node.path as string[]).join('').length, depth: node.path.length, count: foundIds.length,
+        nodes: allNodes,
+        currentNodeId: node.id,
+        visitedNodeIds: [...visitedIds],
+        foundPathIds: [...foundIds],
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...node.path],
+        message: `🔙 回溯撤销：segments.remove("${seg}")，恢复段组合：[${node.path.map((p) => `"${p}"`).join(', ') || '空'}]`,
+        codeLine: 24,
+        stats: { remaining: s.length - startIdx, depth: node.depth, count: solutions.length },
+        vars: [
+          { name: 'segments.remove()', value: `"${seg}"`, type: 'string' },
+          { name: 'segments', value: `[${node.path.map((p) => `"${p}"`).join(', ')}]`, type: 'array' },
+        ],
       });
     }
   }
 
-  traverse(root);
+  traverse(root, 0);
 
+  // End step
   steps.push({
-    nodes: allNodes, currentNodeId: 'root',
-    visitedNodeIds: [...visitedIds], foundPathIds: [...foundIds],
-    prunedNodeIds: [...prunedIds],
-    path: [], message: `完成！共找到 ${foundIds.length} 个 IP 地址`, codeLine: 4,
-    startIndex: s.length, depth: 0, count: foundIds.length,
+    nodes: allNodes,
+    currentNodeId: 'root',
+    visitedNodeIds: [...visitedIds],
+    foundPathIds: [...foundIds],
+    prunedNodeIds: [...dynamicPrunedIds],
+    path: [],
+    message: `🎉 搜索完成！共找到 ${solutions.length} 个合法有效 IP 地址`,
+    codeLine: 5,
+    stats: { remaining: 0, depth: 0, count: solutions.length },
+    vars: [
+      { name: 's', value: `"${s}"`, type: 'string' },
+      { name: 'res.size()', value: String(solutions.length), type: 'number' },
+    ],
   });
 
   return steps;
 }
 
-/* ── Visualizer ───────────────────────────────────────────── */
-export class RestoreIPVisualizer extends StepVisualizer<IPStep> {
-  protected codeLines = [
-    'public List<String> restoreIpAddresses(String s) {',
-    '    List<String> res = new ArrayList<>();',
-    '    backtrack(s, 0, new ArrayList<>(), res, 0);',
-    '    return res;',
-    '}',
-    '',
-    'void backtrack(String s, int start, List<String> path,',
-    '               List<String> res, int dots) {',
-    '    if (dots == 3) {',
-    '        String last = s.substring(start);',
-    '        if (isValid(last)) res.add(String.join(".", path) + "." + last);',
-    '        return;',
-    '    }',
-    '    for (int len = 1; len <= 3 && start + len <= s.length(); len++) {',
-    '        String seg = s.substring(start, start + len);',
-    '        if (!isValid(seg)) continue;',
-    '        path.add(seg);',
-    '        backtrack(s, start + len, path, res, dots + 1);',
-    '        path.remove(path.size() - 1);',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '复原 IP 地址 Java 代码';
+/* ── Visualizer class ─────────────────────────────────────── */
+export class RestoreIPVisualizer extends StepVisualizer<BacktrackTreeStep> {
+  protected codeLanguages = RESTORE_IP_CODE_LANGUAGES;
+  protected codeLines = RESTORE_IP_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '复原 IP 地址 代码调试';
 
-  private inputText: HTMLInputElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private treeDisplay: HTMLElement | null = null;
+  private pathStackContainer: HTMLElement | null = null;
+  private validationMonitorContainer: HTMLElement | null = null;
+  private resultCollectionContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
+  private cachedLogs: BacktrackLogItem[] = [];
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    // Inject shared tree CSS
-    const styleEl = this.root.querySelector('#cs-tree-style');
-    if (styleEl) styleEl.textContent = getBacktrackTreeCSS('cs');
-    this.inputText = this.root.querySelector('#bt-text');
-    this.treeDisplay = this.root.querySelector('#bt-tree-display');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#bt-start')?.addEventListener('click', () => this.start());
+    this.treeDisplay = this.root.querySelector('#restore-ip-tree-display');
+    this.pathStackContainer = this.root.querySelector('#ip-path-stack-container');
+    this.validationMonitorContainer = this.root.querySelector('#ip-validation-monitor-container');
+    this.resultCollectionContainer = this.root.querySelector('#ip-result-collection-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelectorAll<HTMLButtonElement>('.bt-example').forEach(btn => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 绑定生成与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.ip-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const text = btn.dataset.text;
-        if (text && this.inputText) this.inputText.value = text;
+        const strEl = this.root?.querySelector('#input-str') as HTMLInputElement | null;
+        if (strEl) strEl.value = btn.dataset.s || '';
         this.start();
       });
     });
 
-    this.root.querySelector('#bt-log-clear')?.addEventListener('click', () => {
-      const logEl = this.root?.querySelector('#bt-log');
-      if (logEl) logEl.innerHTML = '';
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: RESTORE_IP_PROBLEM_HTML,
+      analysisHtml: RESTORE_IP_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  protected buildSteps(): IPStep[] {
-    let text = (this.inputText?.value || '25525511135').trim();
-    text = text.replace(/\D/g, '').slice(0, 12);
-    if (text.length === 0) text = '25525511135';
-    if (this.inputText) this.inputText.value = text;
-    return ipSteps(text);
+  protected buildSteps(): BacktrackTreeStep[] {
+    const strEl = this.root?.querySelector('#input-str') as HTMLInputElement | null;
+    let s = (strEl?.value || '25525511135').trim().replace(/\D/g, '');
+    if (!s) s = '25525511135';
+    if (s.length > 12) s = s.slice(0, 12);
+
+    const steps = buildRestoreIPSteps(s);
+
+    // 预计算日志流
+    this.cachedLogs = steps.map((st, idx) => {
+      let type: BacktrackLogItem['type'] = 'info';
+      if (st.message.includes('做选择')) type = 'push';
+      else if (st.message.includes('回溯撤销')) type = 'pop';
+      else if (st.message.includes('收集有效 IP')) type = 'collect';
+      else if (st.message.includes('剪枝')) type = 'prune';
+
+      return {
+        stepIndex: idx + 1,
+        type,
+        text: st.message,
+      };
+    });
+
+    return steps;
   }
 
-  protected renderStep(step: IPStep): void {
-    const depthEl = this.root?.querySelector('[data-metric="depth"]');
-    const startEl = this.root?.querySelector('[data-metric="start"]');
-    const countEl = this.root?.querySelector('[data-metric="count"]');
-    const remainEl = this.root?.querySelector('[data-metric="remain"]');
+  protected renderStep(step: BacktrackTreeStep): void {
+    const index = this.currentIndex;
 
-    if (depthEl) depthEl.textContent = String(step.depth);
-    if (startEl) startEl.textContent = String(step.startIndex);
-    if (countEl) countEl.textContent = String(step.count);
-    if (remainEl) {
-      const s = (this.inputText?.value || '').trim().replace(/\D/g, '');
-      remainEl.textContent = String(Math.max(0, s.length - step.startIndex));
-    }
-
+    // 1. 渲染 SVG 决策树沙盘
     if (this.treeDisplay) {
       renderBacktrackTree({
         container: this.treeDisplay,
         step,
-        cssPrefix: 'cs',
-        nodeLabel: (nd) => nd.id === 'root' ? '[]' : nd.value,
+        cssPrefix: 'ip',
+        nodeLabel: (nd) => (nd.id === 'root' ? '""' : nd.value),
       });
     }
 
-    const logEl = this.root?.querySelector('#bt-log');
-    renderBacktrackLog(logEl as HTMLElement | null, this.steps, this.currentIndex, 'cs');
+    // 2. 渲染当前路径栈 (Card 2 Left)
+    if (this.pathStackContainer) {
+      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
+    }
+
+    // 3. 渲染分段合法性监视器 (Card 2 Center)
+    if (this.validationMonitorContainer) {
+      const segs = step.path as string[];
+      const ipPreview = segs.length > 0 ? segs.join('.') + (segs.length < 4 ? '....' : '') : '(空)';
+
+      let subDisplay = '';
+      if (step.message.includes('剪枝') || step.message.includes('做选择')) {
+        const match = step.message.match(/"([^"]+)"/);
+        const examinedSeg = match ? match[1] : (segs[segs.length - 1] || '');
+        const val = parseInt(examinedSeg, 10);
+        const hasLeadingZero = examinedSeg.length > 1 && examinedSeg[0] === '0';
+        const isOver255 = val > 255;
+        const valid = !hasLeadingZero && !isOver255 && !isNaN(val);
+
+        subDisplay = `
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span>当前段: <strong style="color: #0f172a; font-family: monospace; font-size: 13px;">"${examinedSeg}"</strong> (${val})</span>
+            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; background: ${valid ? '#ecfdf5' : '#fef2f2'}; color: ${valid ? '#059669' : '#dc2626'}; border: 1px solid ${valid ? '#a7f3d0' : '#fecaca'};">
+              ${valid ? '✓ 合法段 (0~255)' : isOver255 ? '✕ 超额 > 255' : hasLeadingZero ? '✕ 前导零非法' : '✕ 长度非法'}
+            </span>
+          </div>
+        `;
+      } else {
+        subDisplay = `
+          <div style="color: #334155; font-size: 11px;">
+            当前 IP 预览: <code style="color: #2563eb; font-family: monospace; font-weight: 700; font-size: 12px;">${ipPreview}</code>
+          </div>
+        `;
+      }
+
+      this.validationMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          ${subDisplay}
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 段合法性: <code style="color:#b45309; font-family:monospace;">0 &le; val &le; 255 && 无前导 0</code></div>
+            <div>• 剩余长度: <code style="color:#b45309; font-family:monospace;">need &le; rem &le; need * 3</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染实时解集箱 (Card 2 Bottom)
+    const solutionsUpToNow: Array<Array<number | string>> = [];
+    for (let i = 0; i <= index; i++) {
+      const st = this.steps[i];
+      if (st.message.includes('收集有效 IP')) {
+        const match = st.message.match(/"([^"]+)"/);
+        if (match) {
+          solutionsUpToNow.push([match[1]]);
+        }
+      }
+    }
+
+    if (this.resultCollectionContainer) {
+      BacktrackStateSpacePresenter.renderResultCollection(
+        this.resultCollectionContainer,
+        solutionsUpToNow,
+        -1,
+        (solIdx: number) => {
+          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
+            if (
+              this.steps[stepIdx].message.includes('收集有效 IP') &&
+              this.steps[stepIdx].message.includes(String(solutionsUpToNow[solIdx][0]))
+            ) {
+              this.goToStep(stepIdx);
+              break;
+            }
+          }
+        }
+      );
+    }
+
+    const badgeCount = this.root?.querySelector('#badge-result-count');
+    if (badgeCount) {
+      badgeCount.textContent = `解集: ${solutionsUpToNow.length}`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      BacktrackStateSpacePresenter.renderBacktrackLogStream(
+        this.logContainer,
+        this.cachedLogs.slice(0, this.currentIndex + 1),
+        this.currentIndex
+      );
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    resetContainerViewState(this.treeDisplay);
+    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }
 
 registerAlgorithm({
   id: 'restore-ip',
-  name: '复原IP地址',
+  name: '复原 IP 地址',
   viewId: 'algo-restore-ip-view',
   category: 'backtracking',
-  description: 'LeetCode 93 · 字符串切 3 个点，每段 0–255',
-  icon: '\uD83C\uDF10',
+  description: '在数字串中插入点号复原合法有效 IP 地址',
+  icon: '🌐',
   template,
   Visualizer: RestoreIPVisualizer,
-  difficulty: 3,
-  levelOrder: 9,
-  learningGoal: '掌握 IP 地址分割的回溯加合法性校验',
+  difficulty: 2,
+  levelOrder: 7,
+  learningGoal: '掌握 4 段式点分十进制切割与前导零、255 上限等全方位剪枝',
 });

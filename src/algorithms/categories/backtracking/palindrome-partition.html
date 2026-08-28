@@ -1,329 +1,869 @@
 <style>
+  /* === 分割回文串 (LeetCode 131) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-palindrome-partition-view {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(167, 139, 250, .22), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(236, 72, 153, .22), transparent 55%),
-      linear-gradient(135deg, #1e1b4b 0%, #4c0519 50%, #1e1b4b 100%);
-    width: 100%; height: 100%;
-    color: #e2e8f0;
-    overflow: hidden;
-  }
-  #algo-palindrome-partition-view .pal-page {
+    width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  #algo-palindrome-partition-view .pal-header {
-    padding: 18px 24px 12px;
-    display: flex;
-    gap: 18px;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-palindrome-partition-view h1 {
-    margin: 0 0 5px;
-    color: #c4b5fd;
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -.02em;
-  }
-  #algo-palindrome-partition-view .pal-desc {
-    color: #a78bfa;
-    margin: 0;
-    font-size: 12.5px;
-    line-height: 1.5;
-  }
-  #algo-palindrome-partition-view .pal-tip {
-    max-width: 540px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(236, 72, 153, .08));
-    border: 1px solid rgba(167, 139, 250, .3);
-    color: #cbd5e1;
-    font-size: 12.5px;
-    line-height: 1.65;
-  }
-  #algo-palindrome-partition-view .pal-tip strong { color: #e879f9; }
-  #algo-palindrome-partition-view .pal-main {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-  #algo-palindrome-partition-view .pal-left {
     min-width: 0;
     min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-palindrome-partition-view .pal-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
+
+  #algo-palindrome-partition-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-palindrome-partition-view .pp-header {
+    background: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-palindrome-partition-view .pal-card-title {
-    padding: 10px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
-    justify-content: space-between;
-    color: #cbd5e1;
-    font-weight: 700;
-    font-size: 13px;
-  }
-  #algo-palindrome-partition-view .pal-tag {
-    font-size: 11px;
-    color: #e879f9;
-    background: rgba(167, 139, 250, .14);
-    border: 1px solid rgba(167, 139, 250, .3);
-    padding: 2px 8px;
-    border-radius: 999px;
-  }
-  #algo-palindrome-partition-view .pal-input-row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 10px;
     align-items: center;
-    padding: 14px 16px;
-  }
-  #algo-palindrome-partition-view .pal-examples {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  #algo-palindrome-partition-view .pal-btn,
-  #algo-palindrome-partition-view .pal-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(167, 139, 250, .12); border: 1px solid rgba(167, 139, 250, .28);
-    color: #e9d5ff; cursor: pointer; transition: all .2s;
-  }
-  #algo-palindrome-partition-view .pal-btn:hover,
-  #algo-palindrome-partition-view .pal-example-btn:hover {
-    background: linear-gradient(135deg, #a78bfa, #ec4899);
-    border-color: transparent;
-    color: #06121f;
-    transform: translateY(-1px);
-  }
-  #algo-palindrome-partition-view input {
-    width: 100%;
-    padding: 9px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px;
-    outline: none;
-    transition: all .2s;
-  }
-  #algo-palindrome-partition-view input:focus {
-    border-color: #a78bfa;
-    box-shadow: 0 0 0 3px rgba(167, 139, 250, .15);
-  }
-  #algo-palindrome-partition-view button {
-    padding: 8px 16px;
-    border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, .04);
-    color: #e2e8f0;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    transition: all .25s;
-  }
-  #algo-palindrome-partition-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #a78bfa, #ec4899);
-    border-color: transparent;
-    color: #06121f;
-  }
-  #algo-palindrome-partition-view button:disabled { opacity: .4; cursor: not-allowed; }
-  /* Stats */
-  #algo-palindrome-partition-view .pal-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    justify-content: space-between;
     gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-palindrome-partition-view .pal-stat {
-    position: relative;
-    padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  #algo-palindrome-partition-view .pal-stat::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 8px;
-    bottom: 8px;
-    width: 4px;
-    border-radius: 4px;
-  }
-  #algo-palindrome-partition-view .pal-stat--start::before { background: linear-gradient(180deg, #a78bfa, #e879f9); }
-  #algo-palindrome-partition-view .pal-stat--start .pal-stat-val { color: #e9d5ff; }
-  #algo-palindrome-partition-view .pal-stat--path::before { background: linear-gradient(180deg, #ec4899, #db2777); }
-  #algo-palindrome-partition-view .pal-stat--path .pal-stat-val { color: #f9a8d4; }
-  #algo-palindrome-partition-view .pal-stat--depth::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-palindrome-partition-view .pal-stat--depth .pal-stat-val { color: #6ee7b7; }
-  #algo-palindrome-partition-view .pal-stat--count::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-palindrome-partition-view .pal-stat--count .pal-stat-val { color: #fde68a; }
-  #algo-palindrome-partition-view .pal-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-palindrome-partition-view .pal-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px;
-    font-weight: 800;
-    margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* Tree display */
-  #algo-palindrome-partition-view .pal-tree-card {
-    flex: 1; min-height: 220px; display: flex; flex-direction: column;
-  }
-  #algo-palindrome-partition-view #pal-tree-display {
-    flex: 1; min-height: 180px; padding: 12px 8px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: auto;
-  }
-  #algo-palindrome-partition-view #pal-tree-display svg {
-    max-width: 100%; max-height: 100%;
-  }
-  /* Message */
-  #algo-palindrome-partition-view .pal-message {
-    margin: 0 16px 16px;
-    padding: 14px;
-    border-radius: 12px;
-    border: 1px solid rgba(167, 139, 250, .22);
-    background: rgba(167, 139, 250, .08);
-    line-height: 1.55;
-    font-size: 14px;
-    color: #f1f5f9;
-    text-align: center;
-  }
-  #algo-palindrome-partition-view .pal-message.pal-result {
-    border-color: rgba(236, 72, 153, .4);
-    background: rgba(236, 72, 153, .12);
-    color: #d1fae5;
-  }
-  /* Log */
-  #algo-palindrome-partition-view .pal-log {
-    min-height: 80px;
-    max-height: 130px;
-    padding: 10px 14px;
-    overflow: auto;
-    background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.65;
-    color: #94a3b8;
-  }
-  /* Code panel */
-  #algo-palindrome-partition-view .pal-code {
-    min-height: 0;
+
+  #algo-palindrome-partition-view .pp-header-left {
     display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px;
-    overflow: hidden;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-palindrome-partition-view .pal-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* Controls */
-  #algo-palindrome-partition-view .pal-controls {
-    padding: 14px 16px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
+
+  #algo-palindrome-partition-view .pp-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-  }
-  #algo-palindrome-partition-view .pal-controls .pal-counter {
-    color: #cbd5e1;
     font-size: 13px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-palindrome-partition-view .pal-controls button.pal-play {
-    background: linear-gradient(135deg, #a78bfa, #ec4899);
+
+  #algo-palindrome-partition-view .pp-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-palindrome-partition-view .pp-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-palindrome-partition-view .pp-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-palindrome-partition-view .pp-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-palindrome-partition-view .pp-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-palindrome-partition-view .pp-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-palindrome-partition-view .pp-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  #algo-palindrome-partition-view .pp-input-str {
+    width: 90px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #algo-palindrome-partition-view .pp-input-str:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+  }
+
+  #algo-palindrome-partition-view .pp-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
     border: none;
-    color: #06121f;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
   }
-  @media (max-width: 1100px) {
-    #algo-palindrome-partition-view .pal-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-palindrome-partition-view .pal-code { min-height: 360px; }
+  #algo-palindrome-partition-view .pp-btn-generate:hover {
+    background: #1d4ed8;
   }
-  /* Shared tree CSS injected at runtime */
+
+  #algo-palindrome-partition-view .pp-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-palindrome-partition-view .pp-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-palindrome-partition-view .pp-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-palindrome-partition-view .pp-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-palindrome-partition-view .pp-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-palindrome-partition-view .pp-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-palindrome-partition-view .pp-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-palindrome-partition-view .pp-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-palindrome-partition-view .pp-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-palindrome-partition-view .pp-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-palindrome-partition-view .pp-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-palindrome-partition-view .pp-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 决策树 SVG 容器 */
+  #algo-palindrome-partition-view #palindrome-partition-tree-display {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-palindrome-partition-view .pp-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-palindrome-partition-view .pp-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-palindrome-partition-view .pp-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-palindrome-partition-view .pp-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-palindrome-partition-view .pp-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-palindrome-partition-view .pp-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-palindrome-partition-view .pp-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-palindrome-partition-view .pp-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-palindrome-partition-view .pp-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-palindrome-partition-view .pp-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #algo-palindrome-partition-view .pp-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-palindrome-partition-view .pp-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-palindrome-partition-view .pp-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-palindrome-partition-view .pp-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-palindrome-partition-view .pp-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-palindrome-partition-view .pp-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-palindrome-partition-view .pp-tab-item.active {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  #algo-palindrome-partition-view .pp-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-palindrome-partition-view .pp-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-palindrome-partition-view .pp-lang-btn.active {
+    background: #334155;
+    color: #38bdf8;
+  }
+
+  #algo-palindrome-partition-view .pp-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-palindrome-partition-view .pp-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-palindrome-partition-view .pp-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-palindrome-partition-view .pp-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #38bdf8;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-palindrome-partition-view .pp-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-palindrome-partition-view .pp-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-palindrome-partition-view .pp-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-palindrome-partition-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-palindrome-partition-view .code-line.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-left: 3px solid #3b82f6;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-palindrome-partition-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-palindrome-partition-view .pp-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-palindrome-partition-view .pp-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-palindrome-partition-view .pp-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-palindrome-partition-view .pp-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-palindrome-partition-view .pp-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-palindrome-partition-view .pp-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-palindrome-partition-view .pp-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-palindrome-partition-view .pp-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-palindrome-partition-view .pp-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-palindrome-partition-view .pp-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-palindrome-partition-view .pp-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-palindrome-partition-view .pp-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+  }
 </style>
-<style id="cs-tree-style"></style>
 
-<div class="pal-page">
-  <div class="pal-header">
-    <div>
-      <h1>分割回文串（回溯决策树）</h1>
-      <p class="pal-desc">LeetCode 131 · 把字符串分割成若干子串，要求每个子串都是回文串，枚举所有可能方案</p>
+<div id="algo-palindrome-partition-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="pp-header">
+    <div class="pp-header-left">
+      <div class="pp-icon-btn">✂️</div>
+      <h1 class="pp-main-title">LeetCode 131. 分割回文串</h1>
+      <button id="btn-open-problem-modal" class="pp-btn-problem">📋 题目</button>
+      <span class="pp-badge-mode">回文判定剪枝</span>
+      <span class="pp-badge-complexity">O(N·2^N)</span>
     </div>
-    <div class="pal-tip"><strong>核心动画：</strong>橙色<span style="color:#fb923c">脉冲</span>为当前节点，紫色为已访问节点，绿色为找到的方案，灰色虚线为非回文剪枝。观察回文分割回溯决策树。</div>
-  </div>
 
-  <div class="pal-main">
-    <div class="pal-left">
-      <section class="pal-card">
-        <div class="pal-card-title">输入字符串 <span class="pal-tag">回文测试</span></div>
-        <div class="pal-input-row">
-          <input id="pal-input" type="text" value="aab" maxlength="8" placeholder="输入字符串">
-          <button id="pal-start">生成分割</button>
-          <div class="pal-examples">
-            <button class="pal-example-btn" data-value="aab">aab</button>
-            <button class="pal-example-btn" data-value="efe">efe</button>
-            <button class="pal-example-btn" data-value="abba">abba</button>
-          </div>
-        </div>
-      </section>
-
-      <div class="pal-stats">
-        <div class="pal-stat pal-stat--start"><label>startIndex</label><span id="pal-start-index" class="pal-stat-val">0</span></div>
-        <div class="pal-stat pal-stat--path"><label>path 长度</label><span id="pal-path-size" class="pal-stat-val">0</span></div>
-        <div class="pal-stat pal-stat--depth"><label>递归深度</label><span id="pal-depth" class="pal-stat-val">0</span></div>
-        <div class="pal-stat pal-stat--count"><label>结果数量</label><span id="pal-result-size" class="pal-stat-val">0</span></div>
+    <!-- 参数与操作工具组 -->
+    <div class="pp-header-right">
+      <div class="pp-input-group">
+        <span>s:</span>
+        <input type="text" id="input-str" value="aab" class="pp-input-str" placeholder="aab" />
       </div>
 
-      <section class="pal-card pal-tree-card">
-        <div class="pal-card-title">回溯决策树 <span class="pal-tag">SVG</span></div>
-        <div id="pal-tree-display"></div>
-        <div class="pal-message" id="pal-message">点击「生成分割」观看回溯切割过程</div>
-      </section>
+      <button id="btn-generate" class="pp-btn-generate">
+        <span>▶ 生成</span>
+      </button>
 
-      <section class="pal-card">
-        <div class="pal-card-title">执行日志 <button id="pal-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="pal-log" id="pal-log"></div>
-      </section>
+      <button id="btn-reset" class="pp-btn-reset">
+        重置
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="pp-chip" data-s="aab">"aab"</button>
+        <button class="pp-chip" data-s="efe">"efe"</button>
+        <button class="pp-chip" data-s="cdd">"cdd"</button>
+      </div>
     </div>
+  </header>
 
-    <aside class="pal-code">
-      <div data-code-panel></div>
-    </aside>
-  </div>
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="pp-main-layout">
 
-  <div class="pal-controls">
-    <button id="pal-reset">&#x23EE; 重置</button>
-    <button id="pal-prev">&#x25C0; 上一步</button>
-    <button id="pal-play" class="pal-play">&#x25B6; 播放</button>
-    <button id="pal-next">下一步 &#x25B6;</button>
-    <span id="pal-counter" class="pal-counter">步骤: 0 / 0</span>
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="pp-left-section">
+
+      <!-- 卡片 1: 决策树沙盘 (N-ary Decision Tree) -->
+      <div class="pp-card">
+        <div class="pp-card-header">
+          <div class="pp-card-title">
+            <span>🌲 N 叉决策树沙盘 (N-ary Decision Tree)</span>
+          </div>
+          <div class="pp-legend-bar">
+            <div><span class="pp-legend-dot" style="background:#3b82f6;"></span> 📍当前探索</div>
+            <div><span class="pp-legend-dot" style="background:#10b981;"></span> ✅解集命中</div>
+            <div><span class="pp-legend-dot" style="background:#ef4444; border: 1px dashed #b91c1c;"></span> ✂️非回文截断</div>
+            <div><span class="pp-legend-dot" style="background:#94a3b8;"></span> 🔙已回溯</div>
+          </div>
+        </div>
+
+        <!-- 决策树居中展示盒 -->
+        <div id="palindrome-partition-tree-display"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="pp-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="pp-slider" />
+        <div class="pp-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="pp-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="pp-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="pp-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 回溯状态空间与解集追踪 -->
+      <div class="pp-card">
+        <div class="pp-card-header">
+          <div>
+            <div class="pp-card-title">📦 回溯状态空间与解集追踪</div>
+            <div class="pp-card-desc">当前已切割回文段、即时回文判定与全局解集收集</div>
+          </div>
+          <span id="badge-result-count" class="pp-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">解集: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="pp-state-space-box">
+          <div class="pp-state-columns">
+            <!-- 路径栈 -->
+            <div class="pp-subcard">
+              <div class="pp-subcard-title">📦 当前已切割回文段 (Path Slices)</div>
+              <div id="pp-path-stack-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 回文监视器 -->
+            <div class="pp-subcard">
+              <div class="pp-subcard-title">✂️ 回文判定监视器 (Palindrome Monitor)</div>
+              <div id="pp-palindrome-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 解集箱 -->
+          <div class="pp-subcard" style="flex-shrink: 0;">
+            <div class="pp-subcard-title">🏆 实时解集收集箱 (Result Collection)</div>
+            <div id="pp-result-collection-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="pp-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="pp-dark-terminal">
+        <div class="pp-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="pp-tab-group">
+            <button id="btn-tab-code" class="pp-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="pp-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="pp-tab-item">💡 回溯精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="pp-lang-group" id="code-lang-tabs">
+            <button class="pp-lang-btn active" data-lang="java">Java</button>
+            <button class="pp-lang-btn" data-lang="cpp">C++</button>
+            <button class="pp-lang-btn" data-lang="python">Python</button>
+            <button class="pp-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="pp-font-tools">
+            <div class="pp-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="pp-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="pp-window-dots">
+              <span class="pp-dot" style="background:#ef4444;"></span>
+              <span class="pp-dot" style="background:#eab308;"></span>
+              <span class="pp-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="pp-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 回溯精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载回溯精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="pp-log-card">
+        <div class="pp-log-header">
+          <div class="pp-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="pp-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="pp-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="pp-modal-backdrop hidden">
+    <div class="pp-modal-content">
+      <div class="pp-modal-header">
+        <div class="pp-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="pp-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="pp-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
+    </div>
   </div>
 </div>
