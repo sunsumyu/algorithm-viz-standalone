@@ -1,351 +1,834 @@
 <style>
-  /* === 相交链表 · 玻璃感 + 渐变 + 双指针同步走线 + 交汇脉冲 === */
+  /* === 链表相交 (面试题 02.07 / LC 160) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-intersection-linked-list-view {
-    --accent-a: #ec4899;
-    --accent-b: #8b5cf6;
-    --accent-glow: rgba(139, 92, 246, .45);
-    --list-a-color: #34d399;
-    --list-b-color: #60a5fa;
-    --meet-color: #fbbf24;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 10% 5%, rgba(236, 72, 153, .28), transparent 55%),
-      radial-gradient(ellipse at 90% 90%, rgba(139, 92, 246, .3), transparent 55%),
-      linear-gradient(135deg, #0a0a1f 0%, #1a1442 50%, #241b4d 100%);
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-intersection-linked-list-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-intersection-linked-list-view .ill-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-intersection-linked-list-view .ill-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-intersection-linked-list-view .ill-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-intersection-linked-list-view .ill-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-intersection-linked-list-view .ill-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-intersection-linked-list-view .ill-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-reverse-linked-list-view .ill-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-intersection-linked-list-view .ill-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-intersection-linked-list-view .ill-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-intersection-linked-list-view .ill-case-select {
+    padding: 3px 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+  }
+
+  #algo-intersection-linked-list-view .ill-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-intersection-linked-list-view .ill-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-intersection-linked-list-view .ill-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-intersection-linked-list-view .ill-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-intersection-linked-list-view .ill-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-intersection-linked-list-view .ill-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-intersection-linked-list-view .ill-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  /* hero */
-  #algo-intersection-linked-list-view .ill-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-intersection-linked-list-view .ill-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-intersection-linked-list-view .ill-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf4ff; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-intersection-linked-list-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-intersection-linked-list-view .ill-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-intersection-linked-list-view .ill-tip {
-    max-width: 500px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .08));
-    border: 1px solid rgba(236, 72, 153, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-intersection-linked-list-view .ill-tip strong { color: #f0abfc; }
-  /* main */
-  #algo-intersection-linked-list-view .ill-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-intersection-linked-list-view .ill-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
   #algo-intersection-linked-list-view .ill-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-intersection-linked-list-view .ill-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-intersection-linked-list-view .ill-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-intersection-linked-list-view .ill-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-intersection-linked-list-view .ill-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-intersection-linked-list-view .ill-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 双链表沙盘展示盒 */
+  #algo-intersection-linked-list-view #ill-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-intersection-linked-list-view .ill-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-intersection-linked-list-view .ill-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-intersection-linked-list-view .ill-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-intersection-linked-list-view .ill-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-intersection-linked-list-view .ill-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-intersection-linked-list-view .ill-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-intersection-linked-list-view .ill-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-intersection-linked-list-view .ill-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     overflow: hidden;
   }
-  #algo-intersection-linked-list-view .ill-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+
+  #algo-intersection-linked-list-view .ill-state-columns {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
   }
-  #algo-intersection-linked-list-view .ill-tag {
-    font-size: 11px; color: #f0abfc; background: rgba(236, 72, 153, .14);
-    border: 1px solid rgba(236, 72, 153, .3); padding: 2px 8px; border-radius: 999px;
+
+  #algo-intersection-linked-list-view .ill-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
   }
-  /* input */
-  #algo-intersection-linked-list-view .ill-input-row {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 14px 16px;
+
+  #algo-intersection-linked-list-view .ill-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
   }
-  #algo-intersection-linked-list-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-intersection-linked-list-view .ill-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-intersection-linked-list-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #fdf4ff; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-intersection-linked-list-view .ill-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-intersection-linked-list-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-intersection-linked-list-view .ill-chip {
-    padding: 6px 12px; border-radius: 999px; font-size: 12.5px;
-    background: rgba(236, 72, 153, .12); border: 1px solid rgba(236, 72, 153, .28);
-    color: #f0abfc; cursor: pointer; transition: all .2s;
+
+  #algo-intersection-linked-list-view .ill-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
-  #algo-intersection-linked-list-view .ill-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf4ff; border-color: transparent; transform: translateY(-1px);
+
+  #algo-intersection-linked-list-view .ill-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  /* stats */
-  #algo-intersection-linked-list-view .ill-stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+
+  #algo-intersection-linked-list-view .ill-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-intersection-linked-list-view .ill-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
+  #algo-intersection-linked-list-view .ill-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
-  #algo-intersection-linked-list-view .ill-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+
+  #algo-intersection-linked-list-view .ill-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
   }
-  #algo-intersection-linked-list-view .ill-stat--a::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-intersection-linked-list-view .ill-stat--a .ill-stat-val { color: #6ee7b7; }
-  #algo-intersection-linked-list-view .ill-stat--b::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
-  #algo-intersection-linked-list-view .ill-stat--b .ill-stat-val { color: #93c5fd; }
-  #algo-intersection-linked-list-view .ill-stat--meet::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-intersection-linked-list-view .ill-stat--meet .ill-stat-val { color: #fcd34d; }
-  #algo-intersection-linked-list-view .ill-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-intersection-linked-list-view .ill-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+
+  #algo-intersection-linked-list-view .ill-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  /* canvas */
-  #algo-intersection-linked-list-view .ill-visual { flex: 1; min-height: 320px; display: flex; flex-direction: column; }
-  #algo-intersection-linked-list-view .ill-canvas {
-    flex: 1; min-height: 0; padding: 28px 18px;
-    position: relative; overflow: auto;
+  #algo-intersection-linked-list-view .ill-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
   }
-  #algo-intersection-linked-list-view .ill-canvas::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at 50% 30%, rgba(236, 72, 153, .12), transparent 60%);
-    pointer-events: none;
+
+  #algo-intersection-linked-list-view .ill-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #algo-intersection-linked-list-view .ill-list-row {
-    position: relative; display: flex; align-items: center; gap: 0; flex-wrap: wrap;
-    padding: 24px 0; min-height: 90px;
+
+  #algo-intersection-linked-list-view .ill-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
   }
-  #algo-intersection-linked-list-view .ill-list-label {
-    position: absolute; left: 8px; top: 4px;
-    font-size: 11px; font-weight: 700; color: #94a3b8;
-    padding: 2px 8px; border-radius: 6px;
-    background: rgba(8, 8, 24, .6);
+  #algo-intersection-linked-list-view .ill-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
   }
-  #algo-intersection-linked-list-view .ill-list-label--a { color: #6ee7b7; border: 1px solid rgba(52, 211, 153, .35); }
-  #algo-intersection-linked-list-view .ill-list-label--b { color: #93c5fd; border: 1px solid rgba(96, 165, 250, .35); }
-  #algo-intersection-linked-list-view .ill-node-wrap {
-    position: relative; display: flex; align-items: center;
-    margin-left: 64px;
-    transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+  #algo-intersection-linked-list-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
-  #algo-intersection-linked-list-view .ill-node {
-    position: relative; width: 56px; height: 56px;
-    border-radius: 14px;
-    border: 2px solid rgba(255, 255, 255, .14);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02));
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 18px; font-weight: 800; color: #e2e8f0;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-intersection-linked-list-view .ill-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-intersection-linked-list-view .ill-node.ill-list-a { border-color: rgba(52, 211, 153, .4); }
-  #algo-intersection-linked-list-view .ill-node.ill-list-b { border-color: rgba(96, 165, 250, .4); }
-  #algo-intersection-linked-list-view .ill-node.ill-list-shared {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .3), rgba(245, 158, 11, .1));
-    border-color: var(--meet-color);
-    color: #fef3c7;
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, .3);
+  #algo-intersection-linked-list-view .ill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
-  #algo-intersection-linked-list-view .ill-node.ill-meeting {
-    animation: ill-meet-pulse 1.2s ease-in-out infinite;
+
+  #algo-intersection-linked-list-view .ill-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
-  @keyframes ill-meet-pulse {
-    0%, 100% {
-      box-shadow: 0 0 0 2px rgba(251, 191, 36, .5), 0 0 0 0 rgba(251, 191, 36, .6);
-      transform: scale(1);
-    }
-    50% {
-      box-shadow: 0 0 0 6px rgba(251, 191, 36, 0), 0 0 24px rgba(251, 191, 36, .7);
-      transform: scale(1.12);
-    }
+
+  #algo-intersection-linked-list-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
   }
-  #algo-intersection-linked-list-view .ill-arrow {
-    color: #64748b; font-size: 22px; padding: 0 8px;
-    display: inline-flex; align-items: center;
+  #algo-intersection-linked-list-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
   }
-  #algo-intersection-linked-list-view .ill-pointer {
-    position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
-    font-size: 11px; font-weight: 800;
-    padding: 2px 8px; border-radius: 6px;
-    background: rgba(8, 8, 24, .8);
-    border: 1.5px solid;
-    animation: ill-pointer-bounce 1s ease-in-out infinite;
+  #algo-intersection-linked-list-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
-  @keyframes ill-pointer-bounce {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-3px); }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-intersection-linked-list-view .ill-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-intersection-linked-list-view .ill-pointer--a {
-    color: #6ee7b7; border-color: #34d399;
-    box-shadow: 0 0 12px rgba(52, 211, 153, .45);
+
+  #algo-intersection-linked-list-view .ill-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-intersection-linked-list-view .ill-pointer--b {
-    color: #93c5fd; border-color: #60a5fa;
-    box-shadow: 0 0 12px rgba(96, 165, 250, .45);
+
+  #algo-intersection-linked-list-view .ill-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  /* connection line when ptr moves across (pA→B / pB→A) */
-  #algo-intersection-linked-list-view .ill-track {
-    position: relative; min-height: 14px; padding: 4px 0;
+
+  #algo-intersection-linked-list-view .ill-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
-  #algo-intersection-linked-list-view .ill-track-line {
-    width: 100%; height: 2px;
-    background: linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, .5) 50%, transparent 100%);
-    border-radius: 2px;
+
+  #algo-intersection-linked-list-view .ill-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
   }
-  /* result banner */
-  #algo-intersection-linked-list-view .ill-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, .12), rgba(139, 92, 246, .06));
-    border: 1px solid rgba(236, 72, 153, .28);
-    line-height: 1.55; font-size: 14px; color: #fae8ff;
+
+  /* 模态弹窗 */
+  #algo-intersection-linked-list-view .ill-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
   }
-  #algo-intersection-linked-list-view .ill-result .ill-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf4ff; box-shadow: 0 4px 14px var(--accent-glow);
+  #algo-intersection-linked-list-view .ill-modal-backdrop.hidden {
+    display: none;
   }
-  #algo-intersection-linked-list-view .ill-result.ill-result--meet {
-    background: linear-gradient(135deg, rgba(251, 191, 36, .2), rgba(245, 158, 11, .08));
-    border-color: rgba(251, 191, 36, .45); color: #fef3c7;
+
+  #algo-intersection-linked-list-view .ill-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-intersection-linked-list-view .ill-result.ill-result--meet .ill-emoji {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    color: #1e1b4b; box-shadow: 0 4px 14px rgba(251, 191, 36, .55);
+
+  #algo-intersection-linked-list-view .ill-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
   }
-  #algo-intersection-linked-list-view .ill-result.ill-result--miss {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .15), rgba(239, 68, 68, .06));
-    border-color: rgba(248, 113, 113, .4); color: #fecaca;
+  #algo-intersection-linked-list-view .ill-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
   }
-  #algo-intersection-linked-list-view .ill-result.ill-result--miss .ill-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+  #algo-intersection-linked-list-view .ill-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-  /* log */
-  #algo-intersection-linked-list-view .ill-log {
-    min-height: 90px; max-height: 140px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
-  }
-  #algo-intersection-linked-list-view .ill-log-line { display: flex; gap: 8px; }
-  #algo-intersection-linked-list-view .ill-log-line .ill-log-num { color: #475569; flex-shrink: 0; }
-  #algo-intersection-linked-list-view .ill-log-line.ill-log-active { color: #f0abfc; font-weight: 600; }
-  #algo-intersection-linked-list-view .ill-log-line.ill-log-active .ill-log-num { color: var(--accent-a); }
-  /* code */
-  #algo-intersection-linked-list-view .ill-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
-  }
-  #algo-intersection-linked-list-view .ill-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-intersection-linked-list-view .ill-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-  }
-  #algo-intersection-linked-list-view .ill-controls .ill-ctrl-btn { min-width: 64px; }
-  #algo-intersection-linked-list-view .ill-controls .ill-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf4ff; border-color: transparent;
-  }
-  #algo-intersection-linked-list-view .ill-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-intersection-linked-list-view .ill-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
-  }
-  #algo-intersection-linked-list-view #ill-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-intersection-linked-list-view .ill-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-intersection-linked-list-view .ill-code { min-height: 360px; }
+  #algo-intersection-linked-list-view .ill-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="ill-shell">
-  <div class="ill-hero">
-    <div class="ill-hero-left">
-      <span class="ill-icon">✂️</span>
-      <div>
-        <h1>相交链表（双指针）</h1>
-        <div class="ill-sub">LeetCode 160 · pA 走 A+B、pB 走 B+A，相交时必在交点相遇</div>
-      </div>
+<div id="algo-intersection-linked-list-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="ill-header">
+    <div class="ill-header-left">
+      <div class="ill-icon-btn">🤝</div>
+      <h1 class="ill-main-title">面试题 02.07 / LC 160. 链表相交</h1>
+      <button id="btn-open-problem-modal" class="ill-btn-problem">📋 题目</button>
+      <span class="ill-badge-mode">双指针浪漫换道相遇 / a+c+b = b+c+a</span>
+      <span class="ill-badge-complexity">O(M+N) 时间 · O(1) 空间</span>
     </div>
-    <div class="ill-tip"><strong>核心动画：</strong><span style="color:#6ee7b7">pA</span>（绿）和 <span style="color:#93c5fd">pB</span>（蓝）以对称节拍同步推进；<strong>到达链表末尾时无缝切换到对方链表</strong>继续前进；命中交点后金色脉冲 + 振动。</div>
-  </div>
-  <div class="ill-main">
-    <div class="ill-left">
-      <section class="ill-card">
-        <div class="ill-card-title">输入 <span class="ill-tag">两种示例</span></div>
-        <div class="ill-input-row">
-          <button id="ill-start">开始查找</button>
-          <button class="ill-chip" data-mode="meet">相交示例 A=[4,1,8,4,5], B=[5,6,1,8,4,5]</button>
-          <button class="ill-chip" data-mode="miss">不相交示例 A=[2,6,4], B=[1,5]</button>
-        </div>
-      </section>
 
-      <div class="ill-stats">
-        <div class="ill-stat ill-stat--a"><div class="ill-stat-label">pA 位置</div><div class="ill-stat-val" id="ill-stat-pa" style="font-size:16px;">A[0]</div></div>
-        <div class="ill-stat ill-stat--b"><div class="ill-stat-label">pB 位置</div><div class="ill-stat-val" id="ill-stat-pb" style="font-size:16px;">B[0]</div></div>
-        <div class="ill-stat"><div class="ill-stat-label">len(A) + len(B)</div><div class="ill-stat-val" id="ill-stat-len">0</div></div>
-        <div class="ill-stat"><div class="ill-stat-label">步数</div><div class="ill-stat-val" id="ill-stat-step">0</div></div>
-        <div class="ill-stat ill-stat--meet"><div class="ill-stat-label">交点</div><div class="ill-stat-val" id="ill-stat-meet" style="font-size:16px;">-</div></div>
+    <!-- 参数与操作工具组 -->
+    <div class="ill-header-right">
+      <select id="select-intersect-case" class="ill-case-select">
+        <option value="meet">示例 1 (相交于 8)</option>
+        <option value="miss">示例 2 (不相交)</option>
+      </select>
+
+      <button id="btn-generate" class="ill-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="ill-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="ill-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="ill-left-section">
+
+      <!-- 卡片 1: 双链表拓扑与双指针换道沙盘 -->
+      <div class="ill-card">
+        <div class="ill-card-header">
+          <div class="ill-card-title">
+            <span>🤝 双链表拓扑与双指针换道沙盘 (Intersection Sandbox)</span>
+          </div>
+          <div class="ill-legend-bar">
+            <div><span class="ill-legend-dot" style="background:#2563eb;"></span> 📍 pA 指针 (A &rarr; B)</div>
+            <div><span class="ill-legend-dot" style="background:#059669;"></span> 📍 pB 指针 (B &rarr; A)</div>
+            <div><span class="ill-legend-dot" style="background:#ec4899;"></span> 💖 公共相交节点</div>
+          </div>
+        </div>
+
+        <!-- 链表沙盘展示盒 -->
+        <div id="ill-sandbox-container"></div>
       </div>
 
-      <section class="ill-card ill-visual">
-        <div class="ill-card-title">两条链表 + 双指针</div>
-        <div class="ill-canvas" id="ill-canvas"></div>
-        <div class="ill-result" id="ill-result">
-          <span class="ill-emoji">✂️</span>
-          <div id="step-message">点击「开始查找」观察双指针寻找交点</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="ill-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="ill-slider" />
+        <div class="ill-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
         </div>
-      </section>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="ill-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="ill-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="ill-ctrl-btn">▶</button>
+        </div>
+      </div>
 
-      <section class="ill-card">
-        <div class="ill-card-title">执行日志 <button id="ill-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="ill-log" id="ill-log"></div>
-      </section>
-    </div>
-    <aside class="ill-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="ill-controls">
-    <button id="step-reset" class="ill-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="ill-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="ill-ctrl-btn ill-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="ill-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="ill-counter">步骤: 0 / 0</span>
-    <div class="ill-speed-wrap">
-      <span>速度</span>
-      <input id="ill-speed" type="range" min="200" max="2500" step="100" value="900">
-      <span id="ill-speed-label" style="min-width:42px;">0.9s</span>
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="ill-card">
+        <div class="ill-card-header">
+          <div>
+            <div class="ill-card-title">📦 双指针状态空间与相遇监视器</div>
+            <div class="ill-card-desc">pA 与 pB 所处链表轨道、路程累加与等式验证</div>
+          </div>
+          <span id="badge-intersection-status" class="ill-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">探索中</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="ill-state-space-box">
+          <div class="ill-state-columns">
+            <!-- 指针位置 -->
+            <div class="ill-subcard">
+              <div class="ill-subcard-title">📍 指针位置 (Pointers State)</div>
+              <div id="ill-pointers-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 决策监视器 -->
+            <div class="ill-subcard">
+              <div class="ill-subcard-title">⚖️ 换道与判定指令 (Step Action)</div>
+              <div id="ill-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 结果与交点 -->
+          <div class="ill-subcard" style="flex-shrink: 0;">
+            <div class="ill-subcard-title">🏆 最终交点检索结果 (Intersection Node)</div>
+            <div id="ill-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="ill-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="ill-dark-terminal">
+        <div class="ill-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="ill-tab-group">
+            <button id="btn-tab-code" class="ill-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="ill-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="ill-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="ill-lang-group" id="code-lang-tabs">
+            <button class="ill-lang-btn active" data-lang="java">Java</button>
+            <button class="ill-lang-btn" data-lang="cpp">C++</button>
+            <button class="ill-lang-btn" data-lang="python">Python</button>
+            <button class="ill-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="ill-font-tools">
+            <div class="ill-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="algo-intersection-linked-list-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="ill-window-dots">
+              <span class="ill-dot" style="background:#ef4444;"></span>
+              <span class="ill-dot" style="background:#eab308;"></span>
+              <span class="ill-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="ill-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="ill-log-card">
+        <div class="ill-log-header">
+          <div class="ill-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="ill-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="ill-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="ill-modal-backdrop hidden">
+    <div class="ill-modal-content">
+      <div class="ill-modal-header">
+        <div class="ill-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="ill-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="ill-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

@@ -1,545 +1,835 @@
 <style>
+  /* === 环形链表 II (LC 142) · 100% 独立纯粹 Vanilla CSS 完美复刻 DP 标准设计 === */
   #algo-linked-list-cycle-ii-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
-  }
-
-  #algo-linked-list-cycle-ii-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 8% 6%, #22d3eeee, transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #3b82f6ee, transparent 55%),
-                linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #1e1b4b 50%, #3730a3 75%, #1e1b4b 100%);
-    z-index: -2;
-  }
-
-  #algo-linked-list-cycle-ii-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(30, 27, 75, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-linked-list-cycle-ii-view .lc-page {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .lc-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
+  #algo-linked-list-cycle-ii-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-linked-list-cycle-ii-view .llc-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .lc-hero .lc-title-wrapper {
+  #algo-linked-list-cycle-ii-view .llc-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .lc-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+  #algo-linked-list-cycle-ii-view .llc-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .lc-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
+  #algo-linked-list-cycle-ii-view .llc-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #22d3ee, #3b82f6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .lc-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
+  #algo-linked-list-cycle-ii-view .llc-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-linked-list-cycle-ii-view .llc-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .lc-tip {
-    max-width: 500px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(34, 211, 238, 0.08);
-    border: 1px solid rgba(34, 211, 238, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-linked-list-cycle-ii-view .llc-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .lc-tip strong {
-    color: #22d3ee;
+  #algo-linked-list-cycle-ii-view .llc-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-case-select {
+    padding: 3px 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 11px;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-linked-list-cycle-ii-view .llc-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
     font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-linked-list-cycle-ii-view .llc-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-main {
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-linked-list-cycle-ii-view .llc-main-layout {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px;
-    gap: 16px;
-    padding: 16px;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
 
-  @media (max-width: 1100px) {
-    #algo-linked-list-cycle-ii-view .lc-main {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .lc-left {
-    min-width: 0;
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-linked-list-cycle-ii-view .llc-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
     overflow: hidden;
   }
 
-  .lc-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-linked-list-cycle-ii-view .llc-card {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .lc-card-title {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: #cdd6f4;
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .lc-input-row {
-    display: grid;
-    grid-template-columns: 1fr 100px auto;
-    gap: 10px;
-    align-items: center;
-    padding: 16px;
-  }
-
-  .lc-input-row input {
-    width: 100%;
     padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(11, 10, 23, 0.8);
-    color: #cdd6f4;
-    font-family: Consolas, monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
-  .lc-input-row input:focus {
-    border-color: #22d3ee;
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+  #algo-linked-list-cycle-ii-view .llc-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
   }
 
-  .lc-input-row button {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+  #algo-linked-list-cycle-ii-view .llc-card-title {
+    font-size: 12px;
+    font-weight: 800;
     color: #0f172a;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-linked-list-cycle-ii-view .llc-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 环形拓扑沙盘展示盒 */
+  #algo-linked-list-cycle-ii-view #llc-sandbox-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-linked-list-cycle-ii-view .llc-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
     cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+    background: #e2e8f0;
+    border-radius: 999px;
   }
 
-  .lc-input-row button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4);
+  #algo-linked-list-cycle-ii-view .llc-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .lc-input-row button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
+  #algo-linked-list-cycle-ii-view .llc-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-linked-list-cycle-ii-view .llc-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  .lc-examples {
-    padding: 14px;
+  #algo-linked-list-cycle-ii-view .llc-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-linked-list-cycle-ii-view .llc-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-linked-list-cycle-ii-view .llc-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-state-columns {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
+    flex: 1;
+    min-height: 0;
   }
 
-  .lc-example-btn {
-    padding: 8px 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(110, 231, 183, 0.3);
-    background: rgba(34, 211, 238, 0.1);
-    color: #cdd6f4;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
+  #algo-linked-list-cycle-ii-view .llc-subcard {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
   }
 
-  .lc-example-btn:hover {
-    background: rgba(34, 211, 238, 0.2);
-    border-color: #22d3ee;
+  #algo-linked-list-cycle-ii-view .llc-subcard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 3px;
   }
 
-  .lc-examples .lc-example-btn:last-child {
-    border-color: rgba(92, 211, 255, 0.3);
-    background: rgba(59, 130, 246, 0.1);
-  }
-
-  .lc-examples .lc-example-btn:last-child:hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #3b82f6;
-  }
-
-  #algo-linked-list-cycle-ii-view .lc-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-
-  #algo-linked-list-cycle-ii-view .lc-stat {
-    padding: 16px;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-linked-list-cycle-ii-view .llc-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     overflow: hidden;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #22d3ee, #3b82f6);
-  }
-
-  #algo-linked-list-cycle-ii-view .lc-stat label {
-    display: block;
-    margin-bottom: 8px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  #algo-linked-list-cycle-ii-view .lc-stat span {
-    color: #22d3ee;
-    font-family: Consolas, monospace;
-    font-size: 20px;
-    font-weight: 800;
-  }
-
-  #algo-linked-list-cycle-ii-view .lc-visual {
-    flex: 1;
+  /* Card 3: 暗色代码终端面板 */
+  #algo-linked-list-cycle-ii-view .llc-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
     min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-canvas-wrap {
-    flex: 1;
-    min-height: 0;
-    padding: 20px;
-    overflow: auto;
+  #algo-linked-list-cycle-ii-view .llc-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-canvas {
-    width: 100%;
-    height: 100%;
-    min-height: 240px;
+  #algo-linked-list-cycle-ii-view .llc-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-message {
-    margin: 0 16px 16px;
-    padding: 14px 18px;
-    border-radius: 12px;
-    border: 1px solid rgba(34, 211, 238, 0.2);
-    background: rgba(34, 211, 238, 0.08);
-    color: #cdd6f4;
-    font-size: 14px;
-    line-height: 1.5;
+  #algo-linked-list-cycle-ii-view .llc-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-linked-list-cycle-ii-view .llc-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-log {
+  #algo-linked-list-cycle-ii-view .llc-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-linked-list-cycle-ii-view .llc-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-linked-list-cycle-ii-view .llc-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-linked-list-cycle-ii-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-linked-list-cycle-ii-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-terminal-body {
+    flex: 1;
     min-height: 0;
-    max-height: 140px;
-    padding: 14px 18px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: Consolas, monospace;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
     font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
+    line-height: 1.6;
+    color: #cbd5e1;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-log .active {
-    color: #22d3ee;
-    font-weight: 600;
+  #algo-linked-list-cycle-ii-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-linked-list-cycle-ii-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-linked-list-cycle-ii-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-code {
+  /* Card 4: 执行日志卡片 */
+  #algo-linked-list-cycle-ii-view .llc-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
     min-height: 0;
     display: flex;
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+    flex-direction: column;
     overflow: hidden;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-code [data-code-panel] {
-    flex: 1;
-    min-width: 0;
+  #algo-linked-list-cycle-ii-view .llc-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
 
-  #algo-linked-list-cycle-ii-view .lc-controls {
-    padding: 16px 20px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-linked-list-cycle-ii-view .llc-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-linked-list-cycle-ii-view .llc-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    z-index: 999;
+  }
+  #algo-linked-list-cycle-ii-view .llc-modal-backdrop.hidden {
+    display: none;
   }
 
-  .lc-playback-btn {
-    padding: 10px 20px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(59, 130, 246, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
+  #algo-linked-list-cycle-ii-view .llc-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-linked-list-cycle-ii-view .llc-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-linked-list-cycle-ii-view .llc-modal-title {
     font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-weight: 800;
+    color: #f8fafc;
   }
-
-  .lc-playback-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .lc-playback-btn:not(:disabled):hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #3b82f6;
-    transform: translateY(-1px);
-  }
-
-  .lc-playback-btn#step-play:not(:disabled) {
-    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+  #algo-linked-list-cycle-ii-view .llc-modal-close {
+    background: transparent;
     border: none;
-    color: #0f172a;
-    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-
-  .lc-playback-btn#step-play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4);
-    transform: translateY(-2px);
-  }
-
-  .lc-counter {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 13px;
-    font-family: Consolas, monospace;
-  }
-
-  #algo-linked-list-cycle-ii-view #step-speed {
-    accent-color: #22d3ee;
-  }
-
-  /* Animations */
-  @keyframes pulse {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
-    }
-  }
-
-  @keyframes popIn {
-    0% {
-      transform: scale(0) rotate(-10deg);
-      opacity: 0;
-    }
-    100% {
-      transform: scale(1) rotate(0deg);
-      opacity: 1;
-    }
-  }
-
-  @keyframes burst {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.15);
-      opacity: 0.8;
-    }
-  }
-
-  @keyframes shake {
-    0%, 100% {
-      transform: translateX(0);
-    }
-    20%, 60% {
-      transform: translateX(-5px);
-    }
-    40%, 80% {
-      transform: translateX(5px);
-    }
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes rise {
-    from {
-      transform: scaleY(0);
-      opacity: 0;
-    }
-    to {
-      transform: scaleY(1);
-      opacity: 1;
-    }
-  }
-
-  @keyframes ripple {
-    0% {
-      transform: scale(0.8);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1.5);
-      opacity: 0;
-    }
-  }
-
-  .lc-stat.active {
-    animation: pulse 1.2s infinite;
-  }
-
-  .lc-stat.new {
-    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .lc-stat.success {
-    animation: burst 0.4s ease;
-  }
-
-  .lc-stat.fail {
-    animation: shake 0.4s ease;
+  #algo-linked-list-cycle-ii-view .llc-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="lc-page">
-  <div class="lc-hero">
-    <div class="lc-title-wrapper">
-      <div class="lc-hero-icon">🔄</div>
-      <div class="lc-hero-text">
-        <h2>环形链表 II（快慢指针）</h2>
-        <p>LeetCode 142：找到链表入环的第一个节点，无环返回 null。</p>
+<div id="algo-linked-list-cycle-ii-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="llc-header">
+    <div class="llc-header-left">
+      <div class="llc-icon-btn">🔄</div>
+      <h1 class="llc-main-title">LC 142. 环形链表 II</h1>
+      <button id="btn-open-problem-modal" class="llc-btn-problem">📋 题目</button>
+      <span class="llc-badge-mode">快慢指针相遇 + x = z 数学追击</span>
+      <span class="llc-badge-complexity">O(N) 时间 · O(1) 空间</span>
+    </div>
+
+    <!-- 参数与操作工具组 -->
+    <div class="llc-header-right">
+      <select id="select-cycle-case" class="llc-case-select">
+        <option value="ex1">[3,2,0,-4] pos=1 (入环点: 2)</option>
+        <option value="ex2">[1,2] pos=0 (入环点: 1)</option>
+        <option value="ex3">[1] pos=-1 (无环)</option>
+      </select>
+
+      <button id="btn-generate" class="llc-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="llc-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="llc-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="llc-left-section">
+
+      <!-- 卡片 1: 环形拓扑与指针追击沙盘 -->
+      <div class="llc-card">
+        <div class="llc-card-header">
+          <div class="llc-card-title">
+            <span>🔄 环形拓扑与指针追击沙盘 (Cycle Sandbox)</span>
+          </div>
+          <div class="llc-legend-bar">
+            <div><span class="llc-legend-dot" style="background:#2563eb;"></span> fast (2步)</div>
+            <div><span class="llc-legend-dot" style="background:#059669;"></span> slow (1步)</div>
+            <div><span class="llc-legend-dot" style="background:#ec4899;"></span> 环入口 (Entrance)</div>
+          </div>
+        </div>
+
+        <!-- 环形拓扑展示盒 -->
+        <div id="llc-sandbox-container"></div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="llc-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="llc-slider" />
+        <div class="llc-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="llc-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="llc-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="llc-ctrl-btn">▶</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与最优指标追踪 -->
+      <div class="llc-card">
+        <div class="llc-card-header">
+          <div>
+            <div class="llc-card-title">📦 快慢指针状态空间与数学推导监视器</div>
+            <div class="llc-card-desc">阶段判定、相遇点与 x = (n-1)(y+z) + z 定理验证</div>
+          </div>
+          <span id="badge-cycle-status" class="llc-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">探索追击中</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="llc-state-space-box">
+          <div class="llc-state-columns">
+            <!-- 指针位置 -->
+            <div class="llc-subcard">
+              <div class="llc-subcard-title">📍 指针位置 (Pointers Track)</div>
+              <div id="llc-pointers-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+            <!-- 阶段监视器 -->
+            <div class="llc-subcard">
+              <div class="llc-subcard-title">⚖️ 阶段与追击决策 (Phase Monitor)</div>
+              <div id="llc-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <!-- 结果展示 -->
+          <div class="llc-subcard" style="flex-shrink: 0;">
+            <div class="llc-subcard-title">🏆 入环节点检索结果 (Cycle Entrance)</div>
+            <div id="llc-metrics-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="llc-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="llc-dark-terminal">
+        <div class="llc-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="llc-tab-group">
+            <button id="btn-tab-code" class="llc-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="llc-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="llc-tab-item">💡 贪心精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="llc-lang-group" id="code-lang-tabs">
+            <button class="llc-lang-btn active" data-lang="java">Java</button>
+            <button class="llc-lang-btn" data-lang="cpp">C++</button>
+            <button class="llc-lang-btn" data-lang="python">Python</button>
+            <button class="llc-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="llc-font-tools">
+            <div class="llc-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="algo-linked-list-cycle-ii-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="llc-window-dots">
+              <span class="llc-dot" style="background:#ef4444; width:7px; height:7px; border-radius:999px;"></span>
+              <span class="llc-dot" style="background:#eab308; width:7px; height:7px; border-radius:999px;"></span>
+              <span class="llc-dot" style="background:#22c55e; width:7px; height:7px; border-radius:999px;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="llc-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 贪心精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载贪心精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="llc-log-card">
+        <div class="llc-log-header">
+          <div class="llc-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="llc-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="llc-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="llc-modal-backdrop hidden">
+    <div class="llc-modal-content">
+      <div class="llc-modal-header">
+        <div class="llc-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="llc-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="llc-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
-    <div class="lc-tip"><strong>两阶段：</strong>① fast 走2步、slow 走1步，相遇则有环；② 让一个指针从 head 出发、另一个留在相遇点，同速前进，再次相遇点即入环口。</div>
-  </div>
-
-  <div class="lc-main">
-    <div class="lc-left">
-      <section class="lc-card">
-        <div class="lc-card-title">输入</div>
-        <div class="lc-input-row">
-          <input id="lc-input" value="3,2,0,-4">
-          <input id="lc-pos-input" type="number" min="-1" max="9" value="1">
-          <button id="lc-start">开始检测</button>
-        </div>
-        <div class="lc-examples">
-          <button class="lc-example-btn" data-val="3,2,0,-4" data-pos="1">入环下标1</button>
-          <button class="lc-example-btn" data-val="1,2" data-pos="0">入环下标0</button>
-          <button class="lc-example-btn" data-val="1" data-pos="-1">无环</button>
-        </div>
-      </section>
-
-      <div class="lc-stats">
-        <div class="lc-stat"><label>fast 位置</label><span id="lc-fast">head</span></div>
-        <div class="lc-stat"><label>slow 位置</label><span id="lc-slow">head</span></div>
-        <div class="lc-stat"><label>阶段</label><span id="lc-phase">就绪</span></div>
-        <div class="lc-stat"><label>入环口</label><span id="lc-entry">-</span></div>
-      </div>
-
-      <section class="lc-card lc-visual">
-        <div class="lc-card-title">链表与环（Canvas）</div>
-        <div class="lc-canvas-wrap"><canvas id="lc-canvas" class="lc-canvas"></canvas></div>
-        <div class="lc-message" id="step-message">点击开始检测</div>
-      </section>
-
-      <section class="lc-card">
-        <div class="lc-card-title">执行日志</div>
-        <div class="lc-log" id="lc-log"></div>
-      </section>
-    </div>
-    <aside class="lc-code"><div data-code-panel></div></aside>
-  </div>
-
-  <div class="lc-controls">
-    <button id="step-reset" class="lc-playback-btn">重置</button>
-    <button id="step-prev" class="lc-playback-btn">上一步</button>
-    <button id="step-play" class="lc-playback-btn">播放</button>
-    <button id="step-next" class="lc-playback-btn">下一步</button>
-    <span id="step-counter" class="lc-counter">步骤: 0 / 0</span>
-    <input id="step-speed" type="range" min="400" max="2500" step="100" value="900" style="accent-color:#22d3ee">
-    <span id="step-speed-label" class="lc-counter">0.9s</span>
   </div>
 </div>

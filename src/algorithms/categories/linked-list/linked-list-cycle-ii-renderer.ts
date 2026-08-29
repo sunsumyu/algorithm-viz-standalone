@@ -1,329 +1,496 @@
 /**
- * 环形链表 II 可视化器（快慢指针）
- * LeetCode 142
+ * 环形链表 II 可视化器 — 4-Card 标准现代架构
+ * LeetCode 142：快慢指针相遇与入口数学推导 (x = z)
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  LINKED_LIST_CYCLE_II_PROBLEM_HTML,
+  LINKED_LIST_CYCLE_II_ANALYSIS_HTML,
+  LINKED_LIST_CYCLE_II_CODE_LANGUAGES,
+} from './linked-list-cycle-ii-problem-content';
 import template from './linked-list-cycle-ii.html?raw';
 
 export interface CycleStep {
   values: number[];
-  pos: number;           // 入环下标，-1 无环
-  fast: number;          // fast 当前下标
-  slow: number;          // slow 当前下标
-  meetIndex: number;     // 相遇点下标，-1 未相遇
-  entryIndex: number;    // 入环口下标，-1 未确定
-  phase: 'init' | 'chase' | 'meet' | 'find-entry' | 'no-cycle' | 'done';
+  pos: number; // 入环下标，-1 无环
+  fast: number; // fast / index2 当前下标 (-1 表示 null)
+  slow: number; // slow / index1 当前下标 (-1 表示 null)
+  meetIndex: number; // 相遇点下标，-1 未相遇
+  entryIndex: number; // 入环口下标，-1 未确定
+  phase: 'init' | 'chase' | 'meet' | 'find_entry' | 'done_entrance' | 'no_cycle';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: number;
 }
 
 export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
   const steps: CycleStep[] = [];
   const n = values.length;
 
+  if (n === 0) return steps;
+
   steps.push({
-    values, pos, fast: n > 0 ? 0 : -1, slow: n > 0 ? 0 : -1, meetIndex: -1, entryIndex: -1, phase: 'init',
-    message: pos === -1 ? '链表无环。fast、slow 都从 head 出发。' : `链表有环，入环下标 = ${pos}。fast 走2步、slow 走1步开始追逐。`,
-    log: '初始化快慢指针。',
-    codeLine: [1, 2],
+    values,
+    pos,
+    fast: 0,
+    slow: 0,
+    meetIndex: -1,
+    entryIndex: -1,
+    phase: 'init',
+    message: pos === -1 ? '链表无环。fast 与 slow 从 head (下标 0) 出发。' : `链表有环 (尾节点连回下标 ${pos})。fast (每次2步) 与 slow (每次1步) 开始追逐。`,
+    codeLine: 2,
   });
 
   if (pos === -1) {
-    // 无环：模拟 fast 到达末尾
     let fast = 0;
+    let slow = 0;
     while (fast < n && fast + 1 < n) {
       fast += 2;
+      slow += 1;
       steps.push({
-        values, pos, fast: Math.min(fast, n), slow: 0, meetIndex: -1, entryIndex: -1, phase: 'chase',
-        message: `fast 走2步到 ${fast >= n ? 'null' : values[fast]}，slow 在 ${values[0]}。`,
-        log: `fast -> ${fast >= n ? 'null' : values[fast]}。`,
-        codeLine: 4,
+        values,
+        pos,
+        fast: Math.min(fast, n),
+        slow: Math.min(slow, n),
+        meetIndex: -1,
+        entryIndex: -1,
+        phase: 'chase',
+        message: `fast 走2步到 ${fast >= n ? 'null' : `[${fast}](${values[fast]})`}，slow 走1步到 [${slow}](${values[slow]})`,
+        codeLine: 6,
       });
     }
     steps.push({
-      values, pos, fast: n, slow: 0, meetIndex: -1, entryIndex: -1, phase: 'no-cycle',
-      message: `fast 到达 null，链表无环，返回 null。`,
-      log: '无环，返回 null。',
-      codeLine: 7,
+      values,
+      pos,
+      fast: -1,
+      slow,
+      meetIndex: -1,
+      entryIndex: -1,
+      phase: 'no_cycle',
+      message: 'fast 到达 null (fast == null || fast.next == null)，说明无环，返回 null。',
+      codeLine: 17,
     });
     return steps;
   }
 
-  // 有环：模拟追逐
-  let fast = 0;
-  let slow = 0;
-  // next: 若 i==n-1（环尾），指向 pos；否则 i+1。环尾 = pos-1（最后一个连回 pos 的节点）
-  // 实际：链表节点 0..n-1，节点 n-1 的 next 指向 pos
+  // 有环：阶段 1 追逐
   const next = (i: number): number => (i === n - 1 ? pos : i + 1);
 
-  let safety = 0;
-  while (safety < n * n + 10) {
-    safety++;
-    // fast 走2步
-    fast = next(next(fast));
-    slow = next(slow);
-    steps.push({
-      values, pos, fast, slow, meetIndex: -1, entryIndex: -1, phase: 'chase',
-      message: `fast 走2步到节点 ${values[fast]}，slow 走1步到节点 ${values[slow]}。`,
-      log: `fast -> ${values[fast]}, slow -> ${values[slow]}。`,
-      codeLine: [3, 4, 5, 6],
-    });
+  let fast = 0;
+  let slow = 0;
+  let meet = -1;
+
+  for (let iter = 0; iter < 40; iter++) {
+    const f1 = next(fast);
+    const f2 = next(f1);
+    const s1 = next(slow);
+
+    fast = f2;
+    slow = s1;
+
     if (fast === slow) {
+      meet = fast;
       steps.push({
-        values, pos, fast, slow, meetIndex: fast, entryIndex: -1, phase: 'meet',
-        message: `相遇！fast 与 slow 在节点 ${values[fast]}（下标 ${fast}）相遇，确认有环。`,
-        log: `相遇于 ${values[fast]}。`,
-        codeLine: 7,
+        values,
+        pos,
+        fast,
+        slow,
+        meetIndex: meet,
+        entryIndex: -1,
+        phase: 'meet',
+        message: `🎉 fast 与 slow 在下标 [${meet}] (值 ${values[meet]}) 处相遇！开始启动阶段二：推纳入环口 (x = z)。`,
+        codeLine: 9,
       });
       break;
+    } else {
+      steps.push({
+        values,
+        pos,
+        fast,
+        slow,
+        meetIndex: -1,
+        entryIndex: -1,
+        phase: 'chase',
+        message: `fast 走2步到 [${fast}](${values[fast]})，slow 走1步到 [${slow}](${values[slow]})`,
+        codeLine: 6,
+      });
     }
   }
 
-  // 找入环口：ptr1 从 head，ptr2 从相遇点，同速前进
-  let ptr1 = 0;
-  let ptr2 = fast;
+  // 阶段 2: index1 = head, index2 = meet，每次各走 1 步
+  let index1 = 0;
+  let index2 = meet;
+
   steps.push({
-    values, pos, fast: ptr2, slow: ptr1, meetIndex: ptr2, entryIndex: -1, phase: 'find-entry',
-    message: `第二阶段：让 ptr1 从 head(${values[0]}) 出发，ptr2 从相遇点(${values[ptr2]}) 出发，各走1步。`,
-    log: `ptr1=head, ptr2=meet，开始同速。`,
-    codeLine: [9, 10, 11],
+    values,
+    pos,
+    fast: index2,
+    slow: index1,
+    meetIndex: meet,
+    entryIndex: -1,
+    phase: 'find_entry',
+    message: `阶段二初始化：index1 指向 head (下标 0)，index2 指向相遇点 (下标 ${meet})，每次各走 1 步。`,
+    codeLine: 12,
   });
 
-  safety = 0;
-  while (ptr1 !== ptr2 && safety < n * n + 10) {
-    safety++;
-    ptr1 = next(ptr1);
-    ptr2 = next(ptr2);
+  while (index1 !== index2) {
+    index1 = next(index1);
+    index2 = next(index2);
+
+    if (index1 === index2) {
+      break;
+    }
+
     steps.push({
-      values, pos, fast: ptr2, slow: ptr1, meetIndex: fast, entryIndex: -1, phase: 'find-entry',
-      message: `ptr1 -> ${values[ptr1]}，ptr2 -> ${values[ptr2]}。`,
-      log: `ptr1=${values[ptr1]}, ptr2=${values[ptr2]}。`,
-      codeLine: [12, 13, 14],
+      values,
+      pos,
+      fast: index2,
+      slow: index1,
+      meetIndex: meet,
+      entryIndex: -1,
+      phase: 'find_entry',
+      message: `index1 移动到 [${index1}](${values[index1]})，index2 移动到 [${index2}](${values[index2]})`,
+      codeLine: 14,
     });
   }
 
+  // 找到入环口
   steps.push({
-    values, pos, fast: ptr1, slow: ptr1, meetIndex: fast, entryIndex: ptr1, phase: 'done',
-    message: `ptr1 与 ptr2 在节点 ${values[ptr1]}（下标 ${ptr1}）再次相遇，即为入环口。`,
-    log: `入环口 = ${values[ptr1]}。`,
-    codeLine: 15,
+    values,
+    pos,
+    fast: index2,
+    slow: index1,
+    meetIndex: meet,
+    entryIndex: index1,
+    phase: 'done_entrance',
+    message: `🎉 index1 与 index2 在下标 [${index1}] (值 ${values[index1]}) 处相遇！成功锁定入环起始节点！`,
+    codeLine: 16,
   });
+
   return steps;
 }
 
 export class LinkedListCycleIIVisualizer extends StepVisualizer<CycleStep> {
-  protected codeLines = [
-    'ListNode detectCycle(ListNode head) {',
-    '    ListNode slow = head, fast = head;',
-    '    while (fast != null && fast.next != null) {',
-    '        fast = fast.next.next;',
-    '        slow = slow.next;',
-    '        if (fast == slow) {',
-    '            // 相遇，有环',
-    '            ListNode p1 = head, p2 = fast;',
-    '            while (p1 != p2) {',
-    '                p1 = p1.next;',
-    '                p2 = p2.next;',
-    '            }',
-    '            return p1;  // 入环口',
-    '        }',
-    '    }',
-    '    return null;  // 无环',
-    '}',
-  ];
-  protected codePanelTitle = '环形链表II Java 代码';
+  protected codeLanguages = LINKED_LIST_CYCLE_II_CODE_LANGUAGES;
+  protected codeLines = LINKED_LIST_CYCLE_II_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '环形链表 II 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
-  private posInput: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private logEl: HTMLElement | null = null;
-  private fastEl: HTMLElement | null = null;
-  private slowEl: HTMLElement | null = null;
-  private phaseEl: HTMLElement | null = null;
-  private entryEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private pointersContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#lc-input');
-    this.posInput = this.root.querySelector('#lc-pos-input');
-    this.btnStart = this.root.querySelector('#lc-start');
-    this.exampleButtons = this.root.querySelectorAll('.lc-example-btn');
-    this.canvas = this.root.querySelector('#lc-canvas');
-    this.ctx = this.canvas?.getContext('2d') || null;
-    this.logEl = this.root.querySelector('#lc-log');
-    this.fastEl = this.root.querySelector('#lc-fast');
-    this.slowEl = this.root.querySelector('#lc-slow');
-    this.phaseEl = this.root.querySelector('#lc-phase');
-    this.entryEl = this.root.querySelector('#lc-entry');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        if (this.inputEl) this.inputEl.value = btn.dataset.val || '';
-        if (this.posInput) this.posInput.value = btn.dataset.pos || '1';
-        this.start();
-      };
+    this.sandboxContainer = this.root.querySelector('#llc-sandbox-container');
+    this.pointersContainer = this.root.querySelector('#llc-pointers-container');
+    this.decisionMonitorContainer = this.root.querySelector('#llc-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#llc-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: LINKED_LIST_CYCLE_II_PROBLEM_HTML,
+      analysisHtml: LINKED_LIST_CYCLE_II_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): CycleStep[] {
-    const values = (this.inputEl?.value || '3,2,0,-4')
-      .split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
-    if (values.length === 0) values.push(3, 2, 0, -4);
-    let pos = parseInt(this.posInput?.value || '1', 10);
-    if (!Number.isFinite(pos)) pos = 1;
-    pos = Math.max(-1, Math.min(values.length - 1, pos));
-    if (this.posInput) this.posInput.value = String(pos);
-    return buildCycleSteps(values, pos);
+    const select = this.root?.querySelector('#select-cycle-case') as HTMLSelectElement | null;
+    const val = select?.value || 'ex1';
+    if (val === 'ex1') return buildCycleSteps([3, 2, 0, -4], 1);
+    if (val === 'ex2') return buildCycleSteps([1, 2], 0);
+    return buildCycleSteps([1], -1);
   }
 
   protected renderStep(step: CycleStep): void {
-    if (this.fastEl) this.fastEl.textContent = step.fast < step.values.length ? String(step.values[step.fast]) : 'null';
-    if (this.slowEl) this.slowEl.textContent = step.slow < step.values.length ? String(step.values[step.slow]) : 'null';
-    if (this.phaseEl) this.phaseEl.textContent = this.phaseText(step.phase);
-    if (this.entryEl) this.entryEl.textContent = step.entryIndex >= 0 ? String(step.values[step.entryIndex]) : (step.phase === 'no-cycle' ? 'null' : '-');
-    this.drawCanvas(step);
-    this.renderLogLine(step);
-  }
-
-  private phaseText(p: CycleStep['phase']): string {
-    return { init: '初始化', chase: '追逐', meet: '相遇', 'find-entry': '找入环口', 'no-cycle': '无环', done: '完成' }[p];
-  }
-
-  private drawCanvas(step: CycleStep): void {
-    if (!this.canvas || !this.ctx) return;
-    const parent = this.canvas.parentElement;
-    this.canvas.width = parent?.clientWidth || 600;
-    this.canvas.height = parent?.clientHeight || 240;
-    const ctx = this.ctx;
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    const n = step.values.length;
-    if (n === 0) return;
+    const values = step.values;
     const pos = step.pos;
-    const hasCycle = pos !== -1;
+    const isPhase2 = step.phase === 'find_entry' || step.phase === 'done_entrance';
 
-    // 布局：环外节点水平排列，环内节点排成圆形
-    const cx = this.canvas.width / 2;
-    const cy = this.canvas.height / 2;
-    const radius = Math.min(90, this.canvas.height * 0.32);
-    const tailX = cx - radius - 110;
+    // 1. 渲染环形拓扑沙盘 (Card 1)
+    if (this.sandboxContainer) {
+      const nodesHtml = values
+        .map((val, idx) => {
+          const isEntrance = pos !== -1 && idx === pos;
+          const isMeetNode = step.meetIndex !== -1 && idx === step.meetIndex;
 
-    const positions: Array<{ x: number; y: number }> = [];
-    // 环外节点 0..pos-1
-    const outsideCount = hasCycle ? pos : n;
-    for (let i = 0; i < outsideCount; i++) {
-      positions.push({ x: tailX + i * 60, y: cy });
+          const pointerBadges: string[] = [];
+          if (step.slow === idx) {
+            pointerBadges.push(
+              `<span style="background:#059669; color:#ffffff; padding:1px 4px; border-radius:4px; font-size:9px; font-weight:800;">${isPhase2 ? 'idx1' : 'slow'}</span>`
+            );
+          }
+          if (step.fast === idx) {
+            pointerBadges.push(
+              `<span style="background:#2563eb; color:#ffffff; padding:1px 4px; border-radius:4px; font-size:9px; font-weight:800;">${isPhase2 ? 'idx2' : 'fast'}</span>`
+            );
+          }
+
+          let borderColor = '#e2e8f0';
+          let bgColor = '#ffffff';
+          if (isEntrance) {
+            borderColor = '#ec4899';
+            bgColor = '#fdf2f8';
+          }
+          if (isMeetNode) {
+            borderColor = '#8b5cf6';
+          }
+
+          return `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative;">
+              <div style="min-height: 14px; display: flex; gap: 2px;">
+                ${pointerBadges.join('')}
+              </div>
+              <div style="min-width: 44px; height: 44px; padding: 0 8px; border-radius: 10px; background: ${bgColor}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                <span style="font-size: 13px; font-weight: 800; color: ${isEntrance ? '#be185d' : '#0f172a'}; font-family: 'JetBrains Mono', monospace;">
+                  ${val}
+                </span>
+                <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">[${idx}]</span>
+              </div>
+              ${isEntrance ? '<span style="font-size: 9px; color: #ec4899; font-weight: 800;">入环点</span>' : ''}
+              ${isMeetNode ? '<span style="font-size: 9px; color: #8b5cf6; font-weight: 800;">相遇点</span>' : ''}
+            </div>
+          `;
+        })
+        .join(`
+          <div style="display: flex; align-items: center; color: #94a3b8; font-size: 14px; margin-top: 14px;">▶</div>
+        `);
+
+      const loopBackHtml =
+        pos !== -1
+          ? `
+        <div style="width: 100%; display: flex; align-items: center; justify-content: center; margin-top: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; background: #fdf2f8; border: 1px dashed #ec4899; color: #be185d; font-size: 10.5px; font-weight: 700;">
+            <span>↩ 末尾节点 [${values.length - 1}] 指向入环节点 [${pos}] (构成环状闭合)</span>
+          </div>
+        </div>
+      `
+          : `
+        <div style="width: 100%; display: flex; align-items: center; justify-content: center; margin-top: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; background: #f1f5f9; border: 1px dashed #cbd5e1; color: #64748b; font-size: 10.5px;">
+            <span>末尾节点指向 null (无环线性单链表)</span>
+          </div>
+        </div>
+      `;
+
+      this.sandboxContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 6px 0;">
+            ${nodesHtml}
+          </div>
+          ${loopBackHtml}
+        </div>
+      `;
     }
-    if (hasCycle) {
-      const cycleLen = n - pos;
-      for (let i = 0; i < cycleLen; i++) {
-        const angle = (i / cycleLen) * Math.PI * 2 - Math.PI / 2;
-        positions.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
+
+    // 2. 渲染指针追踪 (Card 2 Left)
+    if (this.pointersContainer) {
+      const p1Label = isPhase2 ? 'index1 (head出发)' : 'slow (1步/拍)';
+      const p2Label = isPhase2 ? 'index2 (相遇点出发)' : 'fast (2步/拍)';
+
+      const p1Val = step.slow === -1 ? 'null' : `[${step.slow}] (值 ${values[step.slow]})`;
+      const p2Val = step.fast === -1 ? 'null' : `[${step.fast}] (值 ${values[step.fast]})`;
+
+      this.pointersContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>${p1Label}:</span>
+            <span style="font-family: monospace; font-weight: 800; color: #059669;">${p1Val}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>${p2Label}:</span>
+            <span style="font-family: monospace; font-weight: 800; color: #2563eb;">${p2Val}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>相遇判定 (${isPhase2 ? 'idx1 == idx2' : 'fast == slow'}):</span>
+            <span style="font-family: monospace; font-weight: 800; color: ${step.phase === 'meet' || step.phase === 'done_entrance' ? '#059669' : '#64748b'};">
+              ${step.phase === 'meet' || step.phase === 'done_entrance' ? 'true' : 'false'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染阶段监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      let phaseBadge = '';
+      if (step.phase === 'init') phaseBadge = '<span style="background:#eff6ff; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:700;">初始化</span>';
+      else if (step.phase === 'chase') phaseBadge = '<span style="background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; font-weight:700;">阶段一: 环内快慢追击</span>';
+      else if (step.phase === 'meet') phaseBadge = '<span style="background:#f3e8ff; color:#9333ea; padding:2px 6px; border-radius:4px; font-weight:700;">🎉 阶段一完成: 相遇</span>';
+      else if (step.phase === 'find_entry') phaseBadge = '<span style="background:#eff6ff; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:700;">阶段二: 等速同步寻入口</span>';
+      else if (step.phase === 'done_entrance') phaseBadge = '<span style="background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-weight:700;">🏆 阶段二完成: 锁定入环口</span>';
+      else phaseBadge = '<span style="background:#fef2f2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700;">无环判定</span>';
+
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>当前算法阶段:</span>
+            ${phaseBadge}
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 数学定理: <strong>2(x+y) = x+y+n(y+z) &rArr; x = (n-1)(y+z)+z</strong></div>
+            <div>• 当 n=1 时: <strong>x = z</strong> (head 出发与相遇点出发必定在入环口相遇)</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染入环结果 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      let resultText = '<span style="color:#64748b;">判定追击中...</span>';
+      if (step.phase === 'done_entrance') {
+        resultText = `<strong style="color: #059669; font-family: monospace; font-size: 13px;">索引 [${step.entryIndex}] (值 ${values[step.entryIndex]})</strong>`;
+      } else if (step.phase === 'no_cycle') {
+        resultText = '<strong style="color: #ef4444; font-family: monospace; font-size: 13px;">null (链表无环)</strong>';
+      }
+
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>入环起始节点 (Cycle Entrance): ${resultText}</span>
+            <span style="font-family: monospace; font-weight: 700; color: #2563eb;">定理证明完毕</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgeStatus = this.root?.querySelector('#badge-cycle-status') as HTMLElement | null;
+    if (badgeStatus) {
+      if (step.phase === 'done_entrance') {
+        badgeStatus.textContent = '入环点已锁定';
+        badgeStatus.style.background = '#ecfdf5';
+        badgeStatus.style.color = '#059669';
+      } else if (step.phase === 'no_cycle') {
+        badgeStatus.textContent = '无环';
+        badgeStatus.style.background = '#fef2f2';
+        badgeStatus.style.color = '#ef4444';
+      } else if (step.phase === 'meet') {
+        badgeStatus.textContent = '环内相遇';
+        badgeStatus.style.background = '#f3e8ff';
+        badgeStatus.style.color = '#9333ea';
+      } else {
+        badgeStatus.textContent = '追击中';
+        badgeStatus.style.background = '#eff6ff';
+        badgeStatus.style.color = '#2563eb';
       }
     }
 
-    // 画连接线
-    ctx.strokeStyle = '#45475a';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < n; i++) {
-      const from = positions[i];
-      const toIndex = hasCycle ? (i === n - 1 ? pos : i + 1) : (i + 1 < n ? i + 1 : -1);
-      if (toIndex === -1) continue;
-      const to = positions[toIndex];
-      this.drawArrow(ctx, from.x, from.y, to.x, to.y);
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
     }
 
-    // 画节点
-    for (let i = 0; i < n; i++) {
-      const { x, y } = positions[i];
-      let fill = '#11111b';
-      let stroke = '#45475a';
-      let textColor = '#cdd6f4';
-      if (i === step.entryIndex) { fill = '#a6e3a1'; stroke = '#a6e3a1'; textColor = '#1e1e2e'; }
-      else if (i === step.meetIndex) { fill = '#f9e2af'; stroke = '#f9e2af'; textColor = '#1e1e2e'; }
-      ctx.beginPath();
-      ctx.arc(x, y, 20, 0, Math.PI * 2);
-      ctx.fillStyle = fill;
-      ctx.fill();
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.fillStyle = textColor;
-      ctx.font = '13px Consolas';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(step.values[i]), x, y);
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '扫描';
+
+        if (st.phase === 'chase') {
+          badgeColor = '#d97706';
+          badgeBg = '#fef3c7';
+          badgeText = '追击';
+        } else if (st.phase === 'meet') {
+          badgeColor = '#9333ea';
+          badgeBg = '#f3e8ff';
+          badgeText = '相遇';
+        } else if (st.phase === 'find_entry') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '寻径';
+        } else if (st.phase === 'done_entrance') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '锁定';
+        } else if (st.phase === 'no_cycle') {
+          badgeColor = '#ef4444';
+          badgeBg = '#fef2f2';
+          badgeText = '无环';
+        }
+
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
     }
-
-    // 画 fast/slow 指针标记
-    if (step.slow < n) this.drawPointer(ctx, positions[step.slow], '#94e2d5', 'slow', -28);
-    if (step.fast < n && step.fast !== step.slow) this.drawPointer(ctx, positions[step.fast], '#89b4fa', 'fast', 28);
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
-  private drawArrow(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number): void {
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.hypot(dx, dy);
-    if (len === 0) return;
-    const ux = dx / len, uy = dy / len;
-    const sx = x1 + ux * 20, sy = y1 + uy * 20;
-    const ex = x2 - ux * 24, ey = y2 - uy * 24;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(ex, ey);
-    ctx.stroke();
-    // 箭头
-    const ang = Math.atan2(dy, dx);
-    ctx.beginPath();
-    ctx.moveTo(ex, ey);
-    ctx.lineTo(ex - 7 * Math.cos(ang - 0.4), ey - 7 * Math.sin(ang - 0.4));
-    ctx.lineTo(ex - 7 * Math.cos(ang + 0.4), ey - 7 * Math.sin(ang + 0.4));
-    ctx.closePath();
-    ctx.fillStyle = '#45475a';
-    ctx.fill();
-  }
-
-  private drawPointer(ctx: CanvasRenderingContext2D, pos: { x: number; y: number }, color: string, label: string, offsetY: number): void {
-    ctx.fillStyle = color;
-    ctx.font = 'bold 11px Consolas';
-    ctx.textAlign = 'center';
-    ctx.fillText(label, pos.x + offsetY * 0.6, pos.y - 30);
-    ctx.beginPath();
-    ctx.moveTo(pos.x + offsetY * 0.6, pos.y - 24);
-    ctx.lineTo(pos.x, pos.y - 20);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
-
-  private renderLogLine(step: CycleStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
 registerAlgorithm({
   id: 'linked-list-cycle-ii',
-  name: '环形链表 II（快慢指针）',
+  name: '环形链表 II',
   viewId: 'algo-linked-list-cycle-ii-view',
   category: 'linked-list',
-  description: '快慢指针相遇后找入环口',
+  description: 'LeetCode 142 · 快慢指针判断环形与相遇点，严谨数学推导 (x = z) 寻找入环口',
   icon: '🔄',
   template,
   Visualizer: LinkedListCycleIIVisualizer,
   difficulty: 2,
-  levelOrder: 3,
-  learningGoal: '理解快慢指针检测环 + 找入环点的数学原理',
+  levelOrder: 4,
+  learningGoal: '掌握 Floyd 判圈算法数学推导原理与快慢双指针协作技巧',
 });

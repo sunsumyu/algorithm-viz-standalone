@@ -1,406 +1,564 @@
 /**
- * 设计链表可视化器（MyLinkedList）
- * 重做：玻璃感 stat 面板 + addAt 节点 scale-pop-in / delete shake-and-shrink / get 脉冲 + 完整执行日志
+ * 设计链表可视化器（MyLinkedList）— 4-Card 标准现代架构
+ * LeetCode 707：虚拟头节点单链表增删查改
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  DESIGN_LINKED_LIST_PROBLEM_HTML,
+  DESIGN_LINKED_LIST_ANALYSIS_HTML,
+  DESIGN_LINKED_LIST_CODE_LANGUAGES,
+} from './design-linked-list-problem-content';
 import template from './design-linked-list.html?raw';
 
-type Op = 'addAtHead' | 'addAtTail' | 'addAtIndex' | 'deleteAtIndex' | 'get' | 'reset';
+export type OpType = 'addAtHead' | 'addAtTail' | 'addAtIndex' | 'deleteAtIndex' | 'get' | 'init';
 
-interface DLLNode {
+export interface DLLNode {
   val: number;
   next: DLLNode | null;
 }
 
-interface DLLStep {
-  /** 当前链表快照（按 head→tail 顺序） */
+export interface DLLStep {
   values: number[];
-  op: Op;
+  op: OpType;
   args: number[];
-  highlight: number;          // -1 = 无高亮
+  highlightIndex: number; // -1 = 无高亮
   highlightKind: 'add' | 'del' | 'get' | '';
   ret: number | string;
   size: number;
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: number;
 }
 
-class MyLinkedList {
+export class LinkedListModel {
   private head: DLLNode | null = null;
   private size = 0;
 
-  getSize(): number { return this.size; }
-  getHead(): DLLNode | null { return this.head; }
+  public getSize(): number {
+    return this.size;
+  }
 
-  values(): number[] {
+  public values(): number[] {
     const out: number[] = [];
     let cur = this.head;
-    while (cur) { out.push(cur.val); cur = cur.next; }
+    while (cur) {
+      out.push(cur.val);
+      cur = cur.next;
+    }
     return out;
   }
 
-  get(index: number): number {
+  public reset(): void {
+    this.head = null;
+    this.size = 0;
+  }
+
+  public get(index: number): number {
     if (index < 0 || index >= this.size) return -1;
     let cur = this.head;
     for (let i = 0; i < index; i++) cur = cur!.next;
     return cur!.val;
   }
 
-  addAtHead(val: number): void {
+  public addAtHead(val: number): void {
     this.head = { val, next: this.head };
     this.size++;
   }
 
-  addAtTail(val: number): void {
-    if (!this.head) { this.addAtHead(val); return; }
+  public addAtTail(val: number): void {
+    if (!this.head) {
+      this.addAtHead(val);
+      return;
+    }
     let cur = this.head;
     while (cur.next) cur = cur.next;
     cur.next = { val, next: null };
     this.size++;
   }
 
-  addAtIndex(index: number, val: number): void {
-    if (index < 0 || index > this.size) return;
-    if (index === 0) { this.addAtHead(val); return; }
-    let cur = this.head!;
-    for (let i = 0; i < index - 1; i++) cur = cur.next!;
-    cur.next = { val, next: cur.next };
+  public addAtIndex(index: number, val: number): boolean {
+    if (index > this.size) return false;
+    if (index <= 0) {
+      this.addAtHead(val);
+      return true;
+    }
+    let cur = this.head;
+    for (let i = 0; i < index - 1; i++) cur = cur!.next;
+    cur!.next = { val, next: cur!.next };
     this.size++;
+    return true;
   }
 
-  deleteAtIndex(index: number): void {
-    if (index < 0 || index >= this.size) return;
-    if (index === 0) { this.head = this.head!.next; this.size--; return; }
-    let cur = this.head!;
-    for (let i = 0; i < index - 1; i++) cur = cur.next!;
-    cur.next = cur.next!.next;
+  public deleteAtIndex(index: number): boolean {
+    if (index < 0 || index >= this.size) return false;
+    if (index === 0) {
+      this.head = this.head!.next;
+      this.size--;
+      return true;
+    }
+    let cur = this.head;
+    for (let i = 0; i < index - 1; i++) cur = cur!.next;
+    cur!.next = cur!.next ? cur!.next.next : null;
     this.size--;
-  }
-
-  reset(): void {
-    this.head = null; this.size = 0;
+    return true;
   }
 }
 
+export function buildPresetSteps(): DLLStep[] {
+  const model = new LinkedListModel();
+  const steps: DLLStep[] = [];
+
+  steps.push({
+    values: [],
+    op: 'init',
+    args: [],
+    highlightIndex: -1,
+    highlightKind: '',
+    ret: 'void',
+    size: 0,
+    message: '初始化 MyLinkedList()：虚拟头节点 dummyHead 创建，size = 0',
+    codeLine: 6,
+  });
+
+  // 1. addAtHead(1)
+  model.addAtHead(1);
+  steps.push({
+    values: model.values(),
+    op: 'addAtHead',
+    args: [1],
+    highlightIndex: 0,
+    highlightKind: 'add',
+    ret: 'void',
+    size: model.getSize(),
+    message: 'addAtHead(1)：在头部插入节点 1，当前链表: [1]',
+    codeLine: 18,
+  });
+
+  // 2. addAtTail(3)
+  model.addAtTail(3);
+  steps.push({
+    values: model.values(),
+    op: 'addAtTail',
+    args: [3],
+    highlightIndex: model.getSize() - 1,
+    highlightKind: 'add',
+    ret: 'void',
+    size: model.getSize(),
+    message: 'addAtTail(3)：在尾部追加节点 3，当前链表: [1, 3]',
+    codeLine: 22,
+  });
+
+  // 3. addAtIndex(1, 2)
+  model.addAtIndex(1, 2);
+  steps.push({
+    values: model.values(),
+    op: 'addAtIndex',
+    args: [1, 2],
+    highlightIndex: 1,
+    highlightKind: 'add',
+    ret: 'void',
+    size: model.getSize(),
+    message: 'addAtIndex(1, 2)：在索引 1 处插入节点 2，当前链表: [1, 2, 3]',
+    codeLine: 25,
+  });
+
+  // 4. get(1) -> 2
+  const r1 = model.get(1);
+  steps.push({
+    values: model.values(),
+    op: 'get',
+    args: [1],
+    highlightIndex: 1,
+    highlightKind: 'get',
+    ret: r1,
+    size: model.getSize(),
+    message: `get(1)：查询索引 1 处的值，返回 ${r1}`,
+    codeLine: 11,
+  });
+
+  // 5. deleteAtIndex(1)
+  model.deleteAtIndex(1);
+  steps.push({
+    values: model.values(),
+    op: 'deleteAtIndex',
+    args: [1],
+    highlightIndex: 1,
+    highlightKind: 'del',
+    ret: 'void',
+    size: model.getSize(),
+    message: 'deleteAtIndex(1)：删除索引 1 处的节点，当前链表: [1, 3]',
+    codeLine: 36,
+  });
+
+  // 6. get(1) -> 3
+  const r2 = model.get(1);
+  steps.push({
+    values: model.values(),
+    op: 'get',
+    args: [1],
+    highlightIndex: 1,
+    highlightKind: 'get',
+    ret: r2,
+    size: model.getSize(),
+    message: `get(1)：再次查询索引 1 处的值，返回 ${r2}`,
+    codeLine: 11,
+  });
+
+  return steps;
+}
+
 export class DesignLinkedListVisualizer extends StepVisualizer<DLLStep> {
-  protected codeLines = [
-    'class MyLinkedList {',
-    '    private ListNode head; private int size;',
-    '    public MyLinkedList() { head = null; size = 0; }',
-    '',
-    '    public int get(int index) {',
-    '        if (index < 0 || index >= size) return -1;',
-    '        ListNode cur = head; for (int i = 0; i < index; i++) cur = cur.next;',
-    '        return cur.val;',
-    '    }',
-    '',
-    '    public void addAtHead(int val) {',
-    '        head = new ListNode(val, head); size++;',
-    '    }',
-    '',
-    '    public void addAtTail(int val) {',
-    '        if (head == null) { addAtHead(val); return; }',
-    '        ListNode cur = head; while (cur.next != null) cur = cur.next;',
-    '        cur.next = new ListNode(val); size++;',
-    '    }',
-    '',
-    '    public void addAtIndex(int index, int val) {',
-    '        if (index < 0 || index > size) return;',
-    '        if (index == 0) { addAtHead(val); return; }',
-    '        ListNode cur = head; for (int i = 0; i < index - 1; i++) cur = cur.next;',
-    '        cur.next = new ListNode(val, cur.next); size++;',
-    '    }',
-    '',
-    '    public void deleteAtIndex(int index) {',
-    '        if (index < 0 || index >= size) return;',
-    '        if (index == 0) { head = head.next; size--; return; }',
-    '        ListNode cur = head; for (int i = 0; i < index - 1; i++) cur = cur.next;',
-    '        cur.next = cur.next.next; size--;',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '🔗 MyLinkedList Java 源码';
+  protected codeLanguages = DESIGN_LINKED_LIST_CODE_LANGUAGES;
+  protected codeLines = DESIGN_LINKED_LIST_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '设计链表代码调试';
 
-  private list: MyLinkedList = new MyLinkedList();
-  private opCount = 0;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private pointersContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
-  private statLen: HTMLElement | null = null;
-  private statOp: HTMLElement | null = null;
-  private statRet: HTMLElement | null = null;
-  private statCnt: HTMLElement | null = null;
-  private canvasEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
-  private currentLogLines: string[] = [];
+  private currentModel = new LinkedListModel();
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.statLen = this.root.querySelector('#dll-stat-len');
-    this.statOp = this.root.querySelector('#dll-stat-op');
-    this.statRet = this.root.querySelector('#dll-stat-ret');
-    this.statCnt = this.root.querySelector('#dll-stat-cnt');
-    this.canvasEl = this.root.querySelector('#dll-canvas');
-    this.resultEl = this.root.querySelector('#dll-result');
-    this.logEl = this.root.querySelector('#dll-log');
-    this.clearLogBtn = this.root.querySelector('#dll-log-clear');
+    this.sandboxContainer = this.root.querySelector('#dll-sandbox-container');
+    this.pointersContainer = this.root.querySelector('#dll-pointers-container');
+    this.decisionMonitorContainer = this.root.querySelector('#dll-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#dll-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'dll-speed', speedLabel: 'dll-speed-label',
-      counter: 'step-counter', message: 'step-message',
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 绑定预设用例流
+    this.root.querySelector('#btn-preset-suite')?.addEventListener('click', () => {
+      this.steps = buildPresetSteps();
+      this.currentIndex = 0;
+      this.render();
     });
 
-    this.root.querySelector('#dll-add-head')?.addEventListener('click', () => this.execOp('addAtHead', [this.num('dll-val-head', 10)]));
-    this.root.querySelector('#dll-add-tail')?.addEventListener('click', () => this.execOp('addAtTail', [this.num('dll-val-tail', 20)]));
-    this.root.querySelector('#dll-add-index')?.addEventListener('click', () => this.execOp('addAtIndex', [this.num('dll-idx-add', 1), this.num('dll-val-add', 15)]));
-    this.root.querySelector('#dll-delete')?.addEventListener('click', () => this.execOp('deleteAtIndex', [this.num('dll-idx-del', 0)]));
-    this.root.querySelector('#dll-get')?.addEventListener('click', () => this.execOp('get', [this.num('dll-idx-get', 0)]));
-    this.root.querySelector('#dll-reset')?.addEventListener('click', () => this.execOp('reset', []));
-    this.clearLogBtn?.addEventListener('click', () => {
-      this.currentLogLines = [];
-      if (this.logEl) this.logEl.innerHTML = '';
+    // 绑定单独单步操作按钮
+    this.root.querySelector('#btn-add-head')?.addEventListener('click', () => this.handleOp('addAtHead'));
+    this.root.querySelector('#btn-add-tail')?.addEventListener('click', () => this.handleOp('addAtTail'));
+    this.root.querySelector('#btn-add-idx')?.addEventListener('click', () => this.handleOp('addAtIndex'));
+    this.root.querySelector('#btn-del-idx')?.addEventListener('click', () => this.handleOp('deleteAtIndex'));
+    this.root.querySelector('#btn-get-idx')?.addEventListener('click', () => this.handleOp('get'));
+
+    // 重置
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => {
+      this.currentModel.reset();
+      this.steps = [
+        {
+          values: [],
+          op: 'init',
+          args: [],
+          highlightIndex: -1,
+          highlightKind: '',
+          ret: 'void',
+          size: 0,
+          message: '重置链表为空状态',
+          codeLine: 6,
+        },
+      ];
+      this.currentIndex = 0;
+      this.render();
+    });
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: DESIGN_LINKED_LIST_PROBLEM_HTML,
+      analysisHtml: DESIGN_LINKED_LIST_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  private num(id: string, fallback: number): number {
-    const el = this.root?.querySelector(`#${id}`) as HTMLInputElement | null;
-    const v = parseInt(el?.value || String(fallback), 10);
-    return Number.isFinite(v) ? v : fallback;
-  }
+  private handleOp(op: OpType): void {
+    const valInput = this.root?.querySelector('#input-val') as HTMLInputElement | null;
+    const idxInput = this.root?.querySelector('#input-idx') as HTMLInputElement | null;
 
-  private execOp(op: Op, args: number[]): void {
-    let highlight = -1;
-    let highlightKind: DLLStep['highlightKind'] = '';
-    let ret: number | string = '-';
-    let message = '';
-    let log = '';
-    let codeLine: number | number[] = 1;
-    const sizeBefore = this.list.getSize();
+    const val = parseInt(valInput?.value || '0', 10);
+    const idx = parseInt(idxInput?.value || '0', 10);
 
-    switch (op) {
-      case 'addAtHead':
-        this.list.addAtHead(args[0]);
-        highlight = 0;
-        highlightKind = 'add';
-        ret = 'void';
-        message = `addAtHead(${args[0]})：新节点 ${args[0]} 飞入到头部成为新 head（size ${sizeBefore} → ${sizeBefore + 1}）。`;
-        log = `addAtHead(${args[0]}) → head`;
-        codeLine = [9, 10];
-        break;
-      case 'addAtTail':
-        this.list.addAtTail(args[0]);
-        highlight = this.list.getSize() - 1;
-        highlightKind = 'add';
-        ret = 'void';
-        message = `addAtTail(${args[0]})：遍历到尾后插入新节点 ${args[0]}（size ${sizeBefore} → ${sizeBefore + 1}）。`;
-        log = `addAtTail(${args[0]}) → tail`;
-        codeLine = [13, 14, 15];
-        break;
-      case 'addAtIndex': {
-        const idx = args[0];
-        if (idx < 0 || idx > this.list.getSize()) {
-          message = `addAtIndex(${idx}, ${args[1]})：index 越界（合法 0..${this.list.getSize()}），操作被拒绝。`;
-          log = `addAtIndex(${idx}, ${args[1]}) 越界`;
-          codeLine = 17;
-        } else {
-          this.list.addAtIndex(idx, args[1]);
-          highlight = idx;
-          highlightKind = 'add';
-          ret = 'void';
-          message = `addAtIndex(${idx}, ${args[1]})：遍历到 index=${idx - 1}，插入新节点 ${args[1]}。`;
-          log = `addAtIndex(${idx}, ${args[1]})`;
-          codeLine = [17, 18, 19, 20];
-        }
-        break;
-      }
-      case 'deleteAtIndex': {
-        const idx = args[0];
-        if (idx < 0 || idx >= this.list.getSize()) {
-          message = `deleteAtIndex(${idx})：index 越界（合法 0..${this.list.getSize() - 1}），操作被拒绝。`;
-          log = `deleteAtIndex(${idx}) 越界`;
-          codeLine = 23;
-        } else {
-          this.list.deleteAtIndex(idx);
-          highlight = idx;
-          highlightKind = 'del';
-          ret = 'void';
-          message = `deleteAtIndex(${idx})：节点 ${this.list.values()[idx] ?? '?'} 被删除（size ${sizeBefore} → ${this.list.getSize()}）。`;
-          log = `deleteAtIndex(${idx})`;
-          codeLine = [23, 24, 25];
-        }
-        break;
-      }
-      case 'get': {
-        const idx = args[0];
-        if (idx < 0 || idx >= this.list.getSize()) {
-          ret = -1;
-          message = `get(${idx})：index 越界（合法 0..${this.list.getSize() - 1}），返回 -1。`;
-          log = `get(${idx}) → -1 (越界)`;
-          codeLine = 5;
-        } else {
-          const v = this.list.get(idx);
-          highlight = idx;
-          highlightKind = 'get';
-          ret = v;
-          message = `get(${idx})：遍历 ${idx + 1} 步到达节点，取到值 = ${v}。`;
-          log = `get(${idx}) → ${v}`;
-          codeLine = [3, 4, 5, 6, 7];
-        }
-        break;
-      }
-      case 'reset':
-        this.list.reset();
-        highlight = -1;
-        message = '重置链表为空。';
-        log = 'reset list';
-        codeLine = 2;
-        break;
+    let msg = '';
+    let ret: number | string = 'void';
+    let hlIdx = -1;
+    let hlKind: 'add' | 'del' | 'get' | '' = '';
+    let codeLine = 1;
+
+    if (op === 'addAtHead') {
+      this.currentModel.addAtHead(val);
+      msg = `addAtHead(${val})：头部插入节点 ${val}`;
+      hlIdx = 0;
+      hlKind = 'add';
+      codeLine = 18;
+    } else if (op === 'addAtTail') {
+      this.currentModel.addAtTail(val);
+      msg = `addAtTail(${val})：尾部追加节点 ${val}`;
+      hlIdx = this.currentModel.getSize() - 1;
+      hlKind = 'add';
+      codeLine = 22;
+    } else if (op === 'addAtIndex') {
+      const ok = this.currentModel.addAtIndex(idx, val);
+      msg = ok ? `addAtIndex(${idx}, ${val})：索引 ${idx} 插入节点 ${val}` : `addAtIndex(${idx}, ${val})：索引越界忽略`;
+      hlIdx = ok ? idx : -1;
+      hlKind = ok ? 'add' : '';
+      codeLine = 25;
+    } else if (op === 'deleteAtIndex') {
+      const ok = this.currentModel.deleteAtIndex(idx);
+      msg = ok ? `deleteAtIndex(${idx})：成功删除索引 ${idx} 处节点` : `deleteAtIndex(${idx})：索引无效无法删除`;
+      hlIdx = ok ? idx : -1;
+      hlKind = ok ? 'del' : '';
+      codeLine = 36;
+    } else if (op === 'get') {
+      ret = this.currentModel.get(idx);
+      msg = `get(${idx})：获取索引 ${idx} 的值，结果为 ${ret}`;
+      hlIdx = idx >= 0 && idx < this.currentModel.getSize() ? idx : -1;
+      hlKind = 'get';
+      codeLine = 11;
     }
 
     const step: DLLStep = {
-      values: this.list.values(),
-      op, args, highlight, highlightKind, ret, size: this.list.getSize(),
-      message, log, codeLine,
+      values: this.currentModel.values(),
+      op,
+      args: op === 'addAtIndex' ? [idx, val] : op === 'addAtHead' || op === 'addAtTail' ? [val] : [idx],
+      highlightIndex: hlIdx,
+      highlightKind: hlKind,
+      ret,
+      size: this.currentModel.getSize(),
+      message: msg,
+      codeLine,
     };
 
-    this.steps = [step];
-    this.currentIndex = 0;
-    this.opCount++;
-    this.currentLogLines.push(`${String(this.opCount).padStart(2, '0')}. ${log}`);
+    this.steps.push(step);
+    this.currentIndex = this.steps.length - 1;
     this.render();
-    this.updateButtons();
-    this.renderStatFromStep(step);
   }
 
   protected buildSteps(): DLLStep[] {
-    return this.steps;
+    return buildPresetSteps();
   }
 
   protected renderStep(step: DLLStep): void {
-    this.renderCanvas(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
-  }
+    const values = step.values;
 
-  private renderStatFromStep(step: DLLStep): void {
-    if (this.statLen) this.statLen.textContent = String(step.size);
-    if (this.statOp) this.statOp.textContent = step.op;
-    if (this.statRet) this.statRet.textContent = String(step.ret);
-    if (this.statCnt) this.statCnt.textContent = String(this.opCount);
-  }
+    // 1. 渲染拓扑沙盘 (Card 1)
+    if (this.sandboxContainer) {
+      // 虚拟头节点
+      const dummyHtml = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+          <div style="min-height: 14px; display: flex; gap: 2px;">
+            <span style="background:#f59e0b; color:#ffffff; padding:1px 4px; border-radius:4px; font-size:9px; font-weight:800;">dummyHead</span>
+          </div>
+          <div style="min-width: 44px; height: 44px; padding: 0 8px; border-radius: 10px; background: #fffbeb; border: 2px dashed #f59e0b; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <span style="font-size: 13px; font-weight: 800; color: #b45309; font-family: 'JetBrains Mono', monospace;">0</span>
+            <span style="font-size: 8.5px; color: #d97706; font-family: monospace;">[dummy]</span>
+          </div>
+        </div>
+      `;
 
-  private renderCanvas(step: DLLStep): void {
-    if (!this.canvasEl) return;
-    this.canvasEl.innerHTML = '';
-    if (step.values.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'dll-list-empty';
-      empty.textContent = '（空链表）';
-      this.canvasEl.appendChild(empty);
-      return;
+      const nodesHtml = values.map((val, idx) => {
+        let borderColor = '#e2e8f0';
+        let bgColor = '#ffffff';
+        let badgeHtml = '';
+
+        if (step.highlightIndex === idx) {
+          if (step.highlightKind === 'add') {
+            borderColor = '#10b981';
+            bgColor = '#ecfdf5';
+            badgeHtml = '<span style="background:#059669; color:#ffffff; padding:1px 4px; border-radius:4px; font-size:9px; font-weight:800;">+插入</span>';
+          } else if (step.highlightKind === 'del') {
+            borderColor = '#ef4444';
+            bgColor = '#fef2f2';
+            badgeHtml = '<span style="background:#ef4444; color:#ffffff; padding:1px 4px; border-radius:4px; font-size:9px; font-weight:800;">-删除</span>';
+          } else if (step.highlightKind === 'get') {
+            borderColor = '#2563eb';
+            bgColor = '#eff6ff';
+            badgeHtml = '<span style="background:#2563eb; color:#ffffff; padding:1px 4px; border-radius:4px; font-size:9px; font-weight:800;">?查询</span>';
+          }
+        }
+
+        return `
+          <div style="display: flex; align-items: center; color: #94a3b8; font-size: 14px; margin-top: 14px;">▶</div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative;">
+            <div style="min-height: 14px; display: flex; gap: 2px;">
+              ${badgeHtml}
+            </div>
+            <div style="min-width: 44px; height: 44px; padding: 0 8px; border-radius: 10px; background: ${bgColor}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <span style="font-size: 13px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${val}</span>
+              <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">[${idx}]</span>
+            </div>
+          </div>
+        `;
+      });
+
+      const nullHtml = `
+        <div style="display: flex; align-items: center; color: #94a3b8; font-size: 14px; margin-top: 14px;">▶</div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+          <div style="min-height: 14px;"></div>
+          <div style="min-width: 40px; height: 44px; padding: 0 8px; border-radius: 10px; background: #f1f5f9; border: 1px dashed #cbd5e1; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748b; font-family: monospace;">null</span>
+          </div>
+        </div>
+      `;
+
+      this.sandboxContainer.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 6px; width: 100%; min-height: 100%;">
+          ${dummyHtml}
+          ${nodesHtml.join('')}
+          ${nullHtml}
+        </div>
+      `;
     }
-    const list = document.createElement('div');
-    list.className = 'dll-list';
 
-    step.values.forEach((val, idx) => {
-      const nodeWrap = document.createElement('div');
-      nodeWrap.className = 'dll-node';
+    // 2. 渲染链表属性 (Card 2 Left)
+    if (this.pointersContainer) {
+      this.pointersContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>链表长度 (size):</span>
+            <span style="font-family: monospace; font-weight: 800; color: #2563eb;">${step.size}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>头节点值 (head):</span>
+            <span style="font-family: monospace; font-weight: 800; color: #059669;">${values.length > 0 ? values[0] : 'null'}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>尾节点值 (tail):</span>
+            <span style="font-family: monospace; font-weight: 800; color: #059669;">${values.length > 0 ? values[values.length - 1] : 'null'}</span>
+          </div>
+        </div>
+      `;
+    }
 
-      const box = document.createElement('div');
-      box.className = 'dll-box';
-      if (idx === 0) box.classList.add('dll-head');
-      if (idx === step.highlight && step.highlightKind === 'add') box.classList.add('dll-target-add');
-      if (idx === step.highlight && step.highlightKind === 'del') box.classList.add('dll-target-del');
-      if (idx === step.highlight && step.highlightKind === 'get') box.classList.add('dll-target-get');
+    // 3. 渲染指令监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>当前调用方法:</span>
+            <span style="font-family: monospace; font-weight: 800; color: #0f172a;">${step.op}(${step.args.join(', ')})</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>影响节点索引:</span>
+            <span style="font-family: monospace; font-weight: 800; color: ${step.highlightIndex !== -1 ? '#2563eb' : '#64748b'};">
+              ${step.highlightIndex !== -1 ? `[${step.highlightIndex}]` : '无 / 全局'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
 
-      const idxLabel = document.createElement('div');
-      idxLabel.className = 'dll-box-idx';
-      idxLabel.textContent = `[${idx}]`;
-      const valLabel = document.createElement('div');
-      valLabel.className = 'dll-box-val';
-      valLabel.textContent = String(val);
-      box.appendChild(idxLabel);
-      box.appendChild(valLabel);
+    // 4. 渲染返回值 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>操作返回值: <strong style="color: #2563eb; font-family: monospace; font-size: 13px;">${step.ret}</strong></span>
+            <span style="font-family: monospace; font-weight: 700; color: #059669;">单链表结构合法</span>
+          </div>
+        </div>
+      `;
+    }
 
-      if (idx === 0) {
-        const tag = document.createElement('span');
-        tag.className = 'dll-tag-head';
-        tag.textContent = 'HEAD';
-        box.appendChild(tag);
-      }
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
 
-      nodeWrap.appendChild(box);
-      const arrow = document.createElement('span');
-      arrow.className = 'dll-arrow';
-      if (idx === step.highlight && step.highlightKind === 'add' && idx > 0) {
-        arrow.classList.add('dll-arrow-new');
-      }
-      arrow.textContent = '→';
-      nodeWrap.appendChild(arrow);
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
 
-      list.appendChild(nodeWrap);
-    });
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
 
-    const nullSpan = document.createElement('span');
-    nullSpan.className = 'dll-null';
-    nullSpan.textContent = 'null';
-    list.appendChild(nullSpan);
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '执行';
 
-    this.canvasEl.appendChild(list);
-  }
+        if (st.op === 'addAtHead' || st.op === 'addAtTail' || st.op === 'addAtIndex') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '插入';
+        } else if (st.op === 'deleteAtIndex') {
+          badgeColor = '#ef4444';
+          badgeBg = '#fef2f2';
+          badgeText = '删除';
+        } else if (st.op === 'get') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '查询';
+        }
 
-  private renderResultBanner(step: DLLStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('dll-result--add', 'dll-result--del');
-    const emoji = this.resultEl.querySelector('.dll-emoji') as HTMLElement | null;
-    if (step.highlightKind === 'add' && step.op !== 'reset') {
-      this.resultEl.classList.add('dll-result--add');
-      if (emoji) emoji.textContent = '➕';
-    } else if (step.highlightKind === 'del') {
-      this.resultEl.classList.add('dll-result--del');
-      if (emoji) emoji.textContent = '🗑️';
-    } else if (step.highlightKind === 'get') {
-      if (emoji) emoji.textContent = '🔎';
-    } else if (step.op === 'reset') {
-      if (emoji) emoji.textContent = '🧹';
-    } else {
-      if (emoji) emoji.textContent = '🔗';
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
     }
   }
 
-  private renderLogPanel(step: DLLStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.currentLogLines.forEach((line, i) => {
-      const row = document.createElement('div');
-      row.className = 'dll-log-line' + (i === this.currentLogLines.length - 1 ? ' dll-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'dll-log-num';
-      num.textContent = line.split('. ')[0] + '.';
-      const text = document.createElement('span');
-      text.textContent = line.split('. ').slice(1).join('. ');
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
 registerAlgorithm({
   id: 'design-linked-list',
-  name: '设计链表（MyLinkedList）',
+  name: '设计链表',
   viewId: 'algo-design-linked-list-view',
   category: 'linked-list',
-  description: '亲手实现单链表五种操作 + 节点飞入/抖动/脉冲动画',
-  icon: '🔗',
+  description: 'LeetCode 707 · 使用虚拟头节点 (dummyHead) 实现单链表增删查改 (CRUD)',
+  icon: '🛠️',
   template,
   Visualizer: DesignLinkedListVisualizer,
-  difficulty: 1,
-  levelOrder: 4,
-  learningGoal: '从零实现链表，深入理解节点与指针操作',
+  difficulty: 2,
+  levelOrder: 5,
+  learningGoal: '深入掌握虚拟头节点 (dummyHead) 统一链表头与中间操作的标准编程范式',
 });

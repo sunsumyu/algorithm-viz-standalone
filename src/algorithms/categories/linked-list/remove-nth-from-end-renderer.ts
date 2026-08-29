@@ -1,357 +1,419 @@
 /**
- * 删除链表的倒数第 N 个节点（快慢指针）可视化器
- * 重做：玻璃感 stat 面板 + fast 冲刺动画 + slow 锁步动画 + 目标节点 shake+vanish + 完整执行日志
+ * 删除链表的倒数第 N 个结点可视化器 — 4-Card 标准现代架构
+ * LeetCode 19：dummyHead 虚拟头节点 + 快慢指针定距一趟扫描
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  REMOVE_NTH_FROM_END_PROBLEM_HTML,
+  REMOVE_NTH_FROM_END_ANALYSIS_HTML,
+  REMOVE_NTH_FROM_END_CODE_LANGUAGES,
+} from './remove-nth-from-end-problem-content';
 import template from './remove-nth-from-end.html?raw';
 
-export type Phase = 'init' | 'fast-advance' | 'together' | 'remove' | 'done';
-
-export interface RNSstep {
+export interface RNStep {
   values: number[];
-  fast: number;        // -1 = dummy, values.length = null
-  slow: number;        // -1 = dummy
-  removed: number;     // 被删除节点原始下标（-1 = 未删）
-  stepsTaken: number;
-  phase: Phase;
-  sprint: boolean;     // 本步 fast 是否处于"冲刺"动画态
+  fast: number; // -1 = dummy, values.length = null
+  slow: number; // -1 = dummy
+  removedIndex: number; // -1 表示未删除
+  action: 'init' | 'fast_advance' | 'move_together' | 'delete_node' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: number;
 }
 
 export function parseValues(input: string): number[] {
-  return input.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
+  const arr = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  return arr.length > 0 ? arr : [1, 2, 3, 4, 5];
 }
 
-export function buildRNSteps(values: number[], n: number): RNSstep[] {
-  const steps: RNSstep[] = [];
+export function buildRNSteps(values: number[], n: number): RNStep[] {
+  const steps: RNStep[] = [];
   const len = values.length;
 
-  if (len === 0 || n > len) {
+  if (len === 0 || n > len || n <= 0) {
     steps.push({
-      values, fast: -1, slow: -1, removed: -1, stepsTaken: 0,
-      phase: 'done', sprint: false,
-      message: '输入不合法：链表为空或 n 超过长度。',
-      log: 'invalid input',
+      values: [...values],
+      fast: -1,
+      slow: -1,
+      removedIndex: -1,
+      action: 'done',
+      message: '输入不合法：链表为空或 n 超过链表总长度',
       codeLine: 1,
     });
     return steps;
   }
 
+  // 1. 初始化
+  let fast = -1; // -1 为 dummyHead
+  let slow = -1;
   steps.push({
-    values, fast: -1, slow: -1, removed: -1, stepsTaken: 0,
-    phase: 'init', sprint: false,
-    message: `创建 dummy 节点指向 head，fast = slow = dummy。准备让 fast 先走 n=${n} 步（建立间距）。`,
-    log: 'init dummy, fast = slow = dummy',
-    codeLine: [1, 2, 3],
+    values: [...values],
+    fast,
+    slow,
+    removedIndex: -1,
+    action: 'init',
+    message: `创建虚拟头节点 dummyHead 指向 head，fast = slow = dummyHead。准备让 fast 先走 ${n + 1} 步建立定距窗口。`,
+    codeLine: 2,
   });
 
-  let fast = -1; // dummy
-  let slow = -1;
-
-  // fast 先走 n 步（从 dummy 出发走 n 步到达下标 n-1）
-  for (let i = 0; i < n; i++) {
+  // 2. fast 先走 n + 1 步 (从 -1 走到 n-1，再走到 n)
+  for (let i = 0; i <= n; i++) {
     fast = fast === -1 ? 0 : fast + 1;
     steps.push({
-      values, fast, slow, removed: -1, stepsTaken: i + 1,
-      phase: 'fast-advance', sprint: true,
-      message: `⚡ fast 冲刺第 ${i + 1} 步，到达节点 ${fast < len ? values[fast] : 'null'}（slow 仍在 dummy 等待）。`,
-      log: `fast sprint -> ${fast < len ? values[fast] : 'null'}`,
-      codeLine: 4,
+      values: [...values],
+      fast,
+      slow,
+      removedIndex: -1,
+      action: 'fast_advance',
+      message: `① fast 先行第 ${i + 1} / ${n + 1} 步：fast 移动到 ${fast >= len ? 'null' : `节点 ${values[fast]}`}`,
+      codeLine: 8,
     });
   }
 
-  // fast、slow 一起走，直到 fast 走到末尾（fast === len - 1）
-  while (fast < len - 1) {
+  // 3. fast 与 slow 同时移动
+  while (fast < len) {
     fast++;
     slow = slow === -1 ? 0 : slow + 1;
     steps.push({
-      values, fast, slow, removed: -1, stepsTaken: n,
-      phase: 'together', sprint: false,
-      message: `🔗 锁步前进：fast → ${values[fast]}，slow → ${slow === -1 ? 'dummy' : values[slow]}。间距恒为 n=${n}。`,
-      log: `sync fast=${values[fast]}, slow=${slow === -1 ? 'dummy' : values[slow]}`,
-      codeLine: [5, 6, 7],
+      values: [...values],
+      fast,
+      slow,
+      removedIndex: -1,
+      action: 'move_together',
+      message: `② 同步平移：fast 和 slow 同时前进 1 步 (保持间距)。fast=${fast >= len ? 'null' : `节点 ${values[fast]}`}, slow=${slow === -1 ? 'dummyHead' : `节点 ${values[slow]}`}`,
+      codeLine: 13,
     });
   }
 
-  // 删除 slow.next（即下标 slow + 1）
-  const toRemove = slow + 1;
-  const removedVal = values[toRemove];
+  // 4. 删除 slow.next
+  const targetIdx = slow + 1;
+  const targetVal = values[targetIdx];
+  const nextVals = [...values];
+  nextVals.splice(targetIdx, 1);
+
   steps.push({
-    values, fast, slow, removed: -1, stepsTaken: n,
-    phase: 'remove', sprint: false,
-    message: `fast 已到末尾，slow 恰在待删节点前驱。准备删除 slow.next = ${removedVal}。`,
-    log: `mark slow.next = ${removedVal} for removal`,
-    codeLine: 8,
+    values: [...values],
+    fast,
+    slow,
+    removedIndex: targetIdx,
+    action: 'delete_node',
+    message: `③ 跨越删除：fast 已到达末尾 null，slow.next 指向待删除的倒数第 ${n} 个节点 (节点 ${targetVal})。执行 slow.next = slow.next.next 完成删除！`,
+    codeLine: 18,
   });
 
-  // 结果链表
-  const resultValues = values.filter((_, i) => i !== toRemove);
+  // 5. done
   steps.push({
-    values: resultValues, fast: -1, slow: -1, removed: toRemove, stepsTaken: n,
-    phase: 'done', sprint: false,
-    message: `✅ 删除完成。结果链表：${resultValues.length ? resultValues.join(' → ') : '（空）'}，共 ${resultValues.length} 个节点。`,
-    log: `done: removed ${removedVal}, size ${resultValues.length}`,
-    codeLine: 9,
+    values: nextVals,
+    fast,
+    slow,
+    removedIndex: targetIdx,
+    action: 'done',
+    message: `🎉 删除完成！返回 dummyHead.next (新头节点 ${nextVals.length > 0 ? `节点 ${nextVals[0]}` : 'null'})`,
+    codeLine: 19,
   });
 
   return steps;
 }
 
-export class RemoveNthFromEndVisualizer extends StepVisualizer<RNSstep> {
-  protected codeLines = [
-    'ListNode removeNthFromEnd(ListNode head, int n) {',
-    '    ListNode dummy = new ListNode(0); dummy.next = head;',
-    '    ListNode fast = dummy, slow = dummy;',
-    '    // ① 让 fast 先走 n 步，建立间距',
-    '    for (int i = 0; i < n; i++) fast = fast.next;',
-    '    // ② fast、slow 锁步前进',
-    '    while (fast.next != null) {',
-    '        fast = fast.next; slow = slow.next;',
-    '    }',
-    '    // ③ fast 到末尾时，slow 恰在待删节点前驱',
-    '    slow.next = slow.next.next;',
-    '    return dummy.next;',
-    '}',
-  ];
-  protected codePanelTitle = '🗑️ 删除倒数第 N 节点 Java 源码';
+export class RemoveNthFromEndVisualizer extends StepVisualizer<RNStep> {
+  protected codeLanguages = REMOVE_NTH_FROM_END_CODE_LANGUAGES;
+  protected codeLines = REMOVE_NTH_FROM_END_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '删除链表的倒数第 N 个结点 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private nInput: HTMLInputElement | null = null;
-  private statFast: HTMLElement | null = null;
-  private statSlow: HTMLElement | null = null;
-  private statSteps: HTMLElement | null = null;
-  private statTarget: HTMLElement | null = null;
-  private statLen: HTMLElement | null = null;
-  private canvasEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private sandboxContainer: HTMLElement | null = null;
+  private pointersContainer: HTMLElement | null = null;
+  private decisionMonitorContainer: HTMLElement | null = null;
+  private metricsContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#rn-array');
-    this.nInput = this.root.querySelector('#rn-n');
-    this.statFast = this.root.querySelector('#rn-stat-fast');
-    this.statSlow = this.root.querySelector('#rn-stat-slow');
-    this.statSteps = this.root.querySelector('#rn-stat-steps');
-    this.statTarget = this.root.querySelector('#rn-stat-target');
-    this.statLen = this.root.querySelector('#rn-stat-len');
-    this.canvasEl = this.root.querySelector('#rn-canvas');
-    this.resultEl = this.root.querySelector('#rn-result');
-    this.logEl = this.root.querySelector('#rn-log');
-    this.clearLogBtn = this.root.querySelector('#rn-log-clear');
+    this.sandboxContainer = this.root.querySelector('#rn-sandbox-container');
+    this.pointersContainer = this.root.querySelector('#rn-pointers-container');
+    this.decisionMonitorContainer = this.root.querySelector('#rn-decision-monitor-container');
+    this.metricsContainer = this.root.querySelector('#rn-metrics-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'rn-speed', speedLabel: 'rn-speed-label',
-      counter: 'step-counter', message: 'step-message',
-    });
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    this.root.querySelector('#rn-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.rn-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.val || '';
-        if (this.nInput) this.nInput.value = btn.dataset.n || '2';
-        this.start();
+    // 绑定运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 绑定 Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
       });
+    }
+
+    // 绑定前进后退按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: REMOVE_NTH_FROM_END_PROBLEM_HTML,
+      analysisHtml: REMOVE_NTH_FROM_END_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    this.clearLogBtn?.addEventListener('click', () => { if (this.logEl) this.logEl.innerHTML = ''; });
-    this.arrayInput?.addEventListener('change', () => this.start());
-    this.nInput?.addEventListener('change', () => this.start());
   }
 
-  protected buildSteps(): RNSstep[] {
-    const values = parseValues(this.arrayInput?.value || '1,2,3,4,5');
-    let n = parseInt(this.nInput?.value || '2', 10);
-    if (!Number.isFinite(n)) n = 2;
-    n = Math.max(1, Math.min(values.length, n));
-    if (this.nInput) this.nInput.value = String(n);
+  protected buildSteps(): RNStep[] {
+    const inputList = this.root?.querySelector('#input-list') as HTMLInputElement | null;
+    const inputN = this.root?.querySelector('#input-n') as HTMLInputElement | null;
+    const values = parseValues(inputList?.value || '1,2,3,4,5');
+    const n = parseInt(inputN?.value || '2', 10);
     return buildRNSteps(values, n);
   }
 
-  protected renderStep(step: RNSstep): void {
-    this.renderStats(step);
-    this.renderCanvas(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
+  protected renderStep(step: RNStep): void {
+    const originalValues = parseValues((this.root?.querySelector('#input-list') as HTMLInputElement | null)?.value || '1,2,3,4,5');
+    const fast = step.fast;
+    const slow = step.slow;
+    const removed = step.removedIndex;
+    const isDone = step.action === 'done';
+
+    // 1. 渲染双指针定距滑窗沙盘 (Card 1)
+    if (this.sandboxContainer) {
+      const nodesHtml = originalValues
+        .map((val, idx) => {
+          const isFast = fast === idx;
+          const isSlow = slow === idx;
+          const isTarget = removed === idx;
+
+          const pointerBadges: string[] = [];
+          if (isSlow) pointerBadges.push('<span style="background: #059669; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 800;">slow</span>');
+          if (isFast) pointerBadges.push('<span style="background: #2563eb; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 800;">fast</span>');
+
+          return `
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <!-- 节点盒 -->
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                <div style="min-height: 14px; display: flex; gap: 2px;">
+                  ${pointerBadges.join('')}
+                </div>
+
+                <div style="min-width: 44px; height: 44px; padding: 0 10px; border-radius: 10px; background: ${isTarget ? '#fef2f2' : isFast ? '#eff6ff' : isSlow ? '#ecfdf5' : '#ffffff'}; border: 2px ${isTarget ? 'dashed #ef4444' : isFast ? 'solid #2563eb' : isSlow ? 'solid #059669' : 'solid #e2e8f0'}; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: ${isDone && isTarget ? 0.35 : 1}; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                  <span style="font-size: 13.5px; font-weight: 800; color: ${isTarget ? '#ef4444' : isFast ? '#1d4ed8' : isSlow ? '#047857' : '#0f172a'}; font-family: 'JetBrains Mono', monospace; text-decoration: ${isDone && isTarget ? 'line-through' : 'none'};">
+                    ${val}
+                  </span>
+                  <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">idx:${idx}</span>
+                </div>
+
+                <div style="font-size: 9px; color: ${isTarget ? '#ef4444' : '#64748b'}; font-weight: 700;">
+                  ${isTarget ? '待删' : `第 ${idx + 1} 项`}
+                </div>
+              </div>
+
+              <!-- 连接箭头 -->
+              ${
+                idx < originalValues.length - 1
+                  ? `<div style="font-size: 14px; font-weight: 800; color: ${isDone && isTarget ? '#ef4444' : '#cbd5e1'};">▶</div>`
+                  : ''
+              }
+            </div>
+          `;
+        })
+        .join('');
+
+      this.sandboxContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 6px 2px; min-height: 80px;">
+            <!-- dummyHead 节点 -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+              <div style="min-height: 14px; display: flex; gap: 2px;">
+                ${slow === -1 ? '<span style="background: #059669; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 800;">slow</span>' : ''}
+                ${fast === -1 ? '<span style="background: #2563eb; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 800;">fast</span>' : ''}
+              </div>
+              <div style="min-width: 44px; height: 44px; border-radius: 10px; background: #f8fafc; border: 2px solid #64748b; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 11px; font-weight: 800; color: #334155; font-family: monospace;">dummy</span>
+                <span style="font-size: 8.5px; color: #64748b;">(0)</span>
+              </div>
+              <div style="font-size: 9px; color: #64748b; font-weight: 700;">虚拟头</div>
+            </div>
+
+            <div style="font-size: 14px; font-weight: 800; color: #94a3b8;">▶</div>
+
+            ${nodesHtml}
+
+            <div style="font-size: 14px; font-weight: 800; color: #cbd5e1;">▶</div>
+
+            <!-- 末尾 null -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+              <div style="min-height: 14px;">
+                ${fast >= originalValues.length ? '<span style="background: #2563eb; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 800;">fast</span>' : ''}
+              </div>
+              <div style="min-width: 40px; height: 44px; border-radius: 10px; background: #f1f5f9; border: 1.5px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #94a3b8; font-family: monospace;">
+                null
+              </div>
+              <div style="font-size: 9px; color: #94a3b8;">末尾终止</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. 渲染指针位置 (Card 2 Left)
+    if (this.pointersContainer) {
+      this.pointersContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>fast 指针位置:</span>
+            <span style="font-family: monospace; font-weight:800; color: #2563eb;">
+              ${fast === -1 ? 'dummyHead' : fast >= originalValues.length ? 'null (末尾)' : `[${fast}] 值 ${originalValues[fast]}`}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>slow 指针位置:</span>
+            <span style="font-family: monospace; font-weight:800; color: #059669;">
+              ${slow === -1 ? 'dummyHead' : `[${slow}] 值 ${originalValues[slow]}`}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>待删除目标 (slow.next):</span>
+            <span style="font-family: monospace; font-weight:800; color: #ef4444;">
+              ${slow + 1 < originalValues.length ? `[${slow + 1}] 节点 ${originalValues[slow + 1]}` : '无'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. 渲染删除指令监视器 (Card 2 Center)
+    if (this.decisionMonitorContainer) {
+      let actionBadge = '';
+      if (step.action === 'fast_advance') actionBadge = '<span style="background:#eff6ff; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:700;">① fast 先行 (拉开间距)</span>';
+      else if (step.action === 'move_together') actionBadge = '<span style="background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-weight:700;">② fast & slow 同步平移</span>';
+      else if (step.action === 'delete_node') actionBadge = '<span style="background:#fef2f2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700;">③ slow.next = slow.next.next</span>';
+      else actionBadge = '<span style="background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-weight:700;">🎉 删除完成</span>';
+
+      this.decisionMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>当前阶段:</span>
+            ${actionBadge}
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+            <div>• 定距原理: <strong>fast 先走 n+1 步后，fast 触底时 slow 恰好在目标前驱</strong></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. 渲染新链表头节点 (Card 2 Bottom)
+    if (this.metricsContainer) {
+      this.metricsContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>当前链表头 (dummy.next): <strong style="color: #059669; font-family: monospace; font-size: 13px;">${step.values.length > 0 ? `节点 ${step.values[0]}` : 'null (空链表)'}</strong></span>
+            <span style="font-family: monospace; font-weight: 700; color: #2563eb;">剩余节点数: ${step.values.length}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const badgeGap = this.root?.querySelector('#badge-gap-count');
+    if (badgeGap) {
+      const gap = Math.max(0, fast - slow);
+      badgeGap.textContent = `指针间距: ${gap} 步`;
+    }
+
+    // 5. 更新 Scrubber 进度条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
+    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
+    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
+
+    if (slider) {
+      slider.max = String(Math.max(0, this.steps.length - 1));
+      slider.value = String(this.currentIndex);
+    }
+    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
+    if (stepTotal) stepTotal.textContent = String(this.steps.length);
+    if (playIcon) {
+      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
+    }
+
+    // 6. 暗色终端代码行高亮
+    this.terminalInstance?.highlightLine(step.codeLine);
+
+    // 7. 渲染执行日志流 (Card 4)
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let badgeColor = '#64748b';
+        let badgeBg = '#f1f5f9';
+        let badgeText = '扫描';
+
+        if (st.action === 'fast_advance') {
+          badgeColor = '#2563eb';
+          badgeBg = '#eff6ff';
+          badgeText = '先行';
+        } else if (st.action === 'move_together') {
+          badgeColor = '#059669';
+          badgeBg = '#ecfdf5';
+          badgeText = '平移';
+        } else if (st.action === 'delete_node') {
+          badgeColor = '#ef4444';
+          badgeBg = '#fef2f2';
+          badgeText = '删除';
+        } else if (st.action === 'done') {
+          badgeColor = '#10b981';
+          badgeBg = '#ecfdf5';
+          badgeText = '完成';
+        }
+
+        return `
+          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
+            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
+            <span style="color: #334155; flex: 1;">${st.message}</span>
+          </div>
+        `;
+      });
+
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
-  private renderStats(step: RNSstep): void {
-    const valTxt = (idx: number) => {
-      if (idx < 0) return 'dummy';
-      if (idx >= step.values.length) return 'null';
-      return String(step.values[idx]);
-    };
-    if (this.statFast) this.statFast.textContent = step.phase === 'init' ? 'dummy' : valTxt(step.fast);
-    if (this.statSlow) this.statSlow.textContent = step.phase === 'init' ? 'dummy' : valTxt(step.slow);
-    if (this.statSteps) this.statSteps.textContent = String(step.stepsTaken);
-    if (this.statTarget) {
-      this.statTarget.textContent = step.removed >= 0 ? valTxt(step.removed) : (step.phase === 'remove' ? valTxt(step.slow + 1) : '-');
-    }
-    if (this.statLen) this.statLen.textContent = String(step.values.length);
-  }
-
-  private renderCanvas(step: RNSstep): void {
-    if (!this.canvasEl) return;
-    this.canvasEl.innerHTML = '';
-    if (step.values.length === 0) {
-      const empty = document.createElement('div');
-      empty.style.color = '#64748b'; empty.style.fontSize = '14px';
-      empty.textContent = '（空链表）';
-      this.canvasEl.appendChild(empty);
-      return;
-    }
-
-    const list = document.createElement('div');
-    list.className = 'rn-list';
-
-    // dummy
-    const dummyWrap = document.createElement('div');
-    dummyWrap.className = 'rn-node-wrap';
-    const dummy = document.createElement('div');
-    dummy.className = 'rn-box rn-dummy';
-    const dIdx = document.createElement('div'); dIdx.className = 'rn-box-idx'; dIdx.textContent = 'D';
-    const dVal = document.createElement('div'); dVal.className = 'rn-box-val'; dVal.textContent = '·';
-    dummy.appendChild(dIdx); dummy.appendChild(dVal);
-    const dTag = document.createElement('span');
-    dTag.className = 'rn-tag-dummy';
-    dTag.textContent = 'dummy';
-    dummy.appendChild(dTag);
-    if (step.fast === -1 && step.phase !== 'init') {
-      // dummy 不在 fast-advance/together 阶段
-    } else if (step.fast === -1 && step.phase === 'init') {
-      // init 阶段都指着 dummy
-    }
-    if (step.fast === -1) {
-      const ptr = document.createElement('span');
-      ptr.className = 'rn-pointer rn-pointer--fast';
-      ptr.textContent = 'fast';
-      dummy.appendChild(ptr);
-    }
-    if (step.slow === -1) {
-      const ptr = document.createElement('span');
-      ptr.className = 'rn-pointer rn-pointer--slow';
-      ptr.textContent = 'slow';
-      dummy.appendChild(ptr);
-    }
-    dummyWrap.appendChild(dummy);
-
-    const arr = document.createElement('span');
-    arr.className = 'rn-arrow'; arr.textContent = '→';
-    dummyWrap.appendChild(arr);
-    list.appendChild(dummyWrap);
-
-    step.values.forEach((val, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'rn-node-wrap';
-
-      const box = document.createElement('div');
-      box.className = 'rn-box';
-      if (idx === step.fast) {
-        box.classList.add('rn-fast');
-        if (step.sprint) box.classList.add('rn-sprint');
-      }
-      if (idx === step.slow) box.classList.add('rn-slow');
-      if (step.phase === 'remove' && idx === step.slow + 1) box.classList.add('rn-target');
-      if (step.phase === 'done' && idx === step.removed) box.classList.add('rn-removed');
-
-      const idxLbl = document.createElement('div');
-      idxLbl.className = 'rn-box-idx';
-      idxLbl.textContent = String(idx);
-      const valLbl = document.createElement('div');
-      valLbl.className = 'rn-box-val';
-      valLbl.textContent = String(val);
-      box.appendChild(idxLbl);
-      box.appendChild(valLbl);
-
-      if (idx === step.fast && step.phase !== 'done') {
-        const ptr = document.createElement('span');
-        ptr.className = 'rn-pointer rn-pointer--fast';
-        ptr.textContent = 'fast';
-        box.appendChild(ptr);
-      }
-      if (idx === step.slow && step.phase !== 'done') {
-        const ptr = document.createElement('span');
-        ptr.className = 'rn-pointer rn-pointer--slow';
-        ptr.textContent = 'slow';
-        box.appendChild(ptr);
-      }
-
-      wrap.appendChild(box);
-
-      // 箭头：在 remove/done 阶段，待删节点前后的箭头需要坍缩
-      const arrow = document.createElement('span');
-      arrow.className = 'rn-arrow';
-      const isArrowToDeleted = step.phase === 'done' && idx === step.removed;
-      const isArrowFromDeletedPredecessor = step.phase === 'remove' && idx === step.slow;
-      if (isArrowToDeleted || isArrowFromDeletedPredecessor) {
-        arrow.classList.add('rn-arrow-cancel');
-      }
-      arrow.textContent = '→';
-      wrap.appendChild(arrow);
-
-      list.appendChild(wrap);
-    });
-
-    const nullSpan = document.createElement('span');
-    nullSpan.className = 'rn-null';
-    nullSpan.textContent = 'null';
-    list.appendChild(nullSpan);
-
-    this.canvasEl.appendChild(list);
-  }
-
-  private renderResultBanner(step: RNSstep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('rn-result--done');
-    const emoji = this.resultEl.querySelector('.rn-emoji') as HTMLElement | null;
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('rn-result--done');
-      if (emoji) emoji.textContent = '✅';
-    } else if (step.phase === 'fast-advance') {
-      if (emoji) emoji.textContent = '⚡';
-    } else if (step.phase === 'together') {
-      if (emoji) emoji.textContent = '🔗';
-    } else if (step.phase === 'remove') {
-      if (emoji) emoji.textContent = '🎯';
-    } else {
-      if (emoji) emoji.textContent = '🗑️';
-    }
-  }
-
-  private renderLogPanel(step: RNSstep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'rn-log-line' + (i === this.currentIndex ? ' rn-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'rn-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
   }
 }
 
 registerAlgorithm({
   id: 'remove-nth-from-end',
-  name: '删除链表的倒数第 N 个节点（快慢指针）',
+  name: '删除链表的倒数第 N 个结点',
   viewId: 'algo-remove-nth-from-end-view',
   category: 'linked-list',
-  description: '快慢指针一次遍历，fast 冲刺后锁步删除倒数第 n 个节点',
-  icon: '🗑️',
+  description: 'LeetCode 19 · 虚拟头节点 + 快慢指针定距一趟扫描完成倒数第 N 个节点跨越删除',
+  icon: '✂️',
   template,
   Visualizer: RemoveNthFromEndVisualizer,
-  difficulty: 1,
+  difficulty: 2,
   levelOrder: 2,
-  learningGoal: '学会快慢指针找倒数第 N 个节点',
+  learningGoal: '掌握虚拟头节点 (dummyHead) 消除特判与快慢指针定距一趟扫描删除链表结点的核心技巧',
 });
