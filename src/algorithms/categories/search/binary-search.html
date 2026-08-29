@@ -1,5 +1,5 @@
 <style>
-  /* === 二分查找 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 二分查找 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-binary-search-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-binary-search-view .bns-btn-problem {
@@ -120,160 +121,181 @@
   #algo-binary-search-view .bns-input-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-binary-search-view .bns-input-group label {
+    gap: 4px;
     font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
   }
 
   #algo-binary-search-view .bns-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  #algo-binary-search-view .bns-btn-primary {
-    padding: 4px 10px;
+  #algo-binary-search-view .bns-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-binary-search-view .bns-btn-primary:hover {
+  #algo-binary-search-view .bns-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-binary-search-view .bns-btn-secondary {
-    padding: 4px 8px;
+  #algo-binary-search-view .bns-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-binary-search-view .bns-btn-secondary:hover {
+  #algo-binary-search-view .bns-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-binary-search-view .bns-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-binary-search-view .bns-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-binary-search-view .bns-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-binary-search-view .bns-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-binary-search-view .bns-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-binary-search-view .bns-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-binary-search-view .bns-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-binary-search-view .bns-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-binary-search-view .bns-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 二分搜索区间折半沙盘 */
-  #algo-binary-search-view .bns-sandbox-container {
-    flex: 1;
+  #algo-binary-search-view .bns-legend-bar {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-binary-search-view .bns-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 沙盘展示盒 */
+  #algo-binary-search-view .bns-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 6px;
-    width: 100%;
+    padding: 10px 12px;
   }
 
   #algo-binary-search-view .bns-track-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    width: 100%;
-    overflow-x: auto;
-    padding: 6px;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 16px 8px;
   }
 
   #algo-binary-search-view .bns-cell-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
   }
 
   #algo-binary-search-view .bns-ptr-tag {
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 9.5px;
     font-family: 'JetBrains Mono', monospace;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-weight: 800;
+    min-height: 14px;
+    line-height: 14px;
   }
 
   #algo-binary-search-view .bns-cell-box {
-    width: 38px;
-    height: 42px;
+    min-width: 36px;
+    height: 38px;
+    padding: 0 4px;
     border-radius: 8px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1.5px solid #cbd5e1;
     display: flex;
     flex-direction: column;
@@ -281,26 +303,17 @@
     justify-content: center;
     font-family: 'JetBrains Mono', monospace;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    flex-shrink: 0;
   }
 
   #algo-binary-search-view .bns-cell-box .val {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
 
   #algo-binary-search-view .bns-cell-box .idx {
-    font-size: 8px;
-    font-weight: 700;
+    font-size: 9px;
     color: #94a3b8;
-  }
-
-  #algo-binary-search-view .bns-cell-box.is-dimmed {
-    opacity: 0.25;
-    background: #f1f5f9;
-    border-color: #e2e8f0;
   }
 
   #algo-binary-search-view .bns-cell-box.in-range {
@@ -311,59 +324,149 @@
   #algo-binary-search-view .bns-cell-box.is-mid {
     border-color: #a855f7;
     background: #faf5ff;
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+    color: #7e22ce;
     transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(168, 85, 247, 0.25);
   }
 
   #algo-binary-search-view .bns-cell-box.is-found {
-    border-color: #10b981;
+    border-color: #22c55e;
     background: #f0fdf4;
     color: #15803d;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
     transform: scale(1.12);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
   }
 
-  /* Preset Chips */
+  #algo-binary-search-view .bns-cell-box.is-dimmed {
+    opacity: 0.35;
+    background: #f1f5f9;
+  }
+
+  /* 预设案例 Chips */
   #algo-binary-search-view .bns-preset-chips {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-binary-search-view .bns-chip {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10px;
     color: #475569;
     cursor: pointer;
     transition: all 0.15s;
   }
   #algo-binary-search-view .bns-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
     background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-binary-search-view .bns-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-binary-search-view .bns-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-binary-search-view .bns-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-binary-search-view .bns-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-binary-search-view .bns-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-binary-search-view .bns-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-binary-search-view .bns-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-binary-search-view .bns-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-binary-search-view .bns-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-binary-search-view .bns-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -378,7 +481,7 @@
 
   #algo-binary-search-view .bns-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -386,88 +489,290 @@
   #algo-binary-search-view .bns-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-binary-search-view .bns-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-binary-search-view .bns-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-binary-search-view .bns-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-binary-search-view .bns-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-binary-search-view .bns-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-binary-search-view .bns-playback-controls {
+  #algo-binary-search-view .bns-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-binary-search-view .bns-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-binary-search-view .bns-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-binary-search-view .bns-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-binary-search-view .bns-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-binary-search-view .bns-progress-wrap {
-    flex: 1;
+  #algo-binary-search-view .bns-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-binary-search-view .bns-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-binary-search-view .bns-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-binary-search-view .bns-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-binary-search-view .bns-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-binary-search-view .bns-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-binary-search-view .bns-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-binary-search-view .bns-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-binary-search-view .bns-step-badge {
-    font-size: 11px;
+  #algo-binary-search-view .bns-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-binary-search-view .bns-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-binary-search-view .bns-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-binary-search-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-binary-search-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-binary-search-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-binary-search-view .bns-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-binary-search-view .bns-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-binary-search-view .bns-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-binary-search-view .bns-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-binary-search-view .bns-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-binary-search-view .bns-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-binary-search-view .bns-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-binary-search-view .bns-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-binary-search-view .bns-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-binary-search-view .bns-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-binary-search-view .bns-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-binary-search-view .bns-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -476,129 +781,217 @@
   <header class="bns-header">
     <div class="bns-header-left">
       <div class="bns-icon-btn">🔍</div>
-      <div class="bns-main-title">二分查找 · Binary Search</div>
-      <button class="bns-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 题目与解析
-      </button>
-      <div class="bns-badge-mode">左闭右闭区间折半搜索</div>
-      <div class="bns-badge-complexity">O(log n) · O(1)</div>
+      <h1 class="bns-main-title">二分查找 (Binary Search)</h1>
+      <button id="btn-open-problem-modal" class="bns-btn-problem">📋 题目</button>
+      <span class="bns-badge-mode">左闭右闭区间折半·中点定位·边界收缩</span>
+      <span class="bns-badge-complexity">O(log n) · O(1)</span>
     </div>
+
     <div class="bns-header-right">
       <div class="bns-input-group">
-        <label for="input-array">有序数组:</label>
-        <input type="text" id="input-array" value="-1, 0, 3, 5, 9, 12" style="width: 140px;">
+        <label for="input-array">数组:</label>
+        <input type="text" id="input-array" value="-1, 0, 3, 5, 9, 12" style="width: 140px;" />
       </div>
       <div class="bns-input-group">
         <label for="input-target">target:</label>
-        <input type="number" id="input-target" value="9" style="width: 50px;">
+        <input type="number" id="input-target" value="9" style="width: 50px;" />
       </div>
-      <button class="bns-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="bns-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="bns-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="bns-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="bns-workspace">
-    <!-- Card 1: 二分搜索区间折半沙盘 -->
-    <section class="bns-card">
-      <div class="bns-card-header">
-        <div class="bns-card-title">
-          <span>📊</span> 有序数组区间折半与指针沙盘 (Range & Mid Pointer)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="bns-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="bns-left-section">
+
+      <!-- 卡片 1: 二分沙盘 -->
+      <div class="bns-card">
+        <div class="bns-card-header">
+          <div class="bns-card-title">
+            <span>📊 有序数组区间折半与指针沙盘 (Range & Mid Pointer)</span>
+          </div>
+          <div class="bns-legend-bar">
+            <div><span class="bns-legend-dot" style="background:#3b82f6;"></span> 搜索区间 [L, R]</div>
+            <div><span class="bns-legend-dot" style="background:#a855f7;"></span> 中点 mid</div>
+            <div><span class="bns-legend-dot" style="background:#22c55e;"></span> 命中 target</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #3b82f6;">● 当前搜索区间 [L, R]</span> · <span style="color: #a855f7;">● 中点 mid</span> · <span style="color: #10b981;">● 命中 target</span>
+
+        <!-- 数组沙盘展示盒 -->
+        <div class="bns-sandbox-wrap">
+          <div id="bns-track-row" class="bns-track-row"></div>
+        </div>
+
+        <!-- 预设案例 Chips -->
+        <div class="bns-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="bns-chip" data-arr="-1, 0, 3, 5, 9, 12" data-t="9">示例 1 (target=9)</button>
+          <button class="bns-chip" data-arr="-1, 0, 3, 5, 9, 12" data-t="2">示例 2 (target=2)</button>
+          <button class="bns-chip" data-arr="2, 5, 8, 12, 16, 23, 38, 56, 72, 91" data-t="23">长数组命中</button>
+          <button class="bns-chip" data-arr="1, 3, 5, 7, 9" data-t="1">最左端 (target=1)</button>
         </div>
       </div>
-      <div class="bns-card-body" style="justify-content: center;">
-        <div class="bns-sandbox-container">
-          <div class="bns-track-row" id="bns-track-row"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="bns-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="bns-slider" />
+        <div class="bns-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="bns-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="bns-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="bns-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
         </div>
       </div>
-      <div class="bns-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="bns-chip" data-arr="-1, 0, 3, 5, 9, 12" data-t="9">示例 1 (target=9 -> 下标 4)</button>
-        <button class="bns-chip" data-arr="-1, 0, 3, 5, 9, 12" data-t="2">示例 2 (target=2 -> -1)</button>
-        <button class="bns-chip" data-arr="2, 5, 8, 12, 16, 23, 38, 56, 72, 91" data-t="23">长数组命中中点</button>
-        <button class="bns-chip" data-arr="1, 3, 5, 7, 9" data-t="1">最左端命中 (target=1)</button>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="bns-card">
+        <div class="bns-card-header">
+          <div>
+            <div class="bns-card-title">🧭 搜索状态与指标监视器 (Search Metrics Monitor)</div>
+            <div class="bns-card-desc">当前区间 [L, R]、中点 mid、目标值 target 与判定结果</div>
+          </div>
+          <span id="badge-range" class="bns-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">区间: [0..5]</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="bns-state-space-box">
+          <div class="bns-metrics-grid">
+            <div class="bns-metric-card">
+              <span class="bns-metric-label">搜索区间 [L, R]</span>
+              <span class="bns-metric-val" id="metric-range" style="color: #2563eb;">[0, 5]</span>
+            </div>
+            <div class="bns-metric-card">
+              <span class="bns-metric-label">中点 mid (数值)</span>
+              <span class="bns-metric-val" id="metric-mid" style="color: #a855f7;">2 (3)</span>
+            </div>
+            <div class="bns-metric-card">
+              <span class="bns-metric-label">目标值 TARGET</span>
+              <span class="bns-metric-val" id="metric-target" style="color: #f59e0b;">9</span>
+            </div>
+            <div class="bns-metric-card">
+              <span class="bns-metric-label">结果下标 RESULT</span>
+              <span class="bns-metric-val" id="metric-res" style="color: #10b981;">待判定</span>
+            </div>
+          </div>
+
+          <div class="bns-formula-box">
+            <span style="color:#64748b;">中点计算:</span>
+            <strong id="formula-action" style="color: #2563eb;">mid = left + (right - left) / 2</strong>
+          </div>
+
+          <div class="bns-live-alert">
+            <span>💡</span> <span id="bns-live-text">准备就绪，点击运行开始二分查找。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="bns-card">
-      <div class="bns-card-header">
-        <div class="bns-card-title">
-          <span>🧭</span> 搜索指标监视器 (Search Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="bns-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="bns-dark-terminal">
+        <div class="bns-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="bns-tab-group">
+            <button id="btn-tab-code" class="bns-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="bns-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="bns-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="bns-lang-group" id="code-lang-tabs">
+            <button class="bns-lang-btn active" data-lang="java">Java</button>
+            <button class="bns-lang-btn" data-lang="cpp">C++</button>
+            <button class="bns-lang-btn" data-lang="python">Python</button>
+            <button class="bns-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="bns-font-tools">
+            <div class="bns-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="bns-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="bns-window-dots">
+              <span class="bns-dot" style="background:#ef4444;"></span>
+              <span class="bns-dot" style="background:#eab308;"></span>
+              <span class="bns-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="bns-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="bns-card-body">
-        <div class="bns-metrics-grid">
-          <div class="bns-metric-card">
-            <span class="bns-metric-label">区间 [L, R]</span>
-            <span class="bns-metric-val" id="metric-range" style="color: #2563eb;">[0, 5]</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="bns-log-card">
+        <div class="bns-log-header">
+          <div class="bns-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="bns-metric-card">
-            <span class="bns-metric-label">中点 mid (数值)</span>
-            <span class="bns-metric-val" id="metric-mid" style="color: #a855f7;">2 (3)</span>
-          </div>
-          <div class="bns-metric-card">
-            <span class="bns-metric-label">目标值 target</span>
-            <span class="bns-metric-val" id="metric-target" style="color: #f59e0b;">9</span>
-          </div>
-          <div class="bns-metric-card">
-            <span class="bns-metric-label">结果下标</span>
-            <span class="bns-metric-val" id="metric-res" style="color: #10b981;">待判定</span>
-          </div>
+          <span id="log-count" class="bns-log-count">0 条记录</span>
         </div>
-        <div class="bns-formula-box" id="bns-formula-box">
-          <span>中点计算:</span> <strong id="formula-action" style="color: #2563eb;">mid = left + (right - left) / 2</strong>
-        </div>
-        <div class="bns-live-alert" id="bns-live-alert">
-          <span>💡</span> <span id="bns-live-text">准备就绪，点击运行开始二分查找。</span>
+
+        <div id="log-container" class="bns-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="bns-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="bns-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="bns-card-header">
-        <div class="bns-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="bns-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="bns-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="bns-playback-bar">
-    <div class="bns-playback-controls">
-      <button class="bns-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="bns-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="bns-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="bns-modal-backdrop hidden">
+    <div class="bns-modal-content">
+      <div class="bns-modal-header">
+        <div class="bns-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="bns-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="bns-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="bns-progress-wrap">
-      <span class="bns-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>
