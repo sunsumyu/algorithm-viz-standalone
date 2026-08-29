@@ -345,6 +345,11 @@ class AlgoNavigationManager {
       `
           : ''
       }
+
+      <button id="algo-nav-shortcuts-btn" class="algo-nav-btn algo-nav-shortcuts" type="button" title="快捷键速查与自定义配置 (?)">
+        <span class="nav-btn-icon">⌨️</span>
+        <span class="nav-btn-text">快捷键</span>
+      </button>
     `;
 
     // 绑定事件
@@ -359,6 +364,12 @@ class AlgoNavigationManager {
 
     const nextBtn = document.getElementById('algo-nav-next-btn');
     nextBtn?.addEventListener('click', () => this.navigateToNext());
+
+    const shortcutsBtn = document.getElementById('algo-nav-shortcuts-btn');
+    shortcutsBtn?.addEventListener('click', async () => {
+      const { shortcutManagerModal } = await import('./shortcuts/shortcut-manager-modal');
+      shortcutManagerModal.open();
+    });
   }
 
   /**

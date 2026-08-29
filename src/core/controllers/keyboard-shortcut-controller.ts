@@ -1,8 +1,22 @@
 /**
  * 全局键盘快捷键控制中枢深度模块 (KeyboardShortcutController Deep Module)
  * 遵循命令模式 (Command Pattern) 与中介者模式 (Mediator Pattern)：
- * 提供集中的热键注册、按键分发、输入框焦点避让与生命周期管理。
+ * 整合配置式按键仓储 (ShortcutConfigRepository)、组合键规范化 (KeyComboMatcher) 与动作调度器 (ShortcutActionDispatcher)
  */
+
+import {
+  normalizeKeyCombo,
+  eventToKeyCombo
+} from '../shortcuts/key-combo-matcher';
+import {
+  shortcutConfigRepo,
+  ShortcutConfigRepository
+} from '../shortcuts/shortcut-config-repository';
+import {
+  shortcutDispatcher,
+  ShortcutActionDispatcher
+} from '../shortcuts/shortcut-action-dispatcher';
+import { ShortcutActionDefinition } from '../shortcuts/shortcut-schema';
 
 export type KeyCombo = string;
 export type ShortcutHandler = (e: KeyboardEvent) => void;
@@ -16,11 +30,15 @@ export interface ShortcutDefinition {
 
 export class KeyboardShortcutController {
   private static instance: KeyboardShortcutController | null = null;
-  private shortcuts: Map<string, ShortcutDefinition[]> = new Map();
+  private customHandlers: Map<string, ShortcutDefinition[]> = new Map();
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
   private isEnabled: boolean = true;
+  private configRepo: ShortcutConfigRepository;
+  private dispatcher: ShortcutActionDispatcher;
 
   private constructor() {
+    this.configRepo = shortcutConfigRepo;
+    this.dispatcher = shortcutDispatcher;
     this.initListener();
   }
 
@@ -32,8 +50,8 @@ export class KeyboardShortcutController {
   }
 
   /**
-   * 注册快捷键命令
-   * @param combo 按键定义 (如 'Space', 'ArrowRight', 'Escape', 'm', '[')
+   * 手动编程式注册快捷键命令（向后兼容接口）
+   * @param combo 按键定义 (如 'Space', 'ArrowRight', 'Ctrl+K', '[')
    * @param handler 触发回调
    * @param description 功能描述
    * @param allowInInput 是否允许在输入框中触发 (默认 false)
@@ -45,19 +63,19 @@ export class KeyboardShortcutController {
     description?: string,
     allowInInput: boolean = false
   ): () => void {
-    const normalized = combo.toLowerCase();
-    if (!this.shortcuts.has(normalized)) {
-      this.shortcuts.set(normalized, []);
+    const normalized = normalizeKeyCombo(combo);
+    if (!this.customHandlers.has(normalized)) {
+      this.customHandlers.set(normalized, []);
     }
 
     const def: ShortcutDefinition = {
-      combo,
+      combo: normalized,
       handler,
       description,
       allowInInput
     };
 
-    this.shortcuts.get(normalized)!.push(def);
+    this.customHandlers.get(normalized)!.push(def);
 
     return () => {
       this.unregister(combo, handler);
@@ -65,18 +83,18 @@ export class KeyboardShortcutController {
   }
 
   /**
-   * 取消指定快捷键注册
+   * 取消指定手动快捷键注册
    */
   public unregister(combo: KeyCombo, handler: ShortcutHandler): void {
-    const normalized = combo.toLowerCase();
-    const list = this.shortcuts.get(normalized);
+    const normalized = normalizeKeyCombo(combo);
+    const list = this.customHandlers.get(normalized);
     if (list) {
       const idx = list.findIndex((item) => item.handler === handler);
       if (idx !== -1) {
         list.splice(idx, 1);
       }
       if (list.length === 0) {
-        this.shortcuts.delete(normalized);
+        this.customHandlers.delete(normalized);
       }
     }
   }
@@ -93,10 +111,10 @@ export class KeyboardShortcutController {
   }
 
   /**
-   * 清空所有快捷键注册
+   * 清空所有手动编程式注册的快捷键
    */
   public clear(): void {
-    this.shortcuts.clear();
+    this.customHandlers.clear();
   }
 
   /**
@@ -113,27 +131,62 @@ export class KeyboardShortcutController {
   /**
    * 触发按键事件调度处理 (供原生 DOM 监听器与无头单测直接调度)
    */
-  public handleKeyEvent(e: { key: string; target?: any; preventDefault?: () => void }): void {
-    if (!this.isEnabled) return;
+  public handleKeyEvent(e: {
+    key?: string;
+    code?: string;
+    ctrlKey?: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    metaKey?: boolean;
+    target?: any;
+    preventDefault?: () => void;
+  }): boolean {
+    if (!this.isEnabled) return false;
 
     const target = e.target as HTMLElement | null;
     const isInput =
       target &&
       (target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
-        Boolean(target.isContentEditable));
+        Boolean((target as any).isContentEditable));
 
-    const key = (e.key || '').toLowerCase();
-    const defs = this.shortcuts.get(key);
+    // 1. 将按键转换为规范化组合键
+    const combo = eventToKeyCombo(e);
+    if (!combo) return false;
 
-    if (defs && defs.length > 0) {
-      for (const def of defs) {
+    let handled = false;
+
+    // 2. 先检查是否有手动编程式注册的处理函数 (Custom Handlers)
+    const customList = this.customHandlers.get(combo);
+    if (customList && customList.length > 0) {
+      for (const def of customList) {
         if (isInput && !def.allowInInput) {
           continue;
         }
         def.handler(e as KeyboardEvent);
+        handled = true;
       }
     }
+
+    if (handled) {
+      return true;
+    }
+
+    // 3. 检查系统配置动作表 (Declarative Action Registry)
+    const action = this.configRepo.findActionByCombo(combo);
+    if (action) {
+      if (isInput && !action.allowInInput) {
+        return false;
+      }
+
+      if (typeof e.preventDefault === 'function') {
+        e.preventDefault();
+      }
+
+      return this.dispatcher.dispatch(action.id, e as unknown as Event);
+    }
+
+    return false;
   }
 
   private initListener(): void {

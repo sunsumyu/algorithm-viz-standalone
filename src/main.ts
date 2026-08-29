@@ -5,13 +5,18 @@
  * 同时绑定 Tauri 桌面窗口的自定义标题栏控制
  */
 
+import './styles/visualizer-theme.css';
+import './styles/shortcut-modal.css';
 import { pluginLoader } from './core/plugin-loader';
 import { setupTauriWindowControls } from './core/tauri-window-controls';
 import { algorithmVizPlugin } from './plugins/algorithm-viz/index';
 import { algorithmManager } from './core/algorithm-manager';
+import { shortcutController } from './core/controllers/keyboard-shortcut-controller';
+import { shortcutManagerModal } from './core/shortcuts/shortcut-manager-modal';
 
 if (typeof window !== 'undefined') {
   (window as unknown as { algorithmManager: typeof algorithmManager }).algorithmManager = algorithmManager;
+  (window as unknown as { shortcutManagerModal: typeof shortcutManagerModal }).shortcutManagerModal = shortcutManagerModal;
 }
 
 /**
