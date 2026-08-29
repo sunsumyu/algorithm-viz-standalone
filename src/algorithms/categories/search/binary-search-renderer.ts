@@ -1,319 +1,379 @@
 /**
- * 二分查找可视化器
- * 重做：玻璃感 stat 面板 + 命中间距的"逐次折半"动画 + 命中 ripple 庆祝 + 完整执行日志
+ * 二分查找可视化器 — 4-Card 标准现代架构
+ * 左闭右闭区间折半、中点动态定位、边界收缩与目标命中
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BINARY_SEARCH_PROBLEM_HTML,
+  BINARY_SEARCH_ANALYSIS_HTML,
+  BINARY_SEARCH_CODE_LANGUAGES,
+} from './binary-search-problem-content';
+import { parseArray } from '../sort/bubble-sort-renderer';
 import template from './binary-search.html?raw';
-
-type Phase = 'init' | 'search' | 'narrow-left' | 'narrow-right' | 'found' | 'not-found';
 
 export interface BSStep {
   array: number[];
   left: number;
   right: number;
-  mid: number;          // -1 = 未计算
+  mid: number;
   target: number;
-  phase: Phase;
-  comparisons: number;  // 比较次数累计
-  foundIndex: number;   // -1 = 未找到
+  phase: 'init' | 'check-mid' | 'narrow-left' | 'narrow-right' | 'found' | 'not-found';
+  status: 'init' | 'check-mid' | 'narrow-left' | 'narrow-right' | 'found' | 'not-found';
+  comparisons: number;
+  foundIndex: number;
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseArray(input: string): number[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-}
-
 export function binarySearchSteps(raw: number[], target: number): BSStep[] {
   const steps: BSStep[] = [];
   const array = [...raw].sort((a, b) => a - b);
+  const n = array.length;
   let left = 0;
-  let right = array.length - 1;
+  let right = n - 1;
   let comparisons = 0;
-  let foundIndex = -1;
-  let found = false;
 
   steps.push({
-    array, left, right, mid: -1, target, phase: 'init', comparisons,
+    array: [...array],
+    left: 0,
+    right: n - 1,
+    mid: -1,
+    target,
+    phase: 'init',
+    status: 'init',
+    comparisons: 0,
     foundIndex: -1,
-    message: `初始化：L=0，R=${right}，target=${target}，区间大小 ${right + 1}。`,
-    log: `init L=0, R=${right}`,
-    codeLine: 2,
+    message: n === 0 ? '数组为空，无法查找。' : `初始化二分查找：L = 0, R = ${n - 1}，目标 target = ${target}。`,
+    log: n === 0 ? '空数组' : `初始化: L=0, R=${n - 1}, target=${target}`,
+    codeLine: 3,
   });
 
-  if (array.length === 0) {
+  if (n === 0) {
     steps.push({
-      array, left: -1, right: -1, mid: -1, target, phase: 'not-found', comparisons,
+      array: [],
+      left: -1,
+      right: -1,
+      mid: -1,
+      target,
+      phase: 'not-found',
+      status: 'not-found',
+      comparisons: 0,
       foundIndex: -1,
-      message: '数组为空，无法查找。',
-      log: 'empty array',
-      codeLine: 4,
+      message: '❌ 数组为空，未找到目标值，返回 -1。',
+      log: '未找到 target -> 返回 -1',
+      codeLine: 2,
     });
     return steps;
   }
 
   while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
+    const mid = left + Math.floor((right - left) / 2);
     const midVal = array[mid];
     comparisons++;
 
     steps.push({
-      array, left, right, mid, target, phase: 'search', comparisons,
+      array: [...array],
+      left,
+      right,
+      mid,
+      target,
+      phase: 'check-mid',
+      status: 'check-mid',
+      comparisons,
       foundIndex: -1,
-      message: `计算 mid = ⌊(${left}+${right})/2⌋ = ${mid}，比较 arr[${mid}]=${midVal} 与 target=${target}。`,
-      log: `mid=${mid}, arr[${mid}]=${midVal} vs target=${target}`,
-      codeLine: 6,
+      message: `计算中点：mid = ${left} + (${right} - ${left}) / 2 = ${mid}，nums[${mid}] = ${midVal}。与 target (${target}) 比较。`,
+      log: `计算 mid=${mid} (nums[${mid}]=${midVal})`,
+      codeLine: [4, 5, 6],
     });
 
     if (midVal === target) {
-      found = true;
-      foundIndex = mid;
       steps.push({
-        array, left: mid, right: mid, mid, target, phase: 'found', comparisons,
+        array: [...array],
+        left,
+        right,
+        mid,
+        target,
+        phase: 'found',
+        status: 'found',
+        comparisons,
         foundIndex: mid,
-        message: `🎯 命中！arr[${mid}] = ${target}，返回下标 ${mid}。共比较 ${comparisons} 次。`,
-        log: `found @ ${mid} after ${comparisons} comparisons`,
+        message: `🎯 命中目标！nums[${mid}] == ${target}，搜索成功，返回下标 ${mid}。`,
+        log: `✓ 命中 target: nums[${mid}] == ${target}`,
         codeLine: 7,
       });
-      break;
-    } else if (midVal < target) {
-      const newLeft = mid + 1;
+      return steps;
+    } else if (midVal > target) {
+      right = mid - 1;
       steps.push({
-        array, left, right, mid, target, phase: 'narrow-right', comparisons,
+        array: [...array],
+        left,
+        right,
+        mid,
+        target,
+        phase: 'narrow-right',
+        status: 'narrow-right',
+        comparisons,
         foundIndex: -1,
-        message: `arr[${mid}]=${midVal} < ${target} ⇒ 目标在右半边，丢弃左半 [${left}..${mid}]，L = ${newLeft}。`,
-        log: `arr[${mid}] < target → L = ${newLeft}`,
-        codeLine: 9,
+        message: `nums[${mid}] (${midVal}) > target (${target})，说明目标在左侧半区。收缩右界：right = mid - 1 = ${right}。`,
+        log: `nums[${mid}] > target -> right=${right}`,
+        codeLine: [8, 9],
       });
-      left = newLeft;
     } else {
-      const newRight = mid - 1;
+      left = mid + 1;
       steps.push({
-        array, left, right, mid, target, phase: 'narrow-left', comparisons,
+        array: [...array],
+        left,
+        right,
+        mid,
+        target,
+        phase: 'narrow-left',
+        status: 'narrow-left',
+        comparisons,
         foundIndex: -1,
-        message: `arr[${mid}]=${midVal} > ${target} ⇒ 目标在左半边，丢弃右半 [${mid}..${right}]，R = ${newRight}。`,
-        log: `arr[${mid}] > target → R = ${newRight}`,
-        codeLine: 11,
+        message: `nums[${mid}] (${midVal}) < target (${target})，说明目标在右侧半区。收缩左界：left = mid + 1 = ${left}。`,
+        log: `nums[${mid}] < target -> left=${left}`,
+        codeLine: [10, 11],
       });
-      right = newRight;
     }
   }
 
-  if (!found) {
-    steps.push({
-      array, left: -1, right: -1, mid: -1, target, phase: 'not-found', comparisons,
-      foundIndex: -1,
-      message: `未找到 target=${target}，返回 -1。共比较 ${comparisons} 次。`,
-      log: `not found after ${comparisons} comparisons`,
-      codeLine: 13,
-    });
-  }
+  steps.push({
+    array: [...array],
+    left,
+    right,
+    mid: -1,
+    target,
+    phase: 'not-found',
+    status: 'not-found',
+    comparisons,
+    foundIndex: -1,
+    message: `❌ 搜索结束：left (${left}) > right (${right})，区间为空，target (${target}) 不存在于数组中，返回 -1。`,
+    log: `未找到 target -> 返回 -1`,
+    codeLine: 14,
+  });
 
   return steps;
 }
 
 export class BinarySearchVisualizer extends StepVisualizer<BSStep> {
-  protected codeLines = [
-    'public int binarySearch(int[] arr, int target) {',
-    '    int L = 0, R = arr.length - 1;',
-    '    ',
-    '    while (L <= R) {',
-    '        int mid = (L + R) / 2;',
-    '        if (arr[mid] == target) return mid;  // 命中',
-    '        ',
-    '        if (arr[mid] < target) {',
-    '            L = mid + 1;   // 搜索右半',
-    '        } else {',
-    '            R = mid - 1;   // 搜索左半',
-    '        }',
-    '    }',
-    '    return -1;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 二分查找源码';
+  protected codeLanguages = BINARY_SEARCH_CODE_LANGUAGES;
+  protected codeLines = BINARY_SEARCH_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '二分查找 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private targetInput: HTMLInputElement | null = null;
-  private statL: HTMLElement | null = null;
-  private statR: HTMLElement | null = null;
-  private statM: HTMLElement | null = null;
-  private statT: HTMLElement | null = null;
-  private statC: HTMLElement | null = null;
-  private cellsEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private trackRowEl: HTMLElement | null = null;
+  private metricRangeEl: HTMLElement | null = null;
+  private metricMidEl: HTMLElement | null = null;
+  private metricTargetEl: HTMLElement | null = null;
+  private metricResEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#bs-array');
-    this.targetInput = this.root.querySelector('#bs-target');
-    this.statL = this.root.querySelector('#bs-stat-l');
-    this.statR = this.root.querySelector('#bs-stat-r');
-    this.statM = this.root.querySelector('#bs-stat-m');
-    this.statT = this.root.querySelector('#bs-stat-t');
-    this.statC = this.root.querySelector('#bs-stat-c');
-    this.cellsEl = this.root.querySelector('#bs-cells');
-    this.resultEl = this.root.querySelector('#bs-result');
-    this.logEl = this.root.querySelector('#bs-log');
-    this.clearLogBtn = this.root.querySelector('#bs-log-clear');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset',
-      prev: 'step-prev',
-      play: 'step-play',
-      next: 'step-next',
-      speed: 'bs-speed',
-      speedLabel: 'bs-speed-label',
-      counter: 'step-counter',
-      message: 'step-message',
-    });
+    this.trackRowEl = this.root.querySelector('#bns-track-row');
+    this.metricRangeEl = this.root.querySelector('#metric-range');
+    this.metricMidEl = this.root.querySelector('#metric-mid');
+    this.metricTargetEl = this.root.querySelector('#metric-target');
+    this.metricResEl = this.root.querySelector('#metric-res');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#bns-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelector('#bs-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.bs-chip').forEach((btn) => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bns-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
-        if (this.targetInput) this.targetInput.value = btn.dataset.tgt || '';
+        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+        const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
+        if (targetInput && btn.dataset.t) targetInput.value = btn.dataset.t;
         this.start();
       });
     });
-    this.clearLogBtn?.addEventListener('click', () => {
-      if (this.logEl) this.logEl.innerHTML = '';
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: BINARY_SEARCH_PROBLEM_HTML,
+      analysisHtml: BINARY_SEARCH_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    this.arrayInput?.addEventListener('change', () => this.start());
-    this.targetInput?.addEventListener('change', () => this.start());
   }
 
   protected buildSteps(): BSStep[] {
-    const arr = parseArray(this.arrayInput?.value || '1,3,5,7,9,11,13,15,17,19');
-    const tgt = parseInt(this.targetInput?.value || '7', 10);
-    return binarySearchSteps(arr, Number.isFinite(tgt) ? tgt : 7);
+    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
+    const raw = arrInput?.value || '-1, 0, 3, 5, 9, 12';
+    const t = parseInt(targetInput?.value || '9', 10);
+    const arr = parseArray(raw);
+    return binarySearchSteps(arr, isNaN(t) ? 9 : t);
   }
 
   protected renderStep(step: BSStep): void {
-    this.renderStats(step);
-    this.renderCells(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
-  }
+    const { array, left, right, mid, target, phase, foundIndex, message } = step;
 
-  private renderStats(step: BSStep): void {
-    const last = this.steps[Math.max(0, this.currentIndex - 1)];
-    this.flashIfChanged(this.statL, this.fmtIdx(step.left, step), this.fmtIdx(last?.left, last));
-    this.flashIfChanged(this.statR, this.fmtIdx(step.right, step), this.fmtIdx(last?.right, last));
-    this.flashIfChanged(this.statM, step.mid < 0 ? '-' : String(step.mid), last && last.mid < 0 ? '-' : String(last?.mid ?? '-'));
-    if (this.statT) this.statT.textContent = String(step.target);
-    if (this.statC) this.statC.textContent = String(step.comparisons);
-  }
+    // 1. 渲染二分数组与指针
+    if (this.trackRowEl) {
+      this.trackRowEl.innerHTML = array
+        .map((val, idx) => {
+          const isL = idx === left;
+          const isR = idx === right;
+          const isM = idx === mid;
+          const isFound = idx === foundIndex;
+          const inRange = idx >= left && idx <= right;
 
-  private fmtIdx(idx: number | undefined, step?: BSStep): string {
-    if (idx == null || idx < 0) return '-';
-    if (step && idx < step.array.length) return `${idx} (${step.array[idx]})`;
-    return String(idx);
-  }
+          let tagText = '';
+          if (isL && isR) tagText = isM ? 'L,R,M' : 'L,R';
+          else if (isL) tagText = isM ? 'L,M' : 'L';
+          else if (isR) tagText = isM ? 'R,M' : 'R';
+          else if (isM) tagText = 'M';
 
-  private flashIfChanged(el: HTMLElement | null, next: string, prev: string | undefined): void {
-    if (!el) return;
-    el.textContent = next;
-    if (next !== prev) {
-      el.style.transition = 'none';
-      el.style.transform = 'scale(1.2)';
-      el.style.color = '#67e8f9';
-      requestAnimationFrame(() => {
-        el.style.transition = 'transform .35s cubic-bezier(.4,0,.2,1), color .6s';
-        el.style.transform = 'scale(1)';
-        el.style.color = '';
-      });
+          let cellClass = 'bns-cell-box';
+          if (isFound) cellClass += ' is-found';
+          else if (isM) cellClass += ' is-mid';
+          else if (inRange) cellClass += ' in-range';
+          else cellClass += ' is-dimmed';
+
+          return `
+            <div class="bns-cell-wrapper">
+              <span class="bns-ptr-tag" style="color:${isFound ? '#10b981' : isM ? '#a855f7' : '#2563eb'};">${tagText}</span>
+              <div class="${cellClass}">
+                <span class="val">${val}</span>
+                <span class="idx">[${idx}]</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricRangeEl) {
+      this.metricRangeEl.textContent = left <= right ? `[${left}, ${right}]` : '区间为空';
+    }
+    if (this.metricMidEl) {
+      this.metricMidEl.textContent = mid >= 0 ? `${mid} (${array[mid]})` : '—';
+    }
+    if (this.metricTargetEl) this.metricTargetEl.textContent = `${target}`;
+    if (this.metricResEl) {
+      if (phase === 'found') {
+        this.metricResEl.textContent = `命中 [${foundIndex}]`;
+        this.metricResEl.style.color = '#10b981';
+      } else if (phase === 'not-found') {
+        this.metricResEl.textContent = '未找到 (-1)';
+        this.metricResEl.style.color = '#ef4444';
+      } else {
+        this.metricResEl.textContent = '搜索中...';
+        this.metricResEl.style.color = '#2563eb';
+      }
+    }
+
+    if (this.formulaActionEl) {
+      if (phase === 'check-mid') {
+        this.formulaActionEl.textContent = `mid = ${left} + (${right} - ${left}) / 2 = ${mid}`;
+      } else if (phase === 'narrow-right') {
+        this.formulaActionEl.textContent = `nums[${mid}] (${array[mid]}) > ${target} -> right = ${right}`;
+      } else if (phase === 'narrow-left') {
+        this.formulaActionEl.textContent = `nums[${mid}] (${array[mid]}) < ${target} -> left = ${left}`;
+      } else if (phase === 'found') {
+        this.formulaActionEl.textContent = `nums[${mid}] == ${target} 命中返回 ${mid}`;
+      } else if (phase === 'not-found') {
+        this.formulaActionEl.textContent = 'left > right -> 搜索结束返回 -1';
+      } else {
+        this.formulaActionEl.textContent = 'mid = left + (right - left) / 2';
+      }
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'found' ? '#f0fdf4' : phase === 'not-found' ? '#fff1f2' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'found' ? '#15803d' : phase === 'not-found' ? '#e11d48' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'found' ? '#bbf7d0' : phase === 'not-found' ? '#fecdd3' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderCells(step: BSStep): void {
-    const cellsEl = this.cellsEl;
-    if (!cellsEl) return;
-    cellsEl.innerHTML = '';
-    const arr = step.array;
-    if (arr.length === 0) {
-      cellsEl.innerHTML = '<div style="color:#64748b;padding:24px;">空数组</div>';
-      return;
-    }
-
-    arr.forEach((value, index) => {
-      const cell = document.createElement('div');
-      cell.className = 'bs-cell';
-      if (index === step.mid) cell.classList.add('bs-mid');
-      if (step.phase === 'found' && index === step.foundIndex) cell.classList.add('bs-found');
-      if (step.left >= 0 && step.right >= 0 && index >= step.left && index <= step.right && step.phase !== 'found') {
-        cell.classList.add('bs-range');
-      }
-      if ((step.phase === 'narrow-left' || step.phase === 'narrow-right') && step.mid === index) {
-        cell.classList.add(step.phase === 'narrow-left' ? 'bs-compare-yes' : 'bs-compare-no');
-      }
-      if (step.phase === 'not-found' || step.phase === 'init') {
-        if (index !== step.mid && (step.left < 0 || index < step.left || index > step.right)) {
-          cell.classList.add('bs-out');
-        }
-      } else if (step.left < 0 || step.right < 0 || index < step.left || index > step.right) {
-        cell.classList.add('bs-out');
-      }
-
-      cell.innerHTML = `<span>${value}</span><span class="bs-idx">${index}</span>`;
-      if (index === step.left && step.left >= 0 && step.left <= step.right) {
-        const p = document.createElement('span');
-        p.className = 'bs-ptr bs-ptr--L';
-        p.textContent = 'L';
-        cell.appendChild(p);
-      }
-      if (index === step.right && step.left >= 0 && step.left <= step.right) {
-        const p = document.createElement('span');
-        p.className = 'bs-ptr bs-ptr--R';
-        p.textContent = 'R';
-        cell.appendChild(p);
-      }
-      cellsEl.appendChild(cell);
-    });
-  }
-
-  private renderResultBanner(step: BSStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('bs-result--success', 'bs-result--fail');
-    const emoji = this.resultEl.querySelector('.bs-emoji') as HTMLElement | null;
-    if (step.phase === 'found') {
-      this.resultEl.classList.add('bs-result--success');
-      if (emoji) emoji.textContent = '🎯';
-    } else if (step.phase === 'not-found') {
-      this.resultEl.classList.add('bs-result--fail');
-      if (emoji) emoji.textContent = '❌';
-    } else if (step.phase === 'narrow-left') {
-      if (emoji) emoji.textContent = '👈';
-    } else if (step.phase === 'narrow-right') {
-      if (emoji) emoji.textContent = '👉';
-    } else {
-      if (emoji) emoji.textContent = '🎯';
-    }
-  }
-
-  private renderLogPanel(step: BSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'bs-log-line' + (i === this.currentIndex ? ' bs-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'bs-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
