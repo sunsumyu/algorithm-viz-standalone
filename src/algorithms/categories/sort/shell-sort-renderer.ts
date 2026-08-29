@@ -249,7 +249,7 @@ export class ShellSortVisualizer extends StepVisualizer<ShellStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.sh-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.sh-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
         if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;

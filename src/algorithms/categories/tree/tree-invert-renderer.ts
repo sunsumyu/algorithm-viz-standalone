@@ -209,7 +209,7 @@ export class TreeInvertVisualizer extends StepVisualizer<InvertStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ti-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.ti-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
         if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;

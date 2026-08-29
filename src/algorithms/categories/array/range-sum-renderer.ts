@@ -234,7 +234,7 @@ export class RangeSumVisualizer extends StepVisualizer<RSumStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rs-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rs-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const arrInput = this.root?.querySelector('#input-arr') as HTMLInputElement | null;
         const qInput = this.root?.querySelector('#input-queries') as HTMLInputElement | null;

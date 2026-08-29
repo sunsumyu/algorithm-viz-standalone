@@ -174,7 +174,7 @@ export class IntersectionOfTwoArraysVisualizer extends StepVisualizer<Intersecti
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ia-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.ia-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const n1Input = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
         const n2Input = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;

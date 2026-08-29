@@ -257,7 +257,7 @@ export class SelectionSortVisualizer extends StepVisualizer<SSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ss-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.ss-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
         if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;

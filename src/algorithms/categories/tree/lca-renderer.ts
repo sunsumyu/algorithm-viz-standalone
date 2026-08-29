@@ -253,7 +253,7 @@ export class LCAVisualizer extends StepVisualizer<LCAStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.lca-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.lca-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
         const pInput = this.root?.querySelector('#input-p') as HTMLInputElement | null;

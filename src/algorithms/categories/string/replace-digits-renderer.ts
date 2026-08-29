@@ -199,7 +199,7 @@ export class ReplaceDigitsVisualizer extends StepVisualizer<ReplaceDigitsStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rd-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rd-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
         if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;

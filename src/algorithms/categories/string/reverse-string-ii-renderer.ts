@@ -188,7 +188,7 @@ export class ReverseStringIIVisualizer extends StepVisualizer<ReverseStringIISte
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rs2-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rs2-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
         const kInput = this.root?.querySelector('#input-k') as HTMLInputElement | null;

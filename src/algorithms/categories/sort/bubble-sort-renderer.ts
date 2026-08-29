@@ -250,7 +250,7 @@ export class BubbleSortVisualizer extends StepVisualizer<BSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bs-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.bs-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
         if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;

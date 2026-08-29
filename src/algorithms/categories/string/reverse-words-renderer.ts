@@ -253,7 +253,7 @@ export class ReverseWordsVisualizer extends StepVisualizer<ReverseWordsStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rw-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rw-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
         if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;

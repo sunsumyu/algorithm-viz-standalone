@@ -361,7 +361,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     this.updateButtons();
   }
 
-  protected reset(): void {
+  public reset(): void {
     this.pause();
     this.currentIndex = 0;
     this.render();
@@ -376,6 +376,15 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     this.render();
     this.updateButtons();
   }
+
+  public get currentStepIndex(): number {
+    return this.currentIndex;
+  }
+
+  public getCurrentIndex(): number {
+    return this.currentIndex;
+  }
+
 
   protected updateButtons(): void {
     if (!this.btnPrev || !this.btnNext || !this.btnPlay) return;

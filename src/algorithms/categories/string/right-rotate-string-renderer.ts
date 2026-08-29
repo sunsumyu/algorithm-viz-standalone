@@ -206,7 +206,7 @@ export class RightRotateStringVisualizer extends StepVisualizer<RightRotateStep>
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rr-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rr-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
         const kInput = this.root?.querySelector('#input-k') as HTMLInputElement | null;

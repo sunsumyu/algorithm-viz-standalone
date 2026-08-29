@@ -288,7 +288,7 @@ export class ThreeSumVisualizer extends StepVisualizer<ThreeSumStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.th-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.th-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
         if (numsInput && btn.dataset.nums) numsInput.value = btn.dataset.nums;

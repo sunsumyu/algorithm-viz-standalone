@@ -5,7 +5,10 @@
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import { DarkCodeTerminalPresenter } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   MOVE_ZEROES_PROBLEM_HTML,
   MOVE_ZEROES_ANALYSIS_HTML,
@@ -100,7 +103,7 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
   protected codeLines = MOVE_ZEROES_CODE_LANGUAGES['java'];
   protected codePanelTitle = '移动零 代码调试';
 
-  private codeTerminalPresenter!: DarkCodeTerminalPresenter;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private canvasContainer: HTMLElement | null = null;
   private slowMonitorVal: HTMLElement | null = null;
   private fastMonitorVal: HTMLElement | null = null;
@@ -109,35 +112,24 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
   private stepPhaseBadge: HTMLElement | null = null;
   private execLogStream: HTMLElement | null = null;
 
-  protected initElements(): void {
-    super.initElements();
-    this.canvasContainer = document.getElementById('mz-canvas-container');
-    this.slowMonitorVal = document.getElementById('slow-monitor-val');
-    this.fastMonitorVal = document.getElementById('fast-monitor-val');
-    this.curValMonitorVal = document.getElementById('cur-val-monitor-val');
-    this.stepActionDesc = document.getElementById('step-action-desc');
-    this.stepPhaseBadge = document.getElementById('step-phase-badge');
-    this.execLogStream = document.getElementById('exec-log-stream');
+  protected initDOMElements(): void {
+    if (!this.root) return;
+    this.canvasContainer = this.root.querySelector('#mz-canvas-container');
+    this.slowMonitorVal = this.root.querySelector('#slow-monitor-val');
+    this.fastMonitorVal = this.root.querySelector('#fast-monitor-val');
+    this.curValMonitorVal = this.root.querySelector('#cur-val-monitor-val');
+    this.stepActionDesc = this.root.querySelector('#step-action-desc');
+    this.stepPhaseBadge = this.root.querySelector('#step-phase-badge');
+    this.execLogStream = this.root.querySelector('#exec-log-stream');
 
-    const terminalContainer = document.getElementById('code-terminal-container');
-    if (terminalContainer) {
-      this.codeTerminalPresenter = new DarkCodeTerminalPresenter(
-        terminalContainer,
-        this.codeLanguages,
-        'java',
-        '移动零 (LeetCode 283)'
-      );
-      this.codeTerminalPresenter.onLanguageChange((lang) => {
-        const lines = this.codeLanguages[lang];
-        if (lines) {
-          this.codeLines = lines;
-          const currentStep = this.steps[this.currentIndex];
-          if (currentStep) {
-            this.codeTerminalPresenter.highlightLine(currentStep.codeLine);
-          }
-        }
-      });
-    }
+    this.bindPlaybackControls();
+
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: MOVE_ZEROES_PROBLEM_HTML,
+      analysisHtml: MOVE_ZEROES_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
 
     this.initProblemModal();
     this.initCustomControls();
@@ -225,14 +217,17 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
     this.goToStep(0);
   }
 
+  protected buildSteps(): MoveZeroesStep[] {
+    return this.generateSteps();
+  }
+
   public generateSteps(): MoveZeroesStep[] {
     const numsInput = document.getElementById('nums-input') as HTMLInputElement;
     const vals = parseValues(numsInput ? numsInput.value : '', [0, 1, 0, 3, 12]);
     return buildMoveZeroesSteps(vals);
   }
 
-  protected renderStep(index: number): void {
-    const step = this.steps[index];
+  protected renderStep(step: MoveZeroesStep): void {
     if (!step) return;
 
     if (this.stepActionDesc) this.stepActionDesc.textContent = step.message;
@@ -261,12 +256,13 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
       }
     }
 
-    if (this.codeTerminalPresenter) {
-      this.codeTerminalPresenter.highlightLine(step.codeLine);
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
 
     this.renderCanvas(step);
-    this.appendLogEntry(step, index);
+    this.appendLogEntry(step, this.currentStepIndex);
   }
 
   private renderCanvas(step: MoveZeroesStep): void {

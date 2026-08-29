@@ -318,7 +318,7 @@ export class FourSumVisualizer extends StepVisualizer<FourSumStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.fs-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.fs-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
         const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;

@@ -243,7 +243,7 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.fs2-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.fs2-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.currentDemo = parseInt(btn.dataset.demo || '1', 10);
         this.start();
@@ -286,7 +286,7 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
 
     if (this.rowAEl) this.rowAEl.innerHTML = renderRow(a, idxA);
     if (this.rowBEl) this.rowBEl.innerHTML = renderRow(b, idxB);
-    if (this.rowCEEl) this.rowCEl.innerHTML = renderRow(c, idxC);
+    if (this.rowCEl) this.rowCEl.innerHTML = renderRow(c, idxC);
     if (this.rowDEl) this.rowDEl.innerHTML = renderRow(d, idxD);
 
     // 2. 渲染 Map

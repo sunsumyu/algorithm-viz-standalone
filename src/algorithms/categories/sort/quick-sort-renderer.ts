@@ -179,6 +179,8 @@ export function quickSortSteps(input: number[]): QSStep[] {
           swaps,
           settledIndices: [...settledIndices],
           swapping: true,
+          phase: 'swap-ij',
+          status: 'swap-ij',
           message: `双向交换：交换 arr[${i}] 与 arr[${j}] (${temp} ⇋ ${array[i]})。`,
           log: `交换 [${i}] ⇋ [${j}] (${temp} ⇋ ${array[i]})`,
           codeLine: [14, 15, 16],
@@ -300,7 +302,7 @@ export class QuickSortVisualizer extends StepVisualizer<QSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.qs-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.qs-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
         if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;

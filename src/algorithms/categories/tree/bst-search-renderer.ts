@@ -204,7 +204,7 @@ export class BstSearchVisualizer extends StepVisualizer<BSTSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bsts-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.bsts-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
         const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;

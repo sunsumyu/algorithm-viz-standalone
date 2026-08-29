@@ -170,7 +170,7 @@ export class ReverseStringVisualizer extends StepVisualizer<ReverseStringStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rs-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rs-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
         if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;

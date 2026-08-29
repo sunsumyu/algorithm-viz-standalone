@@ -281,7 +281,7 @@ export class ArrayTheoryVisualizer extends StepVisualizer<ATStep> {
     this.bindPlaybackControls();
 
     // 操作切换按钮
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.at-op-btn').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.at-op-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.root?.querySelectorAll('.at-op-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
@@ -291,7 +291,7 @@ export class ArrayTheoryVisualizer extends StepVisualizer<ATStep> {
     });
 
     // 快捷演示 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.at-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.at-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const demo = btn.dataset.demo;
         if (demo?.startsWith('access')) {

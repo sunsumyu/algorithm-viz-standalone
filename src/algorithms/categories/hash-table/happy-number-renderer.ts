@@ -177,7 +177,7 @@ export class HappyNumberVisualizer extends StepVisualizer<HappyNumberStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.hn-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.hn-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const nInput = this.root?.querySelector('#input-n') as HTMLInputElement | null;
         if (nInput && btn.dataset.n) nInput.value = btn.dataset.n;

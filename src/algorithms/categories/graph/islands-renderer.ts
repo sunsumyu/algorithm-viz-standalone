@@ -230,7 +230,7 @@ export class IslandsVisualizer extends StepVisualizer<IslandsStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.isl-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.isl-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const caseKey = btn.dataset.case || 'classic';
         if (PRESET_CASES[caseKey]) {

@@ -246,7 +246,7 @@ export class CountingSortVisualizer extends StepVisualizer<CSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.cs-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.cs-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
         if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;

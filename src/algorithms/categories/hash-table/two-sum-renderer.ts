@@ -188,7 +188,7 @@ export class TwoSumVisualizer extends StepVisualizer<TwoSumStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ts-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.ts-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
         const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;

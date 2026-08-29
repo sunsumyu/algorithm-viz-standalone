@@ -223,7 +223,7 @@ export class BinarySearchVisualizer extends StepVisualizer<BSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bns-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.bns-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
         const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;

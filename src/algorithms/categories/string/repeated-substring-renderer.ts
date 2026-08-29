@@ -217,7 +217,7 @@ export class RepeatedSubstringVisualizer extends StepVisualizer<RPSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rps-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rps-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
         if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;

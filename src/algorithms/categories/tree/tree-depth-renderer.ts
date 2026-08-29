@@ -194,7 +194,7 @@ export class TreeDepthVisualizer extends StepVisualizer<TDStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.td-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.td-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
         if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;

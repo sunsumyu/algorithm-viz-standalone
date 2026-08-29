@@ -232,7 +232,7 @@ export class BuyLandVisualizer extends StepVisualizer<BLStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bl-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.bl-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const gridInput = this.root?.querySelector('#input-grid') as HTMLInputElement | null;
         const budgetInput = this.root?.querySelector('#input-budget') as HTMLInputElement | null;

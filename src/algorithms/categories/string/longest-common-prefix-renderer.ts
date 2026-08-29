@@ -234,7 +234,7 @@ export class LongestCommonPrefixVisualizer extends StepVisualizer<LCPStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.lcp-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.lcp-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const strsInput = this.root?.querySelector('#input-strs') as HTMLInputElement | null;
         if (strsInput && btn.dataset.strs) strsInput.value = btn.dataset.strs;

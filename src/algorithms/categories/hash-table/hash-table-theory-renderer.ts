@@ -166,7 +166,7 @@ export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.htt-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.htt-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (btn.dataset.keys) {
           this.currentKeys = parseKeysList(btn.dataset.keys);

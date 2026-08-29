@@ -188,7 +188,7 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.sw-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.sw-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
         const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;

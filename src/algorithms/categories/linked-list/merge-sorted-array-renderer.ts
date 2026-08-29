@@ -5,7 +5,10 @@
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import { DarkCodeTerminalPresenter } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   MERGE_SORTED_ARRAY_PROBLEM_HTML,
   MERGE_SORTED_ARRAY_ANALYSIS_HTML,
@@ -158,7 +161,7 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
   protected codeLines = MERGE_SORTED_ARRAY_CODE_LANGUAGES['java'];
   protected codePanelTitle = '合并两个有序数组 代码调试';
 
-  private codeTerminalPresenter!: DarkCodeTerminalPresenter;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private canvasContainer: HTMLElement | null = null;
   private p1MonitorVal: HTMLElement | null = null;
   private p2MonitorVal: HTMLElement | null = null;
@@ -167,35 +170,24 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
   private stepPhaseBadge: HTMLElement | null = null;
   private execLogStream: HTMLElement | null = null;
 
-  protected initElements(): void {
-    super.initElements();
-    this.canvasContainer = document.getElementById('msa-canvas-container');
-    this.p1MonitorVal = document.getElementById('p1-monitor-val');
-    this.p2MonitorVal = document.getElementById('p2-monitor-val');
-    this.kMonitorVal = document.getElementById('k-monitor-val');
-    this.stepActionDesc = document.getElementById('step-action-desc');
-    this.stepPhaseBadge = document.getElementById('step-phase-badge');
-    this.execLogStream = document.getElementById('exec-log-stream');
+  protected initDOMElements(): void {
+    if (!this.root) return;
+    this.canvasContainer = this.root.querySelector('#msa-canvas-container');
+    this.p1MonitorVal = this.root.querySelector('#p1-monitor-val');
+    this.p2MonitorVal = this.root.querySelector('#p2-monitor-val');
+    this.kMonitorVal = this.root.querySelector('#k-monitor-val');
+    this.stepActionDesc = this.root.querySelector('#step-action-desc');
+    this.stepPhaseBadge = this.root.querySelector('#step-phase-badge');
+    this.execLogStream = this.root.querySelector('#exec-log-stream');
 
-    const terminalContainer = document.getElementById('code-terminal-container');
-    if (terminalContainer) {
-      this.codeTerminalPresenter = new DarkCodeTerminalPresenter(
-        terminalContainer,
-        this.codeLanguages,
-        'java',
-        '合并两个有序数组 (LeetCode 88)'
-      );
-      this.codeTerminalPresenter.onLanguageChange((lang) => {
-        const lines = this.codeLanguages[lang];
-        if (lines) {
-          this.codeLines = lines;
-          const currentStep = this.steps[this.currentIndex];
-          if (currentStep) {
-            this.codeTerminalPresenter.highlightLine(currentStep.codeLine);
-          }
-        }
-      });
-    }
+    this.bindPlaybackControls();
+
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: MERGE_SORTED_ARRAY_PROBLEM_HTML,
+      analysisHtml: MERGE_SORTED_ARRAY_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
 
     this.initProblemModal();
     this.initCustomControls();
@@ -284,6 +276,10 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
     this.goToStep(0);
   }
 
+  protected buildSteps(): MSAStep[] {
+    return this.generateSteps();
+  }
+
   public generateSteps(): MSAStep[] {
     const nums1Input = document.getElementById('nums1-input') as HTMLInputElement;
     const nums2Input = document.getElementById('nums2-input') as HTMLInputElement;
@@ -292,8 +288,7 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
     return buildMSASteps(n1, n2);
   }
 
-  protected renderStep(index: number): void {
-    const step = this.steps[index];
+  protected renderStep(step: MSAStep): void {
     if (!step) return;
 
     if (this.stepActionDesc) this.stepActionDesc.textContent = step.message;
@@ -317,12 +312,13 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
       }
     }
 
-    if (this.codeTerminalPresenter) {
-      this.codeTerminalPresenter.highlightLine(step.codeLine);
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
 
     this.renderCanvas(step);
-    this.appendLogEntry(step, index);
+    this.appendLogEntry(step, this.currentStepIndex);
   }
 
   private renderCanvas(step: MSAStep): void {

@@ -285,7 +285,7 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.sp-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.sp-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const nInput = this.root?.querySelector('#input-n') as HTMLInputElement | null;
         if (nInput && btn.dataset.n) {

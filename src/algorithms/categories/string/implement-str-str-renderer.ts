@@ -238,7 +238,7 @@ export class ImplementStrStrVisualizer extends StepVisualizer<SSStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.kmp-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.kmp-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const hInput = this.root?.querySelector('#input-haystack') as HTMLInputElement | null;
         const nInput = this.root?.querySelector('#input-needle') as HTMLInputElement | null;

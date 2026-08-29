@@ -227,7 +227,7 @@ export class MaxIslandAreaVisualizer extends StepVisualizer<MIAStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.mia-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.mia-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const caseKey = btn.dataset.case || 'classic';
         if (PRESET_CASES[caseKey]) {

@@ -211,7 +211,7 @@ export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rn-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.rn-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const rInput = this.root?.querySelector('#input-ransom') as HTMLInputElement | null;
         const mInput = this.root?.querySelector('#input-magazine') as HTMLInputElement | null;

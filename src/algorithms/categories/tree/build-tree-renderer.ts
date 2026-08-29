@@ -225,7 +225,7 @@ export class BuildTreeVisualizer extends StepVisualizer<BTStep> {
     }
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bt-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.bt-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
         const preInput = this.root?.querySelector('#input-pre') as HTMLInputElement | null;
         const inInput = this.root?.querySelector('#input-in') as HTMLInputElement | null;
