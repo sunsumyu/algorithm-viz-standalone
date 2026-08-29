@@ -110,119 +110,71 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
   private curValMonitorVal: HTMLElement | null = null;
   private stepActionDesc: HTMLElement | null = null;
   private stepPhaseBadge: HTMLElement | null = null;
-  private execLogStream: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
     this.canvasContainer = this.root.querySelector('#mz-canvas-container');
-    this.slowMonitorVal = this.root.querySelector('#slow-monitor-val');
-    this.fastMonitorVal = this.root.querySelector('#fast-monitor-val');
-    this.curValMonitorVal = this.root.querySelector('#cur-val-monitor-val');
+    this.slowMonitorVal = this.root.querySelector('#metric-slow');
+    this.fastMonitorVal = this.root.querySelector('#metric-fast');
+    this.curValMonitorVal = this.root.querySelector('#metric-val');
     this.stepActionDesc = this.root.querySelector('#step-action-desc');
     this.stepPhaseBadge = this.root.querySelector('#step-phase-badge');
-    this.execLogStream = this.root.querySelector('#exec-log-stream');
+    this.logContainer = this.root.querySelector('#exec-log-stream');
+    this.logCountEl = this.root.querySelector('#log-count');
 
+    // 绑定播放控制
     this.bindPlaybackControls();
 
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 预设 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.mz-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
+        if (numsInput && btn.dataset.nums !== undefined) numsInput.value = btn.dataset.nums;
+        this.start();
+      });
+    });
+
+    // 挂载暗色代码终端深模块
     this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
       codeLanguages: this.codeLanguages,
       problemHtml: MOVE_ZEROES_PROBLEM_HTML,
       analysisHtml: MOVE_ZEROES_ANALYSIS_HTML,
       initialLang: 'java',
     });
-
-    this.initProblemModal();
-    this.initCustomControls();
-  }
-
-  private initProblemModal(): void {
-    const openBtn = document.getElementById('open-problem-btn');
-    const modal = document.getElementById('problem-modal');
-    const closeBtn = document.getElementById('close-modal-btn');
-    const tabProblem = document.getElementById('modal-tab-problem');
-    const tabAnalysis = document.getElementById('modal-tab-analysis');
-    const contentArea = document.getElementById('modal-content-area');
-
-    if (!openBtn || !modal || !closeBtn || !tabProblem || !tabAnalysis || !contentArea) return;
-
-    contentArea.innerHTML = MOVE_ZEROES_PROBLEM_HTML;
-
-    openBtn.addEventListener('click', () => {
-      modal.classList.add('active');
-    });
-
-    closeBtn.addEventListener('click', () => {
-      modal.classList.remove('active');
-    });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.remove('active');
-    });
-
-    tabProblem.addEventListener('click', () => {
-      tabProblem.classList.add('active');
-      tabAnalysis.classList.remove('active');
-      contentArea.innerHTML = MOVE_ZEROES_PROBLEM_HTML;
-    });
-
-    tabAnalysis.addEventListener('click', () => {
-      tabAnalysis.classList.add('active');
-      tabProblem.classList.remove('active');
-      contentArea.innerHTML = MOVE_ZEROES_ANALYSIS_HTML;
-    });
-  }
-
-  private initCustomControls(): void {
-    const applyBtn = document.getElementById('apply-btn');
-    const randomBtn = document.getElementById('random-btn');
-    const numsInput = document.getElementById('nums-input') as HTMLInputElement;
-    const clearLogBtn = document.getElementById('clear-log-btn');
-
-    if (applyBtn && numsInput) {
-      applyBtn.addEventListener('click', () => {
-        this.restartWithInputs();
-      });
-    }
-
-    if (randomBtn && numsInput) {
-      randomBtn.addEventListener('click', () => {
-        const len = Math.floor(Math.random() * 4) + 5; // 5 to 8
-        const arr: number[] = [];
-        for (let i = 0; i < len; i++) {
-          if (Math.random() > 0.45) {
-            arr.push(0);
-          } else {
-            arr.push(Math.floor(Math.random() * 20) + 1);
-          }
-        }
-        numsInput.value = arr.join(', ');
-        this.restartWithInputs();
-      });
-    }
-
-    if (clearLogBtn && this.execLogStream) {
-      clearLogBtn.addEventListener('click', () => {
-        if (this.execLogStream) this.execLogStream.innerHTML = '';
-      });
-    }
-  }
-
-  private restartWithInputs(): void {
-    const numsInput = document.getElementById('nums-input') as HTMLInputElement;
-    const vals = parseValues(numsInput ? numsInput.value : '', [0, 1, 0, 3, 12]);
-    if (numsInput) numsInput.value = vals.join(', ');
-
-    if (this.execLogStream) this.execLogStream.innerHTML = '';
-    this.steps = buildMoveZeroesSteps(vals);
-    this.goToStep(0);
   }
 
   protected buildSteps(): MoveZeroesStep[] {
-    return this.generateSteps();
-  }
-
-  public generateSteps(): MoveZeroesStep[] {
-    const numsInput = document.getElementById('nums-input') as HTMLInputElement;
+    const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
     const vals = parseValues(numsInput ? numsInput.value : '', [0, 1, 0, 3, 12]);
     return buildMoveZeroesSteps(vals);
   }
@@ -231,28 +183,28 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
     if (!step) return;
 
     if (this.stepActionDesc) this.stepActionDesc.textContent = step.message;
-    if (this.slowMonitorVal) this.slowMonitorVal.textContent = `索引 ${step.slow}`;
-    if (this.fastMonitorVal) this.fastMonitorVal.textContent = step.fast < step.nums.length ? `索引 ${step.fast}` : '扫描结束';
+    if (this.slowMonitorVal) this.slowMonitorVal.textContent = `[${step.slow}]`;
+    if (this.fastMonitorVal) this.fastMonitorVal.textContent = step.fast < step.nums.length ? `[${step.fast}]` : '扫描结束';
     if (this.curValMonitorVal) {
-      this.curValMonitorVal.textContent = step.fast < step.nums.length ? String(step.nums[step.fast]) : '-';
+      this.curValMonitorVal.textContent = step.fast < step.nums.length ? String(step.nums[step.fast]) : '—';
     }
 
     if (this.stepPhaseBadge) {
       if (step.action === 'init') {
-        this.stepPhaseBadge.className = 'algo-badge info';
         this.stepPhaseBadge.textContent = '初始化';
+        this.stepPhaseBadge.style.color = '#3b82f6';
       } else if (step.action === 'check_nonzero') {
-        this.stepPhaseBadge.className = 'algo-badge primary';
         this.stepPhaseBadge.textContent = '命中非零';
+        this.stepPhaseBadge.style.color = '#2563eb';
       } else if (step.action === 'swap') {
-        this.stepPhaseBadge.className = 'algo-badge warning';
         this.stepPhaseBadge.textContent = '原地交换';
+        this.stepPhaseBadge.style.color = '#f59e0b';
       } else if (step.action === 'check_zero') {
-        this.stepPhaseBadge.className = 'algo-badge secondary';
         this.stepPhaseBadge.textContent = '遇到 0 跳过';
+        this.stepPhaseBadge.style.color = '#64748b';
       } else if (step.action === 'done') {
-        this.stepPhaseBadge.className = 'algo-badge success';
         this.stepPhaseBadge.textContent = '移动完成';
+        this.stepPhaseBadge.style.color = '#10b981';
       }
     }
 
@@ -261,8 +213,36 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
       this.terminalInstance.highlightLine(line);
     }
 
+    // 更新底部进度控制
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
     this.renderCanvas(step);
-    this.appendLogEntry(step, this.currentStepIndex);
+
+    // 日志流
+    if (this.logContainer) {
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = step.action === 'done' ? '#f0fdf4' : step.action === 'swap' ? '#fffbeb' : '#eff6ff';
+      logEntry.style.color = step.action === 'done' ? '#15803d' : step.action === 'swap' ? '#b45309' : '#1d4ed8';
+      logEntry.style.border = '1px solid ' + (step.action === 'done' ? '#bbf7d0' : step.action === 'swap' ? '#fde68a' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${this.currentStepIndex + 1}]</span> ${step.message}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
   }
 
   private renderCanvas(step: MoveZeroesStep): void {
@@ -270,12 +250,12 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
 
     const n = step.nums.length;
     let html = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 24px 0; width: 100%;">
-        <div style="font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 12px 0; width: 100%;">
+        <div style="font-size: 11.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
           <span>数组内存结构 (长度 ${n})</span>
-          <span style="font-size: 11px; font-weight: normal; color: #64748b;">[0..slow-1 为已整理非零区]</span>
+          <span style="font-size: 10.5px; font-weight: normal; color: #64748b;">[0..slow-1 为已整理非零区]</span>
         </div>
-        <div style="display: flex; gap: 10px; position: relative;">
+        <div style="display: flex; gap: 6px; position: relative; flex-wrap: wrap; justify-content: center;">
     `;
 
     for (let i = 0; i < n; i++) {
@@ -306,18 +286,18 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
       }
 
       html += `
-        <div style="display: flex; flex-direction: column; align-items: center; width: 48px; position: relative;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 40px; position: relative;">
           <!-- 顶部指针标签 (slow / fast) -->
-          <div style="height: 24px; display: flex; align-items: center; justify-content: center; gap: 2px;">
-            ${isSlow ? '<span style="background: #6366f1; color: white; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px;">slow</span>' : ''}
-            ${isFast ? '<span style="background: #10b981; color: white; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px;">fast</span>' : ''}
+          <div style="height: 18px; display: flex; align-items: center; justify-content: center; gap: 2px;">
+            ${isSlow ? '<span style="background: #6366f1; color: white; font-size: 8.5px; font-weight: bold; padding: 1px 3px; border-radius: 4px;">slow</span>' : ''}
+            ${isFast ? '<span style="background: #10b981; color: white; font-size: 8.5px; font-weight: bold; padding: 1px 3px; border-radius: 4px;">fast</span>' : ''}
           </div>
           <!-- 数值盒子 -->
-          <div style="width: 48px; height: 48px; border-radius: 8px; background: ${bg}; border: ${border}; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: ${textColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+          <div style="width: 40px; height: 40px; border-radius: 8px; background: ${bg}; border: ${border}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: ${textColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
             ${val}
           </div>
           <!-- 下标 -->
-          <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-family: monospace;">[${i}]</div>
+          <div style="font-size: 10px; color: #64748b; margin-top: 2px; font-family: monospace;">[${i}]</div>
         </div>
       `;
     }
@@ -330,39 +310,11 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
     this.canvasContainer.innerHTML = html;
   }
 
-  private appendLogEntry(step: MoveZeroesStep, index: number): void {
-    if (!this.execLogStream) return;
-
-    if (index === 0) {
-      this.execLogStream.innerHTML = '';
-    }
-
-    let badgeClass = 'primary';
-    let actionName = 'INIT';
-    if (step.action === 'check_nonzero') {
-      badgeClass = 'info';
-      actionName = 'NON_ZERO';
-    } else if (step.action === 'swap') {
-      badgeClass = 'warning';
-      actionName = 'SWAP';
-    } else if (step.action === 'check_zero') {
-      badgeClass = 'secondary';
-      actionName = 'ZERO';
-    } else if (step.action === 'done') {
-      badgeClass = 'success';
-      actionName = 'DONE';
-    }
-
-    const item = document.createElement('div');
-    item.className = 'exec-log-item';
-    item.innerHTML = `
-      <span class="log-step-badge">#${String(index + 1).padStart(2, '0')}</span>
-      <span class="algo-badge ${badgeClass}" style="font-size: 10px; padding: 1px 5px;">${actionName}</span>
-      <span class="log-msg" style="margin-left: 6px; color: #334155; font-size: 12px;">${step.message}</span>
-    `;
-
-    this.execLogStream.appendChild(item);
-    this.execLogStream.scrollTop = this.execLogStream.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 

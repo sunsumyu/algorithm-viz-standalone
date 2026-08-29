@@ -118,7 +118,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
         p2--;
       }
     } else {
-      // p1 已经小于 0，直接将 nums2[p2] 填入 nums1[k]
+      // p1 已经全部处理完，直接把 nums2 剩余元素拷贝进 nums1
       const v2 = nums2Copy[p2];
       nums1Full[k] = v2;
       steps.push({
@@ -132,7 +132,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
         action: 'fill_p2',
         chosenSource: 'nums2',
         chosenValue: v2,
-        message: `nums1 元素已全部就位 (p1 < 0)，直接将 nums2[${p2}]=${v2} 写入 nums1[${k}]。`,
+        message: `nums1 原有效元素已处理完 (p1 < 0)，将 nums2[${p2}]=${v2} 写入 nums1[${k}]。`,
         codeLine: 9,
       });
       p2--;
@@ -168,7 +168,8 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
   private kMonitorVal: HTMLElement | null = null;
   private stepActionDesc: HTMLElement | null = null;
   private stepPhaseBadge: HTMLElement | null = null;
-  private execLogStream: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
@@ -178,111 +179,63 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
     this.kMonitorVal = this.root.querySelector('#k-monitor-val');
     this.stepActionDesc = this.root.querySelector('#step-action-desc');
     this.stepPhaseBadge = this.root.querySelector('#step-phase-badge');
-    this.execLogStream = this.root.querySelector('#exec-log-stream');
+    this.logContainer = this.root.querySelector('#exec-log-stream');
+    this.logCountEl = this.root.querySelector('#log-count');
 
+    // 绑定播放控制
     this.bindPlaybackControls();
 
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // Scrubber 进度条
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进按钮
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 预设 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.msa-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const n1Input = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
+        const n2Input = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
+        if (n1Input && btn.dataset.n1 !== undefined) n1Input.value = btn.dataset.n1;
+        if (n2Input && btn.dataset.n2 !== undefined) n2Input.value = btn.dataset.n2;
+        this.start();
+      });
+    });
+
+    // 挂载暗色代码终端深模块
     this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
       codeLanguages: this.codeLanguages,
       problemHtml: MERGE_SORTED_ARRAY_PROBLEM_HTML,
       analysisHtml: MERGE_SORTED_ARRAY_ANALYSIS_HTML,
       initialLang: 'java',
     });
-
-    this.initProblemModal();
-    this.initCustomControls();
-  }
-
-  private initProblemModal(): void {
-    const openBtn = document.getElementById('open-problem-btn');
-    const modal = document.getElementById('problem-modal');
-    const closeBtn = document.getElementById('close-modal-btn');
-    const tabProblem = document.getElementById('modal-tab-problem');
-    const tabAnalysis = document.getElementById('modal-tab-analysis');
-    const contentArea = document.getElementById('modal-content-area');
-
-    if (!openBtn || !modal || !closeBtn || !tabProblem || !tabAnalysis || !contentArea) return;
-
-    contentArea.innerHTML = MERGE_SORTED_ARRAY_PROBLEM_HTML;
-
-    openBtn.addEventListener('click', () => {
-      modal.classList.add('active');
-    });
-
-    closeBtn.addEventListener('click', () => {
-      modal.classList.remove('active');
-    });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.remove('active');
-    });
-
-    tabProblem.addEventListener('click', () => {
-      tabProblem.classList.add('active');
-      tabAnalysis.classList.remove('active');
-      contentArea.innerHTML = MERGE_SORTED_ARRAY_PROBLEM_HTML;
-    });
-
-    tabAnalysis.addEventListener('click', () => {
-      tabAnalysis.classList.add('active');
-      tabProblem.classList.remove('active');
-      contentArea.innerHTML = MERGE_SORTED_ARRAY_ANALYSIS_HTML;
-    });
-  }
-
-  private initCustomControls(): void {
-    const applyBtn = document.getElementById('apply-btn');
-    const randomBtn = document.getElementById('random-btn');
-    const nums1Input = document.getElementById('nums1-input') as HTMLInputElement;
-    const nums2Input = document.getElementById('nums2-input') as HTMLInputElement;
-    const clearLogBtn = document.getElementById('clear-log-btn');
-
-    if (applyBtn && nums1Input && nums2Input) {
-      applyBtn.addEventListener('click', () => {
-        this.restartWithInputs();
-      });
-    }
-
-    if (randomBtn && nums1Input && nums2Input) {
-      randomBtn.addEventListener('click', () => {
-        const len1 = Math.floor(Math.random() * 3) + 2;
-        const len2 = Math.floor(Math.random() * 3) + 2;
-        const arr1 = Array.from({ length: len1 }, () => Math.floor(Math.random() * 20)).sort((a, b) => a - b);
-        const arr2 = Array.from({ length: len2 }, () => Math.floor(Math.random() * 20)).sort((a, b) => a - b);
-        nums1Input.value = arr1.join(', ');
-        nums2Input.value = arr2.join(', ');
-        this.restartWithInputs();
-      });
-    }
-
-    if (clearLogBtn && this.execLogStream) {
-      clearLogBtn.addEventListener('click', () => {
-        if (this.execLogStream) this.execLogStream.innerHTML = '';
-      });
-    }
-  }
-
-  private restartWithInputs(): void {
-    const nums1Input = document.getElementById('nums1-input') as HTMLInputElement;
-    const nums2Input = document.getElementById('nums2-input') as HTMLInputElement;
-    const n1 = parseValues(nums1Input ? nums1Input.value : '', [1, 2, 3]).sort((a, b) => a - b);
-    const n2 = parseValues(nums2Input ? nums2Input.value : '', [2, 5, 6]).sort((a, b) => a - b);
-
-    if (nums1Input) nums1Input.value = n1.join(', ');
-    if (nums2Input) nums2Input.value = n2.join(', ');
-
-    if (this.execLogStream) this.execLogStream.innerHTML = '';
-    this.steps = buildMSASteps(n1, n2);
-    this.goToStep(0);
   }
 
   protected buildSteps(): MSAStep[] {
-    return this.generateSteps();
-  }
-
-  public generateSteps(): MSAStep[] {
-    const nums1Input = document.getElementById('nums1-input') as HTMLInputElement;
-    const nums2Input = document.getElementById('nums2-input') as HTMLInputElement;
+    const nums1Input = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
+    const nums2Input = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
     const n1 = parseValues(nums1Input ? nums1Input.value : '', [1, 2, 3]).sort((a, b) => a - b);
     const n2 = parseValues(nums2Input ? nums2Input.value : '', [2, 5, 6]).sort((a, b) => a - b);
     return buildMSASteps(n1, n2);
@@ -292,23 +245,23 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
     if (!step) return;
 
     if (this.stepActionDesc) this.stepActionDesc.textContent = step.message;
-    if (this.p1MonitorVal) this.p1MonitorVal.textContent = step.p1 >= 0 ? `索引 ${step.p1} (${step.nums1[step.p1]})` : '已越界 (-1)';
-    if (this.p2MonitorVal) this.p2MonitorVal.textContent = step.p2 >= 0 ? `索引 ${step.p2} (${step.nums2[step.p2]})` : '已越界 (-1)';
-    if (this.kMonitorVal) this.kMonitorVal.textContent = step.k >= 0 ? `索引 ${step.k}` : '已完成 (-1)';
+    if (this.p1MonitorVal) this.p1MonitorVal.textContent = step.p1 >= 0 ? `[${step.p1}]=${step.nums1[step.p1]}` : '已越界 (-1)';
+    if (this.p2MonitorVal) this.p2MonitorVal.textContent = step.p2 >= 0 ? `[${step.p2}]=${step.nums2[step.p2]}` : '已越界 (-1)';
+    if (this.kMonitorVal) this.kMonitorVal.textContent = step.k >= 0 ? `[${step.k}]` : '已完成 (-1)';
 
     if (this.stepPhaseBadge) {
       if (step.action === 'init') {
-        this.stepPhaseBadge.className = 'algo-badge info';
         this.stepPhaseBadge.textContent = '初始化';
+        this.stepPhaseBadge.style.color = '#3b82f6';
       } else if (step.action === 'compare') {
-        this.stepPhaseBadge.className = 'algo-badge primary';
         this.stepPhaseBadge.textContent = '双指针比对';
+        this.stepPhaseBadge.style.color = '#2563eb';
       } else if (step.action === 'fill_p1' || step.action === 'fill_p2') {
-        this.stepPhaseBadge.className = 'algo-badge warning';
         this.stepPhaseBadge.textContent = `写入 ${step.chosenValue}`;
+        this.stepPhaseBadge.style.color = '#f59e0b';
       } else if (step.action === 'done') {
-        this.stepPhaseBadge.className = 'algo-badge success';
         this.stepPhaseBadge.textContent = '合并完成';
+        this.stepPhaseBadge.style.color = '#10b981';
       }
     }
 
@@ -317,8 +270,36 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
       this.terminalInstance.highlightLine(line);
     }
 
+    // 更新底部进度控制
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
     this.renderCanvas(step);
-    this.appendLogEntry(step, this.currentStepIndex);
+
+    // 日志流
+    if (this.logContainer) {
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = step.action === 'done' ? '#f0fdf4' : '#eff6ff';
+      logEntry.style.color = step.action === 'done' ? '#15803d' : '#1d4ed8';
+      logEntry.style.border = '1px solid ' + (step.action === 'done' ? '#bbf7d0' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${this.currentStepIndex + 1}]</span> ${step.message}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
   }
 
   private renderCanvas(step: MSAStep): void {
@@ -328,15 +309,15 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
     const len2 = step.nums2.length;
 
     let html = `
-      <div style="display: flex; flex-direction: column; gap: 24px; width: 100%; align-items: center; justify-content: center; padding: 20px 0;">
+      <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; align-items: center; justify-content: center; padding: 10px 0;">
         
         <!-- nums1 区域 (带 p1 和 k 指针) -->
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-          <div style="font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
             <span>nums1 物理存储区 (长度 ${totalLen1})</span>
-            <span style="font-size: 11px; font-weight: normal; color: #64748b;">(前 ${step.m} 个有效，后 ${step.n} 个待写入)</span>
+            <span style="font-size: 10.5px; font-weight: normal; color: #64748b;">(前 ${step.m} 个有效，后 ${step.n} 个待写入)</span>
           </div>
-          <div style="display: flex; gap: 8px; position: relative;">
+          <div style="display: flex; gap: 6px; position: relative;">
     `;
 
     for (let i = 0; i < totalLen1; i++) {
@@ -364,18 +345,18 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
       }
 
       html += `
-        <div style="display: flex; flex-direction: column; align-items: center; width: 44px; position: relative;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 38px; position: relative;">
           <!-- 顶部指针标签 (p1 / k) -->
-          <div style="height: 22px; display: flex; align-items: center; justify-content: center;">
-            ${isP1 ? '<span style="background: #3b82f6; color: white; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px;">p1</span>' : ''}
-            ${isK ? '<span style="background: #f59e0b; color: white; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px; margin-left: 2px;">k</span>' : ''}
+          <div style="height: 18px; display: flex; align-items: center; justify-content: center;">
+            ${isP1 ? '<span style="background: #3b82f6; color: white; font-size: 9px; font-weight: bold; padding: 1px 4px; border-radius: 4px;">p1</span>' : ''}
+            ${isK ? '<span style="background: #f59e0b; color: white; font-size: 9px; font-weight: bold; padding: 1px 4px; border-radius: 4px; margin-left: 2px;">k</span>' : ''}
           </div>
           <!-- 数值盒子 -->
-          <div style="width: 44px; height: 44px; border-radius: 8px; background: ${bg}; border: ${border}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: ${textColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: ${bg}; border: ${border}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: ${textColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
             ${val !== null ? val : '∅'}
           </div>
           <!-- 下标 -->
-          <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-family: monospace;">[${i}]</div>
+          <div style="font-size: 10px; color: #64748b; margin-top: 2px; font-family: monospace;">[${i}]</div>
         </div>
       `;
     }
@@ -384,17 +365,17 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
           </div>
         </div>
 
-        <!-- 分割箭头指示 -->
-        <div style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;">
+        <!-- 分割指示 -->
+        <div style="display: flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 11px;">
           <span>↑ 逆向合并与数据回填</span>
         </div>
 
         <!-- nums2 区域 (带 p2 指针) -->
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-          <div style="font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
             <span>nums2 来源数组 (长度 ${len2})</span>
           </div>
-          <div style="display: flex; gap: 8px; position: relative;">
+          <div style="display: flex; gap: 6px; position: relative;">
     `;
 
     for (let j = 0; j < len2; j++) {
@@ -411,17 +392,17 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
       }
 
       html += `
-        <div style="display: flex; flex-direction: column; align-items: center; width: 44px; position: relative;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 38px; position: relative;">
           <!-- 顶部指针标签 (p2) -->
-          <div style="height: 22px; display: flex; align-items: center; justify-content: center;">
-            ${isP2 ? '<span style="background: #10b981; color: white; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px;">p2</span>' : ''}
+          <div style="height: 18px; display: flex; align-items: center; justify-content: center;">
+            ${isP2 ? '<span style="background: #10b981; color: white; font-size: 9px; font-weight: bold; padding: 1px 4px; border-radius: 4px;">p2</span>' : ''}
           </div>
           <!-- 数值盒子 -->
-          <div style="width: 44px; height: 44px; border-radius: 8px; background: ${bg}; border: ${border}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: ${textColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: ${bg}; border: ${border}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: ${textColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
             ${val}
           </div>
           <!-- 下标 -->
-          <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-family: monospace;">[${j}]</div>
+          <div style="font-size: 10px; color: #64748b; margin-top: 2px; font-family: monospace;">[${j}]</div>
         </div>
       `;
     }
@@ -435,39 +416,11 @@ export class MergeSortedArrayVisualizer extends StepVisualizer<MSAStep> {
     this.canvasContainer.innerHTML = html;
   }
 
-  private appendLogEntry(step: MSAStep, index: number): void {
-    if (!this.execLogStream) return;
-
-    if (index === 0) {
-      this.execLogStream.innerHTML = '';
-    }
-
-    let badgeClass = 'primary';
-    let actionName = 'INIT';
-    if (step.action === 'compare') {
-      badgeClass = 'info';
-      actionName = 'COMPARE';
-    } else if (step.action === 'fill_p1') {
-      badgeClass = 'warning';
-      actionName = 'FILL_A';
-    } else if (step.action === 'fill_p2') {
-      badgeClass = 'warning';
-      actionName = 'FILL_B';
-    } else if (step.action === 'done') {
-      badgeClass = 'success';
-      actionName = 'DONE';
-    }
-
-    const item = document.createElement('div');
-    item.className = 'exec-log-item';
-    item.innerHTML = `
-      <span class="log-step-badge">#${String(index + 1).padStart(2, '0')}</span>
-      <span class="algo-badge ${badgeClass}" style="font-size: 10px; padding: 1px 5px;">${actionName}</span>
-      <span class="log-msg" style="margin-left: 6px; color: #334155; font-size: 12px;">${step.message}</span>
-    `;
-
-    this.execLogStream.appendChild(item);
-    this.execLogStream.scrollTop = this.execLogStream.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
