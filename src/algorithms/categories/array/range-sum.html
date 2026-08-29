@@ -1,283 +1,649 @@
 <style>
-  :root {
-    --accent-a: #a78bfa;
-    --accent-b: #c084fc;
-    --accent-rgb: 167, 139, 250;
-  }
+  /* === 区间和 · 前缀和 (KamaCoder 58) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-range-sum-view {
-    width: 100%; height: 100%; color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: radial-gradient(ellipse at 8% 6%, var(--accent-rgb), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #c084fc, transparent 55%),
-                linear-gradient(135deg, #181825, #1e1e2e, #11111b);
-  }
-  #algo-range-sum-view .rsum-page {
-    height: 100%; display: flex; flex-direction: column; overflow: hidden;
-  }
-  #algo-range-sum-view .rsum-header {
-    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
-  }
-  #algo-range-sum-view .rsum-icon-badge {
-    width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
-  }
-  #algo-range-sum-view h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
-  #algo-range-sum-view .rsum-desc { margin: 5px 0 0; color: #a6adc8; font-size: 14px; line-height: 1.4; }
-  #algo-range-sum-view .rsum-tip {
-    max-width: 420px; padding: 11px 14px; border-radius: 12px;
-    background: rgba(167, 139, 250, 0.12); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(167, 139, 250, 0.25); color: #bac2de; font-size: 13px; line-height: 1.55;
-  }
-  #algo-range-sum-view .rsum-tip strong { color: var(--accent-a); }
-  #algo-range-sum-view .rsum-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden; }
-  #algo-range-sum-view .rsum-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-  #algo-range-sum-view .rsum-card {
-    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  #algo-range-sum-view .rsum-card-title {
-    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
-  }
-  #algo-range-sum-view .rsum-input-row {
-    display: grid; grid-template-columns: 1fr 180px auto; gap: 10px; align-items: center; padding: 16px;
-  }
-  #algo-range-sum-view input {
-    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none;
-  }
-  #algo-range-sum-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2); }
-  #algo-range-sum-view button {
-    padding: 9px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-  }
-  #algo-range-sum-view button:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); border-color: transparent; color: #fff; }
-  #algo-range-sum-view button:disabled { opacity: 0.4; cursor: not-allowed; }
-  #algo-range-sum-view .rsum-examples { padding: 0 16px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-range-sum-view .rsum-example-btn {
-    padding: 6px 12px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(20, 18, 38, 0.4); color: #a6adc8; cursor: pointer; transition: all 0.2s;
-  }
-  #algo-range-sum-view .rsum-example-btn:hover { border-color: var(--accent-a); color: #fff; }
-  #algo-range-sum-view .rsum-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  #algo-range-sum-view .rsum-stat {
-    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
-  }
-  #algo-range-sum-view .rsum-stat::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-range-sum-view .rsum-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
-  #algo-range-sum-view .rsum-stat span {
-    color: var(--accent-a); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
-  }
-  #algo-range-sum-view .rsum-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-range-sum-view .rsum-track {
-    flex: 1; min-height: 0; padding: 18px; overflow: auto; display: flex; flex-direction: column; gap: 16px;
-  }
-  #algo-range-sum-view .rsum-row {
-    display: flex; align-items: center; gap: 10px;
-  }
-  #algo-range-sum-view .rsum-row-label {
-    min-width: 80px; color: #a6adc8; font-size: 13px; font-weight: 600;
-  }
-  #algo-range-sum-view .rsum-row-cells {
-    display: flex; gap: 8px; flex: 1;
-  }
-  #algo-range-sum-view .rsum-cell {
-    min-width: 54px; height: 60px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(20, 18, 38, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
-  }
-  #algo-range-sum-view .rsum-cell .idx { color: #6c7086; font-size: 11px; }
-  #algo-range-sum-view .rsum-cell .val { color: #cdd6f4; font-weight: 800; font-size: 20px; }
-  #algo-range-sum-view .rsum-cell.range {
-    background: rgba(167, 139, 250, 0.25); border-color: var(--accent-a);
-    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.3);
-  }
-  #algo-range-sum-view .rsum-cell.active {
-    border-color: #f9e2af; box-shadow: 0 0 0 3px rgba(249, 226, 175, 0.3);
-    animation: pulse-glow-purple 1.2s infinite;
-  }
-  #algo-range-sum-view .rsum-cell.computed {
-    background: rgba(166, 227, 161, 0.15); border-color: #a6e3a1;
-  }
-  #algo-range-sum-view .rsum-formula {
-    padding: 14px 16px; background: rgba(20, 18, 38, 0.5); border-radius: 12px;
-    border: 1px solid rgba(167, 139, 250, 0.2); font-family: Consolas, monospace; font-size: 14px;
-    color: #cdd6f4; text-align: center;
-  }
-  #algo-range-sum-view .rsum-formula .highlight { color: var(--accent-a); font-weight: 700; }
-  #algo-range-sum-view .rsum-results {
-    padding: 16px; display: flex; flex-direction: column; gap: 8px;
-  }
-  #algo-range-sum-view .rsum-result-item {
-    padding: 10px 14px; background: rgba(20, 18, 38, 0.4); border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08); font-size: 14px; line-height: 1.5;
-  }
-  #algo-range-sum-view .rsum-result-item .query { color: #a6adc8; }
-  #algo-range-sum-view .rsum-result-item .answer { color: var(--accent-a); font-weight: 700; font-size: 16px; margin-left: 12px; }
-  #algo-range-sum-view .rsum-result-banner {
-    margin: 0 16px 16px; padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5;
-  }
-  #algo-range-sum-view .rsum-result-banner.success { background: rgba(167, 139, 250, 0.15); border-color: var(--accent-a); color: #d8b4fe; }
-  #algo-range-sum-view .rsum-log {
-    min-height: 90px; max-height: 120px; padding: 12px 16px; overflow: auto;
-    background: rgba(20, 18, 38, 0.4); border-radius: 12px; font-family: Consolas, monospace; font-size: 12px; line-height: 1.7; color: #a6adc8;
-  }
-  #algo-range-sum-view .rsum-log .active { color: var(--accent-a); background: rgba(167, 139, 250, 0.1); border-left: 2px solid var(--accent-a); padding-left: 8px; }
-  #algo-range-sum-view .rsum-code {
-    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
-  }
-  #algo-range-sum-view .rsum-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-range-sum-view .rsum-controls {
-    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-  }
-  #algo-range-sum-view .rsum-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-    font-size: 14px; font-weight: 500;
-  }
-  #algo-range-sum-view .rsum-btn:hover:not(:disabled) { border-color: var(--accent-a); color: #fff; }
-  #algo-range-sum-view .rsum-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #algo-range-sum-view .rsum-play-btn {
-    border: 1px solid transparent; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fff; font-weight: 600;
-  }
-  #algo-range-sum-view .rsum-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(167, 139, 250, 0.4); border-color: transparent; }
-  #algo-range-sum-view .rsum-counter { color: #a6adc8; font-size: 13px; min-width: 100px; text-align: center; }
-  #algo-range-sum-view .rsum-slider-container { display: flex; align-items: center; gap: 8px; }
-  #algo-range-sum-view .rsum-slider-container input[type=range] {
-    width: 100px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
-    outline: none; -webkit-appearance: none;
-  }
-  #algo-range-sum-view .rsum-slider-container input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-a);
-    cursor: pointer; box-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
-  }
-  #algo-range-sum-view .rsum-slider-container span {
-    color: #a6adc8; font-size: 13px; min-width: 40px;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  @keyframes pulse-glow-purple {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(167, 139, 250, 0); }
-  }
-  @keyframes pop-in {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.15); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  /* 填充轨迹发光：prefix[i] 被计算填入时脉冲发光 */
-  @keyframes rsum-filling {
-    0% { box-shadow: 0 0 0 0 rgba(249, 226, 175, 0.7); background: rgba(249, 226, 175, 0.5); transform: scale(1); }
-    40% { box-shadow: 0 0 28px 6px rgba(249, 226, 175, 0.8); background: rgba(249, 226, 175, 0.45); transform: scale(1.1); border-color: #f9e2af; }
-    100% { box-shadow: 0 0 0 0 rgba(249, 226, 175, 0); background: rgba(166, 227, 161, 0.15); transform: scale(1); }
-  }
-  /* 累加来源高亮：prefix[i-1] 与 arr[i] 同时闪一下 */
-  @keyframes rsum-source {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0); border-color: rgba(255, 255, 255, 0.08); }
-    50% { box-shadow: 0 0 18px 2px rgba(167, 139, 250, 0.6); border-color: var(--accent-a); }
-  }
-  #algo-range-sum-view .rsum-cell.new { animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  /* 填充轨迹 / 累加来源动画 class（新增） */
-  #algo-range-sum-view .rsum-cell.filling {
-    animation: rsum-filling 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
-  }
-  #algo-range-sum-view .rsum-cell.filling-source {
-    animation: rsum-source 0.7s ease-out;
-  }
-  /* 原数组行累加来源 cell（arr[i] 当前参与计算） */
-  #algo-range-sum-view .rsum-cell.source {
-    border-color: var(--accent-a);
-    box-shadow: 0 0 18px 2px rgba(167, 139, 250, 0.5);
-    animation: rsum-source 0.7s ease-out;
+  #algo-range-sum-view * {
+    box-sizing: border-box;
   }
 
-  @media (max-width: 1100px) {
-    #algo-range-sum-view .rsum-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-range-sum-view .rsum-code { min-height: 360px; }
-    #algo-range-sum-view .rsum-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    #algo-range-sum-view .rsum-tip { max-width: 100%; }
+  /* 1. 顶栏 Header */
+  #algo-range-sum-view .rs-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-range-sum-view .rs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-range-sum-view .rs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-range-sum-view .rs-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-range-sum-view .rs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-range-sum-view .rs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-range-sum-view .rs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-range-sum-view .rs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-range-sum-view .rs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-range-sum-view .rs-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-range-sum-view .rs-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-range-sum-view .rs-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-range-sum-view .rs-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-range-sum-view .rs-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-range-sum-view .rs-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-range-sum-view .rs-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-range-sum-view .rs-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-range-sum-view .rs-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-range-sum-view .rs-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-range-sum-view .rs-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-range-sum-view .rs-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 双轨前缀和沙盘 */
+  #algo-range-sum-view .rs-dual-track-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 8px;
+    width: 100%;
+  }
+
+  #algo-range-sum-view .rs-track-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-range-sum-view .rs-track-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-range-sum-view .rs-track-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 18px 8px 4px;
+  }
+
+  #algo-range-sum-view .rs-cell-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  #algo-range-sum-view .rs-cell-box {
+    width: 44px;
+    height: 48px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  #algo-range-sum-view .rs-cell-box .val {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-range-sum-view .rs-cell-box .idx {
+    font-size: 9px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-range-sum-view .rs-cell-box.is-query-range {
+    background: #eff6ff;
+    border-color: #3b82f6;
+  }
+
+  #algo-range-sum-view .rs-cell-box.is-prefix-r {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  }
+
+  #algo-range-sum-view .rs-cell-box.is-prefix-l {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  }
+
+  #algo-range-sum-view .rs-ptr-badge {
+    position: absolute;
+    top: -20px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  #algo-range-sum-view .rs-ptr-badge.pl {
+    background: #f59e0b;
+    color: #ffffff;
+  }
+  #algo-range-sum-view .rs-ptr-badge.pr {
+    background: #22c55e;
+    color: #ffffff;
+  }
+
+  /* Preset Chips */
+  #algo-range-sum-view .rs-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-range-sum-view .rs-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-range-sum-view .rs-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-range-sum-view .rs-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-range-sum-view .rs-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-range-sum-view .rs-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-range-sum-view .rs-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-range-sum-view .rs-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-range-sum-view .rs-results-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 8px;
+  }
+
+  #algo-range-sum-view .rs-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-range-sum-view .rs-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-range-sum-view .rs-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-range-sum-view .rs-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-range-sum-view .rs-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-range-sum-view .rs-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-range-sum-view .rs-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-range-sum-view .rs-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="rsum-page">
-  <div class="rsum-header">
-    <div>
-      <div class="rsum-icon-badge">Σ</div>
-      <h1>区间和（前缀和）</h1>
-      <p class="rsum-desc">经典算法 · 预处理前缀和数组 O(1) 回答区间查询</p>
+<div id="algo-range-sum-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="rs-header">
+    <div class="rs-header-left">
+      <div class="rs-icon-btn">📊</div>
+      <div class="rs-main-title">区间和 · Range Sum (一维前缀和)</div>
+      <button class="rs-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="rs-badge-mode">一维前缀和差分</div>
+      <div class="rs-badge-complexity">O(1) 查询 · O(n) 空间</div>
     </div>
-    <div class="rsum-tip"><strong>前缀和思想：</strong>预处理前缀和数组 prefix，其中 prefix[i+1] = prefix[i] + arr[i]。查询区间 [L, R] 的和时，直接用 prefix[R+1] - prefix[L]，O(1) 时间完成。</div>
-  </div>
-
-  <div class="rsum-main">
-    <div class="rsum-left">
-      <section class="rsum-card">
-        <div class="rsum-card-title">输入</div>
-        <div class="rsum-input-row">
-          <input id="rsum-arr-input" value="1,2,3,4,5">
-          <input id="rsum-query-input" value="0,2|1,3|2,4">
-          <button id="rsum-start">开始计算</button>
-        </div>
-        <div class="rsum-examples">
-          <button class="rsum-example-btn" data-arr="1,2,3,4,5" data-q="0,2|1,3|2,4">示例 1</button>
-          <button class="rsum-example-btn" data-arr="3,1,4,1,5,9" data-q="0,5|2,4">示例 2</button>
-          <button class="rsum-example-btn" data-arr="-1,2,-3,4,-5" data-q="0,4|1,3">示例 3</button>
-        </div>
-      </section>
-
-      <div class="rsum-stats">
-        <div class="rsum-stat"><label>查询序号</label><span id="rsum-q-index">-</span></div>
-        <div class="rsum-stat"><label>L</label><span id="rsum-l">-</span></div>
-        <div class="rsum-stat"><label>R</label><span id="rsum-r">-</span></div>
-        <div class="rsum-stat"><label>当前和</label><span id="rsum-sum">-</span></div>
-        <div class="rsum-stat"><label>prefix[R+1]</label><span id="rsum-prefix-r">-</span></div>
+    <div class="rs-header-right">
+      <div class="rs-input-group">
+        <label for="input-arr">数组:</label>
+        <input type="text" id="input-arr" value="1, 2, 3, 4, 5" style="width: 110px;" placeholder="逗号分隔">
       </div>
+      <div class="rs-input-group">
+        <label for="input-queries">查询:</label>
+        <input type="text" id="input-queries" value="0,2|1,3|2,4" style="width: 110px;" placeholder="L,R|L,R">
+      </div>
+      <button class="rs-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="rs-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
 
-      <section class="rsum-card rsum-visual">
-        <div class="rsum-card-title">数组可视化</div>
-        <div class="rsum-track" id="rsum-track">
-          <div class="rsum-row">
-            <div class="rsum-row-label">原数组</div>
-            <div class="rsum-row-cells" id="rsum-arr-cells"></div>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="rs-workspace">
+    <!-- Card 1: 双轨前缀和沙盘 -->
+    <section class="rs-card">
+      <div class="rs-card-header">
+        <div class="rs-card-title">
+          <span>📊</span> 原数组与前缀和双轨沙盘 (Dual-Track Prefix Sandbox)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #22c55e;">● prefix[R+1]</span> 减去 <span style="color: #f59e0b;">● prefix[L]</span> = 区间和
+        </div>
+      </div>
+      <div class="rs-card-body" style="justify-content: center;">
+        <div class="rs-dual-track-container">
+          <!-- 上轨：原数组 -->
+          <div class="rs-track-section">
+            <div class="rs-track-label">
+              <span>原数组 arr (待查询区间 [L, R])</span>
+            </div>
+            <div class="rs-track-row" id="rs-arr-track"></div>
           </div>
-          <div class="rsum-row">
-            <div class="rsum-row-label">前缀和</div>
-            <div class="rsum-row-cells" id="rsum-prefix-cells"></div>
-          </div>
-          <div class="rsum-formula" id="rsum-formula">
-            sum[L, R] = prefix[R+1] - prefix[L]
+          <!-- 下轨：前缀和数组 -->
+          <div class="rs-track-section">
+            <div class="rs-track-label">
+              <span>前缀和数组 prefix (prefix[0]=0 虚拟头节点)</span>
+            </div>
+            <div class="rs-track-row" id="rs-prefix-track"></div>
           </div>
         </div>
-      </section>
+      </div>
+      <div class="rs-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="rs-chip" data-arr="1, 2, 3, 4, 5" data-q="0,2|1,3|2,4">标准案例 ([1,2,3,4,5], 3次查询)</button>
+        <button class="rs-chip" data-arr="5, 10, 15, 20, 25" data-q="0,4|1,2|3,4">全区间与短区间</button>
+        <button class="rs-chip" data-arr="2, -1, 3, 8, -4" data-q="0,1|2,4|1,3">含负数数组</button>
+      </div>
+    </section>
 
-      <section class="rsum-card">
-        <div class="rsum-card-title">查询结果</div>
-        <div class="rsum-results" id="rsum-results"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="rs-card">
+      <div class="rs-card-header">
+        <div class="rs-card-title">
+          <span>🧭</span> 差分计算与查询监视器 (Query Monitor)
+        </div>
+      </div>
+      <div class="rs-card-body">
+        <div class="rs-metrics-grid">
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">当前查询</span>
+            <span class="rs-metric-val" id="metric-query" style="color: #3b82f6;">#0</span>
+          </div>
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">查询区间 [L, R]</span>
+            <span class="rs-metric-val" id="metric-lr">[0, 2]</span>
+          </div>
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">prefix[R+1] - prefix[L]</span>
+            <span class="rs-metric-val" id="metric-diff" style="color: #22c55e;">6 - 0</span>
+          </div>
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">区间总和 Sum</span>
+            <span class="rs-metric-val" id="metric-sum" style="color: #10b981;">6</span>
+          </div>
+        </div>
+        <div class="rs-formula-box" id="rs-formula-box">
+          <span>公式:</span> <strong style="color: #22c55e;" id="formula-pr">prefix[3] (6)</strong> - <strong style="color: #f59e0b;" id="formula-pl">prefix[0] (0)</strong> = <strong style="color: #2563eb;" id="formula-res">6</strong>
+        </div>
+        <div class="rs-results-bar" id="rs-results-bar">
+          <span style="font-size: 11px; font-weight: 700; color: #64748b;">历史查询结果:</span>
+          <!-- 动态结果 badges -->
+        </div>
+        <div class="rs-live-alert" id="rs-live-alert">
+          <span>💡</span> <span id="rs-live-text">准备就绪，点击运行开始前缀和构建与查询。</span>
+        </div>
+      </div>
+    </section>
 
-      <section class="rsum-card">
-        <div class="rsum-card-title">执行日志</div>
-        <div class="rsum-log" id="rsum-log"></div>
-      </section>
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="rs-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="rs-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="rs-card-header">
+        <div class="rs-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="rs-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="rs-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="rs-playback-bar">
+    <div class="rs-playback-controls">
+      <button class="rs-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="rs-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="rs-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="rsum-code"><div data-code-panel></div></aside>
-  </div>
-
-  <div class="rsum-controls">
-    <button id="step-reset" class="rsum-btn">⏮重置</button>
-    <button id="step-prev" class="rsum-btn">◀上一步</button>
-    <button id="step-play" class="rsum-btn rsum-play-btn">▶播放</button>
-    <button id="step-next" class="rsum-btn">下一步▶</button>
-    <span id="step-counter" class="rsum-counter">步骤: 0 / 0</span>
-    <div class="rsum-slider-container">
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" class="rsum-counter">0.9s</span>
+    <div class="rs-progress-wrap">
+      <span class="rs-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

@@ -1,262 +1,607 @@
 <style>
-  :root {
-    --accent-a: #fb923c;
-    --accent-b: #f87171;
-    --accent-rgb: 251, 146, 60;
-  }
+  /* === 移除元素 (LeetCode 27) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-remove-element-view {
-    width: 100%; height: 100%; color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: radial-gradient(ellipse at 8% 6%, var(--accent-rgb), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #f87171, transparent 55%),
-                linear-gradient(135deg, #181825, #1e1e2e, #11111b);
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-remove-element-view .rm-page {
-    height: 100%; display: flex; flex-direction: column; overflow: hidden;
+
+  #algo-remove-element-view * {
+    box-sizing: border-box;
   }
+
+  /* 1. 顶栏 Header */
   #algo-remove-element-view .rm-header {
-    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-remove-element-view .rm-icon-badge {
-    width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
+
+  #algo-remove-element-view .rm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-remove-element-view h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
-  #algo-remove-element-view .rm-desc { margin: 5px 0 0; color: #a6adc8; font-size: 14px; line-height: 1.4; }
-  #algo-remove-element-view .rm-tip {
-    max-width: 420px; padding: 11px 14px; border-radius: 12px;
-    background: rgba(251, 146, 60, 0.12); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(251, 146, 60, 0.25); color: #bac2de; font-size: 13px; line-height: 1.55;
+
+  #algo-remove-element-view .rm-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-remove-element-view .rm-tip strong { color: var(--accent-a); }
-  #algo-remove-element-view .rm-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden; }
-  #algo-remove-element-view .rm-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+
+  #algo-remove-element-view .rm-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-remove-element-view .rm-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-remove-element-view .rm-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-remove-element-view .rm-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-remove-element-view .rm-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-remove-element-view .rm-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-remove-element-view .rm-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-remove-element-view .rm-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-remove-element-view .rm-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-remove-element-view .rm-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-remove-element-view .rm-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-remove-element-view .rm-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-remove-element-view .rm-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-remove-element-view .rm-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
   #algo-remove-element-view .rm-card {
-    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
+
+  #algo-remove-element-view .rm-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
   #algo-remove-element-view .rm-card-title {
-    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
-  }
-  #algo-remove-element-view .rm-input-row {
-    display: grid; grid-template-columns: 1fr 120px auto; gap: 10px; align-items: center; padding: 16px;
-  }
-  #algo-remove-element-view input {
-    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none;
-  }
-  #algo-remove-element-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2); }
-  #algo-remove-element-view button {
-    padding: 9px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-  }
-  #algo-remove-element-view button:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); border-color: transparent; color: #fff; }
-  #algo-remove-element-view button:disabled { opacity: 0.4; cursor: not-allowed; }
-  #algo-remove-element-view .rm-examples { padding: 0 16px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-remove-element-view .rm-example-btn {
-    padding: 6px 12px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(20, 18, 38, 0.4); color: #a6adc8; cursor: pointer; transition: all 0.2s;
-  }
-  #algo-remove-element-view .rm-example-btn:hover { border-color: var(--accent-a); color: #fff; }
-  #algo-remove-element-view .rm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  #algo-remove-element-view .rm-stat {
-    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
-  }
-  #algo-remove-element-view .rm-stat::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-remove-element-view .rm-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
-  #algo-remove-element-view .rm-stat span {
-    color: var(--accent-a); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
-  }
-  #algo-remove-element-view .rm-visual { flex: 1; min-height: 230px; display: flex; flex-direction: column; }
-  #algo-remove-element-view .rm-track {
-    flex: 1; min-height: 0; padding: 18px; overflow: auto; display: flex; align-items: center; gap: 10px;
-  }
-  #algo-remove-element-view .rm-cell {
-    min-width: 54px; height: 60px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(20, 18, 38, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
-  }
-  #algo-remove-element-view .rm-cell .idx { color: #6c7086; font-size: 11px; }
-  #algo-remove-element-view .rm-cell .val { color: #cdd6f4; font-weight: 800; font-size: 20px; }
-  #algo-remove-element-view .rm-cell.slow {
-    border-color: #f9e2af; box-shadow: 0 0 0 3px rgba(249, 226, 175, 0.2);
-  }
-  #algo-remove-element-view .rm-cell.fast {
-    border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2); transform: translateY(-6px);
-    animation: pulse-glow 1.2s infinite;
-  }
-  #algo-remove-element-view .rm-cell.target {
-    background: rgba(248, 113, 113, 0.18); border-color: var(--accent-b);
-  }
-  #algo-remove-element-view .rm-cell.kept {
-    background: rgba(166, 227, 161, 0.12); border-color: #a6e3a1;
-  }
-  #algo-remove-element-view .rm-ptr {
-    position: absolute; top: -18px; font-size: 11px; font-weight: 700;
-  }
-  #algo-remove-element-view .rm-ptr.slow { color: #f9e2af; }
-  #algo-remove-element-view .rm-ptr.fast { color: var(--accent-a); }
-  #algo-remove-element-view .rm-result-banner {
-    margin: 0 16px 16px; padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5;
-    transform: scale(1); transition: all 0.3s;
-  }
-  #algo-remove-element-view .rm-result-banner.success { background: rgba(34, 197, 94, 0.12); border-color: #22c55e; color: #86efac; }
-  #algo-remove-element-view .rm-result-banner.fail { background: rgba(248, 113, 113, 0.12); border-color: var(--accent-b); color: #fca5a5; }
-  #algo-remove-element-view .rm-result-banner .badge { margin-right: 8px; }
-  #algo-remove-element-view .rm-log {
-    min-height: 90px; max-height: 120px; padding: 12px 16px; overflow: auto;
-    background: rgba(20, 18, 38, 0.4); border-radius: 12px; font-family: Consolas, monospace; font-size: 12px; line-height: 1.7; color: #a6adc8;
-  }
-  #algo-remove-element-view .rm-log .active { color: var(--accent-a); background: rgba(251, 146, 60, 0.1); border-left: 2px solid var(--accent-a); padding-left: 8px; }
-  #algo-remove-element-view .rm-code {
-    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
-  }
-  #algo-remove-element-view .rm-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-remove-element-view .rm-controls {
-    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-  }
-  #algo-remove-element-view .rm-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-    font-size: 14px; font-weight: 500;
-  }
-  #algo-remove-element-view .rm-btn:hover:not(:disabled) { border-color: var(--accent-a); color: #fff; }
-  #algo-remove-element-view .rm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #algo-remove-element-view .rm-play-btn {
-    border: 1px solid transparent; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fff; font-weight: 600;
-  }
-  #algo-remove-element-view .rm-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(251, 146, 60, 0.4); border-color: transparent; }
-  #algo-remove-element-view .rm-counter { color: #a6adc8; font-size: 13px; min-width: 100px; text-align: center; }
-  #algo-remove-element-view .rm-slider-container { display: flex; align-items: center; gap: 8px; }
-  #algo-remove-element-view .rm-slider-container input[type=range] {
-    width: 100px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
-    outline: none; -webkit-appearance: none;
-  }
-  #algo-remove-element-view .rm-slider-container input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-a);
-    cursor: pointer; box-shadow: 0 0 10px rgba(251, 146, 60, 0.4);
-  }
-  #algo-remove-element-view .rm-slider-container span {
-    color: #a6adc8; font-size: 13px; min-width: 40px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(251, 146, 60, 0); }
-  }
-  @keyframes pop-in {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.15); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  @keyframes burst {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); filter: brightness(1.2); }
-  }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
-  }
-  /* 元素被移除：淡出 + 缩小 + 抖动 */
-  @keyframes rm-removing {
-    0% { transform: scale(1); opacity: 1; filter: brightness(1); }
-    25% { transform: scale(1.18) rotate(-3deg); filter: brightness(1.4); }
-    60% { transform: scale(0.85) rotate(2deg); opacity: 0.5; filter: brightness(0.9); }
-    100% { transform: scale(1); opacity: 1; filter: brightness(1); }
-  }
-  /* 元素被复制覆盖：原值淡出/新值高亮脉冲 */
-  @keyframes rm-overwriting {
-    0% { box-shadow: 0 0 0 0 rgba(249, 226, 175, 0.6); transform: translateY(0); }
-    35% { box-shadow: 0 0 26px 4px rgba(249, 226, 175, 0.7); transform: translateY(-6px) scale(1.06); border-color: #f9e2af; }
-    100% { box-shadow: 0 0 0 0 rgba(249, 226, 175, 0); transform: translateY(0) scale(1); }
-  }
-  #algo-remove-element-view .rm-cell.new { animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  #algo-remove-element-view .rm-cell.current { animation: pulse-glow 1.2s infinite; }
-  #algo-remove-element-view .rm-cell.success { animation: burst 0.5s ease-out; }
-  #algo-remove-element-view .rm-cell.conflict { animation: shake 0.3s ease-in-out; }
-  /* 移除/覆盖动画 class（新增） */
-  #algo-remove-element-view .rm-cell.removing {
-    animation: rm-removing 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    background: rgba(248, 113, 113, 0.35);
-    border-color: var(--accent-b);
-  }
-  #algo-remove-element-view .rm-cell.overwriting {
-    animation: rm-overwriting 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
+  #algo-remove-element-view .rm-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
 
-  @media (max-width: 1100px) {
-    #algo-remove-element-view .rm-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-remove-element-view .rm-code { min-height: 360px; }
-    #algo-remove-element-view .rm-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    #algo-remove-element-view .rm-tip { max-width: 100%; }
+  /* Card 1: 沙盘与双指针 */
+  #algo-remove-element-view .rm-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px;
+    width: 100%;
+  }
+
+  #algo-remove-element-view .rm-track-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 24px 10px 10px;
+  }
+
+  #algo-remove-element-view .rm-cell-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+
+  #algo-remove-element-view .rm-cell-box {
+    width: 48px;
+    height: 52px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  }
+
+  #algo-remove-element-view .rm-cell-box .val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-remove-element-view .rm-cell-box .idx {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-remove-element-view .rm-cell-box.is-kept {
+    background: #f0fdf4;
+    border-color: #22c55e;
+  }
+  #algo-remove-element-view .rm-cell-box.is-kept .val {
+    color: #15803d;
+  }
+
+  #algo-remove-element-view .rm-cell-box.is-target {
+    background: #fef2f2;
+    border-color: #ef4444;
+    opacity: 0.7;
+  }
+  #algo-remove-element-view .rm-cell-box.is-target .val {
+    color: #b91c1c;
+    text-decoration: line-through;
+  }
+
+  #algo-remove-element-view .rm-cell-box.is-active-fast {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    transform: translateY(-4px);
+  }
+
+  #algo-remove-element-view .rm-cell-box.is-active-slow {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  }
+
+  #algo-remove-element-view .rm-pointer-tags {
+    position: absolute;
+    top: -24px;
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+
+  #algo-remove-element-view .rm-ptr-badge {
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  #algo-remove-element-view .rm-ptr-badge.fast {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+  #algo-remove-element-view .rm-ptr-badge.slow {
+    background: #f59e0b;
+    color: #ffffff;
+  }
+
+  /* Preset Chips */
+  #algo-remove-element-view .rm-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-remove-element-view .rm-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-remove-element-view .rm-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-remove-element-view .rm-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-remove-element-view .rm-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-remove-element-view .rm-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-remove-element-view .rm-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-remove-element-view .rm-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-remove-element-view .rm-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-remove-element-view .rm-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-remove-element-view .rm-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-remove-element-view .rm-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-remove-element-view .rm-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-remove-element-view .rm-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-remove-element-view .rm-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="rm-page">
-  <div class="rm-header">
-    <div>
-      <div class="rm-icon-badge">🧹</div>
-      <h1>移除元素（双指针）</h1>
-      <p class="rm-desc">LeetCode 27：原地移除数组中所有值为 val 的元素，返回新长度</p>
+<div id="algo-remove-element-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="rm-header">
+    <div class="rm-header-left">
+      <div class="rm-icon-btn">🎯</div>
+      <div class="rm-main-title">移除元素 · Remove Element</div>
+      <button class="rm-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="rm-badge-mode">双指针原地覆盖</div>
+      <div class="rm-badge-complexity">O(n) · O(1)</div>
     </div>
-    <div class="rm-tip"><strong>快慢指针：</strong>快指针 fast 遍历每个元素，遇到不等于 val 的就复制到 slow 位置，slow 前进一格。</div>
-  </div>
-
-  <div class="rm-main">
-    <div class="rm-left">
-      <section class="rm-card">
-        <div class="rm-card-title">输入</div>
-        <div class="rm-input-row">
-          <input id="rm-array-input" value="3,2,2,3,4,3,5">
-          <input id="rm-val-input" value="3">
-          <button id="rm-start">开始移除</button>
-        </div>
-        <div class="rm-examples">
-          <button class="rm-example-btn" data-arr="3,2,2,3" data-val="3">3,2,2,3 / val=3</button>
-          <button class="rm-example-btn" data-arr="0,1,2,2,3,0,4,2" data-val="2">含 0 示例</button>
-          <button class="rm-example-btn" data-arr="1,1,1,1" data-val="1">全为 val</button>
-        </div>
-      </section>
-
-      <div class="rm-stats">
-        <div class="rm-stat"><label>fast 指针</label><span id="rm-fast">0</span></div>
-        <div class="rm-stat"><label>slow 指针</label><span id="rm-slow">0</span></div>
-        <div class="rm-stat"><label>当前值</label><span id="rm-cur">-</span></div>
-        <div class="rm-stat"><label>新长度</label><span id="rm-len">0</span></div>
+    <div class="rm-header-right">
+      <div class="rm-input-group">
+        <label for="input-nums">数组:</label>
+        <input type="text" id="input-nums" value="3, 2, 2, 3, 4, 3, 5" style="width: 140px;" placeholder="逗号分隔">
       </div>
-
-      <section class="rm-card rm-visual">
-        <div class="rm-card-title">数组可视化</div>
-        <div class="rm-track" id="rm-track"></div>
-        <div class="rm-result-banner" id="step-message"><span class="badge">💡</span>点击开始移除</div>
-      </section>
-
-      <section class="rm-card">
-        <div class="rm-card-title">执行日志</div>
-        <div class="rm-log" id="rm-log"></div>
-      </section>
+      <div class="rm-input-group">
+        <label for="input-val">val:</label>
+        <input type="number" id="input-val" value="3" style="width: 45px;">
+      </div>
+      <button class="rm-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="rm-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <aside class="rm-code"><div data-code-panel></div></aside>
-  </div>
+  </header>
 
-  <div class="rm-controls">
-    <button id="step-reset" class="rm-btn">⏮重置</button>
-    <button id="step-prev" class="rm-btn">◀上一步</button>
-    <button id="step-play" class="rm-btn rm-play-btn">▶播放</button>
-    <button id="step-next" class="rm-btn">下一步▶</button>
-    <span id="step-counter" class="rm-counter">步骤: 0 / 0</span>
-    <div class="rm-slider-container">
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" class="rm-counter">0.9s</span>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="rm-workspace">
+    <!-- Card 1: 内存数组沙盘与双指针 -->
+    <section class="rm-card">
+      <div class="rm-card-header">
+        <div class="rm-card-title">
+          <span>📊</span> 数组内存沙盘与快慢指针 (Array & Fast-Slow Pointers)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">●</span> 快指针寻找有效元素 · <span style="color: #f59e0b;">●</span> 慢指针定位覆写位置
+        </div>
+      </div>
+      <div class="rm-card-body" style="justify-content: center;">
+        <div class="rm-sandbox-container" id="rm-sandbox-container">
+          <!-- 动态渲染数组 Cell 和 指针 -->
+          <div class="rm-track-row" id="rm-track-row"></div>
+        </div>
+      </div>
+      <div class="rm-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="rm-chip" data-nums="3, 2, 2, 3" data-val="3">LeetCode 示例 1 ([3,2,2,3], val=3)</button>
+        <button class="rm-chip" data-nums="0, 1, 2, 2, 3, 0, 4, 2" data-val="2">LeetCode 示例 2 ([0,1,2,2,3...], val=2)</button>
+        <button class="rm-chip" data-nums="1, 2, 3, 4, 5" data-val="6">无匹配元素 (val=6)</button>
+        <button class="rm-chip" data-nums="3, 3, 3, 3" data-val="3">全匹配移除 (val=3)</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="rm-card">
+      <div class="rm-card-header">
+        <div class="rm-card-title">
+          <span>🧭</span> 执行状态监视器 (Execution Monitor)
+        </div>
+      </div>
+      <div class="rm-card-body">
+        <div class="rm-metrics-grid">
+          <div class="rm-metric-card">
+            <span class="rm-metric-label">慢指针 slow (新长度)</span>
+            <span class="rm-metric-val" id="metric-slow" style="color: #f59e0b;">0</span>
+          </div>
+          <div class="rm-metric-card">
+            <span class="rm-metric-label">快指针 fast</span>
+            <span class="rm-metric-val" id="metric-fast" style="color: #3b82f6;">0</span>
+          </div>
+          <div class="rm-metric-card">
+            <span class="rm-metric-label">当前检查 nums[fast]</span>
+            <span class="rm-metric-val" id="metric-curr">-</span>
+          </div>
+          <div class="rm-metric-card">
+            <span class="rm-metric-label">有效元素计数</span>
+            <span class="rm-metric-val" id="metric-kept" style="color: #10b981;">0</span>
+          </div>
+        </div>
+        <div class="rm-live-alert" id="rm-live-alert">
+          <span>💡</span> <span id="rm-live-text">准备就绪，点击运行开始双指针遍历。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="rm-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="rm-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="rm-card-header">
+        <div class="rm-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="rm-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="rm-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="rm-playback-bar">
+    <div class="rm-playback-controls">
+      <button class="rm-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="rm-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="rm-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="rm-progress-wrap">
+      <span class="rm-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

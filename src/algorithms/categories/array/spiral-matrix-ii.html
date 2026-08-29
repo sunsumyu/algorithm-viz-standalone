@@ -1,252 +1,566 @@
 <style>
-  :root {
-    --accent-a: #c084fc;
-    --accent-b: #f472b6;
-    --accent-rgb: 192, 132, 252;
-  }
+  /* === 螺旋矩阵 II (LeetCode 59) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-spiral-matrix-ii-view {
-    width: 100%; height: 100%; color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: radial-gradient(ellipse at 8% 6%, var(--accent-rgb), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #f472b6, transparent 55%),
-                linear-gradient(135deg, #181825, #1e1e2e, #11111b);
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-spiral-matrix-ii-view .sp-page {
-    height: 100%; display: flex; flex-direction: column; overflow: hidden;
-  }
-  #algo-spiral-matrix-ii-view .sp-header {
-    padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 18px;
-  }
-  #algo-spiral-matrix-ii-view .sp-icon-badge {
-    width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
-  }
-  #algo-spiral-matrix-ii-view h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
-  #algo-spiral-matrix-ii-view .sp-desc { margin: 5px 0 0; color: #a6adc8; font-size: 14px; line-height: 1.4; }
-  #algo-spiral-matrix-ii-view .sp-tip {
-    max-width: 430px; padding: 11px 14px; border-radius: 12px;
-    background: rgba(192, 132, 252, 0.12); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(192, 132, 252, 0.25); color: #bac2de; font-size: 13px; line-height: 1.55;
-  }
-  #algo-spiral-matrix-ii-view .sp-tip strong { color: var(--accent-a); }
-  #algo-spiral-matrix-ii-view .sp-main {
-    flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-spiral-matrix-ii-view .sp-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-  #algo-spiral-matrix-ii-view .sp-card {
-    background: rgba(20, 18, 38, 0.55); backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  #algo-spiral-matrix-ii-view .sp-card-title {
-    padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex; justify-content: space-between; color: #fff; font-weight: 700; font-size: 14px;
-  }
-  #algo-spiral-matrix-ii-view .sp-input-row {
-    display: grid; grid-template-columns: 120px auto 1fr; gap: 10px; align-items: center; padding: 16px;
-  }
-  #algo-spiral-matrix-ii-view input {
-    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; font-family: Consolas, monospace; outline: none;
-  }
-  #algo-spiral-matrix-ii-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.2); }
-  #algo-spiral-matrix-ii-view button {
-    padding: 9px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.6); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-  }
-  #algo-spiral-matrix-ii-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); border-color: transparent; color: #fff;
-  }
-  #algo-spiral-matrix-ii-view button:disabled { opacity: 0.4; cursor: not-allowed; }
-  #algo-spiral-matrix-ii-view .sp-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  #algo-spiral-matrix-ii-view .sp-stat {
-    padding: 14px; background: rgba(20, 18, 38, 0.4); border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
-  }
-  #algo-spiral-matrix-ii-view .sp-stat::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-spiral-matrix-ii-view .sp-stat label { display: block; margin-bottom: 6px; color: #a6adc8; font-size: 12px; }
-  #algo-spiral-matrix-ii-view .sp-stat span {
-    color: var(--accent-a); font-family: Consolas, monospace; font-size: 21px; font-weight: 800;
-  }
-  #algo-spiral-matrix-ii-view .sp-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
-  #algo-spiral-matrix-ii-view .sp-grid-wrap {
-    flex: 1; min-height: 0; padding: 18px; overflow: auto; display: flex; align-items: center; justify-content: center;
-  }
-  #algo-spiral-matrix-ii-view .sp-grid { display: grid; gap: 6px; }
-  #algo-spiral-matrix-ii-view .sp-cell {
-    width: 52px; height: 52px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(20, 18, 38, 0.5); display: flex; align-items: center; justify-content: center;
-    font-family: Consolas, monospace; font-size: 18px; font-weight: 700; color: #6c7086;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  #algo-spiral-matrix-ii-view .sp-cell.filled {
-    color: #cdd6f4; background: rgba(20, 18, 38, 0.7); border-color: rgba(255, 255, 255, 0.12);
-  }
-  #algo-spiral-matrix-ii-view .sp-cell.current {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); color: #fff;
-    transform: scale(1.08); border-color: transparent;
-    animation: pulse-glow 1.2s infinite;
-  }
-  #algo-spiral-matrix-ii-view .sp-result-banner {
-    margin: 0 16px 16px; padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); backdrop-filter: blur(18px); font-size: 14px; line-height: 1.5;
-    transform: scale(1); transition: all 0.3s;
-  }
-  #algo-spiral-matrix-ii-view .sp-result-banner.success { background: rgba(34, 197, 94, 0.12); border-color: #22c55e; color: #86efac; }
-  #algo-spiral-matrix-ii-view .sp-result-banner .badge { margin-right: 8px; }
-  #algo-spiral-matrix-ii-view .sp-log {
-    min-height: 90px; max-height: 120px; padding: 12px 16px; overflow: auto;
-    background: rgba(20, 18, 38, 0.4); border-radius: 12px; font-family: Consolas, monospace; font-size: 12px; line-height: 1.7; color: #a6adc8;
-  }
-  #algo-spiral-matrix-ii-view .sp-log .active {
-    color: var(--accent-a); background: rgba(192, 132, 252, 0.1); border-left: 2px solid var(--accent-a); padding-left: 8px;
-  }
-  #algo-spiral-matrix-ii-view .sp-code {
-    min-height: 0; display: flex; background: rgba(20, 18, 38, 0.4); border-radius: 16px; overflow: hidden;
-  }
-  #algo-spiral-matrix-ii-view .sp-code [data-code-panel] { flex: 1; min-width: 0; }
-  #algo-spiral-matrix-ii-view .sp-controls {
-    padding: 14px 20px; background: rgba(20, 18, 38, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-  }
-  #algo-spiral-matrix-ii-view .sp-btn {
-    padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(20, 18, 38, 0.5); color: #cdd6f4; cursor: pointer; transition: all 0.2s;
-    font-size: 14px; font-weight: 500;
-  }
-  #algo-spiral-matrix-ii-view .sp-btn:hover:not(:disabled) { border-color: var(--accent-a); color: #fff; }
-  #algo-spiral-matrix-ii-view .sp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #algo-spiral-matrix-ii-view .sp-play-btn {
-    border: 1px solid transparent; background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fff; font-weight: 600;
-  }
-  #algo-spiral-matrix-ii-view .sp-play-btn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(192, 132, 252, 0.4); border-color: transparent; }
-  #algo-spiral-matrix-ii-view .sp-counter { color: #a6adc8; font-size: 13px; min-width: 100px; text-align: center; }
-  #algo-spiral-matrix-ii-view .sp-slider-container { display: flex; align-items: center; gap: 8px; }
-  #algo-spiral-matrix-ii-view .sp-slider-container input[type=range] {
-    width: 100px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15);
-    outline: none; -webkit-appearance: none;
-  }
-  #algo-spiral-matrix-ii-view .sp-slider-container input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-a);
-    cursor: pointer; box-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
-  }
-  #algo-spiral-matrix-ii-view .sp-slider-container span { color: #a6adc8; font-size: 13px; min-width: 40px; }
 
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.5); }
-    50% { box-shadow: 0 0 0 10px rgba(192, 132, 252, 0); }
+  #algo-spiral-matrix-ii-view * {
+    box-sizing: border-box;
   }
-  @keyframes pop-in {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.15); }
-    100% { transform: scale(1); opacity: 1; }
+
+  /* 1. 顶栏 Header */
+  #algo-spiral-matrix-ii-view .sp-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  @keyframes burst {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); filter: brightness(1.2); }
+
+  #algo-spiral-matrix-ii-view .sp-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
+
+  #algo-spiral-matrix-ii-view .sp-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  /* 螺旋填充发光：每填入一个新 cell 时脉冲发光 */
-  @keyframes sp-filling {
-    0% { box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.9); transform: scale(1); filter: brightness(1); }
-    35% { box-shadow: 0 0 26px 8px rgba(244, 114, 182, 0.85); transform: scale(1.15); filter: brightness(1.4); border-color: var(--accent-b); }
-    100% { box-shadow: 0 0 10px 1px rgba(192, 132, 252, 0.3); transform: scale(1); filter: brightness(1); }
+
+  #algo-spiral-matrix-ii-view .sp-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-spiral-matrix-ii-view .sp-cell.new { animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  #algo-spiral-matrix-ii-view .sp-cell.current { animation: pulse-glow 1.2s infinite; }
-  #algo-spiral-matrix-ii-view .sp-cell.success { animation: burst 0.5s ease-out; }
-  #algo-spiral-matrix-ii-view .sp-cell.conflict { animation: shake 0.3s ease-in-out; }
-  /* 填充发光 / 螺旋轨迹发光（新增） */
-  #algo-spiral-matrix-ii-view .sp-cell.filling {
-    animation: sp-filling 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
+
+  #algo-spiral-matrix-ii-view .sp-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-spiral-matrix-ii-view .sp-cell.trail {
-    box-shadow: 0 0 8px 0 rgba(192, 132, 252, 0.25);
-    border-color: rgba(192, 132, 252, 0.25);
+  #algo-spiral-matrix-ii-view .sp-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  /* 方向指示器：当前填充方向箭头随 #sp-dir 文字变化（简化为统一发光徽章） */
-  #algo-spiral-matrix-ii-view .sp-grid-wrap {
+
+  #algo-spiral-matrix-ii-view .sp-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-spiral-matrix-ii-view .sp-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-spiral-matrix-ii-view .sp-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-spiral-matrix-ii-view .sp-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
     position: relative;
   }
-  #algo-spiral-matrix-ii-view .sp-grid-wrap::after {
-    content: '◎';
-    position: absolute; top: 10px; right: 14px;
-    width: 30px; height: 30px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 800; color: var(--accent-a);
-    background: rgba(20, 18, 38, 0.7);
-    border: 1px solid rgba(192, 132, 252, 0.4);
-    box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.5);
-    transition: all 0.3s;
-  }
-  #algo-spiral-matrix-ii-view .sp-grid-wrap[data-dir="right"]::after { content: '→'; color: #a6e3a1; border-color: #a6e3a1; box-shadow: 0 0 16px 2px rgba(166, 227, 161, 0.5); }
-  #algo-spiral-matrix-ii-view .sp-grid-wrap[data-dir="down"]::after { content: '↓'; color: #89dceb; border-color: #89dceb; box-shadow: 0 0 16px 2px rgba(137, 220, 235, 0.5); }
-  #algo-spiral-matrix-ii-view .sp-grid-wrap[data-dir="left"]::after { content: '←'; color: #f9e2af; border-color: #f9e2af; box-shadow: 0 0 16px 2px rgba(249, 226, 175, 0.5); }
-  #algo-spiral-matrix-ii-view .sp-grid-wrap[data-dir="up"]::after { content: '↑'; color: #f5c2e7; border-color: #f5c2e7; box-shadow: 0 0 16px 2px rgba(245, 194, 231, 0.5); }
-  #algo-spiral-matrix-ii-view .sp-grid-wrap[data-dir="done"]::after { content: '✓'; color: #a6e3a1; border-color: #a6e3a1; }
 
-  @media (max-width: 1100px) {
-    #algo-spiral-matrix-ii-view .sp-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-spiral-matrix-ii-view .sp-code { min-height: 360px; }
-    #algo-spiral-matrix-ii-view .sp-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    #algo-spiral-matrix-ii-view .sp-tip { max-width: 100%; }
+  /* Card 1: 2D 螺旋矩阵沙盘 */
+  #algo-spiral-matrix-ii-view .sp-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    width: 100%;
+    position: relative;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-grid-wrapper {
+    display: grid;
+    gap: 6px;
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  #algo-spiral-matrix-ii-view .sp-cell-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-cell-box.is-filled {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-cell-box.is-current {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+    transform: scale(1.08);
+    z-index: 2;
+  }
+
+  /* Preset Chips */
+  #algo-spiral-matrix-ii-view .sp-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-spiral-matrix-ii-view .sp-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-spiral-matrix-ii-view .sp-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-boundary-panel {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-spiral-matrix-ii-view .sp-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-spiral-matrix-ii-view .sp-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-spiral-matrix-ii-view .sp-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="sp-page">
-  <div class="sp-header">
-    <div>
-      <div class="sp-icon-badge">🌀</div>
-      <h1>螺旋矩阵 II（模拟）</h1>
-      <p class="sp-desc">LeetCode 59：生成 n×n 矩阵，按顺时针螺旋顺序填入 1 到 n²</p>
+<div id="algo-spiral-matrix-ii-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="sp-header">
+    <div class="sp-header-left">
+      <div class="sp-icon-btn">🌀</div>
+      <div class="sp-main-title">螺旋矩阵 II · Spiral Matrix II</div>
+      <button class="sp-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="sp-badge-mode">四边界收缩模拟</div>
+      <div class="sp-badge-complexity">O(n²) · O(1)</div>
     </div>
-    <div class="sp-tip"><strong>按层模拟：</strong>维护上下左右四个边界，依次向右→向下→向左→向上填数，每填完一条边收缩对应边界。</div>
-  </div>
-  <div class="sp-main">
-    <div class="sp-left">
-      <section class="sp-card">
-        <div class="sp-card-title">输入</div>
-        <div class="sp-input-row">
-          <input id="sp-n-input" type="number" min="1" max="8" value="4">
-          <button id="sp-start">生成矩阵</button>
-          <div></div>
-        </div>
-      </section>
-      <div class="sp-stats">
-        <div class="sp-stat"><label>当前填入</label><span id="sp-num">0</span></div>
-        <div class="sp-stat"><label>方向</label><span id="sp-dir">-</span></div>
-        <div class="sp-stat"><label>上/下边界</label><span id="sp-rowb">-</span></div>
-        <div class="sp-stat"><label>左/右边界</label><span id="sp-colb">-</span></div>
+    <div class="sp-header-right">
+      <div class="sp-input-group">
+        <label for="input-n">矩阵边长 n:</label>
+        <input type="number" id="input-n" value="3" min="1" max="6" style="width: 45px;">
       </div>
-      <section class="sp-card sp-visual">
-        <div class="sp-card-title">矩阵填充过程</div>
-        <div class="sp-grid-wrap" id="sp-grid-wrap"></div>
-        <div class="sp-result-banner" id="step-message"><span class="badge">💡</span>点击生成矩阵</div>
-      </section>
-      <section class="sp-card">
-        <div class="sp-card-title">执行日志</div>
-        <div class="sp-log" id="sp-log"></div>
-      </section>
+      <button class="sp-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="sp-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <aside class="sp-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="sp-controls">
-    <button id="step-reset" class="sp-btn">⏮重置</button>
-    <button id="step-prev" class="sp-btn">◀上一步</button>
-    <button id="step-play" class="sp-btn sp-play-btn">▶播放</button>
-    <button id="step-next" class="sp-btn">下一步▶</button>
-    <span id="step-counter" class="sp-counter">步骤: 0 / 0</span>
-    <div class="sp-slider-container">
-      <input id="step-speed" type="range" min="300" max="2000" step="100" value="700">
-      <span id="step-speed-label" class="sp-counter">0.7s</span>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="sp-workspace">
+    <!-- Card 1: 2D 螺旋矩阵沙盘 -->
+    <section class="sp-card">
+      <div class="sp-card-header">
+        <div class="sp-card-title">
+          <span>📊</span> 2D 顺时针螺旋填充沙盘 (Spiral Grid Sandbox)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">●</span> 顺时针旋转填充 1 ~ n²
+        </div>
+      </div>
+      <div class="sp-card-body" style="justify-content: center;">
+        <div class="sp-sandbox-container">
+          <div class="sp-grid-wrapper" id="sp-grid-wrapper"></div>
+        </div>
+      </div>
+      <div class="sp-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设边长:</span>
+        <button class="sp-chip" data-n="1">n = 1 (1×1 单元素)</button>
+        <button class="sp-chip" data-n="2">n = 2 (2×2 矩阵)</button>
+        <button class="sp-chip" data-n="3">n = 3 (3×3 经典 LeetCode 示例)</button>
+        <button class="sp-chip" data-n="4">n = 4 (4×4 偶数边长)</button>
+        <button class="sp-chip" data-n="5">n = 5 (5×5 矩阵)</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="sp-card">
+      <div class="sp-card-header">
+        <div class="sp-card-title">
+          <span>🧭</span> 填充与边界监视器 (Boundary Monitor)
+        </div>
+      </div>
+      <div class="sp-card-body">
+        <div class="sp-metrics-grid">
+          <div class="sp-metric-card">
+            <span class="sp-metric-label">当前填入数字</span>
+            <span class="sp-metric-val" id="metric-num" style="color: #22c55e;">1</span>
+          </div>
+          <div class="sp-metric-card">
+            <span class="sp-metric-label">填充方向</span>
+            <span class="sp-metric-val" id="metric-dir" style="color: #3b82f6;">右 ➡️</span>
+          </div>
+          <div class="sp-metric-card">
+            <span class="sp-metric-label">当前位置 (r, c)</span>
+            <span class="sp-metric-val" id="metric-pos">(0, 0)</span>
+          </div>
+          <div class="sp-metric-card">
+            <span class="sp-metric-label">完成度</span>
+            <span class="sp-metric-val" id="metric-prog" style="color: #a855f7;">0 / 9</span>
+          </div>
+        </div>
+        <div class="sp-boundary-panel">
+          <div><span style="color: #64748b;">top:</span> <strong id="bound-top" style="color: #3b82f6;">0</strong></div>
+          <div><span style="color: #64748b;">bottom:</span> <strong id="bound-bottom" style="color: #3b82f6;">2</strong></div>
+          <div><span style="color: #64748b;">left:</span> <strong id="bound-left" style="color: #f59e0b;">0</strong></div>
+          <div><span style="color: #64748b;">right:</span> <strong id="bound-right" style="color: #f59e0b;">2</strong></div>
+        </div>
+        <div class="sp-live-alert" id="sp-live-alert">
+          <span>💡</span> <span id="sp-live-text">准备就绪，点击运行开始螺旋矩阵生成。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="sp-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="sp-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="sp-card-header">
+        <div class="sp-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="sp-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="sp-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="sp-playback-bar">
+    <div class="sp-playback-controls">
+      <button class="sp-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="sp-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="sp-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="sp-progress-wrap">
+      <span class="sp-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

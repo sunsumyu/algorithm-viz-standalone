@@ -1,13 +1,22 @@
 /**
- * 区间和（前缀和）可视化器
- * 预处理前缀和数组，O(1) 回答区间查询
+ * 区间和（前缀和）可视化器 — 4-Card 标准现代架构
+ * KamaCoder 58：一维前缀和预处理与 O(1) 差分查询
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  RANGE_SUM_PROBLEM_HTML,
+  RANGE_SUM_ANALYSIS_HTML,
+  RANGE_SUM_CODE_LANGUAGES,
+} from './range-sum-problem-content';
 import template from './range-sum.html?raw';
 
-interface RSumStep {
+export interface RSumStep {
   arr: number[];
   prefix: number[];
   queries: [number, number][];
@@ -24,391 +33,364 @@ interface RSumStep {
   codeLine: number | number[];
 }
 
-export class RangeSumVisualizer extends StepVisualizer<RSumStep> {
-  protected codeLines = [
-    'public int[] rangeSum(int[] arr, int[][] queries) {',
-    '    int n = arr.length;',
-    '    int[] prefix = new int[n + 1];',
-    '    prefix[0] = 0;',
-    '    for (int i = 0; i < n; i++) {',
-    '        prefix[i + 1] = prefix[i] + arr[i];',
-    '    }',
-    '    int[] results = new int[queries.length];',
-    '    for (int q = 0; q < queries.length; q++) {',
-    '        int L = queries[q][0], R = queries[q][1];',
-    '        results[q] = prefix[R + 1] - prefix[L];',
-    '    }',
-    '    return results;',
-    '}',
-  ];
-  protected codePanelTitle = '前缀和 Java 实现';
+export function parseRangeArray(input: string): number[] {
+  const arr = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  return arr.length > 0 ? arr : [1, 2, 3, 4, 5];
+}
 
-  private arrInput: HTMLInputElement | null = null;
-  private queryInput: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private arrCellsEl: HTMLElement | null = null;
-  private prefixCellsEl: HTMLElement | null = null;
-  private formulaEl: HTMLElement | null = null;
-  private resultsEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private qIndexEl: HTMLElement | null = null;
-  private lEl: HTMLElement | null = null;
-  private rEl: HTMLElement | null = null;
-  private sumEl: HTMLElement | null = null;
-  private prefixREl: HTMLElement | null = null;
-  /** 持久化原数组 cell */
-  private arrCells: HTMLElement[] = [];
-  /** 持久化前缀和 cell */
-  private prefixCells: HTMLElement[] = [];
+export function parseQueries(input: string): [number, number][] {
+  const parts = input.split(/[|；;]+/).map((s) => s.trim()).filter(Boolean);
+  const res: [number, number][] = [];
+  for (const p of parts) {
+    const [lStr, rStr] = p.split(/[,，\s]+/);
+    const l = parseInt(lStr, 10);
+    const r = parseInt(rStr, 10);
+    if (Number.isFinite(l) && Number.isFinite(r)) {
+      res.push([Math.min(l, r), Math.max(l, r)]);
+    }
+  }
+  return res.length > 0 ? res : [[0, 2], [1, 3], [2, 4]];
+}
+
+export function buildRangeSumSteps(arr: number[], queries: [number, number][]): RSumStep[] {
+  const steps: RSumStep[] = [];
+  const n = arr.length;
+  const prefix: number[] = new Array(n + 1).fill(0);
+  const results: number[] = [];
+
+  // 1. 初始化
+  steps.push({
+    arr: [...arr],
+    prefix: [0],
+    queries,
+    qIndex: -1,
+    phase: 'build',
+    i: -1,
+    L: -1,
+    R: -1,
+    sum: 0,
+    results: [],
+    status: 'init',
+    message: `初始化前缀和数组 prefix，设置 prefix[0] = 0 作为虚拟前置元素。`,
+    log: `初始化: prefix[0] = 0`,
+    codeLine: [3, 4],
+  });
+
+  // 2. 构建前缀和数组
+  for (let i = 0; i < n; i++) {
+    prefix[i + 1] = prefix[i] + arr[i];
+    steps.push({
+      arr: [...arr],
+      prefix: prefix.slice(0, i + 2),
+      queries,
+      qIndex: -1,
+      phase: 'build',
+      i,
+      L: -1,
+      R: -1,
+      sum: prefix[i + 1],
+      results: [],
+      status: 'build-prefix',
+      message: `计算前缀和 prefix[${i + 1}] = prefix[${i}] (${prefix[i]}) + arr[${i}] (${arr[i]}) = ${prefix[i + 1]}。`,
+      log: `构建前缀和: prefix[${i + 1}] = ${prefix[i + 1]}`,
+      codeLine: [5, 6],
+    });
+  }
+
+  // 3. 执行区间查询
+  for (let q = 0; q < queries.length; q++) {
+    const [rawL, rawR] = queries[q];
+    const L = Math.max(0, Math.min(rawL, n - 1));
+    const R = Math.max(0, Math.min(rawR, n - 1));
+
+    steps.push({
+      arr: [...arr],
+      prefix: [...prefix],
+      queries,
+      qIndex: q,
+      phase: 'query',
+      i: -1,
+      L,
+      R,
+      sum: 0,
+      results: [...results],
+      status: 'query-start',
+      message: `开始第 ${q + 1} 次查询：区间 [${L}, ${R}]。`,
+      log: `查询 #${q + 1}: 范围 [${L}, ${R}]`,
+      codeLine: 8,
+    });
+
+    const sumVal = prefix[R + 1] - prefix[L];
+    results.push(sumVal);
+
+    steps.push({
+      arr: [...arr],
+      prefix: [...prefix],
+      queries,
+      qIndex: q,
+      phase: 'query',
+      i: -1,
+      L,
+      R,
+      sum: sumVal,
+      results: [...results],
+      status: 'compute',
+      message: `公式计算: prefix[R+1=${R + 1}] (${prefix[R + 1]}) - prefix[L=${L}] (${prefix[L]}) = ${sumVal}。`,
+      log: `查询结果: prefix[${R + 1}] - prefix[${L}] = ${sumVal}`,
+      codeLine: 9,
+    });
+  }
+
+  // 4. 完成
+  steps.push({
+    arr: [...arr],
+    prefix: [...prefix],
+    queries,
+    qIndex: queries.length - 1,
+    phase: 'query',
+    i: -1,
+    L: -1,
+    R: -1,
+    sum: 0,
+    results: [...results],
+    status: 'done',
+    message: `🎉 所有 ${queries.length} 次区间和查询全部完成！输出结果集: [${results.join(', ')}]。`,
+    log: `算法完成: 所有查询结果 [${results.join(', ')}]`,
+    codeLine: 11,
+  });
+
+  return steps;
+}
+
+export class RangeSumVisualizer extends StepVisualizer<RSumStep> {
+  protected codeLanguages = RANGE_SUM_CODE_LANGUAGES;
+  protected codeLines = RANGE_SUM_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '前缀和 代码调试';
+
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private arrTrackEl: HTMLElement | null = null;
+  private prefixTrackEl: HTMLElement | null = null;
+  private metricQueryEl: HTMLElement | null = null;
+  private metricLrEl: HTMLElement | null = null;
+  private metricDiffEl: HTMLElement | null = null;
+  private metricSumEl: HTMLElement | null = null;
+  private formulaPrEl: HTMLElement | null = null;
+  private formulaPlEl: HTMLElement | null = null;
+  private formulaResEl: HTMLElement | null = null;
+  private resultsBarEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrInput = this.root.querySelector('#rsum-arr-input');
-    this.queryInput = this.root.querySelector('#rsum-query-input');
-    this.btnStart = this.root.querySelector('#rsum-start');
-    this.exampleButtons = this.root.querySelectorAll('.rsum-example-btn');
-    this.arrCellsEl = this.root.querySelector('#rsum-arr-cells');
-    this.prefixCellsEl = this.root.querySelector('#rsum-prefix-cells');
-    this.formulaEl = this.root.querySelector('#rsum-formula');
-    this.resultsEl = this.root.querySelector('#rsum-results');
-    this.logEl = this.root.querySelector('#rsum-log');
-    this.qIndexEl = this.root.querySelector('#rsum-q-index');
-    this.lEl = this.root.querySelector('#rsum-l');
-    this.rEl = this.root.querySelector('#rsum-r');
-    this.sumEl = this.root.querySelector('#rsum-sum');
-    this.prefixREl = this.root.querySelector('#rsum-prefix-r');
-    this.bindPlaybackControls({ message: 'step-message' });
 
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        if (this.arrInput) this.arrInput.value = btn.dataset.arr || '';
-        if (this.queryInput) this.queryInput.value = btn.dataset.q || '';
+    this.arrTrackEl = this.root.querySelector('#rs-arr-track');
+    this.prefixTrackEl = this.root.querySelector('#rs-prefix-track');
+    this.metricQueryEl = this.root.querySelector('#metric-query');
+    this.metricLrEl = this.root.querySelector('#metric-lr');
+    this.metricDiffEl = this.root.querySelector('#metric-diff');
+    this.metricSumEl = this.root.querySelector('#metric-sum');
+    this.formulaPrEl = this.root.querySelector('#formula-pr');
+    this.formulaPlEl = this.root.querySelector('#formula-pl');
+    this.formulaResEl = this.root.querySelector('#formula-res');
+    this.resultsBarEl = this.root.querySelector('#rs-results-bar');
+    this.liveTextEl = this.root.querySelector('#rs-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rs-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const arrInput = this.root?.querySelector('#input-arr') as HTMLInputElement | null;
+        const qInput = this.root?.querySelector('#input-queries') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
+        if (qInput && btn.dataset.q) qInput.value = btn.dataset.q;
         this.start();
-      };
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: RANGE_SUM_PROBLEM_HTML,
+      analysisHtml: RANGE_SUM_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): RSumStep[] {
-    const arr = this.parseArray(this.arrInput?.value || '1,2,3,4,5');
-    const queries = this.parseQueries(this.queryInput?.value || '0,2|1,3|2,4');
-    const steps: RSumStep[] = [];
-    const n = arr.length;
-    const prefix = new Array<number>(n + 1).fill(0);
-
-    // Init step
-    steps.push({
-      arr: [...arr],
-      prefix: [...prefix],
-      queries,
-      qIndex: -1,
-      phase: 'build',
-      i: -1,
-      L: -1,
-      R: -1,
-      sum: 0,
-      results: [],
-      status: 'init',
-      message: `初始化数组长度 n=${n}，前缀和数组 prefix 大小为 n+1=${n + 1}，prefix[0]=0。`,
-      log: '初始化前缀和数组 prefix[0]=0。',
-      codeLine: [2, 3, 4],
-    });
-
-    // Build phase
-    for (let i = 0; i < n; i++) {
-      prefix[i + 1] = prefix[i] + arr[i];
-      steps.push({
-        arr: [...arr],
-        prefix: [...prefix],
-        queries,
-        qIndex: -1,
-        phase: 'build',
-        i,
-        L: -1,
-        R: -1,
-        sum: prefix[i + 1],
-        results: [],
-        status: 'build-prefix',
-        message: `构建阶段 i=${i}：prefix[${i + 1}] = prefix[${i}] + arr[${i}] = ${prefix[i]} + ${arr[i]} = ${prefix[i + 1]}。`,
-        log: `prefix[${i + 1}] = ${prefix[i]} + ${arr[i]} = ${prefix[i + 1]}。`,
-        codeLine: [5, 6],
-      });
-    }
-
-    steps.push({
-      arr: [...arr],
-      prefix: [...prefix],
-      queries,
-      qIndex: -1,
-      phase: 'build',
-      i: n,
-      L: -1,
-      R: -1,
-      sum: 0,
-      results: [],
-      status: 'build-prefix',
-      message: `前缀和数组构建完成：[${prefix.join(', ')}]。共 ${queries.length} 个查询待处理。`,
-      log: `前缀和数组构建完成。`,
-      codeLine: 7,
-    });
-
-    // Query phase
-    const results: number[] = [];
-    for (let qi = 0; qi < queries.length; qi++) {
-      const [L, R] = queries[qi];
-      const ans = prefix[R + 1] - prefix[L];
-
-      steps.push({
-        arr: [...arr],
-        prefix: [...prefix],
-        queries,
-        qIndex: qi,
-        phase: 'query',
-        i: n,
-        L,
-        R,
-        sum: 0,
-        results: [...results],
-        status: 'query-start',
-        message: `查询 #${qi + 1}：区间 [${L}, ${R}]，需要计算 prefix[${R + 1}] - prefix[${L}] = ${prefix[R + 1]} - ${prefix[L]}。`,
-        log: `查询 #${qi + 1}：区间 [${L}, ${R}]。`,
-        codeLine: [8, 9],
-      });
-
-      steps.push({
-        arr: [...arr],
-        prefix: [...prefix],
-        queries,
-        qIndex: qi,
-        phase: 'query',
-        i: n,
-        L,
-        R,
-        sum: ans,
-        results: [...results],
-        status: 'compute',
-        message: `计算：prefix[${R + 1}]=${prefix[R + 1]} − prefix[${L}]=${prefix[L]} = ${ans}。区间 [${L},${R}] 的和为 ${ans}。`,
-        log: `sum[${L},${R}] = ${prefix[R + 1]} − ${prefix[L]} = ${ans}。`,
-        codeLine: 10,
-      });
-
-      results.push(ans);
-      steps.push({
-        arr: [...arr],
-        prefix: [...prefix],
-        queries,
-        qIndex: qi,
-        phase: 'query',
-        i: n,
-        L,
-        R,
-        sum: ans,
-        results: [...results],
-        status: 'query-done',
-        message: `查询 #${qi + 1} 结果：sum[${L},${R}] = ${ans}。`,
-        log: `查询 #${qi + 1} 结果 = ${ans}。`,
-        codeLine: 10,
-      });
-    }
-
-    steps.push({
-      arr: [...arr],
-      prefix: [...prefix],
-      queries,
-      qIndex: queries.length - 1,
-      phase: 'query',
-      i: n,
-      L: -1,
-      R: -1,
-      sum: 0,
-      results: [...results],
-      status: 'done',
-      message: `所有查询完成，结果：[${results.join(', ')}]。`,
-      log: `返回 [${results.join(', ')}]。`,
-      codeLine: 12,
-    });
-
-    return steps;
-  }
-
-  private parseArray(input: string): number[] {
-    return input
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => Number.isFinite(n));
-  }
-
-  private parseQueries(input: string): [number, number][] {
-    const out: [number, number][] = [];
-    const parts = input.split(/[|]/).map((s) => s.trim()).filter(Boolean);
-    for (const p of parts) {
-      const [a, b] = p.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10));
-      if (Number.isFinite(a) && Number.isFinite(b)) {
-        out.push([a, b]);
-      }
-    }
-    return out;
+    const arrInput = this.root?.querySelector('#input-arr') as HTMLInputElement | null;
+    const qInput = this.root?.querySelector('#input-queries') as HTMLInputElement | null;
+    const arr = parseRangeArray(arrInput?.value || '1, 2, 3, 4, 5');
+    const queries = parseQueries(qInput?.value || '0,2|1,3|2,4');
+    return buildRangeSumSteps(arr, queries);
   }
 
   protected renderStep(step: RSumStep): void {
-    // Stats
-    if (this.qIndexEl) this.qIndexEl.textContent = step.qIndex >= 0 ? `${step.qIndex + 1}/${step.queries.length}` : '-';
-    if (this.lEl) this.lEl.textContent = step.L >= 0 ? String(step.L) : '-';
-    if (this.rEl) this.rEl.textContent = step.R >= 0 ? String(step.R) : '-';
-    if (this.sumEl) {
-      if (step.status === 'init' || step.status === 'build-prefix') {
-        this.sumEl.textContent = step.status === 'init' ? '-' : String(step.sum);
+    const { arr, prefix, qIndex, phase, L, R, sum, results, status, message } = step;
+
+    // 1. 渲染原数组 arr (上轨)
+    if (this.arrTrackEl) {
+      this.arrTrackEl.innerHTML = arr
+        .map((num, idx) => {
+          const inRange = phase === 'query' && idx >= L && idx <= R && L >= 0;
+          let boxClasses = 'rs-cell-box';
+          if (inRange) boxClasses += ' is-query-range';
+
+          return `
+            <div class="rs-cell-wrapper">
+              <div class="${boxClasses}">
+                <span class="val">${num}</span>
+                <span class="idx">[${idx}]</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 2. 渲染前缀和数组 prefix (下轨)
+    if (this.prefixTrackEl) {
+      this.prefixTrackEl.innerHTML = Array.from({ length: arr.length + 1 })
+        .map((_, idx) => {
+          const val = idx < prefix.length ? prefix[idx] : null;
+          const isPL = phase === 'query' && L >= 0 && idx === L;
+          const isPR = phase === 'query' && R >= 0 && idx === R + 1;
+
+          let boxClasses = 'rs-cell-box';
+          if (isPL) boxClasses += ' is-prefix-l';
+          if (isPR) boxClasses += ' is-prefix-r';
+
+          const badges: string[] = [];
+          if (isPL) badges.push('<span class="rs-ptr-badge pl">prefix[L]</span>');
+          if (isPR) badges.push('<span class="rs-ptr-badge pr">prefix[R+1]</span>');
+
+          return `
+            <div class="rs-cell-wrapper">
+              ${badges.join('')}
+              <div class="${boxClasses}">
+                <span class="val">${val !== null ? val : '—'}</span>
+                <span class="idx">[${idx}]</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricQueryEl) this.metricQueryEl.textContent = qIndex >= 0 ? `#${qIndex + 1}` : '预处理';
+    if (this.metricLrEl) this.metricLrEl.textContent = L >= 0 && R >= 0 ? `[${L}, ${R}]` : '—';
+    if (this.metricDiffEl) {
+      this.metricDiffEl.textContent =
+        phase === 'query' && L >= 0 && R >= 0 && R + 1 < prefix.length
+          ? `${prefix[R + 1]} - ${prefix[L]}`
+          : '—';
+    }
+    if (this.metricSumEl) this.metricSumEl.textContent = phase === 'query' && status === 'compute' ? String(sum) : '—';
+
+    if (this.formulaPrEl) this.formulaPrEl.textContent = R >= 0 && R + 1 < prefix.length ? `prefix[${R + 1}] (${prefix[R + 1]})` : 'prefix[R+1]';
+    if (this.formulaPlEl) this.formulaPlEl.textContent = L >= 0 && L < prefix.length ? `prefix[${L}] (${prefix[L]})` : 'prefix[L]';
+    if (this.formulaResEl) this.formulaResEl.textContent = phase === 'query' && status === 'compute' ? String(sum) : '—';
+
+    // 历史结果徽标
+    if (this.resultsBarEl) {
+      let html = '<span style="font-size: 11px; font-weight: 700; color: #64748b;">历史查询结果:</span> ';
+      if (results.length === 0) {
+        html += '<span style="color: #94a3b8; font-size: 11px;">(暂无)</span>';
       } else {
-        this.sumEl.textContent = String(step.sum);
+        html += results
+          .map(
+            (res, idx) => `
+          <span style="padding: 2px 6px; border-radius: 4px; background: #eff6ff; color: #2563eb; font-weight: 700; border: 1px solid #bfdbfe; font-family: monospace; font-size: 11px;">
+            Q${idx + 1}: ${res}
+          </span>
+        `
+          )
+          .join('');
+      }
+      this.resultsBarEl.innerHTML = html;
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = status === 'done' ? '#f0fdf4' : phase === 'query' ? '#eff6ff' : '#f8fafc';
+      logEntry.style.color = status === 'done' ? '#15803d' : phase === 'query' ? '#1d4ed8' : '#334155';
+      logEntry.style.border = '1px solid ' + (status === 'done' ? '#bbf7d0' : phase === 'query' ? '#bfdbfe' : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
-    if (this.prefixREl) {
-      if (step.R >= 0 && step.R + 1 < step.prefix.length) {
-        this.prefixREl.textContent = String(step.prefix[step.R + 1]);
-      } else {
-        this.prefixREl.textContent = '-';
-      }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
 
-    // Original array row
-    if (this.arrCellsEl) {
-      this.ensureArrCells(step.arr.length);
-      step.arr.forEach((v, i) => {
-        const cell = this.arrCells[i];
-        if (!cell) return;
-        const inRange = step.phase === 'query' && step.L >= 0 && step.R >= 0 && i >= step.L && i <= step.R;
-        const isActive =
-          step.phase === 'build' && step.status === 'build-prefix' && step.i === i;
-        const isSource =
-          step.phase === 'build' && step.status === 'build-prefix' && step.i === i;
-
-        cell.classList.toggle('range', !!inRange);
-        cell.classList.toggle('active', isActive);
-        cell.classList.toggle('source', isSource && step.i >= 0);
-        if (!isSource) cell.classList.remove('source');
-
-        cell.innerHTML = `<span class="idx">${i}</span><span class="val">${v}</span>`;
-      });
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
     }
-
-    // Prefix sum row
-    if (this.prefixCellsEl) {
-      this.ensurePrefixCells(step.prefix.length);
-      const building =
-        step.phase === 'build' && step.status === 'build-prefix' && step.i >= 0 && step.i < step.prefix.length - 1;
-      const fillIdx = building ? step.i + 1 : -1;
-      const sourceIdx = building ? step.i : -1;
-      step.prefix.forEach((v, i) => {
-        const cell = this.prefixCells[i];
-        if (!cell) return;
-        const isNewFill = step.phase === 'build' && step.status === 'build-prefix' && i === fillIdx;
-        const isSource = step.phase === 'build' && step.status === 'build-prefix' && i === sourceIdx;
-        const isComputed = step.phase === 'build' && step.i >= 0 && i <= step.i;
-        const isRange = step.phase === 'query' && (i === step.L || i === step.R + 1);
-
-        cell.classList.toggle('active', isNewFill);
-        cell.classList.toggle('computed', isComputed && !isNewFill);
-        cell.classList.toggle('range', isRange);
-        cell.classList.toggle('source', isSource);
-
-        if (isNewFill) {
-          this.restartAnimation(cell, 'filling');
-        } else {
-          cell.classList.remove('filling');
-        }
-        if (isSource && !isNewFill) {
-          this.restartAnimation(cell, 'filling-source');
-        } else if (!isNewFill) {
-          cell.classList.remove('filling-source');
-        }
-
-        cell.innerHTML = `<span class="idx">${i}</span><span class="val">${v}</span>`;
-      });
-    }
-
-    // Formula display
-    if (this.formulaEl) {
-      if (step.phase === 'query' && step.L >= 0 && step.R >= 0) {
-        const pR1 = step.prefix[step.R + 1];
-        const pL = step.prefix[step.L];
-        this.formulaEl.innerHTML =
-          `sum[${step.L}, ${step.R}] = <span class="highlight">prefix[${step.R + 1}]</span> − <span class="highlight">prefix[${step.L}]</span> = <span class="highlight">${pR1}</span> − <span class="highlight">${pL}</span> = <span class="highlight">${step.sum}</span>`;
-      } else {
-        this.formulaEl.innerHTML = `sum[L, R] = <span class="highlight">prefix[R+1]</span> − <span class="highlight">prefix[L]</span>`;
-      }
-    }
-
-    // Results list
-    if (this.resultsEl) {
-      this.resultsEl.innerHTML = '';
-      if (step.results.length === 0) {
-        this.resultsEl.innerHTML = '<div class="rsum-result-item" style="color:#6c7086;">尚无查询结果</div>';
-      } else {
-        step.results.forEach((ans, qi) => {
-          const [L, R] = step.queries[qi];
-          const div = document.createElement('div');
-          div.className = 'rsum-result-item';
-          const isLatest = qi === step.qIndex && (step.status === 'compute' || step.status === 'query-done' || step.status === 'done');
-          div.innerHTML = `<span class="query">查询 #${qi + 1}：sum[${L}, ${R}] =</span><span class="answer">${ans}</span>`;
-          if (isLatest) {
-            div.style.borderColor = 'rgba(167, 139, 250, 0.5)';
-            div.style.background = 'rgba(167, 139, 250, 0.15)';
-          }
-          this.resultsEl?.appendChild(div);
-        });
-      }
-    }
-
-    this.renderLogLine(step);
-  }
-
-  private renderLogLine(step: RSumStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
-
-  /** 按需创建/回收原数组 cell */
-  private ensureArrCells(n: number): void {
-    if (!this.arrCellsEl) return;
-    while (this.arrCells.length < n) {
-      const cell = document.createElement('div');
-      cell.className = 'rsum-cell';
-      this.arrCells.push(cell);
-      this.arrCellsEl.appendChild(cell);
-    }
-    while (this.arrCells.length > n) {
-      const cell = this.arrCells.pop();
-      if (cell && cell.parentElement === this.arrCellsEl) this.arrCellsEl.removeChild(cell);
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  /** 按需创建/回收前缀和 cell */
-  private ensurePrefixCells(n: number): void {
-    if (!this.prefixCellsEl) return;
-    while (this.prefixCells.length < n) {
-      const cell = document.createElement('div');
-      cell.className = 'rsum-cell';
-      this.prefixCells.push(cell);
-      this.prefixCellsEl.appendChild(cell);
-    }
-    while (this.prefixCells.length > n) {
-      const cell = this.prefixCells.pop();
-      if (cell && cell.parentElement === this.prefixCellsEl) this.prefixCellsEl.removeChild(cell);
-    }
-  }
-
-  /** 重启 CSS 动画 class */
-  private restartAnimation(el: HTMLElement, cls: string): void {
-    el.classList.remove(cls);
-    void el.offsetWidth;
-    el.classList.add(cls);
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -419,11 +401,9 @@ registerAlgorithm({
   category: 'array',
   description: '预处理前缀和数组，O(1) 回答区间查询',
   icon: 'Σ',
-  template,
-  Visualizer: RangeSumVisualizer,
   difficulty: 1,
   levelOrder: 6,
   learningGoal: '掌握前缀和思想与区间查询技巧',
+  template,
+  Visualizer: RangeSumVisualizer,
 });
-
-export {};

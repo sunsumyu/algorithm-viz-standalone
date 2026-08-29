@@ -1,53 +1,100 @@
 /**
- * 数组理论基础可视化器
- * 演示数组的内存布局、基本操作与时间复杂度
+ * 数组理论基础可视化器 — 4-Card 标准现代架构
+ * 演示连续内存布局、随机寻址与插入/删除移动元素
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  ARRAY_THEORY_PROBLEM_HTML,
+  ARRAY_THEORY_ANALYSIS_HTML,
+  ARRAY_THEORY_CODE_LANGUAGES,
+} from './array-theory-problem-content';
 import template from './array-theory.html?raw';
 
-interface ATStep {
-  array: number[];
+export interface ATStep {
+  array: (number | null)[];
   action: 'access' | 'insert' | 'delete' | 'search';
   index: number;
   value: number | null;
-  status: 'init' | 'access' | 'insert-shift' | 'insert-place' | 'delete-shift' | 'delete-remove' | 'search-found' | 'search-not-found' | 'done';
+  shiftCount: number;
+  status:
+    | 'init'
+    | 'access'
+    | 'insert-shift'
+    | 'insert-place'
+    | 'delete-shift'
+    | 'delete-remove'
+    | 'search-found'
+    | 'search-not-found'
+    | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildAccessSteps(idx: number): ATStep[] {
+export function buildAccessSteps(idx: number): ATStep[] {
   const arr = [3, 5, 7, 11, 15];
   const i = Math.max(0, Math.min(idx, arr.length - 1));
+  const hexAddr = `0x${(0x1000 + i * 4).toString(16).toUpperCase()}`;
+
   return [
     {
       array: [...arr],
       action: 'access',
       index: -1,
       value: null,
+      shiftCount: 0,
       status: 'init',
-      message: `初始化数组 arr = [${arr.join(', ')}]`,
-      log: `初始化: arr = [${arr.join(', ')}]`,
-      codeLine: 0,
+      message: `初始化连续内存数组 arr = [${arr.join(', ')}]，基地址 Base = 0x1000。`,
+      log: `初始化数组: Base = 0x1000`,
+      codeLine: 1,
     },
     {
       array: [...arr],
       action: 'access',
       index: i,
       value: arr[i],
+      shiftCount: 0,
       status: 'access',
-      message: `访问 arr[${i}] = ${arr[i]}，地址 = base + ${i} \u00d7 size（O(1)）`,
-      log: `访问 arr[${i}] = ${arr[i]} (O(1))`,
-      codeLine: 1,
+      message: `O(1) 随机访问 arr[${i}] = ${arr[i]}：计算物理内存地址 Base + ${i} × 4B = ${hexAddr}，一次寻址直接获取！`,
+      log: `访问 arr[${i}] = ${arr[i]}，地址 = ${hexAddr} (O(1))`,
+      codeLine: [3, 4],
+    },
+    {
+      array: [...arr],
+      action: 'access',
+      index: i,
+      value: arr[i],
+      shiftCount: 0,
+      status: 'done',
+      message: `🎉 访问完成，返回值 = ${arr[i]}。`,
+      log: `完成访问: 返回 ${arr[i]}`,
+      codeLine: 4,
     },
   ];
 }
 
-function buildSearchSteps(arr: number[], target: number): ATStep[] {
+export function buildSearchSteps(arr: number[], target: number): ATStep[] {
   const steps: ATStep[] = [];
   let found = false;
+
+  steps.push({
+    array: [...arr],
+    action: 'search',
+    index: -1,
+    value: target,
+    shiftCount: 0,
+    status: 'init',
+    message: `在线性数组 [${arr.join(', ')}] 中搜索目标值 target = ${target}。`,
+    log: `开始线性搜索 target = ${target}`,
+    codeLine: 6,
+  });
+
   for (let i = 0; i < arr.length; i++) {
     const isMatch = arr[i] === target;
     steps.push({
@@ -55,396 +102,363 @@ function buildSearchSteps(arr: number[], target: number): ATStep[] {
       action: 'search',
       index: i,
       value: target,
+      shiftCount: 0,
       status: isMatch ? 'search-found' : 'access',
       message: isMatch
-        ? `搜索 ${target}: 检查 arr[${i}] = ${target} \u2713，返回下标 ${i}（O(n)）`
-        : `搜索 ${target}: 检查 arr[${i}] = ${arr[i]} \u2260 ${target}`,
-      log: isMatch
-        ? `搜索: arr[${i}] = ${target}，找到下标 ${i}`
-        : `搜索: arr[${i}] = ${arr[i]} \u2260 ${target}`,
-      codeLine: isMatch ? 4 : [3, 4],
+        ? `检查 arr[${i}] = ${target} ✓ 匹配成功！找到目标值下标为 ${i}。`
+        : `检查 arr[${i}] = ${arr[i]} ≠ ${target}，继续向后搜索。`,
+      log: isMatch ? `找到目标: arr[${i}] == ${target}` : `比对 arr[${i}] != ${target}`,
+      codeLine: isMatch ? [9, 10] : [8, 9],
     });
     if (isMatch) {
       found = true;
       break;
     }
   }
+
   if (!found) {
     steps.push({
       array: [...arr],
       action: 'search',
       index: -1,
       value: target,
+      shiftCount: 0,
       status: 'search-not-found',
-      message: `搜索 ${target}: 遍历完成，未找到`,
-      log: `搜索: 未找到 ${target}`,
-      codeLine: [3, 4],
+      message: `遍历完成，数组中不存在元素 ${target}，返回 -1。`,
+      log: `未找到目标 ${target}，返回 -1`,
+      codeLine: 12,
     });
   }
+
   return steps;
 }
 
-function buildInsertSteps(arr: number[], insertIdx: number, value: number): ATStep[] {
+export function buildInsertSteps(arr: number[], insertIdx: number, value: number): ATStep[] {
   const steps: ATStep[] = [];
   const idx = Math.max(0, Math.min(insertIdx, arr.length));
+  const work: (number | null)[] = [...arr, null];
 
   steps.push({
-    array: [...arr],
+    array: [...work],
     action: 'insert',
     index: -1,
-    value: null,
+    value,
+    shiftCount: 0,
     status: 'init',
-    message: `初始化数组 arr = [${arr.join(', ')}]`,
-    log: `初始化: arr = [${arr.join(', ')}]`,
-    codeLine: 0,
+    message: `准备在下标 ${idx} 插入元素 ${value}。需要将下标 ${idx} 及其之后的所有元素向后移动一位。`,
+    log: `开始插入: 在下标 ${idx} 插入 ${value}`,
+    codeLine: 14,
   });
 
-  let workingArr = [...arr];
-  for (let i = arr.length; i > idx; i--) {
-    if (i >= workingArr.length) {
-      workingArr.push(workingArr[i - 1]);
-    } else {
-      workingArr[i] = workingArr[i - 1];
-    }
+  let shifts = 0;
+  for (let j = work.length - 1; j > idx; j--) {
+    work[j] = work[j - 1];
+    shifts++;
     steps.push({
-      array: [...workingArr],
+      array: [...work],
       action: 'insert',
-      index: i - 1,
+      index: j,
       value,
+      shiftCount: shifts,
       status: 'insert-shift',
-      message: `插入 ${value} 到 index ${idx}: 将 arr[${i - 1}] = ${arr[i - 1]} 右移 \u2192 arr[${i}]`,
-      log: `右移: arr[${i - 1}] = ${arr[i - 1]} \u2192 arr[${i}]`,
-      codeLine: 7,
+      message: `后移元素：arr[${j}] = arr[${j - 1}] (${work[j - 1]})（累计移动 ${shifts} 个元素）。`,
+      log: `后移: arr[${j}] = ${work[j]}`,
+      codeLine: [15, 16],
     });
   }
 
-  workingArr[idx] = value;
+  work[idx] = value;
   steps.push({
-    array: [...workingArr],
+    array: [...work],
     action: 'insert',
     index: idx,
     value,
+    shiftCount: shifts,
     status: 'insert-place',
-    message: `插入 ${value} 到 index ${idx}: arr[${idx}] = ${value}，插入完成`,
-    log: `插入: arr[${idx}] = ${value}`,
-    codeLine: 8,
+    message: `将新元素 ${value} 放入腾出的空位 arr[${idx}]。`,
+    log: `放置新值: arr[${idx}] = ${value}`,
+    codeLine: 18,
+  });
+
+  steps.push({
+    array: [...work],
+    action: 'insert',
+    index: idx,
+    value,
+    shiftCount: shifts,
+    status: 'done',
+    message: `🎉 插入完成！新数组为 [${work.join(', ')}]，总共移动了 ${shifts} 个元素（O(n)）。`,
+    log: `插入完成: 移动次数 ${shifts}`,
+    codeLine: 18,
   });
 
   return steps;
 }
 
-function buildDeleteSteps(arr: number[], deleteIdx: number): ATStep[] {
+export function buildDeleteSteps(arr: number[], deleteIdx: number): ATStep[] {
   const steps: ATStep[] = [];
   const idx = Math.max(0, Math.min(deleteIdx, arr.length - 1));
+  const work: (number | null)[] = [...arr];
 
   steps.push({
-    array: [...arr],
+    array: [...work],
     action: 'delete',
-    index: -1,
-    value: null,
+    index: idx,
+    value: work[idx],
+    shiftCount: 0,
     status: 'init',
-    message: `初始化数组 arr = [${arr.join(', ')}]`,
-    log: `初始化: arr = [${arr.join(', ')}]`,
-    codeLine: 0,
+    message: `准备删除下标 ${idx} 的元素 ${work[idx]}。需要将下标 ${idx + 1} 之后的所有元素向前移动一位。`,
+    log: `开始删除: 删除下标 ${idx} 处元素 ${work[idx]}`,
+    codeLine: 14,
   });
 
-  let workingArr = [...arr];
-  for (let i = idx + 1; i < workingArr.length; i++) {
-    workingArr[i - 1] = workingArr[i];
+  let shifts = 0;
+  for (let j = idx; j < work.length - 1; j++) {
+    work[j] = work[j + 1];
+    shifts++;
     steps.push({
-      array: [...workingArr],
+      array: [...work],
       action: 'delete',
-      index: i,
+      index: j,
       value: null,
+      shiftCount: shifts,
       status: 'delete-shift',
-      message: `删除 index ${idx}: 将 arr[${i}] = ${arr[i]} 左移 \u2192 arr[${i - 1}]`,
-      log: `左移: arr[${i}] = ${arr[i]} \u2192 arr[${i - 1}]`,
-      codeLine: 10,
+      message: `前移覆盖：arr[${j}] = arr[${j + 1}] (${work[j + 1]})（累计移动 ${shifts} 个元素）。`,
+      log: `前移: arr[${j}] = ${work[j]}`,
+      codeLine: 16,
     });
   }
 
-  const deletedValue = arr[idx];
-  workingArr.pop();
+  work.pop();
   steps.push({
-    array: [...workingArr],
+    array: [...work],
     action: 'delete',
-    index: idx,
-    value: null,
-    status: 'delete-remove',
-    message: `删除 index ${idx} 完成: arr = [${workingArr.join(', ')}]，被删除元素 ${deletedValue} 已移除`,
-    log: `删除完成: arr = [${workingArr.join(', ')}]`,
-    codeLine: 10,
-  });
-
-  return steps;
-}
-
-function buildDefaultSteps(): ATStep[] {
-  const steps: ATStep[] = [];
-  const arr = [3, 5, 7, 11, 15];
-
-  // Step 0: init
-  steps.push({
-    array: [...arr],
-    action: 'access',
     index: -1,
     value: null,
-    status: 'init',
-    message: `初始化数组 arr = [${arr.join(', ')}]`,
-    log: `初始化: arr = [${arr.join(', ')}]`,
-    codeLine: 0,
-  });
-
-  // Step 1: access arr[2]
-  steps.push({
-    array: [...arr],
-    action: 'access',
-    index: 2,
-    value: 7,
-    status: 'access',
-    message: `访问 arr[2] = 7，地址 = base + 2 \u00d7 size（O(1)）`,
-    log: `访问 arr[2] = 7 (O(1))`,
-    codeLine: 1,
-  });
-
-  // Steps 2-5: search for 11
-  steps.push({
-    array: [...arr],
-    action: 'search',
-    index: 0,
-    value: 11,
-    status: 'access',
-    message: `搜索 11: 检查 arr[0] = 3 \u2260 11`,
-    log: `搜索: arr[0] = 3 \u2260 11`,
-    codeLine: [3, 4],
-  });
-  steps.push({
-    array: [...arr],
-    action: 'search',
-    index: 1,
-    value: 11,
-    status: 'access',
-    message: `搜索 11: 检查 arr[1] = 5 \u2260 11`,
-    log: `搜索: arr[1] = 5 \u2260 11`,
-    codeLine: [3, 4],
-  });
-  steps.push({
-    array: [...arr],
-    action: 'search',
-    index: 2,
-    value: 11,
-    status: 'access',
-    message: `搜索 11: 检查 arr[2] = 7 \u2260 11`,
-    log: `搜索: arr[2] = 7 \u2260 11`,
-    codeLine: [3, 4],
-  });
-  steps.push({
-    array: [...arr],
-    action: 'search',
-    index: 3,
-    value: 11,
-    status: 'search-found',
-    message: `搜索 11: 检查 arr[3] = 11 \u2713，返回下标 3（O(n)）`,
-    log: `搜索: arr[3] = 11，找到下标 3`,
-    codeLine: 4,
-  });
-
-  // Steps 6-8: insert 9 at index 3
-  steps.push({
-    array: [3, 5, 7, 11, 15, 15],
-    action: 'insert',
-    index: 4,
-    value: 9,
-    status: 'insert-shift',
-    message: `插入 9 到 index 3: 将 arr[4] = 15 右移 \u2192 arr[5]`,
-    log: `右移: arr[4] = 15 \u2192 arr[5]`,
-    codeLine: 7,
-  });
-  steps.push({
-    array: [3, 5, 7, 11, 11, 15],
-    action: 'insert',
-    index: 3,
-    value: 9,
-    status: 'insert-shift',
-    message: `插入 9 到 index 3: 将 arr[3] = 11 右移 \u2192 arr[4]`,
-    log: `右移: arr[3] = 11 \u2192 arr[4]`,
-    codeLine: 7,
-  });
-  steps.push({
-    array: [3, 5, 7, 9, 11, 15],
-    action: 'insert',
-    index: 3,
-    value: 9,
-    status: 'insert-place',
-    message: `插入 9 到 index 3: arr[3] = 9，插入完成`,
-    log: `插入: arr[3] = 9`,
-    codeLine: 8,
-  });
-
-  // Steps 9-13: delete at index 1
-  steps.push({
-    array: [3, 7, 7, 9, 11, 15],
-    action: 'delete',
-    index: 2,
-    value: null,
-    status: 'delete-shift',
-    message: `删除 index 1: 将 arr[2] = 7 左移 \u2192 arr[1]`,
-    log: `左移: arr[2] = 7 \u2192 arr[1]`,
-    codeLine: 10,
-  });
-  steps.push({
-    array: [3, 7, 9, 9, 11, 15],
-    action: 'delete',
-    index: 3,
-    value: null,
-    status: 'delete-shift',
-    message: `删除 index 1: 将 arr[3] = 9 左移 \u2192 arr[2]`,
-    log: `左移: arr[3] = 9 \u2192 arr[2]`,
-    codeLine: 10,
-  });
-  steps.push({
-    array: [3, 7, 9, 11, 11, 15],
-    action: 'delete',
-    index: 4,
-    value: null,
-    status: 'delete-shift',
-    message: `删除 index 1: 将 arr[4] = 11 左移 \u2192 arr[3]`,
-    log: `左移: arr[4] = 11 \u2192 arr[3]`,
-    codeLine: 10,
-  });
-  steps.push({
-    array: [3, 7, 9, 11, 15, 15],
-    action: 'delete',
-    index: 5,
-    value: null,
-    status: 'delete-shift',
-    message: `删除 index 1: 将 arr[5] = 15 左移 \u2192 arr[4]`,
-    log: `左移: arr[5] = 15 \u2192 arr[4]`,
-    codeLine: 10,
-  });
-  steps.push({
-    array: [3, 7, 9, 11, 15],
-    action: 'delete',
-    index: 1,
-    value: null,
-    status: 'delete-remove',
-    message: `删除 index 1 完成: arr = [3, 7, 9, 11, 15]，被删除元素 5 已移除`,
-    log: `删除完成: arr = [3, 7, 9, 11, 15]`,
-    codeLine: 10,
+    shiftCount: shifts,
+    status: 'done',
+    message: `🎉 删除完成！新数组为 [${work.join(', ')}]，总共移动了 ${shifts} 个元素（O(n)）。`,
+    log: `删除完成: 移动次数 ${shifts}`,
+    codeLine: 18,
   });
 
   return steps;
 }
 
 export class ArrayTheoryVisualizer extends StepVisualizer<ATStep> {
-  protected codeLines = [
-    '// 访问',
-    'int x = arr[i];             // O(1)',
-    '// 搜索',
-    'for (int i = 0; i < n; i++) {',
-    '    if (arr[i] == target) return i;',
-    '}',
-    '// 插入',
-    'for (int i = n; i > idx; i--) arr[i] = arr[i - 1];',
-    'arr[idx] = value;',
-    '// 删除',
-    'for (int i = idx; i < n - 1; i++) arr[i] = arr[i + 1];',
-  ];
-  protected codePanelTitle = '数组操作 Java 实现';
+  protected codeLanguages = ARRAY_THEORY_CODE_LANGUAGES;
+  protected codeLines = ARRAY_THEORY_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '数组基础操作 代码实现';
 
-  private indexInput: HTMLInputElement | null = null;
-  private valueInput: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private trackEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentMode: 'default' | 'access' | 'insert' | 'delete' = 'default';
+  private currentOp: 'access' | 'search' | 'insert' | 'delete' = 'access';
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private trackRowEl: HTMLElement | null = null;
+  private metricOpEl: HTMLElement | null = null;
+  private metricCompEl: HTMLElement | null = null;
+  private metricAddrEl: HTMLElement | null = null;
+  private metricShiftEl: HTMLElement | null = null;
+  private formulaIdxEl: HTMLElement | null = null;
+  private formulaAddrEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.indexInput = this.root.querySelector('#at-index-input');
-    this.valueInput = this.root.querySelector('#at-value-input');
-    this.btnStart = this.root.querySelector('#at-start');
-    this.exampleButtons = this.root.querySelectorAll('.at-example-btn');
-    this.trackEl = this.root.querySelector('#at-track');
-    this.logEl = this.root.querySelector('#at-log');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => {
-      this.currentMode = 'default';
-      this.start();
-    };
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        this.currentMode = (btn.dataset.action as 'default' | 'access' | 'insert' | 'delete') || 'default';
+
+    this.trackRowEl = this.root.querySelector('#at-track-row');
+    this.metricOpEl = this.root.querySelector('#metric-op');
+    this.metricCompEl = this.root.querySelector('#metric-comp');
+    this.metricAddrEl = this.root.querySelector('#metric-addr');
+    this.metricShiftEl = this.root.querySelector('#metric-shift');
+    this.formulaIdxEl = this.root.querySelector('#formula-idx');
+    this.formulaAddrEl = this.root.querySelector('#formula-addr');
+    this.liveTextEl = this.root.querySelector('#at-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 操作切换按钮
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.at-op-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.root?.querySelectorAll('.at-op-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.currentOp = (btn.dataset.op as any) || 'access';
         this.start();
-      };
+      });
+    });
+
+    // 快捷演示 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.at-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const demo = btn.dataset.demo;
+        if (demo?.startsWith('access')) {
+          this.currentOp = 'access';
+        } else if (demo?.startsWith('search')) {
+          this.currentOp = 'search';
+        } else if (demo?.startsWith('insert')) {
+          this.currentOp = 'insert';
+        } else if (demo?.startsWith('delete')) {
+          this.currentOp = 'delete';
+        }
+        this.root?.querySelectorAll('.at-op-btn').forEach((b) => {
+          if ((b as HTMLElement).dataset.op === this.currentOp) b.classList.add('active');
+          else b.classList.remove('active');
+        });
+        this.start();
+      });
+    });
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: ARRAY_THEORY_PROBLEM_HTML,
+      analysisHtml: ARRAY_THEORY_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): ATStep[] {
-    const idx = parseInt(this.indexInput?.value || '2', 10);
-    const val = parseInt(this.valueInput?.value || '9', 10);
-
-    switch (this.currentMode) {
+    switch (this.currentOp) {
       case 'access':
-        return buildAccessSteps(idx);
+        return buildAccessSteps(2);
+      case 'search':
+        return buildSearchSteps([3, 5, 7, 11, 15], 11);
       case 'insert':
-        return buildInsertSteps([3, 5, 7, 11, 15], idx, val);
+        return buildInsertSteps([3, 5, 7, 11, 15], 1, 99);
       case 'delete':
-        return buildDeleteSteps([3, 5, 7, 9, 11, 15], idx);
+        return buildDeleteSteps([3, 5, 7, 11, 15], 2);
       default:
-        return buildDefaultSteps();
+        return buildAccessSteps(2);
     }
   }
 
   protected renderStep(step: ATStep): void {
-    if (this.trackEl) {
-      this.trackEl.innerHTML = '';
-      step.array.forEach((value, index) => {
-        const cell = document.createElement('div');
-        cell.className = 'at-cell';
-        cell.innerHTML = `<span class="idx">${index}</span><span class="val">${value}</span>`;
+    const { array, action, index, shiftCount, status, message } = step;
 
-        if (index === step.index) {
-          switch (step.status) {
-            case 'access':
-              cell.classList.add('active');
-              break;
-            case 'insert-shift':
-            case 'delete-shift':
-              cell.classList.add('shifting');
-              break;
-            case 'search-found':
-              cell.classList.add('found');
-              break;
-            case 'search-not-found':
-              cell.classList.add('not-found');
-              break;
-          }
-        }
+    // 1. 渲染物理内存沙盘
+    if (this.trackRowEl) {
+      this.trackRowEl.innerHTML = array
+        .map((num, idx) => {
+          const isActive = index === idx && status !== 'done';
+          const isShifting = status.includes('shift') && index === idx;
+          const hexAddr = `0x${(0x1000 + idx * 4).toString(16).toUpperCase()}`;
 
-        this.trackEl?.appendChild(cell);
-      });
+          let boxClasses = 'at-cell-box';
+          if (isActive) boxClasses += ' is-active';
+          if (isShifting) boxClasses += ' is-shifting';
+
+          return `
+            <div class="at-cell-wrapper">
+              <span class="at-addr" style="font-size: 8.5px; font-family: monospace; color: #2563eb; font-weight: 700;">${hexAddr}</span>
+              <div class="${boxClasses}">
+                <span class="val">${num !== null ? num : '—'}</span>
+                <span class="idx">[${idx}]</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
     }
-    this.renderLogLine(step);
+
+    // 2. 更新状态监视器
+    if (this.metricOpEl) {
+      const opNames: Record<string, string> = {
+        access: '下标访问',
+        search: '线性搜索',
+        insert: '元素插入',
+        delete: '元素删除',
+      };
+      this.metricOpEl.textContent = opNames[action] || action;
+    }
+    if (this.metricCompEl) {
+      this.metricCompEl.textContent = action === 'access' ? 'O(1)' : 'O(n)';
+      this.metricCompEl.style.color = action === 'access' ? '#10b981' : '#f59e0b';
+    }
+    if (this.metricAddrEl) {
+      this.metricAddrEl.textContent =
+        index >= 0 ? `0x${(0x1000 + index * 4).toString(16).toUpperCase()}` : '—';
+    }
+    if (this.metricShiftEl) {
+      this.metricShiftEl.textContent = `${shiftCount} 次`;
+    }
+
+    if (this.formulaIdxEl) this.formulaIdxEl.textContent = index >= 0 ? String(index) : 'i';
+    if (this.formulaAddrEl) {
+      this.formulaAddrEl.textContent =
+        index >= 0 ? `0x${(0x1000 + index * 4).toString(16).toUpperCase()}` : '0x1000 + i*4B';
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = status === 'done' ? '#f0fdf4' : '#eff6ff';
+      logEntry.style.color = status === 'done' ? '#15803d' : '#1d4ed8';
+      logEntry.style.border = '1px solid ' + (status === 'done' ? '#bbf7d0' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: ATStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      let prefix = '';
-      switch (s.action) {
-        case 'access': prefix = s.status === 'init' ? '⚡' : '👁️'; break;
-        case 'search': prefix = s.status === 'search-found' ? '✅' : '🔍'; break;
-        case 'insert': prefix = s.status === 'insert-shift' ? '➜' : '⬇️'; break;
-        case 'delete': prefix = s.status === 'delete-shift' ? '←' : '🗑️'; break;
-      }
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${prefix} ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -455,11 +469,9 @@ registerAlgorithm({
   category: 'array',
   description: '数组的内存布局、基本操作和时间复杂度',
   icon: '📖',
-  template,
-  Visualizer: ArrayTheoryVisualizer,
   difficulty: 1,
   levelOrder: 0,
   learningGoal: '理解数组的连续内存特性和基本操作',
+  template,
+  Visualizer: ArrayTheoryVisualizer,
 });
-
-export {};

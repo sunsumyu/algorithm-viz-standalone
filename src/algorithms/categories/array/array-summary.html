@@ -1,474 +1,567 @@
 <style>
-  /* === 数组专题总结篇 · 玻璃感 + 琥珀金色主题 === */
+  /* === 数组专题总结篇 (Array Summary) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-array-summary-view {
-    --accent-a: #fbbf24;
-    --accent-b: #d97706;
-    --accent-glow: rgba(251, 191, 36, .40);
-    --match-color: #34d399;
-    --highlight-bg: rgba(251, 191, 36, .12);
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(251, 191, 36, .18), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(217, 119, 6, .18), transparent 55%),
-      linear-gradient(135deg, #1a0f00 0%, #271a08 50%, #1a1208 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-array-summary-view .as-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-array-summary-view * {
+    box-sizing: border-box;
   }
-  /* ── Hero ── */
-  #algo-array-summary-view .as-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-array-summary-view .as-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-array-summary-view .as-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-array-summary-view .as-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a0f00; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-array-summary-view .as-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-array-summary-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-array-summary-view .as-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-array-summary-view .as-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .10), rgba(217, 119, 6, .06));
-    border: 1px solid rgba(251, 191, 36, .28);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-array-summary-view .as-tip strong { color: #fcd34d; }
-  /* ── Main grid ── */
-  #algo-array-summary-view .as-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-array-summary-view .as-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  /* ── Glass card ── */
-  #algo-array-summary-view .as-card {
-    background: rgba(20, 18, 10, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-array-summary-view .as-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-array-summary-view .as-tag {
-    font-size: 11px; color: #fcd34d; background: rgba(251, 191, 36, .14);
-    border: 1px solid rgba(251, 191, 36, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  /* ── Scrollable body ── */
-  #algo-array-summary-view .as-scroll {
-    flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 14px;
-    padding-right: 2px;
-  }
-  #algo-array-summary-view .as-scroll::-webkit-scrollbar { width: 6px; }
-  #algo-array-summary-view .as-scroll::-webkit-scrollbar-thumb { background: rgba(251, 191, 36, .3); border-radius: 3px; }
-  #algo-array-summary-view .as-body {
-    padding: 16px 18px; color: #cbd5e1; font-size: 13px; line-height: 1.75;
-  }
-  #algo-array-summary-view .as-body h3 {
-    margin: 0 0 8px; font-size: 14px; color: #fcd34d; font-weight: 800; letter-spacing: .02em;
-  }
-  #algo-array-summary-view .as-body p { margin: 0 0 10px; }
-  #algo-array-summary-view .as-body code {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    padding: 2px 6px; border-radius: 6px;
-    background: rgba(251, 191, 36, .14); color: #fcd34d; font-size: 12px;
-  }
-  /* ── Summary technique cards ── */
-  #algo-array-summary-view .as-tech-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-    padding: 0 18px 16px;
-  }
-  #algo-array-summary-view .as-tech-item {
-    padding: 14px 14px; border-radius: 12px;
-    background: rgba(8, 8, 24, .45);
-    border: 1px solid rgba(255, 255, 255, .08);
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-    opacity: 0; transform: translateY(16px);
-  }
-  #algo-array-summary-view .as-tech-item.as-visible {
-    opacity: 1; transform: translateY(0);
-  }
-  #algo-array-summary-view .as-tech-item:hover {
-    border-color: rgba(251, 191, 36, .4); transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(251, 191, 36, .18);
-  }
-  #algo-array-summary-view .as-tech-item .as-tech-emoji { font-size: 22px; margin-bottom: 6px; display: block; }
-  #algo-array-summary-view .as-tech-item h5 {
-    margin: 0 0 4px; font-size: 13px; color: #fcd34d; font-weight: 700;
-  }
-  #algo-array-summary-view .as-tech-item p { margin: 0; font-size: 11.5px; line-height: 1.55; color: #94a3b8; }
-  #algo-array-summary-view .as-tech-item code { font-size: 11px; }
-  /* ── Technique matrix table ── */
-  #algo-array-summary-view .as-table-wrap { padding: 0 18px 16px; }
-  #algo-array-summary-view table.as-table {
-    width: 100%; border-collapse: collapse; font-size: 12.5px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  #algo-array-summary-view table.as-table th, #algo-array-summary-view table.as-table td {
-    padding: 8px 12px; text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-  }
-  #algo-array-summary-view table.as-table th {
-    color: #fcd34d; font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em;
-    background: rgba(251, 191, 36, .08);
-  }
-  #algo-array-summary-view table.as-table td { color: #cbd5e1; }
-  #algo-array-summary-view table.as-table tr:last-child td { border-bottom: none; }
-  #algo-array-summary-view table.as-table tr.as-row-highlight td {
-    background: rgba(251, 191, 36, .08);
-    color: #fcd34d; font-weight: 600;
-    transition: background .3s;
-  }
-  #algo-array-summary-view table.as-table tr.as-row-dim td {
-    opacity: .45;
-  }
-  /* ── Interactive demo ── */
-  #algo-array-summary-view .as-demo-area {
-    padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
-  }
-  #algo-array-summary-view .as-demo-prompt {
-    padding: 14px 16px; border-radius: 12px;
-    background: rgba(8, 8, 24, .45);
-    border: 1px dashed rgba(251, 191, 36, .3);
-    color: #e2e8f0; font-size: 13px; line-height: 1.7;
-  }
-  #algo-array-summary-view .as-demo-prompt strong { color: #fcd34d; }
-  #algo-array-summary-view .as-demo-options {
-    display: flex; gap: 8px; flex-wrap: wrap;
-  }
-  #algo-array-summary-view .as-demo-opt {
-    padding: 7px 16px; border-radius: 10px; font-size: 12.5px; font-weight: 600;
-    background: rgba(251, 191, 36, .08); border: 1px solid rgba(251, 191, 36, .25);
-    color: #fcd34d; cursor: pointer; transition: all .25s;
-  }
-  #algo-array-summary-view .as-demo-opt:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a0f00; border-color: transparent; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-array-summary-view .as-demo-opt.as-correct {
-    background: linear-gradient(135deg, #34d399, #059669);
-    color: #064e3b; border-color: transparent;
-    box-shadow: 0 6px 18px rgba(52, 211, 153, .35);
-  }
-  #algo-array-summary-view .as-demo-opt.as-wrong {
-    background: rgba(248, 113, 113, .15);
-    border-color: rgba(248, 113, 113, .5);
-    color: #fca5a5;
-  }
-  #algo-array-summary-view .as-demo-result {
-    padding: 10px 14px; border-radius: 10px;
-    font-size: 13px; line-height: 1.6;
-    display: none;
-  }
-  #algo-array-summary-view .as-demo-result.as-show { display: block; }
-  #algo-array-summary-view .as-demo-result.as-ok {
-    background: rgba(52, 211, 153, .1);
-    border: 1px solid rgba(52, 211, 153, .3);
-    color: #6ee7b7;
-  }
-  #algo-array-summary-view .as-demo-result.as-fail {
-    background: rgba(248, 113, 113, .1);
-    border: 1px solid rgba(248, 113, 113, .3);
-    color: #fca5a5;
-  }
-  #algo-array-summary-view .as-shuffle-btn {
-    align-self: flex-start;
-    padding: 7px 16px; border-radius: 10px; font-size: 12px; font-weight: 600;
-    background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .14);
-    color: #94a3b8; cursor: pointer; transition: all .2s;
-  }
-  #algo-array-summary-view .as-shuffle-btn:hover {
-    background: rgba(251, 191, 36, .12); border-color: rgba(251, 191, 36, .3); color: #fcd34d;
-  }
-  /* ── Visualization panel (right) ── */
-  #algo-array-summary-view .as-visual {
-    min-height: 200px; display: flex; flex-direction: column;
-  }
-  #algo-array-summary-view .as-visual-track {
-    flex: 1; min-height: 140px; padding: 20px 18px;
-    overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 10px;
+
+  #algo-array-summary-view .as-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
     justify-content: center;
-  }
-  /* summary banner message */
-  #algo-array-summary-view .as-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(251, 191, 36, .10), rgba(217, 119, 6, .05));
-    border: 1px solid rgba(251, 191, 36, .25);
-    line-height: 1.55; font-size: 14px; color: #fcd34d;
-  }
-  #algo-array-summary-view .as-result .as-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a0f00; box-shadow: 0 4px 14px var(--accent-glow);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  /* ── Log ── */
-  #algo-array-summary-view .as-log {
-    min-height: 80px; max-height: 120px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-array-summary-view .as-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-array-summary-view .as-log .active { color: #fcd34d; font-weight: 600; }
-  /* ── Code panel ── */
-  #algo-array-summary-view .as-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-array-summary-view .as-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-array-summary-view .as-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* ── Controls bar ── */
-  #algo-array-summary-view .as-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+  #algo-array-summary-view .as-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-array-summary-view .as-controls .as-ctrl-btn { min-width: 64px; }
-  #algo-array-summary-view .as-controls .as-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a0f00; border-color: transparent;
+
+  #algo-array-summary-view .as-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-array-summary-view .as-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-array-summary-view .as-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-array-summary-view .as-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-array-summary-view .as-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-array-summary-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  /* ── Generic button style ── */
-  #algo-array-summary-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-array-summary-view .as-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-array-summary-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #1a0f00; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
+  #algo-array-summary-view .as-btn-primary:hover {
+    background: #1d4ed8;
   }
-  #algo-array-summary-view button:disabled { opacity: .4; cursor: not-allowed; }
-  /* ── Complexity badges ── */
-  #algo-array-summary-view .as-complexity {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 10px; border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
+
+  #algo-array-summary-view .as-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-array-summary-view .as-complexity.as-o1 {
-    background: rgba(52, 211, 153, .14); border: 1px solid rgba(52, 211, 153, .3); color: #6ee7b7;
+  #algo-array-summary-view .as-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
   }
-  #algo-array-summary-view .as-complexity.as-on {
-    background: rgba(251, 191, 36, .14); border: 1px solid rgba(251, 191, 36, .3); color: #fcd34d;
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-array-summary-view .as-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
   }
-  #algo-array-summary-view .as-complexity.as-ologn {
-    background: rgba(96, 165, 250, .14); border: 1px solid rgba(96, 165, 250, .3); color: #93c5fd;
+
+  #algo-array-summary-view .as-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
-  /* ── Section reveal animation ── */
-  #algo-array-summary-view .as-section-hidden {
-    opacity: 0; transform: translateY(20px);
-    transition: opacity .45s ease, transform .45s ease;
+
+  #algo-array-summary-view .as-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-array-summary-view .as-section-visible {
-    opacity: 1; transform: translateY(0);
+
+  #algo-array-summary-view .as-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  @media (max-width: 1100px) {
-    #algo-array-summary-view .as-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-array-summary-view .as-code { min-height: 360px; }
-    #algo-array-summary-view .as-tech-grid { grid-template-columns: repeat(2, 1fr); }
+
+  #algo-array-summary-view .as-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 技能树与范式矩阵沙盘 */
+  #algo-array-summary-view .as-paradigm-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  #algo-array-summary-view .as-paradigm-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  #algo-array-summary-view .as-paradigm-card:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  #algo-array-summary-view .as-paradigm-card.active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+
+  #algo-array-summary-view .as-paradigm-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-array-summary-view .as-paradigm-desc {
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.4;
+  }
+
+  #algo-array-summary-view .as-paradigm-tag {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    color: #475569;
+    align-self: flex-start;
+  }
+
+  /* Card 2: 状态与互动练习监视器 */
+  #algo-array-summary-view .as-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-array-summary-view .as-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-array-summary-view .as-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-array-summary-view .as-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-array-summary-view .as-quiz-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #algo-array-summary-view .as-quiz-q {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.5;
+  }
+
+  #algo-array-summary-view .as-quiz-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  #algo-array-summary-view .as-quiz-btn {
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  #algo-array-summary-view .as-quiz-btn:hover {
+    background: #f1f5f9;
+  }
+  #algo-array-summary-view .as-quiz-btn.correct {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+  }
+  #algo-array-summary-view .as-quiz-btn.wrong {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+  }
+
+  #algo-array-summary-view .as-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-array-summary-view .as-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-array-summary-view .as-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-array-summary-view .as-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-array-summary-view .as-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-array-summary-view .as-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-array-summary-view .as-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-array-summary-view .as-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="as-shell">
-  <!-- Hero -->
-  <div class="as-hero">
-    <div class="as-hero-left">
-      <span class="as-icon">📝</span>
-      <div>
-        <h1>数组专题总结篇</h1>
-        <div class="as-sub">回顾数组专题的核心技巧与解题思路</div>
+<div id="algo-array-summary-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="as-header">
+    <div class="as-header-left">
+      <div class="as-icon-btn">📚</div>
+      <div class="as-main-title">数组专题总结 · Array Summary</div>
+      <button class="as-btn-problem" id="btn-problem-info" title="查看专题全景">
+        <span>📖</span> 知识全景图
+      </button>
+      <div class="as-badge-mode">6大核心解题范式</div>
+      <div class="as-badge-complexity">高频考点全通关</div>
+    </div>
+    <div class="as-header-right">
+      <button class="as-btn-primary" id="btn-generate">
+        <span>▶</span> 步进复习
+      </button>
+      <button class="as-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="as-workspace">
+    <!-- Card 1: 范式矩阵与技能卡片沙盘 -->
+    <section class="as-card">
+      <div class="as-card-header">
+        <div class="as-card-title">
+          <span>📊</span> 数组 6 大核心解题范式全景 (Array Paradigms)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          点击卡片即刻定位核心考点与经典题目
+        </div>
       </div>
-    </div>
-    <div class="as-tip"><strong>学习回顾：</strong>从基础操作到双指针、二分查找、前缀和，系统梳理每一个核心技巧的适用场景与复杂度。点击播放逐步回顾！</div>
-  </div>
-
-  <!-- Main -->
-  <div class="as-main">
-    <div class="as-left">
-      <div class="as-scroll">
-
-        <!-- 1. 基础操作 -->
-        <section class="as-card as-section-hidden" id="as-section-basics">
-          <div class="as-card-title">1. 基础操作 <span class="as-tag">O(1) 访问</span></div>
-          <div class="as-body">
-            <p>数组是最基本的数据结构。通过下标可以在 <span class="as-complexity as-o1">O(1)</span> 时间内访问任意元素，但搜索、插入和删除在最坏情况下需要 <span class="as-complexity as-on">O(n)</span> 时间。</p>
-            <p>💡 <strong style="color:#fcd34d">关键点：</strong>数组的连续内存布局使得缓存友好，实际访问速度远快于链表。在算法题中，数组通常是输入的基本形式。</p>
+      <div class="as-card-body" style="justify-content: center;">
+        <div class="as-paradigm-grid" id="as-paradigm-grid">
+          <div class="as-paradigm-card" data-idx="0">
+            <div class="as-paradigm-title"><span>🔍</span> 二分查找</div>
+            <div class="as-paradigm-desc">有序数组检索，区间开闭与循环不变量</div>
+            <span class="as-paradigm-tag">LC 704 / Kama 58</span>
           </div>
-        </section>
-
-        <!-- 2. 双指针法 -->
-        <section class="as-card as-section-hidden" id="as-section-two-pointer">
-          <div class="as-card-title">2. 双指针法 <span class="as-tag">Two Pointers</span></div>
-          <div class="as-body">
-            <p>双指针是数组题中最重要的技巧之一。常见变体：</p>
-            <p>🔹 <strong style="color:#fcd34d">对撞指针（首尾）</strong> —— 一个从头、一个从尾向中间逼近，适用于有序数组的两数之和、回文判断、数组平方排序等。</p>
-            <p>🔹 <strong style="color:#fcd34d">快慢指针</strong> —— 快指针探路、慢指针记录，适用于原地移除元素、去重等原地修改类问题。</p>
-            <p>🔹 <strong style="color:#fcd34d">滑动窗口</strong> —— 维护一个可变区间 [left, right]，适用于满足某条件的最小子数组、最长子数组等连续子数组问题。</p>
+          <div class="as-paradigm-card" data-idx="1">
+            <div class="as-paradigm-title"><span>⚡</span> 快慢双指针</div>
+            <div class="as-paradigm-desc">原地覆写数组，一个 for 搞定元素筛选</div>
+            <span class="as-paradigm-tag">LC 27 移除元素</span>
           </div>
-        </section>
-
-        <!-- 3. 二分查找 -->
-        <section class="as-card as-section-hidden" id="as-section-binary-search">
-          <div class="as-card-title">3. 二分查找 <span class="as-tag">Binary Search</span></div>
-          <div class="as-body">
-            <p>在<strong style="color:#fcd34d">有序数组</strong>上，二分查找可以在 <span class="as-complexity as-ologn">O(log n)</span> 时间内定位目标值。核心思想：每次将搜索范围缩小一半。</p>
-            <p>💡 <strong style="color:#fcd34d">模板要点：</strong>注意 <code>left</code>、<code>right</code> 的初始值和循环不变量。常见的变体包括查找第一个 >= target 的位置（lower_bound）和最后一个 <= target 的位置（upper_bound）。</p>
+          <div class="as-paradigm-card" data-idx="2">
+            <div class="as-paradigm-title"><span>↔️</span> 首尾对撞双指针</div>
+            <div class="as-paradigm-desc">两端向中间收缩，高效归并极端值</div>
+            <span class="as-paradigm-tag">LC 977 有序数组平方</span>
           </div>
-        </section>
-
-        <!-- 4. 前缀和 -->
-        <section class="as-card as-section-hidden" id="as-section-prefix-sum">
-          <div class="as-card-title">4. 前缀和 <span class="as-tag">Prefix Sum</span></div>
-          <div class="as-body">
-            <p>前缀和数组 <code>pre[i] = nums[0] + nums[1] + ... + nums[i-1]</code>，可以在 <span class="as-complexity as-o1">O(1)</span> 时间内回答任意区间的和查询，预处理需要 <span class="as-complexity as-on">O(n)</span> 时间。</p>
-            <p>💡 <strong style="color:#fcd34d">区间和公式：</strong><code>sum(nums[l..r]) = pre[r+1] - pre[l]</code>。这是处理"连续子数组的和"类问题的利器。</p>
+          <div class="as-paradigm-card" data-idx="3">
+            <div class="as-paradigm-title"><span>🪟</span> 滑动窗口</div>
+            <div class="as-paradigm-desc">连续子数组最值，动态右扩与左收缩</div>
+            <span class="as-paradigm-tag">LC 209 长度最小子数组</span>
           </div>
-        </section>
-
-        <!-- 5. 二维数组技巧 -->
-        <section class="as-card as-section-hidden" id="as-section-matrix">
-          <div class="as-card-title">5. 二维数组技巧 <span class="as-tag">2D Array</span></div>
-          <div class="as-body">
-            <p>🔹 <strong style="color:#fcd34d">螺旋遍历</strong> —— 维护上下左右四个边界，按右 → 下 → 左 → 上的顺序逐步收缩边界。</p>
-            <p>🔹 <strong style="color:#fcd34d">二维前缀和</strong> —— 预处理 <code>pre[i][j]</code> 表示从 (0,0) 到 (i-1,j-1) 的子矩阵和，可以 <span class="as-complexity as-o1">O(1)</span> 查询任意子矩阵的和。</p>
-            <p>💡 <strong style="color:#fcd34d">关键：</strong>二维问题本质上是嵌套的一维问题，理清行列循环的顺序和边界是解题关键。</p>
+          <div class="as-paradigm-card" data-idx="4">
+            <div class="as-paradigm-title"><span>🌀</span> 螺旋矩阵模拟</div>
+            <div class="as-paradigm-desc">四边界顺时针收缩，严谨模拟无 bug</div>
+            <span class="as-paradigm-tag">LC 59 螺旋矩阵 II</span>
           </div>
-        </section>
-
-        <!-- 6. 常用套路 -->
-        <section class="as-card as-section-hidden" id="as-section-patterns">
-          <div class="as-card-title">6. 常用套路 <span class="as-tag">Common Patterns</span></div>
-          <div class="as-tech-grid">
-            <div class="as-tech-item" id="as-tech-0">
-              <span class="as-tech-emoji">🔄</span>
-              <h5>原地修改</h5>
-              <p>利用快慢指针在原数组上覆盖，空间 <code>O(1)</code>。适用于移除元素、去重等。</p>
-            </div>
-            <div class="as-tech-item" id="as-tech-1">
-              <span class="as-tech-emoji">🧱</span>
-              <h5>分块处理</h5>
-              <p>将数组分成大小为 √n 的块，平衡查询与更新的复杂度。进阶技巧。</p>
-            </div>
-            <div class="as-tech-item" id="as-tech-2">
-              <span class="as-tech-emoji">🔀</span>
-              <h5>平方后归并</h5>
-              <p>有序数组平方后利用双指针从两端合并，避免排序的 <code>O(n log n)</code>。</p>
-            </div>
-            <div class="as-tech-item" id="as-tech-3">
-              <span class="as-tech-emoji">📐</span>
-              <h5>模拟边界</h5>
-              <p>螺旋矩阵、蛇形遍历等，核心是维护边界并逐步收缩。</p>
-            </div>
-            <div class="as-tech-item" id="as-tech-4">
-              <span class="as-tech-emoji">📊</span>
-              <h5>差分数组</h5>
-              <p>前缀和的逆操作，适合批量区间更新、单点查询的场景。</p>
-            </div>
-            <div class="as-tech-item" id="as-tech-5">
-              <span class="as-tech-emoji">🎯</span>
-              <h5>二分答案</h5>
-              <p>答案具有单调性时，二分答案 + 验证，将优化问题转化为判定问题。</p>
-            </div>
+          <div class="as-paradigm-card" data-idx="5">
+            <div class="as-paradigm-title"><span>➕</span> 一维/二维前缀和</div>
+            <div class="as-paradigm-desc">静态区间与子矩阵求和，O(1) 差分响应</div>
+            <span class="as-paradigm-tag">Kama 58 / Kama 44</span>
           </div>
-        </section>
-
-        <!-- 7. 题目-技巧对照表 -->
-        <section class="as-card as-section-hidden" id="as-section-matrix-table">
-          <div class="as-card-title">7. 题目-技巧对照表 <span class="as-tag">Technique Matrix</span></div>
-          <div class="as-table-wrap">
-            <table class="as-table">
-              <thead>
-                <tr><th>题目</th><th>核心技巧</th></tr>
-              </thead>
-              <tbody>
-                <tr id="as-row-0"><td>🧹 移除元素</td><td>快慢指针</td></tr>
-                <tr id="as-row-1"><td>🔢 有序数组平方</td><td>首尾双指针</td></tr>
-                <tr id="as-row-2"><td>📏 长度最小子数组</td><td>滑动窗口</td></tr>
-                <tr id="as-row-3"><td>🔍 二分查找</td><td>二分查找</td></tr>
-                <tr id="as-row-4"><td>🌀 螺旋矩阵</td><td>模拟边界</td></tr>
-                <tr id="as-row-5"><td>📊 区间和</td><td>前缀和</td></tr>
-                <tr id="as-row-6"><td>🏗️ 购买土地</td><td>二维前缀和</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- 8. Interactive Demo -->
-        <section class="as-card as-visual as-section-hidden" id="as-section-demo">
-          <div class="as-card-title">互动练习 <span class="as-tag">Practice</span></div>
-          <div class="as-demo-area">
-            <div class="as-demo-prompt" id="as-demo-prompt">
-              <strong>📝 思考题：</strong><span id="as-demo-question">点击播放查看练习题</span>
-            </div>
-            <div class="as-demo-options" id="as-demo-options"></div>
-            <div class="as-demo-result" id="as-demo-result"></div>
-            <button class="as-shuffle-btn" id="as-shuffle-btn">🎲 换一题</button>
-          </div>
-        </section>
-
-        <!-- 9. Message + Log -->
-        <section class="as-card">
-          <div class="as-card-title">学习进度</div>
-          <div class="as-result" id="as-message-banner">
-            <span class="as-emoji">📝</span>
-            <div id="step-message">点击「播放」开始数组专题回顾</div>
-          </div>
-        </section>
-
-        <!-- 10. Log -->
-        <section class="as-card">
-          <div class="as-card-title">执行日志</div>
-          <div class="as-log" id="as-log"></div>
-        </section>
-
+        </div>
       </div>
-    </div>
-    <aside class="as-code"><div data-code-panel></div></aside>
-  </div>
+    </section>
 
-  <!-- Controls -->
-  <div class="as-controls">
-    <button id="step-reset" class="as-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="as-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="as-ctrl-btn as-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="as-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="as-counter">步骤: 0 / 0</span>
-    <div class="as-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    <!-- Card 2: 状态与互动练习监视器 -->
+    <section class="as-card">
+      <div class="as-card-header">
+        <div class="as-card-title">
+          <span>🧭</span> 技能掌握度与互动自测 (Quiz & Mastery)
+        </div>
+      </div>
+      <div class="as-card-body">
+        <div class="as-metrics-grid">
+          <div class="as-metric-card">
+            <span class="as-metric-label">当前知识点</span>
+            <span class="as-metric-val" id="metric-topic" style="color: #3b82f6;">前言导读</span>
+          </div>
+          <div class="as-metric-card">
+            <span class="as-metric-label">核心技巧</span>
+            <span class="as-metric-val" id="metric-trick" style="color: #10b981;">双指针/前缀和</span>
+          </div>
+          <div class="as-metric-card">
+            <span class="as-metric-label">代表性题目</span>
+            <span class="as-metric-val" id="metric-problems" style="color: #f59e0b;">6 道金题</span>
+          </div>
+          <div class="as-metric-card">
+            <span class="as-metric-label">自测答题得分</span>
+            <span class="as-metric-val" id="metric-score" style="color: #a855f7;">0 / 5</span>
+          </div>
+        </div>
+        <div class="as-quiz-box" id="as-quiz-box">
+          <div class="as-quiz-q" id="quiz-question">【自测小练习】原地移除数组元素时，最适合使用哪种解法？</div>
+          <div class="as-quiz-options" id="quiz-options">
+            <!-- 动态选项 -->
+          </div>
+          <div style="font-size: 11px; color: #64748b;" id="quiz-feedback"></div>
+        </div>
+        <div class="as-live-alert" id="as-live-alert">
+          <span>💡</span> <span id="as-live-text">欢迎学习数组专题总结篇！点击右上方运行开始步进复习。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="as-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="as-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="as-card-header">
+        <div class="as-card-title">
+          <span>📜</span> 复习轨迹与日志 (Review Trace Log)
+        </div>
+        <span class="as-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="as-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="as-playback-bar">
+    <div class="as-playback-controls">
+      <button class="as-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="as-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="as-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="as-progress-wrap">
+      <span class="as-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>
