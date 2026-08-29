@@ -113,7 +113,8 @@ describe('DarkCodeTerminalPresenter (深模块测试 - 0 DOM依赖环境)', () =
     });
 
     const wrapper = root.querySelector('#code-lines-wrapper');
-    expect(wrapper?.innerHTML).toContain('public void backtrack');
+    expect(wrapper?.innerHTML).toContain('algo-code-token-keyword');
+    expect(wrapper?.innerHTML).toContain('backtrack');
     expect(wrapper?.innerHTML).toContain('res.add(path)');
     expect(presenter.getCurrentLanguage()).toBe('java');
   });

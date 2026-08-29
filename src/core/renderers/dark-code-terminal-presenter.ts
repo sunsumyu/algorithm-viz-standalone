@@ -10,6 +10,7 @@
  */
 
 import type { HighlightTarget } from '../code-panel';
+import { highlightTokens } from '../code-highlighter';
 
 export interface DarkCodeTerminalConfig {
   /** 4 语种源码映射表，如 { java: string[], cpp: string[], python: string[], javascript: string[] } */
@@ -96,26 +97,18 @@ export class DarkCodeTerminalPresenter {
       viewAnalysis.innerHTML = config.analysisHtml;
     }
 
-    // 3. 辅助函数：HTML 转义
-    const escapeHtml = (str: string): string => {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-
-    // 4. 渲染代码行
+    // 3. 渲染代码行 (结合单趟词法扫描进行 Token 级语法高亮)
     const renderCodeLines = () => {
       if (!codeWrapper) return;
       const lines = config.codeLanguages[currentLang] || config.codeLanguages['java'] || [];
       codeWrapper.innerHTML = lines
         .map((line, idx) => {
           const lineNum = idx + 1;
+          const highlightedCode = highlightTokens(line, currentLang);
           return `
             <div class="code-line" data-line="${lineNum}" style="font-size: ${codeFontSize}px;">
               <span class="code-line-num">${lineNum}</span>
-              <span class="code-line-text">${escapeHtml(line)}</span>
+              <span class="code-line-text">${highlightedCode}</span>
             </div>
           `;
         })
