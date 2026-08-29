@@ -394,9 +394,20 @@ export class ReverseWordsVisualizer extends StepVisualizer<ReverseWordsStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgePhase = this.root?.querySelector('#badge-phase');
+    if (badgePhase) {
+      const phaseMap: Record<string, string> = {
+        'clean-spaces': 'Step 1: 去空格',
+        'reverse-all': 'Step 2: 整体反转',
+        'reverse-words': 'Step 3: 单词反转',
+        done: '完成',
+      };
+      badgePhase.textContent = phaseMap[phase] || phase;
     }
   }
 

@@ -292,9 +292,21 @@ export class ReverseStringVisualizer extends StepVisualizer<ReverseStringStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeStatus = this.root?.querySelector('#badge-status');
+    if (badgeStatus) {
+      const statusMap: Record<string, string> = {
+        init: '初始化',
+        inspect: '对撞检查',
+        swap: '交换中...',
+        move: '指针移动',
+        done: '反转完成',
+      };
+      badgeStatus.textContent = statusMap[status] || status;
     }
   }
 

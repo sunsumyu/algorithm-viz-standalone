@@ -1,5 +1,5 @@
 <style>
-  /* === 实现 strStr() KMP (LeetCode 28) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 实现 strStr() · KMP 算法 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-str-str-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-str-str-view .kmp-btn-problem {
@@ -120,267 +121,350 @@
   #algo-str-str-view .kmp-input-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-str-str-view .kmp-input-group label {
+    gap: 4px;
     font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
   }
 
   #algo-str-str-view .kmp-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  #algo-str-str-view .kmp-btn-primary {
-    padding: 4px 10px;
+  #algo-str-str-view .kmp-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-str-str-view .kmp-btn-primary:hover {
+  #algo-str-str-view .kmp-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-str-str-view .kmp-btn-secondary {
-    padding: 4px 8px;
+  #algo-str-str-view .kmp-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-str-str-view .kmp-btn-secondary:hover {
+  #algo-str-str-view .kmp-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-str-str-view .kmp-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-str-str-view .kmp-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-str-str-view .kmp-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-str-str-view .kmp-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-str-str-view .kmp-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-str-str-view .kmp-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-str-str-view .kmp-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-str-str-view .kmp-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-str-str-view .kmp-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 主串/模式串滑动对齐与 Next 表沙盘 */
-  #algo-str-str-view .kmp-sandbox-container {
+  #algo-str-str-view .kmp-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-str-str-view .kmp-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 双轨滑动与 Next 表沙盘展示盒 */
+  #algo-str-str-view .kmp-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-around;
-    gap: 12px;
-    padding: 6px;
-    width: 100%;
+    justify-content: space-between;
+    padding: 8px 10px;
+    gap: 6px;
   }
 
   #algo-str-str-view .kmp-rails-container {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    width: 100%;
-    overflow-x: auto;
-    padding: 6px;
+    gap: 4px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
   }
 
   #algo-str-str-view .kmp-rail-row {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
   }
 
   #algo-str-str-view .kmp-rail-label {
-    width: 70px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     color: #64748b;
-    flex-shrink: 0;
+    min-width: 62px;
+    text-transform: uppercase;
   }
 
-  #algo-str-str-view .kmp-cell-box {
-    width: 32px;
-    height: 38px;
+  #algo-str-str-view .kmp-cell {
+    width: 26px;
+    height: 28px;
     border-radius: 6px;
-    background: #f8fafc;
-    border: 1.5px solid #cbd5e1;
-    display: flex;
-    flex-direction: column;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-family: 'JetBrains Mono', monospace;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    flex-shrink: 0;
+    transition: all 0.15s;
   }
-
-  #algo-str-str-view .kmp-cell-box .val {
-    font-size: 13px;
-    font-weight: 800;
-    color: #0f172a;
-  }
-
-  #algo-str-str-view .kmp-cell-box .idx {
-    font-size: 8px;
-    font-weight: 700;
-    color: #94a3b8;
-  }
-
-  #algo-str-str-view .kmp-cell-box.is-i-ptr {
-    border-color: #3b82f6;
+  #algo-str-str-view .kmp-cell.is-i {
+    border-color: #2563eb;
     background: #eff6ff;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    color: #1d4ed8;
   }
-
-  #algo-str-str-view .kmp-cell-box.is-j-ptr {
-    border-color: #a855f7;
+  #algo-str-str-view .kmp-cell.is-j {
+    border-color: #9333ea;
     background: #faf5ff;
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+    color: #7e22ce;
   }
-
-  #algo-str-str-view .kmp-cell-box.is-match {
+  #algo-str-str-view .kmp-cell.is-match {
     border-color: #10b981;
-    background: #f0fdf4;
-    color: #15803d;
+    background: #ecfdf5;
+    color: #047857;
   }
-
-  #algo-str-str-view .kmp-cell-box.is-mismatch {
+  #algo-str-str-view .kmp-cell.is-mismatch {
     border-color: #ef4444;
     background: #fef2f2;
-    color: #dc2626;
+    color: #b91c1c;
   }
 
-  /* Next 表展示 */
+  /* Next 前缀表 */
   #algo-str-str-view .kmp-next-table {
     display: flex;
-    align-items: center;
     gap: 4px;
-    padding: 6px 10px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    padding: 4px 8px;
   }
 
-  #algo-str-str-view .kmp-next-cell {
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* Preset Chips */
+  /* 预设案例 Chips */
   #algo-str-str-view .kmp-preset-chips {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-str-str-view .kmp-chip {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10px;
     color: #475569;
     cursor: pointer;
     transition: all 0.15s;
   }
   #algo-str-str-view .kmp-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
     background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-str-str-view .kmp-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-str-str-view .kmp-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-str-str-view .kmp-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-str-str-view .kmp-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-str-str-view .kmp-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-str-str-view .kmp-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-str-str-view .kmp-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-str-str-view .kmp-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-str-str-view .kmp-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-str-str-view .kmp-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -395,7 +479,7 @@
 
   #algo-str-str-view .kmp-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -404,87 +488,290 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-str-str-view .kmp-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-str-str-view .kmp-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-str-str-view .kmp-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-str-str-view .kmp-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-str-str-view .kmp-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-str-str-view .kmp-playback-controls {
+  #algo-str-str-view .kmp-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-str-str-view .kmp-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-str-str-view .kmp-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-str-str-view .kmp-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-str-str-view .kmp-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-str-str-view .kmp-progress-wrap {
-    flex: 1;
+  #algo-str-str-view .kmp-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-str-str-view .kmp-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-str-str-view .kmp-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-str-str-view .kmp-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-str-str-view .kmp-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-str-str-view .kmp-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-str-str-view .kmp-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-str-str-view .kmp-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-str-str-view .kmp-step-badge {
-    font-size: 11px;
+  #algo-str-str-view .kmp-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-str-str-view .kmp-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-str-str-view .kmp-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-str-str-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-str-str-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-str-str-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-str-str-view .kmp-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-str-str-view .kmp-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-str-str-view .kmp-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-str-str-view .kmp-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-str-str-view .kmp-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-str-str-view .kmp-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-str-str-view .kmp-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-str-str-view .kmp-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-str-str-view .kmp-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-str-str-view .kmp-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-str-str-view .kmp-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-str-str-view .kmp-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -493,144 +780,229 @@
   <header class="kmp-header">
     <div class="kmp-header-left">
       <div class="kmp-icon-btn">🔍</div>
-      <div class="kmp-main-title">实现 strStr() · KMP 算法</div>
-      <button class="kmp-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 题目与解析
-      </button>
-      <div class="kmp-badge-mode">KMP 前缀表模式匹配</div>
-      <div class="kmp-badge-complexity">O(m+n) · O(m)</div>
+      <h1 class="kmp-main-title">实现 strStr() · KMP 算法 (Implement strStr)</h1>
+      <button id="btn-open-problem-modal" class="kmp-btn-problem">📋 题目</button>
+      <span class="kmp-badge-mode">KMP 前缀表模式匹配</span>
+      <span class="kmp-badge-complexity">O(m+n) · O(m)</span>
     </div>
+
     <div class="kmp-header-right">
       <div class="kmp-input-group">
         <label for="input-haystack">haystack:</label>
-        <input type="text" id="input-haystack" value="sadbutsad" style="width: 80px;">
+        <input type="text" id="input-haystack" value="sadbutsad" style="width: 80px;" placeholder="主串" />
       </div>
       <div class="kmp-input-group">
         <label for="input-needle">needle:</label>
-        <input type="text" id="input-needle" value="sad" style="width: 50px;">
+        <input type="text" id="input-needle" value="sad" style="width: 50px;" placeholder="模式串" />
       </div>
-      <button class="kmp-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="kmp-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="kmp-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="kmp-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="kmp-workspace">
-    <!-- Card 1: 滑动轨与 Next 数组沙盘 -->
-    <section class="kmp-card">
-      <div class="kmp-card-header">
-        <div class="kmp-card-title">
-          <span>📊</span> 主串与模式串对齐滑动沙盘 (Haystack & Needle Rail)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="kmp-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="kmp-left-section">
+
+      <!-- 卡片 1: 双轨滑动与 Next 数组沙盘 -->
+      <div class="kmp-card">
+        <div class="kmp-card-header">
+          <div class="kmp-card-title">
+            <span>📊 主串与模式串对齐滑动沙盘 (Haystack & Needle Rail)</span>
+          </div>
+          <div class="kmp-legend-bar">
+            <div><span class="kmp-legend-dot" style="background:#2563eb;"></span> 主串 i</div>
+            <div><span class="kmp-legend-dot" style="background:#9333ea;"></span> 模式串 j</div>
+            <div><span class="kmp-legend-dot" style="background:#10b981;"></span> 匹配</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #3b82f6;">● 主串 i</span> · <span style="color: #a855f7;">● 模式串 j</span> · <span style="color: #10b981;">● 匹配</span>
-        </div>
-      </div>
-      <div class="kmp-card-body" style="justify-content: center;">
-        <div class="kmp-sandbox-container">
-          <!-- 上部：主串与模式串双轨 -->
+
+        <!-- 字符展示盒 -->
+        <div class="kmp-sandbox-wrap">
           <div class="kmp-rails-container">
             <div class="kmp-rail-row">
               <span class="kmp-rail-label">haystack:</span>
-              <div id="kmp-haystack-cells" style="display: flex; gap: 4px;"></div>
+              <div id="kmp-haystack-cells" style="display: flex; gap: 4px; flex-wrap: wrap;"></div>
             </div>
             <div class="kmp-rail-row">
               <span class="kmp-rail-label">needle:</span>
-              <div id="kmp-needle-cells" style="display: flex; gap: 4px;"></div>
+              <div id="kmp-needle-cells" style="display: flex; gap: 4px; flex-wrap: wrap;"></div>
             </div>
           </div>
-          <!-- 下部：Next 前缀表 -->
-          <div style="font-size: 11px; font-weight: 700; color: #64748b;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; align-self: flex-start; margin-top: 4px;">
             模式串前缀表 next[0..m-1]
           </div>
           <div class="kmp-next-table" id="kmp-next-table"></div>
         </div>
+
+        <!-- 预设案例 Chips -->
+        <div class="kmp-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="kmp-chip" data-haystack="sadbutsad" data-needle="sad">示例 1 ("sadbutsad", "sad")</button>
+          <button class="kmp-chip" data-haystack="leetcode" data-needle="leeto">不匹配 ("leetcode", "leeto")</button>
+          <button class="kmp-chip" data-haystack="aabaabaafa" data-needle="aabaaf">经典回退 ("aabaabaafa", "aabaaf")</button>
+          <button class="kmp-chip" data-haystack="mississippi" data-needle="issip">多重复 ("mississippi", "issip")</button>
+        </div>
       </div>
-      <div class="kmp-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="kmp-chip" data-h="sadbutsad" data-n="sad">示例 1 ("sadbutsad", "sad")</button>
-        <button class="kmp-chip" data-h="leetcode" data-n="leeto">示例 2 ("leetcode", "leeto" -> -1)</button>
-        <button class="kmp-chip" data-h="aabaabaafa" data-n="aabaaf">经典 KMP ("aabaabaafa", "aabaaf")</button>
-        <button class="kmp-chip" data-h="hello" data-n="ll">简短匹配 ("hello", "ll")</button>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="kmp-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="kmp-slider" />
+        <div class="kmp-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="kmp-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="kmp-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="kmp-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
       </div>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="kmp-card">
+        <div class="kmp-card-header">
+          <div>
+            <div class="kmp-card-title">🧭 双指针状态与匹配监视器 (Pointer & Match Monitor)</div>
+            <div class="kmp-card-desc">主串指针 i、模式串指针 j、匹配状态与最终匹配结果</div>
+          </div>
+          <span id="badge-match-state" class="kmp-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="kmp-state-space-box">
+          <div class="kmp-metrics-grid">
+            <div class="kmp-metric-card">
+              <span class="kmp-metric-label">主串指针 i</span>
+              <span class="kmp-metric-val" id="metric-i" style="color: #2563eb;">0</span>
+            </div>
+            <div class="kmp-metric-card">
+              <span class="kmp-metric-label">模式串指针 j</span>
+              <span class="kmp-metric-val" id="metric-j" style="color: #9333ea;">0</span>
+            </div>
+            <div class="kmp-metric-card">
+              <span class="kmp-metric-label">匹配状态</span>
+              <span class="kmp-metric-val" id="metric-match-state" style="color: #0f172a;">初始化</span>
+            </div>
+            <div class="kmp-metric-card">
+              <span class="kmp-metric-label">最终匹配下标</span>
+              <span class="kmp-metric-val" id="metric-res" style="color: #10b981;">匹配中...</span>
+            </div>
+          </div>
+
+          <div class="kmp-formula-box" id="kmp-formula-box">
+            <span>跳转规则:</span> <strong id="formula-kmp" style="color: #2563eb;">j = next[j - 1] (失配回退)</strong>
+          </div>
+
+          <div class="kmp-live-alert">
+            <span>💡</span> <span id="kmp-live-text">准备就绪，点击运行开始 KMP 匹配。</span>
+          </div>
+        </div>
+      </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="kmp-card">
-      <div class="kmp-card-header">
-        <div class="kmp-card-title">
-          <span>🧭</span> 指针与匹配监视器 (Match Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="kmp-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="kmp-dark-terminal">
+        <div class="kmp-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="kmp-tab-group">
+            <button id="btn-tab-code" class="sq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sq-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sq-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="kmp-lang-group" id="code-lang-tabs">
+            <button class="kmp-lang-btn active" data-lang="java">Java</button>
+            <button class="kmp-lang-btn" data-lang="cpp">C++</button>
+            <button class="kmp-lang-btn" data-lang="python">Python</button>
+            <button class="kmp-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="kmp-font-tools">
+            <div class="kmp-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="kmp-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="kmp-window-dots">
+              <span class="kmp-dot" style="background:#ef4444;"></span>
+              <span class="kmp-dot" style="background:#eab308;"></span>
+              <span class="kmp-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="kmp-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="kmp-card-body">
-        <div class="kmp-metrics-grid">
-          <div class="kmp-metric-card">
-            <span class="kmp-metric-label">主串指针 i</span>
-            <span class="kmp-metric-val" id="metric-i" style="color: #3b82f6;">0</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="kmp-log-card">
+        <div class="kmp-log-header">
+          <div class="kmp-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="kmp-metric-card">
-            <span class="kmp-metric-label">模式串指针 j</span>
-            <span class="kmp-metric-val" id="metric-j" style="color: #a855f7;">0</span>
-          </div>
-          <div class="kmp-metric-card">
-            <span class="kmp-metric-label">匹配状态</span>
-            <span class="kmp-metric-val" id="metric-match-state" style="color: #10b981;">匹配中</span>
-          </div>
-          <div class="kmp-metric-card">
-            <span class="kmp-metric-label">最终下标</span>
-            <span class="kmp-metric-val" id="metric-res" style="color: #0f172a;">待判定</span>
-          </div>
+          <span id="log-count" class="kmp-log-count">0 条记录</span>
         </div>
-        <div class="kmp-formula-box" id="kmp-formula-box">
-          <span>回退公式:</span> <strong id="formula-kmp" style="color: #2563eb;">j = next[j - 1]</strong>
-        </div>
-        <div class="kmp-live-alert" id="kmp-live-alert">
-          <span>💡</span> <span id="kmp-live-text">准备就绪，点击运行开始 KMP 字符串匹配。</span>
+
+        <div id="log-container" class="kmp-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="kmp-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="kmp-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="kmp-card-header">
-        <div class="kmp-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="kmp-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="kmp-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="kmp-playback-bar">
-    <div class="kmp-playback-controls">
-      <button class="kmp-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="kmp-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="kmp-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="kmp-modal-backdrop hidden">
+    <div class="kmp-modal-content">
+      <div class="kmp-modal-header">
+        <div class="kmp-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="kmp-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="kmp-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="kmp-progress-wrap">
-      <span class="kmp-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

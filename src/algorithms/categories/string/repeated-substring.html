@@ -1,5 +1,5 @@
 <style>
-  /* === 重复的子字符串 (LeetCode 459) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 重复的子字符串 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-repeated-substring-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-repeated-substring-view .rps-btn-problem {
@@ -120,252 +121,359 @@
   #algo-repeated-substring-view .rps-input-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-repeated-substring-view .rps-input-group label {
+    gap: 4px;
     font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
   }
 
   #algo-repeated-substring-view .rps-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  #algo-repeated-substring-view .rps-btn-primary {
-    padding: 4px 10px;
+  #algo-repeated-substring-view .rps-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-repeated-substring-view .rps-btn-primary:hover {
+  #algo-repeated-substring-view .rps-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-repeated-substring-view .rps-btn-secondary {
-    padding: 4px 8px;
+  #algo-repeated-substring-view .rps-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-repeated-substring-view .rps-btn-secondary:hover {
+  #algo-repeated-substring-view .rps-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-repeated-substring-view .rps-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-repeated-substring-view .rps-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-repeated-substring-view .rps-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-repeated-substring-view .rps-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-repeated-substring-view .rps-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-repeated-substring-view .rps-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-repeated-substring-view .rps-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-repeated-substring-view .rps-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-repeated-substring-view .rps-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: KMP Next 数组与周期瓷砖平铺沙盘 */
-  #algo-repeated-substring-view .rps-sandbox-container {
+  #algo-repeated-substring-view .rps-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-repeated-substring-view .rps-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* Next 数组与平铺沙盘展示盒 */
+  #algo-repeated-substring-view .rps-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-around;
-    gap: 12px;
-    padding: 6px;
-    width: 100%;
+    justify-content: space-between;
+    padding: 8px 10px;
+    gap: 8px;
   }
 
   #algo-repeated-substring-view .rps-tracks-wrap {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    overflow-x: auto;
-    padding: 6px;
+    gap: 4px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
   }
 
   #algo-repeated-substring-view .rps-track-row {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
     justify-content: center;
+  }
+
+  #algo-repeated-substring-view .rps-cell-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 4px;
   }
 
   #algo-repeated-substring-view .rps-cell-box {
-    width: 34px;
-    height: 40px;
-    border-radius: 6px;
-    background: #f8fafc;
-    border: 1.5px solid #cbd5e1;
+    width: 38px;
+    height: 44px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-family: 'JetBrains Mono', monospace;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
   #algo-repeated-substring-view .rps-cell-box .val {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 800;
     color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
   }
-
-  #algo-repeated-substring-view .rps-cell-box .next-val {
+  #algo-repeated-substring-view .rps-cell-box .idx {
     font-size: 9px;
     font-weight: 700;
-    color: #2563eb;
+    color: #94a3b8;
+    position: absolute;
+    bottom: 2px;
   }
-
-  #algo-repeated-substring-view .rps-cell-box.in-pattern {
-    border-color: #3b82f6;
+  #algo-repeated-substring-view .rps-cell-box.is-period-lead {
+    border-color: #2563eb;
     background: #eff6ff;
   }
-
-  #algo-repeated-substring-view .rps-cell-box.is-last-node {
-    border-color: #a855f7;
+  #algo-repeated-substring-view .rps-cell-box.is-tail {
+    border-color: #9333ea;
     background: #faf5ff;
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
   }
 
   #algo-repeated-substring-view .rps-tile-row {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
     flex-wrap: wrap;
-    padding: 6px;
-    background: #f8fafc;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    width: 100%;
-    max-width: 500px;
+    justify-content: center;
   }
 
   #algo-repeated-substring-view .rps-tile-unit {
     padding: 3px 8px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1.5px solid #3b82f6;
-    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
   }
 
-  /* Preset Chips */
+  /* 预设案例 Chips */
   #algo-repeated-substring-view .rps-preset-chips {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-repeated-substring-view .rps-chip {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10px;
     color: #475569;
     cursor: pointer;
     transition: all 0.15s;
   }
   #algo-repeated-substring-view .rps-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
     background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-repeated-substring-view .rps-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-repeated-substring-view .rps-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-repeated-substring-view .rps-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-repeated-substring-view .rps-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-repeated-substring-view .rps-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-repeated-substring-view .rps-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-repeated-substring-view .rps-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-repeated-substring-view .rps-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-repeated-substring-view .rps-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-repeated-substring-view .rps-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -380,7 +488,7 @@
 
   #algo-repeated-substring-view .rps-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -389,87 +497,290 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-repeated-substring-view .rps-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-repeated-substring-view .rps-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-repeated-substring-view .rps-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-repeated-substring-view .rps-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-repeated-substring-view .rps-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-repeated-substring-view .rps-playback-controls {
+  #algo-repeated-substring-view .rps-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-repeated-substring-view .rps-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-repeated-substring-view .rps-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-repeated-substring-view .rps-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-repeated-substring-view .rps-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-repeated-substring-view .rps-progress-wrap {
-    flex: 1;
+  #algo-repeated-substring-view .rps-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-repeated-substring-view .rps-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-repeated-substring-view .rps-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-repeated-substring-view .rps-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-repeated-substring-view .rps-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-repeated-substring-view .rps-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-repeated-substring-view .rps-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-repeated-substring-view .rps-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-repeated-substring-view .rps-step-badge {
-    font-size: 11px;
+  #algo-repeated-substring-view .rps-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-repeated-substring-view .rps-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-repeated-substring-view .rps-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-repeated-substring-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-repeated-substring-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-repeated-substring-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-repeated-substring-view .rps-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-repeated-substring-view .rps-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-repeated-substring-view .rps-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-repeated-substring-view .rps-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-repeated-substring-view .rps-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-repeated-substring-view .rps-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-repeated-substring-view .rps-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-repeated-substring-view .rps-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-repeated-substring-view .rps-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-repeated-substring-view .rps-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-repeated-substring-view .rps-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-repeated-substring-view .rps-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -478,132 +789,216 @@
   <header class="rps-header">
     <div class="rps-header-left">
       <div class="rps-icon-btn">🔁</div>
-      <div class="rps-main-title">重复的子字符串 · Repeated Substring</div>
-      <button class="rps-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 题目与解析
-      </button>
-      <div class="rps-badge-mode">KMP 周期性整除推导</div>
-      <div class="rps-badge-complexity">O(n) · O(n)</div>
+      <h1 class="rps-main-title">重复的子字符串 (Repeated Substring Pattern)</h1>
+      <button id="btn-open-problem-modal" class="rps-btn-problem">📋 题目</button>
+      <span class="rps-badge-mode">KMP 周期性整除推导</span>
+      <span class="rps-badge-complexity">O(n) · O(n)</span>
     </div>
+
     <div class="rps-header-right">
       <div class="rps-input-group">
         <label for="input-s">s:</label>
-        <input type="text" id="input-s" value="abab" style="width: 90px;">
+        <input type="text" id="input-s" value="abab" style="width: 100px;" placeholder="字符串" />
       </div>
-      <button class="rps-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="rps-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="rps-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="rps-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="rps-workspace">
-    <!-- Card 1: KMP Next 数组与周期瓷砖平铺沙盘 -->
-    <section class="rps-card">
-      <div class="rps-card-header">
-        <div class="rps-card-title">
-          <span>📊</span> Next 前缀表与周期子串平铺沙盘 (Next Array & Periodic Tiles)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="rps-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="rps-left-section">
+
+      <!-- 卡片 1: Next 前缀表与平铺拆解沙盘 -->
+      <div class="rps-card">
+        <div class="rps-card-header">
+          <div class="rps-card-title">
+            <span>📊 Next 前缀表与周期子串平铺沙盘 (Next Array & Periodic Tiles)</span>
+          </div>
+          <div class="rps-legend-bar">
+            <div><span class="rps-legend-dot" style="background:#2563eb;"></span> 最小周期子串</div>
+            <div><span class="rps-legend-dot" style="background:#9333ea;"></span> next[n-1] 尾项</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #3b82f6;">● 最小周期子串</span> · <span style="color: #a855f7;">● next[n-1] 尾项</span>
-        </div>
-      </div>
-      <div class="rps-card-body" style="justify-content: center;">
-        <div class="rps-sandbox-container">
-          <!-- 上部：字符与 Next 表网格 -->
+
+        <!-- 字符展示盒 -->
+        <div class="rps-sandbox-wrap">
           <div class="rps-tracks-wrap">
             <div style="font-size: 11px; font-weight: 700; color: #64748b;">字符与 Next 值</div>
             <div class="rps-track-row" id="rps-track-row"></div>
           </div>
-          <!-- 下部：周期平铺分解 -->
-          <div style="font-size: 11px; font-weight: 700; color: #64748b;">周期单元拆解平铺</div>
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; align-self: flex-start;">周期单元拆解平铺</div>
           <div class="rps-tile-row" id="rps-tile-row"></div>
         </div>
+
+        <!-- 预设案例 Chips -->
+        <div class="rps-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="rps-chip" data-s="abab">示例 1 ("abab" -> true)</button>
+          <button class="rps-chip" data-s="aba">示例 2 ("aba" -> false)</button>
+          <button class="rps-chip" data-s="abcabcabcabc">示例 3 ("abcabcabcabc" -> true)</button>
+          <button class="rps-chip" data-s="aaaa">纯单字符 ("aaaa" -> true)</button>
+        </div>
       </div>
-      <div class="rps-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="rps-chip" data-s="abab">示例 1 ("abab" -> true)</button>
-        <button class="rps-chip" data-s="aba">示例 2 ("aba" -> false)</button>
-        <button class="rps-chip" data-s="abcabcabcabc">示例 3 ("abcabcabcabc" -> true)</button>
-        <button class="rps-chip" data-s="aaaa">纯单字符 ("aaaa" -> true)</button>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="rps-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="rps-slider" />
+        <div class="rps-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="rps-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="rps-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="rps-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
       </div>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="rps-card">
+        <div class="rps-card-header">
+          <div>
+            <div class="rps-card-title">🧭 周期性整除监视器 (Periodic Divisible Monitor)</div>
+            <div class="rps-card-desc">总长度 n、最长相等前后缀、周期元长度与判定结果</div>
+          </div>
+          <span id="badge-result" class="rps-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">分析中...</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="rps-state-space-box">
+          <div class="rps-metrics-grid">
+            <div class="rps-metric-card">
+              <span class="rps-metric-label">总长度 n</span>
+              <span class="rps-metric-val" id="metric-n" style="color: #0f172a;">4</span>
+            </div>
+            <div class="rps-metric-card">
+              <span class="rps-metric-label">最长相等前后缀</span>
+              <span class="rps-metric-val" id="metric-lps" style="color: #9333ea;">2</span>
+            </div>
+            <div class="rps-metric-card">
+              <span class="rps-metric-label">周期元长度 len</span>
+              <span class="rps-metric-val" id="metric-period" style="color: #2563eb;">2 ("ab")</span>
+            </div>
+            <div class="rps-metric-card">
+              <span class="rps-metric-label">判定结果</span>
+              <span class="rps-metric-val" id="metric-res" style="color: #10b981;">分析中...</span>
+            </div>
+          </div>
+
+          <div class="rps-formula-box" id="rps-formula-box">
+            <span>整除检验:</span> <strong id="formula-div" style="color: #2563eb;">n % (n - next[n-1]) == 0</strong>
+          </div>
+
+          <div class="rps-live-alert">
+            <span>💡</span> <span id="rps-live-text">准备就绪，点击运行开始周期性整除分析。</span>
+          </div>
+        </div>
+      </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="rps-card">
-      <div class="rps-card-header">
-        <div class="rps-card-title">
-          <span>🧭</span> 周期性整除监视器 (Periodic Divisible Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="rps-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="rps-dark-terminal">
+        <div class="rps-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="rps-tab-group">
+            <button id="btn-tab-code" class="sq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sq-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sq-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="rps-lang-group" id="code-lang-tabs">
+            <button class="rps-lang-btn active" data-lang="java">Java</button>
+            <button class="rps-lang-btn" data-lang="cpp">C++</button>
+            <button class="rps-lang-btn" data-lang="python">Python</button>
+            <button class="rps-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="rps-font-tools">
+            <div class="rps-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="rps-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="rps-window-dots">
+              <span class="rps-dot" style="background:#ef4444;"></span>
+              <span class="rps-dot" style="background:#eab308;"></span>
+              <span class="rps-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="rps-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="rps-card-body">
-        <div class="rps-metrics-grid">
-          <div class="rps-metric-card">
-            <span class="rps-metric-label">总长度 n</span>
-            <span class="rps-metric-val" id="metric-n" style="color: #0f172a;">4</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="rps-log-card">
+        <div class="rps-log-header">
+          <div class="rps-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="rps-metric-card">
-            <span class="rps-metric-label">最长相等前后缀</span>
-            <span class="rps-metric-val" id="metric-lps" style="color: #a855f7;">2</span>
-          </div>
-          <div class="rps-metric-card">
-            <span class="rps-metric-label">最小周期 patternLen</span>
-            <span class="rps-metric-val" id="metric-period" style="color: #2563eb;">2</span>
-          </div>
-          <div class="rps-metric-card">
-            <span class="rps-metric-label">判定结果</span>
-            <span class="rps-metric-val" id="metric-res" style="color: #10b981;">待判定</span>
-          </div>
+          <span id="log-count" class="rps-log-count">0 条记录</span>
         </div>
-        <div class="rps-formula-box" id="rps-formula-box">
-          <span>整除判定:</span> <strong id="formula-div" style="color: #2563eb;">n % (n - next[n-1]) == 0</strong>
-        </div>
-        <div class="rps-live-alert" id="rps-live-alert">
-          <span>💡</span> <span id="rps-live-text">准备就绪，点击运行开始重复子字符串判定。</span>
+
+        <div id="log-container" class="rps-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="rps-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="rps-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="rps-card-header">
-        <div class="rps-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="rps-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="rps-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="rps-playback-bar">
-    <div class="rps-playback-controls">
-      <button class="rps-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="rps-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="rps-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="rps-modal-backdrop hidden">
+    <div class="rps-modal-content">
+      <div class="rps-modal-header">
+        <div class="rps-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="rps-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="rps-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="rps-progress-wrap">
-      <span class="rps-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>
