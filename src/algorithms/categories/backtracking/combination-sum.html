@@ -702,6 +702,12 @@
 
     <!-- 参数与操作工具组 -->
     <div class="cs-header-right">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="cs-chip" data-candidates="2,3,6,7" data-target="7">2,3,6,7 / 7</button>
+        <button class="cs-chip" data-candidates="2,3,5" data-target="8">2,3,5 / 8</button>
+        <button class="cs-chip" data-candidates="2,4,6" data-target="6">2,4,6 / 6</button>
+      </div>
+
       <div class="cs-input-group">
         <span>c:</span>
         <input type="text" id="input-candidates" value="2,3,6,7" class="cs-input-str" placeholder="2,3,6,7" />
@@ -716,12 +722,6 @@
       <button id="btn-reset" class="cs-btn-reset">
         重置
       </button>
-
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <button class="cs-chip" data-candidates="2,3,6,7" data-target="7">2,3,6,7 / 7</button>
-        <button class="cs-chip" data-candidates="2,3,5" data-target="8">2,3,5 / 8</button>
-        <button class="cs-chip" data-candidates="2,4,6" data-target="6">2,4,6 / 6</button>
-      </div>
     </div>
   </header>
 
