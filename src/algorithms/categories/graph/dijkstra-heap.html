@@ -1,591 +1,486 @@
 <style>
+  /* === 堆优化 Dijkstra · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-dijkstra-heap-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
-  }
-
-  #algo-dijkstra-heap-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #6366f155, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #4f46e555, transparent 55%),
-                linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #1e1b4b 50%, #3730a3 75%, #1e1b4b 100%);
-    z-index: -2;
-  }
-
-  #algo-dijkstra-heap-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(30, 27, 75, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-dijkstra-heap-view .djh-page {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .djh-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
+  #algo-dijkstra-heap-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-dijkstra-heap-view .djh-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .djh-hero .djh-title-wrapper {
+  #algo-dijkstra-heap-view .djh-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .djh-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+  #algo-dijkstra-heap-view .djh-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .djh-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
+  #algo-dijkstra-heap-view .djh-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .djh-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
+  #algo-dijkstra-heap-view .djh-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-dijkstra-heap-view .djh-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .djh-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-dijkstra-heap-view .djh-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .djh-tip strong {
-    color: #6366f1;
-    font-weight: 600;
+  #algo-dijkstra-heap-view .djh-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
 
-  #algo-dijkstra-heap-view .djh-layout {
+  #algo-dijkstra-heap-view .djh-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-dijkstra-heap-view .djh-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-dijkstra-heap-view .djh-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-dijkstra-heap-view .djh-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-dijkstra-heap-view .djh-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-dijkstra-heap-view .djh-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    padding: 16px;
+    margin-top: 8px;
     overflow: hidden;
   }
 
-  @media (max-width: 1100px) {
-    #algo-dijkstra-heap-view .djh-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .djh-main {
-    min-width: 0;
+  #algo-dijkstra-heap-view .djh-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-    gap: 16px;
     overflow: hidden;
-    flex: 1;
+    min-width: 0;
+    min-height: 0;
   }
 
-  .djh-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .djh-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-dijkstra-heap-view .djh-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
     display: flex;
-    gap: 10px;
     align-items: center;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
 
-  .djh-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  #algo-dijkstra-heap-view .djh-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .djh-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  #algo-dijkstra-heap-view .djh-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
 
-  .djh-stats {
+  /* Card 1: 拓扑图 SVG 画布 */
+  #algo-dijkstra-heap-view .djh-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Dist 距离数组展示栏 */
+  #algo-dijkstra-heap-view .djh-dist-track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    overflow-x: auto;
+  }
+
+  #algo-dijkstra-heap-view .djh-dist-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  #algo-dijkstra-heap-view .djh-dist-pill.is-active {
+    background: #fef9c3;
+    border-color: #fde047;
+    color: #854d0e;
+    font-weight: 800;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-dijkstra-heap-view .djh-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
-  .djh-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
+  #algo-dijkstra-heap-view .djh-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .djh-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #6366f1, #4f46e5);
-  }
-
-  .djh-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .djh-stat-val {
-    color: #6366f1;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
+  #algo-dijkstra-heap-view .djh-metric-label {
+    font-size: 10px;
     font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
 
-  .djh-graph-container {
-    padding: 20px;
+  #algo-dijkstra-heap-view .djh-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-dijkstra-heap-view .djh-pq-box {
     display: flex;
-    justify-content: center;
     align-items: center;
-    min-height: 240px;
-  }
-
-  .djh-graph-container svg {
-    width: 100%;
-    max-width: 480px;
-    height: 240px;
-  }
-
-  .djh-heap-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .djh-heap-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .djh-heap-row {
-    display: flex;
     gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .djh-heap-item {
     padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: #6366f1;
-    font-family: ui-monospace, monospace;
-    font-size: 11px;
-    font-weight: 600;
-    min-width: 50px;
-    text-align: center;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    overflow-x: auto;
   }
 
-  .djh-heap-item .djh-heap-node {
-    display: block;
-    font-size: 9px;
-    color: rgba(204, 214, 244, 0.5);
-    margin-bottom: 2px;
-  }
-
-  .djh-heap-item.top {
-    background: rgba(99, 102, 241, 0.4);
-    border-color: #6366f1;
-    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
-  }
-
-  .djh-dist-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .djh-dist-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .djh-dist-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .djh-dist-item {
-    padding: 6px 10px;
+  #algo-dijkstra-heap-view .djh-live-alert {
+    padding: 8px 10px;
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: #6366f1;
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    font-weight: 600;
-    min-width: 32px;
-    text-align: center;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .djh-dist-item .djh-idx {
-    display: block;
-    font-size: 9px;
-    color: rgba(204, 214, 244, 0.5);
-    margin-bottom: 2px;
-  }
-
-  .djh-dist-item.updated {
-    background: rgba(99, 102, 241, 0.4);
-    border-color: #6366f1;
-    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
-  }
-
-  .djh-dist-item.visited-node {
-    background: rgba(34, 197, 94, 0.2);
-    border-color: rgba(34, 197, 94, 0.5);
-    color: #22c55e;
-  }
-
-  .djh-visited-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .djh-visited-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .djh-visited-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .djh-visited-item {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(34, 197, 94, 0.2);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    color: #22c55e;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .djh-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    background: rgba(99, 102, 241, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
     line-height: 1.5;
-  }
-
-  .djh-log {
-    min-height: 0;
-    max-height: 100px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .djh-log div {
-    padding: 2px 0;
-  }
-
-  .djh-log div.active {
-    color: #6366f1;
-    font-weight: 600;
-  }
-
-  .djh-right {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .djh-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
+  /* 底部播放进度条控制条 */
+  #algo-dijkstra-heap-view .djh-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-dijkstra-heap-view .djh-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-dijkstra-heap-view .djh-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-dijkstra-heap-view .djh-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-dijkstra-heap-view .djh-progress-wrap {
     flex: 1;
-  }
-
-  .djh-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 8px;
   }
 
-  .djh-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .djh-legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-  }
-
-  .djh-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .djh-pb-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .djh-pb-btn {
+  #algo-dijkstra-heap-view .djh-progress-wrap input[type="range"] {
     flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(99, 102, 241, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    accent-color: #2563eb;
   }
 
-  .djh-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .djh-pb-btn:not(:disabled):hover {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: #6366f1;
-    transform: translateY(-1px);
-  }
-
-  .djh-pb-btn.play {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    border: none;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-  }
-
-  .djh-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-  }
-
-  .djh-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .djh-speed-row input {
-    flex: 1;
-    accent-color: #6366f1;
-  }
-
-  .djh-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
-  }
-
-  @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @keyframes pathPulse {
-    0%, 100% { stroke-opacity: 1; }
-    50% { stroke-opacity: 0.5; }
-  }
-
-  .djh-node {
-    transition: all 0.3s ease;
-  }
-
-  .djh-edge {
-    transition: all 0.3s ease;
+  #algo-dijkstra-heap-view .djh-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="djh-page">
-  <div class="djh-hero">
-    <div class="djh-title-wrapper">
-      <div class="djh-hero-icon">🔮</div>
-      <div class="djh-hero-text">
-        <h2>Dijkstra 堆优化版</h2>
-        <p>优先队列 O((V+E)logV) 单源最短路径</p>
-      </div>
+<div id="algo-dijkstra-heap-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="djh-header">
+    <div class="djh-header-left">
+      <div class="djh-icon-btn">⚡</div>
+      <div class="djh-main-title">堆优化 Dijkstra 最短路径 · Dijkstra Heap</div>
+      <button class="djh-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="djh-badge-mode">小顶堆优先队列动态提取</div>
+      <div class="djh-badge-complexity">O(E log V) · O(V+E)</div>
     </div>
-    <div class="djh-tip"><strong>优化思路：</strong>用最小堆（优先队列）替代朴素扫描，每次 O(logV) 取出 dist 最小节点。复杂度从 O(V^2) 降为 O((V+E)logV)，适合稀疏图。</div>
-  </div>
-
-  <div class="djh-layout">
-    <div class="djh-main">
-      <div class="djh-card">
-        <div class="djh-controls">
-          <button id="djh-start" class="djh-btn">开始寻路</button>
-        </div>
-
-        <div class="djh-stats">
-          <div class="djh-stat"><span class="djh-stat-label">当前节点</span><span class="djh-stat-val" id="djh-current">-</span></div>
-          <div class="djh-stat"><span class="djh-stat-label">已访问</span><span class="djh-stat-val" id="djh-visited-count">0</span></div>
-          <div class="djh-stat"><span class="djh-stat-label">堆大小</span><span class="djh-stat-val" id="djh-heap-size">0</span></div>
-          <div class="djh-stat"><span class="djh-stat-label">状态</span><span class="djh-stat-val" id="djh-status">-</span></div>
-        </div>
-
-        <div class="djh-graph-container" id="djh-graph"></div>
-
-        <div class="djh-heap-container">
-          <div class="djh-heap-title">最小堆（优先队列）</div>
-          <div class="djh-heap-row" id="djh-heap"></div>
-        </div>
-
-        <div class="djh-dist-container">
-          <div class="djh-dist-title">距离数组 dist[]</div>
-          <div class="djh-dist-row" id="djh-dist"></div>
-        </div>
-
-        <div class="djh-visited-container">
-          <div class="djh-visited-title">已访问集合</div>
-          <div class="djh-visited-row" id="djh-visited"></div>
-        </div>
-
-        <div class="djh-message" id="step-message">点击「开始寻路」执行 Dijkstra 堆优化版算法。</div>
-
-        <div class="djh-log" id="djh-log"></div>
-      </div>
+    <div class="djh-header-right">
+      <button class="djh-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="djh-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
+  </header>
 
-    <div class="djh-right">
-      <div data-code-panel class="djh-code-card"></div>
-      <div class="djh-legend">
-        <div class="djh-legend-item"><span class="djh-legend-box" style="background:rgba(99,102,241,0.2);border:2px solid #6366f1"></span>未访问节点</div>
-        <div class="djh-legend-item"><span class="djh-legend-box" style="background:rgba(34,197,94,0.4);border:2px solid #22c55e"></span>已访问节点</div>
-        <div class="djh-legend-item"><span class="djh-legend-box" style="background:#f59e0b"></span>当前处理节点</div>
-        <div class="djh-legend-item"><span class="djh-legend-box" style="background:rgba(239,68,68,0.3);border:2px solid #ef4444"></span>正在松弛的边</div>
-      </div>
-      <div class="djh-playback">
-        <div class="djh-pb-row">
-          <button id="step-reset" class="djh-pb-btn">重置</button>
-          <button id="step-prev" class="djh-pb-btn">上一步</button>
-          <button id="step-play" class="djh-pb-btn play">播放</button>
-          <button id="step-next" class="djh-pb-btn">下一步</button>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="djh-workspace">
+    <!-- Card 1: 拓扑图 SVG 画布 -->
+    <section class="djh-card">
+      <div class="djh-card-header">
+        <div class="djh-card-title">
+          <span>📊</span> 有向带权图拓扑沙盘 (Graph Topology Canvas)
         </div>
-        <div class="djh-speed-row">
-          <span>速度</span>
-          <input id="djh-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="djh-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #10b981;">● 源点 (0)</span> · <span style="color: #fbbf24;">● 当前堆顶出队</span> · <span style="color: #3b82f6;">● 正在松弛边</span>
         </div>
-        <div id="step-counter" class="djh-counter">步骤: 1 / 1</div>
       </div>
+      <div class="djh-card-body" style="justify-content: center; align-items: center;">
+        <div class="djh-svg-wrap" id="djh-svg-canvas"></div>
+      </div>
+      <div class="djh-dist-track" id="djh-dist-track">
+        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">dist 数组:</span>
+        <div id="dist-pills-wrap" style="display: flex; gap: 6px;"></div>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="djh-card">
+      <div class="djh-card-header">
+        <div class="djh-card-title">
+          <span>🧭</span> 堆状态与指标监视器 (Heap Metrics Monitor)
+        </div>
+      </div>
+      <div class="djh-card-body">
+        <div class="djh-metrics-grid">
+          <div class="djh-metric-card">
+            <span class="djh-metric-label">当前出队 (d, u)</span>
+            <span class="djh-metric-val" id="metric-cur-node" style="color: #fbbf24;">(0, 0)</span>
+          </div>
+          <div class="djh-metric-card">
+            <span class="djh-metric-label">当前松弛边 (u, v)</span>
+            <span class="djh-metric-val" id="metric-relax-edge" style="color: #2563eb;">(0 -> 2)</span>
+          </div>
+          <div class="djh-metric-card">
+            <span class="djh-metric-label">优先队列大小</span>
+            <span class="djh-metric-val" id="metric-pq-size" style="color: #a855f7;">1</span>
+          </div>
+          <div class="djh-metric-card">
+            <span class="djh-metric-label">有效松弛次数</span>
+            <span class="djh-metric-val" id="metric-relax-count" style="color: #10b981;">0</span>
+          </div>
+        </div>
+        <div class="djh-pq-box" id="djh-pq-box">
+          <span style="color: #64748b; font-weight: 700;">小顶堆 PQ:</span>
+          <span id="pq-elements" style="color: #3b82f6; font-weight: 800;">[ (d:0, u:0) ]</span>
+        </div>
+        <div class="djh-live-alert" id="djh-live-alert">
+          <span>💡</span> <span id="djh-live-text">准备就绪，点击运行开始堆优化 Dijkstra 求解。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="djh-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="djh-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="djh-card-header">
+        <div class="djh-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="djh-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="djh-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="djh-playback-bar">
+    <div class="djh-playback-controls">
+      <button class="djh-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="djh-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="djh-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="djh-progress-wrap">
+      <span class="djh-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

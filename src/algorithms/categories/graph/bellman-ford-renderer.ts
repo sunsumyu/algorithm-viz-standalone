@@ -1,174 +1,254 @@
 /**
- * Bellman-Ford 算法可视化器
- * 松弛所有边 V-1 轮，支持负权边
+ * Bellman-Ford 负权最短路径可视化器 — 4-Card 标准现代架构
+ * V-1 轮全边遍历松弛、早停检测与负权回路判定
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BELLMAN_FORD_PROBLEM_HTML,
+  BELLMAN_FORD_ANALYSIS_HTML,
+  BELLMAN_FORD_CODE_LANGUAGES,
+} from './bellman-ford-problem-content';
 import template from './bellman-ford.html?raw';
 
-interface BFStep extends StepBase {
+export interface BFStep extends StepBase {
   nodes: number[];
   edges: { from: number; to: number; w: number }[];
   dist: number[];
-  prevDist: number[];
-  currentRound: number;
-  currentEdgeIdx: number;
-  currentNode: number | null;
-  relaxEdge: { from: number; to: number; w: number } | null;
-  relaxSuccess: boolean;
-  updateCount: number;
-  action: 'init' | 'round-start' | 'relax' | 'skip' | 'done';
+  round: number;
+  maxRounds: number;
+  currentEdge: { from: number; to: number; w: number } | null;
+  roundRelaxCount: number;
+  totalRelaxCount: number;
+  action: 'init' | 'start-round' | 'relax' | 'skip' | 'round-done' | 'done';
   statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-const BF_NODES = [0, 1, 2, 3, 4];
-const BF_EDGES = [
+export const BF_NODES = [0, 1, 2, 3, 4];
+export const BF_EDGES = [
   { from: 0, to: 1, w: 4 },
-  { from: 0, to: 2, w: 1 },
-  { from: 2, to: 1, w: -2 },
-  { from: 1, to: 3, w: 1 },
-  { from: 2, to: 3, w: 5 },
-  { from: 3, to: 4, w: 3 },
+  { from: 0, to: 2, w: 2 },
+  { from: 1, to: 2, w: -1 },
+  { from: 1, to: 3, w: 2 },
+  { from: 2, to: 3, w: 3 },
+  { from: 3, to: 4, w: -2 },
+  { from: 2, to: 4, w: 5 },
 ];
 
-// Node positions for SVG layout
-const BF_NODE_POSITIONS: { x: number; y: number }[] = [
-  { x: 80, y: 140 },
-  { x: 240, y: 60 },
-  { x: 240, y: 220 },
-  { x: 380, y: 140 },
-  { x: 460, y: 140 },
+export const BF_NODE_POSITIONS: { x: number; y: number }[] = [
+  { x: 70, y: 130 },
+  { x: 200, y: 55 },
+  { x: 200, y: 205 },
+  { x: 340, y: 55 },
+  { x: 440, y: 130 },
 ];
 
 const INF = Infinity;
 
-function buildBFSteps(): BFStep[] {
+export function buildBFSteps(): BFStep[] {
   const steps: BFStep[] = [];
   const n = BF_NODES.length;
+  const maxRounds = n - 1;
   const source = 0;
-  const totalRounds = n - 1;
 
   const dist = new Array(n).fill(INF);
   dist[source] = 0;
-  let updateCount = 0;
-  let prevDistSnapshot = [...dist];
+  let totalRelaxCount = 0;
 
-  const snap = (action: BFStep['action'], currentRound: number, currentEdgeIdx: number, currentNode: number | null, relaxEdge: BFStep['relaxEdge'], relaxSuccess: boolean, statusText: string, msg: string, log: string, code: number | number[]) => {
+  steps.push({
+    nodes: BF_NODES,
+    edges: BF_EDGES,
+    dist: [...dist],
+    round: 0,
+    maxRounds,
+    currentEdge: null,
+    roundRelaxCount: 0,
+    totalRelaxCount: 0,
+    action: 'init',
+    statusText: `初始化：源点为 ${source}，dist[${source}] = 0，其余节点 dist = ∞。共需最多进行 ${maxRounds} 轮全边松弛。`,
+    log: `初始化 Bellman-Ford: 源点 0, 最多 ${maxRounds} 轮`,
+    codeLine: [3, 4, 5],
+  });
+
+  for (let k = 1; k <= maxRounds; k++) {
+    let updated = false;
+    let roundRelaxCount = 0;
+
     steps.push({
-      nodes: [...BF_NODES],
-      edges: BF_EDGES.map(e => ({ ...e })),
+      nodes: BF_NODES,
+      edges: BF_EDGES,
       dist: [...dist],
-      prevDist: [...prevDistSnapshot],
-      currentRound,
-      currentEdgeIdx,
-      currentNode,
-      relaxEdge,
-      relaxSuccess,
-      updateCount,
-      action,
-      statusText,
-      message: msg,
-      log,
-      codeLine: code,
+      round: k,
+      maxRounds,
+      currentEdge: null,
+      roundRelaxCount: 0,
+      totalRelaxCount,
+      action: 'start-round',
+      statusText: `开始第 ${k} / ${maxRounds} 轮全边遍历松弛。`,
+      log: `--- 第 ${k} 轮全边扫描开始 ---`,
+      codeLine: [6, 7],
     });
-    prevDistSnapshot = [...dist];
-  };
 
-  // Init
-  snap('init', 0, -1, null, null, false, '初始化',
-    `初始化: 源点=${source}, dist[${source}]=0, 其余 dist=INF。共 ${n} 个节点，需 ${totalRounds} 轮松弛。`,
-    `初始化: dist[0]=0, 其余=INF`, [0, 1]);
+    for (const edge of BF_EDGES) {
+      const { from: u, to: v, w } = edge;
 
-  // Main loop: V-1 rounds
-  for (let round = 1; round <= totalRounds; round++) {
-    let updatedThisRound = false;
+      if (dist[u] !== INF && dist[u] + w < dist[v]) {
+        const oldDist = dist[v];
+        dist[v] = dist[u] + w;
+        updated = true;
+        roundRelaxCount++;
+        totalRelaxCount++;
 
-    snap('round-start', round, -1, null, null, false, `第${round}轮`,
-      `第 ${round}/${totalRounds} 轮松弛开始：遍历所有 ${BF_EDGES.length} 条边。`,
-      `第${round}轮开始`, [2, 3]);
-
-    for (let ei = 0; ei < BF_EDGES.length; ei++) {
-      const edge = BF_EDGES[ei];
-      const newDist = dist[edge.from] + edge.w;
-
-      if (dist[edge.from] !== INF && newDist < dist[edge.to]) {
-        const oldDist = dist[edge.to];
-        dist[edge.to] = newDist;
-        updateCount++;
-        updatedThisRound = true;
-        snap('relax', round, ei, edge.from, { ...edge }, true, '更新',
-          `第${round}轮: 松弛边 ${edge.from}->${edge.to}(w=${edge.w}): dist[${edge.from}]+${edge.w}=${newDist} < dist[${edge.to}]=${oldDist === INF ? 'INF' : oldDist}，更新为 ${newDist}。`,
-          `第${round}轮: ${edge.from}->${edge.to} w=${edge.w}, ${oldDist === INF ? 'INF' : oldDist}->${newDist}`, [4, 5]);
+        steps.push({
+          nodes: BF_NODES,
+          edges: BF_EDGES,
+          dist: [...dist],
+          round: k,
+          maxRounds,
+          currentEdge: edge,
+          roundRelaxCount,
+          totalRelaxCount,
+          action: 'relax',
+          statusText: `成功松弛边 (${u} -> ${v}, w=${w})：dist[${v}] 从 ${
+            oldDist === INF ? '∞' : oldDist
+          } 缩短为 ${dist[v]}。`,
+          log: `  松弛 (${u}->${v}, w=${w}): dist[${v}]=${dist[v]}`,
+          codeLine: [8, 9, 10, 11],
+        });
       } else {
-        const distStr = dist[edge.from] === INF ? 'INF' : String(dist[edge.from]);
-        snap('skip', round, ei, dist[edge.from] === INF ? null : edge.from, { ...edge }, false, '跳过',
-          `第${round}轮: 检查边 ${edge.from}->${edge.to}(w=${edge.w}): dist[${edge.from}]=${distStr}${dist[edge.from] === INF ? '(不可达)' : `+${edge.w}=${newDist}`} ${dist[edge.from] === INF ? '' : (newDist < dist[edge.to] ? '<' : '>=')} dist[${edge.to}]=${dist[edge.to] === INF ? 'INF' : dist[edge.to]}${newDist >= dist[edge.to] ? '，无需更新' : ''}。`,
-          `第${round}轮: ${edge.from}->${edge.to} w=${edge.w}, 跳过`, [4, 6]);
+        steps.push({
+          nodes: BF_NODES,
+          edges: BF_EDGES,
+          dist: [...dist],
+          round: k,
+          maxRounds,
+          currentEdge: edge,
+          roundRelaxCount,
+          totalRelaxCount,
+          action: 'skip',
+          statusText: `检查边 (${u} -> ${v}, w=${w})：${
+            dist[u] === INF ? `源点尚不可达节点 ${u}` : `dist[${u}] + (${w}) >= dist[${v}] (${dist[v]})`
+          }，无法松弛。`,
+          log: `  跳过 (${u}->${v}, w=${w})`,
+          codeLine: 8,
+        });
       }
     }
 
-    // Early termination if no updates this round
-    if (!updatedThisRound) {
-      snap('done', round, -1, null, null, false, '提前结束',
-        `第 ${round} 轮无更新，提前结束！`,
-        `第${round}轮无更新，提前结束`, [7]);
-      return steps;
-    }
+    steps.push({
+      nodes: BF_NODES,
+      edges: BF_EDGES,
+      dist: [...dist],
+      round: k,
+      maxRounds,
+      currentEdge: null,
+      roundRelaxCount,
+      totalRelaxCount,
+      action: 'round-done',
+      statusText: `第 ${k} 轮结束：本轮发生 ${roundRelaxCount} 次松弛。${
+        !updated ? '未发生任何松弛，触发提前早停！' : ''
+      }`,
+      log: `第 ${k} 轮结束: 松弛 ${roundRelaxCount} 次`,
+      codeLine: 14,
+    });
+
+    if (!updated) break;
   }
 
-  // Done
-  snap('done', totalRounds, -1, null, null, false, '完成',
-    `Bellman-Ford 完成！共 ${totalRounds} 轮松弛，${updateCount} 次更新。最短距离: [${dist.map((d, i) => `${i}:${d === INF ? 'INF' : d}`).join(', ')}]`,
-    `完成: ${updateCount}次更新, 最短路径已求出`, [7]);
+  steps.push({
+    nodes: BF_NODES,
+    edges: BF_EDGES,
+    dist: [...dist],
+    round: maxRounds,
+    maxRounds,
+    currentEdge: null,
+    roundRelaxCount: 0,
+    totalRelaxCount,
+    action: 'done',
+    statusText: `🎉 Bellman-Ford 算法求解完成！全图无负权回路，最短距离已收敛。`,
+    log: `✓ 求解完成: dist=[${dist.join(', ')}]`,
+    codeLine: 16,
+  });
 
   return steps;
 }
 
 export class BellmanFordVisualizer extends StepVisualizer<BFStep> {
-  protected codeLines = [
-    'int[] bellmanFord(int[][] edges, int V, int source) {',
-    '    int[] dist = new int[V]; Arrays.fill(dist, INF);',
-    '    dist[source] = 0;',
-    '    for (int round = 1; round <= V - 1; round++) {',
-    '        for (int[] e : edges) {',
-    '            int u = e[0], v = e[1], w = e[2];',
-    '            if (dist[u] + w < dist[v]) {',
-    '                dist[v] = dist[u] + w;',
-    '            }',
-    '        }',
-    '    }',
-    '    return dist;',
-    '}',
-  ];
-  protected codePanelTitle = 'Bellman-Ford 代码 (Java)';
+  protected codeLanguages = BELLMAN_FORD_CODE_LANGUAGES;
+  protected codeLines = BELLMAN_FORD_CODE_LANGUAGES['java'];
+  protected codePanelTitle = 'Bellman-Ford 算法 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private distEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private roundEl: HTMLElement | null = null;
-  private edgeEl: HTMLElement | null = null;
-  private updateCountEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private distPillsWrap: HTMLElement | null = null;
+  private metricRoundEl: HTMLElement | null = null;
+  private metricCurEdgeEl: HTMLElement | null = null;
+  private metricRoundRelaxEl: HTMLElement | null = null;
+  private metricNegativeCycleEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#bf-graph');
-    this.distEl = this.root.querySelector('#bf-dist');
-    this.logEl = this.root.querySelector('#bf-log');
-    this.roundEl = this.root.querySelector('#bf-round');
-    this.edgeEl = this.root.querySelector('#bf-edge');
-    this.updateCountEl = this.root.querySelector('#bf-update-count');
-    this.statusEl = this.root.querySelector('#bf-status');
-    this.btnStart = this.root.querySelector('#bf-start');
-    this.bindPlaybackControls({
-      speed: 'bf-speed',
-      speedLabel: 'bf-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#bf-svg-canvas');
+    this.distPillsWrap = this.root.querySelector('#dist-pills-wrap');
+    this.metricRoundEl = this.root.querySelector('#metric-round');
+    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
+    this.metricRoundRelaxEl = this.root.querySelector('#metric-round-relax');
+    this.metricNegativeCycleEl = this.root.querySelector('#metric-negative-cycle');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#bf-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 400;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: BELLMAN_FORD_PROBLEM_HTML,
+      analysisHtml: BELLMAN_FORD_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
   protected buildSteps(): BFStep[] {
@@ -176,216 +256,179 @@ export class BellmanFordVisualizer extends StepVisualizer<BFStep> {
   }
 
   protected renderStep(step: BFStep): void {
-    if (this.roundEl) this.roundEl.textContent = step.currentRound > 0 ? `${step.currentRound}/4` : '-';
-    if (this.edgeEl) {
-      if (step.currentEdgeIdx >= 0) {
-        const e = step.edges[step.currentEdgeIdx];
-        this.edgeEl.textContent = `${e.from}->${e.to}`;
-      } else {
-        this.edgeEl.textContent = '-';
+    const { dist, round, maxRounds, currentEdge, roundRelaxCount, statusText, action } = step;
+
+    // 1. 绘制 SVG 拓扑图
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 520 260" style="width:100%; height:100%; max-height:240px;">
+        <defs>
+          <marker id="arrow-bf" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+          </marker>
+          <marker id="arrow-bf-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+          </marker>
+        </defs>`;
+
+      // 绘制边
+      for (const e of BF_EDGES) {
+        const p1 = BF_NODE_POSITIONS[e.from];
+        const p2 = BF_NODE_POSITIONS[e.to];
+        const isActive = currentEdge && currentEdge.from === e.from && currentEdge.to === e.to;
+        const isNeg = e.w < 0;
+        const strokeColor = isActive ? '#2563eb' : isNeg ? '#f87171' : '#cbd5e1';
+        const strokeWidth = isActive ? 3.5 : 2;
+        const marker = isActive ? 'url(#arrow-bf-active)' : 'url(#arrow-bf)';
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+
+        const midX = (p1.x + p2.x) / 2 + (p1.y === p2.y ? 0 : p1.y > p2.y ? 12 : -12);
+        const midY = (p1.y + p2.y) / 2 - 8;
+        svgHtml += `<text x="${midX}" y="${midY}" fill="${isActive ? '#1d4ed8' : isNeg ? '#dc2626' : '#64748b'}" font-size="11" font-weight="800" text-anchor="middle">${e.w}</text>`;
       }
+
+      // 绘制节点
+      BF_NODES.forEach((node) => {
+        const p = BF_NODE_POSITIONS[node];
+        const isCurrent = currentEdge && (currentEdge.from === node || currentEdge.to === node);
+        const isSource = node === 0;
+
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrent) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        } else if (isSource) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+
+        const dVal = dist[node] === INF ? '∞' : dist[node];
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="#64748b" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">d:${dVal}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
-    if (this.updateCountEl) this.updateCountEl.textContent = String(step.updateCount);
-    if (this.statusEl) {
-      this.statusEl.textContent = step.statusText;
-      if (step.action === 'relax') {
-        (this.statusEl as HTMLElement).style.color = '#22c55e';
-      } else if (step.action === 'skip') {
-        (this.statusEl as HTMLElement).style.color = '#f59e0b';
+
+    // 2. 渲染 Dist 药丸栏
+    if (this.distPillsWrap) {
+      this.distPillsWrap.innerHTML = BF_NODES.map((node) => {
+        const d = dist[node] === INF ? '∞' : `${dist[node]}`;
+        const isCurrent = currentEdge && currentEdge.to === node;
+
+        let cls = 'bf-dist-pill';
+        if (isCurrent) cls += ' is-active';
+
+        return `<div class="${cls}">
+          <span style="color:#64748b;">${node}:</span>
+          <span>${d}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricRoundEl) this.metricRoundEl.textContent = `${round} / ${maxRounds}`;
+    if (this.metricCurEdgeEl) {
+      this.metricCurEdgeEl.textContent = currentEdge ? `(${currentEdge.from} -> ${currentEdge.to}, w=${currentEdge.w})` : '—';
+    }
+    if (this.metricRoundRelaxEl) this.metricRoundRelaxEl.textContent = `${roundRelaxCount}`;
+    if (this.metricNegativeCycleEl) this.metricNegativeCycleEl.textContent = '无负权环 (收敛)';
+
+    if (this.formulaActionEl) {
+      if (action === 'relax') {
+        this.formulaActionEl.textContent = `松弛成功: dist[${currentEdge?.to}] = dist[${currentEdge?.from}] + (${currentEdge?.w}) = ${dist[currentEdge!.to]}`;
+      } else if (action === 'round-done') {
+        this.formulaActionEl.textContent = `第 ${round} 轮扫描完毕，共松弛 ${roundRelaxCount} 次`;
+      } else if (action === 'done') {
+        this.formulaActionEl.textContent = 'Bellman-Ford 最短路计算完毕';
       } else {
-        (this.statusEl as HTMLElement).style.color = '#f97316';
+        this.formulaActionEl.textContent = 'dist[u] != INF && dist[u] + w < dist[v]';
       }
     }
 
-    this.renderGraph(step);
-    this.renderDist(step);
-    this.renderLogLine(step);
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done'
+          ? '#f0fdf4'
+          : action === 'relax'
+          ? '#eff6ff'
+          : action === 'start-round'
+          ? '#fefce8'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done'
+          ? '#15803d'
+          : action === 'relax'
+          ? '#1d4ed8'
+          : action === 'start-round'
+          ? '#854d0e'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done'
+          ? '#bbf7d0'
+          : action === 'relax'
+          ? '#bfdbfe'
+          : action === 'start-round'
+          ? '#fef08a'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderGraph(step: BFStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 540 280');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '540px';
-    svg.style.height = '280px';
-
-    // Draw edges
-    for (let i = 0; i < step.edges.length; i++) {
-      const edge = step.edges[i];
-      const p1 = BF_NODE_POSITIONS[edge.from];
-      const p2 = BF_NODE_POSITIONS[edge.to];
-      const isRelaxEdge = step.relaxEdge !== null &&
-        step.relaxEdge.from === edge.from && step.relaxEdge.to === edge.to &&
-        i === step.currentEdgeIdx;
-      const isFromCurrent = step.currentNode === edge.from;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('bf-edge');
-
-      // Line
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-
-      if (isRelaxEdge && step.relaxSuccess) {
-        line.setAttribute('stroke', '#22c55e');
-        line.setAttribute('stroke-width', '3.5');
-        line.style.animation = 'pathPulse 0.8s infinite';
-      } else if (isRelaxEdge) {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '3');
-      } else if (isFromCurrent) {
-        line.setAttribute('stroke', 'rgba(249, 115, 22, 0.5)');
-        line.setAttribute('stroke-width', '2');
-      } else {
-        line.setAttribute('stroke', 'rgba(249, 115, 22, 0.2)');
-        line.setAttribute('stroke-width', '1.5');
-      }
-      g?.appendChild(line);
-
-      // Arrow head
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const ux = dx / len;
-      const uy = dy / len;
-      const nodeR = 22;
-      const ax = p2.x - ux * (nodeR + 4);
-      const ay = p2.y - uy * (nodeR + 4);
-      const arrowSize = 10;
-      const perpX = -uy;
-      const perpY = ux;
-
-      let strokeColor = 'rgba(249, 115, 22, 0.2)';
-      if (isRelaxEdge && step.relaxSuccess) strokeColor = '#22c55e';
-      else if (isRelaxEdge) strokeColor = '#f59e0b';
-      else if (isFromCurrent) strokeColor = 'rgba(249, 115, 22, 0.5)';
-
-      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      arrow.setAttribute('points',
-        `${ax},${ay} ${ax - ux * arrowSize + perpX * arrowSize * 0.4},${ay - uy * arrowSize + perpY * arrowSize * 0.4} ${ax - ux * arrowSize - perpX * arrowSize * 0.4},${ay - uy * arrowSize - perpY * arrowSize * 0.4}`
-      );
-      arrow.setAttribute('fill', strokeColor);
-      g?.appendChild(arrow);
-
-      // Weight label (negative in red)
-      const mx = (p1.x + p2.x) / 2;
-      const my = (p1.y + p2.y) / 2;
-      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(mx - 14));
-      bg.setAttribute('y', String(my - 10));
-      bg.setAttribute('width', '28');
-      bg.setAttribute('height', '20');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('fill', isRelaxEdge && step.relaxSuccess ? 'rgba(34, 197, 94, 0.3)' : isRelaxEdge ? 'rgba(245, 158, 11, 0.3)' : 'rgba(30, 30, 50, 0.8)');
-      bg.setAttribute('stroke', isRelaxEdge && step.relaxSuccess ? '#22c55e' : isRelaxEdge ? '#f59e0b' : edge.w < 0 ? 'rgba(239, 68, 68, 0.5)' : 'rgba(156, 163, 175, 0.4)');
-      bg.setAttribute('stroke-width', '1');
-      g?.appendChild(bg);
-
-      const wt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      wt.setAttribute('x', String(mx));
-      wt.setAttribute('y', String(my + 5));
-      wt.setAttribute('text-anchor', 'middle');
-      let weightColor = 'rgba(156, 163, 175, 0.7)';
-      if (edge.w < 0) weightColor = '#ef4444';
-      if (isRelaxEdge && step.relaxSuccess) weightColor = '#22c55e';
-      else if (isRelaxEdge) weightColor = '#f59e0b';
-      wt.setAttribute('fill', weightColor);
-      wt.setAttribute('font-size', '12');
-      wt.setAttribute('font-weight', '700');
-      wt.setAttribute('font-family', 'ui-monospace, monospace');
-      wt.textContent = String(edge.w);
-      g?.appendChild(wt);
-
-      svg?.appendChild(g);
-    }
-
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = BF_NODE_POSITIONS[i];
-      const isCurrent = step.currentNode === i;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('bf-node');
-
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
-
-      if (isCurrent) {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.5)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 1s infinite';
-      } else {
-        circle.setAttribute('fill', 'rgba(249, 115, 22, 0.12)');
-        circle.setAttribute('stroke', '#f97316');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      const textColor = isCurrent ? '#fff' : '#f97316';
-      text.setAttribute('fill', textColor);
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
-    }
-
-    this.graphEl?.appendChild(svg);
-  }
-
-  private renderDist(step: BFStep): void {
-    if (!this.distEl) return;
-    this.distEl.innerHTML = '';
-    step.nodes.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'bf-dist-item';
-      const d = step.dist[i];
-      const isUpdated = step.prevDist[i] !== step.dist[i];
-      if (isUpdated) item.classList.add('updated');
-      item.innerHTML = `<span class="bf-idx">dist[${node}]</span>${d === INF ? 'INF' : d}`;
-      this.distEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: BFStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'bellman-ford',
-  name: 'Bellman-Ford 算法',
+  name: 'Bellman-Ford 负权最短路',
   viewId: 'algo-bellman-ford-view',
   category: 'graph',
-  description: '松弛所有边 V-1 轮，支持负权边的单源最短路径',
+  description: '在包含负权边的有向图中通过 V-1 轮全边松弛计算单源最短路',
   icon: '🔄',
+  difficulty: 2,
+  levelOrder: 6,
+  learningGoal: '掌握全边松弛迭代法与负权回路判定的理论模型',
   template,
   Visualizer: BellmanFordVisualizer,
-  difficulty: 3,
-  levelOrder: 23,
-  learningGoal: '理解 Bellman-Ford 的逐轮松弛思想和负权边处理能力',
 });
-
-export {};

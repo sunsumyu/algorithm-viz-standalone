@@ -1,564 +1,499 @@
 <style>
+  /* === Kruskal 最小生成树 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-mst-kruskal-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
-    overflow: hidden;
-  }
-
-  #algo-mst-kruskal-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #14b8a655, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #0d948855, transparent 55%),
-                linear-gradient(135deg, #042f2e 0%, #134e4a 25%, #042f2e 50%, #115e59 75%, #042f2e 100%);
-    z-index: -2;
-  }
-
-  #algo-mst-kruskal-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(4, 47, 46, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-mst-kruskal-view .mstk-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .mstk-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .mstk-hero .mstk-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .mstk-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
-  }
-
-  .mstk-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .mstk-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
-  }
-
-  .mstk-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(20, 184, 166, 0.08);
-    border: 1px solid rgba(20, 184, 166, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-
-  .mstk-tip strong {
-    color: #14b8a6;
-    font-weight: 600;
-  }
-
-  #algo-mst-kruskal-view .mstk-layout {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-mst-kruskal-view .mstk-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .mstk-main {
     min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .mstk-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-mst-kruskal-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-mst-kruskal-view .kru-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .mstk-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .mstk-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
-  }
-
-  .mstk-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(20, 184, 166, 0.4);
-  }
-
-  .mstk-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .mstk-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .mstk-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #14b8a6, #0d9488);
-  }
-
-  .mstk-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .mstk-stat-val {
-    color: #14b8a6;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-  }
-
-  .mstk-graph-container {
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 280px;
-  }
-
-  .mstk-graph-container svg {
+    flex-shrink: 0;
     width: 100%;
-    max-width: 480px;
-    height: 280px;
   }
 
-  .mstk-edges-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .mstk-edges-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .mstk-edges-list {
+  #algo-mst-kruskal-view .kru-header-left {
     display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
     align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .mstk-edge-item {
-    padding: 5px 10px;
-    border-radius: 8px;
-    background: rgba(20, 184, 166, 0.12);
-    border: 1px solid rgba(20, 184, 166, 0.25);
-    color: #14b8a6;
-    font-family: ui-monospace, monospace;
-    font-size: 11px;
-    font-weight: 600;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  #algo-mst-kruskal-view .kru-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-mst-kruskal-view .kru-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
     white-space: nowrap;
   }
 
-  .mstk-edge-item.current {
-    background: rgba(245, 158, 11, 0.2);
-    border-color: #f59e0b;
-    color: #f59e0b;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  #algo-mst-kruskal-view .kru-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-mst-kruskal-view .kru-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .mstk-edge-item.accepted {
-    background: rgba(34, 197, 94, 0.2);
-    border-color: rgba(34, 197, 94, 0.5);
-    color: #22c55e;
+  #algo-mst-kruskal-view .kru-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .mstk-edge-item.rejected {
-    background: rgba(239, 68, 68, 0.2);
-    border-color: rgba(239, 68, 68, 0.5);
-    color: #ef4444;
+  #algo-mst-kruskal-view .kru-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-mst-kruskal-view .kru-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-mst-kruskal-view .kru-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-mst-kruskal-view .kru-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-mst-kruskal-view .kru-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-mst-kruskal-view .kru-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-mst-kruskal-view .kru-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-mst-kruskal-view .kru-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-mst-kruskal-view .kru-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-mst-kruskal-view .kru-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-mst-kruskal-view .kru-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 拓扑图 SVG 画布 */
+  #algo-mst-kruskal-view .kru-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 已排序边列表展示栏 */
+  #algo-mst-kruskal-view .kru-edge-track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    overflow-x: auto;
+  }
+
+  #algo-mst-kruskal-view .kru-edge-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+  }
+
+  #algo-mst-kruskal-view .kru-edge-pill.is-selected {
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #16a34a;
+    font-weight: 800;
+  }
+
+  #algo-mst-kruskal-view .kru-edge-pill.is-rejected {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
     text-decoration: line-through;
   }
 
-  .mstk-uf-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-mst-kruskal-view .kru-edge-pill.is-current {
+    background: #fef9c3;
+    border-color: #fde047;
+    color: #854d0e;
+    font-weight: 800;
   }
 
-  .mstk-uf-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .mstk-uf-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
+  /* Card 2: 状态监视器 */
+  #algo-mst-kruskal-view .kru-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
     margin-bottom: 8px;
   }
 
-  .mstk-uf-item {
-    padding: 6px 10px;
+  #algo-mst-kruskal-view .kru-metric-card {
+    background: #f8fafc;
     border-radius: 8px;
-    background: rgba(20, 184, 166, 0.15);
-    border: 1px solid rgba(20, 184, 166, 0.3);
-    color: #14b8a6;
-    font-family: ui-monospace, monospace;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-mst-kruskal-view .kru-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-mst-kruskal-view .kru-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-mst-kruskal-view .kru-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    font-weight: 600;
-    min-width: 32px;
-    text-align: center;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .mstk-uf-item .mstk-idx {
-    display: block;
-    font-size: 9px;
-    color: rgba(204, 214, 244, 0.5);
-    margin-bottom: 2px;
-  }
-
-  .mstk-uf-item.changed {
-    background: rgba(20, 184, 166, 0.4);
-    border-color: #14b8a6;
-    box-shadow: 0 0 8px rgba(20, 184, 166, 0.4);
-  }
-
-  .mstk-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(20, 184, 166, 0.2);
-    background: rgba(20, 184, 166, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
+  #algo-mst-kruskal-view .kru-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
     line-height: 1.5;
-  }
-
-  .mstk-log {
-    min-height: 0;
-    max-height: 120px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .mstk-log div {
-    padding: 2px 0;
-  }
-
-  .mstk-log div.active {
-    color: #14b8a6;
-    font-weight: 600;
-  }
-
-  .mstk-right {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .mstk-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
+  /* 底部播放进度条控制条 */
+  #algo-mst-kruskal-view .kru-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-mst-kruskal-view .kru-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-mst-kruskal-view .kru-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-mst-kruskal-view .kru-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-mst-kruskal-view .kru-progress-wrap {
     flex: 1;
-  }
-
-  .mstk-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 8px;
   }
 
-  .mstk-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .mstk-legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-  }
-
-  .mstk-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .mstk-pb-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .mstk-pb-btn {
+  #algo-mst-kruskal-view .kru-progress-wrap input[type="range"] {
     flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(20, 184, 166, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    accent-color: #2563eb;
   }
 
-  .mstk-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .mstk-pb-btn:not(:disabled):hover {
-    background: rgba(20, 184, 166, 0.2);
-    border-color: #14b8a6;
-    transform: translateY(-1px);
-  }
-
-  .mstk-pb-btn.play {
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    border: none;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
-  }
-
-  .mstk-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(20, 184, 166, 0.4);
-  }
-
-  .mstk-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .mstk-speed-row input {
-    flex: 1;
-    accent-color: #14b8a6;
-  }
-
-  .mstk-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
-  }
-
-  @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @keyframes pathPulse {
-    0%, 100% { stroke-opacity: 1; }
-    50% { stroke-opacity: 0.5; }
-  }
-
-  @keyframes shakeIn {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.2) rotate(5deg); }
-    70% { transform: scale(0.9) rotate(-3deg); }
-    100% { transform: scale(1) rotate(0); }
-  }
-
-  .mstk-node {
-    transition: all 0.3s ease;
-  }
-
-  .mstk-edge {
-    transition: all 0.3s ease;
+  #algo-mst-kruskal-view .kru-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="mstk-page">
-  <div class="mstk-hero">
-    <div class="mstk-title-wrapper">
-      <div class="mstk-hero-icon">🌲</div>
-      <div class="mstk-hero-text">
-        <h2>最小生成树之 Kruskal 算法</h2>
-        <p>按权重排序所有边，依次加入不构成环的边来构建 MST</p>
-      </div>
+<div id="algo-mst-kruskal-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="kru-header">
+    <div class="kru-header-left">
+      <div class="kru-icon-btn">🔗</div>
+      <div class="kru-main-title">Kruskal 最小生成树 · Kruskal's MST</div>
+      <button class="kru-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="kru-badge-mode">加边法并查集判环</div>
+      <div class="kru-badge-complexity">O(E log E) · O(V)</div>
     </div>
-    <div class="mstk-tip"><strong>Kruskal 核心：</strong>将所有边按权重从小到大排序，依次检查每条边：如果它的两端不在同一集合（不形成环），就加入 MST 并合并集合；否则跳过。使用并查集高效判环。</div>
-  </div>
-
-  <div class="mstk-layout">
-    <div class="mstk-main">
-      <div class="mstk-card">
-        <div class="mstk-controls">
-          <button id="mstk-start" class="mstk-btn">开始建树</button>
-        </div>
-
-        <div class="mstk-stats">
-          <div class="mstk-stat"><span class="mstk-stat-label">当前边</span><span class="mstk-stat-val" id="mstk-current">-</span></div>
-          <div class="mstk-stat"><span class="mstk-stat-label">MST边数</span><span class="mstk-stat-val" id="mstk-edges">0</span></div>
-          <div class="mstk-stat"><span class="mstk-stat-label">MST权重</span><span class="mstk-stat-val" id="mstk-weight">0</span></div>
-          <div class="mstk-stat"><span class="mstk-stat-label">决策</span><span class="mstk-stat-val" id="mstk-decision">-</span></div>
-        </div>
-
-        <div class="mstk-graph-container" id="mstk-graph"></div>
-
-        <div class="mstk-edges-container">
-          <div class="mstk-edges-title">排序后的边列表（按权重从小到大）</div>
-          <div class="mstk-edges-list" id="mstk-edge-list"></div>
-        </div>
-
-        <div class="mstk-uf-container">
-          <div class="mstk-uf-title">并查集 parent 数组（用于判环）</div>
-          <div class="mstk-uf-row" id="mstk-parent"></div>
-          <div class="mstk-uf-title" style="margin-top:8px;">并查集 rank 数组</div>
-          <div class="mstk-uf-row" id="mstk-rank"></div>
-        </div>
-
-        <div class="mstk-message" id="step-message">点击「开始建树」用 Kruskal 算法构建最小生成树。</div>
-
-        <div class="mstk-log" id="mstk-log"></div>
-      </div>
+    <div class="kru-header-right">
+      <button class="kru-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="kru-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
+  </header>
 
-    <div class="mstk-right">
-      <div data-code-panel class="mstk-code-card"></div>
-      <div class="mstk-legend">
-        <div class="mstk-legend-item"><span class="mstk-legend-box" style="background:rgba(20,184,166,0.2);border:2px solid #14b8a6"></span>未处理节点</div>
-        <div class="mstk-legend-item"><span class="mstk-legend-box" style="background:rgba(34,197,94,0.4);border:2px solid #22c55e"></span>MST中的节点</div>
-        <div class="mstk-legend-item"><span class="mstk-legend-box" style="background:#f59e0b"></span>当前检查边</div>
-        <div class="mstk-legend-item"><span class="mstk-legend-box" style="background:rgba(239,68,68,0.3);border:2px solid #ef4444"></span>拒绝(成环)</div>
-      </div>
-      <div class="mstk-playback">
-        <div class="mstk-pb-row">
-          <button id="step-reset" class="mstk-pb-btn">重置</button>
-          <button id="step-prev" class="mstk-pb-btn">上一步</button>
-          <button id="step-play" class="mstk-pb-btn play">播放</button>
-          <button id="step-next" class="mstk-pb-btn">下一步</button>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="kru-workspace">
+    <!-- Card 1: 拓扑图 SVG 画布 -->
+    <section class="kru-card">
+      <div class="kru-card-header">
+        <div class="kru-card-title">
+          <span>📊</span> 无向带权图加边沙盘 (Graph Topology Canvas)
         </div>
-        <div class="mstk-speed-row">
-          <span>速度</span>
-          <input id="mstk-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="mstk-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #10b981;">● 已选入 MST 边</span> · <span style="color: #fbbf24;">● 正在检查边</span> · <span style="color: #ef4444;">● 成环丢弃边</span>
         </div>
-        <div id="step-counter" class="mstk-counter">步骤: 1 / 1</div>
       </div>
+      <div class="kru-card-body" style="justify-content: center; align-items: center;">
+        <div class="kru-svg-wrap" id="kruskal-svg-canvas"></div>
+      </div>
+      <div class="kru-edge-track" id="kru-edge-track">
+        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">升序边集:</span>
+        <div id="edge-pills-wrap" style="display: flex; gap: 6px;"></div>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="kru-card">
+      <div class="kru-card-header">
+        <div class="kru-card-title">
+          <span>🧭</span> 并查集判环与指标监视器 (Union-Find Metrics Monitor)
+        </div>
+      </div>
+      <div class="kru-card-body">
+        <div class="kru-metrics-grid">
+          <div class="kru-metric-card">
+            <span class="kru-metric-label">当前边 (u, v, w)</span>
+            <span class="kru-metric-val" id="metric-cur-edge" style="color: #fbbf24;">(0, 1, 2)</span>
+          </div>
+          <div class="kru-metric-card">
+            <span class="kru-metric-label">根节点 [rootU, rootV]</span>
+            <span class="kru-metric-val" id="metric-roots" style="color: #2563eb;">[0, 1]</span>
+          </div>
+          <div class="kru-metric-card">
+            <span class="kru-metric-label">已选入边数</span>
+            <span class="kru-metric-val" id="metric-mst-count" style="color: #10b981;">0 / 4</span>
+          </div>
+          <div class="kru-metric-card">
+            <span class="kru-metric-label">生成树总权值</span>
+            <span class="kru-metric-val" id="metric-total-weight" style="color: #a855f7;">0</span>
+          </div>
+        </div>
+        <div class="kru-formula-box" id="kru-formula-box">
+          <span>判环法则:</span> <strong id="formula-action" style="color: #2563eb;">find(u) !== find(v) -> union(u, v)</strong>
+        </div>
+        <div class="kru-live-alert" id="kru-live-alert">
+          <span>💡</span> <span id="kru-live-text">准备就绪，点击运行开始 Kruskal 算法演示。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="kru-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="kru-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="kru-card-header">
+        <div class="kru-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="kru-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="kru-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="kru-playback-bar">
+    <div class="kru-playback-controls">
+      <button class="kru-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="kru-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="kru-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="kru-progress-wrap">
+      <span class="kru-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="500" selected>正常</option>
+        <option value="200">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

@@ -1,345 +1,412 @@
 /**
- * A* 寻路算法可视化器
- * f(n) = g(n) + h(n)，曼哈顿距离启发
+ * A* 启发式搜索可视化器 — 4-Card 标准现代架构
+ * 评估函数 f(n) = g(n) + h(n)、Open/Closed 列表演变与最优路径重构
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  A_STAR_PROBLEM_HTML,
+  A_STAR_ANALYSIS_HTML,
+  A_STAR_CODE_LANGUAGES,
+} from './a-star-problem-content';
 import template from './a-star.html?raw';
 
-type CellType = 'empty' | 'obstacle' | 'start' | 'end';
-type CellState = 'empty' | 'obstacle' | 'start' | 'end' | 'open' | 'closed' | 'current' | 'path';
-
-interface AStarStep {
-  grid: number[][];
-  cellStates: CellState[][];
-  gValues: number[][];
-  hValues: number[][];
-  fValues: number[][];
-  openSet: Set<string>;
-  closedSet: Set<string>;
-  current: [number, number] | null;
+export interface AStarNode {
+  r: number;
+  c: number;
+  g: number;
+  h: number;
+  f: number;
   path: [number, number][];
+}
+
+export interface AStarStep extends StepBase {
+  grid: number[][];
   start: [number, number];
-  end: [number, number];
-  pathLength: number;
-  phase: 'init' | 'expand' | 'found' | 'done';
-  message: string;
+  goal: [number, number];
+  currentNode: [number, number] | null;
+  g: number;
+  h: number;
+  f: number;
+  openSet: [number, number][];
+  closedSet: [number, number][];
+  finalPath: [number, number][];
+  action: 'init' | 'poll' | 'expand' | 'reach-goal' | 'done';
+  statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseGrid(input: string): number[][] {
-  const rows = input.split(/[;\n]+/).map(r => r.trim()).filter(r => r.length > 0);
-  return rows.map(r =>
-    r.split(',').map(c => parseInt(c.trim(), 10))
-  ).filter(r => r.length > 0 && !r.some(isNaN));
-}
+export const ASTAR_GRID = [
+  [0, 0, 0, 0, 0, 0],
+  [0, 1, 1, 1, 0, 0],
+  [0, 0, 0, 1, 0, 0],
+  [0, 1, 0, 1, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+];
+
+export const ASTAR_START: [number, number] = [0, 0];
+export const ASTAR_GOAL: [number, number] = [4, 5];
 
 function manhattan(r1: number, c1: number, r2: number, c2: number): number {
   return Math.abs(r1 - r2) + Math.abs(c1 - c2);
 }
 
-function buildAStarSteps(grid: number[][]): AStarStep[] {
+export function buildAStarSteps(): AStarStep[] {
   const steps: AStarStep[] = [];
+  const grid = ASTAR_GRID;
+  const start = ASTAR_START;
+  const goal = ASTAR_GOAL;
   const m = grid.length;
-  if (m === 0) return steps;
   const n = grid[0].length;
 
-  const start: [number, number] = [0, 0];
-  const end: [number, number] = [m - 1, n - 1];
-
-  const cellStates: CellState[][] = grid.map((row, r) =>
-    row.map((v, c) => {
-      if (r === start[0] && c === start[1]) return 'start';
-      if (r === end[0] && c === end[1]) return 'end';
-      return v === 1 ? 'obstacle' : 'empty';
-    })
-  );
-
-  const gValues: number[][] = Array.from({ length: m }, () => new Array(n).fill(Infinity));
-  const hValues: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
-  const fValues: number[][] = Array.from({ length: m }, () => new Array(n).fill(Infinity));
-  const openSet = new Set<string>();
-  const closedSet = new Set<string>();
-  const parent = new Map<string, string>();
-  const dirs: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]];
-
-  gValues[start[0]][start[1]] = 0;
-  hValues[start[0]][start[1]] = manhattan(start[0], start[1], end[0], end[1]);
-  fValues[start[0]][start[1]] = hValues[start[0]][start[1]];
-  openSet.add(`${start[0]},${start[1]}`);
-
-  const key = (r: number, c: number) => `${r},${c}`;
-
-  const snap = (current: [number, number] | null, path: [number, number][],
-    phase: AStarStep['phase'], msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      grid: grid.map(r => [...r]),
-      cellStates: cellStates.map(r => [...r]),
-      gValues: gValues.map(r => [...r]),
-      hValues: hValues.map(r => [...r]),
-      fValues: fValues.map(r => [...r]),
-      openSet: new Set(openSet),
-      closedSet: new Set(closedSet),
-      current,
-      path: [...path],
-      start,
-      end,
-      pathLength: path.length,
-      phase,
-      message: msg,
-      log,
-      codeLine: code,
-    });
+  const h0 = manhattan(start[0], start[1], goal[0], goal[1]);
+  const startNode: AStarNode = {
+    r: start[0],
+    c: start[1],
+    g: 0,
+    h: h0,
+    f: h0,
+    path: [start],
   };
 
-  // Init
-  snap(null, [], 'init',
-    `初始化：${m}x${n} 网格，起点 S=(${start[0]},${start[1]})，终点 E=(${end[0]},${end[1]})。将起点加入 Open Set。g=${gValues[start[0]][start[1]]}, h=${hValues[start[0]][start[1]]}, f=${fValues[start[0]][start[1]]}。`,
-    '初始化: 起点入队', 0);
+  const openList: AStarNode[] = [startNode];
+  const closedSet = new Set<string>();
+  const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 
-  let found = false;
+  steps.push({
+    grid,
+    start,
+    goal,
+    currentNode: start,
+    g: 0,
+    h: h0,
+    f: h0,
+    openSet: [[start[0], start[1]]],
+    closedSet: [],
+    finalPath: [],
+    action: 'init',
+    statusText: `初始化 A* 寻路：起点 (${start[0]}, ${start[1]})，终点 (${goal[0]}, ${goal[1]})。起点启发距离 h=${h0}，推入 Open Set。`,
+    log: `初始化: 起点 (0,0) -> 终点 (4,5), h=${h0}`,
+    codeLine: [3, 4, 5],
+  });
 
-  while (openSet.size > 0) {
-    // Find node with min f in open set
-    let minF = Infinity;
-    let curR = -1, curC = -1;
-    for (const k of openSet) {
+  let foundGoalNode: AStarNode | null = null;
+
+  while (openList.length > 0) {
+    openList.sort((a, b) => a.f - b.f);
+    const cur = openList.shift()!;
+    const key = `${cur.r},${cur.c}`;
+
+    if (closedSet.has(key)) continue;
+    closedSet.add(key);
+
+    const closedArr: [number, number][] = Array.from(closedSet).map((k) => {
       const [r, c] = k.split(',').map(Number);
-      if (fValues[r][c] < minF) {
-        minF = fValues[r][c];
-        curR = r;
-        curC = c;
-      }
+      return [r, c];
+    });
+
+    if (cur.r === goal[0] && cur.c === goal[1]) {
+      foundGoalNode = cur;
+      steps.push({
+        grid,
+        start,
+        goal,
+        currentNode: [cur.r, cur.c],
+        g: cur.g,
+        h: 0,
+        f: cur.g,
+        openSet: openList.map((node) => [node.r, node.c]),
+        closedSet: closedArr,
+        finalPath: cur.path,
+        action: 'reach-goal',
+        statusText: `🎯 成功到达目标终点 (${goal[0]}, ${goal[1]})！总实际代价 g=${cur.g}。开始重构最优路径。`,
+        log: `到达终点 (${goal[0]}, ${goal[1]}): 步长 g=${cur.g}`,
+        codeLine: 7,
+      });
+      break;
     }
 
-    if (curR === -1) break;
-    const cur: [number, number] = [curR, curC];
+    steps.push({
+      grid,
+      start,
+      goal,
+      currentNode: [cur.r, cur.c],
+      g: cur.g,
+      h: cur.h,
+      f: cur.f,
+      openSet: openList.map((node) => [node.r, node.c]),
+      closedSet: closedArr,
+      finalPath: [],
+      action: 'poll',
+      statusText: `选取 Open Set 中 f 最小节点 (${cur.r}, ${cur.c})：g=${cur.g}, h=${cur.h} -> f=${cur.f}，移入 Closed Set 并拓展邻格。`,
+      log: `考察格 (${cur.r}, ${cur.c}): f=${cur.f} (g=${cur.g}, h=${cur.h})`,
+      codeLine: [6, 8],
+    });
 
-    // Mark current
-    if (cellStates[curR][curC] !== 'start' && cellStates[curR][curC] !== 'end') {
-      cellStates[curR][curC] = 'current';
-    }
-
-    snap(cur, [], 'expand',
-      `从 Open Set 取出 f 最小的节点 (${curR},${curC})，f=${fValues[curR][curC]}, g=${gValues[curR][curC]}, h=${hValues[curR][curC]}。`,
-      `展开 (${curR},${curC}) f=${fValues[curR][curC]}`, [1, 2]);
-
-    // Check if reached end
-    if (curR === end[0] && curC === end[1]) {
-      // Reconstruct path
-      const path: [number, number][] = [];
-      let pk = key(end[0], end[1]);
-      while (pk) {
-        const [pr, pc] = pk.split(',').map(Number);
-        path.unshift([pr, pc]);
-        pk = parent.get(pk)!;
-      }
-
-      // Mark path cells
-      for (const [pr, pc] of path) {
-        if (cellStates[pr][pc] !== 'start' && cellStates[pr][pc] !== 'end') {
-          cellStates[pr][pc] = 'path';
-        }
-      }
-
-      found = true;
-      snap(cur, path, 'found',
-        `到达终点 (${end[0]},${end[1]})！路径长度=${path.length} 步。`,
-        `找到路径! 长度=${path.length}`, [5, 6]);
-
-      snap(null, path, 'done',
-        `A* 完成！最短路径长度=${path.length} 步。`,
-        '完成', 7);
-      return steps;
-    }
-
-    // Move to closed
-    openSet.delete(key(curR, curC));
-    closedSet.add(key(curR, curC));
-    if (cellStates[curR][curC] === 'current') {
-      cellStates[curR][curC] = 'closed';
-    }
-
-    // Explore neighbors
-    let expanded = 0;
     for (const [dr, dc] of dirs) {
-      const nr = curR + dr;
-      const nc = curC + dc;
-      if (nr < 0 || nr >= m || nc < 0 || nc >= n) continue;
-      if (grid[nr][nc] === 1) continue;
-      if (closedSet.has(key(nr, nc))) continue;
+      const nr = cur.r + dr;
+      const nc = cur.c + dc;
+      const nKey = `${nr},${nc}`;
 
-      const newG = gValues[curR][curC] + 1;
-      if (newG < gValues[nr][nc]) {
-        gValues[nr][nc] = newG;
-        hValues[nr][nc] = manhattan(nr, nc, end[0], end[1]);
-        fValues[nr][nc] = newG + hValues[nr][nc];
-        parent.set(key(nr, nc), key(curR, curC));
+      if (nr >= 0 && nr < m && nc >= 0 && nc < n && grid[nr][nc] === 0 && !closedSet.has(nKey)) {
+        const nextG = cur.g + 1;
+        const nextH = manhattan(nr, nc, goal[0], goal[1]);
+        const nextF = nextG + nextH;
 
-        if (!openSet.has(key(nr, nc))) {
-          openSet.add(key(nr, nc));
-          if (cellStates[nr][nc] !== 'start' && cellStates[nr][nc] !== 'end') {
-            cellStates[nr][nc] = 'open';
-          }
-          expanded++;
-        }
+        openList.push({
+          r: nr,
+          c: nc,
+          g: nextG,
+          h: nextH,
+          f: nextF,
+          path: [...cur.path, [nr, nc]],
+        });
       }
     }
-
-    snap(null, [], 'expand',
-      `节点 (${curR},${curC}) 扩展了 ${expanded} 个邻居。Open=${openSet.size}, Closed=${closedSet.size}。`,
-      `扩展${expanded}个邻居, Open=${openSet.size}`, [3, 4]);
   }
 
-  if (!found) {
-    snap(null, [], 'done',
-      `Open Set 为空但未到达终点，不存在可行路径。`,
-      '无路径', 7);
+  if (foundGoalNode) {
+    const closedArr: [number, number][] = Array.from(closedSet).map((k) => {
+      const [r, c] = k.split(',').map(Number);
+      return [r, c];
+    });
+
+    steps.push({
+      grid,
+      start,
+      goal,
+      currentNode: null,
+      g: foundGoalNode.g,
+      h: 0,
+      f: foundGoalNode.g,
+      openSet: [],
+      closedSet: closedArr,
+      finalPath: foundGoalNode.path,
+      action: 'done',
+      statusText: `🎉 A* 启发式最优路径探索完成！路径长度为 ${foundGoalNode.path.length} 格。`,
+      log: `✓ 最优路径重构完成: 长度 ${foundGoalNode.path.length}`,
+      codeLine: 18,
+    });
   }
 
   return steps;
 }
 
 export class AStarVisualizer extends StepVisualizer<AStarStep> {
-  protected codeLines = [
-    'List<int[]> aStar(int[][] grid, int[] start, int[] end) {',
-    '    PriorityQueue<int[]> openSet = new PriorityQueue<>((a, b) -> a[2] - b[2]);',
-    '    int[][] gValues = init(INF); gValues[start[0]][start[1]] = 0;',
-    '    int[][] hValues = initManhattan(end);',
-    '    for (int[] nb : neighbors(current)) {',
-    '        int newG = gValues[r][c] + 1;',
-    '        if (newG < gValues[nr][nc]) {',
-    '            gValues[nr][nc] = newG;',
-    '            fValues[nr][nc] = newG + hValues[nr][nc];',
-    '            openSet.add(new int[]{nr, nc, fValues[nr][nc]});',
-    '        }',
-    '    }',
-    '    return reconstructPath(parent, end);',
-    '}',
-  ];
-  protected codePanelTitle = 'A* 算法代码 (Java)';
+  protected codeLanguages = A_STAR_CODE_LANGUAGES;
+  protected codeLines = A_STAR_CODE_LANGUAGES['java'];
+  protected codePanelTitle = 'A* 启发式寻路 代码调试';
 
-  private gridEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private openEl: HTMLElement | null = null;
-  private closedEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private pathLenEl: HTMLElement | null = null;
-  private infoEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private gridCanvas: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private metricGValEl: HTMLElement | null = null;
+  private metricHValEl: HTMLElement | null = null;
+  private metricFValEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.gridEl = this.root.querySelector('#astar-grid');
-    this.logEl = this.root.querySelector('#astar-log');
-    this.openEl = this.root.querySelector('#astar-open');
-    this.closedEl = this.root.querySelector('#astar-closed');
-    this.currentEl = this.root.querySelector('#astar-current');
-    this.pathLenEl = this.root.querySelector('#astar-path-len');
-    this.infoEl = this.root.querySelector('#astar-info');
-    this.btnStart = this.root.querySelector('#astar-start');
-    this.bindPlaybackControls({
-      speed: 'astar-speed',
-      speedLabel: 'astar-speed-label',
-      message: 'step-message',
+
+    this.gridCanvas = this.root.querySelector('#a-star-grid-canvas');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.metricGValEl = this.root.querySelector('#metric-g-val');
+    this.metricHValEl = this.root.querySelector('#metric-h-val');
+    this.metricFValEl = this.root.querySelector('#metric-f-val');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#ast-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 400;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: A_STAR_PROBLEM_HTML,
+      analysisHtml: A_STAR_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
   protected buildSteps(): AStarStep[] {
-    const defaultGrid = [
-      [0, 0, 0, 0, 0],
-      [0, 1, 1, 1, 0],
-      [0, 0, 0, 1, 0],
-      [0, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-    ];
-    return buildAStarSteps(defaultGrid);
+    return buildAStarSteps();
   }
 
   protected renderStep(step: AStarStep): void {
-    if (this.openEl) this.openEl.textContent = String(step.openSet.size);
-    if (this.closedEl) this.closedEl.textContent = String(step.closedSet.size);
-    if (this.currentEl) {
-      this.currentEl.textContent = step.current ? `(${step.current[0]},${step.current[1]})` : '-';
-    }
-    if (this.pathLenEl) {
-      this.pathLenEl.textContent = step.pathLength > 0 ? String(step.pathLength) : '-';
-    }
+    const { grid, start, goal, currentNode, g, h, f, openSet, closedSet, finalPath, statusText, action } = step;
+    const m = grid.length;
+    const n = grid[0].length;
 
-    if (this.infoEl) {
-      if (step.current) {
-        (this.infoEl as HTMLElement).style.display = '';
-        const [r, c] = step.current;
-        this.infoEl.innerHTML = `f(${r},${c}) = g(${step.gValues[r][c]}) + h(${step.hValues[r][c]}) = <strong>${step.fValues[r][c]}</strong>`;
-      } else {
-        (this.infoEl as HTMLElement).style.display = 'none';
-      }
-    }
+    // 1. 渲染网格矩阵
+    if (this.gridCanvas) {
+      this.gridCanvas.style.gridTemplateColumns = `repeat(${n}, 38px)`;
+      const openMap = new Set(openSet.map(([r, c]) => `${r},${c}`));
+      const closedMap = new Set(closedSet.map(([r, c]) => `${r},${c}`));
+      const pathMap = new Set(finalPath.map(([r, c]) => `${r},${c}`));
 
-    this.renderGrid(step);
-    this.renderLogLine(step);
-  }
+      let html = '';
+      for (let r = 0; r < m; r++) {
+        for (let c = 0; c < n; c++) {
+          const isStart = start[0] === r && start[1] === c;
+          const isGoal = goal[0] === r && goal[1] === c;
+          const isWall = grid[r][c] === 1;
+          const isCurrent = currentNode && currentNode[0] === r && currentNode[1] === c;
+          const isPath = pathMap.has(`${r},${c}`);
+          const isOpen = openMap.has(`${r},${c}`);
+          const isClosed = closedMap.has(`${r},${c}`);
 
-  private renderGrid(step: AStarStep): void {
-    if (!this.gridEl) return;
-    this.gridEl.innerHTML = '';
-    const m = step.grid.length;
-    const n = step.grid[0].length;
-    this.gridEl.style.gridTemplateColumns = `repeat(${n}, 56px)`;
-
-    for (let r = 0; r < m; r++) {
-      for (let c = 0; c < n; c++) {
-        const cell = document.createElement('div');
-        cell.className = `astar-cell ${step.cellStates[r][c]}`;
-
-        const state = step.cellStates[r][c];
-        if (state === 'start') {
-          cell.textContent = 'S';
-        } else if (state === 'end') {
-          cell.textContent = 'E';
-        } else if (state === 'obstacle') {
-          cell.textContent = '#';
-        } else if (state === 'open' || state === 'closed' || state === 'current' || state === 'path') {
-          const g = step.gValues[r][c];
-          const h = step.hValues[r][c];
-          const f = step.fValues[r][c];
-          if (f < Infinity) {
-            cell.innerHTML = `<span class="astar-f-val">f=${f}</span><span class="astar-gh-val">g=${g} h=${h}</span>`;
+          let cls = 'ast-cell';
+          let label = '';
+          if (isStart) {
+            cls += ' is-start';
+            label = 'S';
+          } else if (isGoal) {
+            cls += ' is-goal';
+            label = 'G';
+          } else if (isWall) {
+            cls += ' is-wall';
+            label = '■';
+          } else if (isPath) {
+            cls += ' is-path';
+            label = '★';
+          } else if (isOpen) {
+            cls += ' is-open';
+            label = 'o';
+          } else if (isClosed) {
+            cls += ' is-closed';
+            label = '·';
           }
-        }
 
-        this.gridEl?.appendChild(cell);
+          if (isCurrent) cls += ' is-current';
+
+          html += `<div class="${cls}"><span>${label}</span></div>`;
+        }
       }
+      this.gridCanvas.innerHTML = html;
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode ? `(${currentNode[0]}, ${currentNode[1]})` : '—';
+    if (this.metricGValEl) this.metricGValEl.textContent = `${g}`;
+    if (this.metricHValEl) this.metricHValEl.textContent = `${h}`;
+    if (this.metricFValEl) this.metricFValEl.textContent = `${f}`;
+
+    if (this.formulaActionEl) {
+      this.formulaActionEl.textContent = `f(n) = g(${g}) + h(${h}) = ${f}`;
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done' || action === 'reach-goal'
+          ? '#f0fdf4'
+          : action === 'poll'
+          ? '#eff6ff'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done' || action === 'reach-goal'
+          ? '#15803d'
+          : action === 'poll'
+          ? '#1d4ed8'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done' || action === 'reach-goal'
+          ? '#bbf7d0'
+          : action === 'poll'
+          ? '#bfdbfe'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderLogLine(step: AStarStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'a-star',
-  name: 'A*算法',
+  name: 'A* 启发式搜索',
   viewId: 'algo-a-star-view',
   category: 'graph',
-  description: '启发式搜索 A* 寻路算法，f(n) = g(n) + h(n)',
+  description: '结合实际路径代价与曼哈顿启发距离在网格中快速寻找最优路径',
   icon: '⭐',
+  difficulty: 2,
+  levelOrder: 9,
+  learningGoal: '掌握评估函数 f(n)=g(n)+h(n) 的设计与 Open/Closed 优先队列管理',
   template,
   Visualizer: AStarVisualizer,
-  difficulty: 3,
-  levelOrder: 27,
-  learningGoal: '理解 A* 算法的启发式搜索策略和最优性保证',
 });
-
-export {};

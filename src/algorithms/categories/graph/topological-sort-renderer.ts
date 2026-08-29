@@ -1,374 +1,385 @@
 /**
- * 拓扑排序 (Kahn 算法) 可视化器
- * 计算入度，反复移除入度为 0 的节点
+ * 拓扑排序 (Kahn 算法) 可视化器 — 4-Card 标准现代架构
+ * 入度统计、零入度队列进出、邻边剥离与 DAG 拓扑序列重构
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  TOPOLOGICAL_SORT_PROBLEM_HTML,
+  TOPOLOGICAL_SORT_ANALYSIS_HTML,
+  TOPOLOGICAL_SORT_CODE_LANGUAGES,
+} from './topological-sort-problem-content';
 import template from './topological-sort.html?raw';
 
-interface TSStep extends StepBase {
+export interface TopoStep extends StepBase {
   nodes: number[];
   edges: { from: number; to: number }[];
   inDegree: number[];
-  prevInDegree: number[];
   queue: number[];
+  order: number[];
   currentNode: number | null;
-  sorted: number[];
-  removed: Set<number>;
-  action: 'init' | 'enqueue' | 'process' | 'reduce' | 'done';
+  activeEdge: { from: number; to: number } | null;
+  action: 'init' | 'poll' | 'reduce-degree' | 'enqueue' | 'done';
+  statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-const TS_NODES = [0, 1, 2, 3, 4];
-const TS_EDGES = [
-  { from: 0, to: 1 },
-  { from: 0, to: 2 },
-  { from: 1, to: 3 },
+export const TOPO_NODES = [0, 1, 2, 3, 4, 5];
+export const TOPO_EDGES = [
+  { from: 5, to: 2 },
+  { from: 5, to: 0 },
+  { from: 4, to: 0 },
+  { from: 4, to: 1 },
   { from: 2, to: 3 },
-  { from: 3, to: 4 },
+  { from: 3, to: 1 },
 ];
 
-// Node positions for SVG layout
-const TS_NODE_POSITIONS: { x: number; y: number }[] = [
-  { x: 80, y: 140 },
-  { x: 220, y: 60 },
-  { x: 220, y: 220 },
-  { x: 360, y: 140 },
-  { x: 460, y: 140 },
+export const TOPO_NODE_POSITIONS: { x: number; y: number }[] = [
+  { x: 170, y: 190 },
+  { x: 330, y: 190 },
+  { x: 170, y: 70 },
+  { x: 330, y: 70 },
+  { x: 250, y: 225 },
+  { x: 90, y: 130 },
 ];
 
-function buildTSSteps(): TSStep[] {
-  const steps: TSStep[] = [];
-  const n = TS_NODES.length;
-
-  // Build adjacency list and compute in-degrees
-  const adj: number[][] = Array.from({ length: n }, () => []);
+export function buildTopoSteps(): TopoStep[] {
+  const steps: TopoStep[] = [];
+  const n = TOPO_NODES.length;
   const inDegree = new Array(n).fill(0);
+  const adj: number[][] = Array.from({ length: n }, () => []);
 
-  for (const edge of TS_EDGES) {
-    adj[edge.from].push(edge.to);
-    inDegree[edge.to]++;
+  for (const e of TOPO_EDGES) {
+    adj[e.from].push(e.to);
+    inDegree[e.to]++;
   }
 
-  const prevInDegree = [...inDegree];
-
-  const snap = (action: TSStep['action'], currentNode: number | null, queue: number[], sorted: number[], removed: Set<number>, msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      nodes: [...TS_NODES],
-      edges: TS_EDGES.map(e => ({ ...e })),
-      inDegree: [...inDegree],
-      prevInDegree: [...prevInDegree],
-      queue: [...queue],
-      currentNode,
-      sorted: [...sorted],
-      removed: new Set(removed),
-      action,
-      message: msg,
-      log,
-      codeLine: code,
-    });
-  };
-
-  // Init: compute in-degrees
   const queue: number[] = [];
   for (let i = 0; i < n; i++) {
-    if (inDegree[i] === 0) {
-      queue.push(i);
-    }
+    if (inDegree[i] === 0) queue.push(i);
   }
-  snap('init', null, [...queue], [], new Set(),
-    `初始化: 计算 ${n} 个节点的入度。入度为 0 的节点: [${queue.join(', ')}] 入队。`,
-    `初始化: 计算入度，零入度节点入队`, [0, 1, 2]);
 
-  const removed = new Set<number>();
-  const sorted: number[] = [];
+  const order: number[] = [];
 
-  // Process queue
-  let stepNum = 3;
+  steps.push({
+    nodes: TOPO_NODES,
+    edges: TOPO_EDGES,
+    inDegree: [...inDegree],
+    queue: [...queue],
+    order: [],
+    currentNode: null,
+    activeEdge: null,
+    action: 'init',
+    statusText: `初始化：统计全图所有节点的入度 inDegree。将入度为 0 的节点 [${queue.join(
+      ', '
+    )}] 推入队列。`,
+    log: `初始化入度: [${inDegree.join(', ')}]，初始入队 [${queue.join(', ')}]`,
+    codeLine: [3, 4, 5, 6, 7, 8, 9],
+  });
+
   while (queue.length > 0) {
-    const node = queue.shift()!;
-    snap('process', node, [...queue], [...sorted], new Set(removed),
-      `取出节点 ${node}（入度为 0），加入拓扑序。`,
-      `取出节点 ${node}`, stepNum);
-    stepNum++;
+    const cur = queue.shift()!;
+    order.push(cur);
 
-    sorted.push(node);
-    removed.add(node);
+    steps.push({
+      nodes: TOPO_NODES,
+      edges: TOPO_EDGES,
+      inDegree: [...inDegree],
+      queue: [...queue],
+      order: [...order],
+      currentNode: cur,
+      activeEdge: null,
+      action: 'poll',
+      statusText: `出队节点 ${cur} 并加入拓扑序列：order=[${order.join(
+        ', '
+      )}]。准备将其所有出边的终点入度减 1。`,
+      log: `出队节点 ${cur} -> 写入拓扑序列`,
+      codeLine: [12, 13],
+    });
 
-    for (const neighbor of adj[node]) {
-      const prevDeg = inDegree[neighbor];
-      inDegree[neighbor]--;
-      snap('reduce', node, [...queue], [...sorted], new Set(removed),
-        `节点 ${node} -> ${neighbor}：入度从 ${prevDeg} 减为 ${inDegree[neighbor]}。`,
-        `减少邻接节点 ${neighbor} 入度: ${prevDeg}->${inDegree[neighbor]}`, stepNum);
-      stepNum++;
-
-      if (inDegree[neighbor] === 0) {
-        queue.push(neighbor);
-        snap('enqueue', null, [...queue], [...sorted], new Set(removed),
-          `节点 ${neighbor} 入度变为 0，加入队列。`,
-          `节点 ${neighbor} 入度为0，入队`, stepNum);
-        stepNum++;
+    for (const next of adj[cur]) {
+      inDegree[next]--;
+      const reducedToZero = inDegree[next] === 0;
+      if (reducedToZero) {
+        queue.push(next);
       }
+
+      steps.push({
+        nodes: TOPO_NODES,
+        edges: TOPO_EDGES,
+        inDegree: [...inDegree],
+        queue: [...queue],
+        order: [...order],
+        currentNode: cur,
+        activeEdge: { from: cur, to: next },
+        action: reducedToZero ? 'enqueue' : 'reduce-degree',
+        statusText: `删除出边 (${cur} -> ${next})：节点 ${next} 的入度减为 ${
+          inDegree[next]
+        }。${reducedToZero ? `入度降为 0，将节点 ${next} 推入队列！` : ''}`,
+        log: `  边 (${cur}->${next}): inDegree[${next}]=${inDegree[next]}${
+          reducedToZero ? ' -> 入队' : ''
+        }`,
+        codeLine: [14, 15],
+      });
     }
   }
 
-  // Done
-  snap('done', null, [], [...sorted], new Set(removed),
-    `拓扑排序完成！结果: [${sorted.join(', ')}]`,
-    `完成: 拓扑序 = [${sorted.join(', ')}]`, 7);
+  steps.push({
+    nodes: TOPO_NODES,
+    edges: TOPO_EDGES,
+    inDegree: [...inDegree],
+    queue: [],
+    order: [...order],
+    currentNode: null,
+    activeEdge: null,
+    action: 'done',
+    statusText: `🎉 拓扑排序执行完成！最终线性拓扑序列为: [ ${order.join(
+      ' -> '
+    )} ]。`,
+    log: `✓ 拓扑排序完成: [ ${order.join(' -> ')} ]`,
+    codeLine: 18,
+  });
 
   return steps;
 }
 
-export class TopologicalSortVisualizer extends StepVisualizer<TSStep> {
-  protected codeLines = [
-    'int[] topologicalSort(List<List<Integer>> adj, int V) {',
-    '    int[] inDegree = new int[V];',
-    '    for (int u = 0; u < V; u++)',
-    '        for (int v : adj.get(u)) inDegree[v]++;',
-    '    Queue<Integer> queue = new LinkedList<>();',
-    '    for (int i = 0; i < V; i++)',
-    '        if (inDegree[i] == 0) queue.add(i);',
-    '    List<Integer> sorted = new ArrayList<>();',
-    '    while (!queue.isEmpty()) {',
-    '        int node = queue.poll(); sorted.add(node);',
-    '        for (int nb : adj.get(node)) {',
-    '            if (--inDegree[nb] == 0) queue.add(nb);',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Kahn 拓扑排序代码 (Java)';
+export class TopologicalSortVisualizer extends StepVisualizer<TopoStep> {
+  protected codeLanguages = TOPOLOGICAL_SORT_CODE_LANGUAGES;
+  protected codeLines = TOPOLOGICAL_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '拓扑排序 (Kahn 算法) 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private inDegreeEl: HTMLElement | null = null;
-  private queueEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private sortedCountEl: HTMLElement | null = null;
-  private queueSizeEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private degreePillsWrap: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private metricQueueSizeEl: HTMLElement | null = null;
+  private metricOrderCountEl: HTMLElement | null = null;
+  private metricCycleStatusEl: HTMLElement | null = null;
+  private queueElementsEl: HTMLElement | null = null;
+  private orderElementsEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#ts-graph');
-    this.inDegreeEl = this.root.querySelector('#ts-indegree');
-    this.queueEl = this.root.querySelector('#ts-queue');
-    this.resultEl = this.root.querySelector('#ts-result');
-    this.logEl = this.root.querySelector('#ts-log');
-    this.currentEl = this.root.querySelector('#ts-current');
-    this.sortedCountEl = this.root.querySelector('#ts-sorted-count');
-    this.queueSizeEl = this.root.querySelector('#ts-queue-size');
-    this.btnStart = this.root.querySelector('#ts-start');
-    this.bindPlaybackControls({
-      speed: 'ts-speed',
-      speedLabel: 'ts-speed-label',
-      message: 'step-message',
-    });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-  }
 
-  protected buildSteps(): TSStep[] {
-    return buildTSSteps();
-  }
+    this.svgCanvas = this.root.querySelector('#topo-svg-canvas');
+    this.degreePillsWrap = this.root.querySelector('#degree-pills-wrap');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.metricQueueSizeEl = this.root.querySelector('#metric-queue-size');
+    this.metricOrderCountEl = this.root.querySelector('#metric-order-count');
+    this.metricCycleStatusEl = this.root.querySelector('#metric-cycle-status');
+    this.queueElementsEl = this.root.querySelector('#queue-elements');
+    this.orderElementsEl = this.root.querySelector('#order-elements');
+    this.liveTextEl = this.root.querySelector('#topo-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-  protected renderStep(step: TSStep): void {
-    if (this.currentEl) {
-      this.currentEl.textContent = step.currentNode !== null ? String(step.currentNode) : '-';
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
     }
-    if (this.sortedCountEl) this.sortedCountEl.textContent = String(step.sorted.length);
-    if (this.queueSizeEl) this.queueSizeEl.textContent = String(step.queue.length);
 
-    this.renderGraph(step);
-    this.renderInDegree(step);
-    this.renderQueue(step);
-    this.renderResult(step);
-    this.renderLogLine(step);
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 500;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: TOPOLOGICAL_SORT_PROBLEM_HTML,
+      analysisHtml: TOPOLOGICAL_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
-  private renderGraph(step: TSStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 540 280');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '540px';
-    svg.style.height = '280px';
+  protected buildSteps(): TopoStep[] {
+    return buildTopoSteps();
+  }
 
-    // Draw edges
-    for (const edge of step.edges) {
-      const p1 = TS_NODE_POSITIONS[edge.from];
-      const p2 = TS_NODE_POSITIONS[edge.to];
-      const isRemoved = step.removed.has(edge.from) || step.removed.has(edge.to);
-      const isFromCurrent = step.currentNode === edge.from;
+  protected renderStep(step: TopoStep): void {
+    const { inDegree, queue, order, currentNode, activeEdge, statusText, action } = step;
 
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('ts-edge');
+    // 1. 绘制有向图 SVG 拓扑图
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 460 260" style="width:100%; height:100%; max-height:240px;">
+        <defs>
+          <marker id="arrow-topo" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+          </marker>
+          <marker id="arrow-topo-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+          </marker>
+        </defs>`;
 
-      // Line
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
+      // 边绘制
+      for (const e of TOPO_EDGES) {
+        const p1 = TOPO_NODE_POSITIONS[e.from];
+        const p2 = TOPO_NODE_POSITIONS[e.to];
+        const isActive = activeEdge && activeEdge.from === e.from && activeEdge.to === e.to;
 
-      if (isFromCurrent) {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '3');
-        line.style.animation = 'pathPulse 1s infinite';
-      } else if (isRemoved) {
-        line.setAttribute('stroke', 'rgba(100, 116, 139, 0.3)');
-        line.setAttribute('stroke-width', '1.5');
-      } else {
-        line.setAttribute('stroke', 'rgba(245, 158, 11, 0.25)');
-        line.setAttribute('stroke-width', '2');
+        const strokeColor = isActive ? '#2563eb' : '#cbd5e1';
+        const strokeWidth = isActive ? 3.5 : 2;
+        const marker = isActive ? 'url(#arrow-topo-active)' : 'url(#arrow-topo)';
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
       }
-      g?.appendChild(line);
 
-      // Arrow head
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const ux = dx / len;
-      const uy = dy / len;
-      const nodeR = 22;
-      const ax = p2.x - ux * (nodeR + 4);
-      const ay = p2.y - uy * (nodeR + 4);
-      const arrowSize = 10;
-      const perpX = -uy;
-      const perpY = ux;
+      // 节点绘制
+      const orderSet = new Set(order);
+      const qSet = new Set(queue);
 
-      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      const strokeColor = isFromCurrent ? '#f59e0b' : isRemoved ? 'rgba(100, 116, 139, 0.3)' : 'rgba(245, 158, 11, 0.25)';
-      arrow.setAttribute('points',
-        `${ax},${ay} ${ax - ux * arrowSize + perpX * arrowSize * 0.4},${ay - uy * arrowSize + perpY * arrowSize * 0.4} ${ax - ux * arrowSize - perpX * arrowSize * 0.4},${ay - uy * arrowSize - perpY * arrowSize * 0.4}`
-      );
-      arrow.setAttribute('fill', strokeColor);
-      g?.appendChild(arrow);
+      TOPO_NODES.forEach((node) => {
+        const p = TOPO_NODE_POSITIONS[node];
+        const isCurrent = currentNode === node;
+        const isOrdered = orderSet.has(node);
+        const inQueue = qSet.has(node);
 
-      svg?.appendChild(g);
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrent) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        } else if (isOrdered) {
+          fill = '#dcfce7';
+          stroke = '#22c55e';
+        } else if (inQueue) {
+          fill = '#dbeafe';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isOrdered ? '#15803d' : '#64748b'}" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">in:${inDegree[node]}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = TS_NODE_POSITIONS[i];
-      const isRemoved = step.removed.has(i);
-      const isSorted = step.sorted.includes(i);
-      const isCurrent = step.currentNode === i;
+    // 2. 渲染 inDegree 药丸栏
+    if (this.degreePillsWrap) {
+      this.degreePillsWrap.innerHTML = TOPO_NODES.map((node) => {
+        const deg = inDegree[node];
+        let cls = 'topo-degree-pill';
+        if (deg === 0) cls += ' is-zero';
 
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('ts-node');
+        return `<div class="${cls}">
+          <span style="color:#64748b;">${node}:</span>
+          <span>${deg}</span>
+        </div>`;
+      }).join('');
+    }
 
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
+    // 3. 更新状态监视器
+    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode != null ? `${currentNode}` : '—';
+    if (this.metricQueueSizeEl) this.metricQueueSizeEl.textContent = `${queue.length}`;
+    if (this.metricOrderCountEl) this.metricOrderCountEl.textContent = `${order.length} / ${TOPO_NODES.length}`;
+    if (this.metricCycleStatusEl) this.metricCycleStatusEl.textContent = '无环 (DAG)';
 
-      if (isCurrent) {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.5)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 1s infinite';
-      } else if (isRemoved) {
-        circle.setAttribute('fill', 'rgba(100, 116, 139, 0.15)');
-        circle.setAttribute('stroke', '#64748b');
-        circle.setAttribute('stroke-width', '1.5');
-        circle.setAttribute('stroke-dasharray', '4,4');
-      } else if (isSorted) {
-        circle.setAttribute('fill', 'rgba(34, 197, 94, 0.3)');
-        circle.setAttribute('stroke', '#22c55e');
-        circle.setAttribute('stroke-width', '2');
-      } else {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.12)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '2');
+    if (this.queueElementsEl) {
+      this.queueElementsEl.textContent = queue.length > 0 ? `[ ${queue.join(', ')} ]` : '[ (空) ]';
+    }
+    if (this.orderElementsEl) {
+      this.orderElementsEl.textContent = order.length > 0 ? `[ ${order.join(' -> ')} ]` : '[ ]';
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done'
+          ? '#f0fdf4'
+          : action === 'poll'
+          ? '#eff6ff'
+          : action === 'enqueue'
+          ? '#fefce8'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done'
+          ? '#15803d'
+          : action === 'poll'
+          ? '#1d4ed8'
+          : action === 'enqueue'
+          ? '#854d0e'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done'
+          ? '#bbf7d0'
+          : action === 'poll'
+          ? '#bfdbfe'
+          : action === 'enqueue'
+          ? '#fef08a'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      const textColor = isCurrent ? '#fff' : isRemoved ? '#64748b' : isSorted ? '#22c55e' : '#f59e0b';
-      text.setAttribute('fill', textColor);
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
     }
 
-    this.graphEl?.appendChild(svg);
-  }
-
-  private renderInDegree(step: TSStep): void {
-    if (!this.inDegreeEl) return;
-    this.inDegreeEl.innerHTML = '';
-    step.nodes.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'ts-indegree-item';
-      const deg = step.inDegree[i];
-      if (deg === 0 && !step.removed.has(node)) item.classList.add('zero');
-      if (step.prevInDegree[i] !== step.inDegree[i]) item.classList.add('changed');
-      item.innerHTML = `<span class="ts-idx">节点${node}</span>${deg}`;
-      this.inDegreeEl?.appendChild(item);
-    });
-  }
-
-  private renderQueue(step: TSStep): void {
-    if (!this.queueEl) return;
-    this.queueEl.innerHTML = '';
-    if (step.queue.length === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（空队列）';
-      this.queueEl?.appendChild(empty);
-      return;
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
-    step.queue.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'ts-queue-item';
-      if (i === 0 && step.action !== 'init') item.classList.add('current');
-      item.textContent = String(node);
-      this.queueEl?.appendChild(item);
-    });
-  }
 
-  private renderResult(step: TSStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.innerHTML = '';
-    if (step.sorted.length === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（等待排序...）';
-      this.resultEl?.appendChild(empty);
-      return;
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
     }
-    step.sorted.forEach((node) => {
-      const item = document.createElement('div');
-      item.className = 'ts-result-item';
-      item.textContent = String(node);
-      this.resultEl?.appendChild(item);
-    });
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: TSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -377,13 +388,11 @@ registerAlgorithm({
   name: '拓扑排序',
   viewId: 'algo-topological-sort-view',
   category: 'graph',
-  description: 'Kahn 算法：计算入度，反复移除入度为 0 的节点得到 DAG 拓扑序',
-  icon: '📐',
+  description: '使用 Kahn 入度剥离队列算法计算有向无环图 (DAG) 的拓扑依赖序列',
+  icon: '🎯',
+  difficulty: 2,
+  levelOrder: 12,
+  learningGoal: '掌握 DAG 依赖拓扑排序与零入度队列驱动的状态转移模型',
   template,
   Visualizer: TopologicalSortVisualizer,
-  difficulty: 3,
-  levelOrder: 20,
-  learningGoal: '理解 Kahn 算法中入度计算和零入度节点队列的处理过程',
 });
-
-export {};

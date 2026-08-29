@@ -1,538 +1,526 @@
 <style>
+  /* === A* 启发式搜索 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-a-star-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
-    overflow: hidden;
-  }
-
-  #algo-a-star-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #eab30855, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #ca8a0455, transparent 55%),
-                linear-gradient(135deg, #1a1505 0%, #2d2408 25%, #1a1505 50%, #3b3009 75%, #1a1505 100%);
-    z-index: -2;
-  }
-
-  #algo-a-star-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(26, 21, 5, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-a-star-view .astar-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .astar-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .astar-hero .astar-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .astar-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #eab308, #ca8a04);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
-  }
-
-  .astar-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #eab308, #ca8a04);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .astar-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
-  }
-
-  .astar-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(234, 179, 8, 0.08);
-    border: 1px solid rgba(234, 179, 8, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-
-  .astar-tip strong {
-    color: #eab308;
-    font-weight: 600;
-  }
-
-  #algo-a-star-view .astar-layout {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-a-star-view .astar-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .astar-main {
     min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .astar-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-a-star-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-a-star-view .ast-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .astar-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .astar-btn {
-    padding: 10px 18px;
+  #algo-a-star-view .ast-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-a-star-view .ast-icon-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #eab308, #ca8a04);
-    color: #fff;
-    font-weight: 600;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
     cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .astar-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+  #algo-a-star-view .ast-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .astar-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .astar-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    text-align: center;
-  }
-
-  .astar-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #eab308, #ca8a04);
-  }
-
-  .astar-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .astar-stat-val {
-    color: #eab308;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-  }
-
-  .astar-grid-container {
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .astar-grid {
-    display: grid;
-    gap: 3px;
-    background: rgba(11, 10, 23, 0.8);
-    border-radius: 12px;
-    padding: 12px;
-  }
-
-  .astar-cell {
-    width: 56px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-a-star-view .ast-btn-problem {
+    padding: 2px 7px;
     border-radius: 6px;
-    font-size: 10px;
-    font-weight: 600;
-    font-family: ui-monospace, monospace;
-    transition: all 0.25s ease;
-    position: relative;
-    flex-direction: column;
-    gap: 1px;
-    overflow: hidden;
-  }
-
-  .astar-cell.empty {
-    background: rgba(20, 18, 38, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: rgba(204, 214, 244, 0.3);
-  }
-
-  .astar-cell.obstacle {
-    background: rgba(30, 30, 50, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  .astar-cell.start {
-    background: rgba(34, 197, 94, 0.3);
-    border: 2px solid #22c55e;
-    color: #22c55e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
     font-weight: 700;
-    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-a-star-view .ast-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .astar-cell.end {
-    background: rgba(239, 68, 68, 0.3);
-    border: 2px solid #ef4444;
-    color: #ef4444;
-    font-weight: 700;
-    font-size: 13px;
-  }
-
-  .astar-cell.open {
-    background: rgba(34, 197, 94, 0.2);
-    border: 1px solid rgba(34, 197, 94, 0.5);
-    color: #22c55e;
-    animation: astar-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .astar-cell.closed {
-    background: rgba(100, 100, 120, 0.3);
-    border: 1px solid rgba(150, 150, 170, 0.3);
-    color: rgba(204, 214, 244, 0.5);
-  }
-
-  .astar-cell.current {
-    background: rgba(234, 179, 8, 0.5);
-    border: 2px solid #eab308;
-    color: #1a1505;
-    transform: scale(1.08);
-    box-shadow: 0 0 12px rgba(234, 179, 8, 0.4);
-    animation: astar-pulse 1s infinite;
-  }
-
-  .astar-cell.path {
-    background: rgba(234, 179, 8, 0.3);
-    border: 2px solid #eab308;
-    color: #eab308;
-    font-weight: 700;
-    box-shadow: 0 0 8px rgba(234, 179, 8, 0.3);
-  }
-
-  .astar-f-val {
+  #algo-a-star-view .ast-badge-mode {
     font-size: 11px;
     font-weight: 700;
-    line-height: 1;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .astar-gh-val {
-    font-size: 8px;
-    color: rgba(204, 214, 244, 0.5);
-    line-height: 1;
+  #algo-a-star-view .ast-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
 
-  .astar-info {
-    padding: 12px 16px;
-    margin: 0 16px 12px;
-    border-radius: 12px;
-    background: rgba(234, 179, 8, 0.08);
-    border: 1px solid rgba(234, 179, 8, 0.2);
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    color: #cdd6f4;
-    text-align: center;
-  }
-
-  .astar-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(234, 179, 8, 0.2);
-    background: rgba(234, 179, 8, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .astar-log {
-    min-height: 0;
-    max-height: 120px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .astar-log div {
-    padding: 2px 0;
-  }
-
-  .astar-log div.active {
-    color: #eab308;
-    font-weight: 600;
-  }
-
-  .astar-right {
+  #algo-a-star-view .ast-header-right {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
-  .astar-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
+  #algo-a-star-view .ast-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-a-star-view .ast-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-a-star-view .ast-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-a-star-view .ast-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-a-star-view .ast-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
     flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
   }
 
-  .astar-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
+  #algo-a-star-view .ast-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-a-star-view .ast-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-a-star-view .ast-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-a-star-view .ast-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 网格寻路沙盘 */
+  #algo-a-star-view .ast-grid-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  #algo-a-star-view .ast-grid-matrix {
+    display: inline-grid;
+    gap: 4px;
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    user-select: none;
+  }
+
+  #algo-a-star-view .ast-cell {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+  }
+
+  #algo-a-star-view .ast-cell.is-start {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1d4ed8 !important;
+    font-weight: 800;
+  }
+
+  #algo-a-star-view .ast-cell.is-goal {
+    background: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    color: #15803d !important;
+    font-weight: 800;
+  }
+
+  #algo-a-star-view .ast-cell.is-wall {
+    background: #334155 !important;
+    border-color: #1e293b !important;
+    color: #64748b !important;
+  }
+
+  #algo-a-star-view .ast-cell.is-open {
+    background: #fef9c3 !important;
+    border-color: #fde047 !important;
+    color: #854d0e !important;
+  }
+
+  #algo-a-star-view .ast-cell.is-closed {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #94a3b8 !important;
+  }
+
+  #algo-a-star-view .ast-cell.is-path {
+    background: #a7f3d0 !important;
+    border-color: #10b981 !important;
+    color: #065f46 !important;
+    font-weight: 800;
+    transform: scale(1.05);
+    z-index: 2;
+  }
+
+  #algo-a-star-view .ast-cell.is-current {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 1px;
+    z-index: 3;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-a-star-view .ast-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-a-star-view .ast-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-a-star-view .ast-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-a-star-view .ast-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-a-star-view .ast-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-a-star-view .ast-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-a-star-view .ast-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-a-star-view .ast-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-a-star-view .ast-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-a-star-view .ast-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-a-star-view .ast-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
     gap: 8px;
   }
 
-  .astar-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .astar-legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-  }
-
-  .astar-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .astar-pb-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .astar-pb-btn {
+  #algo-a-star-view .ast-progress-wrap input[type="range"] {
     flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(234, 179, 8, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    accent-color: #2563eb;
   }
 
-  .astar-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .astar-pb-btn:not(:disabled):hover {
-    background: rgba(234, 179, 8, 0.2);
-    border-color: #eab308;
-    transform: translateY(-1px);
-  }
-
-  .astar-pb-btn.play {
-    background: linear-gradient(135deg, #eab308, #ca8a04);
-    border: none;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
-  }
-
-  .astar-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
-  }
-
-  .astar-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .astar-speed-row input {
-    flex: 1;
-    accent-color: #eab308;
-  }
-
-  .astar-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-  }
-
-  @keyframes astar-popIn {
-    0% { transform: scale(0.7); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @keyframes astar-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
-    50% { box-shadow: 0 0 14px 4px rgba(234, 179, 8, 0.3); }
+  #algo-a-star-view .ast-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="astar-page">
-  <div class="astar-hero">
-    <div class="astar-title-wrapper">
-      <div class="astar-hero-icon">⭐</div>
-      <div class="astar-hero-text">
-        <h2>A*算法</h2>
-        <p>启发式搜索：f(n) = g(n) + h(n)，兼顾已走距离和预估代价</p>
-      </div>
+<div id="algo-a-star-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="ast-header">
+    <div class="ast-header-left">
+      <div class="ast-icon-btn">⭐</div>
+      <div class="ast-main-title">A* 启发式寻路算法 · A* Search</div>
+      <button class="ast-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="ast-badge-mode">f(n) = g(n) + h(n) 评估函数</div>
+      <div class="ast-badge-complexity">O(b^d) · O(V)</div>
     </div>
-    <div class="astar-tip"><strong>A* 核心：</strong>使用优先队列，每次选 f 值最小的节点扩展。g(n) 是起点到 n 的实际代价，h(n) 是 n 到终点的启发式估计（曼哈顿距离）。当 h 满足可容许性时，A* 保证找到最优路径。</div>
-  </div>
-
-  <div class="astar-layout">
-    <div class="astar-main">
-      <div class="astar-card">
-        <div class="astar-controls">
-          <button id="astar-start" class="astar-btn">开始寻路</button>
-        </div>
-
-        <div class="astar-stats">
-          <div class="astar-stat"><span class="astar-stat-label">Open Set</span><span class="astar-stat-val" id="astar-open">0</span></div>
-          <div class="astar-stat"><span class="astar-stat-label">Closed Set</span><span class="astar-stat-val" id="astar-closed">0</span></div>
-          <div class="astar-stat"><span class="astar-stat-label">当前节点</span><span class="astar-stat-val" id="astar-current">-</span></div>
-          <div class="astar-stat"><span class="astar-stat-label">路径长度</span><span class="astar-stat-val" id="astar-path-len">-</span></div>
-        </div>
-
-        <div class="astar-grid-container">
-          <div class="astar-grid" id="astar-grid"></div>
-        </div>
-
-        <div class="astar-info" id="astar-info" style="display:none;"></div>
-
-        <div class="astar-message" id="step-message">点击「开始寻路」运行 A* 寻路算法。</div>
-
-        <div class="astar-log" id="astar-log"></div>
-      </div>
+    <div class="ast-header-right">
+      <button class="ast-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="ast-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
+  </header>
 
-    <div class="astar-right">
-      <div data-code-panel class="astar-code-card"></div>
-      <div class="astar-legend">
-        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(34,197,94,0.3);border:2px solid #22c55e"></span>起点 S</div>
-        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(239,68,68,0.3);border:2px solid #ef4444"></span>终点 E</div>
-        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.5)"></span>Open Set (待探索)</div>
-        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(100,100,120,0.3);border:1px solid rgba(150,150,170,0.3)"></span>Closed Set (已探索)</div>
-        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(234,179,8,0.5);border:2px solid #eab308"></span>当前节点 / 最终路径</div>
-        <div class="astar-legend-item"><span class="astar-legend-box" style="background:rgba(30,30,50,0.9);border:1px solid rgba(255,255,255,0.15)"></span>障碍物</div>
-      </div>
-      <div class="astar-playback">
-        <div class="astar-pb-row">
-          <button id="step-reset" class="astar-pb-btn">重置</button>
-          <button id="step-prev" class="astar-pb-btn">上一步</button>
-          <button id="step-play" class="astar-pb-btn play">播放</button>
-          <button id="step-next" class="astar-pb-btn">下一步</button>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="ast-workspace">
+    <!-- Card 1: 网格寻路沙盘 -->
+    <section class="ast-card">
+      <div class="ast-card-header">
+        <div class="ast-card-title">
+          <span>📊</span> 二维网格启发式寻路沙盘 (Grid Canvas)
         </div>
-        <div class="astar-speed-row">
-          <span>速度</span>
-          <input id="astar-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="astar-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #2563eb;">● Start</span> · <span style="color: #16a34a;">● Goal</span> · <span style="color: #334155;">● 障碍</span> · <span style="color: #f59e0b;">● Open</span> · <span style="color: #94a3b8;">● Closed</span> · <span style="color: #10b981;">● 最优路径</span>
         </div>
-        <div id="step-counter" class="astar-counter">步骤: 1 / 1</div>
       </div>
+      <div class="ast-card-body" style="justify-content: center; align-items: center;">
+        <div class="ast-grid-wrap">
+          <div class="ast-grid-matrix" id="a-star-grid-canvas"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="ast-card">
+      <div class="ast-card-header">
+        <div class="ast-card-title">
+          <span>🧭</span> 启发评估指标监视器 (A* Metrics Monitor)
+        </div>
+      </div>
+      <div class="ast-card-body">
+        <div class="ast-metrics-grid">
+          <div class="ast-metric-card">
+            <span class="ast-metric-label">当前考察格 (r, c)</span>
+            <span class="ast-metric-val" id="metric-cur-node" style="color: #3b82f6;">(0, 0)</span>
+          </div>
+          <div class="ast-metric-card">
+            <span class="ast-metric-label">实际代价 g(n)</span>
+            <span class="ast-metric-val" id="metric-g-val" style="color: #a855f7;">0</span>
+          </div>
+          <div class="ast-metric-card">
+            <span class="ast-metric-label">启发预估 h(n)</span>
+            <span class="ast-metric-val" id="metric-h-val" style="color: #fbbf24;">0</span>
+          </div>
+          <div class="ast-metric-card">
+            <span class="ast-metric-label">综合评估 f(n)</span>
+            <span class="ast-metric-val" id="metric-f-val" style="color: #10b981;">0</span>
+          </div>
+        </div>
+        <div class="ast-formula-box" id="ast-formula-box">
+          <span>评估函数:</span> <strong id="formula-action" style="color: #2563eb;">f(n) = g(n) + h(n) = 0 + 0 = 0</strong>
+        </div>
+        <div class="ast-live-alert" id="ast-live-alert">
+          <span>💡</span> <span id="ast-live-text">准备就绪，点击运行开始 A* 启发式寻路。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="ast-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="ast-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="ast-card-header">
+        <div class="ast-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="ast-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="ast-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="ast-playback-bar">
+    <div class="ast-playback-controls">
+      <button class="ast-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="ast-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="ast-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="ast-progress-wrap">
+      <span class="ast-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="400" selected>正常</option>
+        <option value="150">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

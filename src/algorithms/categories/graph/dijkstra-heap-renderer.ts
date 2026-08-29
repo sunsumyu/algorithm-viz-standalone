@@ -1,195 +1,244 @@
 /**
- * Dijkstra 堆优化版 (O((V+E)logV)) 可视化器
- * 使用最小堆优先队列
+ * 堆优化 Dijkstra (O(E log V)) 可视化器 — 4-Card 标准现代架构
+ * 优先队列动态提取、惰性丢弃、邻接边松弛与拓扑高亮
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import { GraphTopologyPresenter } from './graph-topology-presenter';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  DIJKSTRA_HEAP_PROBLEM_HTML,
+  DIJKSTRA_HEAP_ANALYSIS_HTML,
+  DIJKSTRA_HEAP_CODE_LANGUAGES,
+} from './dijkstra-heap-problem-content';
+import { DJB_NODES, DJB_EDGES, DJB_NODE_POSITIONS } from './dijkstra-basic-renderer';
 import template from './dijkstra-heap.html?raw';
 
-interface DJHHeapItem {
-  node: number;
-  dist: number;
-}
-
-interface DJHStep extends StepBase {
+export interface DJHStep extends StepBase {
   nodes: number[];
   edges: { from: number; to: number; w: number }[];
   dist: number[];
-  prevDist: number[];
-  visited: Set<number>;
+  pq: { d: number; u: number }[];
   currentNode: number | null;
+  currentDist: number | null;
   relaxEdge: { from: number; to: number } | null;
-  heap: DJHHeapItem[];
-  action: 'init' | 'extract' | 'relax' | 'push' | 'skip' | 'stale' | 'done';
+  relaxCount: number;
+  action: 'init' | 'poll' | 'skip-lazy' | 'relax' | 'skip' | 'done';
   statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-const DJH_NODES = [0, 1, 2, 3, 4];
-const DJH_EDGES = [
-  { from: 0, to: 1, w: 4 },
-  { from: 0, to: 2, w: 1 },
-  { from: 2, to: 1, w: 2 },
-  { from: 1, to: 3, w: 1 },
-  { from: 2, to: 3, w: 5 },
-  { from: 3, to: 4, w: 3 },
-];
-
-// Node positions for SVG layout
-const DJH_NODE_POSITIONS: { x: number; y: number }[] = [
-  { x: 80, y: 120 },
-  { x: 240, y: 50 },
-  { x: 240, y: 190 },
-  { x: 380, y: 120 },
-  { x: 460, y: 120 },
-];
-
 const INF = Infinity;
 
-function buildDJHSteps(): DJHStep[] {
+export function buildDJHSteps(): DJHStep[] {
   const steps: DJHStep[] = [];
-  const n = DJH_NODES.length;
+  const n = DJB_NODES.length;
   const source = 0;
 
   const dist = new Array(n).fill(INF);
   dist[source] = 0;
-  const visited = new Set<number>();
+  let relaxCount = 0;
 
   // Build adjacency list
   const adj: { to: number; w: number }[][] = Array.from({ length: n }, () => []);
-  for (const e of DJH_EDGES) {
+  for (const e of DJB_EDGES) {
     adj[e.from].push({ to: e.to, w: e.w });
   }
 
-  // Simple min-heap simulation
-  let heap: DJHHeapItem[] = [{ node: source, dist: 0 }];
-  let prevDistSnapshot = [...dist];
+  // Priority Queue: min-heap of {d, u}
+  const pq: { d: number; u: number }[] = [{ d: 0, u: source }];
 
-  const snap = (action: DJHStep['action'], currentNode: number | null, relaxEdge: DJHStep['relaxEdge'], heapSnapshot: DJHHeapItem[], statusText: string, msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      nodes: [...DJH_NODES],
-      edges: DJH_EDGES.map(e => ({ ...e })),
-      dist: [...dist],
-      prevDist: [...prevDistSnapshot],
-      visited: new Set(visited),
-      currentNode,
-      relaxEdge,
-      heap: heapSnapshot.map(h => ({ ...h })),
-      action,
-      statusText,
-      message: msg,
-      log,
-      codeLine: code,
-    });
-    prevDistSnapshot = [...dist];
-  };
+  steps.push({
+    nodes: DJB_NODES,
+    edges: DJB_EDGES,
+    dist: [...dist],
+    pq: [...pq],
+    currentNode: null,
+    currentDist: null,
+    relaxEdge: null,
+    relaxCount: 0,
+    action: 'init',
+    statusText: `初始化：源点为 ${source}，dist[${source}] = 0，将 (0, ${source}) 推入优先队列。`,
+    log: `初始化: pq=[(0, ${source})]`,
+    codeLine: [4, 5, 6, 7],
+  });
 
-  // Init
-  snap('init', null, null, [...heap], '初始化',
-    `初始化: 源点=${source}, dist[${source}]=0, 将 (node=${source}, dist=0) 入堆。`,
-    `初始化: 源点入堆`, [0, 1]);
+  while (pq.length > 0) {
+    // Sort to simulate min-heap
+    pq.sort((a, b) => a.d - b.d);
+    const { d, u } = pq.shift()!;
 
-  while (heap.length > 0) {
-    // Extract min from heap
-    heap.sort((a, b) => a.dist - b.dist);
-    const top = heap.shift()!;
-    const { node: u, dist: topDist } = top;
-
-    // Check if stale
-    if (visited.has(u)) {
-      snap('stale', null, null, [...heap], '跳过旧记录',
-        `堆顶 (node=${u}, dist=${topDist}) 已访问，跳过。`,
-        `跳过: node${u}已访问`, [3, 4]);
+    if (d > dist[u]) {
+      steps.push({
+        nodes: DJB_NODES,
+        edges: DJB_EDGES,
+        dist: [...dist],
+        pq: [...pq],
+        currentNode: u,
+        currentDist: d,
+        relaxEdge: null,
+        relaxCount,
+        action: 'skip-lazy',
+        statusText: `出队节点 (${d}, ${u})：发现 d (${d}) > dist[${u}] (${dist[u]})，为历史过期条目，惰性丢弃。`,
+        log: `  丢弃过期条目: (${d}, ${u})`,
+        codeLine: 10,
+      });
       continue;
     }
 
-    snap('extract', u, null, [...heap], '出堆',
-      `从堆中取出 (node=${u}, dist=${topDist})，标记为已访问。堆剩余 ${heap.length} 个元素。`,
-      `出堆: node${u}(dist=${topDist})`, [2, 3]);
+    steps.push({
+      nodes: DJB_NODES,
+      edges: DJB_EDGES,
+      dist: [...dist],
+      pq: [...pq],
+      currentNode: u,
+      currentDist: d,
+      relaxEdge: null,
+      relaxCount,
+      action: 'poll',
+      statusText: `堆顶出队：提取当前距离最小的顶点 (${d}, ${u})，开始检查其所有出边。`,
+      log: `堆顶出队 (${d}, ${u})`,
+      codeLine: [8, 9],
+    });
 
-    visited.add(u);
+    for (const edge of adj[u]) {
+      const v = edge.to;
+      const w = edge.w;
 
-    // Relax edges
-    for (const { to, w } of adj[u]) {
-      const newDist = dist[u] + w;
-      if (newDist < dist[to]) {
-        const oldDist = dist[to];
-        dist[to] = newDist;
-        heap.push({ node: to, dist: newDist });
-        snap('relax', u, { from: u, to }, [...heap], '松弛成功',
-          `松弛 ${u}->${to}: dist[${u}]+${w}=${newDist} < ${oldDist === INF ? 'INF' : oldDist}，更新 dist[${to}]=${newDist}，将 (node=${to}, dist=${newDist}) 入堆。`,
-          `松弛成功: ${u}->${to}, dist=${oldDist === INF ? 'INF' : oldDist}->${newDist}`, [5, 6]);
+      if (dist[u] + w < dist[v]) {
+        const oldDist = dist[v];
+        dist[v] = dist[u] + w;
+        pq.push({ d: dist[v], u: v });
+        relaxCount++;
+
+        steps.push({
+          nodes: DJB_NODES,
+          edges: DJB_EDGES,
+          dist: [...dist],
+          pq: [...pq],
+          currentNode: u,
+          currentDist: d,
+          relaxEdge: { from: u, to: v },
+          relaxCount,
+          action: 'relax',
+          statusText: `松弛边 (${u} -> ${v}, w=${w})：dist[${v}] 从 ${
+            oldDist === INF ? '∞' : oldDist
+          } 缩短为 ${dist[v]}，将 (${dist[v]}, ${v}) 入堆。`,
+          log: `  松弛 (${u}->${v}): dist[${v}]=${dist[v]} 入堆`,
+          codeLine: [12, 13, 14],
+        });
       } else {
-        snap('skip', u, { from: u, to }, [...heap], '无需更新',
-          `检查 ${u}->${to}: dist[${u}]+${w}=${newDist} >= dist[${to}]=${dist[to] === INF ? 'INF' : dist[to]}，无需更新。`,
-          `无需更新: ${u}->${to}`, [5, 7]);
+        steps.push({
+          nodes: DJB_NODES,
+          edges: DJB_EDGES,
+          dist: [...dist],
+          pq: [...pq],
+          currentNode: u,
+          currentDist: d,
+          relaxEdge: { from: u, to: v },
+          relaxCount,
+          action: 'skip',
+          statusText: `检查边 (${u} -> ${v}, w=${w})：dist[${u}] + ${w} = ${
+            dist[u] + w
+          } >= dist[${v}] (${dist[v]})，无需入堆。`,
+          log: `  检查 (${u}->${v}): 距离未缩短`,
+          codeLine: 12,
+        });
       }
     }
   }
 
-  // Done
-  snap('done', null, null, [], '完成',
-    `Dijkstra 堆优化版完成！最短距离: [${dist.map((d, i) => `${i}:${d === INF ? 'INF' : d}`).join(', ')}]`,
-    `完成: 最短路径已求出`, [8]);
+  steps.push({
+    nodes: DJB_NODES,
+    edges: DJB_EDGES,
+    dist: [...dist],
+    pq: [],
+    currentNode: null,
+    currentDist: null,
+    relaxEdge: null,
+    relaxCount,
+    action: 'done',
+    statusText: `🎉 优先队列为空，堆优化 Dijkstra 算法执行完毕！`,
+    log: `✓ Dijkstra 堆优化求解完毕: dist=[${dist.join(', ')}]`,
+    codeLine: 18,
+  });
 
   return steps;
 }
 
 export class DijkstraHeapVisualizer extends StepVisualizer<DJHStep> {
-  protected codeLines = [
-    'int[] dijkstraHeap(List<int[]>[] adj, int source) {',
-    '    int[] dist = new int[V]; Arrays.fill(dist, INF);',
-    '    dist[source] = 0;',
-    '    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);',
-    '    pq.add(new int[]{source, 0});',
-    '    boolean[] visited = new boolean[V];',
-    '    while (!pq.isEmpty()) {',
-    '        int[] top = pq.poll(); int u = top[0];',
-    '        if (visited[u]) continue;',
-    '        visited[u] = true;',
-    '        for (int[] edge : adj[u]) {',
-    '            int v = edge[0], w = edge[1];',
-    '            if (dist[u] + w < dist[v]) {',
-    '                dist[v] = dist[u] + w;',
-    '                pq.add(new int[]{v, dist[v]});',
-    '            }',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Dijkstra 堆优化版代码 (Java)';
+  protected codeLanguages = DIJKSTRA_HEAP_CODE_LANGUAGES;
+  protected codeLines = DIJKSTRA_HEAP_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '堆优化 Dijkstra 最短路 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private heapEl: HTMLElement | null = null;
-  private distEl: HTMLElement | null = null;
-  private visitedEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private visitedCountEl: HTMLElement | null = null;
-  private heapSizeEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private distPillsWrap: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private metricRelaxEdgeEl: HTMLElement | null = null;
+  private metricPQSizeEl: HTMLElement | null = null;
+  private metricRelaxCountEl: HTMLElement | null = null;
+  private pqElementsEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#djh-graph');
-    this.heapEl = this.root.querySelector('#djh-heap');
-    this.distEl = this.root.querySelector('#djh-dist');
-    this.visitedEl = this.root.querySelector('#djh-visited');
-    this.logEl = this.root.querySelector('#djh-log');
-    this.currentEl = this.root.querySelector('#djh-current');
-    this.visitedCountEl = this.root.querySelector('#djh-visited-count');
-    this.heapSizeEl = this.root.querySelector('#djh-heap-size');
-    this.statusEl = this.root.querySelector('#djh-status');
-    this.btnStart = this.root.querySelector('#djh-start');
-    this.bindPlaybackControls({
-      speed: 'djh-speed',
-      speedLabel: 'djh-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#djh-svg-canvas');
+    this.distPillsWrap = this.root.querySelector('#dist-pills-wrap');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.metricRelaxEdgeEl = this.root.querySelector('#metric-relax-edge');
+    this.metricPQSizeEl = this.root.querySelector('#metric-pq-size');
+    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
+    this.pqElementsEl = this.root.querySelector('#pq-elements');
+    this.liveTextEl = this.root.querySelector('#djh-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: DIJKSTRA_HEAP_PROBLEM_HTML,
+      analysisHtml: DIJKSTRA_HEAP_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
   protected buildSteps(): DJHStep[] {
@@ -197,147 +246,173 @@ export class DijkstraHeapVisualizer extends StepVisualizer<DJHStep> {
   }
 
   protected renderStep(step: DJHStep): void {
-    if (this.currentEl) {
-      this.currentEl.textContent = step.currentNode !== null ? String(step.currentNode) : '-';
+    const { dist, pq, currentNode, relaxEdge, relaxCount, statusText, action } = step;
+
+    // 1. 绘制 SVG 拓扑图
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 520 260" style="width:100%; height:100%; max-height:240px;">
+        <defs>
+          <marker id="arrow-h" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+          </marker>
+          <marker id="arrow-h-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+          </marker>
+        </defs>`;
+
+      // 绘制边
+      for (const e of DJB_EDGES) {
+        const p1 = DJB_NODE_POSITIONS[e.from];
+        const p2 = DJB_NODE_POSITIONS[e.to];
+        const isActive = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
+        const strokeColor = isActive ? '#2563eb' : '#cbd5e1';
+        const strokeWidth = isActive ? 3.5 : 2;
+        const marker = isActive ? 'url(#arrow-h-active)' : 'url(#arrow-h)';
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+
+        const midX = (p1.x + p2.x) / 2 + (p1.y === p2.y ? 0 : p1.y > p2.y ? 10 : -10);
+        const midY = (p1.y + p2.y) / 2 - 8;
+        svgHtml += `<text x="${midX}" y="${midY}" fill="${isActive ? '#1d4ed8' : '#64748b'}" font-size="11" font-weight="800" text-anchor="middle">${e.w}</text>`;
+      }
+
+      // 绘制节点
+      DJB_NODES.forEach((node) => {
+        const p = DJB_NODE_POSITIONS[node];
+        const isCurrent = currentNode === node;
+        const isSource = node === 0;
+
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrent) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        } else if (isSource) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+
+        const dVal = dist[node] === INF ? '∞' : dist[node];
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="#64748b" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">d:${dVal}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
-    if (this.visitedCountEl) this.visitedCountEl.textContent = String(step.visited.size);
-    if (this.heapSizeEl) this.heapSizeEl.textContent = String(step.heap.length);
-    if (this.statusEl) {
-      this.statusEl.textContent = step.statusText;
-      if (step.action === 'relax') {
-        (this.statusEl as HTMLElement).style.color = '#22c55e';
-      } else if (step.action === 'skip' || step.action === 'stale') {
-        (this.statusEl as HTMLElement).style.color = '#f59e0b';
-      } else {
-        (this.statusEl as HTMLElement).style.color = '#6366f1';
+
+    // 2. 渲染 Dist 药丸栏
+    if (this.distPillsWrap) {
+      this.distPillsWrap.innerHTML = DJB_NODES.map((node) => {
+        const d = dist[node] === INF ? '∞' : `${dist[node]}`;
+        const isCurrent = currentNode === node;
+
+        let cls = 'djh-dist-pill';
+        if (isCurrent) cls += ' is-active';
+
+        return `<div class="${cls}">
+          <span style="color:#64748b;">${node}:</span>
+          <span>${d}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricCurNodeEl) {
+      this.metricCurNodeEl.textContent = currentNode != null ? `(${step.currentDist}, ${currentNode})` : '—';
+    }
+    if (this.metricRelaxEdgeEl) {
+      this.metricRelaxEdgeEl.textContent = relaxEdge ? `(${relaxEdge.from} -> ${relaxEdge.to})` : '—';
+    }
+    if (this.metricPQSizeEl) this.metricPQSizeEl.textContent = `${pq.length}`;
+    if (this.metricRelaxCountEl) this.metricRelaxCountEl.textContent = `${relaxCount}`;
+
+    if (this.pqElementsEl) {
+      this.pqElementsEl.textContent =
+        pq.length > 0 ? `[ ${pq.map((item) => `(d:${item.d}, u:${item.u})`).join(', ')} ]` : '[ (空) ]';
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done'
+          ? '#f0fdf4'
+          : action === 'relax'
+          ? '#eff6ff'
+          : action === 'skip-lazy'
+          ? '#fff1f2'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done'
+          ? '#15803d'
+          : action === 'relax'
+          ? '#1d4ed8'
+          : action === 'skip-lazy'
+          ? '#e11d48'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done'
+          ? '#bbf7d0'
+          : action === 'relax'
+          ? '#bfdbfe'
+          : action === 'skip-lazy'
+          ? '#fecdd3'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
 
-    this.renderGraph(step);
-    this.renderHeap(step);
-    this.renderDist(step);
-    this.renderVisited(step);
-    this.renderLogLine(step);
-  }
-
-  private renderGraph(step: DJHStep): void {
-    if (!this.graphEl) return;
-
-    const visualNodes = step.nodes.map((nodeId) => {
-      const pos = DJH_NODE_POSITIONS[nodeId];
-      return {
-        id: nodeId,
-        x: pos.x,
-        y: pos.y,
-        isVisited: step.visited.has(nodeId),
-        isCurrent: step.currentNode === nodeId
-      };
-    });
-
-    const visualEdges = step.edges.map((edge) => {
-      const isRelaxEdge =
-        step.relaxEdge !== null &&
-        step.relaxEdge.from === edge.from &&
-        step.relaxEdge.to === edge.to;
-      return {
-        from: edge.from,
-        to: edge.to,
-        weight: edge.w,
-        isDirected: true,
-        isRelaxing: isRelaxEdge && step.action !== 'relax',
-        isRelaxSuccess: isRelaxEdge && step.action === 'relax',
-        isFromCurrent: step.currentNode === edge.from
-      };
-    });
-
-    GraphTopologyPresenter.render(this.graphEl, visualNodes, visualEdges, {
-      viewBox: '0 0 540 240',
-      height: '240px',
-      prefix: 'djh'
-    });
-  }
-
-  private renderHeap(step: DJHStep): void {
-    if (!this.heapEl) return;
-    this.heapEl.innerHTML = '';
-    if (step.heap.length === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（空堆）';
-      this.heapEl?.appendChild(empty);
-      return;
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
-    // Sort for display (min-heap order)
-    const sorted = [...step.heap].sort((a, b) => a.dist - b.dist);
-    sorted.forEach((item, i) => {
-      const el = document.createElement('div');
-      el.className = 'djh-heap-item';
-      if (i === 0) el.classList.add('top');
-      el.innerHTML = `<span class="djh-heap-node">node=${item.node}</span>d=${item.dist}`;
-      this.heapEl?.appendChild(el);
-    });
-  }
 
-  private renderDist(step: DJHStep): void {
-    if (!this.distEl) return;
-    this.distEl.innerHTML = '';
-    step.nodes.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'djh-dist-item';
-      const d = step.dist[i];
-      const isUpdated = step.prevDist[i] !== step.dist[i];
-      if (isUpdated) item.classList.add('updated');
-      if (step.visited.has(node)) item.classList.add('visited-node');
-      item.innerHTML = `<span class="djh-idx">dist[${node}]</span>${d === INF ? 'INF' : d}`;
-      this.distEl?.appendChild(item);
-    });
-  }
-
-  private renderVisited(step: DJHStep): void {
-    if (!this.visitedEl) return;
-    this.visitedEl.innerHTML = '';
-    if (step.visited.size === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（空）';
-      this.visitedEl?.appendChild(empty);
-      return;
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
     }
-    step.visited.forEach((node) => {
-      const item = document.createElement('div');
-      item.className = 'djh-visited-item';
-      item.textContent = String(node);
-      this.visitedEl?.appendChild(item);
-    });
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: DJHStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'dijkstra-heap',
-  name: 'Dijkstra 堆优化版',
+  name: '堆优化 Dijkstra 最短路径',
   viewId: 'algo-dijkstra-heap-view',
   category: 'graph',
-  description: '优先队列 O((V+E)logV) 单源最短路径',
-  icon: '🔮',
+  description: '使用小顶堆（优先队列）加速带权图单源最短路径计算',
+  icon: '⚡',
+  difficulty: 2,
+  levelOrder: 5,
+  learningGoal: '掌握小顶堆加速单源最短路与惰性删除冗余节点的技巧',
   template,
   Visualizer: DijkstraHeapVisualizer,
-  difficulty: 3,
-  levelOrder: 22,
-  learningGoal: '理解堆优化如何将选最小节点的操作从 O(V) 降到 O(logV)',
 });
-
-export {};

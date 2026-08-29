@@ -1,439 +1,408 @@
 /**
- * SPFA (Shortest Path Faster Algorithm) 可视化器
- * Bellman-Ford 的队列优化版本
+ * SPFA 队列优化最短路径可视化器 — 4-Card 标准现代架构
+ * 队列按需触发松弛、在队标记防止重复进队与负权图高效求解
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  SPFA_PROBLEM_HTML,
+  SPFA_ANALYSIS_HTML,
+  SPFA_CODE_LANGUAGES,
+} from './spfa-problem-content';
+import { BF_NODES, BF_EDGES, BF_NODE_POSITIONS } from './bellman-ford-renderer';
 import template from './spfa.html?raw';
 
-interface SPFStep extends StepBase {
+export interface SPFAStep extends StepBase {
   nodes: number[];
   edges: { from: number; to: number; w: number }[];
   dist: number[];
-  prevDist: number[];
   queue: number[];
-  inQueue: Set<number>;
+  inQueue: boolean[];
   currentNode: number | null;
   relaxEdge: { from: number; to: number; w: number } | null;
-  relaxSuccess: boolean;
-  updateCount: number;
-  action: 'init' | 'dequeue' | 'relax' | 'enqueue' | 'skip' | 'done';
+  relaxCount: number;
+  action: 'init' | 'poll' | 'relax' | 'skip' | 'done';
   statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-const SPFA_NODES = [0, 1, 2, 3, 4];
-const SPFA_EDGES = [
-  { from: 0, to: 1, w: 4 },
-  { from: 0, to: 2, w: 1 },
-  { from: 2, to: 1, w: -2 },
-  { from: 1, to: 3, w: 1 },
-  { from: 2, to: 3, w: 5 },
-  { from: 3, to: 4, w: 3 },
-];
-
-// Node positions for SVG layout
-const SPFA_NODE_POSITIONS: { x: number; y: number }[] = [
-  { x: 80, y: 140 },
-  { x: 240, y: 60 },
-  { x: 240, y: 220 },
-  { x: 380, y: 140 },
-  { x: 460, y: 140 },
-];
-
 const INF = Infinity;
 
-function buildSPFASteps(): SPFStep[] {
-  const steps: SPFStep[] = [];
-  const n = SPFA_NODES.length;
+export function buildSPFASteps(): SPFAStep[] {
+  const steps: SPFAStep[] = [];
+  const n = BF_NODES.length;
   const source = 0;
 
   const dist = new Array(n).fill(INF);
   dist[source] = 0;
+  const inQueue = new Array(n).fill(false);
   const queue: number[] = [source];
-  const inQueue = new Set<number>([source]);
-  let updateCount = 0;
-  let prevDistSnapshot = [...dist];
+  inQueue[source] = true;
+  let relaxCount = 0;
 
   // Build adjacency list
   const adj: { to: number; w: number }[][] = Array.from({ length: n }, () => []);
-  for (const e of SPFA_EDGES) {
+  for (const e of BF_EDGES) {
     adj[e.from].push({ to: e.to, w: e.w });
   }
 
-  const snap = (action: SPFStep['action'], currentNode: number | null, queueSnapshot: number[], inQueueSnapshot: Set<number>, relaxEdge: SPFStep['relaxEdge'], relaxSuccess: boolean, statusText: string, msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      nodes: [...SPFA_NODES],
-      edges: SPFA_EDGES.map(e => ({ ...e })),
-      dist: [...dist],
-      prevDist: [...prevDistSnapshot],
-      queue: [...queueSnapshot],
-      inQueue: new Set(inQueueSnapshot),
-      currentNode,
-      relaxEdge,
-      relaxSuccess,
-      updateCount,
-      action,
-      statusText,
-      message: msg,
-      log,
-      codeLine: code,
-    });
-    prevDistSnapshot = [...dist];
-  };
+  steps.push({
+    nodes: BF_NODES,
+    edges: BF_EDGES,
+    dist: [...dist],
+    queue: [...queue],
+    inQueue: [...inQueue],
+    currentNode: null,
+    relaxEdge: null,
+    relaxCount: 0,
+    action: 'init',
+    statusText: `初始化：源点 ${source} 入队，dist[${source}] = 0，inQueue[${source}] = true。`,
+    log: `初始化 SPFA: 源点 0 入队`,
+    codeLine: [4, 5, 6, 7, 8],
+  });
 
-  // Init
-  snap('init', null, [...queue], new Set(inQueue), null, false, '初始化',
-    `初始化: 源点=${source}, dist[${source}]=0, 将其加入队列。其余 dist=INF。`,
-    `初始化: dist[0]=0, 入队`, [0, 1, 2]);
-
-  // Main loop
   while (queue.length > 0) {
     const u = queue.shift()!;
-    inQueue.delete(u);
+    inQueue[u] = false;
 
-    snap('dequeue', u, [...queue], new Set(inQueue), null, false, '出队',
-      `取出队首节点 ${u}，松弛其所有出边。`,
-      `出队: 节点${u}`, [3, 4]);
+    steps.push({
+      nodes: BF_NODES,
+      edges: BF_EDGES,
+      dist: [...dist],
+      queue: [...queue],
+      inQueue: [...inQueue],
+      currentNode: u,
+      relaxEdge: null,
+      relaxCount,
+      action: 'poll',
+      statusText: `出队节点 ${u}：清除在队标记 (inQueue[${u}] = false)，准备松弛其所有出边。`,
+      log: `出队节点 ${u}`,
+      codeLine: [9, 10, 11],
+    });
 
-    // Relax edges from u
-    for (const { to, w } of adj[u]) {
-      const newDist = dist[u] + w;
-      if (newDist < dist[to]) {
-        const oldDist = dist[to];
-        dist[to] = newDist;
-        updateCount++;
+    for (const edge of adj[u]) {
+      const v = edge.to;
+      const w = edge.w;
 
-        snap('relax', u, [...queue], new Set(inQueue), { from: u, to, w }, true, '松弛成功',
-          `松弛 ${u}->${to}(w=${w}): dist[${u}]+${w}=${newDist} < dist[${to}]=${oldDist === INF ? 'INF' : oldDist}，更新为 ${newDist}。`,
-          `松弛成功: ${u}->${to}, ${oldDist === INF ? 'INF' : oldDist}->${newDist}`, [5, 6]);
+      if (dist[u] !== INF && dist[u] + w < dist[v]) {
+        const oldDist = dist[v];
+        dist[v] = dist[u] + w;
+        relaxCount++;
+        let enqueued = false;
 
-        if (!inQueue.has(to)) {
-          queue.push(to);
-          inQueue.add(to);
-          snap('enqueue', null, [...queue], new Set(inQueue), null, false, '入队',
-            `节点 ${to} 不在队列中，将其加入队列。`,
-            `节点${to}入队`, [7]);
+        if (!inQueue[v]) {
+          queue.push(v);
+          inQueue[v] = true;
+          enqueued = true;
         }
+
+        steps.push({
+          nodes: BF_NODES,
+          edges: BF_EDGES,
+          dist: [...dist],
+          queue: [...queue],
+          inQueue: [...inQueue],
+          currentNode: u,
+          relaxEdge: { from: u, to: v, w },
+          relaxCount,
+          action: 'relax',
+          statusText: `成功松弛边 (${u} -> ${v}, w=${w})：dist[${v}] 从 ${
+            oldDist === INF ? '∞' : oldDist
+          } 缩短为 ${dist[v]}。${enqueued ? `节点 ${v} 不在队列中，推入队列！` : `节点 ${v} 已在队列中。`}`,
+          log: `  松弛 (${u}->${v}, w=${w}): dist[${v}]=${dist[v]}${enqueued ? ' -> 入队' : ''}`,
+          codeLine: [13, 14, 15, 16],
+        });
       } else {
-        const distStr = dist[u] === INF ? 'INF' : String(dist[u]);
-        snap('skip', u, [...queue], new Set(inQueue), { from: u, to, w }, false, '跳过',
-          `检查 ${u}->${to}(w=${w}): dist[${u}]=${distStr}${dist[u] === INF ? '(不可达)' : `+${w}=${newDist}`} ${dist[u] === INF ? '' : (newDist < dist[to] ? '<' : '>=')} dist[${to}]=${dist[to] === INF ? 'INF' : dist[to]}${newDist >= dist[to] ? '，无需更新' : ''}。`,
-          `跳过: ${u}->${to}`, [5, 8]);
+        steps.push({
+          nodes: BF_NODES,
+          edges: BF_EDGES,
+          dist: [...dist],
+          queue: [...queue],
+          inQueue: [...inQueue],
+          currentNode: u,
+          relaxEdge: { from: u, to: v, w },
+          relaxCount,
+          action: 'skip',
+          statusText: `检查边 (${u} -> ${v}, w=${w})：dist[${u}] + (${w}) >= dist[${v}] (${dist[v]})，无需松弛。`,
+          log: `  跳过 (${u}->${v})`,
+          codeLine: 13,
+        });
       }
     }
   }
 
-  // Done
-  snap('done', null, [], new Set(), null, false, '完成',
-    `SPFA 完成！共 ${updateCount} 次距离更新。最短距离: [${dist.map((d, i) => `${i}:${d === INF ? 'INF' : d}`).join(', ')}]`,
-    `完成: ${updateCount}次更新, 最短路径已求出`, [9]);
+  steps.push({
+    nodes: BF_NODES,
+    edges: BF_EDGES,
+    dist: [...dist],
+    queue: [],
+    inQueue: new Array(n).fill(false),
+    currentNode: null,
+    relaxEdge: null,
+    relaxCount,
+    action: 'done',
+    statusText: `🎉 队列为空，SPFA 算法执行完成！单源最短路径全部求出。`,
+    log: `✓ SPFA 求解完毕: dist=[${dist.join(', ')}]`,
+    codeLine: 21,
+  });
 
   return steps;
 }
 
-export class SPFAVisualizer extends StepVisualizer<SPFStep> {
-  protected codeLines = [
-    'int[] SPFA(List<int[]>[] adj, int source) {',
-    '    int[] dist = new int[V]; Arrays.fill(dist, INF);',
-    '    dist[source] = 0;',
-    '    Queue<Integer> queue = new LinkedList<>();',
-    '    boolean[] inQueue = new boolean[V];',
-    '    queue.add(source); inQueue[source] = true;',
-    '    while (!queue.isEmpty()) {',
-    '        int u = queue.poll(); inQueue[u] = false;',
-    '        for (int[] edge : adj[u]) {',
-    '            int v = edge[0], w = edge[1];',
-    '            if (dist[u] + w < dist[v]) {',
-    '                dist[v] = dist[u] + w;',
-    '                if (!inQueue[v]) {',
-    '                    queue.add(v); inQueue[v] = true;',
-    '                }',
-    '            }',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'SPFA 算法代码 (Java)';
+export class SPFAVisualizer extends StepVisualizer<SPFAStep> {
+  protected codeLanguages = SPFA_CODE_LANGUAGES;
+  protected codeLines = SPFA_CODE_LANGUAGES['java'];
+  protected codePanelTitle = 'SPFA 队列优化最短路 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private queueEl: HTMLElement | null = null;
-  private distEl: HTMLElement | null = null;
-  private inQueueEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private queueSizeEl: HTMLElement | null = null;
-  private updateCountEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private distPillsWrap: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private metricRelaxEdgeEl: HTMLElement | null = null;
+  private metricInQCountEl: HTMLElement | null = null;
+  private metricRelaxCountEl: HTMLElement | null = null;
+  private queueElementsEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#spfa-graph');
-    this.queueEl = this.root.querySelector('#spfa-queue');
-    this.distEl = this.root.querySelector('#spfa-dist');
-    this.inQueueEl = this.root.querySelector('#spfa-inqueue');
-    this.logEl = this.root.querySelector('#spfa-log');
-    this.currentEl = this.root.querySelector('#spfa-current');
-    this.queueSizeEl = this.root.querySelector('#spfa-queue-size');
-    this.updateCountEl = this.root.querySelector('#spfa-update-count');
-    this.statusEl = this.root.querySelector('#spfa-status');
-    this.btnStart = this.root.querySelector('#spfa-start');
-    this.bindPlaybackControls({
-      speed: 'spfa-speed',
-      speedLabel: 'spfa-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#spfa-svg-canvas');
+    this.distPillsWrap = this.root.querySelector('#dist-pills-wrap');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.metricRelaxEdgeEl = this.root.querySelector('#metric-relax-edge');
+    this.metricInQCountEl = this.root.querySelector('#metric-in-q-count');
+    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
+    this.queueElementsEl = this.root.querySelector('#queue-elements');
+    this.liveTextEl = this.root.querySelector('#spfa-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 400;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: SPFA_PROBLEM_HTML,
+      analysisHtml: SPFA_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
-  protected buildSteps(): SPFStep[] {
+  protected buildSteps(): SPFAStep[] {
     return buildSPFASteps();
   }
 
-  protected renderStep(step: SPFStep): void {
-    if (this.currentEl) {
-      this.currentEl.textContent = step.currentNode !== null ? String(step.currentNode) : '-';
+  protected renderStep(step: SPFAStep): void {
+    const { dist, queue, inQueue, currentNode, relaxEdge, relaxCount, statusText, action } = step;
+
+    // 1. 绘制 SVG 拓扑图
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 520 260" style="width:100%; height:100%; max-height:240px;">
+        <defs>
+          <marker id="arrow-spfa" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+          </marker>
+          <marker id="arrow-spfa-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+          </marker>
+        </defs>`;
+
+      // 绘制边
+      for (const e of BF_EDGES) {
+        const p1 = BF_NODE_POSITIONS[e.from];
+        const p2 = BF_NODE_POSITIONS[e.to];
+        const isActive = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
+        const isNeg = e.w < 0;
+        const strokeColor = isActive ? '#2563eb' : isNeg ? '#f87171' : '#cbd5e1';
+        const strokeWidth = isActive ? 3.5 : 2;
+        const marker = isActive ? 'url(#arrow-spfa-active)' : 'url(#arrow-spfa)';
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+
+        const midX = (p1.x + p2.x) / 2 + (p1.y === p2.y ? 0 : p1.y > p2.y ? 12 : -12);
+        const midY = (p1.y + p2.y) / 2 - 8;
+        svgHtml += `<text x="${midX}" y="${midY}" fill="${isActive ? '#1d4ed8' : isNeg ? '#dc2626' : '#64748b'}" font-size="11" font-weight="800" text-anchor="middle">${e.w}</text>`;
+      }
+
+      // 绘制节点
+      BF_NODES.forEach((node) => {
+        const p = BF_NODE_POSITIONS[node];
+        const isCurrent = currentNode === node;
+        const isInQ = inQueue[node];
+        const isSource = node === 0;
+
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrent) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        } else if (isInQ) {
+          fill = '#dbeafe';
+          stroke = '#3b82f6';
+        } else if (isSource) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+
+        const dVal = dist[node] === INF ? '∞' : dist[node];
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="#64748b" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">d:${dVal}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
-    if (this.queueSizeEl) this.queueSizeEl.textContent = String(step.queue.length);
-    if (this.updateCountEl) this.updateCountEl.textContent = String(step.updateCount);
-    if (this.statusEl) {
-      this.statusEl.textContent = step.statusText;
-      if (step.action === 'relax') {
-        (this.statusEl as HTMLElement).style.color = '#22c55e';
-      } else if (step.action === 'skip') {
-        (this.statusEl as HTMLElement).style.color = '#f59e0b';
-      } else {
-        (this.statusEl as HTMLElement).style.color = '#14b8a6';
+
+    // 2. 渲染 Dist 药丸栏
+    if (this.distPillsWrap) {
+      this.distPillsWrap.innerHTML = BF_NODES.map((node) => {
+        const d = dist[node] === INF ? '∞' : `${dist[node]}`;
+        const isInQ = inQueue[node];
+        const isCurrent = currentNode === node;
+
+        let cls = 'spfa-dist-pill';
+        if (isCurrent) cls += ' is-active';
+        else if (isInQ) cls += ' is-in-q';
+
+        return `<div class="${cls}">
+          <span style="color:#64748b;">${node}:</span>
+          <span>${d}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode != null ? `${currentNode}` : '—';
+    if (this.metricRelaxEdgeEl) {
+      this.metricRelaxEdgeEl.textContent = relaxEdge ? `(${relaxEdge.from} -> ${relaxEdge.to}, w=${relaxEdge.w})` : '—';
+    }
+    if (this.metricInQCountEl) this.metricInQCountEl.textContent = `${queue.length}`;
+    if (this.metricRelaxCountEl) this.metricRelaxCountEl.textContent = `${relaxCount}`;
+
+    if (this.queueElementsEl) {
+      this.queueElementsEl.textContent =
+        queue.length > 0 ? `[ ${queue.join(', ')} ]` : '[ (空) ]';
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done'
+          ? '#f0fdf4'
+          : action === 'relax'
+          ? '#eff6ff'
+          : action === 'poll'
+          ? '#fefce8'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done'
+          ? '#15803d'
+          : action === 'relax'
+          ? '#1d4ed8'
+          : action === 'poll'
+          ? '#854d0e'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done'
+          ? '#bbf7d0'
+          : action === 'relax'
+          ? '#bfdbfe'
+          : action === 'poll'
+          ? '#fef08a'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
 
-    this.renderGraph(step);
-    this.renderQueue(step);
-    this.renderDist(step);
-    this.renderInQueue(step);
-    this.renderLogLine(step);
-  }
-
-  private renderGraph(step: SPFStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 540 280');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '540px';
-    svg.style.height = '280px';
-
-    // Draw edges
-    for (const edge of step.edges) {
-      const p1 = SPFA_NODE_POSITIONS[edge.from];
-      const p2 = SPFA_NODE_POSITIONS[edge.to];
-      const isRelaxEdge = step.relaxEdge !== null &&
-        step.relaxEdge.from === edge.from && step.relaxEdge.to === edge.to;
-      const isFromCurrent = step.currentNode === edge.from;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('spfa-edge');
-
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-
-      if (isRelaxEdge && step.relaxSuccess) {
-        line.setAttribute('stroke', '#22c55e');
-        line.setAttribute('stroke-width', '3.5');
-        line.style.animation = 'pathPulse 0.8s infinite';
-      } else if (isRelaxEdge) {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '3');
-      } else if (isFromCurrent) {
-        line.setAttribute('stroke', 'rgba(20, 184, 166, 0.5)');
-        line.setAttribute('stroke-width', '2');
-      } else {
-        line.setAttribute('stroke', 'rgba(20, 184, 166, 0.2)');
-        line.setAttribute('stroke-width', '1.5');
-      }
-      g?.appendChild(line);
-
-      // Arrow head
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const ux = dx / len;
-      const uy = dy / len;
-      const nodeR = 22;
-      const ax = p2.x - ux * (nodeR + 4);
-      const ay = p2.y - uy * (nodeR + 4);
-      const arrowSize = 10;
-      const perpX = -uy;
-      const perpY = ux;
-
-      let strokeColor = 'rgba(20, 184, 166, 0.2)';
-      if (isRelaxEdge && step.relaxSuccess) strokeColor = '#22c55e';
-      else if (isRelaxEdge) strokeColor = '#f59e0b';
-      else if (isFromCurrent) strokeColor = 'rgba(20, 184, 166, 0.5)';
-
-      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      arrow.setAttribute('points',
-        `${ax},${ay} ${ax - ux * arrowSize + perpX * arrowSize * 0.4},${ay - uy * arrowSize + perpY * arrowSize * 0.4} ${ax - ux * arrowSize - perpX * arrowSize * 0.4},${ay - uy * arrowSize - perpY * arrowSize * 0.4}`
-      );
-      arrow.setAttribute('fill', strokeColor);
-      g?.appendChild(arrow);
-
-      // Weight label
-      const mx = (p1.x + p2.x) / 2;
-      const my = (p1.y + p2.y) / 2;
-      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(mx - 14));
-      bg.setAttribute('y', String(my - 10));
-      bg.setAttribute('width', '28');
-      bg.setAttribute('height', '20');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('fill', isRelaxEdge && step.relaxSuccess ? 'rgba(34, 197, 94, 0.3)' : isRelaxEdge ? 'rgba(245, 158, 11, 0.3)' : 'rgba(30, 30, 50, 0.8)');
-      bg.setAttribute('stroke', isRelaxEdge && step.relaxSuccess ? '#22c55e' : isRelaxEdge ? '#f59e0b' : edge.w < 0 ? 'rgba(239, 68, 68, 0.5)' : 'rgba(156, 163, 175, 0.4)');
-      bg.setAttribute('stroke-width', '1');
-      g?.appendChild(bg);
-
-      const wt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      wt.setAttribute('x', String(mx));
-      wt.setAttribute('y', String(my + 5));
-      wt.setAttribute('text-anchor', 'middle');
-      let weightColor = 'rgba(156, 163, 175, 0.7)';
-      if (edge.w < 0) weightColor = '#ef4444';
-      if (isRelaxEdge && step.relaxSuccess) weightColor = '#22c55e';
-      else if (isRelaxEdge) weightColor = '#f59e0b';
-      wt.setAttribute('fill', weightColor);
-      wt.setAttribute('font-size', '12');
-      wt.setAttribute('font-weight', '700');
-      wt.setAttribute('font-family', 'ui-monospace, monospace');
-      wt.textContent = String(edge.w);
-      g?.appendChild(wt);
-
-      svg?.appendChild(g);
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
 
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = SPFA_NODE_POSITIONS[i];
-      const isInQueue = step.inQueue.has(i);
-      const isCurrent = step.currentNode === i;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('spfa-node');
-
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
-
-      if (isCurrent) {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.5)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 1s infinite';
-      } else if (isInQueue) {
-        circle.setAttribute('fill', 'rgba(20, 184, 166, 0.4)');
-        circle.setAttribute('stroke', '#14b8a6');
-        circle.setAttribute('stroke-width', '3');
-      } else {
-        circle.setAttribute('fill', 'rgba(20, 184, 166, 0.12)');
-        circle.setAttribute('stroke', '#14b8a6');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      const textColor = isCurrent ? '#fff' : isInQueue ? '#14b8a6' : '#14b8a6';
-      text.setAttribute('fill', textColor);
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
     }
-
-    this.graphEl?.appendChild(svg);
-  }
-
-  private renderQueue(step: SPFStep): void {
-    if (!this.queueEl) return;
-    this.queueEl.innerHTML = '';
-    if (step.queue.length === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（空队列）';
-      this.queueEl?.appendChild(empty);
-      return;
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
-    step.queue.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'spfa-queue-item';
-      if (i === 0 && step.action !== 'init') item.classList.add('current');
-      item.textContent = String(node);
-      this.queueEl?.appendChild(item);
-    });
   }
 
-  private renderDist(step: SPFStep): void {
-    if (!this.distEl) return;
-    this.distEl.innerHTML = '';
-    step.nodes.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'spfa-dist-item';
-      const d = step.dist[i];
-      const isUpdated = step.prevDist[i] !== step.dist[i];
-      if (isUpdated) item.classList.add('updated');
-      item.innerHTML = `<span class="spfa-idx">dist[${node}]</span>${d === INF ? 'INF' : d}`;
-      this.distEl?.appendChild(item);
-    });
-  }
-
-  private renderInQueue(step: SPFStep): void {
-    if (!this.inQueueEl) return;
-    this.inQueueEl.innerHTML = '';
-    step.nodes.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'spfa-inqueue-item';
-      if (step.inQueue.has(node)) item.classList.add('in-queue');
-      item.innerHTML = `<span class="spfa-idx">节点${node}</span>${step.inQueue.has(node) ? '✓' : '-'}`;
-      this.inQueueEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: SPFStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'spfa',
-  name: 'SPFA 算法',
+  name: 'SPFA 队列优化最短路',
   viewId: 'algo-spfa-view',
   category: 'graph',
-  description: 'Bellman-Ford 的队列优化版本，仅松弛队列中节点的出边',
-  icon: '⚡',
+  description: '使用队列维护可能被松弛的顶点以优化 Bellman-Ford 算法的执行效率',
+  icon: '🚀',
+  difficulty: 2,
+  levelOrder: 7,
+  learningGoal: '掌握通过在队标记与队列驱动实现高效带负权图最短路',
   template,
   Visualizer: SPFAVisualizer,
-  difficulty: 3,
-  levelOrder: 24,
-  learningGoal: '理解 SPFA 中队列优化如何避免不必要的松弛操作',
 });
-
-export {};

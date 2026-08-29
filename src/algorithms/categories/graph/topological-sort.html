@@ -1,581 +1,504 @@
 <style>
+  /* === 拓扑排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-topological-sort-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
-    overflow: hidden;
-  }
-
-  #algo-topological-sort-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #f59e0b55, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #d9770655, transparent 55%),
-                linear-gradient(135deg, #451a03 0%, #78350f 25%, #451a03 50%, #92400e 75%, #451a03 100%);
-    z-index: -2;
-  }
-
-  #algo-topological-sort-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(69, 26, 3, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-topological-sort-view .ts-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .ts-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .ts-hero .ts-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .ts-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-  }
-
-  .ts-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .ts-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
-  }
-
-  .ts-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-
-  .ts-tip strong {
-    color: #f59e0b;
-    font-weight: 600;
-  }
-
-  #algo-topological-sort-view .ts-layout {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-topological-sort-view .ts-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .ts-main {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .ts-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .ts-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .ts-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-  }
-
-  .ts-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-  }
-
-  .ts-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .ts-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .ts-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #f59e0b, #d97706);
-  }
-
-  .ts-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .ts-stat-val {
-    color: #f59e0b;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-  }
-
-  .ts-graph-container {
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 280px;
-  }
-
-  .ts-graph-container svg {
-    width: 100%;
-    max-width: 480px;
-    height: 280px;
-  }
-
-  .ts-indegree-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .ts-indegree-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .ts-indegree-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .ts-indegree-item {
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    color: #f59e0b;
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    font-weight: 600;
-    min-width: 32px;
-    text-align: center;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .ts-indegree-item .ts-idx {
-    display: block;
-    font-size: 9px;
-    color: rgba(204, 214, 244, 0.5);
-    margin-bottom: 2px;
-  }
-
-  .ts-indegree-item.zero {
-    background: rgba(34, 197, 94, 0.2);
-    border-color: rgba(34, 197, 94, 0.5);
-    color: #22c55e;
-  }
-
-  .ts-indegree-item.changed {
-    background: rgba(245, 158, 11, 0.4);
-    border-color: #f59e0b;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-  }
-
-  .ts-queue-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .ts-queue-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .ts-queue-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .ts-queue-item {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(245, 158, 11, 0.2);
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    color: #f59e0b;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .ts-queue-item.current {
-    background: rgba(245, 158, 11, 0.5);
-    border-color: #f59e0b;
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
-  }
-
-  .ts-result-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .ts-result-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .ts-result-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .ts-result-item {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(34, 197, 94, 0.2);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    color: #22c55e;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .ts-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    background: rgba(245, 158, 11, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .ts-log {
     min-height: 0;
-    max-height: 120px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .ts-log div {
-    padding: 2px 0;
-  }
-
-  .ts-log div.active {
-    color: #f59e0b;
-    font-weight: 600;
-  }
-
-  .ts-right {
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .ts-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-topological-sort-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-topological-sort-view .topo-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-topological-sort-view .topo-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-topological-sort-view .topo-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-topological-sort-view .topo-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-topological-sort-view .topo-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-topological-sort-view .topo-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-topological-sort-view .topo-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-topological-sort-view .topo-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-topological-sort-view .topo-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-topological-sort-view .topo-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-topological-sort-view .topo-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-topological-sort-view .topo-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-topological-sort-view .topo-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-topological-sort-view .topo-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
     flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
   }
 
-  .ts-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
+  #algo-topological-sort-view .topo-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-topological-sort-view .topo-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-topological-sort-view .topo-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-topological-sort-view .topo-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 拓扑图 SVG 画布 */
+  #algo-topological-sort-view .topo-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* inDegree 数组展示栏 */
+  #algo-topological-sort-view .topo-degree-track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    overflow-x: auto;
+  }
+
+  #algo-topological-sort-view .topo-degree-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  #algo-topological-sort-view .topo-degree-pill.is-zero {
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #16a34a;
+    font-weight: 800;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-topological-sort-view .topo-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-topological-sort-view .topo-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-topological-sort-view .topo-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-topological-sort-view .topo-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-topological-sort-view .topo-queue-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    overflow-x: auto;
+  }
+
+  #algo-topological-sort-view .topo-order-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    overflow-x: auto;
+  }
+
+  #algo-topological-sort-view .topo-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-topological-sort-view .topo-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-topological-sort-view .topo-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-topological-sort-view .topo-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-topological-sort-view .topo-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-topological-sort-view .topo-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
     gap: 8px;
   }
 
-  .ts-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .ts-legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-  }
-
-  .ts-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .ts-pb-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .ts-pb-btn {
+  #algo-topological-sort-view .topo-progress-wrap input[type="range"] {
     flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(245, 158, 11, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    accent-color: #2563eb;
   }
 
-  .ts-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .ts-pb-btn:not(:disabled):hover {
-    background: rgba(245, 158, 11, 0.2);
-    border-color: #f59e0b;
-    transform: translateY(-1px);
-  }
-
-  .ts-pb-btn.play {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    border: none;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-  }
-
-  .ts-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-  }
-
-  .ts-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .ts-speed-row input {
-    flex: 1;
-    accent-color: #f59e0b;
-  }
-
-  .ts-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
-  }
-
-  @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @keyframes pathPulse {
-    0%, 100% { stroke-opacity: 1; }
-    50% { stroke-opacity: 0.5; }
-  }
-
-  .ts-node {
-    transition: all 0.3s ease;
-  }
-
-  .ts-edge {
-    transition: all 0.3s ease;
+  #algo-topological-sort-view .topo-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="ts-page">
-  <div class="ts-hero">
-    <div class="ts-title-wrapper">
-      <div class="ts-hero-icon">📐</div>
-      <div class="ts-hero-text">
-        <h2>拓扑排序</h2>
-        <p>Kahn 算法：反复移除入度为 0 的节点，得到 DAG 的线性序</p>
-      </div>
+<div id="algo-topological-sort-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="topo-header">
+    <div class="topo-header-left">
+      <div class="topo-icon-btn">🎯</div>
+      <div class="topo-main-title">拓扑排序 · Topological Sort</div>
+      <button class="topo-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="topo-badge-mode">Kahn 入度剥离队列算法</div>
+      <div class="topo-badge-complexity">O(V+E) · O(V+E)</div>
     </div>
-    <div class="ts-tip"><strong>核心思想：</strong>计算所有节点的入度，将入度为 0 的节点加入队列。每次取出队首节点加入拓扑序，并减少其邻接节点的入度。若邻接节点入度变为 0，则入队。最终得到 DAG 的拓扑排序。</div>
-  </div>
-
-  <div class="ts-layout">
-    <div class="ts-main">
-      <div class="ts-card">
-        <div class="ts-controls">
-          <button id="ts-start" class="ts-btn">开始拓扑排序</button>
-        </div>
-
-        <div class="ts-stats">
-          <div class="ts-stat"><span class="ts-stat-label">当前节点</span><span class="ts-stat-val" id="ts-current">-</span></div>
-          <div class="ts-stat"><span class="ts-stat-label">已排序</span><span class="ts-stat-val" id="ts-sorted-count">0</span></div>
-          <div class="ts-stat"><span class="ts-stat-label">队列大小</span><span class="ts-stat-val" id="ts-queue-size">0</span></div>
-        </div>
-
-        <div class="ts-graph-container" id="ts-graph"></div>
-
-        <div class="ts-indegree-container">
-          <div class="ts-indegree-title">入度数组 inDegree[]</div>
-          <div class="ts-indegree-row" id="ts-indegree"></div>
-        </div>
-
-        <div class="ts-queue-container">
-          <div class="ts-queue-title">零入度队列</div>
-          <div class="ts-queue-row" id="ts-queue"></div>
-        </div>
-
-        <div class="ts-result-container">
-          <div class="ts-result-title">拓扑排序结果</div>
-          <div class="ts-result-row" id="ts-result"></div>
-        </div>
-
-        <div class="ts-message" id="step-message">点击「开始拓扑排序」执行 Kahn 拓扑排序算法。</div>
-
-        <div class="ts-log" id="ts-log"></div>
-      </div>
+    <div class="topo-header-right">
+      <button class="topo-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="topo-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
+  </header>
 
-    <div class="ts-right">
-      <div data-code-panel class="ts-code-card"></div>
-      <div class="ts-legend">
-        <div class="ts-legend-item"><span class="ts-legend-box" style="background:rgba(245,158,11,0.2);border:2px solid #f59e0b"></span>未处理节点</div>
-        <div class="ts-legend-item"><span class="ts-legend-box" style="background:rgba(34,197,94,0.4);border:2px solid #22c55e"></span>已排序节点</div>
-        <div class="ts-legend-item"><span class="ts-legend-box" style="background:#f59e0b"></span>当前处理节点</div>
-        <div class="ts-legend-item"><span class="ts-legend-box" style="background:rgba(100,100,120,0.3);border:2px solid #64748b"></span>已移除节点</div>
-      </div>
-      <div class="ts-playback">
-        <div class="ts-pb-row">
-          <button id="step-reset" class="ts-pb-btn">重置</button>
-          <button id="step-prev" class="ts-pb-btn">上一步</button>
-          <button id="step-play" class="ts-pb-btn play">播放</button>
-          <button id="step-next" class="ts-pb-btn">下一步</button>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="topo-workspace">
+    <!-- Card 1: 拓扑图 SVG 画布 -->
+    <section class="topo-card">
+      <div class="topo-card-header">
+        <div class="topo-card-title">
+          <span>📊</span> 有向无环图 (DAG) 拓扑沙盘 (Graph Topology Canvas)
         </div>
-        <div class="ts-speed-row">
-          <span>速度</span>
-          <input id="ts-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="ts-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #10b981;">● 入度为 0 / 已排序</span> · <span style="color: #3b82f6;">● 队列中</span> · <span style="color: #fbbf24;">● 当前出队</span>
         </div>
-        <div id="step-counter" class="ts-counter">步骤: 1 / 1</div>
       </div>
+      <div class="topo-card-body" style="justify-content: center; align-items: center;">
+        <div class="topo-svg-wrap" id="topo-svg-canvas"></div>
+      </div>
+      <div class="topo-degree-track" id="topo-degree-track">
+        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">入度 inDegree:</span>
+        <div id="degree-pills-wrap" style="display: flex; gap: 6px;"></div>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="topo-card">
+      <div class="topo-card-header">
+        <div class="topo-card-title">
+          <span>🧭</span> 拓扑序列与指标监视器 (Topological Metrics Monitor)
+        </div>
+      </div>
+      <div class="topo-card-body">
+        <div class="topo-metrics-grid">
+          <div class="topo-metric-card">
+            <span class="topo-metric-label">当前出队节点 u</span>
+            <span class="topo-metric-val" id="metric-cur-node" style="color: #fbbf24;">—</span>
+          </div>
+          <div class="topo-metric-card">
+            <span class="topo-metric-label">队列大小 queue</span>
+            <span class="topo-metric-val" id="metric-queue-size" style="color: #3b82f6;">0</span>
+          </div>
+          <div class="topo-metric-card">
+            <span class="topo-metric-label">已排序节点数</span>
+            <span class="topo-metric-val" id="metric-order-count" style="color: #10b981;">0 / 6</span>
+          </div>
+          <div class="topo-metric-card">
+            <span class="topo-metric-label">DAG 环状态</span>
+            <span class="topo-metric-val" id="metric-cycle-status" style="color: #10b981;">无环 (DAG)</span>
+          </div>
+        </div>
+        <div class="topo-queue-box" id="topo-queue-box">
+          <span style="color: #64748b; font-weight: 700;">入度为 0 队列:</span>
+          <span id="queue-elements" style="color: #3b82f6; font-weight: 800;">[ ]</span>
+        </div>
+        <div class="topo-order-box" id="topo-order-box">
+          <span style="color: #15803d; font-weight: 700;">拓扑序列 Order:</span>
+          <span id="order-elements" style="color: #16a34a; font-weight: 800;">[ ]</span>
+        </div>
+        <div class="topo-live-alert" id="topo-live-alert">
+          <span>💡</span> <span id="topo-live-text">准备就绪，点击运行开始拓扑排序演示。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="topo-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="topo-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="topo-card-header">
+        <div class="topo-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="topo-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="topo-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="topo-playback-bar">
+    <div class="topo-playback-controls">
+      <button class="topo-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="topo-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="topo-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="topo-progress-wrap">
+      <span class="topo-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="500" selected>正常</option>
+        <option value="200">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

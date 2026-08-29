@@ -1,47 +1,47 @@
 /**
- * 孤岛计数 · 广搜版（BFS）可视化器
+ * 岛屿数量 (BFS 广度优先搜索) 可视化器 — 4-Card 标准现代架构
+ * 队列波浪式扩散、入队即时沉岛染色、避免重复进队
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  ISLANDS_BFS_PROBLEM_HTML,
+  ISLANDS_BFS_ANALYSIS_HTML,
+  ISLANDS_BFS_CODE_LANGUAGES,
+} from './islands-bfs-problem-content';
+import { CellState } from './islands-renderer';
 import template from './islands-bfs.html?raw';
 
-type CellState = 'water' | 'land' | 'visited' | 'island';
-
-interface IslandsBfsStep {
+export interface IslandsBFSStep {
   grid: number[][];
   states: CellState[][];
   current: [number, number] | null;
   queue: [number, number][];
   scan: [number, number] | null;
   count: number;
-  visitedCount: number;
-  action: 'init' | 'scan' | 'found' | 'dequeue' | 'explore' | 'skip' | 'done';
+  visitedLand: number;
+  action: 'init' | 'scan' | 'found' | 'enqueue' | 'poll' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseGrid(input: string): number[][] {
-  const rows = input.split(/[;\n]+/).map((r) => r.trim()).filter((r) => r.length > 0);
-  return rows.map((r) =>
-    r.split(',').map((c) => parseInt(c.trim(), 10))
-  ).filter((r) => r.length > 0 && !r.some(isNaN));
-}
-
-function buildIslandsBfsSteps(grid: number[][]): IslandsBfsStep[] {
-  const steps: IslandsBfsStep[] = [];
+export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
+  const steps: IslandsBFSStep[] = [];
   const m = grid.length;
   if (m === 0) return steps;
   const n = grid[0].length;
-  const states: CellState[][] = grid.map((row) =>
-    row.map((v) => (v === 1 ? 'land' : 'water'))
-  );
+  const states: CellState[][] = grid.map((row) => row.map((v) => (v === 1 ? 'land' : 'water')));
   let count = 0;
-  let visitedCount = 0;
-  const dirs: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+  let visitedLand = 0;
+  const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 
-  const snapshot = (extra: Partial<IslandsBfsStep>): void => {
+  const snapshot = (extra: Partial<IslandsBFSStep>): void => {
     steps.push({
       grid,
       states: states.map((r) => [...r]),
@@ -49,7 +49,7 @@ function buildIslandsBfsSteps(grid: number[][]): IslandsBfsStep[] {
       queue: extra.queue ? [...extra.queue] : [],
       scan: extra.scan ?? null,
       count,
-      visitedCount,
+      visitedLand,
       action: extra.action ?? 'scan',
       message: extra.message ?? '',
       log: extra.log ?? '',
@@ -59,93 +59,70 @@ function buildIslandsBfsSteps(grid: number[][]): IslandsBfsStep[] {
 
   snapshot({
     action: 'init',
-    message: `网格 ${m}x${n}，从左上角开始逐格扫描。遇到陆地即用 BFS 逐层探索整座岛屿。`,
-    log: `初始化 ${m}x${n} 网格，BFS 准备就绪。`,
-    codeLine: [1, 2],
+    message: `初始化 ${m}×${n} 网格。准备双重循环扫描寻找未访问陆地 (1)。`,
+    log: `初始化网格 ${m}x${n}`,
+    codeLine: 2,
   });
 
-  for (let i = 0; i < m; i++) {
-    for (let j = 0; j < n; j++) {
-      if (states[i][j] === 'land') {
+  for (let r = 0; r < m; r++) {
+    for (let c = 0; c < n; c++) {
+      if (states[r][c] === 'land') {
         count++;
+        states[r][c] = 'visited';
+        visitedLand++;
+        const q: [number, number][] = [[r, c]];
+
         snapshot({
-          scan: [i, j],
+          scan: [r, c],
+          current: [r, c],
+          queue: [...q],
           action: 'found',
-          message: `扫描到 (${i},${j}) 为陆地！发现第 ${count} 个岛屿，启动 BFS。`,
-          log: `发现岛屿 #${count} 于 (${i},${j})。`,
-          codeLine: [3, 4],
+          message: `🎯 在 (${r}, ${c}) 发现新岛屿起点！count = ${count}。起点入队并立即染色标记。`,
+          log: `[新岛屿 #${count}] 发现起点 (${r}, ${c}) 并入队`,
+          codeLine: [6, 7, 8, 9],
         });
 
-        const queue: [number, number][] = [[i, j]];
-        states[i][j] = 'visited';
-        visitedCount++;
-
-        snapshot({
-          current: [i, j],
-          queue,
-          scan: [i, j],
-          action: 'dequeue',
-          message: `将 (${i},${j}) 入队并标记已访问。BFS 队列: [(${i},${j})]。`,
-          log: `BFS 起始 (${i},${j}) 入队。`,
-          codeLine: [5, 6],
-        });
-
-        while (queue.length > 0) {
-          const [ci, cj] = queue.shift()!;
+        while (q.length > 0) {
+          const [cr, cc] = q.shift()!;
 
           snapshot({
-            current: [ci, cj],
-            queue,
-            action: 'explore',
-            message: `出队 (${ci},${cj})，向四方向扩展探索。队列剩余 ${queue.length} 格。`,
-            log: `出队 (${ci},${cj})，探索邻居。`,
-            codeLine: [7, 8],
+            scan: [r, c],
+            current: [cr, cc],
+            queue: [...q],
+            action: 'poll',
+            message: `出队 (${cr}, ${cc})：检查四周邻格是否存在连通陆地。`,
+            log: `  出队 (${cr}, ${cc})`,
+            codeLine: 11,
           });
 
-          for (const [di, dj] of dirs) {
-            const ni = ci + di;
-            const nj = cj + dj;
-            if (ni >= 0 && ni < m && nj >= 0 && nj < n && states[ni][nj] === 'land') {
-              states[ni][nj] = 'visited';
-              visitedCount++;
-              queue.push([ni, nj]);
+          for (const [dr, dc] of dirs) {
+            const nr = cr + dr;
+            const nc = cc + dc;
+            if (nr >= 0 && nr < m && nc >= 0 && nc < n && states[nr][nc] === 'land') {
+              states[nr][nc] = 'visited';
+              visitedLand++;
+              q.push([nr, nc]);
 
               snapshot({
-                current: [ni, nj],
-                queue,
-                action: 'explore',
-                message: `发现陆地 (${ni},${nj})，标记已访问并入队。队列大小: ${queue.length}。`,
-                log: `入队 (${ni},${nj})，队列 [${queue.map(([a, b]) => `(${a},${b})`).join(', ')}]`,
-                codeLine: [9, 10, 11],
+                scan: [r, c],
+                current: [nr, nc],
+                queue: [...q],
+                action: 'enqueue',
+                message: `发现邻接陆地 (${nr}, ${nc})：立即染色沉没并推入队列。`,
+                log: `  发现陆地 (${nr}, ${nc}) -> 入队`,
+                codeLine: [14, 15, 16],
               });
             }
           }
         }
-
-        // Mark this island as fully explored
-        for (let a = 0; a < m; a++) {
-          for (let b = 0; b < n; b++) {
-            if (states[a][b] === 'visited' && grid[a][b] === 1) {
-              states[a][b] = 'island';
-            }
-          }
-        }
-
-        snapshot({
-          current: null,
-          queue: [],
-          action: 'found',
-          message: `BFS 完成！岛屿 #${count} 全部探索完毕。`,
-          log: `岛屿 #${count} BFS 探索完成。`,
-          codeLine: 12,
-        });
       } else {
         snapshot({
-          scan: [i, j],
-          action: 'skip',
-          message: `扫描 (${i},${j})：${states[i][j] === 'water' ? '水，跳过' : '已访问，跳过'}。`,
-          log: `跳过 (${i},${j})。`,
-          codeLine: 3,
+          scan: [r, c],
+          current: null,
+          action: 'scan',
+          message: `扫描格 (${r}, ${c})：${states[r][c] === 'water' ? '水域 (0)' : '已访问陆地'}，跳过。`,
+          log: `扫描 (${r}, ${c}): ${states[r][c]}`,
+          codeLine: 5,
         });
       }
     }
@@ -153,157 +130,245 @@ function buildIslandsBfsSteps(grid: number[][]): IslandsBfsStep[] {
 
   snapshot({
     action: 'done',
-    message: `扫描完成！共发现 ${count} 个岛屿。`,
-    log: `完成，岛屿数 = ${count}。`,
-    codeLine: 13,
+    current: null,
+    scan: null,
+    message: `🎉 全网格 BFS 扫描探索完成！共发现 ${count} 座独立岛屿，共计访问 ${visitedLand} 格陆地。`,
+    log: `✓ BFS 探索完成: 岛屿总数 = ${count}`,
+    codeLine: 20,
   });
 
   return steps;
 }
 
-export class IslandsBfsVisualizer extends StepVisualizer<IslandsBfsStep> {
-  protected codeLines = [
-    'public int numIslands(int[][] grid) {',
-    '    int m = grid.length, n = grid[0].length;',
-    '    int count = 0;',
-    '    boolean[][] visited = new boolean[m][n];',
-    '    int[] dx = {0, 0, 1, -1}, dy = {1, -1, 0, 0};',
-    '    for (int i = 0; i < m; i++)',
-    '        for (int j = 0; j < n; j++)',
-    '            if (grid[i][j] == 1 && !visited[i][j]) {',
-    '                count++;',
-    '                Queue<int[]> queue = new LinkedList<>();',
-    '                queue.offer(new int[]{i, j});',
-    '                visited[i][j] = true;',
-    '                while (!queue.isEmpty()) {',
-    '                    int[] cell = queue.poll();',
-    '                    for (int d = 0; d < 4; d++) {',
-    '                        int ni = cell[0] + dx[d];',
-    '                        int nj = cell[1] + dy[d];',
-    '                        if (ni >= 0 && ni < m && nj >= 0 && nj < n',
-    '                            && grid[ni][nj] == 1 && !visited[ni][nj]) {',
-    '                            visited[ni][nj] = true;',
-    '                            queue.offer(new int[]{ni, nj});',
-    '                        }',
-    '                    }',
-    '                }',
-    '            }',
-    '    return count;',
-    '}',
-  ];
-  protected codePanelTitle = '孤岛计数 BFS 代码 (Java)';
+const PRESET_CASES: Record<string, number[][]> = {
+  classic: [
+    [1, 1, 0, 0, 0],
+    [1, 1, 0, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 1],
+  ],
+  single: [
+    [1, 1, 1, 0],
+    [1, 1, 0, 0],
+    [1, 0, 0, 0],
+    [0, 0, 0, 0],
+  ],
+  scattered: [
+    [1, 0, 1, 0, 1],
+    [0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+  ],
+};
 
-  private inputEl: HTMLInputElement | null = null;
-  private gridEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private scanEl: HTMLElement | null = null;
-  private queueSizeEl: HTMLElement | null = null;
-  private visitedEl: HTMLElement | null = null;
-  private countEl: HTMLElement | null = null;
-  private queueVisEl: HTMLElement | null = null;
+export class IslandsBFSVisualizer extends StepVisualizer<IslandsBFSStep> {
+  protected codeLanguages = ISLANDS_BFS_CODE_LANGUAGES;
+  protected codeLines = ISLANDS_BFS_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '岛屿数量 (BFS) 代码调试';
+
+  private currentGrid: number[][] = PRESET_CASES.classic;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private gridContainer: HTMLElement | null = null;
+  private metricScanEl: HTMLElement | null = null;
+  private metricCurrEl: HTMLElement | null = null;
+  private metricQSizeEl: HTMLElement | null = null;
+  private metricIslandCountEl: HTMLElement | null = null;
+  private queueElementsEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#ibfs-input');
-    this.btnStart = this.root.querySelector('#ibfs-start');
-    this.gridEl = this.root.querySelector('#ibfs-grid');
-    this.logEl = this.root.querySelector('#ibfs-log');
-    this.scanEl = this.root.querySelector('#ibfs-scan');
-    this.queueSizeEl = this.root.querySelector('#ibfs-queue-size');
-    this.visitedEl = this.root.querySelector('#ibfs-visited');
-    this.countEl = this.root.querySelector('#ibfs-count');
-    this.queueVisEl = this.root.querySelector('#ibfs-queue-vis');
-    this.bindPlaybackControls({
-      message: 'step-message',
-      speed: 'ibfs-speed',
-      speedLabel: 'ibfs-speed-label',
-      counter: 'step-counter',
-    });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.root.querySelectorAll<HTMLButtonElement>('.ibfs-example').forEach((btn) => {
-      btn.onclick = () => {
-        if (this.inputEl) this.inputEl.value = btn.dataset.val || '';
-        this.start();
-      };
-    });
-  }
 
-  protected buildSteps(): IslandsBfsStep[] {
-    const grid = parseGrid(this.inputEl?.value || '1,1,0,0,0;1,1,0,0,0;0,0,1,0,0;0,0,0,1,1');
-    if (grid.length === 0 || grid[0].length === 0) {
-      return buildIslandsBfsSteps([[1, 1, 0], [1, 0, 0], [0, 0, 1]]);
-    }
-    return buildIslandsBfsSteps(grid);
-  }
+    this.gridContainer = this.root.querySelector('#isl-bfs-grid-container');
+    this.metricScanEl = this.root.querySelector('#metric-scan');
+    this.metricCurrEl = this.root.querySelector('#metric-curr');
+    this.metricQSizeEl = this.root.querySelector('#metric-q-size');
+    this.metricIslandCountEl = this.root.querySelector('#metric-island-count');
+    this.queueElementsEl = this.root.querySelector('#queue-elements');
+    this.liveTextEl = this.root.querySelector('#isl-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-  protected renderStep(step: IslandsBfsStep): void {
-    if (this.scanEl) this.scanEl.textContent = step.scan ? `(${step.scan[0]},${step.scan[1]})` : '-';
-    if (this.queueSizeEl) this.queueSizeEl.textContent = String(step.queue.length);
-    if (this.visitedEl) this.visitedEl.textContent = String(step.visitedCount);
-    if (this.countEl) this.countEl.textContent = String(step.count);
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    if (this.queueVisEl) {
-      this.queueVisEl.innerHTML = '';
-      step.queue.forEach(([r, c]) => {
-        const item = document.createElement('div');
-        item.className = 'ibfs-queue-item';
-        item.textContent = `(${r},${c})`;
-        this.queueVisEl?.appendChild(item);
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
       });
     }
 
-    if (this.gridEl && step.grid.length > 0) {
-      this.gridEl.innerHTML = '';
-      const m = step.grid.length;
-      const n = step.grid[0].length;
-      this.gridEl.style.gridTemplateColumns = `repeat(${n}, 34px)`;
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
 
-      const queueKey = new Set(step.queue.map(([i, j]) => `${i},${j}`));
-
-      for (let i = 0; i < m; i++) {
-        for (let j = 0; j < n; j++) {
-          const cell = document.createElement('div');
-          const state = step.states[i][j];
-          cell.className = `ibfs-cell ${state}`;
-
-          if (step.current && step.current[0] === i && step.current[1] === j) {
-            cell.classList.add('current');
-          } else if (queueKey.has(`${i},${j}`)) {
-            cell.classList.add('queue');
-          }
-
-          cell.textContent = step.grid[i][j] === 1 ? '1' : '0';
-          this.gridEl.appendChild(cell);
-        }
-      }
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 400;
+      });
     }
-    this.renderLogLine(step);
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.isl-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const caseKey = btn.dataset.case || 'classic';
+        if (PRESET_CASES[caseKey]) {
+          this.currentGrid = PRESET_CASES[caseKey];
+          this.start();
+        }
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: ISLANDS_BFS_PROBLEM_HTML,
+      analysisHtml: ISLANDS_BFS_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
-  private renderLogLine(step: IslandsBfsStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl?.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  protected buildSteps(): IslandsBFSStep[] {
+    return buildIslandsBFSSteps(this.currentGrid);
+  }
+
+  protected renderStep(step: IslandsBFSStep): void {
+    const { states, current, queue, scan, count, message } = step;
+    const m = states.length;
+    const n = states[0]?.length || 0;
+
+    // 1. 渲染网格矩阵
+    if (this.gridContainer) {
+      this.gridContainer.style.gridTemplateColumns = `repeat(${n}, 44px)`;
+      const qSet = new Set(queue.map(([r, c]) => `${r},${c}`));
+      let html = '';
+      for (let r = 0; r < m; r++) {
+        for (let c = 0; c < n; c++) {
+          const state = states[r][c];
+          const isCurr = current && current[0] === r && current[1] === c;
+          const isScan = scan && scan[0] === r && scan[1] === c && !isCurr;
+          const inQueue = qSet.has(`${r},${c}`);
+
+          let cellClass = 'isl-cell';
+          if (state === 'water') cellClass += ' is-water';
+          else if (state === 'land') cellClass += ' is-land';
+          else if (state === 'visited') cellClass += ' is-visited';
+
+          if (inQueue) cellClass += ' is-in-queue';
+          if (isCurr) cellClass += ' is-current';
+          if (isScan) cellClass += ' is-scanning';
+
+          const text = state === 'water' ? '0' : state === 'land' ? '1' : '✓';
+          html += `<div class="${cellClass}">${text}</div>`;
+        }
+      }
+      this.gridContainer.innerHTML = html;
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricScanEl) this.metricScanEl.textContent = scan ? `(${scan[0]}, ${scan[1]})` : '—';
+    if (this.metricCurrEl) this.metricCurrEl.textContent = current ? `(${current[0]}, ${current[1]})` : '—';
+    if (this.metricQSizeEl) this.metricQSizeEl.textContent = `${queue.length}`;
+    if (this.metricIslandCountEl) this.metricIslandCountEl.textContent = `${count}`;
+
+    if (this.queueElementsEl) {
+      this.queueElementsEl.textContent =
+        queue.length > 0 ? `[ ${queue.map(([r, c]) => `(${r},${c})`).join(', ')} ]` : '[ (空) ]';
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        step.action === 'done'
+          ? '#f0fdf4'
+          : step.action === 'found'
+          ? '#fefce8'
+          : step.action === 'enqueue'
+          ? '#eff6ff'
+          : '#f8fafc';
+      logEntry.style.color =
+        step.action === 'done'
+          ? '#15803d'
+          : step.action === 'found'
+          ? '#854d0e'
+          : step.action === 'enqueue'
+          ? '#1d4ed8'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (step.action === 'done'
+          ? '#bbf7d0'
+          : step.action === 'found'
+          ? '#fef08a'
+          : step.action === 'enqueue'
+          ? '#bfdbfe'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'islands-bfs',
-  name: '孤岛计数 · 广搜版（BFS）',
+  name: '岛屿数量 (BFS)',
   viewId: 'algo-islands-bfs-view',
   category: 'graph',
-  description: 'BFS 逐层扩展探索岛屿，统计连通分量数量',
-  icon: '🔍',
-  template,
-  Visualizer: IslandsBfsVisualizer,
+  description: '使用广度优先搜索队列波浪式染色计算二维网格中连通岛屿的数量',
+  icon: '🌊',
   difficulty: 2,
-  levelOrder: 5,
-  learningGoal: '掌握 BFS 遍历网格求连通分量',
+  levelOrder: 2,
+  learningGoal: '掌握网格图 BFS 逐层扩散与入队即染色的内存控制技巧',
+  template,
+  Visualizer: IslandsBFSVisualizer,
 });

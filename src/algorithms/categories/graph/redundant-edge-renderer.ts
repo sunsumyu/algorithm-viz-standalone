@@ -1,339 +1,384 @@
 /**
- * 多余的边可视化器 (LeetCode 684)
- * 使用并查集检测环，找到多余的边
+ * 冗余连接 (LC 684) 可视化器 — 4-Card 标准现代架构
+ * 并查集根节点追踪、动态加边合并与冗余环路截断
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  REDUNDANT_EDGE_PROBLEM_HTML,
+  REDUNDANT_EDGE_ANALYSIS_HTML,
+  REDUNDANT_EDGE_CODE_LANGUAGES,
+} from './redundant-edge-problem-content';
 import template from './redundant-edge.html?raw';
 
-interface REStep {
+export interface RedundantStep extends StepBase {
   nodes: number[];
-  allEdges: [number, number][];
-  acceptedEdges: [number, number][];
-  currentEdgeIdx: number;
+  edges: [number, number][];
+  currentEdge: [number, number] | null;
+  rootU: number | null;
+  rootV: number | null;
+  treeEdges: [number, number][];
   redundantEdge: [number, number] | null;
   parent: number[];
-  rank: number[];
-  findU: number;
-  findV: number;
-  action: 'init' | 'check' | 'union' | 'redundant' | 'done';
-  statusLabel: string;
-  edgeLog: { edge: [number, number]; status: 'accepted' | 'redundant' | 'pending' }[];
-  message: string;
+  action: 'init' | 'check' | 'union' | 'found-redundant' | 'done';
+  statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-const RE_NODE_POSITIONS = [
-  { x: 100, y: 60 },
-  { x: 240, y: 40 },
-  { x: 380, y: 60 },
-  { x: 310, y: 170 },
-  { x: 160, y: 170 },
+export const RE_NODES = [1, 2, 3, 4, 5];
+export const RE_EDGES: [number, number][] = [
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [1, 4],
+  [1, 5],
 ];
 
-function buildRESteps(): REStep[] {
-  const steps: REStep[] = [];
-  const allEdges: [number, number][] = [[1, 2], [1, 3], [2, 3], [3, 4], [1, 5]];
-  const n = 5;
-  const nodes = Array.from({ length: n }, (_, i) => i + 1);
+export const RE_NODE_POSITIONS: { x: number; y: number }[] = [
+  { x: 120, y: 70 },
+  { x: 280, y: 70 },
+  { x: 280, y: 200 },
+  { x: 120, y: 200 },
+  { x: 380, y: 135 },
+];
 
-  let parent = Array.from({ length: n + 1 }, (_, i) => i);
-  let rank = new Array(n + 1).fill(0);
-  const acceptedEdges: [number, number][] = [];
-  const edgeLog: { edge: [number, number]; status: 'accepted' | 'redundant' | 'pending' }[] = allEdges.map(e => ({ edge: [...e] as [number, number], status: 'pending' as const }));
+export function buildRedundantSteps(): RedundantStep[] {
+  const steps: RedundantStep[] = [];
+  const n = RE_NODES.length;
+  const parent = Array.from({ length: n + 1 }, (_, i) => i);
 
-  const find = (x: number, p: number[]): number => {
-    while (p[x] !== x) x = p[x];
-    return x;
+  const find = (i: number): number => {
+    let root = i;
+    while (root !== parent[root]) {
+      root = parent[root];
+    }
+    return root;
   };
 
-  const snap = (action: REStep['action'], edgeIdx: number, findU: number, findV: number, redundant: [number, number] | null, statusLabel: string, msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      nodes: [...nodes],
-      allEdges: allEdges.map(e => [...e] as [number, number]),
-      acceptedEdges: acceptedEdges.map(e => [...e] as [number, number]),
-      currentEdgeIdx: edgeIdx,
-      redundantEdge: redundant,
-      parent: [...parent],
-      rank: [...rank],
-      findU,
-      findV,
-      action,
-      statusLabel,
-      edgeLog: edgeLog.map(e => ({ ...e })),
-      message: msg,
-      log,
-      codeLine: code,
-    });
-  };
+  const treeEdges: [number, number][] = [];
+  let foundRedundant: [number, number] | null = null;
 
-  snap('init', -1, -1, -1, null, '初始化', `图有 ${nodes.length} 个节点和 ${allEdges.length} 条边。一棵树有 n-1=${n - 1} 条边，多了 1 条边形成环。用并查集逐条检测。`, '初始化: 5节点5边', 0);
+  steps.push({
+    nodes: RE_NODES,
+    edges: RE_EDGES,
+    currentEdge: null,
+    rootU: null,
+    rootV: null,
+    treeEdges: [],
+    redundantEdge: null,
+    parent: [...parent],
+    action: 'init',
+    statusText: `初始化并查集：共有 ${n} 个节点，每个节点 parent[i] = i。准备按顺序扫描边集。`,
+    log: `初始化并查集 parent=[${parent.slice(1).join(', ')}]`,
+    codeLine: [3, 4, 5],
+  });
 
-  // Process edges: [1,2], [1,3], [2,3], [3,4], [1,5]
-  // Edge [1,2]: find(1)=1, find(2)=2, different -> union
-  {
-    const u = 1, v = 2;
-    const ru = find(u, parent), rv = find(v, parent);
-    snap('check', 0, ru, rv, null, '检查', `处理边 [${u},${v}]：find(${u})=${ru}，find(${v})=${rv}。根不同，不会形成环。`, `检查边[1,2]: find(1)=1, find(2)=2`, [1, 2]);
-    // union
-    parent[ru] = rv;
-    rank[rv] = Math.max(rank[rv], rank[ru] + 1);
-    acceptedEdges.push([u, v]);
-    edgeLog[0].status = 'accepted';
-    snap('union', 0, ru, rv, null, '合并', `合并集合 ${ru} 和 ${rv}。parent[${ru}]=${rv}。边 [${u},${v}] 被接受。`, `union(1,2): 接受`, [3, 4]);
+  for (const edge of RE_EDGES) {
+    const [u, v] = edge;
+    const rU = find(u);
+    const rV = find(v);
+
+    if (rU === rV) {
+      foundRedundant = edge;
+      steps.push({
+        nodes: RE_NODES,
+        edges: RE_EDGES,
+        currentEdge: edge,
+        rootU: rU,
+        rootV: rV,
+        treeEdges: [...treeEdges],
+        redundantEdge: edge,
+        parent: [...parent],
+        action: 'found-redundant',
+        statusText: `🎯 考察边 [${u}, ${v}]：find(${u})=${rU} 与 find(${v})=${rV} 根相同！说明此边导致环形成，为冗余边！`,
+        log: `[冗余边发现] [${u}, ${v}]: rootU(${rU}) == rootV(${rV})`,
+        codeLine: [8, 9],
+      });
+      break;
+    } else {
+      parent[rU] = rV;
+      treeEdges.push(edge);
+
+      steps.push({
+        nodes: RE_NODES,
+        edges: RE_EDGES,
+        currentEdge: edge,
+        rootU: rU,
+        rootV: rV,
+        treeEdges: [...treeEdges],
+        redundantEdge: null,
+        parent: [...parent],
+        action: 'union',
+        statusText: `考察边 [${u}, ${v}]：find(${u})=${rU} !== find(${v})=${rV}。合并集合 parent[${rU}] = ${rV}。`,
+        log: `合并边 [${u}, ${v}]: parent[${rU}]=${rV}`,
+        codeLine: [8, 10],
+      });
+    }
   }
 
-  // Edge [1,3]: find(1)=2, find(3)=3, different -> union
-  {
-    const u = 1, v = 3;
-    const ru = find(u, parent), rv = find(v, parent);
-    snap('check', 1, ru, rv, null, '检查', `处理边 [${u},${v}]：find(${u})=${ru}，find(${v})=${rv}。根不同，不会形成环。`, `检查边[1,3]: find(1)=2, find(3)=3`, [1, 2]);
-    parent[ru] = rv;
-    rank[rv] = Math.max(rank[rv], rank[ru] + 1);
-    acceptedEdges.push([u, v]);
-    edgeLog[1].status = 'accepted';
-    snap('union', 1, ru, rv, null, '合并', `合并集合 ${ru} 和 ${rv}。parent[${ru}]=${rv}。边 [${u},${v}] 被接受。`, `union(1,3): 接受`, [3, 4]);
-  }
-
-  // Edge [2,3]: find(2)=3, find(3)=3, SAME -> REDUNDANT!
-  {
-    const u = 2, v = 3;
-    const ru = find(u, parent), rv = find(v, parent);
-    snap('check', 2, ru, rv, null, '检查', `处理边 [${u},${v}]：find(${u})=${ru}，find(${v})=${rv}。`, `检查边[2,3]: find(2)=3, find(3)=3`, [1, 2]);
-    edgeLog[2].status = 'redundant';
-    snap('redundant', 2, ru, rv, [u, v], '多余!', `find(${u}) = find(${v}) = ${ru}！两端属于同一集合！边 [${u},${v}] 构成环，为多余边！`, `发现多余边: [2,3]!`, [5, 6]);
-  }
-
-  snap('done', 4, -1, -1, [2, 3], '完成', `多余边为 [2, 3]。移除该边后图变为一棵树（无环）。算法使用并查集，时间复杂度接近 O(n)。`, `完成: 多余边=[2,3]`, 7);
+  steps.push({
+    nodes: RE_NODES,
+    edges: RE_EDGES,
+    currentEdge: null,
+    rootU: null,
+    rootV: null,
+    treeEdges: [...treeEdges],
+    redundantEdge: foundRedundant,
+    parent: [...parent],
+    action: 'done',
+    statusText: `🎉 算法执行完成！成功定位可以删去的冗余连接边: [${foundRedundant?.join(', ')}]。`,
+    log: `✓ 检测完毕: 冗余边为 [${foundRedundant?.join(', ')}]`,
+    codeLine: 12,
+  });
 
   return steps;
 }
 
-export class RedundantEdgeVisualizer extends StepVisualizer<REStep> {
-  protected codeLines = [
-    'int[] findRedundantEdge(int[][] edges) {',
-    '    int[] parent = {0,1,2,3,4,5};',
-    '    for (int[] edge : edges) {',
-    '        int ru = find(edge[0]), rv = find(edge[1]);',
-    '        if (ru != rv) union(ru, rv);',
-    '        else return edge; // cycle!',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '多余边检测代码 (Java)';
+export class RedundantEdgeVisualizer extends StepVisualizer<RedundantStep> {
+  protected codeLanguages = REDUNDANT_EDGE_CODE_LANGUAGES;
+  protected codeLines = REDUNDANT_EDGE_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '冗余连接 (LC 684) 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private edgeListEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private edgeEl: HTMLElement | null = null;
-  private findUEl: HTMLElement | null = null;
-  private findVEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private parentPillsWrap: HTMLElement | null = null;
+  private metricCurEdgeEl: HTMLElement | null = null;
+  private metricRootsEl: HTMLElement | null = null;
+  private metricMergedCountEl: HTMLElement | null = null;
+  private metricResultEdgeEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#re-graph');
-    this.edgeListEl = this.root.querySelector('#re-edge-list');
-    this.logEl = this.root.querySelector('#re-log');
-    this.edgeEl = this.root.querySelector('#re-edge');
-    this.findUEl = this.root.querySelector('#re-findu');
-    this.findVEl = this.root.querySelector('#re-findv');
-    this.statusEl = this.root.querySelector('#re-status');
-    this.btnStart = this.root.querySelector('#re-start');
-    this.bindPlaybackControls({
-      speed: 're-speed',
-      speedLabel: 're-speed-label',
-      message: 'step-message',
-    });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-  }
 
-  protected buildSteps(): REStep[] {
-    return buildRESteps();
-  }
+    this.svgCanvas = this.root.querySelector('#re-svg-canvas');
+    this.parentPillsWrap = this.root.querySelector('#parent-pills-wrap');
+    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
+    this.metricRootsEl = this.root.querySelector('#metric-roots');
+    this.metricMergedCountEl = this.root.querySelector('#metric-merged-count');
+    this.metricResultEdgeEl = this.root.querySelector('#metric-result-edge');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#re-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-  protected renderStep(step: REStep): void {
-    if (this.edgeEl) this.edgeEl.textContent = step.currentEdgeIdx >= 0 ? `[${step.allEdges[step.currentEdgeIdx].join(',')}]` : '-';
-    if (this.findUEl) this.findUEl.textContent = step.findU >= 0 ? String(step.findU) : '-';
-    if (this.findVEl) this.findVEl.textContent = step.findV >= 0 ? String(step.findV) : '-';
-    if (this.statusEl) {
-      this.statusEl.textContent = step.statusLabel;
-      if (step.action === 'redundant') {
-        (this.statusEl as HTMLElement).style.color = '#ef4444';
-      } else if (step.action === 'done') {
-        (this.statusEl as HTMLElement).style.color = '#10b981';
-      } else {
-        (this.statusEl as HTMLElement).style.color = '#f43f5e';
-      }
-    }
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    this.renderGraph(step);
-    this.renderEdgeLog(step);
-    this.renderLogLine(step);
-  }
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
 
-  private renderGraph(step: REStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 460 240');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '460px';
-    svg.style.height = '240px';
-
-    const nodeIdx = (n: number) => n - 1;
-
-    // Draw accepted edges
-    for (const [u, v] of step.acceptedEdges) {
-      const p1 = RE_NODE_POSITIONS[nodeIdx(u)];
-      const p2 = RE_NODE_POSITIONS[nodeIdx(v)];
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-      line.setAttribute('stroke', '#10b981');
-      line.setAttribute('stroke-width', '3');
-      line.classList.add('re-edge');
-      svg?.appendChild(line);
-    }
-
-    // Draw current or redundant edge
-    if (step.currentEdgeIdx >= 0) {
-      const [u, v] = step.allEdges[step.currentEdgeIdx];
-      const p1 = RE_NODE_POSITIONS[nodeIdx(u)];
-      const p2 = RE_NODE_POSITIONS[nodeIdx(v)];
-      const isAccepted = step.acceptedEdges.some(e => (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u));
-      if (!isAccepted) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(p1.x));
-        line.setAttribute('y1', String(p1.y));
-        line.setAttribute('x2', String(p2.x));
-        line.setAttribute('y2', String(p2.y));
-        if (step.redundantEdge && step.redundantEdge[0] === u && step.redundantEdge[1] === v) {
-          line.setAttribute('stroke', '#ef4444');
-          line.setAttribute('stroke-width', '4');
-          line.setAttribute('stroke-dasharray', '8,4');
-          line.style.animation = 'pathPulse 1s infinite';
-        } else {
-          line.setAttribute('stroke', '#f43f5e');
-          line.setAttribute('stroke-width', '2');
-          line.setAttribute('stroke-dasharray', '6,3');
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
         }
-        line.classList.add('re-edge');
-        svg?.appendChild(line);
-      }
+      });
     }
 
-    // Draw pending edges (dimmed)
-    for (let i = 0; i < step.allEdges.length; i++) {
-      const [u, v] = step.allEdges[i];
-      const isProcessed = i <= step.currentEdgeIdx || step.acceptedEdges.some(e => (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u));
-      if (!isProcessed) {
-        const p1 = RE_NODE_POSITIONS[nodeIdx(u)];
-        const p2 = RE_NODE_POSITIONS[nodeIdx(v)];
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(p1.x));
-        line.setAttribute('y1', String(p1.y));
-        line.setAttribute('x2', String(p2.x));
-        line.setAttribute('y2', String(p2.y));
-        line.setAttribute('stroke', 'rgba(244, 63, 94, 0.15)');
-        line.setAttribute('stroke-width', '1.5');
-        line.classList.add('re-edge');
-        svg?.appendChild(line);
-      }
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 500;
+      });
     }
 
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const node = step.nodes[i];
-      const pos = RE_NODE_POSITIONS[i];
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('re-node');
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: REDUNDANT_EDGE_PROBLEM_HTML,
+      analysisHtml: REDUNDANT_EDGE_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
+  }
 
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
+  protected buildSteps(): RedundantStep[] {
+    return buildRedundantSteps();
+  }
 
-      const isRedundantNode = step.redundantEdge && (step.redundantEdge[0] === node || step.redundantEdge[1] === node);
-      const isCurrentEdge = step.currentEdgeIdx >= 0 && !step.redundantEdge &&
-        (step.allEdges[step.currentEdgeIdx][0] === node || step.allEdges[step.currentEdgeIdx][1] === node);
+  protected renderStep(step: RedundantStep): void {
+    const { edges, currentEdge, rootU, rootV, treeEdges, redundantEdge, parent, statusText, action } = step;
 
-      if (isRedundantNode && step.action === 'redundant') {
-        circle.setAttribute('fill', 'rgba(239, 68, 68, 0.3)');
-        circle.setAttribute('stroke', '#ef4444');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 0.8s infinite';
-      } else if (isCurrentEdge) {
-        circle.setAttribute('fill', '#f59e0b');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 0.8s infinite';
+    // 1. 绘制无向图 SVG 拓扑图
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 460 260" style="width:100%; height:100%; max-height:240px;">`;
+
+      const treeSet = new Set(treeEdges.map(([u, v]) => `${Math.min(u, v)}-${Math.max(u, v)}`));
+
+      for (const e of edges) {
+        const [u, v] = e;
+        const p1 = RE_NODE_POSITIONS[u - 1];
+        const p2 = RE_NODE_POSITIONS[v - 1];
+        const key = `${Math.min(u, v)}-${Math.max(u, v)}`;
+        const isTree = treeSet.has(key);
+        const isRedundant = redundantEdge && ((redundantEdge[0] === u && redundantEdge[1] === v) || (redundantEdge[0] === v && redundantEdge[1] === u));
+        const isCurrent = currentEdge && ((currentEdge[0] === u && currentEdge[1] === v) || (currentEdge[0] === v && currentEdge[1] === u));
+
+        let strokeColor = '#cbd5e1';
+        let strokeWidth = 1.8;
+        let strokeDash = 'none';
+
+        if (isRedundant) {
+          strokeColor = '#ef4444';
+          strokeWidth = 4;
+          strokeDash = '4,4';
+        } else if (isTree) {
+          strokeColor = '#10b981';
+          strokeWidth = 3.5;
+        } else if (isCurrent) {
+          strokeColor = '#f59e0b';
+          strokeWidth = 3;
+        }
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
+      }
+
+      // 绘制节点
+      RE_NODES.forEach((node) => {
+        const p = RE_NODE_POSITIONS[node - 1];
+        const isCurrent = currentEdge && (currentEdge[0] === node || currentEdge[1] === node);
+
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrent) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="#64748b" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">p:${parent[node]}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
+    }
+
+    // 2. 渲染 parent 药丸栏
+    if (this.parentPillsWrap) {
+      this.parentPillsWrap.innerHTML = RE_NODES.map((node) => {
+        return `<div class="re-parent-pill">
+          <span style="color:#64748b;">${node}:</span>
+          <span>${parent[node]}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricCurEdgeEl) {
+      this.metricCurEdgeEl.textContent = currentEdge ? `[${currentEdge[0]}, ${currentEdge[1]}]` : '—';
+    }
+    if (this.metricRootsEl) {
+      this.metricRootsEl.textContent = rootU != null && rootV != null ? `[${rootU}, ${rootV}]` : '—';
+    }
+    if (this.metricMergedCountEl) this.metricMergedCountEl.textContent = `${treeEdges.length}`;
+    if (this.metricResultEdgeEl) {
+      this.metricResultEdgeEl.textContent = redundantEdge ? `[${redundantEdge.join(', ')}]` : '未发现';
+    }
+
+    if (this.formulaActionEl) {
+      if (action === 'found-redundant' && currentEdge) {
+        this.formulaActionEl.textContent = `发现成环: find(${currentEdge[0]}) === find(${currentEdge[1]}) === ${rootU}`;
+      } else if (action === 'union' && currentEdge) {
+        this.formulaActionEl.textContent = `合并: parent[${rootU}] = ${rootV}`;
       } else {
-        circle.setAttribute('fill', 'rgba(244, 63, 94, 0.2)');
-        circle.setAttribute('stroke', '#f43f5e');
-        circle.setAttribute('stroke-width', '2');
+        this.formulaActionEl.textContent = 'rootU === rootV -> 发现成环冗余边';
       }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('fill', isRedundantNode && step.action === 'redundant' ? '#ef4444' : isCurrentEdge ? '#000' : '#f43f5e');
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(node);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
     }
 
-    this.graphEl?.appendChild(svg);
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done' || action === 'found-redundant'
+          ? '#fef2f2'
+          : action === 'union'
+          ? '#eff6ff'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done' || action === 'found-redundant'
+          ? '#dc2626'
+          : action === 'union'
+          ? '#1d4ed8'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done' || action === 'found-redundant'
+          ? '#fecaca'
+          : action === 'union'
+          ? '#bfdbfe'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderEdgeLog(step: REStep): void {
-    if (!this.edgeListEl) return;
-    this.edgeListEl.innerHTML = '';
-    step.edgeLog.forEach(({ edge, status }) => {
-      const item = document.createElement('div');
-      item.className = 're-edge-item';
-      if (status === 'accepted') item.classList.add('accepted');
-      if (status === 'redundant') item.classList.add('redundant');
-      item.textContent = `[${edge.join(',')}]`;
-      this.edgeListEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: REStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'redundant-edge',
-  name: '多余的边',
+  name: '冗余连接 (LC 684)',
   viewId: 'algo-redundant-edge-view',
   category: 'graph',
-  description: 'LeetCode 684: 用并查集检测环，找到多余的边',
+  description: '使用并查集动态查找无向树中导致成环的多余边',
   icon: '✂️',
+  difficulty: 2,
+  levelOrder: 13,
+  learningGoal: '掌握并查集在无向图连通分量与环路检测中的核心应用',
   template,
   Visualizer: RedundantEdgeVisualizer,
-  difficulty: 2,
-  levelOrder: 16,
-  learningGoal: '掌握用并查集检测图中的环',
 });
-
-export {};

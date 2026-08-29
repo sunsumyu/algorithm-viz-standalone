@@ -1,63 +1,52 @@
 /**
- * 最大岛屿面积可视化器
- * LeetCode 695
+ * 岛屿的最大面积可视化器 — 4-Card 标准现代架构
+ * DFS 面积累加递归、实时沉岛与全局最大值动态追踪
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  MAX_ISLAND_AREA_PROBLEM_HTML,
+  MAX_ISLAND_AREA_ANALYSIS_HTML,
+  MAX_ISLAND_AREA_CODE_LANGUAGES,
+} from './max-island-area-problem-content';
+import { CellState } from './islands-renderer';
 import template from './max-island-area.html?raw';
 
-type CellState = 'water' | 'land' | 'visited' | 'max-island' | 'prev-island';
-
-interface MaxIslandAreaStep {
+export interface MIAStep {
   grid: number[][];
   states: CellState[][];
   current: [number, number] | null;
-  stack: [number, number][];
+  scan: [number, number] | null;
   currentArea: number;
   maxArea: number;
-  islandCount: number;
-  maxIslandCells: Set<string>;
-  prevIslandCells: Set<string>;
-  action: 'init' | 'scan' | 'found' | 'explore' | 'compare' | 'done';
+  action: 'init' | 'scan' | 'found' | 'mark' | 'accumulate' | 'update-max' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseGrid(input: string): number[][] {
-  const rows = input.split(/[;\n]+/).map((r) => r.trim()).filter((r) => r.length > 0);
-  return rows.map((r) =>
-    r.split(',').map((c) => parseInt(c.trim(), 10))
-  ).filter((r) => r.length > 0 && !r.some(isNaN));
-}
-
-function buildMaxIslandAreaSteps(grid: number[][]): MaxIslandAreaStep[] {
-  const steps: MaxIslandAreaStep[] = [];
+export function buildMIASteps(grid: number[][]): MIAStep[] {
+  const steps: MIAStep[] = [];
   const m = grid.length;
   if (m === 0) return steps;
   const n = grid[0].length;
-  const states: CellState[][] = grid.map((row) =>
-    row.map((v) => (v === 1 ? 'land' : 'water'))
-  );
+  const states: CellState[][] = grid.map((row) => row.map((v) => (v === 1 ? 'land' : 'water')));
   let maxArea = 0;
-  let islandCount = 0;
-  let currentArea = 0;
-  const maxIslandCells = new Set<string>();
-  let prevIslandCells = new Set<string>();
-  const dirs: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+  const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 
-  const snapshot = (extra: Partial<MaxIslandAreaStep>): void => {
+  const snapshot = (extra: Partial<MIAStep>): void => {
     steps.push({
       grid,
       states: states.map((r) => [...r]),
       current: extra.current ?? null,
-      stack: extra.stack ? [...extra.stack] : [],
-      currentArea,
+      scan: extra.scan ?? null,
+      currentArea: extra.currentArea ?? 0,
       maxArea,
-      islandCount,
-      maxIslandCells: new Set(maxIslandCells),
-      prevIslandCells: new Set(prevIslandCells),
       action: extra.action ?? 'scan',
       message: extra.message ?? '',
       log: extra.log ?? '',
@@ -67,120 +56,77 @@ function buildMaxIslandAreaSteps(grid: number[][]): MaxIslandAreaStep[] {
 
   snapshot({
     action: 'init',
-    message: `网格 ${m}x${n}，逐格扫描寻找陆地。对每座岛屿用 DFS 计算面积，追踪最大面积。`,
-    log: `初始化 ${m}x${n} 网格。`,
-    codeLine: [1, 2],
+    message: `初始化 ${m}×${n} 二进制矩阵。准备扫描统计最大岛屿面积。`,
+    log: `初始化矩阵 ${m}x${n}`,
+    codeLine: 2,
   });
 
-  for (let i = 0; i < m; i++) {
-    for (let j = 0; j < n; j++) {
-      if (states[i][j] === 'land') {
-        islandCount++;
-        currentArea = 0;
-        const thisIslandCells = new Set<string>();
+  const dfs = (r: number, c: number, runningAreaRef: { val: number }): number => {
+    if (r < 0 || r >= m || c < 0 || c >= n || states[r][c] !== 'land') {
+      return 0;
+    }
 
+    states[r][c] = 'visited';
+    runningAreaRef.val++;
+    let myArea = 1;
+
+    snapshot({
+      current: [r, c],
+      scan: [r, c],
+      currentArea: runningAreaRef.val,
+      action: 'mark',
+      message: `访问并沉没陆地 (${r}, ${c})，当前岛屿面积累加至 ${runningAreaRef.val}。`,
+      log: `  沉没陆地 (${r}, ${c}) -> 面积=${runningAreaRef.val}`,
+      codeLine: [12, 13],
+    });
+
+    for (const [dr, dc] of dirs) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr < m && nc >= 0 && nc < n && states[nr][nc] === 'land') {
+        myArea += dfs(nr, nc, runningAreaRef);
+      }
+    }
+
+    return myArea;
+  };
+
+  for (let r = 0; r < m; r++) {
+    for (let c = 0; c < n; c++) {
+      if (states[r][c] === 'land') {
+        const areaRef = { val: 0 };
         snapshot({
-          current: [i, j],
+          scan: [r, c],
+          current: [r, c],
+          currentArea: 0,
           action: 'found',
-          message: `扫描到 (${i},${j}) 为陆地！发现第 ${islandCount} 个岛屿，启动 DFS 计算面积。`,
-          log: `发现岛屿 #${islandCount} 于 (${i},${j})，开始计算面积。`,
-          codeLine: [3, 4],
-        });
-
-        const stack: [number, number][] = [[i, j]];
-        states[i][j] = 'visited';
-        currentArea = 1;
-        thisIslandCells.add(`${i},${j}`);
-
-        snapshot({
-          current: [i, j],
-          stack,
-          action: 'explore',
-          message: `将 (${i},${j}) 入栈，标记已访问。当前面积 = 1。`,
-          log: `DFS 起点 (${i},${j})，面积 = 1。`,
+          message: `🎯 在 (${r}, ${c}) 发现新岛屿！启动 DFS 递归计算该连通块面积。`,
+          log: `发现新岛屿起点 (${r}, ${c})`,
           codeLine: [5, 6],
         });
 
-        while (stack.length > 0) {
-          const [ci, cj] = stack[stack.length - 1];
-          let found = false;
+        const thisArea = dfs(r, c, areaRef);
+        const prevMax = maxArea;
+        maxArea = Math.max(maxArea, thisArea);
 
-          for (const [di, dj] of dirs) {
-            const ni = ci + di;
-            const nj = cj + dj;
-            if (ni >= 0 && ni < m && nj >= 0 && nj < n && states[ni][nj] === 'land') {
-              states[ni][nj] = 'visited';
-              currentArea++;
-              thisIslandCells.add(`${ni},${nj}`);
-              stack.push([ni, nj]);
-
-              snapshot({
-                current: [ni, nj],
-                stack,
-                action: 'explore',
-                message: `发现 (${ni},${nj}) 为陆地，入栈。当前面积 = ${currentArea}。`,
-                log: `DFS 访问 (${ni},${nj})，面积 = ${currentArea}。`,
-                codeLine: [7, 8, 9],
-              });
-              found = true;
-              break;
-            }
-          }
-
-          if (!found) {
-            stack.pop();
-          }
-        }
-
-        // Compare with max
-        if (currentArea > maxArea) {
-          // Previous max island becomes prev-island
-          prevIslandCells = new Set(maxIslandCells);
-          for (const key of prevIslandCells) {
-            const [r, c] = key.split(',').map(Number);
-            if (states[r][c] !== 'water') states[r][c] = 'prev-island';
-          }
-          maxArea = currentArea;
-          maxIslandCells.clear();
-          for (const key of thisIslandCells) {
-            maxIslandCells.add(key);
-          }
-          // Mark current max island
-          for (const key of maxIslandCells) {
-            const [r, c] = key.split(',').map(Number);
-            states[r][c] = 'max-island';
-          }
-
-          snapshot({
-            current: null,
-            stack: [],
-            action: 'compare',
-            message: `岛屿 #${islandCount} 面积 = ${currentArea}，超过当前最大值 ${maxArea === currentArea ? currentArea : '之前'}！更新最大面积 = ${maxArea}。`,
-            log: `岛屿 #${islandCount} 面积 = ${currentArea}，最大面积更新为 ${maxArea}。`,
-            codeLine: [10, 11],
-          });
-        } else {
-          // Not new max - mark as prev
-          for (const key of thisIslandCells) {
-            const [r, c] = key.split(',').map(Number);
-            states[r][c] = 'prev-island';
-          }
-          snapshot({
-            current: null,
-            stack: [],
-            action: 'compare',
-            message: `岛屿 #${islandCount} 面积 = ${currentArea}，未超过最大值 ${maxArea}。`,
-            log: `岛屿 #${islandCount} 面积 = ${currentArea}，最大面积仍为 ${maxArea}。`,
-            codeLine: 10,
-          });
-        }
+        snapshot({
+          scan: [r, c],
+          current: [r, c],
+          currentArea: thisArea,
+          action: 'update-max',
+          message: `岛屿面积计算完毕：${thisArea}。更新全局最大面积 max(${prevMax}, ${thisArea}) = ${maxArea}。`,
+          log: `本岛面积=${thisArea}, maxArea=${maxArea}`,
+          codeLine: 6,
+        });
       } else {
         snapshot({
+          scan: [r, c],
           current: null,
+          currentArea: 0,
           action: 'scan',
-          message: `扫描 (${i},${j})：${states[i][j] === 'water' ? '水，跳过' : '已访问，跳过'}。`,
-          log: `跳过 (${i},${j})。`,
-          codeLine: 3,
+          message: `扫描格 (${r}, ${c})：${states[r][c] === 'water' ? '水域 (0)' : '已统计陆地'}，跳过。`,
+          log: `扫描 (${r}, ${c}): 跳过`,
+          codeLine: [4, 5],
         });
       }
     }
@@ -188,155 +134,249 @@ function buildMaxIslandAreaSteps(grid: number[][]): MaxIslandAreaStep[] {
 
   snapshot({
     action: 'done',
-    message: `扫描完成！共 ${islandCount} 座岛屿，最大岛屿面积为 ${maxArea}。`,
-    log: `完成，最大面积 = ${maxArea}。`,
-    codeLine: 12,
+    current: null,
+    scan: null,
+    currentArea: 0,
+    message: `🎉 全网格扫描探索完成！最大岛屿面积为 ${maxArea}。`,
+    log: `✓ 统计完成: maxArea = ${maxArea}`,
+    codeLine: 9,
   });
 
   return steps;
 }
 
-export class MaxIslandAreaVisualizer extends StepVisualizer<MaxIslandAreaStep> {
-  protected codeLines = [
-    'public int maxAreaOfIsland(int[][] grid) {',
-    '    int m = grid.length, n = grid[0].length;',
-    '    int maxArea = 0;',
-    '    boolean[][] visited = new boolean[m][n];',
-    '    int[] dx = {0, 0, 1, -1}, dy = {1, -1, 0, 0};',
-    '    for (int i = 0; i < m; i++)',
-    '        for (int j = 0; j < n; j++)',
-    '            if (grid[i][j] == 1 && !visited[i][j]) {',
-    '                int area = 0;',
-    '                Deque<int[]> stack = new ArrayDeque<>();',
-    '                stack.push(new int[]{i, j});',
-    '                visited[i][j] = true;',
-    '                while (!stack.isEmpty()) {',
-    '                    int[] cell = stack.peek();',
-    '                    for (int d = 0; d < 4; d++) {',
-    '                        int ni = cell[0] + dx[d];',
-    '                        int nj = cell[1] + dy[d];',
-    '                        if (ni >= 0 && ni < m && nj >= 0 && nj < n',
-    '                            && grid[ni][nj] == 1 && !visited[ni][nj]) {',
-    '                            visited[ni][nj] = true;',
-    '                            area++;',
-    '                            stack.push(new int[]{ni, nj});',
-    '                        }',
-    '                    }',
-    '                }',
-    '                maxArea = Math.max(maxArea, area);',
-    '            }',
-    '    return maxArea;',
-    '}',
-  ];
-  protected codePanelTitle = '最大岛屿面积代码 (Java)';
+const PRESET_CASES: Record<string, number[][]> = {
+  classic: [
+    [0, 0, 1, 0, 0],
+    [1, 1, 1, 0, 0],
+    [0, 1, 0, 0, 1],
+    [0, 0, 0, 1, 1],
+  ],
+  large: [
+    [1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1],
+    [0, 1, 1, 0, 1],
+    [0, 0, 0, 0, 0],
+  ],
+  empty: [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ],
+};
 
-  private inputEl: HTMLInputElement | null = null;
-  private gridEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentAreaEl: HTMLElement | null = null;
-  private maxAreaEl: HTMLElement | null = null;
-  private islandCountEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private stackVisEl: HTMLElement | null = null;
+export class MaxIslandAreaVisualizer extends StepVisualizer<MIAStep> {
+  protected codeLanguages = MAX_ISLAND_AREA_CODE_LANGUAGES;
+  protected codeLines = MAX_ISLAND_AREA_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '岛屿的最大面积 代码调试';
+
+  private currentGrid: number[][] = PRESET_CASES.classic;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private gridContainer: HTMLElement | null = null;
+  private metricScanEl: HTMLElement | null = null;
+  private metricCurrEl: HTMLElement | null = null;
+  private metricCurAreaEl: HTMLElement | null = null;
+  private metricMaxAreaEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#mia-input');
-    this.btnStart = this.root.querySelector('#mia-start');
-    this.gridEl = this.root.querySelector('#mia-grid');
-    this.logEl = this.root.querySelector('#mia-log');
-    this.currentAreaEl = this.root.querySelector('#mia-current-area');
-    this.maxAreaEl = this.root.querySelector('#mia-max-area');
-    this.islandCountEl = this.root.querySelector('#mia-island-count');
-    this.depthEl = this.root.querySelector('#mia-depth');
-    this.stackVisEl = this.root.querySelector('#mia-stack-vis');
-    this.bindPlaybackControls({
-      message: 'step-message',
-      speed: 'mia-speed',
-      speedLabel: 'mia-speed-label',
-      counter: 'step-counter',
-    });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.root.querySelectorAll<HTMLButtonElement>('.mia-example').forEach((btn) => {
-      btn.onclick = () => {
-        if (this.inputEl) this.inputEl.value = btn.dataset.val || '';
-        this.start();
-      };
-    });
-  }
 
-  protected buildSteps(): MaxIslandAreaStep[] {
-    const grid = parseGrid(this.inputEl?.value || '0,0,1,0;1,1,1,0;0,1,0,0;1,1,0,0');
-    if (grid.length === 0 || grid[0].length === 0) {
-      return buildMaxIslandAreaSteps([[0, 1, 0], [1, 1, 0], [0, 1, 0]]);
-    }
-    return buildMaxIslandAreaSteps(grid);
-  }
+    this.gridContainer = this.root.querySelector('#mia-grid-container');
+    this.metricScanEl = this.root.querySelector('#metric-scan');
+    this.metricCurrEl = this.root.querySelector('#metric-curr');
+    this.metricCurAreaEl = this.root.querySelector('#metric-cur-area');
+    this.metricMaxAreaEl = this.root.querySelector('#metric-max-area');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#mia-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-  protected renderStep(step: MaxIslandAreaStep): void {
-    if (this.currentAreaEl) this.currentAreaEl.textContent = String(step.currentArea);
-    if (this.maxAreaEl) this.maxAreaEl.textContent = String(step.maxArea);
-    if (this.islandCountEl) this.islandCountEl.textContent = String(step.islandCount);
-    if (this.depthEl) this.depthEl.textContent = String(step.stack.length);
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-    if (this.stackVisEl) {
-      this.stackVisEl.innerHTML = '';
-      step.stack.forEach(([r, c]) => {
-        const item = document.createElement('div');
-        item.className = 'mia-stack-item';
-        item.textContent = `(${r},${c})`;
-        this.stackVisEl?.appendChild(item);
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
       });
     }
 
-    if (this.gridEl && step.grid.length > 0) {
-      this.gridEl.innerHTML = '';
-      const m = step.grid.length;
-      const n = step.grid[0].length;
-      this.gridEl.style.gridTemplateColumns = `repeat(${n}, 34px)`;
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
 
-      for (let i = 0; i < m; i++) {
-        for (let j = 0; j < n; j++) {
-          const cell = document.createElement('div');
-          const state = step.states[i][j];
-          cell.className = `mia-cell ${state}`;
-
-          if (step.current && step.current[0] === i && step.current[1] === j) {
-            cell.classList.add('current');
-          }
-
-          cell.textContent = step.grid[i][j] === 1 ? '1' : '0';
-          this.gridEl.appendChild(cell);
-        }
-      }
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 400;
+      });
     }
-    this.renderLogLine(step);
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.mia-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const caseKey = btn.dataset.case || 'classic';
+        if (PRESET_CASES[caseKey]) {
+          this.currentGrid = PRESET_CASES[caseKey];
+          this.start();
+        }
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: MAX_ISLAND_AREA_PROBLEM_HTML,
+      analysisHtml: MAX_ISLAND_AREA_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
-  private renderLogLine(step: MaxIslandAreaStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl?.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  protected buildSteps(): MIAStep[] {
+    return buildMIASteps(this.currentGrid);
+  }
+
+  protected renderStep(step: MIAStep): void {
+    const { states, current, scan, currentArea, maxArea, action, message } = step;
+    const m = states.length;
+    const n = states[0]?.length || 0;
+
+    // 1. 渲染网格矩阵
+    if (this.gridContainer) {
+      this.gridContainer.style.gridTemplateColumns = `repeat(${n}, 44px)`;
+      let html = '';
+      for (let r = 0; r < m; r++) {
+        for (let c = 0; c < n; c++) {
+          const state = states[r][c];
+          const isCurr = current && current[0] === r && current[1] === c;
+          const isScan = scan && scan[0] === r && scan[1] === c && !isCurr;
+
+          let cellClass = 'mia-cell';
+          if (state === 'water') cellClass += ' is-water';
+          else if (state === 'land') cellClass += ' is-land';
+          else if (state === 'visited') cellClass += ' is-visited';
+
+          if (isCurr) cellClass += ' is-current';
+          if (isScan) cellClass += ' is-scanning';
+
+          const text = state === 'water' ? '0' : state === 'land' ? '1' : '✓';
+          html += `<div class="${cellClass}">${text}</div>`;
+        }
+      }
+      this.gridContainer.innerHTML = html;
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricScanEl) this.metricScanEl.textContent = scan ? `(${scan[0]}, ${scan[1]})` : '—';
+    if (this.metricCurrEl) this.metricCurrEl.textContent = current ? `(${current[0]}, ${current[1]})` : '—';
+    if (this.metricCurAreaEl) this.metricCurAreaEl.textContent = `${currentArea}`;
+    if (this.metricMaxAreaEl) this.metricMaxAreaEl.textContent = `${maxArea}`;
+
+    if (this.formulaActionEl) {
+      if (action === 'update-max') {
+        this.formulaActionEl.textContent = `更新最大面积: maxArea = Math.max(maxArea, ${currentArea}) -> ${maxArea}`;
+      } else if (action === 'mark') {
+        this.formulaActionEl.textContent = `沉岛累加: grid[${current?.[0]}][${current?.[1]}] = 0 (area=${currentArea})`;
+      } else if (action === 'done') {
+        this.formulaActionEl.textContent = `探索完毕: 最大面积 maxArea = ${maxArea}`;
+      } else {
+        this.formulaActionEl.textContent = 'area = 1 + dfs(上) + dfs(下) + dfs(左) + dfs(右)';
+      }
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done'
+          ? '#f0fdf4'
+          : action === 'update-max'
+          ? '#fefce8'
+          : action === 'mark'
+          ? '#eff6ff'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done'
+          ? '#15803d'
+          : action === 'update-max'
+          ? '#854d0e'
+          : action === 'mark'
+          ? '#1d4ed8'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done'
+          ? '#bbf7d0'
+          : action === 'update-max'
+          ? '#fef08a'
+          : action === 'mark'
+          ? '#bfdbfe'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'max-island-area',
-  name: '最大岛屿面积',
+  name: '岛屿的最大面积',
   viewId: 'algo-max-island-area-view',
   category: 'graph',
-  description: 'DFS 计算每座岛屿面积，追踪最大值',
+  description: '使用深度优先搜索计算并返回网格中最大连通岛屿的面积',
   icon: '📐',
+  difficulty: 2,
+  levelOrder: 3,
+  learningGoal: '掌握 DFS 递归计数与全局极值维护的经典网格图解法',
   template,
   Visualizer: MaxIslandAreaVisualizer,
-  difficulty: 2,
-  levelOrder: 6,
-  learningGoal: '掌握 DFS 计算连通分量大小并追踪极值',
 });
