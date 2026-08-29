@@ -864,35 +864,43 @@ input[type="number"]::-webkit-outer-spin-button {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 8px !important;
+  gap: 12px !important;
   width: 100% !important;
   min-width: 0 !important;
   flex-wrap: nowrap !important;
   box-sizing: border-box !important;
 }
 
+/* 左侧标题与核心组件：强防压缩，永久显示 */
 [class*="-header-left"] {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
-  flex-shrink: 1 !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  min-width: max-content !important;
+}
+
+[class*="-icon-btn"] {
+  flex-shrink: 0 !important;
 }
 
 [class*="-main-title"] {
   white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  flex-shrink: 1 !important;
+  flex-shrink: 0 !important;
 }
 
+[class*="-btn-problem"] {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* 仅在非常紧凑时允许模式徽章进行微缩或隐藏 */
 [class*="-badge-mode"] {
-  max-width: 220px !important;
+  max-width: 180px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  flex-shrink: 3 !important;
+  flex-shrink: 1 !important;
 }
 
 [class*="-badge-complexity"] {
@@ -900,12 +908,13 @@ input[type="number"]::-webkit-outer-spin-button {
   white-space: nowrap !important;
 }
 
+/* 右侧控制区：自适应占据剩余宽度，并在空间不足时平滑微缩或横向滚动 */
 [class*="-header-right"] {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
   gap: 6px !important;
-  flex-shrink: 0 !important;
+  flex-shrink: 1 !important;
   min-width: 0 !important;
   flex-wrap: nowrap !important;
 }
