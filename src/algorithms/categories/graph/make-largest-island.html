@@ -1,293 +1,929 @@
 <style>
+  /* === 最大人工岛 (LC 827) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-make-largest-island-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-make-largest-island-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-make-largest-island-view .mli-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-make-largest-island-view .mli-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-make-largest-island-view .mli-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-make-largest-island-view .mli-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  #algo-make-largest-island-view .mli-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-make-largest-island-view .mli-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-make-largest-island-view .mli-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-make-largest-island-view .mli-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    white-space: nowrap;
+  }
+
+  #algo-make-largest-island-view .mli-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-make-largest-island-view .mli-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-make-largest-island-view .mli-btn-generate:hover {
+    background: #b91c1c;
+  }
+
+  #algo-make-largest-island-view .mli-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-make-largest-island-view .mli-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-make-largest-island-view .mli-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-make-largest-island-view::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #14b8a655, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #0d948855, transparent 55%),
-                linear-gradient(135deg, #0a1a18 0%, #134e4a 25%, #0a1a18 50%, #064e3b 75%, #0a1a18 100%);
-    z-index: -2;
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-make-largest-island-view .mli-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  #algo-make-largest-island-view::after {
-    content: '';
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-make-largest-island-view .mli-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-make-largest-island-view .mli-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-make-largest-island-view .mli-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-make-largest-island-view .mli-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-make-largest-island-view .mli-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-make-largest-island-view .mli-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 2D 网格沙盘展示盒 */
+  #algo-make-largest-island-view .mli-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  #algo-make-largest-island-view .mli-grid-container {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  #algo-make-largest-island-view .mli-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-sizing: border-box;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+  }
+
+  #algo-make-largest-island-view .mli-cell.is-water {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #94a3b8;
+  }
+
+  #algo-make-largest-island-view .mli-cell.is-island-2 {
+    background: #dcfce7;
+    border: 1.5px solid #86efac;
+    color: #15803d;
+  }
+
+  #algo-make-largest-island-view .mli-cell.is-island-3 {
+    background: #eff6ff;
+    border: 1.5px solid #93c5fd;
+    color: #1d4ed8;
+  }
+
+  #algo-make-largest-island-view .mli-cell.is-island-4 {
+    background: #faf5ff;
+    border: 1.5px solid #d8b4fe;
+    color: #7e22ce;
+  }
+
+  #algo-make-largest-island-view .mli-cell.is-island-5 {
+    background: #fff7ed;
+    border: 1.5px solid #fdba74;
+    color: #c2410c;
+  }
+
+  #algo-make-largest-island-view .mli-cell.is-bridge {
+    background: #fee2e2;
+    border: 2px solid #ef4444;
+    color: #dc2626;
+    font-weight: 900;
+    transform: scale(1.08);
+    z-index: 10;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+  }
+
+  #algo-make-largest-island-view .mli-cell.is-current {
+    box-shadow: 0 0 0 3px #facc15;
+    z-index: 10;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-make-largest-island-view .mli-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-make-largest-island-view .mli-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #dc2626;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-make-largest-island-view .mli-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-make-largest-island-view .mli-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-make-largest-island-view .mli-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-make-largest-island-view .mli-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-make-largest-island-view .mli-play-circle-btn:hover {
+    background: #b91c1c;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-make-largest-island-view .mli-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-make-largest-island-view .mli-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-make-largest-island-view .mli-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-make-largest-island-view .mli-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-make-largest-island-view .mli-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-make-largest-island-view .mli-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-make-largest-island-view .mli-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-make-largest-island-view .mli-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-make-largest-island-view .mli-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-make-largest-island-view .mli-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-make-largest-island-view .mli-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-make-largest-island-view .mli-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-make-largest-island-view .mli-tab-item.active {
+    background: #dc2626;
+    color: #ffffff;
+  }
+
+  #algo-make-largest-island-view .mli-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-make-largest-island-view .mli-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-make-largest-island-view .mli-lang-btn.active {
+    background: #334155;
+    color: #fca5a5;
+  }
+
+  #algo-make-largest-island-view .mli-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-make-largest-island-view .mli-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-make-largest-island-view .mli-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-make-largest-island-view .mli-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fca5a5;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-make-largest-island-view .mli-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-make-largest-island-view .mli-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-make-largest-island-view .mli-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-make-largest-island-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-make-largest-island-view .code-line.active {
+    background: rgba(220, 38, 38, 0.2);
+    border-left: 3px solid #dc2626;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-make-largest-island-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-make-largest-island-view .mli-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-make-largest-island-view .mli-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-make-largest-island-view .mli-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-make-largest-island-view .mli-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-make-largest-island-view .mli-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-make-largest-island-view .mli-modal-backdrop {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(10, 26, 24, 0.4), transparent 70%);
-    z-index: -1;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-make-largest-island-view .mli-modal-backdrop.hidden {
+    display: none;
   }
 
-  .mli-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-
-  .mli-hero {
-    padding: 16px 24px;
-    background: rgba(20,18,38,0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    border-radius: 0 0 16px 16px;
-    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  #algo-make-largest-island-view .mli-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  .mli-hero .mli-title-wrapper { display: flex; align-items: center; gap: 12px; }
-
-  .mli-hero-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; box-shadow: 0 4px 15px rgba(20,184,166,0.3);
+  #algo-make-largest-island-view .mli-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
   }
-
-  .mli-hero-text h2 {
-    margin: 0 0 4px; font-size: 22px; font-weight: 800;
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  #algo-make-largest-island-view .mli-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
   }
-
-  .mli-hero-text p { margin: 0; color: rgba(204,214,244,0.8); font-size: 13px; }
-
-  .mli-tip {
-    max-width: 480px; padding: 12px 16px; border-radius: 12px;
-    background: rgba(20,184,166,0.08); border: 1px solid rgba(20,184,166,0.2);
-    color: rgba(204,214,244,0.9); font-size: 13px; line-height: 1.55;
+  #algo-make-largest-island-view .mli-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-
-  .mli-tip strong { color: #14b8a6; font-weight: 600; }
-
-  #algo-make-largest-island-view .mli-layout {
-    flex: 1; min-height: 0;
-    display: grid; grid-template-columns: 1fr 380px;
-    gap: 16px; padding: 16px; overflow: hidden;
+  #algo-make-largest-island-view .mli-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
-
-  @media (max-width: 1100px) {
-    #algo-make-largest-island-view .mli-layout { grid-template-columns: 1fr; overflow: auto; }
-  }
-
-  .mli-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; }
-
-  .mli-card {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-  }
-
-  .mli-controls {
-    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-  }
-
-  .mli-input {
-    flex: 1; min-width: 140px; padding: 10px 14px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(11,10,23,0.8); color: #cdd6f4;
-    font-family: ui-monospace, monospace; font-size: 13px;
-    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .mli-input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,0.15); }
-
-  .mli-btn {
-    padding: 10px 18px; border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
-    transition: all 0.2s; box-shadow: 0 4px 15px rgba(20,184,166,0.3);
-  }
-
-  .mli-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(20,184,166,0.4); }
-
-  .mli-example {
-    padding: 8px 14px; border-radius: 999px;
-    border: 1px solid rgba(20,184,166,0.3);
-    background: rgba(20,184,166,0.1); color: #cdd6f4;
-    font-size: 12px; cursor: pointer; transition: all 0.2s;
-  }
-
-  .mli-example:hover { background: rgba(20,184,166,0.2); border-color: #14b8a6; }
-
-  .mli-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 12px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .mli-stat {
-    padding: 14px 0; position: relative;
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
-  }
-
-  .mli-stat::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #14b8a6, #0d9488);
-  }
-
-  .mli-stat-label { display: block; margin-bottom: 6px; color: rgba(204,214,244,0.7); font-size: 12px; }
-  .mli-stat-val { color: #14b8a6; font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; }
-
-  .mli-grid-container {
-    padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 260px;
-  }
-
-  .mli-grid { display: grid; gap: 4px; }
-
-  .mli-cell {
-    width: 56px; height: 56px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700;
-    transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1);
-  }
-
-  .mli-message {
-    margin: 0 14px 14px; padding: 12px 16px; border-radius: 12px;
-    border: 1px solid rgba(20,184,166,0.2); background: rgba(20,184,166,0.08);
-    color: #cdd6f4; font-size: 13px; line-height: 1.5;
-  }
-
-  .mli-log {
-    min-height: 0; max-height: 130px; padding: 14px 16px; overflow: auto;
-    background: rgba(11,10,23,0.8); font-family: ui-monospace, monospace;
-    font-size: 12px; line-height: 1.7; color: rgba(204,214,244,0.8);
-  }
-
-  .mli-log div { padding: 2px 0; }
-  .mli-log div.active { color: #14b8a6; font-weight: 600; }
-
-  .mli-right { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
-
-  .mli-code-card {
-    background: rgba(11,10,23,0.8); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px; overflow: hidden; flex: 1;
-  }
-
-  .mli-legend {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
-  }
-
-  .mli-legend-item { display: flex; align-items: center; gap: 10px; }
-  .mli-legend-box { width: 16px; height: 16px; border-radius: 4px; }
-
-  .mli-playback {
-    background: rgba(20,18,38,0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 16px; display: flex; flex-direction: column; gap: 12px;
-  }
-
-  .mli-pb-row { display: flex; gap: 10px; align-items: center; }
-
-  .mli-pb-btn {
-    flex: 1; padding: 12px 16px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(20,184,166,0.1); color: #cdd6f4;
-    cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;
-  }
-
-  .mli-pb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .mli-pb-btn:not(:disabled):hover { background: rgba(20,184,166,0.2); border-color: #14b8a6; transform: translateY(-1px); }
-
-  .mli-pb-btn.play {
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    border: none; color: #fff; box-shadow: 0 4px 15px rgba(20,184,166,0.3);
-  }
-
-  .mli-pb-btn.play:not(:disabled):hover { box-shadow: 0 6px 20px rgba(20,184,166,0.4); }
-
-  .mli-speed-row {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: rgba(204,214,244,0.7);
-  }
-
-  .mli-speed-row input { flex: 1; accent-color: #14b8a6; }
-
-  .mli-counter {
-    color: rgba(204,214,244,0.6); font-size: 13px;
-    font-family: ui-monospace, monospace; text-align: center;
-  }
-
-  @keyframes mli-pop {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @keyframes mli-pulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(20,184,166,0.4); }
-    50% { box-shadow: 0 0 18px rgba(20,184,166,0.7); }
-  }
-
-  .mli-cell.candidate { animation: mli-pulse 0.8s infinite; }
 </style>
 
-<div class="mli-page">
-  <div class="mli-hero">
-    <div class="mli-title-wrapper">
-      <div class="mli-hero-icon">🏝️</div>
-      <div class="mli-hero-text">
-        <h2>建造最大人工岛</h2>
-        <p>改变一个水域(0)为陆地(1)，使岛屿面积最大</p>
-      </div>
+<div id="algo-make-largest-island-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="mli-header">
+    <div class="mli-header-left">
+      <div class="mli-icon-btn">🏝️</div>
+      <h1 class="mli-main-title">LeetCode 827. 最大人工岛 (填海造陆)</h1>
+      <button id="btn-open-problem-modal" class="mli-btn-problem">📋 题目</button>
+      <span class="mli-badge-mode">岛屿染色编号 + 邻接桥接求和</span>
+      <span class="mli-badge-complexity">O(N²) · O(N²)</span>
     </div>
-    <div class="mli-tip"><strong>算法要点：</strong>先用并查集/BFS 标记所有岛屿并给 ID。对每个水域格子，统计其相邻的不同岛屿 ID，求和+1。取最大值。</div>
-  </div>
 
-  <div class="mli-layout">
-    <div class="mli-main">
+    <div class="mli-header-right">
+      <button id="btn-generate" class="mli-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="mli-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="mli-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="mli-left-section">
+
+      <!-- 卡片 1: 2D 网格沙盘 -->
       <div class="mli-card">
-        <div class="mli-controls">
-          <input id="mli-grid-input" class="mli-input" value="1,0,1;0,0,0;1,0,1" title="0=水,1=陆地，行用分号分隔" />
-          <button id="mli-start" class="mli-btn">计算面积</button>
-          <button class="mli-example" data-grid="1,0,1;0,0,0;1,0,1">示例1</button>
-          <button class="mli-example" data-grid="1,1,0;0,1,0;0,0,1">示例2</button>
-          <button class="mli-example" data-grid="1,0;0,1">示例3</button>
+        <div class="mli-card-header">
+          <div class="mli-card-title">
+            <span>🗺️ 岛屿编号染色与填海桥接沙盘 (Grid Canvas)</span>
+          </div>
+          <div class="mli-legend-bar">
+            <div><span class="mli-legend-dot" style="background:#86efac;"></span> 岛屿 2</div>
+            <div><span class="mli-legend-dot" style="background:#93c5fd;"></span> 岛屿 3</div>
+            <div><span class="mli-legend-dot" style="background:#d8b4fe;"></span> 岛屿 4</div>
+            <div><span class="mli-legend-dot" style="background:#ef4444;"></span> 最佳桥接点 (0->1)</div>
+          </div>
         </div>
 
-        <div class="mli-stats">
-          <div class="mli-stat"><span class="mli-stat-label">当前尝试</span><span class="mli-stat-val" id="mli-try">-</span></div>
-          <div class="mli-stat"><span class="mli-stat-label">岛屿数</span><span class="mli-stat-val" id="mli-islands">0</span></div>
-          <div class="mli-stat"><span class="mli-stat-label">尝试面积</span><span class="mli-stat-val" id="mli-try-area">0</span></div>
-          <div class="mli-stat"><span class="mli-stat-label">最大面积</span><span class="mli-stat-val" id="mli-max-area">0</span></div>
+        <!-- 网格沙盘展示盒 -->
+        <div class="mli-sandbox-wrap">
+          <div id="mli-grid-container" class="mli-grid-container"></div>
         </div>
-
-        <div class="mli-grid-container" id="mli-grid"></div>
-
-        <div class="mli-message" id="step-message">输入网格，点击「计算面积」查看最大人工岛构建过程。</div>
-
-        <div class="mli-log" id="mli-log"></div>
       </div>
-    </div>
 
-    <div class="mli-right">
-      <div data-code-panel class="mli-code-card"></div>
-      <div class="mli-legend">
-        <div class="mli-legend-item"><span class="mli-legend-box" style="background:rgba(20,184,166,0.5)"></span>陆地(1)</div>
-        <div class="mli-legend-item"><span class="mli-legend-box" style="background:rgba(20,184,166,0.08)"></span>水域(0)</div>
-        <div class="mli-legend-item"><span class="mli-legend-box" style="background:#f59e0b;border:2px solid #fbbf24"></span>尝试位置</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="mli-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="mli-slider" />
+        <div class="mli-counter-badge">
+          <span id="step-cur" style="color: #dc2626;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="mli-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="mli-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="mli-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="mli-playback">
-        <div class="mli-pb-row">
-          <button id="step-reset" class="mli-pb-btn">重置</button>
-          <button id="step-prev" class="mli-pb-btn">上一步</button>
-          <button id="step-play" class="mli-pb-btn play">播放</button>
-          <button id="step-next" class="mli-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 状态空间与最大面积监视器 -->
+      <div class="mli-card">
+        <div class="mli-card-header">
+          <div>
+            <div class="mli-card-title">🧭 状态指标与最大人工岛监视器 (Monitor)</div>
+            <div class="mli-card-desc">当前测试桥接点、尝试合并面积、最佳填海位置与全局最大面积</div>
+          </div>
+          <span id="badge-max-area" class="mli-counter-badge" style="color:#dc2626; background:#fef2f2; border-color:#fecaca;">最大面积: 0 格</span>
         </div>
-        <div class="mli-speed-row">
-          <span>速度</span>
-          <input id="mli-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="mli-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="mli-state-space-box">
+          <div class="mli-metrics-grid">
+            <div class="mli-metric-card">
+              <span class="mli-metric-label">当前测试格 (r, c)</span>
+              <span class="mli-metric-val" id="metric-cur-cell" style="color: #eab308;">—</span>
+            </div>
+            <div class="mli-metric-card">
+              <span class="mli-metric-label">当前尝试面积 tryArea</span>
+              <span class="mli-metric-val" id="metric-try-area" style="color: #3b82f6;">0</span>
+            </div>
+            <div class="mli-metric-card">
+              <span class="mli-metric-label">最佳桥接点 Best Bridge</span>
+              <span class="mli-metric-val" id="metric-best-cell" style="color: #a855f7;">—</span>
+            </div>
+            <div class="mli-metric-card">
+              <span class="mli-metric-label">最大人工岛面积 maxArea</span>
+              <span class="mli-metric-val" id="metric-max-area" style="color: #dc2626;">0</span>
+            </div>
+          </div>
+
+          <div class="mli-formula-box">
+            <span style="color:#64748b;">桥接合并公式:</span>
+            <strong id="formula-action" style="color: #dc2626;">curArea = 1 + sum(areaMap[neighborId])</strong>
+          </div>
+
+          <div class="mli-live-alert">
+            <span>💡</span> <span id="mli-live-text">准备就绪，点击运行开始最大人工岛分析。</span>
+          </div>
         </div>
-        <div id="step-counter" class="mli-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="mli-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="mli-dark-terminal">
+        <div class="mli-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="mli-tab-group">
+            <button id="btn-tab-code" class="mli-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="mli-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="mli-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="mli-lang-group" id="code-lang-tabs">
+            <button class="mli-lang-btn active" data-lang="java">Java</button>
+            <button class="mli-lang-btn" data-lang="cpp">C++</button>
+            <button class="mli-lang-btn" data-lang="python">Python</button>
+            <button class="mli-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="mli-font-tools">
+            <div class="mli-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="mli-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="mli-window-dots">
+              <span class="mli-dot" style="background:#ef4444;"></span>
+              <span class="mli-dot" style="background:#eab308;"></span>
+              <span class="mli-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="mli-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="mli-log-card">
+        <div class="mli-log-header">
+          <div class="mli-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="mli-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="mli-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="mli-modal-backdrop hidden">
+    <div class="mli-modal-content">
+      <div class="mli-modal-header">
+        <div class="mli-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="mli-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="mli-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

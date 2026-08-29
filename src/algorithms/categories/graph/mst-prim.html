@@ -1,5 +1,5 @@
 <style>
-  /* === Prim 最小生成树 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === Prim 最小生成树 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-mst-prim-view {
     width: 100%;
     height: 100%;
@@ -47,9 +47,9 @@
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #2563eb;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-mst-prim-view .prim-btn-problem {
@@ -102,11 +103,11 @@
     font-size: 10.5px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
-    color: #2563eb;
-    background: #eff6ff;
+    color: #16a34a;
+    background: #f0fdf4;
     padding: 2px 6px;
     border-radius: 6px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid #bbf7d0;
     white-space: nowrap;
   }
 
@@ -117,112 +118,143 @@
     flex-shrink: 0;
   }
 
-  #algo-mst-prim-view .prim-btn-primary {
-    padding: 4px 10px;
+  #algo-mst-prim-view .prim-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
-    background: #2563eb;
+    background: #16a34a;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-mst-prim-view .prim-btn-primary:hover {
-    background: #1d4ed8;
+  #algo-mst-prim-view .prim-btn-generate:hover {
+    background: #15803d;
   }
 
-  #algo-mst-prim-view .prim-btn-secondary {
-    padding: 4px 8px;
+  #algo-mst-prim-view .prim-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-mst-prim-view .prim-btn-secondary:hover {
+  #algo-mst-prim-view .prim-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-mst-prim-view .prim-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-mst-prim-view .prim-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-mst-prim-view .prim-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-mst-prim-view .prim-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-mst-prim-view .prim-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-mst-prim-view .prim-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-mst-prim-view .prim-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-mst-prim-view .prim-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-mst-prim-view .prim-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 拓扑图 SVG 画布 */
-  #algo-mst-prim-view .prim-svg-wrap {
+  #algo-mst-prim-view .prim-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-mst-prim-view .prim-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 拓扑图 SVG 画布 */
+  #algo-mst-prim-view .prim-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
     width: 100%;
-    height: 100%;
-    min-height: 180px;
+    overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* minDist 数组展示栏 */
+  /* 距离 minDist 展示栏 */
   #algo-mst-prim-view .prim-dist-track {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 6px 10px;
     background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
     overflow-x: auto;
   }
 
@@ -238,26 +270,112 @@
     font-size: 11px;
   }
 
-  #algo-mst-prim-view .prim-dist-pill.is-in-mst {
+  #algo-mst-prim-view .prim-dist-pill.is-in-tree {
     background: #f0fdf4;
     border-color: #86efac;
     color: #16a34a;
     font-weight: 800;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-mst-prim-view .prim-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-mst-prim-view .prim-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #16a34a;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-mst-prim-view .prim-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-mst-prim-view .prim-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-mst-prim-view .prim-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-mst-prim-view .prim-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-mst-prim-view .prim-play-circle-btn:hover {
+    background: #15803d;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-mst-prim-view .prim-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-mst-prim-view .prim-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-mst-prim-view .prim-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -272,7 +390,7 @@
 
   #algo-mst-prim-view .prim-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -280,88 +398,290 @@
   #algo-mst-prim-view .prim-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-mst-prim-view .prim-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-mst-prim-view .prim-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-mst-prim-view .prim-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-mst-prim-view .prim-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-mst-prim-view .prim-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-mst-prim-view .prim-playback-controls {
+  #algo-mst-prim-view .prim-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-mst-prim-view .prim-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-mst-prim-view .prim-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-mst-prim-view .prim-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-mst-prim-view .prim-tab-item.active {
+    background: #16a34a;
+    color: #ffffff;
   }
 
-  #algo-mst-prim-view .prim-progress-wrap {
-    flex: 1;
+  #algo-mst-prim-view .prim-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-mst-prim-view .prim-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-mst-prim-view .prim-lang-btn.active {
+    background: #334155;
+    color: #86efac;
+  }
+
+  #algo-mst-prim-view .prim-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-mst-prim-view .prim-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-mst-prim-view .prim-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-mst-prim-view .prim-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-mst-prim-view .prim-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #86efac;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-mst-prim-view .prim-step-badge {
-    font-size: 11px;
+  #algo-mst-prim-view .prim-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-mst-prim-view .prim-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-mst-prim-view .prim-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-mst-prim-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-mst-prim-view .code-line.active {
+    background: rgba(22, 163, 74, 0.2);
+    border-left: 3px solid #16a34a;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-mst-prim-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-mst-prim-view .prim-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-mst-prim-view .prim-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-mst-prim-view .prim-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-mst-prim-view .prim-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-mst-prim-view .prim-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-mst-prim-view .prim-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-mst-prim-view .prim-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-mst-prim-view .prim-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-mst-prim-view .prim-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-mst-prim-view .prim-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-mst-prim-view .prim-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-mst-prim-view .prim-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -370,116 +690,204 @@
   <header class="prim-header">
     <div class="prim-header-left">
       <div class="prim-icon-btn">🌲</div>
-      <div class="prim-main-title">Prim 最小生成树 · Prim's MST</div>
-      <button class="prim-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="prim-badge-mode">加点法贪心扩充树</div>
-      <div class="prim-badge-complexity">O(V²) · O(V)</div>
+      <h1 class="prim-main-title">Prim 最小生成树算法 (加点法)</h1>
+      <button id="btn-open-problem-modal" class="prim-btn-problem">📋 题目</button>
+      <span class="prim-badge-mode">切分定理·贪心选择离生成树最近节点</span>
+      <span class="prim-badge-complexity">O(V²) · O(V)</span>
     </div>
+
     <div class="prim-header-right">
-      <button class="prim-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="prim-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="prim-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="prim-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="prim-workspace">
-    <!-- Card 1: 拓扑图 SVG 画布 -->
-    <section class="prim-card">
-      <div class="prim-card-header">
-        <div class="prim-card-title">
-          <span>📊</span> 无向带权图 MST 生长沙盘 (Graph Topology Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="prim-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="prim-left-section">
+
+      <!-- 卡片 1: 拓扑图 SVG 画布 -->
+      <div class="prim-card">
+        <div class="prim-card-header">
+          <div class="prim-card-title">
+            <span>📊 无向加权图与生成树沙盘 (MST Graph Canvas)</span>
+          </div>
+          <div class="prim-legend-bar">
+            <div><span class="prim-legend-dot" style="background:#16a34a;"></span> 已加入生成树 (inTree)</div>
+            <div><span class="prim-legend-dot" style="background:#eab308;"></span> 当前加入点 u</div>
+            <div><span class="prim-legend-dot" style="background:#10b981;"></span> 生成树树边</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #16a34a;">● inMST 点</span> · <span style="color: #10b981;">● MST 树边</span> · <span style="color: #fbbf24;">● 正在选定点</span> · <span style="color: #2563eb;">● 正在更新切边</span>
+
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="prim-sandbox-wrap" id="prim-svg-canvas"></div>
+
+        <!-- 距离数组 minDist 展示栏 -->
+        <div class="prim-dist-track">
+          <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">到树距离 minDist:</span>
+          <div id="min-dist-pills-wrap" style="display: flex; gap: 6px;"></div>
         </div>
       </div>
-      <div class="prim-card-body" style="justify-content: center; align-items: center;">
-        <div class="prim-svg-wrap" id="prim-svg-canvas"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="prim-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="prim-slider" />
+        <div class="prim-counter-badge">
+          <span id="step-cur" style="color: #16a34a;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="prim-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="prim-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="prim-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="prim-dist-track" id="prim-dist-track">
-        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">minDist 数组:</span>
-        <div id="dist-pills-wrap" style="display: flex; gap: 6px;"></div>
+
+      <!-- 卡片 2: 树状态与权值指标监视器 -->
+      <div class="prim-card">
+        <div class="prim-card-header">
+          <div>
+            <div class="prim-card-title">🧭 生成树指标监视器 (MST Tree Monitor)</div>
+            <div class="prim-card-desc">已入树节点集合、最近入树节点与最小生成树总权值</div>
+          </div>
+          <span id="badge-mst-weight" class="prim-counter-badge" style="color:#16a34a; background:#f0fdf4; border-color:#86efac;">MST 总权值: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="prim-state-space-box">
+          <div class="prim-metrics-grid">
+            <div class="prim-metric-card">
+              <span class="prim-metric-label">当前入树节点 u</span>
+              <span class="prim-metric-val" id="metric-cur-node" style="color: #eab308;">—</span>
+            </div>
+            <div class="prim-metric-card">
+              <span class="prim-metric-label">入树边权值 addedEdge</span>
+              <span class="prim-metric-val" id="metric-added-weight" style="color: #3b82f6;">0</span>
+            </div>
+            <div class="prim-metric-card">
+              <span class="prim-metric-label">已入树节点数 inTree</span>
+              <span class="prim-metric-val" id="metric-intree-count" style="color: #10b981;">0</span>
+            </div>
+            <div class="prim-metric-card">
+              <span class="prim-metric-label">MST 累计总权值</span>
+              <span class="prim-metric-val" id="metric-total-weight" style="color: #16a34a;">0</span>
+            </div>
+          </div>
+
+          <div class="prim-formula-box">
+            <span style="color:#64748b;">贪心选点三部曲:</span>
+            <strong id="formula-action" style="color: #16a34a;">选最近节点 u -> inTree[u]=true -> 更新 minDist</strong>
+          </div>
+
+          <div class="prim-live-alert">
+            <span>💡</span> <span id="prim-live-text">准备就绪，点击运行开始 Prim 最小生成树构建。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="prim-card">
-      <div class="prim-card-header">
-        <div class="prim-card-title">
-          <span>🧭</span> 树生长与指标监视器 (MST Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="prim-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="prim-dark-terminal">
+        <div class="prim-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="prim-tab-group">
+            <button id="btn-tab-code" class="prim-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="prim-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="prim-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="prim-lang-group" id="code-lang-tabs">
+            <button class="prim-lang-btn active" data-lang="java">Java</button>
+            <button class="prim-lang-btn" data-lang="cpp">C++</button>
+            <button class="prim-lang-btn" data-lang="python">Python</button>
+            <button class="prim-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="prim-font-tools">
+            <div class="prim-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="prim-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="prim-window-dots">
+              <span class="prim-dot" style="background:#ef4444;"></span>
+              <span class="prim-dot" style="background:#eab308;"></span>
+              <span class="prim-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="prim-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="prim-card-body">
-        <div class="prim-metrics-grid">
-          <div class="prim-metric-card">
-            <span class="prim-metric-label">当前选定 u</span>
-            <span class="prim-metric-val" id="metric-cur-node" style="color: #fbbf24;">0</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="prim-log-card">
+        <div class="prim-log-header">
+          <div class="prim-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="prim-metric-card">
-            <span class="prim-metric-label">已并入节点</span>
-            <span class="prim-metric-val" id="metric-in-mst-count" style="color: #10b981;">0 / 5</span>
-          </div>
-          <div class="prim-metric-card">
-            <span class="prim-metric-label">MST 边数</span>
-            <span class="prim-metric-val" id="metric-mst-edge-count" style="color: #2563eb;">0</span>
-          </div>
-          <div class="prim-metric-card">
-            <span class="prim-metric-label">生成树总权值</span>
-            <span class="prim-metric-val" id="metric-total-weight" style="color: #a855f7;">0</span>
-          </div>
+          <span id="log-count" class="prim-log-count">0 条记录</span>
         </div>
-        <div class="prim-formula-box" id="prim-formula-box">
-          <span>切边更新:</span> <strong id="formula-action" style="color: #2563eb;">minDist[v] = min(minDist[v], weight(u, v))</strong>
-        </div>
-        <div class="prim-live-alert" id="prim-live-alert">
-          <span>💡</span> <span id="prim-live-text">准备就绪，点击运行开始 Prim 最小生成树演示。</span>
+
+        <div id="log-container" class="prim-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="prim-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="prim-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="prim-card-header">
-        <div class="prim-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="prim-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="prim-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="prim-playback-bar">
-    <div class="prim-playback-controls">
-      <button class="prim-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="prim-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="prim-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="prim-modal-backdrop hidden">
+    <div class="prim-modal-content">
+      <div class="prim-modal-header">
+        <div class="prim-modal-title">
+          <span>📋 算法原理与切分定理说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="prim-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="prim-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="prim-progress-wrap">
-      <span class="prim-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

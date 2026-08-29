@@ -172,10 +172,10 @@ export class KruskalMSTVisualizer extends StepVisualizer<KruskalStep> {
     if (!this.root) return;
 
     this.svgCanvas = this.root.querySelector('#kruskal-svg-canvas');
-    this.edgePillsWrap = this.root.querySelector('#edge-pills-wrap');
+    this.edgePillsWrap = this.root.querySelector('#sorted-edges-pills-wrap');
     this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
-    this.metricRootsEl = this.root.querySelector('#metric-roots');
-    this.metricMSTCountEl = this.root.querySelector('#metric-mst-count');
+    this.metricRootsEl = this.root.querySelector('#metric-same-root');
+    this.metricMSTCountEl = this.root.querySelector('#metric-tree-edges-count');
     this.metricTotalWeightEl = this.root.querySelector('#metric-total-weight');
     this.formulaActionEl = this.root.querySelector('#formula-action');
     this.liveTextEl = this.root.querySelector('#kru-live-text');
@@ -384,10 +384,13 @@ export class KruskalMSTVisualizer extends StepVisualizer<KruskalStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeMST = this.root?.querySelector('#badge-mst-weight');
+    if (badgeMST) badgeMST.textContent = `MST 总权值: ${totalWeight}`;
   }
 
   public reset(): void {

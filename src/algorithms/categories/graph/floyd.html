@@ -1,5 +1,5 @@
 <style>
-  /* === Floyd-Warshall · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === Floyd-Warshall · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-floyd-view {
     width: 100%;
     height: 100%;
@@ -21,7 +21,7 @@
   }
 
   /* 1. 顶栏 Header */
-  #algo-floyd-view .floyd-header {
+  #algo-floyd-view .fl-header {
     background: #ffffff;
     border-radius: 16px;
     padding: 6px 14px;
@@ -35,7 +35,7 @@
     width: 100%;
   }
 
-  #algo-floyd-view .floyd-header-left {
+  #algo-floyd-view .fl-header-left {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -43,13 +43,13 @@
     min-width: 0;
   }
 
-  #algo-floyd-view .floyd-icon-btn {
+  #algo-floyd-view .fl-icon-btn {
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #2563eb;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #ea580c;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -59,15 +59,16 @@
     flex-shrink: 0;
   }
 
-  #algo-floyd-view .floyd-main-title {
+  #algo-floyd-view .fl-main-title {
     font-size: 13.5px;
     font-weight: 800;
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
-  #algo-floyd-view .floyd-btn-problem {
+  #algo-floyd-view .fl-btn-problem {
     padding: 2px 7px;
     border-radius: 6px;
     background: #fffbeb;
@@ -82,12 +83,12 @@
     transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-floyd-view .floyd-btn-problem:hover {
+  #algo-floyd-view .fl-btn-problem:hover {
     background: #fef3c7;
     border-color: #fcd34d;
   }
 
-  #algo-floyd-view .floyd-badge-mode {
+  #algo-floyd-view .fl-badge-mode {
     font-size: 11px;
     font-weight: 700;
     color: #334155;
@@ -98,392 +99,803 @@
     white-space: nowrap;
   }
 
-  #algo-floyd-view .floyd-badge-complexity {
+  #algo-floyd-view .fl-badge-complexity {
     font-size: 10.5px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
-    color: #2563eb;
-    background: #eff6ff;
+    color: #ea580c;
+    background: #fff7ed;
     padding: 2px 6px;
     border-radius: 6px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid #fed7aa;
     white-space: nowrap;
   }
 
-  #algo-floyd-view .floyd-header-right {
+  #algo-floyd-view .fl-header-right {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
   }
 
-  #algo-floyd-view .floyd-btn-primary {
-    padding: 4px 10px;
+  #algo-floyd-view .fl-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
-    background: #2563eb;
+    background: #ea580c;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(234, 88, 12, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-floyd-view .floyd-btn-primary:hover {
-    background: #1d4ed8;
+  #algo-floyd-view .fl-btn-generate:hover {
+    background: #c2410c;
   }
 
-  #algo-floyd-view .floyd-btn-secondary {
-    padding: 4px 8px;
+  #algo-floyd-view .fl-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-floyd-view .floyd-btn-secondary:hover {
+  #algo-floyd-view .fl-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-floyd-view .floyd-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-floyd-view .fl-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-floyd-view .floyd-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-floyd-view .fl-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
-    min-height: 0;
   }
 
-  #algo-floyd-view .floyd-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-floyd-view .fl-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-floyd-view .fl-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
-  #algo-floyd-view .floyd-card-title {
+  #algo-floyd-view .fl-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-floyd-view .floyd-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-floyd-view .fl-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 距离矩阵沙盘 */
-  #algo-floyd-view .floyd-matrix-wrap {
+  #algo-floyd-view .fl-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-floyd-view .fl-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 动态规划距离矩阵 DP Matrix 沙盘展示盒 */
+  #algo-floyd-view .fl-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
     width: 100%;
-    height: 100%;
+    overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 10px;
   }
 
-  #algo-floyd-view .floyd-table {
+  #algo-floyd-view .fl-matrix-table {
     border-collapse: collapse;
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
+    user-select: none;
   }
 
-  #algo-floyd-view .floyd-th,
-  #algo-floyd-view .floyd-td {
-    width: 44px;
-    height: 36px;
+  #algo-floyd-view .fl-matrix-table th,
+  #algo-floyd-view .fl-matrix-table td {
+    width: 46px;
+    height: 38px;
     text-align: center;
     border: 1px solid #e2e8f0;
+    padding: 4px;
+    transition: all 0.2s;
+  }
+
+  #algo-floyd-view .fl-matrix-table th {
+    background: #f1f5f9;
+    color: #64748b;
+    font-weight: 800;
+  }
+
+  #algo-floyd-view .fl-matrix-table td.cell-mid-k {
+    background: #fef08a;
+    color: #854d0e;
+    font-weight: 800;
+  }
+
+  #algo-floyd-view .fl-matrix-table td.cell-active-ij {
+    background: #fed7aa;
+    color: #c2410c;
+    font-weight: 800;
+    box-shadow: inset 0 0 0 2px #ea580c;
+  }
+
+  #algo-floyd-view .fl-matrix-table td.cell-updated {
+    background: #bbf7d0;
+    color: #15803d;
+    font-weight: 800;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-floyd-view .fl-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-floyd-view .fl-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #ea580c;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-floyd-view .fl-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-floyd-view .fl-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
     transition: all 0.15s;
   }
+  #algo-floyd-view .fl-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
 
-  #algo-floyd-view .floyd-th {
+  #algo-floyd-view .fl-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #ea580c;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(234, 88, 12, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-floyd-view .fl-play-circle-btn:hover {
+    background: #c2410c;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-floyd-view .fl-state-space-box {
     background: #f8fafc;
-    font-weight: 800;
-    color: #475569;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  #algo-floyd-view .floyd-td.is-active {
-    background: #fef08a !important;
-    color: #854d0e !important;
-    font-weight: 800;
-  }
-
-  #algo-floyd-view .floyd-td.is-ik {
-    background: #eff6ff !important;
-    color: #1d4ed8 !important;
-    border-color: #93c5fd !important;
-  }
-
-  #algo-floyd-view .floyd-td.is-kj {
-    background: #f0fdf4 !important;
-    color: #15803d !important;
-    border-color: #86efac !important;
-  }
-
-  /* Card 2: 状态监视器 */
-  #algo-floyd-view .floyd-metrics-grid {
+  #algo-floyd-view .fl-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
-  #algo-floyd-view .floyd-metric-card {
-    background: #f8fafc;
+  #algo-floyd-view .fl-metric-card {
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
 
-  #algo-floyd-view .floyd-metric-label {
+  #algo-floyd-view .fl-metric-label {
     font-size: 10px;
     font-weight: 700;
     color: #64748b;
     text-transform: uppercase;
   }
 
-  #algo-floyd-view .floyd-metric-val {
+  #algo-floyd-view .fl-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
 
-  #algo-floyd-view .floyd-formula-box {
+  #algo-floyd-view .fl-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11.5px;
   }
 
-  #algo-floyd-view .floyd-live-alert {
-    padding: 8px 10px;
+  #algo-floyd-view .fl-live-alert {
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-floyd-view .floyd-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-floyd-view .fl-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-floyd-view .fl-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-floyd-view .fl-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-floyd-view .floyd-playback-controls {
+  #algo-floyd-view .fl-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-floyd-view .floyd-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-floyd-view .fl-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-floyd-view .floyd-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-floyd-view .fl-tab-item.active {
+    background: #ea580c;
+    color: #ffffff;
   }
 
-  #algo-floyd-view .floyd-progress-wrap {
-    flex: 1;
+  #algo-floyd-view .fl-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-floyd-view .fl-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-floyd-view .fl-lang-btn.active {
+    background: #334155;
+    color: #fdba74;
+  }
+
+  #algo-floyd-view .fl-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-floyd-view .floyd-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-floyd-view .fl-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-floyd-view .fl-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-floyd-view .fl-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fdba74;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-floyd-view .floyd-step-badge {
-    font-size: 11px;
+  #algo-floyd-view .fl-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-floyd-view .fl-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-floyd-view .fl-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-floyd-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-floyd-view .code-line.active {
+    background: rgba(234, 88, 12, 0.2);
+    border-left: 3px solid #ea580c;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-floyd-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-floyd-view .fl-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-floyd-view .fl-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-floyd-view .fl-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-floyd-view .fl-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-floyd-view .fl-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-floyd-view .fl-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-floyd-view .fl-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-floyd-view .fl-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-floyd-view .fl-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-floyd-view .fl-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-floyd-view .fl-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-floyd-view .fl-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
 <div id="algo-floyd-view">
   <!-- 1. 顶栏 Header -->
-  <header class="floyd-header">
-    <div class="floyd-header-left">
-      <div class="floyd-icon-btn">🌐</div>
-      <div class="floyd-main-title">Floyd-Warshall 多源最短路径 · All-Pairs Shortest Path</div>
-      <button class="floyd-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="floyd-badge-mode">动态规划矩阵三重转移</div>
-      <div class="floyd-badge-complexity">O(V³) · O(V²)</div>
+  <header class="fl-header">
+    <div class="fl-header-left">
+      <div class="fl-icon-btn">🌐</div>
+      <h1 class="fl-main-title">Floyd-Warshall 全源最短路径 (O(V³))</h1>
+      <button id="btn-open-problem-modal" class="fl-btn-problem">📋 题目</button>
+      <span class="fl-badge-mode">三重循环动态规划矩阵更新</span>
+      <span class="fl-badge-complexity">O(V³) · O(V²)</span>
     </div>
-    <div class="floyd-header-right">
-      <button class="floyd-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+
+    <div class="fl-header-right">
+      <button id="btn-generate" class="fl-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="floyd-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="fl-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="floyd-workspace">
-    <!-- Card 1: 距离矩阵沙盘 -->
-    <section class="floyd-card">
-      <div class="floyd-card-header">
-        <div class="floyd-card-title">
-          <span>📊</span> 距离矩阵 DP 状态沙盘 (Dist Matrix Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="fl-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="fl-left-section">
+
+      <!-- 卡片 1: 动态规划距离矩阵 DP Matrix 沙盘 -->
+      <div class="fl-card">
+        <div class="fl-card-header">
+          <div class="fl-card-title">
+            <span>📊 全源最短路矩阵沙盘 (DP Distance Matrix)</span>
+          </div>
+          <div class="fl-legend-bar">
+            <div><span class="fl-legend-dot" style="background:#fef08a;"></span> 中继点 k</div>
+            <div><span class="fl-legend-dot" style="background:#fed7aa;"></span> 考察格 (i, j)</div>
+            <div><span class="fl-legend-dot" style="background:#bbf7d0;"></span> 成功更新更短路</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #2563eb;">● dist[i][k]</span> · <span style="color: #16a34a;">● dist[k][j]</span> · <span style="color: #eab308;">● 目标 dist[i][j]</span>
+
+        <!-- 距离矩阵展示盒 -->
+        <div class="fl-sandbox-wrap">
+          <div id="floyd-matrix-container"></div>
         </div>
       </div>
-      <div class="floyd-card-body" style="justify-content: center; align-items: center;">
-        <div class="floyd-matrix-wrap" id="floyd-matrix-canvas"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="fl-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="fl-slider" />
+        <div class="fl-counter-badge">
+          <span id="step-cur" style="color: #ea580c;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="fl-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="fl-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="fl-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="350" selected>正常</option>
+            <option value="100">快速</option>
+          </select>
+        </div>
       </div>
+
+      <!-- 卡片 2: 中继节点与递推监视器 -->
+      <div class="fl-card">
+        <div class="fl-card-header">
+          <div>
+            <div class="fl-card-title">🧭 三重循环指标监视器 (DP Loop Monitor)</div>
+            <div class="fl-card-desc">当前中继点 k、起点 i、终点 j 与动态转移方程</div>
+          </div>
+          <span id="badge-mid-k" class="fl-counter-badge" style="color:#ea580c; background:#fff7ed; border-color:#fed7aa;">中继点 k: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="fl-state-space-box">
+          <div class="fl-metrics-grid">
+            <div class="fl-metric-card">
+              <span class="fl-metric-label">中继节点 k (Mid)</span>
+              <span class="fl-metric-val" id="metric-k" style="color: #ea580c;">0</span>
+            </div>
+            <div class="fl-metric-card">
+              <span class="fl-metric-label">起点 i (From)</span>
+              <span class="fl-metric-val" id="metric-i" style="color: #3b82f6;">0</span>
+            </div>
+            <div class="fl-metric-card">
+              <span class="fl-metric-label">终点 j (To)</span>
+              <span class="fl-metric-val" id="metric-j" style="color: #10b981;">0</span>
+            </div>
+            <div class="fl-metric-card">
+              <span class="fl-metric-label">松弛更新总次数</span>
+              <span class="fl-metric-val" id="metric-update-count" style="color: #a855f7;">0</span>
+            </div>
+          </div>
+
+          <div class="fl-formula-box">
+            <span style="color:#64748b;">状态转移方程:</span>
+            <strong id="formula-action" style="color: #ea580c;">dp[i][j] = min(dp[i][j], dp[i][k] + dp[k][j])</strong>
+          </div>
+
+          <div class="fl-live-alert">
+            <span>💡</span> <span id="fl-live-text">准备就绪，点击运行开始 Floyd 全源最短路计算。</span>
+          </div>
+        </div>
+      </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="floyd-card">
-      <div class="floyd-card-header">
-        <div class="floyd-card-title">
-          <span>🧭</span> 阶段与转移指标监视器 (Floyd Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="fl-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="fl-dark-terminal">
+        <div class="fl-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="fl-tab-group">
+            <button id="btn-tab-code" class="fl-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="fl-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="fl-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="fl-lang-group" id="code-lang-tabs">
+            <button class="fl-lang-btn active" data-lang="java">Java</button>
+            <button class="fl-lang-btn" data-lang="cpp">C++</button>
+            <button class="fl-lang-btn" data-lang="python">Python</button>
+            <button class="fl-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="fl-font-tools">
+            <div class="fl-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="fl-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="fl-window-dots">
+              <span class="fl-dot" style="background:#ef4444;"></span>
+              <span class="fl-dot" style="background:#eab308;"></span>
+              <span class="fl-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="fl-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="floyd-card-body">
-        <div class="floyd-metrics-grid">
-          <div class="floyd-metric-card">
-            <span class="floyd-metric-label">中转点 k</span>
-            <span class="floyd-metric-val" id="metric-k" style="color: #a855f7;">0 / 3</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="fl-log-card">
+        <div class="fl-log-header">
+          <div class="fl-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="floyd-metric-card">
-            <span class="floyd-metric-label">起点 i</span>
-            <span class="floyd-metric-val" id="metric-i" style="color: #2563eb;">0</span>
-          </div>
-          <div class="floyd-metric-card">
-            <span class="floyd-metric-label">终点 j</span>
-            <span class="floyd-metric-val" id="metric-j" style="color: #10b981;">0</span>
-          </div>
-          <div class="floyd-metric-card">
-            <span class="floyd-metric-label">有效松弛次数</span>
-            <span class="floyd-metric-val" id="metric-relax-count" style="color: #f59e0b;">0</span>
-          </div>
+          <span id="log-count" class="fl-log-count">0 条记录</span>
         </div>
-        <div class="floyd-formula-box" id="floyd-formula-box">
-          <span>转移方程:</span> <strong id="formula-action" style="color: #2563eb;">dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])</strong>
-        </div>
-        <div class="floyd-live-alert" id="floyd-live-alert">
-          <span>💡</span> <span id="floyd-live-text">准备就绪，点击运行开始 Floyd-Warshall 算法演示。</span>
+
+        <div id="log-container" class="fl-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="floyd-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="floyd-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="floyd-card-header">
-        <div class="floyd-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="floyd-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="floyd-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="floyd-playback-bar">
-    <div class="floyd-playback-controls">
-      <button class="floyd-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="floyd-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="floyd-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="fl-modal-backdrop hidden">
+    <div class="fl-modal-content">
+      <div class="fl-modal-header">
+        <div class="fl-modal-title">
+          <span>📋 算法原理与全源最短路解析</span>
+        </div>
+        <button id="btn-close-problem-modal" class="fl-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="fl-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="floyd-progress-wrap">
-      <span class="floyd-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="350" selected>正常</option>
-        <option value="100">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

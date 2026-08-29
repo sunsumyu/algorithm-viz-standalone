@@ -161,11 +161,11 @@ export class RedundantEdgeVisualizer extends StepVisualizer<RedundantStep> {
     if (!this.root) return;
 
     this.svgCanvas = this.root.querySelector('#re-svg-canvas');
-    this.parentPillsWrap = this.root.querySelector('#parent-pills-wrap');
+    this.parentPillsWrap = this.root.querySelector('#edges-pills-wrap');
     this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
     this.metricRootsEl = this.root.querySelector('#metric-roots');
-    this.metricMergedCountEl = this.root.querySelector('#metric-merged-count');
-    this.metricResultEdgeEl = this.root.querySelector('#metric-result-edge');
+    this.metricMergedCountEl = this.root.querySelector('#metric-same-root');
+    this.metricResultEdgeEl = this.root.querySelector('#metric-redundant');
     this.formulaActionEl = this.root.querySelector('#formula-action');
     this.liveTextEl = this.root.querySelector('#re-live-text');
     this.logContainer = this.root.querySelector('#log-container');
@@ -355,9 +355,14 @@ export class RedundantEdgeVisualizer extends StepVisualizer<RedundantStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeRedundant = this.root?.querySelector('#badge-redundant-edge');
+    if (badgeRedundant) {
+      badgeRedundant.textContent = redundantEdge ? `冗余边: [${redundantEdge[0]}, ${redundantEdge[1]}]` : '冗余边: 待检测';
     }
   }
 

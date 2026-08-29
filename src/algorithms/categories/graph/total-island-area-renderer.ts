@@ -1,165 +1,167 @@
 /**
- * 孤岛总面积可视化器
+ * 孤岛总面积 (Total Island Area)
+ * 4-Card 标准现代架构可视化器
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  TOTAL_ISLAND_AREA_PROBLEM_HTML,
+  TOTAL_ISLAND_AREA_ANALYSIS_HTML,
+  TOTAL_ISLAND_AREA_CODE_LANGUAGES,
+} from './total-island-area-problem-content';
 import template from './total-island-area.html?raw';
 
 type CellState = 'water' | 'land' | 'visited' | 'explored';
 
-interface TotalIslandAreaStep {
+export interface TotalIslandAreaStep extends StepBase {
   grid: number[][];
   states: CellState[][];
-  current: [number, number] | null;
-  scan: [number, number] | null;
+  rows: number;
+  cols: number;
+  currentCell: [number, number] | null;
   currentArea: number;
   totalArea: number;
   islandCount: number;
-  islandAreas: number[];
   action: 'init' | 'scan' | 'found' | 'explore' | 'island-done' | 'done';
-  message: string;
+  statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseGrid(input: string): number[][] {
-  const rows = input.split(/[;\n]+/).map((r) => r.trim()).filter((r) => r.length > 0);
-  return rows.map((r) =>
-    r.split(',').map((c) => parseInt(c.trim(), 10))
-  ).filter((r) => r.length > 0 && !r.some(isNaN));
-}
+const DEFAULT_GRID = [
+  [1, 1, 0, 0, 0],
+  [1, 1, 0, 0, 0],
+  [0, 0, 1, 0, 0],
+  [0, 0, 0, 1, 1],
+];
 
-function buildTotalIslandAreaSteps(grid: number[][]): TotalIslandAreaStep[] {
+const DIRS: [number, number][] = [
+  [0, 1],
+  [1, 0],
+  [0, -1],
+  [-1, 0],
+];
+
+export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): TotalIslandAreaStep[] {
   const steps: TotalIslandAreaStep[] = [];
-  const m = grid.length;
-  if (m === 0) return steps;
-  const n = grid[0].length;
+  const R = grid.length;
+  const C = grid[0].length;
   const states: CellState[][] = grid.map((row) =>
     row.map((v) => (v === 1 ? 'land' : 'water'))
   );
+
   let totalArea = 0;
   let islandCount = 0;
   let currentArea = 0;
-  const islandAreas: number[] = [];
-  const dirs: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 
-  const snapshot = (extra: Partial<TotalIslandAreaStep>): void => {
-    steps.push({
-      grid,
-      states: states.map((r) => [...r]),
-      current: extra.current ?? null,
-      scan: extra.scan ?? null,
-      currentArea,
-      totalArea,
-      islandCount,
-      islandAreas: [...islandAreas],
-      action: extra.action ?? 'scan',
-      message: extra.message ?? '',
-      log: extra.log ?? '',
-      codeLine: extra.codeLine ?? 1,
-    });
-  };
-
-  snapshot({
+  steps.push({
+    grid: grid.map((r) => [...r]),
+    states: states.map((r) => [...r]),
+    rows: R,
+    cols: C,
+    currentCell: null,
+    currentArea: 0,
+    totalArea: 0,
+    islandCount: 0,
     action: 'init',
-    message: `网格 ${m}x${n}，找出所有岛屿并累计面积，计算总面积。`,
-    log: `初始化 ${m}x${n} 网格。`,
-    codeLine: [1, 2],
+    statusText: `初始化 ${R}×${C} 网格地图，开始遍历寻找所有连通岛屿并计算总面积。`,
+    log: `初始化: ${R}×${C} 网格`,
+    codeLine: [1, 2, 3],
   });
 
-  for (let i = 0; i < m; i++) {
-    for (let j = 0; j < n; j++) {
-      if (states[i][j] === 'land') {
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) {
+      if (states[r][c] === 'land') {
         islandCount++;
-        currentArea = 0;
-
-        snapshot({
-          scan: [i, j],
-          current: [i, j],
-          action: 'found',
-          message: `扫描到 (${i},${j}) 为陆地！发现第 ${islandCount} 个岛屿，启动 DFS 计算面积。`,
-          log: `发现岛屿 #${islandCount} 于 (${i},${j})。`,
-          codeLine: [3, 4],
-        });
-
-        const stack: [number, number][] = [[i, j]];
-        states[i][j] = 'visited';
         currentArea = 1;
+        states[r][c] = 'visited';
 
-        snapshot({
-          current: [i, j],
-          action: 'explore',
-          message: `将 (${i},${j}) 标记已访问并入栈。当前面积 = 1。`,
-          log: `DFS 起点 (${i},${j})，面积 = 1。`,
-          codeLine: [5, 6],
+        steps.push({
+          grid: grid.map((row) => [...row]),
+          states: states.map((row) => [...row]),
+          rows: R,
+          cols: C,
+          currentCell: [r, c],
+          currentArea,
+          totalArea,
+          islandCount,
+          action: 'found',
+          statusText: `扫描到 (${r}, ${c}) 为陆地！发现第 ${islandCount} 座岛屿，启动 DFS 探索连通面积。`,
+          log: `发现岛屿 #${islandCount} 于 (${r}, ${c})`,
+          codeLine: [7, 8, 9],
         });
 
-        while (stack.length > 0) {
-          const [ci, cj] = stack[stack.length - 1];
-          let found = false;
-
-          for (const [di, dj] of dirs) {
-            const ni = ci + di;
-            const nj = cj + dj;
-            if (ni >= 0 && ni < m && nj >= 0 && nj < n && states[ni][nj] === 'land') {
-              states[ni][nj] = 'visited';
+        const queue: [number, number][] = [[r, c]];
+        while (queue.length > 0) {
+          const [cr, cc] = queue.shift()!;
+          for (const [dr, dc] of DIRS) {
+            const nr = cr + dr;
+            const nc = cc + dc;
+            if (nr >= 0 && nr < R && nc >= 0 && nc < C && states[nr][nc] === 'land') {
+              states[nr][nc] = 'visited';
               currentArea++;
-              stack.push([ni, nj]);
+              queue.push([nr, nc]);
 
-              snapshot({
-                current: [ni, nj],
+              steps.push({
+                grid: grid.map((row) => [...row]),
+                states: states.map((row) => [...row]),
+                rows: R,
+                cols: C,
+                currentCell: [nr, nc],
+                currentArea,
+                totalArea,
+                islandCount,
                 action: 'explore',
-                message: `发现 (${ni},${nj}) 为陆地，入栈。当前岛屿面积 = ${currentArea}。`,
-                log: `DFS 访问 (${ni},${nj})，面积 = ${currentArea}。`,
-                codeLine: [7, 8, 9],
+                statusText: `DFS 扩展至 (${nr}, ${nc})，当前岛屿面积增长为 ${currentArea}。`,
+                log: `扩展陆地 (${nr}, ${nc}) -> 当前岛屿面积 = ${currentArea}`,
+                codeLine: [17, 18, 19, 20],
               });
-              found = true;
-              break;
             }
-          }
-
-          if (!found) {
-            stack.pop();
           }
         }
 
-        // Island done - add to total
         totalArea += currentArea;
-        islandAreas.push(currentArea);
-
-        // Mark explored
-        for (let a = 0; a < m; a++) {
-          for (let b = 0; b < n; b++) {
-            if (states[a][b] === 'visited') {
-              states[a][b] = 'explored';
-            }
+        for (let a = 0; a < R; a++) {
+          for (let b = 0; b < C; b++) {
+            if (states[a][b] === 'visited') states[a][b] = 'explored';
           }
         }
 
-        snapshot({
-          current: null,
+        steps.push({
+          grid: grid.map((row) => [...row]),
+          states: states.map((row) => [...row]),
+          rows: R,
+          cols: C,
+          currentCell: null,
+          currentArea,
+          totalArea,
+          islandCount,
           action: 'island-done',
-          message: `岛屿 #${islandCount} 面积 = ${currentArea}。总面积累加: ${totalArea - currentArea} + ${currentArea} = ${totalArea}。`,
-          log: `岛屿 #${islandCount} 面积 = ${currentArea}，总面积 = ${totalArea}。`,
-          codeLine: [10, 11],
-        });
-      } else {
-        snapshot({
-          scan: [i, j],
-          action: 'scan',
-          message: `扫描 (${i},${j})：${states[i][j] === 'water' ? '水，跳过' : '已探索，跳过'}。`,
-          log: `跳过 (${i},${j})。`,
-          codeLine: 3,
+          statusText: `岛屿 #${islandCount} 探索完成，面积为 ${currentArea} 格。累计总面积更新为 ${totalArea}。`,
+          log: `✓ 岛屿 #${islandCount} 结算: 面积 = ${currentArea}，累计总面积 = ${totalArea}`,
+          codeLine: 8,
         });
       }
     }
   }
 
-  snapshot({
+  steps.push({
+    grid: grid.map((row) => [...row]),
+    states: states.map((row) => [...row]),
+    rows: R,
+    cols: C,
+    currentCell: null,
+    currentArea: 0,
+    totalArea,
+    islandCount,
     action: 'done',
-    message: `扫描完成！共 ${islandCount} 座岛屿，总面积 = ${totalArea}。`,
-    log: `完成，岛屿数 = ${islandCount}，总面积 = ${totalArea}。`,
+    statusText: `🎉 孤岛总面积统计完成！共发现 ${islandCount} 座独立岛屿，总面积为 ${totalArea} 格。`,
+    log: `✓ 统计完成: 岛屿总数 = ${islandCount}，总面积 = ${totalArea}`,
     codeLine: 12,
   });
 
@@ -167,139 +169,192 @@ function buildTotalIslandAreaSteps(grid: number[][]): TotalIslandAreaStep[] {
 }
 
 export class TotalIslandAreaVisualizer extends StepVisualizer<TotalIslandAreaStep> {
-  protected codeLines = [
-    'public int totalIslandArea(int[][] grid) {',
-    '    int m = grid.length, n = grid[0].length;',
-    '    int totalArea = 0;',
-    '    boolean[][] visited = new boolean[m][n];',
-    '    int[] dx = {0, 0, 1, -1}, dy = {1, -1, 0, 0};',
-    '    for (int i = 0; i < m; i++)',
-    '        for (int j = 0; j < n; j++)',
-    '            if (grid[i][j] == 1 && !visited[i][j]) {',
-    '                int area = 0;',
-    '                Deque<int[]> stack = new ArrayDeque<>();',
-    '                stack.push(new int[]{i, j});',
-    '                visited[i][j] = true;',
-    '                while (!stack.isEmpty()) {',
-    '                    int[] cell = stack.peek();',
-    '                    for (int d = 0; d < 4; d++) {',
-    '                        int ni = cell[0] + dx[d];',
-    '                        int nj = cell[1] + dy[d];',
-    '                        if (ni >= 0 && ni < m && nj >= 0 && nj < n',
-    '                            && grid[ni][nj] == 1 && !visited[ni][nj]) {',
-    '                            visited[ni][nj] = true;',
-    '                            area++;',
-    '                            stack.push(new int[]{ni, nj});',
-    '                        }',
-    '                    }',
-    '                }',
-    '                totalArea += area;',
-    '            }',
-    '    return totalArea;',
-    '}',
-  ];
-  protected codePanelTitle = '孤岛总面积代码 (Java)';
+  protected codeLanguages = TOTAL_ISLAND_AREA_CODE_LANGUAGES;
+  protected codeLines = TOTAL_ISLAND_AREA_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '孤岛总面积 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
-  private gridEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentAreaEl: HTMLElement | null = null;
-  private totalAreaEl: HTMLElement | null = null;
-  private islandCountEl: HTMLElement | null = null;
-  private scanEl: HTMLElement | null = null;
-  private areaVisEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private gridContainer: HTMLElement | null = null;
+  private metricCurCellEl: HTMLElement | null = null;
+  private metricCurAreaEl: HTMLElement | null = null;
+  private metricIslandCountEl: HTMLElement | null = null;
+  private metricTotalAreaEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#tia-input');
-    this.btnStart = this.root.querySelector('#tia-start');
-    this.gridEl = this.root.querySelector('#tia-grid');
-    this.logEl = this.root.querySelector('#tia-log');
-    this.currentAreaEl = this.root.querySelector('#tia-current-area');
-    this.totalAreaEl = this.root.querySelector('#tia-total-area');
-    this.islandCountEl = this.root.querySelector('#tia-island-count');
-    this.scanEl = this.root.querySelector('#tia-scan');
-    this.areaVisEl = this.root.querySelector('#tia-area-vis');
-    this.bindPlaybackControls({
-      message: 'step-message',
-      speed: 'tia-speed',
-      speedLabel: 'tia-speed-label',
-      counter: 'step-counter',
-    });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.root.querySelectorAll<HTMLButtonElement>('.tia-example').forEach((btn) => {
-      btn.onclick = () => {
-        if (this.inputEl) this.inputEl.value = btn.dataset.val || '';
-        this.start();
-      };
+
+    this.gridContainer = this.root.querySelector('#tia-grid-container');
+    this.metricCurCellEl = this.root.querySelector('#metric-cur-cell');
+    this.metricCurAreaEl = this.root.querySelector('#metric-cur-area');
+    this.metricIslandCountEl = this.root.querySelector('#metric-island-count');
+    this.metricTotalAreaEl = this.root.querySelector('#metric-total-area');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#tia-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 500;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: TOTAL_ISLAND_AREA_PROBLEM_HTML,
+      analysisHtml: TOTAL_ISLAND_AREA_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): TotalIslandAreaStep[] {
-    const grid = parseGrid(this.inputEl?.value || '1,1,0,0,0;1,0,0,0,0;0,0,1,0,0;0,0,0,1,1');
-    if (grid.length === 0 || grid[0].length === 0) {
-      return buildTotalIslandAreaSteps([[1, 1, 0], [0, 0, 1], [0, 0, 0]]);
-    }
-    return buildTotalIslandAreaSteps(grid);
+    return buildTotalIslandAreaSteps();
   }
 
   protected renderStep(step: TotalIslandAreaStep): void {
-    if (this.currentAreaEl) this.currentAreaEl.textContent = String(step.currentArea);
-    if (this.totalAreaEl) this.totalAreaEl.textContent = String(step.totalArea);
-    if (this.islandCountEl) this.islandCountEl.textContent = String(step.islandCount);
-    if (this.scanEl) this.scanEl.textContent = step.scan ? `(${step.scan[0]},${step.scan[1]})` : '-';
+    const { grid, states, rows, cols, currentCell, currentArea, totalArea, islandCount, statusText, action } = step;
 
-    if (this.areaVisEl) {
-      this.areaVisEl.innerHTML = '';
-      step.islandAreas.forEach((area, idx) => {
-        const item = document.createElement('div');
-        item.className = 'tia-area-item';
-        item.textContent = `#${idx + 1}: ${area}`;
-        this.areaVisEl?.appendChild(item);
-      });
-      if (step.islandAreas.length > 0) {
-        const total = document.createElement('div');
-        total.className = 'tia-area-total';
-        total.textContent = `= ${step.totalArea}`;
-        this.areaVisEl?.appendChild(total);
-      }
-    }
+    // 1. 渲染 2D 网格
+    if (this.gridContainer) {
+      this.gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      let html = '';
 
-    if (this.gridEl && step.grid.length > 0) {
-      this.gridEl.innerHTML = '';
-      const m = step.grid.length;
-      const n = step.grid[0].length;
-      this.gridEl.style.gridTemplateColumns = `repeat(${n}, 34px)`;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const val = grid[r][c];
+          const st = states[r][c];
+          const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
 
-      for (let i = 0; i < m; i++) {
-        for (let j = 0; j < n; j++) {
-          const cell = document.createElement('div');
-          const state = step.states[i][j];
-          cell.className = `tia-cell ${state}`;
+          let cls = 'tia-cell';
+          if (st === 'explored') cls += ' is-explored';
+          else if (st === 'visited') cls += ' is-visited';
+          else if (val === 1) cls += ' is-land';
+          else cls += ' is-water';
 
-          if (step.current && step.current[0] === i && step.current[1] === j) {
-            cell.classList.add('current');
-          }
+          if (isCurrent) cls += ' is-current';
 
-          cell.textContent = step.grid[i][j] === 1 ? '1' : '0';
-          this.gridEl.appendChild(cell);
+          html += `<div class="${cls}"><span>${val}</span></div>`;
         }
       }
+      this.gridContainer.innerHTML = html;
     }
-    this.renderLogLine(step);
+
+    // 2. 更新状态监视器
+    if (this.metricCurCellEl) {
+      this.metricCurCellEl.textContent = currentCell ? `(${currentCell[0]}, ${currentCell[1]})` : '—';
+    }
+    if (this.metricCurAreaEl) {
+      this.metricCurAreaEl.textContent = `${currentArea}`;
+    }
+    if (this.metricIslandCountEl) {
+      this.metricIslandCountEl.textContent = `${islandCount}`;
+    }
+    if (this.metricTotalAreaEl) {
+      this.metricTotalAreaEl.textContent = `${totalArea}`;
+    }
+
+    if (this.formulaActionEl) {
+      this.formulaActionEl.textContent =
+        action === 'explore'
+          ? `DFS: (${currentCell ? currentCell.join(',') : ''}) -> currArea = ${currentArea}`
+          : action === 'island-done'
+          ? `岛屿结算: totalArea += ${currentArea} -> 总面积 = ${totalArea}`
+          : `totalArea = sum(islandAreas)`;
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done' || action === 'island-done'
+          ? '#f0fdf4'
+          : action === 'explore' || action === 'found'
+          ? '#eff6ff'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done' || action === 'island-done'
+          ? '#15803d'
+          : action === 'explore' || action === 'found'
+          ? '#1d4ed8'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done' || action === 'island-done'
+          ? '#bbf7d0'
+          : action === 'explore' || action === 'found'
+          ? '#bfdbfe'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeTotal = this.root?.querySelector('#badge-total-area');
+    if (badgeTotal) badgeTotal.textContent = `总面积: ${totalArea} 格`;
   }
 
-  private renderLogLine(step: TotalIslandAreaStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl?.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -308,11 +363,11 @@ registerAlgorithm({
   name: '孤岛总面积',
   viewId: 'algo-total-island-area-view',
   category: 'graph',
-  description: 'DFS/BFS 找出所有岛屿并累计总面积',
-  icon: '📊',
+  description: '遍历网格连通分量，计算并累计所有独立岛屿的面积总和',
+  icon: '🏝️',
+  difficulty: 2,
+  levelOrder: 18,
+  learningGoal: '掌握网格图连通块的面积累加与状态归一化处理',
   template,
   Visualizer: TotalIslandAreaVisualizer,
-  difficulty: 2,
-  levelOrder: 7,
-  learningGoal: '掌握遍历网格累计各连通分量大小的技巧',
 });

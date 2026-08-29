@@ -1,163 +1,255 @@
 /**
- * 寻找存在的路线可视化器
- * BFS 判断从 source 到 destination 是否存在路径
+ * 寻找图中是否存在有效路径 (LC 1971)
+ * 4-Card 标准现代架构可视化器
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  FIND_ROUTE_PROBLEM_HTML,
+  FIND_ROUTE_ANALYSIS_HTML,
+  FIND_ROUTE_CODE_LANGUAGES,
+} from './find-route-problem-content';
 import template from './find-route.html?raw';
 
-interface FRStep {
+export interface FRStep extends StepBase {
   nodes: number[];
   edges: [number, number][];
-  adjList: number[][];
   visited: Set<number>;
   currentNode: number | null;
   queue: number[];
   source: number;
   dest: number;
   path: number[];
-  parentMap: Map<number, number>;
   found: boolean | null;
   action: 'init' | 'explore' | 'found' | 'notfound' | 'done';
-  message: string;
+  statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-const FR_NODE_POSITIONS = [
-  { x: 80, y: 60 },
-  { x: 220, y: 40 },
-  { x: 370, y: 60 },
-  { x: 140, y: 170 },
-  { x: 310, y: 170 },
-  { x: 430, y: 170 },
+export const FR_NODES = [0, 1, 2, 3, 4, 5];
+export const FR_EDGES: [number, number][] = [
+  [0, 1],
+  [1, 2],
+  [0, 3],
+  [3, 4],
+  [2, 5],
+  [4, 5],
 ];
 
-function buildFRSteps(): FRStep[] {
+export const FR_NODE_POSITIONS = [
+  { x: 80, y: 70 },
+  { x: 220, y: 50 },
+  { x: 370, y: 70 },
+  { x: 130, y: 190 },
+  { x: 280, y: 190 },
+  { x: 420, y: 190 },
+];
+
+export function buildFRSteps(): FRStep[] {
   const steps: FRStep[] = [];
-  const nodes = [0, 1, 2, 3, 4, 5];
-  const edges: [number, number][] = [[0, 1], [1, 2], [0, 3], [3, 4], [2, 5], [4, 5]];
-  const adjList: number[][] = [
-    [1, 3],     // 0
-    [0, 2],     // 1
-    [1, 5],     // 2
-    [0, 4],     // 3
-    [3, 5],     // 4
-    [2, 4],     // 5
-  ];
+  const nodes = [...FR_NODES];
+  const edges = [...FR_EDGES];
   const source = 0;
-  const dest = 4;
+  const dest = 5;
+
+  const adjList: number[][] = Array.from({ length: 6 }, () => []);
+  for (const [u, v] of edges) {
+    adjList[u].push(v);
+    adjList[v].push(u);
+  }
 
   const visited = new Set<number>();
   const queue: number[] = [];
   const parentMap = new Map<number, number>();
 
-  const snap = (action: FRStep['action'], current: number | null, msg: string, log: string, code: number | number[], found: boolean | null = null, path: number[] = []) => {
-    steps.push({
-      nodes: [...nodes],
-      edges: [...edges],
-      adjList: adjList.map(r => [...r]),
-      visited: new Set(visited),
-      currentNode: current,
-      queue: [...queue],
-      source,
-      dest,
-      path: [...path],
-      parentMap: new Map(parentMap),
-      found,
-      action,
-      message: msg,
-      log,
-      codeLine: code,
-    });
-  };
+  steps.push({
+    nodes,
+    edges,
+    visited: new Set(),
+    currentNode: null,
+    queue: [],
+    source,
+    dest,
+    path: [],
+    found: null,
+    action: 'init',
+    statusText: `无向图包含 ${nodes.length} 个节点和 ${edges.length} 条边。目标：判断从起点 ${source} 到终点 ${dest} 是否存在路径。`,
+    log: `初始化: source=${source}, destination=${dest}`,
+    codeLine: [1, 2, 3],
+  });
 
-  snap('init', null, `图有 ${nodes.length} 个节点和 ${edges.length} 条边。寻找从节点 ${source} 到节点 ${dest} 的路径。`, `初始化: source=${source}, dest=${dest}`, 0);
-
-  // BFS
   visited.add(source);
   queue.push(source);
-  snap('explore', source, `从源节点 ${source} 开始 BFS。将其标记为已访问并入队。`, `入队: ${source}`, [1, 2]);
+
+  steps.push({
+    nodes,
+    edges,
+    visited: new Set(visited),
+    currentNode: source,
+    queue: [...queue],
+    source,
+    dest,
+    path: [],
+    found: null,
+    action: 'explore',
+    statusText: `起点 ${source} 加入队列并标记为已访问，启动 BFS 连通性搜索。`,
+    log: `起点入队: ${source}`,
+    codeLine: [11, 12, 13],
+  });
+
+  let foundPath: number[] = [];
+  let isFound = false;
 
   while (queue.length > 0) {
     const u = queue.shift()!;
 
     if (u === dest) {
-      // Reconstruct path
-      const path: number[] = [dest];
+      isFound = true;
+      const p: number[] = [dest];
       let cur = dest;
       while (parentMap.has(cur)) {
         cur = parentMap.get(cur)!;
-        path.unshift(cur);
+        p.unshift(cur);
       }
-      snap('found', u, `找到目标节点 ${dest}！路径存在！`, `发现目标: ${dest}`, [3, 4], true, path);
+      foundPath = p;
+
+      steps.push({
+        nodes,
+        edges,
+        visited: new Set(visited),
+        currentNode: u,
+        queue: [...queue],
+        source,
+        dest,
+        path: [...foundPath],
+        found: true,
+        action: 'found',
+        statusText: `🎉 成功搜索到终点 ${dest}！重构最优路径: [${foundPath.join(' -> ')}]。`,
+        log: `✓ 命中目标: 到达节点 ${dest}，路径存在！`,
+        codeLine: [16, 17],
+      });
       break;
     }
 
     for (const v of adjList[u]) {
       if (!visited.has(v)) {
         visited.add(v);
-        queue.push(v);
         parentMap.set(v, u);
-        snap('explore', u, `从节点 ${u} 发现未访问邻居 ${v}，标记已访问并入队。`, `探索 ${u}→${v}，入队`, [5, 6, 7]);
+        queue.push(v);
+
+        steps.push({
+          nodes,
+          edges,
+          visited: new Set(visited),
+          currentNode: u,
+          queue: [...queue],
+          source,
+          dest,
+          path: [],
+          found: null,
+          action: 'explore',
+          statusText: `节点 ${u} 探测到邻居 ${v}，将其加入遍历队列。`,
+          log: `扩展邻居: ${u} -> ${v}，入队`,
+          codeLine: [18, 19, 20, 21],
+        });
       }
     }
   }
 
-  if (steps[steps.length - 1].action !== 'found') {
-    snap('notfound', null, `BFS 遍历完成，未能到达节点 ${dest}。路径不存在！`, 'BFS 完成: 无路径', 8, false);
-  } else {
-    const finalPath = steps[steps.length - 1].path;
-    snap('done', null, `BFS 搜索完成！从 ${source} 到 ${dest} 存在路径：${finalPath.join(' → ')}。路径长度为 ${finalPath.length - 1}。`, `完成: 路径=${finalPath.join('→')}`, 9, true, finalPath);
-  }
+  steps.push({
+    nodes,
+    edges,
+    visited: new Set(visited),
+    currentNode: null,
+    queue: [],
+    source,
+    dest,
+    path: foundPath,
+    found: isFound,
+    action: 'done',
+    statusText: isFound
+      ? `🎉 搜索完成！起点 ${source} 与终点 ${dest} 连通，路径为: [${foundPath.join(' -> ')}]。`
+      : `❌ 搜索结束，队列为空，起点 ${source} 无法到达终点 ${dest}。`,
+    log: `✓ 算法执行完毕，连通性结果 = ${isFound}`,
+    codeLine: 25,
+  });
 
   return steps;
 }
 
 export class FindRouteVisualizer extends StepVisualizer<FRStep> {
-  protected codeLines = [
-    'boolean hasPath(List<List<Integer>> graph, int src, int dest) {',
-    '    boolean[] visited = new boolean[graph.size()];',
-    '    Queue<Integer> queue = new LinkedList<>();',
-    '    queue.add(src);',
-    '    while (!queue.isEmpty()) {',
-    '        int u = queue.poll();',
-    '        for (int v : graph.get(u)) {',
-    '            if (!visited[v]) {',
-    '                visited[v] = true;',
-    '                queue.add(v);',
-    '            }',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '寻找路线代码 (Java)';
+  protected codeLanguages = FIND_ROUTE_CODE_LANGUAGES;
+  protected codeLines = FIND_ROUTE_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '寻找有效路径 (LC 1971) 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private queueEl: HTMLElement | null = null;
-  private pathEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private visitedEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private metricQueueEl: HTMLElement | null = null;
+  private metricVisitedCountEl: HTMLElement | null = null;
+  private metricFoundEl: HTMLElement | null = null;
+  private resultPathEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#fr-graph');
-    this.queueEl = this.root.querySelector('#fr-queue');
-    this.pathEl = this.root.querySelector('#fr-path');
-    this.logEl = this.root.querySelector('#fr-log');
-    this.currentEl = this.root.querySelector('#fr-current');
-    this.visitedEl = this.root.querySelector('#fr-visited');
-    this.resultEl = this.root.querySelector('#fr-result');
-    this.btnStart = this.root.querySelector('#fr-start');
-    this.bindPlaybackControls({
-      speed: 'fr-speed',
-      speedLabel: 'fr-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#fr-svg-canvas');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.metricQueueEl = this.root.querySelector('#metric-queue');
+    this.metricVisitedCountEl = this.root.querySelector('#metric-visited-count');
+    this.metricFoundEl = this.root.querySelector('#metric-found');
+    this.resultPathEl = this.root.querySelector('#fr-result-path');
+    this.liveTextEl = this.root.querySelector('#fr-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 500;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: FIND_ROUTE_PROBLEM_HTML,
+      analysisHtml: FIND_ROUTE_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
   protected buildSteps(): FRStep[] {
@@ -165,206 +257,172 @@ export class FindRouteVisualizer extends StepVisualizer<FRStep> {
   }
 
   protected renderStep(step: FRStep): void {
-    if (this.currentEl) this.currentEl.textContent = step.currentNode !== null ? String(step.currentNode) : '-';
-    if (this.visitedEl) this.visitedEl.textContent = String(step.visited.size);
-    if (this.resultEl) {
-      if (step.found === true) {
-        this.resultEl.textContent = '存在';
-        (this.resultEl as HTMLElement).style.color = '#10b981';
-      } else if (step.found === false) {
-        this.resultEl.textContent = '不存在';
-        (this.resultEl as HTMLElement).style.color = '#ef4444';
-      } else {
-        this.resultEl.textContent = '-';
-        (this.resultEl as HTMLElement).style.color = '#818cf8';
+    const { nodes, edges, visited, currentNode, queue, source, dest, path, found, statusText, action } = step;
+
+    // 1. 绘制无向图 SVG
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 480 250" style="width:100%; height:100%; max-height:240px;">`;
+
+      // 边路径 Set
+      const pathEdgeSet = new Set<string>();
+      if (path.length > 1) {
+        for (let i = 0; i < path.length - 1; i++) {
+          const u = path[i];
+          const v = path[i + 1];
+          pathEdgeSet.add(`${Math.min(u, v)}-${Math.max(u, v)}`);
+        }
       }
-    }
 
-    this.renderGraph(step);
-    this.renderQueue(step);
-    this.renderPath(step);
-    this.renderLogLine(step);
-  }
-
-  private renderGraph(step: FRStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 500 240');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '480px';
-    svg.style.height = '240px';
-
-    // Draw path edges first (if found)
-    if (step.found && step.path.length > 1) {
-      for (let i = 0; i < step.path.length - 1; i++) {
-        const u = step.path[i];
-        const v = step.path[i + 1];
+      // 绘制边
+      for (const [u, v] of edges) {
         const p1 = FR_NODE_POSITIONS[u];
         const p2 = FR_NODE_POSITIONS[v];
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(p1.x));
-        line.setAttribute('y1', String(p1.y));
-        line.setAttribute('x2', String(p2.x));
-        line.setAttribute('y2', String(p2.y));
-        line.setAttribute('stroke', '#10b981');
-        line.setAttribute('stroke-width', '4');
-        line.style.animation = 'pathPulse 1.5s infinite';
-        svg?.appendChild(line);
+        const isPath = pathEdgeSet.has(`${Math.min(u, v)}-${Math.max(u, v)}`);
+
+        const strokeColor = isPath ? '#f59e0b' : '#cbd5e1';
+        const strokeWidth = isPath ? 3.5 : 2;
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+      }
+
+      // 绘制节点
+      for (const u of nodes) {
+        const pos = FR_NODE_POSITIONS[u];
+        const isCurrent = currentNode === u;
+        const isVisited = visited.has(u);
+        const isSource = source === u;
+        const isDest = dest === u;
+        const inPath = path.includes(u);
+
+        let fill = '#ffffff';
+        let stroke = '#94a3b8';
+        let textColor = '#0f172a';
+
+        if (inPath) {
+          fill = '#fef3c7';
+          stroke = '#f59e0b';
+          textColor = '#b45309';
+        } else if (isCurrent) {
+          fill = '#eff6ff';
+          stroke = '#2563eb';
+          textColor = '#1d4ed8';
+        } else if (isVisited) {
+          fill = '#f0fdf4';
+          stroke = '#16a34a';
+          textColor = '#15803d';
+        }
+
+        let badge = isSource ? ' (S)' : isDest ? ' (D)' : '';
+
+        svgHtml += `
+          <g>
+            <circle cx="${pos.x}" cy="${pos.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
+            <text x="${pos.x}" y="${pos.y + 4.5}" text-anchor="middle" font-size="12" font-weight="800" fill="${textColor}" font-family="JetBrains Mono">${u}${badge}</text>
+          </g>
+        `;
+      }
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricCurNodeEl) {
+      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
+    }
+    if (this.metricQueueEl) {
+      this.metricQueueEl.textContent = queue.length > 0 ? `[${queue.join(', ')}]` : '[ ]';
+    }
+    if (this.metricVisitedCountEl) {
+      this.metricVisitedCountEl.textContent = `${visited.size} / ${nodes.length}`;
+    }
+    if (this.metricFoundEl) {
+      this.metricFoundEl.textContent = found === true ? '存在路径 (true)' : found === false ? '不可达 (false)' : '搜索中...';
+      this.metricFoundEl.style.color = found === true ? '#16a34a' : found === false ? '#dc2626' : '#2563eb';
+    }
+
+    if (this.resultPathEl) {
+      this.resultPathEl.textContent = path.length > 0 ? `[${path.join(' -> ')}]` : '—';
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done' || action === 'found'
+          ? '#f0fdf4'
+          : action === 'explore'
+          ? '#eff6ff'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done' || action === 'found'
+          ? '#15803d'
+          : action === 'explore'
+          ? '#1d4ed8'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done' || action === 'found'
+          ? '#bbf7d0'
+          : action === 'explore'
+          ? '#bfdbfe'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
 
-    // Draw all edges
-    for (const [u, v] of step.edges) {
-      const p1 = FR_NODE_POSITIONS[u];
-      const p2 = FR_NODE_POSITIONS[v];
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-
-      const isPathEdge = step.found && step.path.length > 1 && step.path.includes(u) && step.path.includes(v);
-      if (!isPathEdge) {
-        line.setAttribute('stroke', 'rgba(129, 140, 248, 0.3)');
-        line.setAttribute('stroke-width', '2');
-      }
-      line.classList.add('fr-edge');
-      svg?.appendChild(line);
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
 
-    // Draw nodes
-    step.nodes.forEach((node, i) => {
-      const pos = FR_NODE_POSITIONS[i];
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('fr-node');
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
 
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
-
-      if (step.currentNode === node) {
-        circle.setAttribute('fill', '#f59e0b');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 0.8s infinite';
-      } else if (node === step.source || node === step.dest) {
-        circle.setAttribute('fill', 'rgba(239, 68, 68, 0.3)');
-        circle.setAttribute('stroke', '#ef4444');
-        circle.setAttribute('stroke-width', '3');
-      } else if (step.visited.has(node)) {
-        circle.setAttribute('fill', 'rgba(16, 185, 129, 0.3)');
-        circle.setAttribute('stroke', '#10b981');
-        circle.setAttribute('stroke-width', '2');
-      } else {
-        circle.setAttribute('fill', 'rgba(129, 140, 248, 0.2)');
-        circle.setAttribute('stroke', '#818cf8');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      const isSpecial = step.currentNode === node || node === step.source || node === step.dest;
-      text.setAttribute('fill', isSpecial ? (step.currentNode === node ? '#000' : '#fff') : step.visited.has(node) ? '#10b981' : '#818cf8');
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(node);
-      g?.appendChild(text);
-
-      // Label source/dest
-      if (node === step.source || node === step.dest) {
-        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        label.setAttribute('x', String(pos.x));
-        label.setAttribute('y', String(pos.y - 30));
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('fill', '#ef4444');
-        label.setAttribute('font-size', '11');
-        label.setAttribute('font-weight', '600');
-        label.textContent = node === step.source ? 'SRC' : 'DST';
-        g?.appendChild(label);
-      }
-
-      svg?.appendChild(g);
-    });
-
-    this.graphEl?.appendChild(svg);
+    const badgeStatus = this.root?.querySelector('#badge-path-status');
+    if (badgeStatus) {
+      badgeStatus.textContent = found === true ? '已找到路径' : found === false ? '路径不存在' : '目标状态: 搜索中';
+    }
   }
 
-  private renderQueue(step: FRStep): void {
-    if (!this.queueEl) return;
-    this.queueEl.innerHTML = '';
-    step.queue.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'fr-queue-item';
-      if (i === 0) item.classList.add('front');
-      item.textContent = String(node);
-      this.queueEl?.appendChild(item);
-    });
-    if (step.queue.length === 0) {
-      const empty = document.createElement('span');
-      empty.textContent = '(空)';
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      this.queueEl?.appendChild(empty);
-    }
-  }
-
-  private renderPath(step: FRStep): void {
-    if (!this.pathEl) return;
-    this.pathEl.innerHTML = '';
-    if (step.path.length === 0) {
-      const empty = document.createElement('span');
-      empty.textContent = step.found === false ? '无路径' : '(搜索中...)';
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      this.pathEl?.appendChild(empty);
-      return;
-    }
-    step.path.forEach((node, i) => {
-      if (i > 0) {
-        const arrow = document.createElement('span');
-        arrow.className = 'fr-path-arrow';
-        arrow.textContent = '→';
-        this.pathEl?.appendChild(arrow);
-      }
-      const item = document.createElement('div');
-      item.className = 'fr-path-item';
-      if (i === step.path.length - 1 && step.found) item.classList.add('dest');
-      item.textContent = String(node);
-      this.pathEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: FRStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'find-route',
-  name: '寻找存在的路线',
+  name: '寻找图中有效路径 (LC 1971)',
   viewId: 'algo-find-route-view',
   category: 'graph',
-  description: 'BFS 判断图中两节点间是否存在路径',
-  icon: '🛤️',
+  description: '使用广度优先搜索 (BFS) 与前驱节点映射判断无向图中两点连通性并重构路径',
+  icon: '🧭',
+  difficulty: 1,
+  levelOrder: 20,
+  learningGoal: '掌握无向图连通性判定与前驱记录回溯最短跳步路径',
   template,
   Visualizer: FindRouteVisualizer,
-  difficulty: 2,
-  levelOrder: 15,
-  learningGoal: '理解使用 BFS/DFS 判断图的连通性',
 });
-
-export {};

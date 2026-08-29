@@ -1,5 +1,5 @@
 <style>
-  /* === 基数排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 基数排序 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-radix-sort-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-radix-sort-view .rx-btn-problem {
@@ -117,138 +118,141 @@
     flex-shrink: 0;
   }
 
-  #algo-radix-sort-view .rx-input-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-radix-sort-view .rx-input-group label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
-  }
-
-  #algo-radix-sort-view .rx-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
-    color: #0f172a;
-    font-weight: 600;
-  }
-
-  #algo-radix-sort-view .rx-btn-primary {
-    padding: 4px 10px;
+  #algo-radix-sort-view .rx-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-radix-sort-view .rx-btn-primary:hover {
+  #algo-radix-sort-view .rx-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-radix-sort-view .rx-btn-secondary {
-    padding: 4px 8px;
+  #algo-radix-sort-view .rx-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-radix-sort-view .rx-btn-secondary:hover {
+  #algo-radix-sort-view .rx-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-radix-sort-view .rx-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-radix-sort-view .rx-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-radix-sort-view .rx-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-radix-sort-view .rx-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-radix-sort-view .rx-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-radix-sort-view .rx-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-radix-sort-view .rx-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-radix-sort-view .rx-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-radix-sort-view .rx-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 三轨沙盘 (原数组 + 10进制桶 count[0..9] + 输出缓冲) */
-  #algo-radix-sort-view .rx-sandbox-container {
+  #algo-radix-sort-view .rx-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-radix-sort-view .rx-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 三轨数位沙盘展示盒 */
+  #algo-radix-sort-view .rx-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
+    justify-content: center;
     gap: 8px;
-    padding: 6px;
-    width: 100%;
+    padding: 10px 12px;
   }
 
   #algo-radix-sort-view .rx-track-section {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    gap: 3px;
     width: 100%;
-    overflow-x: auto;
   }
 
   #algo-radix-sort-view .rx-track-label {
@@ -261,102 +265,148 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
+    width: 100%;
+    flex-wrap: wrap;
   }
 
   #algo-radix-sort-view .rx-cell-box {
-    width: 38px;
-    height: 40px;
+    min-width: 34px;
+    height: 32px;
+    padding: 0 4px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1.5px solid #cbd5e1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     font-family: 'JetBrains Mono', monospace;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  #algo-radix-sort-view .rx-cell-box .val {
-    font-size: 13px;
+    font-size: 11.5px;
     font-weight: 800;
     color: #0f172a;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  #algo-radix-sort-view .rx-cell-box .digit-hl {
-    color: #2563eb;
-    text-decoration: underline;
-    font-weight: 900;
-  }
-
-  #algo-radix-sort-view .rx-cell-box .sub {
-    font-size: 8px;
-    font-weight: 700;
-    color: #94a3b8;
-  }
-
-  #algo-radix-sort-view .rx-cell-box.is-active-elem {
-    border-color: #3b82f6;
+  #algo-radix-sort-view .rx-cell-box.is-current {
     background: #eff6ff;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
+    color: #1d4ed8;
+    transform: scale(1.05);
   }
 
-  #algo-radix-sort-view .rx-cell-box.is-active-digit {
-    border-color: #a855f7;
+  #algo-radix-sort-view .rx-cell-box.is-count-active {
     background: #faf5ff;
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+    border-color: #a855f7;
+    color: #7e22ce;
+    transform: scale(1.05);
   }
 
-  #algo-radix-sort-view .rx-cell-box.is-filled-out {
-    border-color: #10b981;
+  #algo-radix-sort-view .rx-cell-box.is-out-filled {
     background: #f0fdf4;
+    border-color: #22c55e;
     color: #15803d;
   }
 
-  /* Preset Chips */
-  #algo-radix-sort-view .rx-preset-chips {
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-radix-sort-view .rx-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
-  #algo-radix-sort-view .rx-chip {
-    padding: 2px 7px;
-    border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
+  #algo-radix-sort-view .rx-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-radix-sort-view .rx-counter-badge {
+    font-size: 11.5px;
     font-family: 'JetBrains Mono', monospace;
-    color: #475569;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-radix-sort-view .rx-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-radix-sort-view .rx-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
-    background: #eff6ff;
+  #algo-radix-sort-view .rx-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  /* Card 2: 状态监视器 */
+  #algo-radix-sort-view .rx-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-radix-sort-view .rx-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-radix-sort-view .rx-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-radix-sort-view .rx-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-radix-sort-view .rx-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -371,7 +421,7 @@
 
   #algo-radix-sort-view .rx-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -379,88 +429,290 @@
   #algo-radix-sort-view .rx-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-radix-sort-view .rx-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-radix-sort-view .rx-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-radix-sort-view .rx-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-radix-sort-view .rx-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-radix-sort-view .rx-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-radix-sort-view .rx-playback-controls {
+  #algo-radix-sort-view .rx-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-radix-sort-view .rx-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-radix-sort-view .rx-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-radix-sort-view .rx-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-radix-sort-view .rx-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-radix-sort-view .rx-progress-wrap {
-    flex: 1;
+  #algo-radix-sort-view .rx-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-radix-sort-view .rx-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-radix-sort-view .rx-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-radix-sort-view .rx-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-radix-sort-view .rx-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-radix-sort-view .rx-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-radix-sort-view .rx-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-radix-sort-view .rx-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-radix-sort-view .rx-step-badge {
-    font-size: 11px;
+  #algo-radix-sort-view .rx-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-radix-sort-view .rx-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-radix-sort-view .rx-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-radix-sort-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-radix-sort-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-radix-sort-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-radix-sort-view .rx-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-radix-sort-view .rx-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-radix-sort-view .rx-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-radix-sort-view .rx-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-radix-sort-view .rx-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-radix-sort-view .rx-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-radix-sort-view .rx-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-radix-sort-view .rx-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-radix-sort-view .rx-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-radix-sort-view .rx-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-radix-sort-view .rx-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-radix-sort-view .rx-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -469,138 +721,211 @@
   <header class="rx-header">
     <div class="rx-header-left">
       <div class="rx-icon-btn">🎯</div>
-      <div class="rx-main-title">基数排序 · Radix Sort</div>
-      <button class="rx-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="rx-badge-mode">LSD 低位优先分发与稳定写回</div>
-      <div class="rx-badge-complexity">O(d·(n+b)) · O(n+b) 稳定</div>
+      <h1 class="rx-main-title">基数排序 (Radix Sort)</h1>
+      <button id="btn-open-problem-modal" class="rx-btn-problem">📋 题目</button>
+      <span class="rx-badge-mode">低位优先(LSD)·按位稳定计数分配回填</span>
+      <span class="rx-badge-complexity">O(d · (n + k)) · O(n + k)</span>
     </div>
+
     <div class="rx-header-right">
-      <div class="rx-input-group">
-        <label for="input-array">数组:</label>
-        <input type="text" id="input-array" value="170, 45, 75, 90, 802, 24, 2, 66" style="width: 200px;">
-      </div>
-      <button class="rx-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="rx-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="rx-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="rx-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="rx-workspace">
-    <!-- Card 1: 三轨沙盘 (原数组 + 10进制桶 count[0..9] + 输出缓冲) -->
-    <section class="rx-card">
-      <div class="rx-card-header">
-        <div class="rx-card-title">
-          <span>📊</span> 按位分解、基数桶与回填沙盘 (Digit Extract, Radix Buckets & Output)
-        </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #3b82f6;">● 输入元素</span> · <span style="color: #a855f7;">● 0..9 计数桶</span> · <span style="color: #10b981;">● 稳定回填</span>
-        </div>
-      </div>
-      <div class="rx-card-body" style="justify-content: center;">
-        <div class="rx-sandbox-container">
-          <!-- 上轨：主数组 -->
-          <div class="rx-track-section">
-            <div class="rx-track-label">原数组 arr (下划线高亮当前 exp 位)</div>
-            <div class="rx-track-row" id="rx-src-track"></div>
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="rx-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="rx-left-section">
+
+      <!-- 卡片 1: 三轨数位沙盘 -->
+      <div class="rx-card">
+        <div class="rx-card-header">
+          <div class="rx-card-title">
+            <span>📊 数位分布与 0..9 计数桶沙盘 (Radix Digit Sandbox)</span>
           </div>
-          <!-- 中轨：0..9 计数桶 -->
-          <div class="rx-track-section">
-            <div class="rx-track-label">10 进制数位计数表 count[0..9]</div>
-            <div class="rx-track-row" id="rx-count-track"></div>
-          </div>
-          <!-- 下轨：Output 缓冲 -->
-          <div class="rx-track-section">
-            <div class="rx-track-label">当前轮次排序输出 output</div>
-            <div class="rx-track-row" id="rx-out-track"></div>
+          <div class="rx-legend-bar">
+            <div><span class="rx-legend-dot" style="background:#3b82f6;"></span> 当前元素</div>
+            <div><span class="rx-legend-dot" style="background:#a855f7;"></span> 数位桶统计</div>
+            <div><span class="rx-legend-dot" style="background:#22c55e;"></span> 输出回填</div>
           </div>
         </div>
+
+        <!-- 三轨沙盘展示盒 -->
+        <div class="rx-sandbox-wrap">
+          <div class="rx-track-section">
+            <div class="rx-track-label">原数组 arr (下划线高亮当前 exp 位):</div>
+            <div id="rx-src-track" class="rx-track-row"></div>
+          </div>
+          <div class="rx-track-section">
+            <div class="rx-track-label">10 进制数位计数表 count[0..9]:</div>
+            <div id="rx-count-track" class="rx-track-row"></div>
+          </div>
+          <div class="rx-track-section">
+            <div class="rx-track-label">当前轮次排序输出 output:</div>
+            <div id="rx-out-track" class="rx-track-row"></div>
+          </div>
+        </div>
       </div>
-      <div class="rx-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="rx-chip" data-arr="170, 45, 75, 90, 802, 24, 2, 66">经典 3 位数 (170, 45, 75, 90, 802, 24, 2, 66)</button>
-        <button class="rx-chip" data-arr="329, 457, 657, 839, 436, 720, 355">多位乱序项</button>
-        <button class="rx-chip" data-arr="9, 8, 7, 6, 5, 4, 3, 2, 1">单数字 1 位</button>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="rx-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="rx-slider" />
+        <div class="rx-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="rx-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="rx-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="rx-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="rx-card">
+        <div class="rx-card-header">
+          <div>
+            <div class="rx-card-title">🧭 基数状态与指标监视器 (Radix Metrics Monitor)</div>
+            <div class="rx-card-desc">当前权位 exp、最大数值 maxVal、当前元素与写入输出下标</div>
+          </div>
+          <span id="badge-exp" class="rx-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">当前权位: 1 (个位)</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="rx-state-space-box">
+          <div class="rx-metrics-grid">
+            <div class="rx-metric-card">
+              <span class="rx-metric-label">当前权位 exp</span>
+              <span class="rx-metric-val" id="metric-exp" style="color: #2563eb;">1 (个位)</span>
+            </div>
+            <div class="rx-metric-card">
+              <span class="rx-metric-label">最大数值 maxVal</span>
+              <span class="rx-metric-val" id="metric-max-val" style="color: #0f172a;">802</span>
+            </div>
+            <div class="rx-metric-card">
+              <span class="rx-metric-label">当前元素 (提取数位)</span>
+              <span class="rx-metric-val" id="metric-cur-elem" style="color: #a855f7;">170 ('0')</span>
+            </div>
+            <div class="rx-metric-card">
+              <span class="rx-metric-label">写入下标 outIdx</span>
+              <span class="rx-metric-val" id="metric-out-idx" style="color: #10b981;">0</span>
+            </div>
+          </div>
+
+          <div class="rx-formula-box">
+            <span style="color:#64748b;">数位提取:</span>
+            <strong id="formula-action" style="color: #2563eb;">digit = (x / exp) % 10</strong>
+          </div>
+
+          <div class="rx-live-alert">
+            <span>💡</span> <span id="rx-live-text">准备就绪，点击运行开始基数排序。</span>
+          </div>
+        </div>
+      </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="rx-card">
-      <div class="rx-card-header">
-        <div class="rx-card-title">
-          <span>🧭</span> 基数指标监视器 (Radix Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="rx-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="rx-dark-terminal">
+        <div class="rx-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="rx-tab-group">
+            <button id="btn-tab-code" class="rx-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="rx-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="rx-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="rx-lang-group" id="code-lang-tabs">
+            <button class="rx-lang-btn active" data-lang="java">Java</button>
+            <button class="rx-lang-btn" data-lang="cpp">C++</button>
+            <button class="rx-lang-btn" data-lang="python">Python</button>
+            <button class="rx-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="rx-font-tools">
+            <div class="rx-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="rx-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="rx-window-dots">
+              <span class="rx-dot" style="background:#ef4444;"></span>
+              <span class="rx-dot" style="background:#eab308;"></span>
+              <span class="rx-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="rx-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="rx-card-body">
-        <div class="rx-metrics-grid">
-          <div class="rx-metric-card">
-            <span class="rx-metric-label">当前权位 exp</span>
-            <span class="rx-metric-val" id="metric-exp" style="color: #2563eb;">1 (个位)</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="rx-log-card">
+        <div class="rx-log-header">
+          <div class="rx-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="rx-metric-card">
-            <span class="rx-metric-label">最大数值 maxVal</span>
-            <span class="rx-metric-val" id="metric-max-val" style="color: #0f172a;">802</span>
-          </div>
-          <div class="rx-metric-card">
-            <span class="rx-metric-label">当前元素 (提取数位)</span>
-            <span class="rx-metric-val" id="metric-cur-elem" style="color: #a855f7;">170 ('0')</span>
-          </div>
-          <div class="rx-metric-card">
-            <span class="rx-metric-label">写入下标 outIdx</span>
-            <span class="rx-metric-val" id="metric-out-idx" style="color: #10b981;">0</span>
-          </div>
+          <span id="log-count" class="rx-log-count">0 条记录</span>
         </div>
-        <div class="rx-formula-box" id="rx-formula-box">
-          <span>数位提取:</span> <strong id="formula-action" style="color: #2563eb;">digit = (x / exp) % 10</strong>
-        </div>
-        <div class="rx-live-alert" id="rx-live-alert">
-          <span>💡</span> <span id="rx-live-text">准备就绪，点击运行开始基数排序。</span>
+
+        <div id="log-container" class="rx-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="rx-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="rx-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="rx-card-header">
-        <div class="rx-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="rx-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="rx-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="rx-playback-bar">
-    <div class="rx-playback-controls">
-      <button class="rx-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="rx-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="rx-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="rx-modal-backdrop hidden">
+    <div class="rx-modal-content">
+      <div class="rx-modal-header">
+        <div class="rx-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="rx-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="rx-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="rx-progress-wrap">
-      <span class="rx-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

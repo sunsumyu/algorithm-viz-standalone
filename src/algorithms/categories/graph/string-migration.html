@@ -1,335 +1,905 @@
 <style>
+  /* === 字符串迁移 / 旋转字符串 (LC 796) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-string-migration-view {
-    width: 100%; height: 100%;
-    color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative; overflow: hidden;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  #algo-string-migration-view::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #8b5cf655, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #7c3aed55, transparent 55%),
-                linear-gradient(135deg, #1a0a2e 0%, #4c1d95 25%, #1a0a2e 50%, #5b21b6 75%, #1a0a2e 100%);
-    z-index: -2;
+  #algo-string-migration-view * {
+    box-sizing: border-box;
   }
 
-  #algo-string-migration-view::after {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at center, rgba(26, 10, 46, 0.4), transparent 70%);
-    z-index: -1;
+  /* 1. 顶栏 Header */
+  #algo-string-migration-view .sm-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .sm-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-
-  .sm-hero {
-    padding: 16px 24px; background: rgba(20,18,38,0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0 0 16px 16px;
-    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  #algo-string-migration-view .sm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .sm-hero .sm-title-wrapper { display: flex; align-items: center; gap: 12px; }
-
-  .sm-hero-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; box-shadow: 0 4px 15px rgba(139,92,246,0.3);
+  #algo-string-migration-view .sm-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .sm-hero-text h2 {
-    margin: 0 0 4px; font-size: 22px; font-weight: 800;
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  #algo-string-migration-view .sm-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
   }
 
-  .sm-hero-text p { margin: 0; color: rgba(204,214,244,0.8); font-size: 13px; }
-
-  .sm-tip {
-    max-width: 480px; padding: 12px 16px; border-radius: 12px;
-    background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2);
-    color: rgba(204,214,244,0.9); font-size: 13px; line-height: 1.55;
+  #algo-string-migration-view .sm-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-string-migration-view .sm-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .sm-tip strong { color: #8b5cf6; font-weight: 600; }
-
-  #algo-string-migration-view .sm-layout {
-    flex: 1; min-height: 0;
-    display: grid; grid-template-columns: 1fr 380px;
-    gap: 16px; padding: 16px; overflow: hidden;
+  #algo-string-migration-view .sm-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  @media (max-width: 1100px) {
-    #algo-string-migration-view .sm-layout { grid-template-columns: 1fr; overflow: auto; }
+  #algo-string-migration-view .sm-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
 
-  .sm-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; }
-
-  .sm-card {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  #algo-string-migration-view .sm-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
-  .sm-controls {
-    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  #algo-string-migration-view .sm-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-string-migration-view .sm-btn-generate:hover {
+    background: #1d4ed8;
   }
 
-  .sm-input {
-    flex: 1; min-width: 120px; padding: 10px 14px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(11,10,23,0.8); color: #cdd6f4;
-    font-family: ui-monospace, monospace; font-size: 13px;
-    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  #algo-string-migration-view .sm-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-string-migration-view .sm-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  .sm-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
-
-  .sm-btn {
-    padding: 10px 18px; border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
-    transition: all 0.2s; box-shadow: 0 4px 15px rgba(139,92,246,0.3);
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-string-migration-view .sm-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
   }
 
-  .sm-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139,92,246,0.4); }
-
-  .sm-example {
-    padding: 8px 14px; border-radius: 999px;
-    border: 1px solid rgba(139,92,246,0.3);
-    background: rgba(139,92,246,0.1); color: #cdd6f4;
-    font-size: 12px; cursor: pointer; transition: all 0.2s;
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-string-migration-view .sm-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .sm-example:hover { background: rgba(139,92,246,0.2); border-color: #8b5cf6; }
-
-  .sm-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 12px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-string-migration-view .sm-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
-  .sm-stat {
-    padding: 14px 0; position: relative;
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
+  #algo-string-migration-view .sm-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
   }
 
-  .sm-stat::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+  #algo-string-migration-view .sm-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .sm-stat-label { display: block; margin-bottom: 6px; color: rgba(204,214,244,0.7); font-size: 12px; }
-  .sm-stat-val { color: #8b5cf6; font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; }
-
-  .sm-string-display {
-    padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px;
-    min-height: 200px;
+  #algo-string-migration-view .sm-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  .sm-string-row {
-    display: flex; align-items: center; gap: 8px;
+  #algo-string-migration-view .sm-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-string-migration-view .sm-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
 
-  .sm-string-label {
-    color: rgba(204,214,244,0.7); font-size: 12px; font-weight: 600;
-    min-width: 40px; text-align: right;
+  /* 字符串拼接与滑动窗口沙盘展示盒 */
+  #algo-string-migration-view .sm-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
   }
 
-  .sm-char-box {
-    width: 40px; height: 40px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: ui-monospace, monospace; font-size: 18px; font-weight: 700;
-    transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1);
+  #algo-string-migration-view .sm-char-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .sm-shift-info {
-    color: rgba(204,214,244,0.8); font-size: 14px; font-family: ui-monospace, monospace;
-    padding: 8px 16px; border-radius: 8px;
-    background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2);
+  #algo-string-migration-view .sm-char-box {
+    width: 36px;
+    height: 40px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .sm-concat-display {
-    padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.08);
+  #algo-string-migration-view .sm-char-box.is-in-window {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+    transform: translateY(-2px);
   }
 
-  .sm-concat-title {
-    color: rgba(204,214,244,0.7); font-size: 12px; margin-bottom: 8px;
+  #algo-string-migration-view .sm-char-box.is-match {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.25);
   }
 
-  .sm-concat-chars {
-    display: flex; gap: 2px; flex-wrap: wrap;
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-string-migration-view .sm-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
-  .sm-concat-char {
-    width: 28px; height: 28px; border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: ui-monospace, monospace; font-size: 13px; font-weight: 600;
-    background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.25);
-    color: #c4b5fd; transition: all 0.3s;
+  #algo-string-migration-view .sm-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
   }
 
-  .sm-concat-char.matched {
-    background: rgba(34,197,94,0.3); border-color: #22c55e; color: #bbf7d0;
+  #algo-string-migration-view .sm-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .sm-concat-char.window {
-    background: rgba(139,92,246,0.5); border-color: #a78bfa;
+  #algo-string-migration-view .sm-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-string-migration-view .sm-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  .sm-message {
-    margin: 0 14px 14px; padding: 12px 16px; border-radius: 12px;
-    border: 1px solid rgba(139,92,246,0.2); background: rgba(139,92,246,0.08);
-    color: #cdd6f4; font-size: 13px; line-height: 1.5;
+  #algo-string-migration-view .sm-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-string-migration-view .sm-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
   }
 
-  .sm-log {
-    min-height: 0; max-height: 130px; padding: 14px 16px; overflow: auto;
-    background: rgba(11,10,23,0.8); font-family: ui-monospace, monospace;
-    font-size: 12px; line-height: 1.7; color: rgba(204,214,244,0.8);
+  /* Card 2 状态空间 */
+  #algo-string-migration-view .sm-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .sm-log div { padding: 2px 0; }
-  .sm-log div.active { color: #8b5cf6; font-weight: 600; }
-
-  .sm-right { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
-
-  .sm-code-card {
-    background: rgba(11,10,23,0.8); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px; overflow: hidden; flex: 1;
+  #algo-string-migration-view .sm-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
   }
 
-  .sm-legend {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
+  #algo-string-migration-view .sm-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .sm-legend-item { display: flex; align-items: center; gap: 10px; }
-  .sm-legend-box { width: 16px; height: 16px; border-radius: 4px; }
-
-  .sm-playback {
-    background: rgba(20,18,38,0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  #algo-string-migration-view .sm-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
 
-  .sm-pb-row { display: flex; gap: 10px; align-items: center; }
-
-  .sm-pb-btn {
-    flex: 1; padding: 12px 16px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(139,92,246,0.1); color: #cdd6f4;
-    cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;
+  #algo-string-migration-view .sm-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
   }
 
-  .sm-pb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .sm-pb-btn:not(:disabled):hover { background: rgba(139,92,246,0.2); border-color: #8b5cf6; transform: translateY(-1px); }
-
-  .sm-pb-btn.play {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    border: none; color: #fff; box-shadow: 0 4px 15px rgba(139,92,246,0.3);
+  #algo-string-migration-view .sm-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
   }
 
-  .sm-pb-btn.play:not(:disabled):hover { box-shadow: 0 6px 20px rgba(139,92,246,0.4); }
-
-  .sm-speed-row {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: rgba(204,214,244,0.7);
+  #algo-string-migration-view .sm-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .sm-speed-row input { flex: 1; accent-color: #8b5cf6; }
-
-  .sm-counter {
-    color: rgba(204,214,244,0.6); font-size: 13px;
-    font-family: ui-monospace, monospace; text-align: center;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-string-migration-view .sm-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  @keyframes sm-rotate {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-42px); }
+  /* Card 3: 暗色代码终端面板 */
+  #algo-string-migration-view .sm-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  @keyframes sm-glow {
-    0%, 100% { box-shadow: 0 0 8px rgba(139,92,246,0.4); }
-    50% { box-shadow: 0 0 18px rgba(139,92,246,0.7); }
+  #algo-string-migration-view .sm-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
 
-  .sm-char-box.matched {
-    animation: sm-glow 0.8s infinite;
-    background: rgba(34,197,94,0.4); border-color: #22c55e; color: #bbf7d0;
+  #algo-string-migration-view .sm-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-string-migration-view .sm-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-string-migration-view .sm-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-string-migration-view .sm-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-string-migration-view .sm-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-string-migration-view .sm-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-string-migration-view .sm-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-string-migration-view .sm-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-string-migration-view .sm-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-string-migration-view .sm-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-string-migration-view .sm-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-string-migration-view .sm-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-string-migration-view .sm-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-string-migration-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-string-migration-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-string-migration-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-string-migration-view .sm-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-string-migration-view .sm-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-string-migration-view .sm-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-string-migration-view .sm-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-string-migration-view .sm-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-string-migration-view .sm-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-string-migration-view .sm-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-string-migration-view .sm-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-string-migration-view .sm-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-string-migration-view .sm-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-string-migration-view .sm-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-string-migration-view .sm-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="sm-page">
-  <div class="sm-hero">
-    <div class="sm-title-wrapper">
-      <div class="sm-hero-icon">🔄</div>
-      <div class="sm-hero-text">
-        <h2>字符串迁移</h2>
-        <p>判断字符串能否通过循环移位变换为目标串</p>
-      </div>
+<div id="algo-string-migration-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="sm-header">
+    <div class="sm-header-left">
+      <div class="sm-icon-btn">🔤</div>
+      <h1 class="sm-main-title">LeetCode 796. 旋转字符串 / 字符串迁移</h1>
+      <button id="btn-open-problem-modal" class="sm-btn-problem">📋 题目</button>
+      <span class="sm-badge-mode">双倍拼接·滑动窗口子串匹配</span>
+      <span class="sm-badge-complexity">O(N) · O(N)</span>
     </div>
-    <div class="sm-tip"><strong>算法要点：</strong>将 str1 自身拼接得到 str1+str1，若 str2 是其子串，则 str2 是 str1 的循环移位。可用 KMP 或内置 indexOf 在 O(n) 内判断。</div>
-  </div>
 
-  <div class="sm-layout">
-    <div class="sm-main">
+    <div class="sm-header-right">
+      <button id="btn-generate" class="sm-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="sm-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="sm-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="sm-left-section">
+
+      <!-- 卡片 1: 字符串拼接与滑动窗口沙盘 -->
       <div class="sm-card">
-        <div class="sm-controls">
-          <input id="sm-str1-input" class="sm-input" value="abcde" title="原字符串" placeholder="str1" />
-          <input id="sm-str2-input" class="sm-input" value="cdeab" title="目标字符串" placeholder="str2" />
-          <button id="sm-start" class="sm-btn">开始检测</button>
-          <button class="sm-example" data-s1="abcde" data-s2="cdeab">示例1</button>
-          <button class="sm-example" data-s1="hello" data-s2="lohel">示例2</button>
-          <button class="sm-example" data-s1="abcd" data-s2="acbd">示例3</button>
+        <div class="sm-card-header">
+          <div class="sm-card-title">
+            <span>🔤 双倍拼接串 (s + s) 与目标串 goal 滑动匹配沙盘</span>
+          </div>
+          <div class="sm-legend-bar">
+            <div><span class="sm-legend-dot" style="background:#3b82f6;"></span> 当前匹配窗口</div>
+            <div><span class="sm-legend-dot" style="background:#22c55e;"></span> 匹配成功</div>
+          </div>
         </div>
 
-        <div class="sm-stats">
-          <div class="sm-stat"><span class="sm-stat-label">移位次数</span><span class="sm-stat-val" id="sm-shift">0</span></div>
-          <div class="sm-stat"><span class="sm-stat-label">当前窗口</span><span class="sm-stat-val" id="sm-window">-</span></div>
-          <div class="sm-stat"><span class="sm-stat-label">匹配位置</span><span class="sm-stat-val" id="sm-match-pos">-</span></div>
-          <div class="sm-stat"><span class="sm-stat-label">结果</span><span class="sm-stat-val" id="sm-result">-</span></div>
+        <!-- 字符沙盘展示盒 -->
+        <div class="sm-sandbox-wrap">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <span style="font-size:11px; font-weight:700; color:#64748b;">目标串 goal:</span>
+            <div id="sm-goal-strip" class="sm-char-strip"></div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <span style="font-size:11px; font-weight:700; color:#64748b;">双倍拼接串 (s + s):</span>
+            <div id="sm-concat-strip" class="sm-char-strip"></div>
+          </div>
         </div>
-
-        <div class="sm-string-display" id="sm-display"></div>
-
-        <div class="sm-concat-display">
-          <div class="sm-concat-title">拼接串 str1 + str1（滑动窗口）</div>
-          <div class="sm-concat-chars" id="sm-concat"></div>
-        </div>
-
-        <div class="sm-message" id="step-message">输入两个字符串，点击「开始检测」查看循环移位检测过程。</div>
-
-        <div class="sm-log" id="sm-log"></div>
       </div>
-    </div>
 
-    <div class="sm-right">
-      <div data-code-panel class="sm-code-card"></div>
-      <div class="sm-legend">
-        <div class="sm-legend-item"><span class="sm-legend-box" style="background:rgba(139,92,246,0.3)"></span>原字符串</div>
-        <div class="sm-legend-item"><span class="sm-legend-box" style="background:rgba(34,197,94,0.4)"></span>匹配成功</div>
-        <div class="sm-legend-item"><span class="sm-legend-box" style="background:rgba(139,92,246,0.5);border:2px solid #a78bfa"></span>滑动窗口</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="sm-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="sm-slider" />
+        <div class="sm-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="sm-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="sm-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="sm-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="sm-playback">
-        <div class="sm-pb-row">
-          <button id="step-reset" class="sm-pb-btn">重置</button>
-          <button id="step-prev" class="sm-pb-btn">上一步</button>
-          <button id="step-play" class="sm-pb-btn play">播放</button>
-          <button id="step-next" class="sm-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 状态空间与匹配监视器 -->
+      <div class="sm-card">
+        <div class="sm-card-header">
+          <div>
+            <div class="sm-card-title">🧭 状态指标与窗口监视器 (Match Monitor)</div>
+            <div class="sm-card-desc">当前滑动位移、窗口子串、匹配判定与最终旋转结果</div>
+          </div>
+          <span id="badge-match-status" class="sm-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">匹配中...</span>
         </div>
-        <div class="sm-speed-row">
-          <span>速度</span>
-          <input id="sm-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="sm-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="sm-state-space-box">
+          <div class="sm-metrics-grid">
+            <div class="sm-metric-card">
+              <span class="sm-metric-label">左移位量 Shift</span>
+              <span class="sm-metric-val" id="metric-shift" style="color: #2563eb;">0</span>
+            </div>
+            <div class="sm-metric-card">
+              <span class="sm-metric-label">窗口子串 window</span>
+              <span class="sm-metric-val" id="metric-window-str" style="color: #eab308;">—</span>
+            </div>
+            <div class="sm-metric-card">
+              <span class="sm-metric-label">匹配位置 MatchPos</span>
+              <span class="sm-metric-val" id="metric-match-pos" style="color: #10b981;">—</span>
+            </div>
+            <div class="sm-metric-card">
+              <span class="sm-metric-label">最终结论 Result</span>
+              <span class="sm-metric-val" id="metric-result" style="color: #16a34a;">待定</span>
+            </div>
+          </div>
+
+          <div class="sm-formula-box">
+            <span style="color:#64748b;">双倍拼接判定定理:</span>
+            <strong id="formula-action" style="color: #2563eb;">goal 是 s 的循环移位 ⟺ (s + s).contains(goal)</strong>
+          </div>
+
+          <div class="sm-live-alert">
+            <span>💡</span> <span id="sm-live-text">准备就绪，点击运行开始字符串迁移分析。</span>
+          </div>
         </div>
-        <div id="step-counter" class="sm-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="sm-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="sm-dark-terminal">
+        <div class="sm-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="sm-tab-group">
+            <button id="btn-tab-code" class="sm-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sm-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sm-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="sm-lang-group" id="code-lang-tabs">
+            <button class="sm-lang-btn active" data-lang="java">Java</button>
+            <button class="sm-lang-btn" data-lang="cpp">C++</button>
+            <button class="sm-lang-btn" data-lang="python">Python</button>
+            <button class="sm-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="sm-font-tools">
+            <div class="sm-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="sm-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="sm-window-dots">
+              <span class="sm-dot" style="background:#ef4444;"></span>
+              <span class="sm-dot" style="background:#eab308;"></span>
+              <span class="sm-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="sm-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="sm-log-card">
+        <div class="sm-log-header">
+          <div class="sm-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="sm-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="sm-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="sm-modal-backdrop hidden">
+    <div class="sm-modal-content">
+      <div class="sm-modal-header">
+        <div class="sm-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="sm-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="sm-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

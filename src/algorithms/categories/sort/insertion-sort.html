@@ -1,5 +1,5 @@
 <style>
-  /* === 插入排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 插入排序 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-insertion-sort-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-insertion-sort-view .is-btn-problem {
@@ -117,236 +118,303 @@
     flex-shrink: 0;
   }
 
-  #algo-insertion-sort-view .is-input-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-insertion-sort-view .is-input-group label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
-  }
-
-  #algo-insertion-sort-view .is-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
-    color: #0f172a;
-    font-weight: 600;
-  }
-
-  #algo-insertion-sort-view .is-btn-primary {
-    padding: 4px 10px;
+  #algo-insertion-sort-view .is-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-insertion-sort-view .is-btn-primary:hover {
+  #algo-insertion-sort-view .is-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-insertion-sort-view .is-btn-secondary {
-    padding: 4px 8px;
+  #algo-insertion-sort-view .is-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-insertion-sort-view .is-btn-secondary:hover {
+  #algo-insertion-sort-view .is-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-insertion-sort-view .is-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-insertion-sort-view .is-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-insertion-sort-view .is-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-insertion-sort-view .is-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-insertion-sort-view .is-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-insertion-sort-view .is-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-insertion-sort-view .is-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-insertion-sort-view .is-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-insertion-sort-view .is-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 柱状图与扑克牌插入沙盘 */
-  #algo-insertion-sort-view .is-sandbox-container {
+  #algo-insertion-sort-view .is-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-insertion-sort-view .is-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 柱状图沙盘展示盒 */
+  #algo-insertion-sort-view .is-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: flex-end;
-    padding: 12px 6px 6px;
-    width: 100%;
-    min-height: 180px;
+    padding: 16px 12px 10px;
   }
 
   #algo-insertion-sort-view .is-bars-container {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
+    height: 100%;
     width: 100%;
-    height: 140px;
-    padding-bottom: 4px;
   }
 
-  #algo-insertion-sort-view .is-bar-wrapper {
+  #algo-insertion-sort-view .is-bar-col {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
+    flex: 1;
+    max-width: 44px;
     height: 100%;
     justify-content: flex-end;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   #algo-insertion-sort-view .is-bar-pillar {
-    width: 38px;
-    border-radius: 6px 6px 0 0;
+    width: 100%;
+    border-radius: 6px 6px 2px 2px;
     background: #cbd5e1;
+    border: 1.5px solid #94a3b8;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 12px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding-top: 4px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
-    color: #0f172a;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  #algo-insertion-sort-view .is-bar-idx {
-    font-size: 9px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    color: #94a3b8;
+    color: #334155;
   }
 
   #algo-insertion-sort-view .is-bar-pillar.is-key {
-    background: #fbbf24;
-    color: #78350f;
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4);
-    transform: translateY(-8px);
+    background: #fef9c3;
+    border-color: #eab308;
+    color: #854d0e;
+    transform: scale(1.05);
   }
 
-  #algo-insertion-sort-view .is-bar-pillar.is-comparing-j {
-    background: #60a5fa;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  #algo-insertion-sort-view .is-bar-pillar.is-scanning {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   #algo-insertion-sort-view .is-bar-pillar.is-shifting {
-    background: #f43f5e;
-    color: #ffffff;
-    transform: translateX(6px);
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
   }
 
   #algo-insertion-sort-view .is-bar-pillar.is-sorted {
-    background: #34d399;
-    color: #064e3b;
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
   }
 
-  /* Preset Chips */
-  #algo-insertion-sort-view .is-preset-chips {
+  #algo-insertion-sort-view .is-bar-idx {
+    font-size: 9.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #94a3b8;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-insertion-sort-view .is-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
-  #algo-insertion-sort-view .is-chip {
-    padding: 2px 7px;
-    border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
+  #algo-insertion-sort-view .is-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-insertion-sort-view .is-counter-badge {
+    font-size: 11.5px;
     font-family: 'JetBrains Mono', monospace;
-    color: #475569;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-insertion-sort-view .is-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-insertion-sort-view .is-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
-    background: #eff6ff;
+  #algo-insertion-sort-view .is-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  /* Card 2: 状态监视器 */
+  #algo-insertion-sort-view .is-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-insertion-sort-view .is-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-insertion-sort-view .is-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-insertion-sort-view .is-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-insertion-sort-view .is-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -361,7 +429,7 @@
 
   #algo-insertion-sort-view .is-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -369,88 +437,290 @@
   #algo-insertion-sort-view .is-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-insertion-sort-view .is-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-insertion-sort-view .is-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-insertion-sort-view .is-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-insertion-sort-view .is-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-insertion-sort-view .is-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-insertion-sort-view .is-playback-controls {
+  #algo-insertion-sort-view .is-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-insertion-sort-view .is-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-insertion-sort-view .is-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-insertion-sort-view .is-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-insertion-sort-view .is-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-insertion-sort-view .is-progress-wrap {
-    flex: 1;
+  #algo-insertion-sort-view .is-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-insertion-sort-view .is-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-insertion-sort-view .is-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-insertion-sort-view .is-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-insertion-sort-view .is-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-insertion-sort-view .is-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-insertion-sort-view .is-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-insertion-sort-view .is-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-insertion-sort-view .is-step-badge {
-    font-size: 11px;
+  #algo-insertion-sort-view .is-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-insertion-sort-view .is-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-insertion-sort-view .is-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-insertion-sort-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-insertion-sort-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-insertion-sort-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-insertion-sort-view .is-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-insertion-sort-view .is-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-insertion-sort-view .is-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-insertion-sort-view .is-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-insertion-sort-view .is-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-insertion-sort-view .is-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-insertion-sort-view .is-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-insertion-sort-view .is-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-insertion-sort-view .is-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-insertion-sort-view .is-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-insertion-sort-view .is-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-insertion-sort-view .is-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -459,125 +729,201 @@
   <header class="is-header">
     <div class="is-header-left">
       <div class="is-icon-btn">🃏</div>
-      <div class="is-main-title">插入排序 · Insertion Sort</div>
-      <button class="is-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="is-badge-mode">向前扫描腾位插入</div>
-      <div class="is-badge-complexity">O(n²) · O(1) 稳定</div>
+      <h1 class="is-main-title">插入排序 (Insertion Sort)</h1>
+      <button id="btn-open-problem-modal" class="is-btn-problem">📋 题目</button>
+      <span class="is-badge-mode">维护前缀有序区·逆序元素搬移</span>
+      <span class="is-badge-complexity">O(n²) · O(1)</span>
     </div>
+
     <div class="is-header-right">
-      <div class="is-input-group">
-        <label for="input-array">数组:</label>
-        <input type="text" id="input-array" value="12, 11, 13, 5, 6" style="width: 140px;">
-      </div>
-      <button class="is-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="is-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="is-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="is-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="is-workspace">
-    <!-- Card 1: 柱状图与扑克牌插入沙盘 -->
-    <section class="is-card">
-      <div class="is-card-header">
-        <div class="is-card-title">
-          <span>📊</span> 数组柱状图与扑克牌插入沙盘 (Pillar Track & Card Insertion)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="is-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="is-left-section">
+
+      <!-- 卡片 1: 柱状图沙盘 -->
+      <div class="is-card">
+        <div class="is-card-header">
+          <div class="is-card-title">
+            <span>📊 数组元素高度柱状沙盘 (Array Canvas)</span>
+          </div>
+          <div class="is-legend-bar">
+            <div><span class="is-legend-dot" style="background:#eab308;"></span> 待插 key</div>
+            <div><span class="is-legend-dot" style="background:#3b82f6;"></span> 扫描比较 j</div>
+            <div><span class="is-legend-dot" style="background:#ef4444;"></span> 后移搬移</div>
+            <div><span class="is-legend-dot" style="background:#22c55e;"></span> 前缀有序</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #fbbf24;">● 待插元素 key</span> · <span style="color: #60a5fa;">● 比对指针 j</span> · <span style="color: #f43f5e;">● 元素右移腾位</span>
+
+        <!-- 柱状沙盘展示盒 -->
+        <div class="is-sandbox-wrap">
+          <div id="is-bars-container" class="is-bars-container"></div>
         </div>
       </div>
-      <div class="is-card-body" style="justify-content: center;">
-        <div class="is-sandbox-container">
-          <div class="is-bars-container" id="is-bars-container"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="is-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="is-slider" />
+        <div class="is-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="is-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="is-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="is-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
         </div>
       </div>
-      <div class="is-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="is-chip" data-arr="12, 11, 13, 5, 6">默认案例 (12, 11, 13, 5, 6)</button>
-        <button class="is-chip" data-arr="1, 2, 3, 4, 5">已有序 (最好情况 O(n))</button>
-        <button class="is-chip" data-arr="9, 7, 5, 3, 1">完全逆序 (最多搬移)</button>
-        <button class="is-chip" data-arr="4, 3, 2, 10, 12, 1, 5, 6">经典随机混合</button>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="is-card">
+        <div class="is-card-header">
+          <div>
+            <div class="is-card-title">🧭 排序状态与指标监视器 (Sorting Metrics Monitor)</div>
+            <div class="is-card-desc">当前插入索引 i、待插值 key、向前扫描指针 j 与元素搬移统计</div>
+          </div>
+          <span id="badge-sorted-count" class="is-counter-badge" style="color:#16a34a; background:#f0fdf4; border-color:#86efac;">有序区长度: 1</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="is-state-space-box">
+          <div class="is-metrics-grid">
+            <div class="is-metric-card">
+              <span class="is-metric-label">当前插入索引 i</span>
+              <span class="is-metric-val" id="metric-i" style="color: #2563eb;">1</span>
+            </div>
+            <div class="is-metric-card">
+              <span class="is-metric-label">待插值 key</span>
+              <span class="is-metric-val" id="metric-key" style="color: #eab308;">11</span>
+            </div>
+            <div class="is-metric-card">
+              <span class="is-metric-label">向前扫描 j</span>
+              <span class="is-metric-val" id="metric-j" style="color: #3b82f6;">0</span>
+            </div>
+            <div class="is-metric-card">
+              <span class="is-metric-label">元素搬移 shifts</span>
+              <span class="is-metric-val" id="metric-shifts" style="color: #f59e0b;">0</span>
+            </div>
+          </div>
+
+          <div class="is-formula-box">
+            <span style="color:#64748b;">当前操作判定:</span>
+            <strong id="formula-action" style="color: #2563eb;">insert(key, arr[0..i-1])</strong>
+          </div>
+
+          <div class="is-live-alert">
+            <span>💡</span> <span id="is-live-text">准备就绪，点击运行开始插入排序。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="is-card">
-      <div class="is-card-header">
-        <div class="is-card-title">
-          <span>🧭</span> 排序指标监视器 (Sorting Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="is-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="is-dark-terminal">
+        <div class="is-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="is-tab-group">
+            <button id="btn-tab-code" class="is-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="is-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="is-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="is-lang-group" id="code-lang-tabs">
+            <button class="is-lang-btn active" data-lang="java">Java</button>
+            <button class="is-lang-btn" data-lang="cpp">C++</button>
+            <button class="is-lang-btn" data-lang="python">Python</button>
+            <button class="is-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="is-font-tools">
+            <div class="is-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="is-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="is-window-dots">
+              <span class="is-dot" style="background:#ef4444;"></span>
+              <span class="is-dot" style="background:#eab308;"></span>
+              <span class="is-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="is-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="is-card-body">
-        <div class="is-metrics-grid">
-          <div class="is-metric-card">
-            <span class="is-metric-label">当前插入索引 i</span>
-            <span class="is-metric-val" id="metric-i" style="color: #2563eb;">1</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="is-log-card">
+        <div class="is-log-header">
+          <div class="is-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="is-metric-card">
-            <span class="is-metric-label">待插值 key</span>
-            <span class="is-metric-val" id="metric-key" style="color: #fbbf24;">11</span>
-          </div>
-          <div class="is-metric-card">
-            <span class="is-metric-label">向前扫描 j</span>
-            <span class="is-metric-val" id="metric-j" style="color: #60a5fa;">0</span>
-          </div>
-          <div class="is-metric-card">
-            <span class="is-metric-label">元素搬移 shifts</span>
-            <span class="is-metric-val" id="metric-shifts" style="color: #f59e0b;">0</span>
-          </div>
+          <span id="log-count" class="is-log-count">0 条记录</span>
         </div>
-        <div class="is-formula-box" id="is-formula-box">
-          <span>当前动作:</span> <strong id="formula-action" style="color: #2563eb;">insert(key, arr[0..i-1])</strong>
-        </div>
-        <div class="is-live-alert" id="is-live-alert">
-          <span>💡</span> <span id="is-live-text">准备就绪，点击运行开始插入排序。</span>
+
+        <div id="log-container" class="is-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="is-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="is-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="is-card-header">
-        <div class="is-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="is-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="is-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="is-playback-bar">
-    <div class="is-playback-controls">
-      <button class="is-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="is-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="is-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="is-modal-backdrop hidden">
+    <div class="is-modal-content">
+      <div class="is-modal-header">
+        <div class="is-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="is-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="is-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="is-progress-wrap">
-      <span class="is-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

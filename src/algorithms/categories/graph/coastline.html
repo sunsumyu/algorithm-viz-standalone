@@ -1,290 +1,912 @@
 <style>
+  /* === 岛屿周长 (LC 463) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-coastline-view {
-    width: 100%; height: 100%;
-    color: #cdd6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative; overflow: hidden;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  #algo-coastline-view::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #38bdf855, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #0ea5e955, transparent 55%),
-                linear-gradient(135deg, #0a1929 0%, #0c4a6e 25%, #0a1929 50%, #0e7490 75%, #0a1929 100%);
-    z-index: -2;
+  #algo-coastline-view * {
+    box-sizing: border-box;
   }
 
-  #algo-coastline-view::after {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at center, rgba(10, 25, 41, 0.4), transparent 70%);
-    z-index: -1;
+  /* 1. 顶栏 Header */
+  #algo-coastline-view .cl-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .cl-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-
-  .cl-hero {
-    padding: 16px 24px; background: rgba(20,18,38,0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0 0 16px 16px;
-    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  #algo-coastline-view .cl-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .cl-hero .cl-title-wrapper { display: flex; align-items: center; gap: 12px; }
-
-  .cl-hero-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; box-shadow: 0 4px 15px rgba(56,189,248,0.3);
+  #algo-coastline-view .cl-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .cl-hero-text h2 {
-    margin: 0 0 4px; font-size: 22px; font-weight: 800;
-    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  #algo-coastline-view .cl-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
   }
 
-  .cl-hero-text p { margin: 0; color: rgba(204,214,244,0.8); font-size: 13px; }
-
-  .cl-tip {
-    max-width: 480px; padding: 12px 16px; border-radius: 12px;
-    background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2);
-    color: rgba(204,214,244,0.9); font-size: 13px; line-height: 1.55;
+  #algo-coastline-view .cl-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-coastline-view .cl-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .cl-tip strong { color: #38bdf8; font-weight: 600; }
-
-  #algo-coastline-view .cl-layout {
-    flex: 1; min-height: 0;
-    display: grid; grid-template-columns: 1fr 380px;
-    gap: 16px; padding: 16px; overflow: hidden;
+  #algo-coastline-view .cl-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  @media (max-width: 1100px) {
-    #algo-coastline-view .cl-layout { grid-template-columns: 1fr; overflow: auto; }
+  #algo-coastline-view .cl-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #16a34a;
+    background: #f0fdf4;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bbf7d0;
+    white-space: nowrap;
   }
 
-  .cl-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; }
-
-  .cl-card {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  #algo-coastline-view .cl-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
-  .cl-controls {
-    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  #algo-coastline-view .cl-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-coastline-view .cl-btn-generate:hover {
+    background: #15803d;
   }
 
-  .cl-input {
-    flex: 1; min-width: 140px; padding: 10px 14px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(11,10,23,0.8); color: #cdd6f4;
-    font-family: ui-monospace, monospace; font-size: 13px;
-    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  #algo-coastline-view .cl-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-coastline-view .cl-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  .cl-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
-
-  .cl-btn {
-    padding: 10px 18px; border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-    color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
-    transition: all 0.2s; box-shadow: 0 4px 15px rgba(56,189,248,0.3);
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-coastline-view .cl-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
   }
 
-  .cl-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56,189,248,0.4); }
-
-  .cl-example {
-    padding: 8px 14px; border-radius: 999px;
-    border: 1px solid rgba(56,189,248,0.3);
-    background: rgba(56,189,248,0.1); color: #cdd6f4;
-    font-size: 12px; cursor: pointer; transition: all 0.2s;
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-coastline-view .cl-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .cl-example:hover { background: rgba(56,189,248,0.2); border-color: #38bdf8; }
-
-  .cl-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 12px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .cl-stat {
-    padding: 14px 0; position: relative;
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
-  }
-
-  .cl-stat::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #38bdf8, #0ea5e9);
-  }
-
-  .cl-stat-label { display: block; margin-bottom: 6px; color: rgba(204,214,244,0.7); font-size: 12px; }
-  .cl-stat-val { color: #38bdf8; font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; }
-
-  .cl-grid-container {
-    padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 260px;
-  }
-
-  .cl-grid { display: grid; gap: 4px; }
-
-  .cl-cell {
-    width: 56px; height: 56px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700;
-    transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1);
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-coastline-view .cl-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     position: relative;
   }
 
-  .cl-cell .cl-edge {
-    position: absolute; background: #fbbf24;
-    transition: all 0.3s ease;
+  #algo-coastline-view .cl-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
   }
 
-  .cl-cell .cl-edge.top { top: -2px; left: 4px; right: 4px; height: 3px; border-radius: 2px; }
-  .cl-cell .cl-edge.bottom { bottom: -2px; left: 4px; right: 4px; height: 3px; border-radius: 2px; }
-  .cl-cell .cl-edge.left { left: -2px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; }
-  .cl-cell .cl-edge.right { right: -2px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; }
-
-  .cl-message {
-    margin: 0 14px 14px; padding: 12px 16px; border-radius: 12px;
-    border: 1px solid rgba(56,189,248,0.2); background: rgba(56,189,248,0.08);
-    color: #cdd6f4; font-size: 13px; line-height: 1.5;
+  #algo-coastline-view .cl-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .cl-log {
-    min-height: 0; max-height: 130px; padding: 14px 16px; overflow: auto;
-    background: rgba(11,10,23,0.8); font-family: ui-monospace, monospace;
-    font-size: 12px; line-height: 1.7; color: rgba(204,214,244,0.8);
+  #algo-coastline-view .cl-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  .cl-log div { padding: 2px 0; }
-  .cl-log div.active { color: #38bdf8; font-weight: 600; }
-
-  .cl-right { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
-
-  .cl-code-card {
-    background: rgba(11,10,23,0.8); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px; overflow: hidden; flex: 1;
+  #algo-coastline-view .cl-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-coastline-view .cl-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
 
-  .cl-legend {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
+  /* 2D 网格沙盘展示盒 */
+  #algo-coastline-view .cl-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
   }
 
-  .cl-legend-item { display: flex; align-items: center; gap: 10px; }
-  .cl-legend-box { width: 16px; height: 16px; border-radius: 4px; }
-
-  .cl-playback {
-    background: rgba(20,18,38,0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  #algo-coastline-view .cl-grid-container {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    max-width: 320px;
   }
 
-  .cl-pb-row { display: flex; gap: 10px; align-items: center; }
-
-  .cl-pb-btn {
-    flex: 1; padding: 12px 16px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(56,189,248,0.1); color: #cdd6f4;
-    cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;
+  #algo-coastline-view .cl-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-sizing: border-box;
   }
 
-  .cl-pb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .cl-pb-btn:not(:disabled):hover { background: rgba(56,189,248,0.2); border-color: #38bdf8; transform: translateY(-1px); }
-
-  .cl-pb-btn.play {
-    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-    border: none; color: #fff; box-shadow: 0 4px 15px rgba(56,189,248,0.3);
+  #algo-coastline-view .cl-cell.is-water {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #94a3b8;
   }
 
-  .cl-pb-btn.play:not(:disabled):hover { box-shadow: 0 6px 20px rgba(56,189,248,0.4); }
-
-  .cl-speed-row {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: rgba(204,214,244,0.7);
+  #algo-coastline-view .cl-cell.is-land {
+    background: #dcfce7;
+    border: 1.5px solid #86efac;
+    color: #16a34a;
   }
 
-  .cl-speed-row input { flex: 1; accent-color: #38bdf8; }
-
-  .cl-counter {
-    color: rgba(204,214,244,0.6); font-size: 13px;
-    font-family: ui-monospace, monospace; text-align: center;
+  #algo-coastline-view .cl-cell.is-current {
+    box-shadow: 0 0 0 3px #facc15;
+    background: #fef9c3;
+    color: #854d0e;
+    transform: scale(1.05);
+    z-index: 10;
   }
 
-  @keyframes cl-flash {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+  #algo-coastline-view .cl-cell .edge-top {
+    position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 4px 4px 0 0;
+  }
+  #algo-coastline-view .cl-cell .edge-right {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 0 4px 4px 0;
+  }
+  #algo-coastline-view .cl-cell .edge-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 0 0 4px 4px;
+  }
+  #algo-coastline-view .cl-cell .edge-left {
+    position: absolute; top: 0; left: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 4px 0 0 4px;
   }
 
-  .cl-edge.active { animation: cl-flash 0.5s infinite; }
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-coastline-view .cl-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-coastline-view .cl-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #16a34a;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-coastline-view .cl-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-coastline-view .cl-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-coastline-view .cl-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-coastline-view .cl-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-coastline-view .cl-play-circle-btn:hover {
+    background: #15803d;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-coastline-view .cl-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-coastline-view .cl-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-coastline-view .cl-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-coastline-view .cl-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-coastline-view .cl-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-coastline-view .cl-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-coastline-view .cl-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-coastline-view .cl-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-coastline-view .cl-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-coastline-view .cl-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-coastline-view .cl-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-coastline-view .cl-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-coastline-view .cl-tab-item.active {
+    background: #16a34a;
+    color: #ffffff;
+  }
+
+  #algo-coastline-view .cl-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-coastline-view .cl-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-coastline-view .cl-lang-btn.active {
+    background: #334155;
+    color: #86efac;
+  }
+
+  #algo-coastline-view .cl-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-coastline-view .cl-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-coastline-view .cl-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-coastline-view .cl-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #86efac;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-coastline-view .cl-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-coastline-view .cl-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-coastline-view .cl-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-coastline-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-coastline-view .code-line.active {
+    background: rgba(22, 163, 74, 0.2);
+    border-left: 3px solid #16a34a;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-coastline-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-coastline-view .cl-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-coastline-view .cl-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-coastline-view .cl-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-coastline-view .cl-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-coastline-view .cl-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-coastline-view .cl-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-coastline-view .cl-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-coastline-view .cl-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-coastline-view .cl-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-coastline-view .cl-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-coastline-view .cl-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-coastline-view .cl-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+  }
 </style>
 
-<div class="cl-page">
-  <div class="cl-hero">
-    <div class="cl-title-wrapper">
-      <div class="cl-hero-icon">🌊</div>
-      <div class="cl-hero-text">
-        <h2>海岸线计算</h2>
-        <p>统计所有岛屿的总周长（暴露边的数量）</p>
-      </div>
+<div id="algo-coastline-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="cl-header">
+    <div class="cl-header-left">
+      <div class="cl-icon-btn">🌊</div>
+      <h1 class="cl-main-title">LeetCode 463. 岛屿的周长 (Coastline Perimeter)</h1>
+      <button id="btn-open-problem-modal" class="cl-btn-problem">📋 题目</button>
+      <span class="cl-badge-mode">4 邻域外露边累计</span>
+      <span class="cl-badge-complexity">O(R × C) · O(1)</span>
     </div>
-    <div class="cl-tip"><strong>算法要点：</strong>遍历每个陆地格子，统计其四条边中暴露（相邻水域或边界）的边数，累加即为总海岸线。时间复杂度 O(R*C)。</div>
-  </div>
 
-  <div class="cl-layout">
-    <div class="cl-main">
+    <div class="cl-header-right">
+      <button id="btn-generate" class="cl-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="cl-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="cl-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="cl-left-section">
+
+      <!-- 卡片 1: 2D 网格沙盘 -->
       <div class="cl-card">
-        <div class="cl-controls">
-          <input id="cl-grid-input" class="cl-input" value="1,1,0;0,1,0;1,1,1" title="0=水,1=陆地" />
-          <button id="cl-start" class="cl-btn">计算周长</button>
-          <button class="cl-example" data-grid="1,1,0;0,1,0;1,1,1">示例1</button>
-          <button class="cl-example" data-grid="1,1;1,1">示例2</button>
-          <button class="cl-example" data-grid="1,0,1;0,1,0;1,0,1">示例3</button>
+        <div class="cl-card-header">
+          <div class="cl-card-title">
+            <span>🏝️ 岛屿网格与暴露边沙盘 (Coastline Canvas)</span>
+          </div>
+          <div class="cl-legend-bar">
+            <div><span class="cl-legend-dot" style="background:#86efac;"></span> 陆地 (1)</div>
+            <div><span class="cl-legend-dot" style="background:#cbd5e1;"></span> 水域 (0)</div>
+            <div><span class="cl-legend-dot" style="background:#e11d48;"></span> 暴露周长边</div>
+          </div>
         </div>
 
-        <div class="cl-stats">
-          <div class="cl-stat"><span class="cl-stat-label">当前格子</span><span class="cl-stat-val" id="cl-cell">-</span></div>
-          <div class="cl-stat"><span class="cl-stat-label">当前边数</span><span class="cl-stat-val" id="cl-cur-edges">0</span></div>
-          <div class="cl-stat"><span class="cl-stat-label">累计周长</span><span class="cl-stat-val" id="cl-perimeter">0</span></div>
-          <div class="cl-stat"><span class="cl-stat-label">陆地总数</span><span class="cl-stat-val" id="cl-land-count">0</span></div>
+        <!-- 网格沙盘展示盒 -->
+        <div class="cl-sandbox-wrap">
+          <div id="cl-grid-container" class="cl-grid-container"></div>
         </div>
-
-        <div class="cl-grid-container" id="cl-grid"></div>
-
-        <div class="cl-message" id="step-message">输入网格，点击「计算周长」查看海岸线逐边统计过程。</div>
-
-        <div class="cl-log" id="cl-log"></div>
       </div>
-    </div>
 
-    <div class="cl-right">
-      <div data-code-panel class="cl-code-card"></div>
-      <div class="cl-legend">
-        <div class="cl-legend-item"><span class="cl-legend-box" style="background:rgba(56,189,248,0.5)"></span>陆地(1)</div>
-        <div class="cl-legend-item"><span class="cl-legend-box" style="background:rgba(56,189,248,0.08)"></span>水域(0)</div>
-        <div class="cl-legend-item"><span class="cl-legend-box" style="background:#fbbf24;width:20px;height:3px;border-radius:2px"></span>海岸线</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="cl-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="cl-slider" />
+        <div class="cl-counter-badge">
+          <span id="step-cur" style="color: #16a34a;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="cl-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="cl-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="cl-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="cl-playback">
-        <div class="cl-pb-row">
-          <button id="step-reset" class="cl-pb-btn">重置</button>
-          <button id="step-prev" class="cl-pb-btn">上一步</button>
-          <button id="step-play" class="cl-pb-btn play">播放</button>
-          <button id="step-next" class="cl-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 状态空间与周长指标监视器 -->
+      <div class="cl-card">
+        <div class="cl-card-header">
+          <div>
+            <div class="cl-card-title">🧭 状态指标与周长监视器 (Perimeter Monitor)</div>
+            <div class="cl-card-desc">当前扫描单元格、本格暴露边数与累计周长</div>
+          </div>
+          <span id="badge-perimeter" class="cl-counter-badge" style="color:#16a34a; background:#f0fdf4; border-color:#86efac;">累计周长: 0</span>
         </div>
-        <div class="cl-speed-row">
-          <span>速度</span>
-          <input id="cl-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="cl-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="cl-state-space-box">
+          <div class="cl-metrics-grid">
+            <div class="cl-metric-card">
+              <span class="cl-metric-label">当前检查格子</span>
+              <span class="cl-metric-val" id="metric-cur-cell" style="color: #eab308;">—</span>
+            </div>
+            <div class="cl-metric-card">
+              <span class="cl-metric-label">本格暴露边数</span>
+              <span class="cl-metric-val" id="metric-cell-edges" style="color: #e11d48;">0</span>
+            </div>
+            <div class="cl-metric-card">
+              <span class="cl-metric-label">陆地总格数</span>
+              <span class="cl-metric-val" id="metric-land-count" style="color: #16a34a;">0</span>
+            </div>
+            <div class="cl-metric-card">
+              <span class="cl-metric-label">累计总周长 perimeter</span>
+              <span class="cl-metric-val" id="metric-total-perimeter" style="color: #2563eb;">0</span>
+            </div>
+          </div>
+
+          <div class="cl-formula-box">
+            <span style="color:#64748b;">边检查规则:</span>
+            <strong id="formula-action" style="color: #16a34a;">若邻格越界或为水域 (0)，则周长 perimeter++</strong>
+          </div>
+
+          <div class="cl-live-alert">
+            <span>💡</span> <span id="cl-live-text">准备就绪，点击运行开始计算岛屿周长。</span>
+          </div>
         </div>
-        <div id="step-counter" class="cl-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="cl-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="cl-dark-terminal">
+        <div class="cl-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="cl-tab-group">
+            <button id="btn-tab-code" class="cl-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="cl-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="cl-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="cl-lang-group" id="code-lang-tabs">
+            <button class="cl-lang-btn active" data-lang="java">Java</button>
+            <button class="cl-lang-btn" data-lang="cpp">C++</button>
+            <button class="cl-lang-btn" data-lang="python">Python</button>
+            <button class="cl-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="cl-font-tools">
+            <div class="cl-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="cl-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="cl-window-dots">
+              <span class="cl-dot" style="background:#ef4444;"></span>
+              <span class="cl-dot" style="background:#eab308;"></span>
+              <span class="cl-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="cl-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="cl-log-card">
+        <div class="cl-log-header">
+          <div class="cl-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="cl-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="cl-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="cl-modal-backdrop hidden">
+    <div class="cl-modal-content">
+      <div class="cl-modal-header">
+        <div class="cl-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="cl-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="cl-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

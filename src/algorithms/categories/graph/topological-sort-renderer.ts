@@ -171,13 +171,13 @@ export class TopologicalSortVisualizer extends StepVisualizer<TopoStep> {
     if (!this.root) return;
 
     this.svgCanvas = this.root.querySelector('#topo-svg-canvas');
-    this.degreePillsWrap = this.root.querySelector('#degree-pills-wrap');
+    this.degreePillsWrap = this.root.querySelector('#indegree-pills-wrap');
     this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricQueueSizeEl = this.root.querySelector('#metric-queue-size');
-    this.metricOrderCountEl = this.root.querySelector('#metric-order-count');
+    this.metricQueueSizeEl = this.root.querySelector('#metric-queue-elements');
+    this.metricOrderCountEl = this.root.querySelector('#metric-topo-len');
     this.metricCycleStatusEl = this.root.querySelector('#metric-cycle-status');
-    this.queueElementsEl = this.root.querySelector('#queue-elements');
-    this.orderElementsEl = this.root.querySelector('#order-elements');
+    this.queueElementsEl = this.root.querySelector('#metric-queue-elements');
+    this.orderElementsEl = this.root.querySelector('#topo-result-order');
     this.liveTextEl = this.root.querySelector('#topo-live-text');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
@@ -369,10 +369,13 @@ export class TopologicalSortVisualizer extends StepVisualizer<TopoStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeTopo = this.root?.querySelector('#badge-topo-count');
+    if (badgeTopo) badgeTopo.textContent = `已排序: ${order.length} / ${TOPO_NODES.length}`;
   }
 
   public reset(): void {

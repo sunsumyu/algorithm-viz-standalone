@@ -1,579 +1,912 @@
 <style>
+  /* === 孤岛总面积 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-total-island-area-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
-    overflow: hidden;
-  }
-
-  #algo-total-island-area-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 8% 6%, #f59e0b55, transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #d9770655, transparent 55%),
-                linear-gradient(135deg, #451a03 0%, #78350f 25%, #451a03 50%, #92400e 75%, #451a03 100%);
-    z-index: -2;
-  }
-
-  #algo-total-island-area-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(69, 26, 3, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-total-island-area-view .tia-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .tia-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .tia-hero .tia-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .tia-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-  }
-
-  .tia-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .tia-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
-  }
-
-  .tia-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-
-  .tia-tip strong {
-    color: #f59e0b;
-    font-weight: 600;
-  }
-
-  #algo-total-island-area-view .tia-layout {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-total-island-area-view .tia-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .tia-main {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .tia-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .tia-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .tia-input {
-    flex: 1;
-    min-width: 180px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(11, 10, 23, 0.8);
-    color: #cdd6f4;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .tia-input:focus {
-    border-color: #f59e0b;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
-  }
-
-  .tia-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #451a03;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-  }
-
-  .tia-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-  }
-
-  .tia-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .tia-example {
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    background: rgba(245, 158, 11, 0.1);
-    color: #cdd6f4;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .tia-example:hover {
-    background: rgba(245, 158, 11, 0.2);
-    border-color: #f59e0b;
-  }
-
-  .tia-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .tia-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .tia-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #f59e0b, #d97706);
-  }
-
-  .tia-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .tia-stat-val {
-    color: #f59e0b;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tia-grid {
-    display: grid;
-    gap: 3px;
-    background: rgba(11, 10, 23, 0.8);
-    border-radius: 12px;
-    padding: 12px;
-    justify-content: center;
-    align-content: center;
-    margin: 16px auto;
-  }
-
-  .tia-cell {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.25s ease;
-    position: relative;
-  }
-
-  .tia-cell.water {
-    background: rgba(28, 27, 50, 0.4);
-    color: rgba(255, 255, 255, 0.3);
-  }
-
-  .tia-cell.land {
-    background: rgba(45, 55, 72, 0.5);
-    color: #cdd6f4;
-  }
-
-  .tia-cell.current {
-    background: rgba(245, 158, 11, 0.7);
-    color: #451a03;
-    transform: scale(1.1);
-    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
-    animation: tia-ripple 0.6s ease-out;
-  }
-
-  .tia-cell.visited {
-    background: rgba(245, 158, 11, 0.35);
-    color: #cdd6f4;
-    animation: tia-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .tia-cell.explored {
-    background: rgba(245, 158, 11, 0.2);
-    color: rgba(204, 214, 244, 0.6);
-  }
-
-  .tia-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    background: rgba(245, 158, 11, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .tia-log {
     min-height: 0;
-    max-height: 130px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .tia-log div {
-    padding: 2px 0;
-  }
-
-  .tia-log div.active {
-    color: #f59e0b;
-    font-weight: 600;
-  }
-
-  .tia-right {
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .tia-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-total-island-area-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-total-island-area-view .tia-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .tia-area-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    overflow: hidden;
-  }
-
-  .tia-area-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 8px;
-  }
-
-  .tia-area-items {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    min-height: 30px;
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .tia-area-item {
-    padding: 4px 10px;
-    border-radius: 8px;
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    color: #f59e0b;
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    animation: tia-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  #algo-total-island-area-view .tia-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .tia-area-total {
+  #algo-total-island-area-view .tia-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-total-island-area-view .tia-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  #algo-total-island-area-view .tia-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-total-island-area-view .tia-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-total-island-area-view .tia-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-total-island-area-view .tia-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #16a34a;
+    background: #f0fdf4;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bbf7d0;
+    white-space: nowrap;
+  }
+
+  #algo-total-island-area-view .tia-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-total-island-area-view .tia-btn-generate {
     padding: 4px 12px;
     border-radius: 8px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #451a03;
-    font-family: ui-monospace, monospace;
-    font-size: 14px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 11px;
     font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-total-island-area-view .tia-btn-generate:hover {
+    background: #15803d;
   }
 
-  .tia-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
+  #algo-total-island-area-view .tia-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-total-island-area-view .tia-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-total-island-area-view .tia-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-total-island-area-view .tia-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 
-  .tia-legend-item {
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-total-island-area-view .tia-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-total-island-area-view .tia-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-total-island-area-view .tia-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-total-island-area-view .tia-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-total-island-area-view .tia-legend-bar {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-total-island-area-view .tia-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
 
-  .tia-legend-box {
-    width: 16px;
-    height: 16px;
+  /* 2D 网格沙盘展示盒 */
+  #algo-total-island-area-view .tia-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  #algo-total-island-area-view .tia-grid-container {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  #algo-total-island-area-view .tia-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  #algo-total-island-area-view .tia-cell.is-water {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #94a3b8;
+  }
+
+  #algo-total-island-area-view .tia-cell.is-land {
+    background: #dcfce7;
+    border: 1.5px solid #86efac;
+    color: #16a34a;
+  }
+
+  #algo-total-island-area-view .tia-cell.is-visited {
+    background: #eff6ff;
+    border: 1.5px solid #93c5fd;
+    color: #1d4ed8;
+  }
+
+  #algo-total-island-area-view .tia-cell.is-explored {
+    background: #f0fdf4;
+    border: 1.5px solid #4ade80;
+    color: #15803d;
+    font-weight: 800;
+  }
+
+  #algo-total-island-area-view .tia-cell.is-current {
+    box-shadow: 0 0 0 3px #facc15;
+    background: #fef9c3;
+    color: #854d0e;
+    transform: scale(1.06);
+    z-index: 10;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-total-island-area-view .tia-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-total-island-area-view .tia-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #16a34a;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-total-island-area-view .tia-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-total-island-area-view .tia-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-total-island-area-view .tia-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-total-island-area-view .tia-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-total-island-area-view .tia-play-circle-btn:hover {
+    background: #15803d;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-total-island-area-view .tia-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-total-island-area-view .tia-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-total-island-area-view .tia-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-total-island-area-view .tia-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-total-island-area-view .tia-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-total-island-area-view .tia-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-total-island-area-view .tia-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-total-island-area-view .tia-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-total-island-area-view .tia-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-total-island-area-view .tia-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-total-island-area-view .tia-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-total-island-area-view .tia-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-total-island-area-view .tia-tab-item.active {
+    background: #16a34a;
+    color: #ffffff;
+  }
+
+  #algo-total-island-area-view .tia-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-total-island-area-view .tia-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-total-island-area-view .tia-lang-btn.active {
+    background: #334155;
+    color: #86efac;
+  }
+
+  #algo-total-island-area-view .tia-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-total-island-area-view .tia-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-total-island-area-view .tia-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-total-island-area-view .tia-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #86efac;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-total-island-area-view .tia-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-total-island-area-view .tia-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-total-island-area-view .tia-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-total-island-area-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-total-island-area-view .code-line.active {
+    background: rgba(22, 163, 74, 0.2);
+    border-left: 3px solid #16a34a;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-total-island-area-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-total-island-area-view .tia-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-total-island-area-view .tia-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-total-island-area-view .tia-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-total-island-area-view .tia-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
     border-radius: 4px;
   }
 
-  .tia-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
+  #algo-total-island-area-view .tia-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
+    font-size: 11.5px;
   }
 
-  .tia-pb-row {
+  /* 模态弹窗 */
+  #algo-total-island-area-view .tia-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
-    gap: 10px;
     align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-total-island-area-view .tia-modal-backdrop.hidden {
+    display: none;
   }
 
-  .tia-pb-btn {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(245, 158, 11, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
+  #algo-total-island-area-view .tia-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-total-island-area-view .tia-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-total-island-area-view .tia-modal-title {
     font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-weight: 800;
+    color: #f8fafc;
   }
-
-  .tia-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .tia-pb-btn:not(:disabled):hover {
-    background: rgba(245, 158, 11, 0.2);
-    border-color: #f59e0b;
-    transform: translateY(-1px);
-  }
-
-  .tia-pb-btn.play {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+  #algo-total-island-area-view .tia-modal-close {
+    background: transparent;
     border: none;
-    color: #451a03;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-
-  .tia-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-  }
-
-  .tia-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .tia-speed-row input {
-    flex: 1;
-    accent-color: #f59e0b;
-  }
-
-  .tia-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  @keyframes tia-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-    50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
-  }
-
-  @keyframes tia-popIn {
-    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-  }
-
-  @keyframes tia-ripple {
-    0% { transform: scale(0.8); opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-    100% { transform: scale(1.5); opacity: 0; box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
-  }
-
-  .tia-cell.current { animation: tia-ripple 0.6s ease-out; }
-  .tia-cell.visited { animation: tia-popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-  @media (max-width: 1100px) {
-    .tia-main { overflow: visible; }
+  #algo-total-island-area-view .tia-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="tia-page">
-  <div class="tia-hero">
-    <div class="tia-title-wrapper">
-      <div class="tia-hero-icon">📊</div>
-      <div class="tia-hero-text">
-        <h2>孤岛总面积（DFS/BFS）</h2>
-        <p>遍历所有岛屿，累计每座岛屿面积，求所有岛屿的总面积。</p>
-      </div>
+<div id="algo-total-island-area-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="tia-header">
+    <div class="tia-header-left">
+      <div class="tia-icon-btn">🏝️</div>
+      <h1 class="tia-main-title">孤岛的总面积 (Total Island Area)</h1>
+      <button id="btn-open-problem-modal" class="tia-btn-problem">📋 题目</button>
+      <span class="tia-badge-mode">连通分量 DFS 面积累计</span>
+      <span class="tia-badge-complexity">O(M × N) · O(M × N)</span>
     </div>
-    <div class="tia-tip"><strong>面积累加：</strong>DFS/BFS 找出每座岛屿，计算其面积后加入总面积。观察面积逐步累加的过程。</div>
-  </div>
 
-  <div class="tia-layout">
-    <div class="tia-main">
+    <div class="tia-header-right">
+      <button id="btn-generate" class="tia-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="tia-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="tia-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="tia-left-section">
+
+      <!-- 卡片 1: 2D 网格沙盘 -->
       <div class="tia-card">
-        <div class="tia-controls">
-          <input id="tia-input" class="tia-input" value="1,1,0,0,0;1,0,0,0,0;0,0,1,0,0;0,0,0,1,1" />
-          <button id="tia-start" class="tia-btn">计算面积</button>
-          <button class="tia-example" data-val="1,1,0,0,0;1,0,0,0,0;0,0,1,0,0;0,0,0,1,1">示例1</button>
-          <button class="tia-example" data-val="0,0,0;0,0,0;0,0,0">示例2</button>
-          <button class="tia-example" data-val="1,1,1;1,1,1;1,1,1">示例3</button>
+        <div class="tia-card-header">
+          <div class="tia-card-title">
+            <span>🗺️ 岛屿网格与连通分量沙盘 (Grid Canvas)</span>
+          </div>
+          <div class="tia-legend-bar">
+            <div><span class="tia-legend-dot" style="background:#86efac;"></span> 未访问陆地 (1)</div>
+            <div><span class="tia-legend-dot" style="background:#93c5fd;"></span> 正在探索 (DFS)</div>
+            <div><span class="tia-legend-dot" style="background:#4ade80;"></span> 已计入总面积</div>
+          </div>
         </div>
 
-        <div class="tia-stats">
-          <div class="tia-stat"><span class="tia-stat-label">当前岛屿面积</span><span class="tia-stat-val" id="tia-current-area">0</span></div>
-          <div class="tia-stat"><span class="tia-stat-label">总面积</span><span class="tia-stat-val" id="tia-total-area">0</span></div>
-          <div class="tia-stat"><span class="tia-stat-label">岛屿数</span><span class="tia-stat-val" id="tia-island-count">0</span></div>
-          <div class="tia-stat"><span class="tia-stat-label">当前扫描</span><span class="tia-stat-val" id="tia-scan">-</span></div>
+        <!-- 网格沙盘展示盒 -->
+        <div class="tia-sandbox-wrap">
+          <div id="tia-grid-container" class="tia-grid-container"></div>
         </div>
-
-        <div class="tia-grid" id="tia-grid"></div>
-
-        <div class="tia-message" id="step-message">点击「计算面积」查看各岛屿面积累计过程。</div>
-
-        <div class="tia-log" id="tia-log"></div>
       </div>
-    </div>
 
-    <div class="tia-right">
-      <div data-code-panel class="tia-code-card"></div>
-      <div class="tia-area-card">
-        <div class="tia-area-title">各岛屿面积</div>
-        <div class="tia-area-items" id="tia-area-vis"></div>
-      </div>
-      <div class="tia-legend">
-        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(28,27,50,0.4)"></span>水（'0'）</div>
-        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(45,55,72,0.5)"></span>未访问陆地（'1'）</div>
-        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(245,158,11,0.7)"></span>当前访问</div>
-        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(245,158,11,0.35)"></span>当前岛屿已访问</div>
-        <div class="tia-legend-item"><span class="tia-legend-box" style="background:rgba(245,158,11,0.2)"></span>已探索岛屿</div>
-      </div>
-      <div class="tia-playback">
-        <div class="tia-pb-row">
-          <button id="step-reset" class="tia-pb-btn">重置</button>
-          <button id="step-prev" class="tia-pb-btn">上一步</button>
-          <button id="step-play" class="tia-pb-btn play">播放</button>
-          <button id="step-next" class="tia-pb-btn">下一步</button>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="tia-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="tia-slider" />
+        <div class="tia-counter-badge">
+          <span id="step-cur" style="color: #16a34a;">0</span> / <span id="step-total">0</span>
         </div>
-        <div class="tia-speed-row">
-          <span>速度</span>
-          <input id="tia-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="tia-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="tia-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="tia-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="tia-ctrl-btn">▶</button>
         </div>
-        <div id="step-counter" class="tia-counter">步骤: 1 / 1</div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与面积指标监视器 -->
+      <div class="tia-card">
+        <div class="tia-card-header">
+          <div>
+            <div class="tia-card-title">🧭 状态指标与面积监视器 (Area Monitor)</div>
+            <div class="tia-card-desc">当前扫描单元格、当前岛屿面积、已发现岛屿数与累计总面积</div>
+          </div>
+          <span id="badge-total-area" class="tia-counter-badge" style="color:#16a34a; background:#f0fdf4; border-color:#86efac;">总面积: 0 格</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="tia-state-space-box">
+          <div class="tia-metrics-grid">
+            <div class="tia-metric-card">
+              <span class="tia-metric-label">当前扫描点</span>
+              <span class="tia-metric-val" id="metric-cur-cell" style="color: #eab308;">—</span>
+            </div>
+            <div class="tia-metric-card">
+              <span class="tia-metric-label">当前岛屿面积 currArea</span>
+              <span class="tia-metric-val" id="metric-cur-area" style="color: #3b82f6;">0</span>
+            </div>
+            <div class="tia-metric-card">
+              <span class="tia-metric-label">已发现岛屿数 Islands</span>
+              <span class="tia-metric-val" id="metric-island-count" style="color: #a855f7;">0</span>
+            </div>
+            <div class="tia-metric-card">
+              <span class="tia-metric-label">累计总面积 Total Area</span>
+              <span class="tia-metric-val" id="metric-total-area" style="color: #16a34a;">0</span>
+            </div>
+          </div>
+
+          <div class="tia-formula-box">
+            <span style="color:#64748b;">面积累计公式:</span>
+            <strong id="formula-action" style="color: #16a34a;">totalArea = sum(islandAreas)</strong>
+          </div>
+
+          <div class="tia-live-alert">
+            <span>💡</span> <span id="tia-live-text">准备就绪，点击运行开始计算岛屿总面积。</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="tia-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="tia-dark-terminal">
+        <div class="tia-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="tia-tab-group">
+            <button id="btn-tab-code" class="tia-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="tia-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="tia-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="tia-lang-group" id="code-lang-tabs">
+            <button class="tia-lang-btn active" data-lang="java">Java</button>
+            <button class="tia-lang-btn" data-lang="cpp">C++</button>
+            <button class="tia-lang-btn" data-lang="python">Python</button>
+            <button class="tia-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="tia-font-tools">
+            <div class="tia-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="tia-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="tia-window-dots">
+              <span class="tia-dot" style="background:#ef4444;"></span>
+              <span class="tia-dot" style="background:#eab308;"></span>
+              <span class="tia-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="tia-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="tia-log-card">
+        <div class="tia-log-header">
+          <div class="tia-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="tia-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="tia-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="tia-modal-backdrop hidden">
+    <div class="tia-modal-content">
+      <div class="tia-modal-header">
+        <div class="tia-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="tia-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="tia-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

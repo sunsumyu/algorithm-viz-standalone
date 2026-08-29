@@ -1,351 +1,403 @@
 /**
- * 高山流水 - Water Flow Simulation
- * 找出所有能从左上和右下两个方向流到的格子
- * 水从高往低（或等高）流，等价于从边界向高处搜索
+ * 太平洋大西洋水流问题 (LC 417)
+ * 4-Card 标准现代架构可视化器
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  WATER_FLOW_PROBLEM_HTML,
+  WATER_FLOW_ANALYSIS_HTML,
+  WATER_FLOW_CODE_LANGUAGES,
+} from './water-flow-problem-content';
 import template from './water-flow.html?raw';
 
-interface WFStep {
-  grid: number[][];
+export interface WFStep extends StepBase {
+  heights: number[][];
   rows: number;
   cols: number;
-  tlReachable: boolean[][];
-  brReachable: boolean[][];
-  currentCells: [number, number][];
-  phase: 'init' | 'tl-bfs' | 'br-bfs' | 'merge' | 'done';
-  dualCells: [number, number][];
-  message: string;
+  pacReachable: boolean[][];
+  atlReachable: boolean[][];
+  currentCell: [number, number] | null;
+  stage: string;
+  pacCount: number;
+  atlCount: number;
+  bothCount: number;
+  action: 'init' | 'pacific' | 'atlantic' | 'intersect' | 'done';
+  statusText: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseGrid(input: string): number[][] {
-  return input.split(';').map(row => row.split(',').map(v => parseInt(v.trim(), 10)));
-}
+const DEFAULT_HEIGHTS = [
+  [1, 2, 2, 3, 5],
+  [3, 2, 3, 4, 4],
+  [2, 4, 5, 3, 1],
+  [6, 7, 1, 4, 5],
+  [5, 1, 1, 2, 4],
+];
 
-function heightColor(val: number, maxVal: number): string {
-  const t = maxVal > 0 ? val / maxVal : 0;
-  const r = Math.round(30 + t * 40);
-  const g = Math.round(50 + t * 60);
-  const b = Math.round(100 + t * 100);
-  return `rgb(${r},${g},${b})`;
-}
+const DIRS = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+];
 
-function buildSteps(gridInput: string): WFStep[] {
+export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFStep[] {
   const steps: WFStep[] = [];
-  const grid = parseGrid(gridInput);
-  const R = grid.length;
-  const C = grid[0].length;
-  let maxVal = 0;
-  for (const row of grid) for (const v of row) if (v > maxVal) maxVal = v;
+  const R = heights.length;
+  const C = heights[0].length;
 
-  const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+  const pac = Array.from({ length: R }, () => Array(C).fill(false));
+  const atl = Array.from({ length: R }, () => Array(C).fill(false));
 
-  // Phase 0: Init
+  let pacCount = 0;
+  let atlCount = 0;
+
   steps.push({
-    grid: grid.map(r => [...r]), rows: R, cols: C,
-    tlReachable: Array.from({length: R}, () => Array(C).fill(false)),
-    brReachable: Array.from({length: R}, () => Array(C).fill(false)),
-    currentCells: [], phase: 'init', dualCells: [],
-    message: `初始化 ${R}×${C} 高度网格。最大值=${maxVal}。水从高往低流，从边界反向搜索。`,
-    log: `初始化: ${R}×${C}, max=${maxVal}`,
-    codeLine: 0,
+    heights: heights.map((r) => [...r]),
+    rows: R,
+    cols: C,
+    pacReachable: pac.map((r) => [...r]),
+    atlReachable: atl.map((r) => [...r]),
+    currentCell: null,
+    stage: '准备开始',
+    pacCount: 0,
+    atlCount: 0,
+    bothCount: 0,
+    action: 'init',
+    statusText: `初始化 ${R}×${C} 高度网格。水从高向低流，采用逆向思维：从双洋边界逆流向更高或等高格子搜索。`,
+    log: `初始化: ${R}×${C} 地形高度矩阵`,
+    codeLine: [1, 2, 3],
   });
 
-  // BFS from a set of starting cells, flowing uphill
-  function bfs(starts: [number, number][]): boolean[][] {
-    const visited = Array.from({length: R}, () => Array(C).fill(false));
-    const queue: [number, number][] = [...starts];
-    for (const [r, c] of starts) visited[r][c] = true;
+  // 1. 太平洋搜索 (左边界和上边界)
+  const dfsPac = (r: number, c: number, prevH: number) => {
+    if (r < 0 || r >= R || c < 0 || c >= C || pac[r][c] || heights[r][c] < prevH) return;
+    pac[r][c] = true;
+    pacCount++;
 
     steps.push({
-      grid: grid.map(r => [...r]), rows: R, cols: C,
-      tlReachable: visited.map(r => [...r]),
-      brReachable: Array.from({length: R}, () => Array(C).fill(false)),
-      currentCells: [...starts], phase: 'tl-bfs', dualCells: [],
-      message: `BFS 从 ${starts.length} 个边界格子开始反向搜索（从低往高）。`,
-      log: `BFS 起点: ${starts.map(([r,c]) => `(${r},${c})`).join(', ')}`,
-      codeLine: [2, 3, 4],
+      heights: heights.map((row) => [...row]),
+      rows: R,
+      cols: C,
+      pacReachable: pac.map((row) => [...row]),
+      atlReachable: atl.map((row) => [...row]),
+      currentCell: [r, c],
+      stage: '太平洋逆流搜索',
+      pacCount,
+      atlCount,
+      bothCount: 0,
+      action: 'pacific',
+      statusText: `太平洋逆流登山访问 (${r}, ${c}) [高度=${heights[r][c]}]，标记为太平洋可达。当前太平洋可达: ${pacCount} 格。`,
+      log: `太平洋可达: (${r}, ${c}) 高度=${heights[r][c]}`,
+      codeLine: [20, 21, 22, 23],
     });
 
-    let head = 0;
-    while (head < queue.length) {
-      const [r, c] = queue[head++];
+    for (const [dr, dc] of DIRS) {
+      dfsPac(r + dr, c + dc, heights[r][c]);
+    }
+  };
 
-      for (const [dr, dc] of dirs) {
-        const nr = r + dr;
-        const nc = c + dc;
-        if (nr < 0 || nr >= R || nc < 0 || nc >= C || visited[nr][nc]) continue;
-        if (grid[nr][nc] < grid[r][c]) continue;
+  for (let r = 0; r < R; r++) dfsPac(r, 0, heights[r][0]);
+  for (let c = 0; c < C; c++) dfsPac(0, c, heights[0][c]);
 
-        visited[nr][nc] = true;
-        queue.push([nr, nc]);
+  // 2. 大西洋搜索 (右边界和下边界)
+  const dfsAtl = (r: number, c: number, prevH: number) => {
+    if (r < 0 || r >= R || c < 0 || c >= C || atl[r][c] || heights[r][c] < prevH) return;
+    atl[r][c] = true;
+    atlCount++;
 
+    steps.push({
+      heights: heights.map((row) => [...row]),
+      rows: R,
+      cols: C,
+      pacReachable: pac.map((row) => [...row]),
+      atlReachable: atl.map((row) => [...row]),
+      currentCell: [r, c],
+      stage: '大西洋逆流搜索',
+      pacCount,
+      atlCount,
+      bothCount: 0,
+      action: 'atlantic',
+      statusText: `大西洋逆流登山访问 (${r}, ${c}) [高度=${heights[r][c]}]，标记为大西洋可达。当前大西洋可达: ${atlCount} 格。`,
+      log: `大西洋可达: (${r}, ${c}) 高度=${heights[r][c]}`,
+      codeLine: [20, 21, 22, 23],
+    });
+
+    for (const [dr, dc] of DIRS) {
+      dfsAtl(r + dr, c + dc, heights[r][c]);
+    }
+  };
+
+  for (let r = 0; r < R; r++) dfsAtl(r, C - 1, heights[r][C - 1]);
+  for (let c = 0; c < C; c++) dfsAtl(R - 1, c, heights[R - 1][c]);
+
+  // 3. 求双洋交集
+  let bothCount = 0;
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) {
+      if (pac[r][c] && atl[r][c]) {
+        bothCount++;
         steps.push({
-          grid: grid.map(r => [...r]), rows: R, cols: C,
-          tlReachable: visited.map(r => [...r]),
-          brReachable: Array.from({length: R}, () => Array(C).fill(false)),
-          currentCells: [[nr, nc]], phase: 'tl-bfs', dualCells: [],
-          message: `(${r},${c}) 高度 ${grid[r][c]} → (${nr},${nc}) 高度 ${grid[nr][nc]}：水可以反向流动，标记可达。`,
-          log: `(${r},${c})[${grid[r][c]}] → (${nr},${nc})[${grid[nr][nc]}]`,
-          codeLine: [5, 6],
+          heights: heights.map((row) => [...row]),
+          rows: R,
+          cols: C,
+          pacReachable: pac.map((row) => [...row]),
+          atlReachable: atl.map((row) => [...row]),
+          currentCell: [r, c],
+          stage: '双洋交集枢纽',
+          pacCount,
+          atlCount,
+          bothCount,
+          action: 'intersect',
+          statusText: `坐标 (${r}, ${c}) 既能流向太平洋又能流向大西洋！找到第 ${bothCount} 处双洋枢纽。`,
+          log: `★ 双洋交集: (${r}, ${c}) [高度=${heights[r][c]}]`,
+          codeLine: [14, 15, 16],
         });
       }
     }
-
-    return visited;
   }
 
-  function bfsBR(starts: [number, number][]): boolean[][] {
-    const visited = Array.from({length: R}, () => Array(C).fill(false));
-    const queue: [number, number][] = [...starts];
-    for (const [r, c] of starts) visited[r][c] = true;
-
-    const tlFinal = steps[steps.length - 1].tlReachable;
-
-    steps.push({
-      grid: grid.map(r => [...r]), rows: R, cols: C,
-      tlReachable: tlFinal.map(r => [...r]),
-      brReachable: visited.map(r => [...r]),
-      currentCells: [...starts], phase: 'br-bfs', dualCells: [],
-      message: `开始右下方向 BFS：从右/下边界 ${starts.length} 个格子出发。`,
-      log: `BFS-右下 起点: ${starts.length} 个格子`,
-      codeLine: [2, 3, 4],
-    });
-
-    let head = 0;
-    while (head < queue.length) {
-      const [r, c] = queue[head++];
-
-      for (const [dr, dc] of dirs) {
-        const nr = r + dr;
-        const nc = c + dc;
-        if (nr < 0 || nr >= R || nc < 0 || nc >= C || visited[nr][nc]) continue;
-        if (grid[nr][nc] < grid[r][c]) continue;
-
-        visited[nr][nc] = true;
-        queue.push([nr, nc]);
-
-        steps.push({
-          grid: grid.map(r => [...r]), rows: R, cols: C,
-          tlReachable: tlFinal.map(r => [...r]),
-          brReachable: visited.map(r => [...r]),
-          currentCells: [[nr, nc]], phase: 'br-bfs', dualCells: [],
-          message: `(${r},${c}) 高度 ${grid[r][c]} → (${nr},${nc}) 高度 ${grid[nr][nc]}：右下可达。`,
-          log: `右下: (${r},${c}) → (${nr},${nc})`,
-          codeLine: [5, 6],
-        });
-      }
-    }
-
-    return visited;
-  }
-
-  // Top-left BFS from top and left edges
-  const tlStarts: [number, number][] = [];
-  for (let r = 0; r < R; r++) tlStarts.push([r, 0]);
-  for (let c = 0; c < C; c++) tlStarts.push([0, c]);
-  // Deduplicate (0,0)
-  const tlSet = new Set(tlStarts.map(([r,c]) => `${r},${c}`));
-  const tlUnique = [...tlSet].map(s => s.split(',').map(Number) as [number, number]);
-
-  const tlReachable = bfs(tlUnique);
-
-  // Bottom-right BFS from bottom and right edges
-  const brStarts: [number, number][] = [];
-  for (let r = 0; r < R; r++) brStarts.push([r, C - 1]);
-  for (let c = 0; c < C; c++) brStarts.push([R - 1, c]);
-  const brSet = new Set(brStarts.map(([r,c]) => `${r},${c}`));
-  const brUnique = [...brSet].map(s => s.split(',').map(Number) as [number, number]);
-
-  const brReachable = bfsBR(brUnique);
-
-  // Merge
-  const dualCells: [number, number][] = [];
-  for (let r = 0; r < R; r++)
-    for (let c = 0; c < C; c++)
-      if (tlReachable[r][c] && brReachable[r][c])
-        dualCells.push([r, c]);
-
   steps.push({
-    grid: grid.map(r => [...r]), rows: R, cols: C,
-    tlReachable: tlReachable.map(r => [...r]),
-    brReachable: brReachable.map(r => [...r]),
-    currentCells: [...dualCells], phase: 'merge', dualCells: [...dualCells],
-    message: `合并：两个方向都能到达的格子有 ${dualCells.length} 个：${dualCells.map(([r,c]) => `(${r},${c})`).join(', ') || '无'}`,
-    log: `结果: ${dualCells.length} 个双达格子: ${dualCells.map(([r,c]) => `(${r},${c})`).join(', ') || '无'}`,
-    codeLine: 8,
-  });
-
-  steps.push({
-    grid: grid.map(r => [...r]), rows: R, cols: C,
-    tlReachable: tlReachable.map(r => [...r]),
-    brReachable: brReachable.map(r => [...r]),
-    currentCells: [], phase: 'done', dualCells: [...dualCells],
-    message: `分析完成！共 ${dualCells.length} 个格子满足：水流既能到达左上边界，也能到达右下边界。`,
-    log: `完成`,
-    codeLine: 9,
+    heights: heights.map((row) => [...row]),
+    rows: R,
+    cols: C,
+    pacReachable: pac.map((row) => [...row]),
+    atlReachable: atl.map((row) => [...row]),
+    currentCell: null,
+    stage: '分析完成',
+    pacCount,
+    atlCount,
+    bothCount,
+    action: 'done',
+    statusText: `🎉 太平洋大西洋水流分析完成！共发现 ${bothCount} 个格子既可流向太平洋也可流向大西洋。`,
+    log: `✓ 分析完成: 双洋连通点共 ${bothCount} 处`,
+    codeLine: 18,
   });
 
   return steps;
 }
 
 export class WaterFlowVisualizer extends StepVisualizer<WFStep> {
-  protected codeLines = [
-    'public List<int[]> waterFlow(int[][] heights) {',
-    '    int R = heights.length, C = heights[0].length;',
-    '    boolean[][] tlReach = bfs(heights, topEdge + leftEdge);',
-    '    boolean[][] brReach = bfs(heights, bottomEdge + rightEdge);',
-    '    // BFS: if heights[nr][nc] >= heights[r][c], visit(nr, nc)',
-    '    Queue<int[]> queue = new LinkedList<>();',
-    '    for each start cell: queue.offer, visited[r][c] = true;',
-    '    List<int[]> result = intersect(tlReach, brReach);',
-    '    return result;',
-    '}',
-  ];
-  protected codePanelTitle = '高山流水 BFS 代码 (Java)';
+  protected codeLanguages = WATER_FLOW_CODE_LANGUAGES;
+  protected codeLines = WATER_FLOW_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '水流问题 (LC 417) 代码调试';
 
-  private gridInput: HTMLInputElement | null = null;
-  private gridEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private phaseEl: HTMLElement | null = null;
-  private tlCountEl: HTMLElement | null = null;
-  private brCountEl: HTMLElement | null = null;
-  private dualCountEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private gridContainer: HTMLElement | null = null;
+  private metricCurCellEl: HTMLElement | null = null;
+  private metricStageEl: HTMLElement | null = null;
+  private metricPacCountEl: HTMLElement | null = null;
+  private metricAtlCountEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.gridInput = this.root.querySelector('#wf-grid-input');
-    this.gridEl = this.root.querySelector('#wf-grid');
-    this.logEl = this.root.querySelector('#wf-log');
-    this.phaseEl = this.root.querySelector('#wf-phase');
-    this.tlCountEl = this.root.querySelector('#wf-tl-count');
-    this.brCountEl = this.root.querySelector('#wf-br-count');
-    this.dualCountEl = this.root.querySelector('#wf-dual-count');
 
-    const startBtn = this.root.querySelector('#wf-start') as HTMLButtonElement | null;
-    if (startBtn) startBtn.onclick = () => this.start();
+    this.gridContainer = this.root.querySelector('#wf-grid-container');
+    this.metricCurCellEl = this.root.querySelector('#metric-cur-cell');
+    this.metricStageEl = this.root.querySelector('#metric-stage');
+    this.metricPacCountEl = this.root.querySelector('#metric-pac-count');
+    this.metricAtlCountEl = this.root.querySelector('#metric-atl-count');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#wf-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelectorAll('.wf-example').forEach((btn) => {
-      (btn as HTMLButtonElement).onclick = () => {
-        if (this.gridInput) this.gridInput.value = (btn as HTMLElement).dataset.grid || '';
-        this.start();
-      };
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 500;
+      });
+    }
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: WATER_FLOW_PROBLEM_HTML,
+      analysisHtml: WATER_FLOW_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-
-    this.bindPlaybackControls({ speed: 'wf-speed', speedLabel: 'wf-speed-label', message: 'step-message' });
   }
 
   protected buildSteps(): WFStep[] {
-    const val = this.gridInput?.value || '3,4,2,1;2,1,3,4;1,2,4,3;4,3,2,1';
-    return buildSteps(val);
+    return buildWaterFlowSteps();
   }
 
   protected renderStep(step: WFStep): void {
-    if (this.phaseEl) {
-      const phaseLabels: Record<string, string> = { init: '初始化', 'tl-bfs': '左上 BFS', 'br-bfs': '右下 BFS', merge: '合并', done: '完成' };
-      this.phaseEl.textContent = phaseLabels[step.phase] || '-';
-    }
+    const { heights, rows, cols, pacReachable, atlReachable, currentCell, stage, pacCount, atlCount, bothCount, statusText, action } = step;
 
-    let tlCount = 0, brCount = 0;
-    for (let r = 0; r < step.rows; r++)
-      for (let c = 0; c < step.cols; c++) {
-        if (step.tlReachable[r]?.[c]) tlCount++;
-        if (step.brReachable[r]?.[c]) brCount++;
-      }
-    if (this.tlCountEl) this.tlCountEl.textContent = String(tlCount);
-    if (this.brCountEl) this.brCountEl.textContent = String(brCount);
-    if (this.dualCountEl) this.dualCountEl.textContent = String(step.dualCells.length);
+    // 1. 渲染 2D 高度网格
+    if (this.gridContainer) {
+      this.gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      let html = '';
 
-    this.renderGrid(step);
-    this.renderLogLine(step);
-  }
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const h = heights[r][c];
+          const isPac = pacReachable[r][c];
+          const isAtl = atlReachable[r][c];
+          const isBoth = isPac && isAtl;
+          const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
 
-  private renderGrid(step: WFStep): void {
-    if (!this.gridEl) return;
-    this.gridEl.innerHTML = '';
+          let cls = 'wf-cell';
+          if (isBoth) cls += ' is-both';
+          else if (isPac) cls += ' is-pacific';
+          else if (isAtl) cls += ' is-atlantic';
 
-    let maxVal = 0;
-    for (const row of step.grid) for (const v of row) if (v > maxVal) maxVal = v;
+          if (isCurrent) cls += ' is-current';
 
-    const dualSet = new Set(step.dualCells.map(([r,c]) => `${r},${c}`));
-    const currentSet = new Set(step.currentCells.map(([r,c]) => `${r},${c}`));
+          let oceanTag = isBoth ? 'P&A' : isPac ? 'P' : isAtl ? 'A' : '';
 
-    const container = document.createElement('div');
-    container.className = 'wf-grid';
-    container.style.gridTemplateColumns = `repeat(${step.cols}, 56px)`;
-
-    for (let r = 0; r < step.rows; r++) {
-      for (let c = 0; c < step.cols; c++) {
-        const cell = document.createElement('div');
-        cell.className = 'wf-cell';
-        const key = `${r},${c}`;
-        const val = step.grid[r]?.[c] ?? 0;
-
-        if (dualSet.has(key)) {
-          cell.classList.add('dual');
-          cell.style.background = 'rgba(59,130,246,0.5)';
-          cell.style.borderColor = '#6366f1';
-          cell.style.color = '#93c5fd';
-        } else if (currentSet.has(key)) {
-          cell.style.background = 'rgba(99,102,241,0.6)';
-          cell.style.borderColor = '#818cf8';
-          cell.style.color = '#c7d2fe';
-          cell.style.animation = 'wf-glow 0.6s';
-        } else if (step.tlReachable[r]?.[c] && step.brReachable[r]?.[c]) {
-          cell.style.background = 'rgba(59,130,246,0.4)';
-          cell.style.borderColor = 'rgba(99,102,241,0.5)';
-          cell.style.color = '#93c5fd';
-        } else if (step.tlReachable[r]?.[c]) {
-          cell.style.background = 'rgba(59,130,246,0.2)';
-          cell.style.borderColor = 'rgba(59,130,246,0.4)';
-          cell.style.color = '#93c5fd';
-        } else if (step.brReachable[r]?.[c]) {
-          cell.style.background = 'rgba(99,102,241,0.2)';
-          cell.style.borderColor = 'rgba(99,102,241,0.4)';
-          cell.style.color = '#c4b5fd';
-        } else {
-          cell.style.background = heightColor(val, maxVal);
-          cell.style.borderColor = 'rgba(255,255,255,0.08)';
-          cell.style.color = '#94a3b8';
+          html += `<div class="${cls}">
+            <span style="font-size:12px; font-weight:800;">${h}</span>
+            ${oceanTag ? `<span style="font-size:9px; opacity:0.85;">${oceanTag}</span>` : ''}
+          </div>`;
         }
+      }
+      this.gridContainer.innerHTML = html;
+    }
 
-        cell.textContent = String(val);
-        container?.appendChild(cell);
+    // 2. 更新状态监视器
+    if (this.metricCurCellEl) {
+      this.metricCurCellEl.textContent = currentCell ? `(${currentCell[0]}, ${currentCell[1]})` : '—';
+    }
+    if (this.metricStageEl) {
+      this.metricStageEl.textContent = stage;
+    }
+    if (this.metricPacCountEl) {
+      this.metricPacCountEl.textContent = `${pacCount}`;
+    }
+    if (this.metricAtlCountEl) {
+      this.metricAtlCountEl.textContent = `${atlCount}`;
+    }
+
+    if (this.formulaActionEl) {
+      this.formulaActionEl.textContent =
+        action === 'pacific'
+          ? `太平洋逆流: (${currentCell ? currentCell.join(',') : ''}) >= 边界，pac[r][c]=true`
+          : action === 'atlantic'
+          ? `大西洋逆流: (${currentCell ? currentCell.join(',') : ''}) >= 边界，atl[r][c]=true`
+          : action === 'intersect'
+          ? `交集命中: pac[${currentCell ? currentCell[0] : 0}][${currentCell ? currentCell[1] : 0}] && atl == true -> 双洋枢纽`
+          : `若 heights[next] >= heights[curr]，则逆流可达`;
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done' || action === 'intersect'
+          ? '#f0fdf4'
+          : action === 'pacific'
+          ? '#eff6ff'
+          : action === 'atlantic'
+          ? '#fef2f2'
+          : '#f8fafc';
+      logEntry.style.color =
+        action === 'done' || action === 'intersect'
+          ? '#15803d'
+          : action === 'pacific'
+          ? '#1d4ed8'
+          : action === 'atlantic'
+          ? '#dc2626'
+          : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done' || action === 'intersect'
+          ? '#bbf7d0'
+          : action === 'pacific'
+          ? '#bfdbfe'
+          : action === 'atlantic'
+          ? '#fecaca'
+          : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
 
-    this.gridEl?.appendChild(container);
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeBoth = this.root?.querySelector('#badge-both-count');
+    if (badgeBoth) badgeBoth.textContent = `双洋交集: ${bothCount} 处`;
   }
 
-  private renderLogLine(step: WFStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'water-flow',
-  name: '高山流水',
+  name: '太平洋大西洋水流 (LC 417)',
   viewId: 'algo-water-flow-view',
   category: 'graph',
-  description: '找出所有水流能同时到达左上和右下水域的格子',
-  icon: '💧',
+  description: '逆向思维：分别从太平洋与大西洋边界逆流登山搜索，求双洋可达性交集',
+  icon: '🌊',
+  difficulty: 2,
+  levelOrder: 17,
+  learningGoal: '掌握逆向多源 DFS/BFS 搜索与双矩阵交集求解技巧',
   template,
   Visualizer: WaterFlowVisualizer,
-  difficulty: 3,
-  levelOrder: 9,
-  learningGoal: '掌握反向 BFS 求解水流可达性问题',
 });
-
-export {};

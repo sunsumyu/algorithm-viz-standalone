@@ -204,11 +204,11 @@ export class RedundantEdgeIIVisualizer extends StepVisualizer<RedundantIIStep> {
     if (!this.root) return;
 
     this.svgCanvas = this.root.querySelector('#re2-svg-canvas');
-    this.degreePillsWrap = this.root.querySelector('#degree-pills-wrap');
-    this.metricConflictEl = this.root.querySelector('#metric-conflict');
-    this.metricCycleEl = this.root.querySelector('#metric-cycle');
-    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
-    this.metricResultEdgeEl = this.root.querySelector('#metric-result-edge');
+    this.degreePillsWrap = this.root.querySelector('#re2-edges-pills-wrap');
+    this.metricConflictEl = this.root.querySelector('#metric-two-parents');
+    this.metricCycleEl = this.root.querySelector('#metric-cycle-detect');
+    this.metricCurEdgeEl = this.root.querySelector('#metric-stage');
+    this.metricResultEdgeEl = this.root.querySelector('#metric-redundant');
     this.formulaActionEl = this.root.querySelector('#formula-action');
     this.liveTextEl = this.root.querySelector('#re2-live-text');
     this.logContainer = this.root.querySelector('#log-container');
@@ -426,9 +426,14 @@ export class RedundantEdgeIIVisualizer extends StepVisualizer<RedundantIIStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeRedundant = this.root?.querySelector('#badge-redundant-edge');
+    if (badgeRedundant) {
+      badgeRedundant.textContent = step.resultEdge ? `冗余边: [${step.resultEdge[0]}, ${step.resultEdge[1]}]` : '冗余边: 待检测';
     }
   }
 

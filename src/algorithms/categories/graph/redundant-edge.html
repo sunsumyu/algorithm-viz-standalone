@@ -1,5 +1,5 @@
 <style>
-  /* === 冗余连接 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 冗余连接 (LC 684) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-redundant-edge-view {
     width: 100%;
     height: 100%;
@@ -47,9 +47,9 @@
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #2563eb;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-redundant-edge-view .re-btn-problem {
@@ -102,11 +103,11 @@
     font-size: 10.5px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
-    color: #2563eb;
-    background: #eff6ff;
+    color: #dc2626;
+    background: #fef2f2;
     padding: 2px 6px;
     border-radius: 6px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid #fecaca;
     white-space: nowrap;
   }
 
@@ -117,116 +118,147 @@
     flex-shrink: 0;
   }
 
-  #algo-redundant-edge-view .re-btn-primary {
-    padding: 4px 10px;
+  #algo-redundant-edge-view .re-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
-    background: #2563eb;
+    background: #dc2626;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-redundant-edge-view .re-btn-primary:hover {
-    background: #1d4ed8;
+  #algo-redundant-edge-view .re-btn-generate:hover {
+    background: #b91c1c;
   }
 
-  #algo-redundant-edge-view .re-btn-secondary {
-    padding: 4px 8px;
+  #algo-redundant-edge-view .re-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-redundant-edge-view .re-btn-secondary:hover {
+  #algo-redundant-edge-view .re-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-redundant-edge-view .re-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-redundant-edge-view .re-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-redundant-edge-view .re-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-redundant-edge-view .re-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-redundant-edge-view .re-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-redundant-edge-view .re-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-redundant-edge-view .re-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-redundant-edge-view .re-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-redundant-edge-view .re-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 拓扑图 SVG 画布 */
-  #algo-redundant-edge-view .re-svg-wrap {
+  #algo-redundant-edge-view .re-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-redundant-edge-view .re-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 拓扑图 SVG 画布 */
+  #algo-redundant-edge-view .re-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
     width: 100%;
-    height: 100%;
-    min-height: 180px;
+    overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* parent 数组展示栏 */
-  #algo-redundant-edge-view .re-parent-track {
+  /* 边列表展示栏 */
+  #algo-redundant-edge-view .re-edge-track {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 6px 10px;
     background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
     overflow-x: auto;
   }
 
-  #algo-redundant-edge-view .re-parent-pill {
+  #algo-redundant-edge-view .re-edge-pill {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -238,19 +270,119 @@
     font-size: 11px;
   }
 
-  /* Card 2: 状态监视器 */
+  #algo-redundant-edge-view .re-edge-pill.is-active {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 800;
+  }
+
+  #algo-redundant-edge-view .re-edge-pill.is-redundant {
+    border-color: #f87171;
+    background: #fef2f2;
+    color: #dc2626;
+    font-weight: 900;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-redundant-edge-view .re-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-redundant-edge-view .re-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #dc2626;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-redundant-edge-view .re-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-redundant-edge-view .re-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-redundant-edge-view .re-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-redundant-edge-view .re-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-redundant-edge-view .re-play-circle-btn:hover {
+    background: #b91c1c;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-redundant-edge-view .re-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-redundant-edge-view .re-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-redundant-edge-view .re-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -265,7 +397,7 @@
 
   #algo-redundant-edge-view .re-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -273,88 +405,290 @@
   #algo-redundant-edge-view .re-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-redundant-edge-view .re-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-redundant-edge-view .re-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-redundant-edge-view .re-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-redundant-edge-view .re-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-view .re-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-redundant-edge-view .re-playback-controls {
+  #algo-redundant-edge-view .re-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-redundant-edge-view .re-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-redundant-edge-view .re-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-redundant-edge-view .re-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-redundant-edge-view .re-tab-item.active {
+    background: #dc2626;
+    color: #ffffff;
   }
 
-  #algo-redundant-edge-view .re-progress-wrap {
-    flex: 1;
+  #algo-redundant-edge-view .re-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-redundant-edge-view .re-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-redundant-edge-view .re-lang-btn.active {
+    background: #334155;
+    color: #fca5a5;
+  }
+
+  #algo-redundant-edge-view .re-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-redundant-edge-view .re-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-redundant-edge-view .re-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-redundant-edge-view .re-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-redundant-edge-view .re-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fca5a5;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-redundant-edge-view .re-step-badge {
-    font-size: 11px;
+  #algo-redundant-edge-view .re-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-redundant-edge-view .re-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-redundant-edge-view .re-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-redundant-edge-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-redundant-edge-view .code-line.active {
+    background: rgba(220, 38, 38, 0.2);
+    border-left: 3px solid #dc2626;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-redundant-edge-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-redundant-edge-view .re-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-view .re-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-redundant-edge-view .re-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-redundant-edge-view .re-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-redundant-edge-view .re-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-redundant-edge-view .re-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-redundant-edge-view .re-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-redundant-edge-view .re-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-view .re-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-redundant-edge-view .re-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-redundant-edge-view .re-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-redundant-edge-view .re-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -362,117 +696,205 @@
   <!-- 1. 顶栏 Header -->
   <header class="re-header">
     <div class="re-header-left">
-      <div class="re-icon-btn">✂️</div>
-      <div class="re-main-title">冗余连接 · Redundant Connection (LC 684)</div>
-      <button class="re-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="re-badge-mode">并查集动态判环</div>
-      <div class="re-badge-complexity">O(N·α(N)) · O(N)</div>
+      <div class="re-icon-btn">🔗</div>
+      <h1 class="re-main-title">LeetCode 684. 冗余连接 (无向图并查集)</h1>
+      <button id="btn-open-problem-modal" class="re-btn-problem">📋 题目</button>
+      <span class="re-badge-mode">并查集成环判定</span>
+      <span class="re-badge-complexity">O(N·α(N)) · O(N)</span>
     </div>
+
     <div class="re-header-right">
-      <button class="re-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="re-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="re-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="re-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="re-workspace">
-    <!-- Card 1: 拓扑图 SVG 画布 -->
-    <section class="re-card">
-      <div class="re-card-header">
-        <div class="re-card-title">
-          <span>📊</span> 无向图加边与环检测沙盘 (Graph Topology Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="re-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="re-left-section">
+
+      <!-- 卡片 1: 拓扑图 SVG 画布 -->
+      <div class="re-card">
+        <div class="re-card-header">
+          <div class="re-card-title">
+            <span>📊 无向图连通分支与环路沙盘 (Graph Canvas)</span>
+          </div>
+          <div class="re-legend-bar">
+            <div><span class="re-legend-dot" style="background:#2563eb;"></span> 正在考察边</div>
+            <div><span class="re-legend-dot" style="background:#16a34a;"></span> 连通成功 (不同根)</div>
+            <div><span class="re-legend-dot" style="background:#dc2626;"></span> 冗余成环边 (相同根)</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #10b981;">● 正常树边</span> · <span style="color: #fbbf24;">● 正在检查边</span> · <span style="color: #ef4444;">● 冗余环边</span>
+
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="re-sandbox-wrap" id="re-svg-canvas"></div>
+
+        <!-- 边列表展示栏 -->
+        <div class="re-edge-track">
+          <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">输入边序列:</span>
+          <div id="edges-pills-wrap" style="display: flex; gap: 6px;"></div>
         </div>
       </div>
-      <div class="re-card-body" style="justify-content: center; align-items: center;">
-        <div class="re-svg-wrap" id="re-svg-canvas"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="re-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="re-slider" />
+        <div class="re-counter-badge">
+          <span id="step-cur" style="color: #dc2626;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="re-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="re-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="re-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="re-parent-track" id="re-parent-track">
-        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">parent 数组:</span>
-        <div id="parent-pills-wrap" style="display: flex; gap: 6px;"></div>
+
+      <!-- 卡片 2: 并查集状态与冗余边监视器 -->
+      <div class="re-card">
+        <div class="re-card-header">
+          <div>
+            <div class="re-card-title">🧭 并查集根判定监视器 (Union-Find Monitor)</div>
+            <div class="re-card-desc">当前考察边 (u, v)、两端根节点判定与最终冗余边输出</div>
+          </div>
+          <span id="badge-redundant-edge" class="re-counter-badge" style="color:#dc2626; background:#fef2f2; border-color:#fecaca;">冗余边: 待检测</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="re-state-space-box">
+          <div class="re-metrics-grid">
+            <div class="re-metric-card">
+              <span class="re-metric-label">考察边 (u, v)</span>
+              <span class="re-metric-val" id="metric-cur-edge" style="color: #2563eb;">—</span>
+            </div>
+            <div class="re-metric-card">
+              <span class="re-metric-label">根节点 root(u) / root(v)</span>
+              <span class="re-metric-val" id="metric-roots" style="color: #a855f7;">— / —</span>
+            </div>
+            <div class="re-metric-card">
+              <span class="re-metric-label">同根成环判定</span>
+              <span class="re-metric-val" id="metric-same-root" style="color: #16a34a;">false</span>
+            </div>
+            <div class="re-metric-card">
+              <span class="re-metric-label">最终冗余连接 REDUNDANT</span>
+              <span class="re-metric-val" id="metric-redundant" style="color: #dc2626;">[—, —]</span>
+            </div>
+          </div>
+
+          <div class="re-formula-box">
+            <span style="color:#64748b;">成环判定:</span>
+            <strong id="formula-action" style="color: #dc2626;">if (find(u) == find(v)) return [u, v]; else union(u, v);</strong>
+          </div>
+
+          <div class="re-live-alert">
+            <span>💡</span> <span id="re-live-text">准备就绪，点击运行开始冗余连接检测。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="re-card">
-      <div class="re-card-header">
-        <div class="re-card-title">
-          <span>🧭</span> 环检测与指标监视器 (Redundant Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="re-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="re-dark-terminal">
+        <div class="re-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="re-tab-group">
+            <button id="btn-tab-code" class="re-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="re-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="re-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="re-lang-group" id="code-lang-tabs">
+            <button class="re-lang-btn active" data-lang="java">Java</button>
+            <button class="re-lang-btn" data-lang="cpp">C++</button>
+            <button class="re-lang-btn" data-lang="python">Python</button>
+            <button class="re-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="re-font-tools">
+            <div class="re-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="re-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="re-window-dots">
+              <span class="re-dot" style="background:#ef4444;"></span>
+              <span class="re-dot" style="background:#eab308;"></span>
+              <span class="re-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="re-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="re-card-body">
-        <div class="re-metrics-grid">
-          <div class="re-metric-card">
-            <span class="re-metric-label">当前考察边 (u, v)</span>
-            <span class="re-metric-val" id="metric-cur-edge" style="color: #fbbf24;">[1, 2]</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="re-log-card">
+        <div class="re-log-header">
+          <div class="re-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="re-metric-card">
-            <span class="re-metric-label">根节点 [rootU, rootV]</span>
-            <span class="re-metric-val" id="metric-roots" style="color: #2563eb;">[1, 2]</span>
-          </div>
-          <div class="re-metric-card">
-            <span class="re-metric-label">已合并边数</span>
-            <span class="re-metric-val" id="metric-merged-count" style="color: #10b981;">0</span>
-          </div>
-          <div class="re-metric-card">
-            <span class="re-metric-label">冗余边结果</span>
-            <span class="re-metric-val" id="metric-result-edge" style="color: #ef4444;">未发现</span>
-          </div>
+          <span id="log-count" class="re-log-count">0 条记录</span>
         </div>
-        <div class="re-formula-box" id="re-formula-box">
-          <span>判环准则:</span> <strong id="formula-action" style="color: #2563eb;">rootU === rootV -> 发现成环冗余边</strong>
-        </div>
-        <div class="re-live-alert" id="re-live-alert">
-          <span>💡</span> <span id="re-live-text">准备就绪，点击运行开始冗余连接检测。</span>
+
+        <div id="log-container" class="re-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="re-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="re-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="re-card-header">
-        <div class="re-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="re-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="re-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="re-playback-bar">
-    <div class="re-playback-controls">
-      <button class="re-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="re-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="re-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="re-modal-backdrop hidden">
+    <div class="re-modal-content">
+      <div class="re-modal-header">
+        <div class="re-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="re-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="re-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="re-progress-wrap">
-      <span class="re-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="500" selected>正常</option>
-        <option value="200">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

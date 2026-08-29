@@ -1,528 +1,856 @@
 <style>
+  /* === 负权回路检测 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-negative-cycle-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
-  }
-
-  #algo-negative-cycle-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #ef444455, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #dc262655, transparent 55%),
-                linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 25%, #1a0a0a 50%, #3b1212 75%, #1a0a0a 100%);
-    z-index: -2;
-  }
-
-  #algo-negative-cycle-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(26, 10, 10, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-negative-cycle-view .nc-page {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .nc-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
+  #algo-negative-cycle-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-negative-cycle-view .nc-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .nc-hero .nc-title-wrapper {
+  #algo-negative-cycle-view .nc-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .nc-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
+  #algo-negative-cycle-view .nc-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .nc-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
+  #algo-negative-cycle-view .nc-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .nc-hero-text p {
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
     margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
   }
 
-  .nc-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-negative-cycle-view .nc-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-negative-cycle-view .nc-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .nc-tip strong {
-    color: #ef4444;
+  #algo-negative-cycle-view .nc-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-negative-cycle-view .nc-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    white-space: nowrap;
+  }
+
+  #algo-negative-cycle-view .nc-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-negative-cycle-view .nc-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-negative-cycle-view .nc-btn-generate:hover {
+    background: #b91c1c;
+  }
+
+  #algo-negative-cycle-view .nc-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
     font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-negative-cycle-view .nc-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  #algo-negative-cycle-view .nc-layout {
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-negative-cycle-view .nc-main-layout {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-negative-cycle-view .nc-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .nc-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .nc-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .nc-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .nc-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-  }
-
-  .nc-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-  }
-
-  .nc-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .nc-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+    margin-top: 8px;
     overflow: hidden;
-    text-align: center;
   }
 
-  .nc-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #ef4444, #dc2626);
-  }
-
-  .nc-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .nc-stat-val {
-    color: #ef4444;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-  }
-
-  .nc-graph-container {
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 280px;
-  }
-
-  .nc-graph-container svg {
-    width: 100%;
-    max-width: 500px;
-    height: 280px;
-  }
-
-  .nc-dist-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .nc-dist-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .nc-dist-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 40px;
-    align-items: center;
-  }
-
-  .nc-dist-item {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    color: #ef4444;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    min-width: 44px;
-    text-align: center;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .nc-dist-item .nc-idx {
-    display: block;
-    font-size: 9px;
-    color: rgba(204, 214, 244, 0.5);
-    margin-bottom: 2px;
-  }
-
-  .nc-dist-item.changed {
-    background: rgba(239, 68, 68, 0.35);
-    border-color: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
-  }
-
-  .nc-result {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    font-size: 13px;
-    line-height: 1.5;
-    font-weight: 600;
-    text-align: center;
-  }
-
-  .nc-result.found {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #ef4444;
-    animation: shakeIn 0.6s ease;
-  }
-
-  .nc-result.none {
-    background: rgba(34, 197, 94, 0.15);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    color: #22c55e;
-  }
-
-  .nc-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .nc-log {
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-negative-cycle-view .nc-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
     min-height: 0;
-    max-height: 120px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .nc-log div {
-    padding: 2px 0;
-  }
-
-  .nc-log div.active {
-    color: #ef4444;
-    font-weight: 600;
-  }
-
-  .nc-right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-  }
-
-  .nc-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .nc-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 
-  .nc-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .nc-legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-  }
-
-  .nc-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-negative-cycle-view .nc-card {
+    background: #ffffff;
     border-radius: 16px;
-    padding: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .nc-pb-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .nc-pb-btn {
+    gap: 6px;
     flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(239, 68, 68, 0.1);
-    color: #cdd6f4;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-negative-cycle-view .nc-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-negative-cycle-view .nc-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-negative-cycle-view .nc-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-negative-cycle-view .nc-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-negative-cycle-view .nc-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 有向带权图 SVG 沙盘 */
+  #algo-negative-cycle-view .nc-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-negative-cycle-view .nc-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-negative-cycle-view .nc-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #dc2626;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    background: #e2e8f0;
+    border-radius: 999px;
   }
 
-  .nc-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  #algo-negative-cycle-view .nc-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .nc-pb-btn:not(:disabled):hover {
-    background: rgba(239, 68, 68, 0.2);
-    border-color: #ef4444;
-    transform: translateY(-1px);
+  #algo-negative-cycle-view .nc-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-negative-cycle-view .nc-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  .nc-pb-btn.play {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
+  #algo-negative-cycle-view .nc-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #ffffff;
     border: none;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-negative-cycle-view .nc-play-circle-btn:hover {
+    background: #b91c1c;
+    transform: scale(1.05);
   }
 
-  .nc-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  /* Card 2 状态空间 */
+  #algo-negative-cycle-view .nc-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .nc-speed-row {
+  #algo-negative-cycle-view .nc-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-negative-cycle-view .nc-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-negative-cycle-view .nc-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-negative-cycle-view .nc-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-negative-cycle-view .nc-dist-table-wrap {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    overflow-x: auto;
   }
 
-  .nc-speed-row input {
-    flex: 1;
-    accent-color: #ef4444;
+  #algo-negative-cycle-view .nc-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .nc-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-negative-cycle-view .nc-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-negative-cycle-view .nc-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-negative-cycle-view .nc-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-negative-cycle-view .nc-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-negative-cycle-view .nc-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-negative-cycle-view .nc-tab-item.active {
+    background: #dc2626;
+    color: #ffffff;
+  }
+
+  #algo-negative-cycle-view .nc-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-negative-cycle-view .nc-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-negative-cycle-view .nc-lang-btn.active {
+    background: #334155;
+    color: #fca5a5;
+  }
+
+  #algo-negative-cycle-view .nc-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-negative-cycle-view .nc-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-negative-cycle-view .nc-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-negative-cycle-view .nc-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fca5a5;
+    min-width: 14px;
     text-align: center;
   }
 
-  @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+  #algo-negative-cycle-view .nc-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-negative-cycle-view .nc-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
 
-  @keyframes pathPulse {
-    0%, 100% { stroke-opacity: 1; }
-    50% { stroke-opacity: 0.5; }
+  #algo-negative-cycle-view .nc-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
 
-  @keyframes shakeIn {
-    0% { transform: scale(0.8); opacity: 0; }
-    30% { transform: scale(1.1) rotate(2deg); }
-    50% { transform: scale(0.95) rotate(-2deg); }
-    100% { transform: scale(1) rotate(0); }
+  #algo-negative-cycle-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-negative-cycle-view .code-line.active {
+    background: rgba(220, 38, 38, 0.2);
+    border-left: 3px solid #dc2626;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-negative-cycle-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
 
-  @keyframes cyclePulse {
-    0%, 100% { stroke-opacity: 1; stroke-width: 4; }
-    50% { stroke-opacity: 0.5; stroke-width: 6; }
+  /* Card 4: 执行日志卡片 */
+  #algo-negative-cycle-view .nc-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  .nc-node {
-    transition: all 0.3s ease;
+  #algo-negative-cycle-view .nc-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
 
-  .nc-edge {
-    transition: all 0.3s ease;
+  #algo-negative-cycle-view .nc-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-negative-cycle-view .nc-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-negative-cycle-view .nc-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-negative-cycle-view .nc-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-negative-cycle-view .nc-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-negative-cycle-view .nc-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-negative-cycle-view .nc-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-negative-cycle-view .nc-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-negative-cycle-view .nc-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-negative-cycle-view .nc-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="nc-page">
-  <div class="nc-hero">
-    <div class="nc-title-wrapper">
-      <div class="nc-hero-icon">⚠️</div>
-      <div class="nc-hero-text">
-        <h2>Bellman-Ford之判断负权回路</h2>
-        <p>通过 V-1 轮松弛后检查第 V 轮是否还能更新来判断负权环的存在</p>
-      </div>
+<div id="algo-negative-cycle-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="nc-header">
+    <div class="nc-header-left">
+      <div class="nc-icon-btn">🔄</div>
+      <h1 class="nc-main-title">Bellman-Ford 负权回路检测</h1>
+      <button id="btn-open-problem-modal" class="nc-btn-problem">📋 题目</button>
+      <span class="nc-badge-mode">第 N 轮松弛·负环判定</span>
+      <span class="nc-badge-complexity">O(V · E) · O(V)</span>
     </div>
-    <div class="nc-tip"><strong>Bellman-Ford 判负环：</strong>对每条边做 V-1 轮松弛操作。如果第 V 轮仍能松弛某条边，说明图中存在负权回路——最短路径不存在。</div>
-  </div>
 
-  <div class="nc-layout">
-    <div class="nc-main">
+    <div class="nc-header-right">
+      <button id="btn-generate" class="nc-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="nc-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="nc-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="nc-left-section">
+
+      <!-- 卡片 1: 有向带权图 SVG 沙盘 -->
       <div class="nc-card">
-        <div class="nc-controls">
-          <button id="nc-start" class="nc-btn">检测负环</button>
+        <div class="nc-card-header">
+          <div class="nc-card-title">
+            <span>🗺️ 有向带权图拓扑沙盘 (Negative Cycle Canvas)</span>
+          </div>
+          <div class="nc-legend-bar">
+            <div><span class="nc-legend-dot" style="background:#2563eb;"></span> 正在松弛边</div>
+            <div><span class="nc-legend-dot" style="background:#16a34a;"></span> 正常松弛</div>
+            <div><span class="nc-legend-dot" style="background:#dc2626;"></span> 负权回路边</div>
+          </div>
         </div>
 
-        <div class="nc-stats">
-          <div class="nc-stat"><span class="nc-stat-label">节点数 V</span><span class="nc-stat-val" id="nc-nodes">5</span></div>
-          <div class="nc-stat"><span class="nc-stat-label">当前轮次</span><span class="nc-stat-val" id="nc-round">0</span></div>
-          <div class="nc-stat"><span class="nc-stat-label">松弛次数</span><span class="nc-stat-val" id="nc-relax-count">0</span></div>
-          <div class="nc-stat"><span class="nc-stat-label">负环?</span><span class="nc-stat-val" id="nc-cycle-found">检测中</span></div>
-        </div>
-
-        <div class="nc-graph-container" id="nc-graph"></div>
-
-        <div class="nc-dist-container">
-          <div class="nc-dist-title">距离数组 dist[]（源点为 0）</div>
-          <div class="nc-dist-row" id="nc-dist"></div>
-        </div>
-
-        <div class="nc-result" id="nc-result" style="display:none;"></div>
-
-        <div class="nc-message" id="step-message">点击「检测负环」运行 Bellman-Ford 判断负权回路。</div>
-
-        <div class="nc-log" id="nc-log"></div>
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="nc-sandbox-wrap" id="nc-svg-canvas"></div>
       </div>
-    </div>
 
-    <div class="nc-right">
-      <div data-code-panel class="nc-code-card"></div>
-      <div class="nc-legend">
-        <div class="nc-legend-item"><span class="nc-legend-box" style="background:rgba(239,68,68,0.2);border:2px solid #ef4444"></span>普通节点</div>
-        <div class="nc-legend-item"><span class="nc-legend-box" style="background:#f59e0b"></span>当前松弛边</div>
-        <div class="nc-legend-item"><span class="nc-legend-box" style="background:rgba(239,68,68,0.6);border:2px solid #ef4444"></span>负环边</div>
-        <div class="nc-legend-item"><span class="nc-legend-box" style="background:rgba(239,68,68,0.3);border:1px dashed #ef4444"></span>负权边</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="nc-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="nc-slider" />
+        <div class="nc-counter-badge">
+          <span id="step-cur" style="color: #dc2626;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="nc-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="nc-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="nc-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="nc-playback">
-        <div class="nc-pb-row">
-          <button id="step-reset" class="nc-pb-btn">重置</button>
-          <button id="step-prev" class="nc-pb-btn">上一步</button>
-          <button id="step-play" class="nc-pb-btn play">播放</button>
-          <button id="step-next" class="nc-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 状态空间与负环监视器 -->
+      <div class="nc-card">
+        <div class="nc-card-header">
+          <div>
+            <div class="nc-card-title">🧭 状态指标与负环监视器 (Cycle Monitor)</div>
+            <div class="nc-card-desc">当前松弛轮次、当前考察边、累计松弛次数与负权回路判定结果</div>
+          </div>
+          <span id="badge-cycle-status" class="nc-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">状态: 正常松弛中</span>
         </div>
-        <div class="nc-speed-row">
-          <span>速度</span>
-          <input id="nc-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="nc-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="nc-state-space-box">
+          <div class="nc-metrics-grid">
+            <div class="nc-metric-card">
+              <span class="nc-metric-label">松弛轮次 Round (<=V)</span>
+              <span class="nc-metric-val" id="metric-round" style="color: #2563eb;">0 / 5</span>
+            </div>
+            <div class="nc-metric-card">
+              <span class="nc-metric-label">当前检查边 (u -> v)</span>
+              <span class="nc-metric-val" id="metric-cur-edge" style="color: #eab308;">—</span>
+            </div>
+            <div class="nc-metric-card">
+              <span class="nc-metric-label">累计松弛次数 Relax</span>
+              <span class="nc-metric-val" id="metric-relax-count" style="color: #16a34a;">0</span>
+            </div>
+            <div class="nc-metric-card">
+              <span class="nc-metric-label">负权环存在 Cycle</span>
+              <span class="nc-metric-val" id="metric-has-cycle" style="color: #10b981;">否</span>
+            </div>
+          </div>
+
+          <div class="nc-dist-table-wrap">
+            <span style="color:#64748b; font-weight:700;">距离数组 dist:</span>
+            <span id="nc-dist-array" style="color: #0f172a; font-weight: 800;">[0:0, 1:INF, 2:INF, 3:INF, 4:INF]</span>
+          </div>
+
+          <div class="nc-live-alert">
+            <span>💡</span> <span id="nc-live-text">准备就绪，点击运行开始负权回路检测。</span>
+          </div>
         </div>
-        <div id="step-counter" class="nc-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="nc-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="nc-dark-terminal">
+        <div class="nc-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="nc-tab-group">
+            <button id="btn-tab-code" class="nc-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="nc-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="nc-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="nc-lang-group" id="code-lang-tabs">
+            <button class="nc-lang-btn active" data-lang="java">Java</button>
+            <button class="nc-lang-btn" data-lang="cpp">C++</button>
+            <button class="nc-lang-btn" data-lang="python">Python</button>
+            <button class="nc-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="nc-font-tools">
+            <div class="nc-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="nc-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="nc-window-dots">
+              <span class="nc-dot" style="background:#ef4444;"></span>
+              <span class="nc-dot" style="background:#eab308;"></span>
+              <span class="nc-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="nc-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="nc-log-card">
+        <div class="nc-log-header">
+          <div class="nc-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="nc-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="nc-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="nc-modal-backdrop hidden">
+    <div class="nc-modal-content">
+      <div class="nc-modal-header">
+        <div class="nc-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="nc-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="nc-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

@@ -1,582 +1,909 @@
 <style>
+  /* === 沉没孤岛 (LC 130) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-sink-islands-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
-    overflow: hidden;
-  }
-
-  #algo-sink-islands-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 8% 6%, #f43f5e55, transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #e11d4855, transparent 55%),
-                linear-gradient(135deg, #4c0519 0%, #881337 25%, #4c0519 50%, #9f1239 75%, #4c0519 100%);
-    z-index: -2;
-  }
-
-  #algo-sink-islands-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(76, 5, 25, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-sink-islands-view .si-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .si-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .si-hero .si-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .si-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #f43f5e, #e11d48);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
-  }
-
-  .si-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #f43f5e, #e11d48);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .si-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
-  }
-
-  .si-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(244, 63, 94, 0.08);
-    border: 1px solid rgba(244, 63, 94, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-
-  .si-tip strong {
-    color: #f43f5e;
-    font-weight: 600;
-  }
-
-  #algo-sink-islands-view .si-layout {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-sink-islands-view .si-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .si-main {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .si-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .si-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .si-input {
-    flex: 1;
-    min-width: 180px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(11, 10, 23, 0.8);
-    color: #cdd6f4;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .si-input:focus {
-    border-color: #f43f5e;
-    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
-  }
-
-  .si-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #f43f5e, #e11d48);
-    color: #4c0519;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
-  }
-
-  .si-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
-  }
-
-  .si-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .si-example {
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    background: rgba(244, 63, 94, 0.1);
-    color: #cdd6f4;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .si-example:hover {
-    background: rgba(244, 63, 94, 0.2);
-    border-color: #f43f5e;
-  }
-
-  .si-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .si-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .si-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #f43f5e, #e11d48);
-  }
-
-  .si-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .si-stat-val {
-    color: #f43f5e;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .si-grid {
-    display: grid;
-    gap: 3px;
-    background: rgba(11, 10, 23, 0.8);
-    border-radius: 12px;
-    padding: 12px;
-    justify-content: center;
-    align-content: center;
-    margin: 16px auto;
-  }
-
-  .si-cell {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.35s ease;
-    position: relative;
-  }
-
-  .si-cell.water {
-    background: rgba(28, 27, 50, 0.4);
-    color: rgba(255, 255, 255, 0.3);
-  }
-
-  .si-cell.land {
-    background: rgba(45, 55, 72, 0.5);
-    color: #cdd6f4;
-  }
-
-  .si-cell.sinking {
-    background: rgba(244, 63, 94, 0.7);
-    color: #4c0519;
-    transform: scale(1.1);
-    animation: si-sink 0.5s ease forwards;
-  }
-
-  .si-cell.sunk {
-    background: rgba(28, 27, 50, 0.4);
-    color: rgba(255, 255, 255, 0.3);
-    animation: si-sunk 0.4s ease;
-  }
-
-  .si-cell.current {
-    background: rgba(244, 63, 94, 0.9);
-    color: #fff;
-    transform: scale(1.15);
-    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.4);
-    animation: si-pulse 1s infinite;
-  }
-
-  .si-cell.visited {
-    background: rgba(244, 63, 94, 0.35);
-    color: #cdd6f4;
-    animation: si-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .si-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(244, 63, 94, 0.2);
-    background: rgba(244, 63, 94, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .si-log {
     min-height: 0;
-    max-height: 130px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .si-log div {
-    padding: 2px 0;
-  }
-
-  .si-log div.active {
-    color: #f43f5e;
-    font-weight: 600;
-  }
-
-  .si-right {
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .si-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-sink-islands-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-sink-islands-view .sink-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .si-sink-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    overflow: hidden;
-  }
-
-  .si-sink-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 8px;
-  }
-
-  .si-sink-items {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    min-height: 30px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .si-sink-item {
+  #algo-sink-islands-view .sink-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-sink-islands-view .sink-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-sink-islands-view .sink-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  #algo-sink-islands-view .sink-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-sink-islands-view .sink-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-sink-islands-view .sink-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-sink-islands-view .sink-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #16a34a;
+    background: #f0fdf4;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bbf7d0;
+    white-space: nowrap;
+  }
+
+  #algo-sink-islands-view .sink-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-sink-islands-view .sink-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-sink-islands-view .sink-btn-generate:hover {
+    background: #15803d;
+  }
+
+  #algo-sink-islands-view .sink-btn-reset {
     padding: 4px 10px;
     border-radius: 8px;
-    background: rgba(244, 63, 94, 0.15);
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    color: #f43f5e;
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    animation: si-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-sink-islands-view .sink-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  .si-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-sink-islands-view .sink-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-sink-islands-view .sink-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 
-  .si-legend-item {
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-sink-islands-view .sink-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-sink-islands-view .sink-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-sink-islands-view .sink-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-sink-islands-view .sink-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-sink-islands-view .sink-legend-bar {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-sink-islands-view .sink-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
 
-  .si-legend-box {
-    width: 16px;
-    height: 16px;
+  /* 2D 网格沙盘展示盒 */
+  #algo-sink-islands-view .sink-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  #algo-sink-islands-view .sink-grid-container {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  #algo-sink-islands-view .sink-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  #algo-sink-islands-view .sink-cell.is-water {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #94a3b8;
+  }
+
+  #algo-sink-islands-view .sink-cell.is-land {
+    background: #dcfce7;
+    border: 1.5px solid #86efac;
+    color: #16a34a;
+  }
+
+  #algo-sink-islands-view .sink-cell.is-protected {
+    background: #e0e7ff;
+    border: 1.5px solid #a5b4fc;
+    color: #4338ca;
+  }
+
+  #algo-sink-islands-view .sink-cell.is-sunk {
+    background: #fee2e2;
+    border: 1.5px solid #fca5a5;
+    color: #dc2626;
+  }
+
+  #algo-sink-islands-view .sink-cell.is-current {
+    box-shadow: 0 0 0 3px #facc15;
+    transform: scale(1.06);
+    z-index: 10;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-sink-islands-view .sink-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-sink-islands-view .sink-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #16a34a;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-sink-islands-view .sink-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-sink-islands-view .sink-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-sink-islands-view .sink-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-sink-islands-view .sink-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-sink-islands-view .sink-play-circle-btn:hover {
+    background: #15803d;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-sink-islands-view .sink-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-sink-islands-view .sink-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-sink-islands-view .sink-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-sink-islands-view .sink-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-sink-islands-view .sink-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-sink-islands-view .sink-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-sink-islands-view .sink-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-sink-islands-view .sink-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-sink-islands-view .sink-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-sink-islands-view .sink-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-sink-islands-view .sink-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-sink-islands-view .sink-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-sink-islands-view .sink-tab-item.active {
+    background: #16a34a;
+    color: #ffffff;
+  }
+
+  #algo-sink-islands-view .sink-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-sink-islands-view .sink-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-sink-islands-view .sink-lang-btn.active {
+    background: #334155;
+    color: #86efac;
+  }
+
+  #algo-sink-islands-view .sink-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-sink-islands-view .sink-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-sink-islands-view .sink-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-sink-islands-view .sink-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #86efac;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-sink-islands-view .sink-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-sink-islands-view .sink-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-sink-islands-view .sink-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-sink-islands-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-sink-islands-view .code-line.active {
+    background: rgba(22, 163, 74, 0.2);
+    border-left: 3px solid #16a34a;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-sink-islands-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-sink-islands-view .sink-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-sink-islands-view .sink-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-sink-islands-view .sink-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-sink-islands-view .sink-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
     border-radius: 4px;
   }
 
-  .si-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
+  #algo-sink-islands-view .sink-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
+    font-size: 11.5px;
   }
 
-  .si-pb-row {
+  /* 模态弹窗 */
+  #algo-sink-islands-view .sink-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
-    gap: 10px;
     align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-sink-islands-view .sink-modal-backdrop.hidden {
+    display: none;
   }
 
-  .si-pb-btn {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(244, 63, 94, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
+  #algo-sink-islands-view .sink-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-sink-islands-view .sink-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-sink-islands-view .sink-modal-title {
     font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-weight: 800;
+    color: #f8fafc;
   }
-
-  .si-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .si-pb-btn:not(:disabled):hover {
-    background: rgba(244, 63, 94, 0.2);
-    border-color: #f43f5e;
-    transform: translateY(-1px);
-  }
-
-  .si-pb-btn.play {
-    background: linear-gradient(135deg, #f43f5e, #e11d48);
+  #algo-sink-islands-view .sink-modal-close {
+    background: transparent;
     border: none;
-    color: #4c0519;
-    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-
-  .si-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
-  }
-
-  .si-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .si-speed-row input {
-    flex: 1;
-    accent-color: #f43f5e;
-  }
-
-  .si-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  @keyframes si-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
-    50% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
-  }
-
-  @keyframes si-popIn {
-    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-  }
-
-  @keyframes si-sink {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.8; background: rgba(244, 63, 94, 0.8); }
-    100% { transform: scale(0.8); opacity: 0.5; }
-  }
-
-  @keyframes si-sunk {
-    0% { transform: scale(0.9); opacity: 0.6; background: rgba(244, 63, 94, 0.4); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  .si-cell.sinking { animation: si-sink 0.5s ease forwards; }
-  .si-cell.sunk { animation: si-sunk 0.4s ease; }
-  .si-cell.visited { animation: si-popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-  @media (max-width: 1100px) {
-    .si-main { overflow: visible; }
+  #algo-sink-islands-view .sink-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="si-page">
-  <div class="si-hero">
-    <div class="si-title-wrapper">
-      <div class="si-hero-icon">🌊</div>
-      <div class="si-hero-text">
-        <h2>沉没孤岛（全部置零）</h2>
-        <p>找到所有岛屿并逐一"沉没"——将陆地变为水域，观察沉没全过程。</p>
-      </div>
-    </div>
-    <div class="si-tip"><strong>沉没过程：</strong>DFS/BFS 遍历每座岛屿，将陆地逐一置为水（1→0），感受连通分量的消除。</div>
-  </div>
-
-  <div class="si-layout">
-    <div class="si-main">
-      <div class="si-card">
-        <div class="si-controls">
-          <input id="si-input" class="si-input" value="1,1,0,0;1,0,0,0;0,0,1,0;0,0,0,1" />
-          <button id="si-start" class="si-btn">开始搜索</button>
-          <button class="si-example" data-val="1,1,0,0;1,0,0,0;0,0,1,0;0,0,0,1">示例1</button>
-          <button class="si-example" data-val="1,0,1;0,1,0;1,0,1">示例2</button>
-          <button class="si-example" data-val="1,1,1;1,1,1;1,1,1">示例3</button>
-        </div>
-
-        <div class="si-stats">
-          <div class="si-stat"><span class="si-stat-label">已沉没格数</span><span class="si-stat-val" id="si-sunk-count">0</span></div>
-          <div class="si-stat"><span class="si-stat-label">岛屿总数</span><span class="si-stat-val" id="si-island-count">0</span></div>
-          <div class="si-stat"><span class="si-stat-label">当前岛屿</span><span class="si-stat-val" id="si-current-island">-</span></div>
-          <div class="si-stat"><span class="si-stat-label">剩余陆地</span><span class="si-stat-val" id="si-remaining">0</span></div>
-        </div>
-
-        <div class="si-grid" id="si-grid"></div>
-
-        <div class="si-message" id="step-message">点击「开始搜索」观察所有岛屿逐一沉没的过程。</div>
-
-        <div class="si-log" id="si-log"></div>
-      </div>
+<div id="algo-sink-islands-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="sink-header">
+    <div class="sink-header-left">
+      <div class="sink-icon-btn">🏝️</div>
+      <h1 class="sink-main-title">LeetCode 130. 沉没孤岛 (被围绕的区域)</h1>
+      <button id="btn-open-problem-modal" class="sink-btn-problem">📋 题目</button>
+      <span class="sink-badge-mode">边缘反向保护 DFS + 孤岛沉没</span>
+      <span class="sink-badge-complexity">O(M × N) · O(M × N)</span>
     </div>
 
-    <div class="si-right">
-      <div data-code-panel class="si-code-card"></div>
-      <div class="si-sink-card">
-        <div class="si-sink-title">沉没记录</div>
-        <div class="si-sink-items" id="si-sink-vis"></div>
-      </div>
-      <div class="si-legend">
-        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(28,27,50,0.4)"></span>水域（'0'）</div>
-        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(45,55,72,0.5)"></span>陆地（'1'）</div>
-        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(244,63,94,0.9)"></span>当前沉没</div>
-        <div class="si-legend-item"><span class="si-legend-box" style="background:rgba(244,63,94,0.35)"></span>待沉没</div>
-      </div>
-      <div class="si-playback">
-        <div class="si-pb-row">
-          <button id="step-reset" class="si-pb-btn">重置</button>
-          <button id="step-prev" class="si-pb-btn">上一步</button>
-          <button id="step-play" class="si-pb-btn play">播放</button>
-          <button id="step-next" class="si-pb-btn">下一步</button>
+    <div class="sink-header-right">
+      <button id="btn-generate" class="sink-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="sink-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="sink-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="sink-left-section">
+
+      <!-- 卡片 1: 2D 网格沙盘 -->
+      <div class="sink-card">
+        <div class="sink-card-header">
+          <div class="sink-card-title">
+            <span>🗺️ 岛屿矩阵与淹没沙盘 (Grid Canvas)</span>
+          </div>
+          <div class="sink-legend-bar">
+            <div><span class="sink-legend-dot" style="background:#86efac;"></span> 陆地 (1)</div>
+            <div><span class="sink-legend-dot" style="background:#a5b4fc;"></span> 边沿保护 (2)</div>
+            <div><span class="sink-legend-dot" style="background:#fca5a5;"></span> 已淹没孤岛 (0)</div>
+          </div>
         </div>
-        <div class="si-speed-row">
-          <span>速度</span>
-          <input id="si-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="si-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 网格沙盘展示盒 -->
+        <div class="sink-sandbox-wrap">
+          <div id="sink-grid-container" class="sink-grid-container"></div>
         </div>
-        <div id="step-counter" class="si-counter">步骤: 1 / 1</div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="sink-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="sink-slider" />
+        <div class="sink-counter-badge">
+          <span id="step-cur" style="color: #16a34a;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="sink-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="sink-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="sink-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与淹没指标监视器 -->
+      <div class="sink-card">
+        <div class="sink-card-header">
+          <div>
+            <div class="sink-card-title">🧭 状态指标与淹没监视器 (Sink Monitor)</div>
+            <div class="sink-card-desc">当前处理坐标、边缘连通保护数与孤岛淹没计数</div>
+          </div>
+          <span id="badge-sunk-count" class="sink-counter-badge" style="color:#dc2626; background:#fef2f2; border-color:#fecaca;">淹没孤岛: 0 格</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="sink-state-space-box">
+          <div class="sink-metrics-grid">
+            <div class="sink-metric-card">
+              <span class="sink-metric-label">当前检查格子</span>
+              <span class="sink-metric-val" id="metric-cur-cell" style="color: #eab308;">—</span>
+            </div>
+            <div class="sink-metric-card">
+              <span class="sink-metric-label">处理阶段 Stage</span>
+              <span class="sink-metric-val" id="metric-stage" style="color: #4338ca;">边缘保护</span>
+            </div>
+            <div class="sink-metric-card">
+              <span class="sink-metric-label">受保护陆地 Protected</span>
+              <span class="sink-metric-val" id="metric-protected-count" style="color: #10b981;">0</span>
+            </div>
+            <div class="sink-metric-card">
+              <span class="sink-metric-label">已沉没孤岛数 Sunk</span>
+              <span class="sink-metric-val" id="metric-sunk-count" style="color: #dc2626;">0</span>
+            </div>
+          </div>
+
+          <div class="sink-formula-box">
+            <span style="color:#64748b;">两阶段沉没:</span>
+            <strong id="formula-action" style="color: #16a34a;">1. 边缘连通 DFS (1->2) 2. 内部孤岛沉没 (1->0) 与还原 (2->1)</strong>
+          </div>
+
+          <div class="sink-live-alert">
+            <span>💡</span> <span id="sink-live-text">准备就绪，点击运行开始沉没孤岛分析。</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="sink-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="sink-dark-terminal">
+        <div class="sink-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="sink-tab-group">
+            <button id="btn-tab-code" class="sink-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sink-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sink-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="sink-lang-group" id="code-lang-tabs">
+            <button class="sink-lang-btn active" data-lang="java">Java</button>
+            <button class="sink-lang-btn" data-lang="cpp">C++</button>
+            <button class="sink-lang-btn" data-lang="python">Python</button>
+            <button class="sink-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="sink-font-tools">
+            <div class="sink-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="sink-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="sink-window-dots">
+              <span class="sink-dot" style="background:#ef4444;"></span>
+              <span class="sink-dot" style="background:#eab308;"></span>
+              <span class="sink-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="sink-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="sink-log-card">
+        <div class="sink-log-header">
+          <div class="sink-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="sink-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="sink-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="sink-modal-backdrop hidden">
+    <div class="sink-modal-content">
+      <div class="sink-modal-header">
+        <div class="sink-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="sink-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="sink-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

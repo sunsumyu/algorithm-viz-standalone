@@ -217,13 +217,13 @@ export class AStarVisualizer extends StepVisualizer<AStarStep> {
   protected initDOMElements(): void {
     if (!this.root) return;
 
-    this.gridCanvas = this.root.querySelector('#a-star-grid-canvas');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricGValEl = this.root.querySelector('#metric-g-val');
-    this.metricHValEl = this.root.querySelector('#metric-h-val');
-    this.metricFValEl = this.root.querySelector('#metric-f-val');
+    this.gridCanvas = this.root.querySelector('#a-star-grid-container');
+    this.metricCurNodeEl = this.root.querySelector('#metric-current');
+    this.metricFValEl = this.root.querySelector('#metric-f-cost');
+    this.metricGValEl = this.root.querySelector('#metric-gh-cost');
+    this.metricHValEl = this.root.querySelector('#metric-closed-count');
     this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#ast-live-text');
+    this.liveTextEl = this.root.querySelector('#as-live-text');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
@@ -326,9 +326,9 @@ export class AStarVisualizer extends StepVisualizer<AStarStep> {
 
     // 2. 更新状态监视器
     if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode ? `(${currentNode[0]}, ${currentNode[1]})` : '—';
-    if (this.metricGValEl) this.metricGValEl.textContent = `${g}`;
-    if (this.metricHValEl) this.metricHValEl.textContent = `${h}`;
     if (this.metricFValEl) this.metricFValEl.textContent = `${f}`;
+    if (this.metricGValEl) this.metricGValEl.textContent = `${g} / ${h}`;
+    if (this.metricHValEl) this.metricHValEl.textContent = `${step.closedSet.length}`;
 
     if (this.formulaActionEl) {
       this.formulaActionEl.textContent = `f(n) = g(${g}) + h(${h}) = ${f}`;
@@ -383,10 +383,13 @@ export class AStarVisualizer extends StepVisualizer<AStarStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeOpen = this.root?.querySelector('#badge-open-count');
+    if (badgeOpen) badgeOpen.textContent = `Open 集合: ${step.openSet.length}`;
   }
 
   public reset(): void {

@@ -1,5 +1,5 @@
 <style>
-  /* === Kruskal 最小生成树 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === Kruskal 最小生成树 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-mst-kruskal-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-mst-kruskal-view .kru-btn-problem {
@@ -117,112 +118,143 @@
     flex-shrink: 0;
   }
 
-  #algo-mst-kruskal-view .kru-btn-primary {
-    padding: 4px 10px;
+  #algo-mst-kruskal-view .kru-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-mst-kruskal-view .kru-btn-primary:hover {
+  #algo-mst-kruskal-view .kru-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-mst-kruskal-view .kru-btn-secondary {
-    padding: 4px 8px;
+  #algo-mst-kruskal-view .kru-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-mst-kruskal-view .kru-btn-secondary:hover {
+  #algo-mst-kruskal-view .kru-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-mst-kruskal-view .kru-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-mst-kruskal-view .kru-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-mst-kruskal-view .kru-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-mst-kruskal-view .kru-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-mst-kruskal-view .kru-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-mst-kruskal-view .kru-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-mst-kruskal-view .kru-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-mst-kruskal-view .kru-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-mst-kruskal-view .kru-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 拓扑图 SVG 画布 */
-  #algo-mst-kruskal-view .kru-svg-wrap {
+  #algo-mst-kruskal-view .kru-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-mst-kruskal-view .kru-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 拓扑图 SVG 画布 */
+  #algo-mst-kruskal-view .kru-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
     width: 100%;
-    height: 100%;
-    min-height: 180px;
+    overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* 已排序边列表展示栏 */
+  /* 排序边集展示栏 */
   #algo-mst-kruskal-view .kru-edge-track {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 6px 10px;
     background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
     overflow-x: auto;
   }
 
@@ -235,10 +267,17 @@
     border: 1px solid #e2e8f0;
     background: #ffffff;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10.5px;
+    font-size: 11px;
   }
 
-  #algo-mst-kruskal-view .kru-edge-pill.is-selected {
+  #algo-mst-kruskal-view .kru-edge-pill.is-active {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 800;
+  }
+
+  #algo-mst-kruskal-view .kru-edge-pill.is-accepted {
     background: #f0fdf4;
     border-color: #86efac;
     color: #16a34a;
@@ -247,31 +286,110 @@
 
   #algo-mst-kruskal-view .kru-edge-pill.is-rejected {
     background: #fef2f2;
-    border-color: #fecaca;
+    border-color: #fca5a5;
     color: #dc2626;
     text-decoration: line-through;
   }
 
-  #algo-mst-kruskal-view .kru-edge-pill.is-current {
-    background: #fef9c3;
-    border-color: #fde047;
-    color: #854d0e;
-    font-weight: 800;
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-mst-kruskal-view .kru-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
-  /* Card 2: 状态监视器 */
+  #algo-mst-kruskal-view .kru-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-mst-kruskal-view .kru-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-mst-kruskal-view .kru-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-mst-kruskal-view .kru-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-mst-kruskal-view .kru-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-mst-kruskal-view .kru-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-mst-kruskal-view .kru-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-mst-kruskal-view .kru-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-mst-kruskal-view .kru-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -286,7 +404,7 @@
 
   #algo-mst-kruskal-view .kru-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -294,88 +412,290 @@
   #algo-mst-kruskal-view .kru-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-mst-kruskal-view .kru-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-mst-kruskal-view .kru-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-mst-kruskal-view .kru-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-mst-kruskal-view .kru-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-mst-kruskal-view .kru-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-mst-kruskal-view .kru-playback-controls {
+  #algo-mst-kruskal-view .kru-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-mst-kruskal-view .kru-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-mst-kruskal-view .kru-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-mst-kruskal-view .kru-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-mst-kruskal-view .kru-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-mst-kruskal-view .kru-progress-wrap {
-    flex: 1;
+  #algo-mst-kruskal-view .kru-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-mst-kruskal-view .kru-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-mst-kruskal-view .kru-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-mst-kruskal-view .kru-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-mst-kruskal-view .kru-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-mst-kruskal-view .kru-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-mst-kruskal-view .kru-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-mst-kruskal-view .kru-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-mst-kruskal-view .kru-step-badge {
-    font-size: 11px;
+  #algo-mst-kruskal-view .kru-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-mst-kruskal-view .kru-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-mst-kruskal-view .kru-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-mst-kruskal-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-mst-kruskal-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-mst-kruskal-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-mst-kruskal-view .kru-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-mst-kruskal-view .kru-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-mst-kruskal-view .kru-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-mst-kruskal-view .kru-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-mst-kruskal-view .kru-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-mst-kruskal-view .kru-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-mst-kruskal-view .kru-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-mst-kruskal-view .kru-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-mst-kruskal-view .kru-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-mst-kruskal-view .kru-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-mst-kruskal-view .kru-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-mst-kruskal-view .kru-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -384,116 +704,204 @@
   <header class="kru-header">
     <div class="kru-header-left">
       <div class="kru-icon-btn">🔗</div>
-      <div class="kru-main-title">Kruskal 最小生成树 · Kruskal's MST</div>
-      <button class="kru-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="kru-badge-mode">加边法并查集判环</div>
-      <div class="kru-badge-complexity">O(E log E) · O(V)</div>
+      <h1 class="kru-main-title">Kruskal 最小生成树算法 (加边法·并查集)</h1>
+      <button id="btn-open-problem-modal" class="kru-btn-problem">📋 题目</button>
+      <span class="kru-badge-mode">按权排序边·并查集防环连通</span>
+      <span class="kru-badge-complexity">O(E log E) · O(V)</span>
     </div>
+
     <div class="kru-header-right">
-      <button class="kru-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="kru-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="kru-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="kru-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="kru-workspace">
-    <!-- Card 1: 拓扑图 SVG 画布 -->
-    <section class="kru-card">
-      <div class="kru-card-header">
-        <div class="kru-card-title">
-          <span>📊</span> 无向带权图加边沙盘 (Graph Topology Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="kru-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="kru-left-section">
+
+      <!-- 卡片 1: 拓扑图 SVG 画布 -->
+      <div class="kru-card">
+        <div class="kru-card-header">
+          <div class="kru-card-title">
+            <span>📊 无向加权图与并查集连通沙盘 (Kruskal Canvas)</span>
+          </div>
+          <div class="kru-legend-bar">
+            <div><span class="kru-legend-dot" style="background:#2563eb;"></span> 正在考察边</div>
+            <div><span class="kru-legend-dot" style="background:#16a34a;"></span> 成功并入 MST</div>
+            <div><span class="kru-legend-dot" style="background:#dc2626;"></span> 同集合弃用 (成环)</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #10b981;">● 已选入 MST 边</span> · <span style="color: #fbbf24;">● 正在检查边</span> · <span style="color: #ef4444;">● 成环丢弃边</span>
+
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="kru-sandbox-wrap" id="kruskal-svg-canvas"></div>
+
+        <!-- 排序边集展示栏 -->
+        <div class="kru-edge-track">
+          <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">按权排序边集:</span>
+          <div id="sorted-edges-pills-wrap" style="display: flex; gap: 6px;"></div>
         </div>
       </div>
-      <div class="kru-card-body" style="justify-content: center; align-items: center;">
-        <div class="kru-svg-wrap" id="kruskal-svg-canvas"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="kru-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="kru-slider" />
+        <div class="kru-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="kru-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="kru-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="kru-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="kru-edge-track" id="kru-edge-track">
-        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">升序边集:</span>
-        <div id="edge-pills-wrap" style="display: flex; gap: 6px;"></div>
+
+      <!-- 卡片 2: 并查集状态与生成树监视器 -->
+      <div class="kru-card">
+        <div class="kru-card-header">
+          <div>
+            <div class="kru-card-title">🧭 并查集与 MST 监视器 (Union-Find Monitor)</div>
+            <div class="kru-card-desc">当前考察边 (u, v, w)、两端根节点判定与 MST 树边计数</div>
+          </div>
+          <span id="badge-mst-weight" class="kru-counter-badge" style="color:#16a34a; background:#f0fdf4; border-color:#86efac;">MST 总权值: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="kru-state-space-box">
+          <div class="kru-metrics-grid">
+            <div class="kru-metric-card">
+              <span class="kru-metric-label">当前考察边 (u, v)</span>
+              <span class="kru-metric-val" id="metric-cur-edge" style="color: #2563eb;">—</span>
+            </div>
+            <div class="kru-metric-card">
+              <span class="kru-metric-label">并查集判定 Same Root</span>
+              <span class="kru-metric-val" id="metric-same-root" style="color: #a855f7;">false</span>
+            </div>
+            <div class="kru-metric-card">
+              <span class="kru-metric-label">已收录树边数 (V-1)</span>
+              <span class="kru-metric-val" id="metric-tree-edges-count" style="color: #10b981;">0</span>
+            </div>
+            <div class="kru-metric-card">
+              <span class="kru-metric-label">MST 累计总权值</span>
+              <span class="kru-metric-val" id="metric-total-weight" style="color: #16a34a;">0</span>
+            </div>
+          </div>
+
+          <div class="kru-formula-box">
+            <span style="color:#64748b;">加边贪心判定:</span>
+            <strong id="formula-action" style="color: #2563eb;">if (find(u) != find(v)) { union(u, v); addEdge(u, v); }</strong>
+          </div>
+
+          <div class="kru-live-alert">
+            <span>💡</span> <span id="kru-live-text">准备就绪，点击运行开始 Kruskal 最小生成树构建。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="kru-card">
-      <div class="kru-card-header">
-        <div class="kru-card-title">
-          <span>🧭</span> 并查集判环与指标监视器 (Union-Find Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="kru-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="kru-dark-terminal">
+        <div class="kru-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="kru-tab-group">
+            <button id="btn-tab-code" class="kru-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="kru-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="kru-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="kru-lang-group" id="code-lang-tabs">
+            <button class="kru-lang-btn active" data-lang="java">Java</button>
+            <button class="kru-lang-btn" data-lang="cpp">C++</button>
+            <button class="kru-lang-btn" data-lang="python">Python</button>
+            <button class="kru-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="kru-font-tools">
+            <div class="kru-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="kru-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="kru-window-dots">
+              <span class="kru-dot" style="background:#ef4444;"></span>
+              <span class="kru-dot" style="background:#eab308;"></span>
+              <span class="kru-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="kru-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="kru-card-body">
-        <div class="kru-metrics-grid">
-          <div class="kru-metric-card">
-            <span class="kru-metric-label">当前边 (u, v, w)</span>
-            <span class="kru-metric-val" id="metric-cur-edge" style="color: #fbbf24;">(0, 1, 2)</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="kru-log-card">
+        <div class="kru-log-header">
+          <div class="kru-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="kru-metric-card">
-            <span class="kru-metric-label">根节点 [rootU, rootV]</span>
-            <span class="kru-metric-val" id="metric-roots" style="color: #2563eb;">[0, 1]</span>
-          </div>
-          <div class="kru-metric-card">
-            <span class="kru-metric-label">已选入边数</span>
-            <span class="kru-metric-val" id="metric-mst-count" style="color: #10b981;">0 / 4</span>
-          </div>
-          <div class="kru-metric-card">
-            <span class="kru-metric-label">生成树总权值</span>
-            <span class="kru-metric-val" id="metric-total-weight" style="color: #a855f7;">0</span>
-          </div>
+          <span id="log-count" class="kru-log-count">0 条记录</span>
         </div>
-        <div class="kru-formula-box" id="kru-formula-box">
-          <span>判环法则:</span> <strong id="formula-action" style="color: #2563eb;">find(u) !== find(v) -> union(u, v)</strong>
-        </div>
-        <div class="kru-live-alert" id="kru-live-alert">
-          <span>💡</span> <span id="kru-live-text">准备就绪，点击运行开始 Kruskal 算法演示。</span>
+
+        <div id="log-container" class="kru-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="kru-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="kru-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="kru-card-header">
-        <div class="kru-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="kru-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="kru-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="kru-playback-bar">
-    <div class="kru-playback-controls">
-      <button class="kru-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="kru-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="kru-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="kru-modal-backdrop hidden">
+    <div class="kru-modal-content">
+      <div class="kru-modal-header">
+        <div class="kru-modal-title">
+          <span>📋 算法原理与并查集解析</span>
+        </div>
+        <button id="btn-close-problem-modal" class="kru-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="kru-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="kru-progress-wrap">
-      <span class="kru-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="500" selected>正常</option>
-        <option value="200">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

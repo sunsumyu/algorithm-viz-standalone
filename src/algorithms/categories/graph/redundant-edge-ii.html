@@ -1,5 +1,5 @@
 <style>
-  /* === 冗余连接 II · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 冗余连接 II (LC 685) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-redundant-edge-ii-view {
     width: 100%;
     height: 100%;
@@ -47,9 +47,9 @@
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #2563eb;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #e11d48;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-redundant-edge-ii-view .re2-btn-problem {
@@ -102,11 +103,11 @@
     font-size: 10.5px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
-    color: #2563eb;
-    background: #eff6ff;
+    color: #e11d48;
+    background: #fff1f2;
     padding: 2px 6px;
     border-radius: 6px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid #fecdd3;
     white-space: nowrap;
   }
 
@@ -117,116 +118,147 @@
     flex-shrink: 0;
   }
 
-  #algo-redundant-edge-ii-view .re2-btn-primary {
-    padding: 4px 10px;
+  #algo-redundant-edge-ii-view .re2-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
-    background: #2563eb;
+    background: #e11d48;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(225, 29, 72, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-redundant-edge-ii-view .re2-btn-primary:hover {
-    background: #1d4ed8;
+  #algo-redundant-edge-ii-view .re2-btn-generate:hover {
+    background: #be123c;
   }
 
-  #algo-redundant-edge-ii-view .re2-btn-secondary {
-    padding: 4px 8px;
+  #algo-redundant-edge-ii-view .re2-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-redundant-edge-ii-view .re2-btn-secondary:hover {
+  #algo-redundant-edge-ii-view .re2-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-redundant-edge-ii-view .re2-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-redundant-edge-ii-view .re2-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-redundant-edge-ii-view .re2-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-redundant-edge-ii-view .re2-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-redundant-edge-ii-view .re2-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-redundant-edge-ii-view .re2-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-redundant-edge-ii-view .re2-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-redundant-edge-ii-view .re2-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-redundant-edge-ii-view .re2-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 拓扑图 SVG 画布 */
-  #algo-redundant-edge-ii-view .re2-svg-wrap {
+  #algo-redundant-edge-ii-view .re2-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-redundant-edge-ii-view .re2-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 拓扑图 SVG 画布 */
+  #algo-redundant-edge-ii-view .re2-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
     width: 100%;
-    height: 100%;
-    min-height: 180px;
+    overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* inDegree 数组展示栏 */
-  #algo-redundant-edge-ii-view .re2-degree-track {
+  /* 边列表展示栏 */
+  #algo-redundant-edge-ii-view .re2-edge-track {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 6px 10px;
     background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
     overflow-x: auto;
   }
 
-  #algo-redundant-edge-ii-view .re2-degree-pill {
+  #algo-redundant-edge-ii-view .re2-edge-pill {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -238,26 +270,119 @@
     font-size: 11px;
   }
 
-  #algo-redundant-edge-ii-view .re2-degree-pill.is-conflict {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
+  #algo-redundant-edge-ii-view .re2-edge-pill.is-active {
+    border-color: #e11d48;
+    background: #fff1f2;
+    color: #be123c;
     font-weight: 800;
   }
 
-  /* Card 2: 状态监视器 */
+  #algo-redundant-edge-ii-view .re2-edge-pill.is-redundant {
+    border-color: #f43f5e;
+    background: #ffe4e6;
+    color: #9f1239;
+    font-weight: 900;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-redundant-edge-ii-view .re2-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-redundant-edge-ii-view .re2-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #e11d48;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-redundant-edge-ii-view .re2-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-redundant-edge-ii-view .re2-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-redundant-edge-ii-view .re2-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-redundant-edge-ii-view .re2-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #e11d48;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(225, 29, 72, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-redundant-edge-ii-view .re2-play-circle-btn:hover {
+    background: #be123c;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-redundant-edge-ii-view .re2-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-redundant-edge-ii-view .re2-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-redundant-edge-ii-view .re2-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -272,7 +397,7 @@
 
   #algo-redundant-edge-ii-view .re2-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -280,88 +405,290 @@
   #algo-redundant-edge-ii-view .re2-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-redundant-edge-ii-view .re2-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-redundant-edge-ii-view .re2-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-redundant-edge-ii-view .re2-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-redundant-edge-ii-view .re2-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-ii-view .re2-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-redundant-edge-ii-view .re2-playback-controls {
+  #algo-redundant-edge-ii-view .re2-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-redundant-edge-ii-view .re2-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-redundant-edge-ii-view .re2-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-redundant-edge-ii-view .re2-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-redundant-edge-ii-view .re2-tab-item.active {
+    background: #e11d48;
+    color: #ffffff;
   }
 
-  #algo-redundant-edge-ii-view .re2-progress-wrap {
-    flex: 1;
+  #algo-redundant-edge-ii-view .re2-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-redundant-edge-ii-view .re2-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-redundant-edge-ii-view .re2-lang-btn.active {
+    background: #334155;
+    color: #fecdd3;
+  }
+
+  #algo-redundant-edge-ii-view .re2-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-redundant-edge-ii-view .re2-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-redundant-edge-ii-view .re2-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-redundant-edge-ii-view .re2-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-redundant-edge-ii-view .re2-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #fecdd3;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-redundant-edge-ii-view .re2-step-badge {
-    font-size: 11px;
+  #algo-redundant-edge-ii-view .re2-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-redundant-edge-ii-view .re2-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-redundant-edge-ii-view .re2-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-redundant-edge-ii-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-redundant-edge-ii-view .code-line.active {
+    background: rgba(225, 29, 72, 0.2);
+    border-left: 3px solid #e11d48;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-redundant-edge-ii-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-redundant-edge-ii-view .re2-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-ii-view .re2-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-redundant-edge-ii-view .re2-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-redundant-edge-ii-view .re2-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-redundant-edge-ii-view .re2-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-redundant-edge-ii-view .re2-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-redundant-edge-ii-view .re2-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-redundant-edge-ii-view .re2-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-redundant-edge-ii-view .re2-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-redundant-edge-ii-view .re2-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-redundant-edge-ii-view .re2-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-redundant-edge-ii-view .re2-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -369,117 +696,205 @@
   <!-- 1. 顶栏 Header -->
   <header class="re2-header">
     <div class="re2-header-left">
-      <div class="re2-icon-btn">🔱</div>
-      <div class="re2-main-title">冗余连接 II · Redundant Connection II (LC 685)</div>
-      <button class="re2-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="re2-badge-mode">双父冲突与有向环并查集检测</div>
-      <div class="re2-badge-complexity">O(N·α(N)) · O(N)</div>
+      <div class="re2-icon-btn">🌲</div>
+      <h1 class="re2-main-title">LeetCode 685. 冗余连接 II (有向树)</h1>
+      <button id="btn-open-problem-modal" class="re2-btn-problem">📋 题目</button>
+      <span class="re2-badge-mode">入度为2判定与有向环检测</span>
+      <span class="re2-badge-complexity">O(N) · O(N)</span>
     </div>
+
     <div class="re2-header-right">
-      <button class="re2-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="re2-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="re2-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="re2-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="re2-workspace">
-    <!-- Card 1: 拓扑图 SVG 画布 -->
-    <section class="re2-card">
-      <div class="re2-card-header">
-        <div class="re2-card-title">
-          <span>📊</span> 有向图入度与环路沙盘 (Graph Topology Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="re2-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="re2-left-section">
+
+      <!-- 卡片 1: 拓扑图 SVG 画布 -->
+      <div class="re2-card">
+        <div class="re2-card-header">
+          <div class="re2-card-title">
+            <span>📊 有向树与入度异常沙盘 (Directed Graph Canvas)</span>
+          </div>
+          <div class="re2-legend-bar">
+            <div><span class="re2-legend-dot" style="background:#e11d48;"></span> 正在考察有向边</div>
+            <div><span class="re2-legend-dot" style="background:#16a34a;"></span> 正常树枝</div>
+            <div><span class="re2-legend-dot" style="background:#dc2626;"></span> 冗余删除边</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #10b981;">● 正常有向树边</span> · <span style="color: #fbbf24;">● 正在检查边</span> · <span style="color: #ef4444;">● 双父冲突/环冗余边</span>
+
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="re2-sandbox-wrap" id="re2-svg-canvas"></div>
+
+        <!-- 边列表展示栏 -->
+        <div class="re2-edge-track">
+          <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">有向边序列:</span>
+          <div id="re2-edges-pills-wrap" style="display: flex; gap: 6px;"></div>
         </div>
       </div>
-      <div class="re2-card-body" style="justify-content: center; align-items: center;">
-        <div class="re2-svg-wrap" id="re2-svg-canvas"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="re2-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="re2-slider" />
+        <div class="re2-counter-badge">
+          <span id="step-cur" style="color: #e11d48;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="re2-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="re2-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="re2-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="re2-degree-track" id="re2-degree-track">
-        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">入度 inDegree:</span>
-        <div id="degree-pills-wrap" style="display: flex; gap: 6px;"></div>
+
+      <!-- 卡片 2: 有向树三情形指标监视器 -->
+      <div class="re2-card">
+        <div class="re2-card-header">
+          <div>
+            <div class="re2-card-title">🧭 有向树三情形指标监视器 (3 Cases Monitor)</div>
+            <div class="re2-card-desc">入度为 2 双亲节点检测、有向环判定与最终冗余边判定</div>
+          </div>
+          <span id="badge-redundant-edge" class="re2-counter-badge" style="color:#e11d48; background:#fff1f2; border-color:#fecdd3;">冗余边: 待检测</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="re2-state-space-box">
+          <div class="re2-metrics-grid">
+            <div class="re2-metric-card">
+              <span class="re2-metric-label">当前阶段 Stage</span>
+              <span class="re2-metric-val" id="metric-stage" style="color: #e11d48;">检测入度</span>
+            </div>
+            <div class="re2-metric-card">
+              <span class="re2-metric-label">入度为 2 候选边对</span>
+              <span class="re2-metric-val" id="metric-two-parents" style="color: #3b82f6;">无</span>
+            </div>
+            <div class="re2-metric-card">
+              <span class="re2-metric-label">有向环检测 Has Cycle</span>
+              <span class="re2-metric-val" id="metric-cycle-detect" style="color: #10b981;">false</span>
+            </div>
+            <div class="re2-metric-card">
+              <span class="re2-metric-label">最终冗余有向边</span>
+              <span class="re2-metric-val" id="metric-redundant" style="color: #e11d48;">[—, —]</span>
+            </div>
+          </div>
+
+          <div class="re2-formula-box">
+            <span style="color:#64748b;">分类决策:</span>
+            <strong id="formula-action" style="color: #e11d48;">1. 入度为2(双亲)且有环 2. 入度为2无环 3. 纯有向环</strong>
+          </div>
+
+          <div class="re2-live-alert">
+            <span>💡</span> <span id="re2-live-text">准备就绪，点击运行开始冗余连接 II 分析。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="re2-card">
-      <div class="re2-card-header">
-        <div class="re2-card-title">
-          <span>🧭</span> 冲突与环路指标监视器 (LC 685 Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="re2-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="re2-dark-terminal">
+        <div class="re2-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="re2-tab-group">
+            <button id="btn-tab-code" class="re2-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="re2-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="re2-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="re2-lang-group" id="code-lang-tabs">
+            <button class="re2-lang-btn active" data-lang="java">Java</button>
+            <button class="re2-lang-btn" data-lang="cpp">C++</button>
+            <button class="re2-lang-btn" data-lang="python">Python</button>
+            <button class="re2-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="re2-font-tools">
+            <div class="re2-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="re2-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="re2-window-dots">
+              <span class="re2-dot" style="background:#ef4444;"></span>
+              <span class="re2-dot" style="background:#eab308;"></span>
+              <span class="re2-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="re2-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="re2-card-body">
-        <div class="re2-metrics-grid">
-          <div class="re2-metric-card">
-            <span class="re2-metric-label">双父冲突边 conflict</span>
-            <span class="re2-metric-val" id="metric-conflict" style="color: #ef4444;">无</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="re2-log-card">
+        <div class="re2-log-header">
+          <div class="re2-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="re2-metric-card">
-            <span class="re2-metric-label">有向环边 cycle</span>
-            <span class="re2-metric-val" id="metric-cycle" style="color: #f59e0b;">无</span>
-          </div>
-          <div class="re2-metric-card">
-            <span class="re2-metric-label">当前考察边 (u, v)</span>
-            <span class="re2-metric-val" id="metric-cur-edge" style="color: #3b82f6;">[1, 2]</span>
-          </div>
-          <div class="re2-metric-card">
-            <span class="re2-metric-label">最终判定冗余边</span>
-            <span class="re2-metric-val" id="metric-result-edge" style="color: #10b981;">未确定</span>
-          </div>
+          <span id="log-count" class="re2-log-count">0 条记录</span>
         </div>
-        <div class="re2-formula-box" id="re2-formula-box">
-          <span>分类法则:</span> <strong id="formula-action" style="color: #2563eb;">conflict >= 0 ? 优先删 conflict 边 : 删成环边</strong>
-        </div>
-        <div class="re2-live-alert" id="re2-live-alert">
-          <span>💡</span> <span id="re2-live-text">准备就绪，点击运行开始 LC 685 算法演示。</span>
+
+        <div id="log-container" class="re2-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="re2-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="re2-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="re2-card-header">
-        <div class="re2-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="re2-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="re2-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="re2-playback-bar">
-    <div class="re2-playback-controls">
-      <button class="re2-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="re2-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="re2-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="re2-modal-backdrop hidden">
+    <div class="re2-modal-content">
+      <div class="re2-modal-header">
+        <div class="re2-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="re2-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="re2-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="re2-progress-wrap">
-      <span class="re2-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="500" selected>正常</option>
-        <option value="200">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

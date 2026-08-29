@@ -204,8 +204,8 @@ export class BellmanFordVisualizer extends StepVisualizer<BFStep> {
     this.distPillsWrap = this.root.querySelector('#dist-pills-wrap');
     this.metricRoundEl = this.root.querySelector('#metric-round');
     this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
-    this.metricRoundRelaxEl = this.root.querySelector('#metric-round-relax');
-    this.metricNegativeCycleEl = this.root.querySelector('#metric-negative-cycle');
+    this.metricRoundRelaxEl = this.root.querySelector('#metric-updated');
+    this.metricNegativeCycleEl = this.root.querySelector('#metric-cycle-check');
     this.formulaActionEl = this.root.querySelector('#formula-action');
     this.liveTextEl = this.root.querySelector('#bf-live-text');
     this.logContainer = this.root.querySelector('#log-container');
@@ -405,10 +405,13 @@ export class BellmanFordVisualizer extends StepVisualizer<BFStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeRound = this.root?.querySelector('#badge-round-count');
+    if (badgeRound) badgeRound.textContent = `轮次: ${step.round} / ${step.maxRounds}`;
   }
 
   public reset(): void {

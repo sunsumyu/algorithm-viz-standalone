@@ -1,5 +1,5 @@
 <style>
-  /* === SPFA 队列优化最短路 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === SPFA 队列优化 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-spfa-view {
     width: 100%;
     height: 100%;
@@ -47,9 +47,9 @@
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #2563eb;
+    background: #fdf4ff;
+    border: 1px solid #f5d0fe;
+    color: #c026d3;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-spfa-view .spfa-btn-problem {
@@ -102,11 +103,11 @@
     font-size: 10.5px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
-    color: #2563eb;
-    background: #eff6ff;
+    color: #c026d3;
+    background: #fdf4ff;
     padding: 2px 6px;
     border-radius: 6px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid #f5d0fe;
     white-space: nowrap;
   }
 
@@ -117,112 +118,143 @@
     flex-shrink: 0;
   }
 
-  #algo-spfa-view .spfa-btn-primary {
-    padding: 4px 10px;
+  #algo-spfa-view .spfa-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
-    background: #2563eb;
+    background: #c026d3;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(192, 38, 211, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-spfa-view .spfa-btn-primary:hover {
-    background: #1d4ed8;
+  #algo-spfa-view .spfa-btn-generate:hover {
+    background: #a21caf;
   }
 
-  #algo-spfa-view .spfa-btn-secondary {
-    padding: 4px 8px;
+  #algo-spfa-view .spfa-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-spfa-view .spfa-btn-secondary:hover {
+  #algo-spfa-view .spfa-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-spfa-view .spfa-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-spfa-view .spfa-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-spfa-view .spfa-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-spfa-view .spfa-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-spfa-view .spfa-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-spfa-view .spfa-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-spfa-view .spfa-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-spfa-view .spfa-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-spfa-view .spfa-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 拓扑图 SVG 画布 */
-  #algo-spfa-view .spfa-svg-wrap {
+  #algo-spfa-view .spfa-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-spfa-view .spfa-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 拓扑图 SVG 画布 */
+  #algo-spfa-view .spfa-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
     width: 100%;
-    height: 100%;
-    min-height: 180px;
+    overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* Dist 距离数组展示栏 */
+  /* 距离数组展示栏 */
   #algo-spfa-view .spfa-dist-track {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 6px 10px;
     background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
     overflow-x: auto;
   }
 
@@ -238,26 +270,105 @@
     font-size: 11px;
   }
 
-  #algo-spfa-view .spfa-dist-pill.is-in-q {
-    background: #eff6ff;
-    border-color: #93c5fd;
-    color: #1d4ed8;
-    font-weight: 800;
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-spfa-view .spfa-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
-  /* Card 2: 状态监视器 */
+  #algo-spfa-view .spfa-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #c026d3;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-spfa-view .spfa-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-spfa-view .spfa-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-spfa-view .spfa-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-spfa-view .spfa-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #c026d3;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(192, 38, 211, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-spfa-view .spfa-play-circle-btn:hover {
+    background: #a21caf;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-spfa-view .spfa-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-spfa-view .spfa-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-spfa-view .spfa-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -272,7 +383,7 @@
 
   #algo-spfa-view .spfa-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -282,86 +393,289 @@
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11.5px;
     overflow-x: auto;
   }
 
   #algo-spfa-view .spfa-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-spfa-view .spfa-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-spfa-view .spfa-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-spfa-view .spfa-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-spfa-view .spfa-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-spfa-view .spfa-playback-controls {
+  #algo-spfa-view .spfa-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-spfa-view .spfa-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-spfa-view .spfa-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-spfa-view .spfa-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-spfa-view .spfa-tab-item.active {
+    background: #c026d3;
+    color: #ffffff;
   }
 
-  #algo-spfa-view .spfa-progress-wrap {
-    flex: 1;
+  #algo-spfa-view .spfa-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-spfa-view .spfa-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-spfa-view .spfa-lang-btn.active {
+    background: #334155;
+    color: #f5d0fe;
+  }
+
+  #algo-spfa-view .spfa-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-spfa-view .spfa-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-spfa-view .spfa-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-spfa-view .spfa-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-spfa-view .spfa-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #f5d0fe;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-spfa-view .spfa-step-badge {
-    font-size: 11px;
+  #algo-spfa-view .spfa-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-spfa-view .spfa-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-spfa-view .spfa-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-spfa-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-spfa-view .code-line.active {
+    background: rgba(192, 38, 211, 0.2);
+    border-left: 3px solid #c026d3;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-spfa-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-spfa-view .spfa-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-spfa-view .spfa-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-spfa-view .spfa-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-spfa-view .spfa-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-spfa-view .spfa-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-spfa-view .spfa-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-spfa-view .spfa-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-spfa-view .spfa-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-spfa-view .spfa-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-spfa-view .spfa-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-spfa-view .spfa-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-spfa-view .spfa-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -369,118 +683,205 @@
   <!-- 1. 顶栏 Header -->
   <header class="spfa-header">
     <div class="spfa-header-left">
-      <div class="spfa-icon-btn">🚀</div>
-      <div class="spfa-main-title">SPFA 队列优化最短路 · SPFA Algorithm</div>
-      <button class="spfa-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="spfa-badge-mode">队列按需触发松弛</div>
-      <div class="spfa-badge-complexity">O(kE) · O(V)</div>
+      <div class="spfa-icon-btn">⚡</div>
+      <h1 class="spfa-main-title">SPFA 队列优化最短路 (含负权)</h1>
+      <button id="btn-open-problem-modal" class="spfa-btn-problem">📋 题目</button>
+      <span class="spfa-badge-mode">先进先出队列动态松弛</span>
+      <span class="spfa-badge-complexity">O(kE) 期望 · O(V)</span>
     </div>
+
     <div class="spfa-header-right">
-      <button class="spfa-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="spfa-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="spfa-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="spfa-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="spfa-workspace">
-    <!-- Card 1: 拓扑图 SVG 画布 -->
-    <section class="spfa-card">
-      <div class="spfa-card-header">
-        <div class="spfa-card-title">
-          <span>📊</span> 有向图 SPFA 动态松弛沙盘 (Graph Topology Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="spfa-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="spfa-left-section">
+
+      <!-- 卡片 1: 拓扑图 SVG 画布 -->
+      <div class="spfa-card">
+        <div class="spfa-card-header">
+          <div class="spfa-card-title">
+            <span>📊 队列状态加权图沙盘 (SPFA Graph Canvas)</span>
+          </div>
+          <div class="spfa-legend-bar">
+            <div><span class="spfa-legend-dot" style="background:#c026d3;"></span> 当前出队点 u</div>
+            <div><span class="spfa-legend-dot" style="background:#3b82f6;"></span> 在队列中 (inQueue)</div>
+            <div><span class="spfa-legend-dot" style="background:#16a34a;"></span> 松弛成功</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #10b981;">● 源点 (0)</span> · <span style="color: #fbbf24;">● 当前出队 u</span> · <span style="color: #3b82f6;">● 在队顶点</span> · <span style="color: #ef4444;">● 负权边</span>
+
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="spfa-sandbox-wrap" id="spfa-svg-canvas"></div>
+
+        <!-- 距离数组展示栏 -->
+        <div class="spfa-dist-track">
+          <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">距离数组 dist:</span>
+          <div id="dist-pills-wrap" style="display: flex; gap: 6px;"></div>
         </div>
       </div>
-      <div class="bf-card-body" style="justify-content: center; align-items: center;">
-        <div class="spfa-svg-wrap" id="spfa-svg-canvas"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="spfa-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="spfa-slider" />
+        <div class="spfa-counter-badge">
+          <span id="step-cur" style="color: #c026d3;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="spfa-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="spfa-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="spfa-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="spfa-dist-track" id="spfa-dist-track">
-        <span style="font-size: 10.5px; font-weight: 800; color: #64748b;">dist 数组:</span>
-        <div id="dist-pills-wrap" style="display: flex; gap: 6px;"></div>
+
+      <!-- 卡片 2: 队列与松弛指标监视器 -->
+      <div class="spfa-card">
+        <div class="spfa-card-header">
+          <div>
+            <div class="spfa-card-title">🧭 SPFA 队列与松弛监视器 (Queue Monitor)</div>
+            <div class="spfa-card-desc">当前出队节点、入队状态标记与松弛边判定</div>
+          </div>
+          <span id="badge-q-count" class="spfa-counter-badge" style="color:#c026d3; background:#fdf4ff; border-color:#f5d0fe;">队列长度: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="spfa-state-space-box">
+          <div class="spfa-metrics-grid">
+            <div class="spfa-metric-card">
+              <span class="spfa-metric-label">当前出队节点 u</span>
+              <span class="spfa-metric-val" id="metric-cur-node" style="color: #c026d3;">—</span>
+            </div>
+            <div class="spfa-metric-card">
+              <span class="spfa-metric-label">考察松弛边 (u -> v)</span>
+              <span class="spfa-metric-val" id="metric-relax-edge" style="color: #3b82f6;">—</span>
+            </div>
+            <div class="spfa-metric-card">
+              <span class="spfa-metric-label">队列元素数 queue</span>
+              <span class="spfa-metric-val" id="metric-q-size" style="color: #a855f7;">0</span>
+            </div>
+            <div class="spfa-metric-card">
+              <span class="spfa-metric-label">累计入队次数</span>
+              <span class="spfa-metric-val" id="metric-in-q-count" style="color: #10b981;">0</span>
+            </div>
+          </div>
+
+          <div class="spfa-queue-box">
+            <span style="color:#64748b; font-weight:700;">SPFA 队列:</span>
+            <span id="queue-elements" style="color: #c026d3; font-weight: 800;">[ ]</span>
+          </div>
+
+          <div class="spfa-live-alert">
+            <span>💡</span> <span id="spfa-live-text">准备就绪，点击运行开始 SPFA 算法演示。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="spfa-card">
-      <div class="spfa-card-header">
-        <div class="spfa-card-title">
-          <span>🧭</span> 队列与指标监视器 (SPFA Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="spfa-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="spfa-dark-terminal">
+        <div class="spfa-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="spfa-tab-group">
+            <button id="btn-tab-code" class="spfa-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="spfa-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="spfa-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="spfa-lang-group" id="code-lang-tabs">
+            <button class="spfa-lang-btn active" data-lang="java">Java</button>
+            <button class="spfa-lang-btn" data-lang="cpp">C++</button>
+            <button class="spfa-lang-btn" data-lang="python">Python</button>
+            <button class="spfa-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="spfa-font-tools">
+            <div class="spfa-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="spfa-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="spfa-window-dots">
+              <span class="spfa-dot" style="background:#ef4444;"></span>
+              <span class="spfa-dot" style="background:#eab308;"></span>
+              <span class="spfa-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="spfa-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="spfa-card-body">
-        <div class="spfa-metrics-grid">
-          <div class="spfa-metric-card">
-            <span class="spfa-metric-label">当前出队节点 u</span>
-            <span class="spfa-metric-val" id="metric-cur-node" style="color: #fbbf24;">0</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="spfa-log-card">
+        <div class="spfa-log-header">
+          <div class="spfa-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="spfa-metric-card">
-            <span class="spfa-metric-label">当前松弛边 (u, v)</span>
-            <span class="spfa-metric-val" id="metric-relax-edge" style="color: #2563eb;">(0 -> 1)</span>
-          </div>
-          <div class="spfa-metric-card">
-            <span class="spfa-metric-label">在队顶点数量</span>
-            <span class="spfa-metric-val" id="metric-in-q-count" style="color: #a855f7;">1</span>
-          </div>
-          <div class="spfa-metric-card">
-            <span class="spfa-metric-label">总松弛次数</span>
-            <span class="spfa-metric-val" id="metric-relax-count" style="color: #10b981;">0</span>
-          </div>
+          <span id="log-count" class="spfa-log-count">0 条记录</span>
         </div>
-        <div class="spfa-queue-box" id="spfa-queue-box">
-          <span style="color: #64748b; font-weight: 700;">待松弛队列:</span>
-          <span id="queue-elements" style="color: #3b82f6; font-weight: 800;">[ 0 ]</span>
-        </div>
-        <div class="spfa-live-alert" id="spfa-live-alert">
-          <span>💡</span> <span id="spfa-live-text">准备就绪，点击运行开始 SPFA 算法演示。</span>
+
+        <div id="log-container" class="spfa-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="spfa-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="spfa-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="spfa-card-header">
-        <div class="spfa-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="spfa-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="spfa-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="spfa-playback-bar">
-    <div class="spfa-playback-controls">
-      <button class="spfa-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="spfa-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="spfa-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="spfa-modal-backdrop hidden">
+    <div class="spfa-modal-content">
+      <div class="spfa-modal-header">
+        <div class="spfa-modal-title">
+          <span>📋 算法原理与队列优化解析</span>
+        </div>
+        <button id="btn-close-problem-modal" class="spfa-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="spfa-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="spfa-progress-wrap">
-      <span class="spfa-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="400" selected>正常</option>
-        <option value="150">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

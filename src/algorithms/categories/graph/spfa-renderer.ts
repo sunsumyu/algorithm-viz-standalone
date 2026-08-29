@@ -379,10 +379,13 @@ export class SPFAVisualizer extends StepVisualizer<SPFAStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeQ = this.root?.querySelector('#badge-q-count');
+    if (badgeQ) badgeQ.textContent = `队列长度: ${queue.length}`;
   }
 
   public reset(): void {

@@ -206,14 +206,14 @@ export class DijkstraBasicVisualizer extends StepVisualizer<DJBStep> {
   protected initDOMElements(): void {
     if (!this.root) return;
 
-    this.svgCanvas = this.root.querySelector('#djb-svg-canvas');
+    this.svgCanvas = this.root.querySelector('#dj-svg-canvas');
     this.distPillsWrap = this.root.querySelector('#dist-pills-wrap');
     this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
     this.metricRelaxEdgeEl = this.root.querySelector('#metric-relax-edge');
     this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
-    this.metricVisitedCountEl = this.root.querySelector('#metric-visited-count');
+    this.metricVisitedCountEl = this.root.querySelector('#metric-visited-nodes');
     this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#djb-live-text');
+    this.liveTextEl = this.root.querySelector('#dj-live-text');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
@@ -416,10 +416,13 @@ export class DijkstraBasicVisualizer extends StepVisualizer<DJBStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeVisited = this.root?.querySelector('#badge-visited-count');
+    if (badgeVisited) badgeVisited.textContent = `已确定: ${visited.size} / ${DJB_NODES.length}`;
   }
 
   public reset(): void {

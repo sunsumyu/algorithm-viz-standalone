@@ -181,10 +181,10 @@ export class IslandsBFSVisualizer extends StepVisualizer<IslandsBFSStep> {
   protected initDOMElements(): void {
     if (!this.root) return;
 
-    this.gridContainer = this.root.querySelector('#isl-bfs-grid-container');
+    this.gridContainer = this.root.querySelector('#isl-grid-container');
     this.metricScanEl = this.root.querySelector('#metric-scan');
     this.metricCurrEl = this.root.querySelector('#metric-curr');
-    this.metricQSizeEl = this.root.querySelector('#metric-q-size');
+    this.metricQSizeEl = this.root.querySelector('#metric-queue-size');
     this.metricIslandCountEl = this.root.querySelector('#metric-island-count');
     this.queueElementsEl = this.root.querySelector('#queue-elements');
     this.liveTextEl = this.root.querySelector('#isl-live-text');
@@ -345,10 +345,13 @@ export class IslandsBFSVisualizer extends StepVisualizer<IslandsBFSStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeIslandCount = this.root?.querySelector('#badge-island-count');
+    if (badgeIslandCount) badgeIslandCount.textContent = `已发现岛屿: ${count}`;
   }
 
   public reset(): void {

@@ -120,13 +120,13 @@ export class FloydVisualizer extends StepVisualizer<FloydStep> {
   protected initDOMElements(): void {
     if (!this.root) return;
 
-    this.matrixCanvas = this.root.querySelector('#floyd-matrix-canvas');
+    this.matrixCanvas = this.root.querySelector('#floyd-matrix-container');
     this.metricKEl = this.root.querySelector('#metric-k');
     this.metricIEl = this.root.querySelector('#metric-i');
     this.metricJEl = this.root.querySelector('#metric-j');
-    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
+    this.metricRelaxCountEl = this.root.querySelector('#metric-update-count');
     this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#floyd-live-text');
+    this.liveTextEl = this.root.querySelector('#fl-live-text');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
@@ -180,24 +180,26 @@ export class FloydVisualizer extends StepVisualizer<FloydStep> {
 
     // 1. 渲染距离矩阵表格
     if (this.matrixCanvas) {
-      let html = '<table class="floyd-table"><thead><tr><th class="floyd-th">i \\ j</th>';
+      let html = '<table class="fl-matrix-table"><thead><tr><th>i \\ j</th>';
       for (let c = 0; c < n; c++) {
-        html += `<th class="floyd-th">${c}</th>`;
+        html += `<th>${c}</th>`;
       }
       html += '</tr></thead><tbody>';
 
       for (let r = 0; r < n; r++) {
-        html += `<tr><th class="floyd-th">${r}</th>`;
+        html += `<tr><th>${r}</th>`;
         for (let c = 0; c < n; c++) {
           const val = matrix[r][c];
           const isTarget = i === r && j === c;
           const isIK = k != null && i === r && k === c;
           const isKJ = k != null && k === r && j === c;
 
-          let cls = 'floyd-td';
-          if (isTarget) cls += ' is-active';
-          else if (isIK) cls += ' is-ik';
-          else if (isKJ) cls += ' is-kj';
+          let cls = '';
+          if (isTarget) {
+            cls = action === 'update' ? 'cell-updated' : 'cell-active-ij';
+          } else if (isIK || isKJ) {
+            cls = 'cell-mid-k';
+          }
 
           const displayVal = val >= INF ? '∞' : `${val}`;
           html += `<td class="${cls}">${displayVal}</td>`;
@@ -274,10 +276,13 @@ export class FloydVisualizer extends StepVisualizer<FloydStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
-    }
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeMidK = this.root?.querySelector('#badge-mid-k');
+    if (badgeMidK) badgeMidK.textContent = `中继点 k: ${k != null ? k : '—'}`;
   }
 
   public reset(): void {

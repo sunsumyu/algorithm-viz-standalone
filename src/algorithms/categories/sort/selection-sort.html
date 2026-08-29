@@ -1,5 +1,5 @@
 <style>
-  /* === 选择排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 选择排序 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-selection-sort-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-selection-sort-view .ss-btn-problem {
@@ -117,241 +118,309 @@
     flex-shrink: 0;
   }
 
-  #algo-selection-sort-view .ss-input-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-selection-sort-view .ss-input-group label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
-  }
-
-  #algo-selection-sort-view .ss-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
-    color: #0f172a;
-    font-weight: 600;
-  }
-
-  #algo-selection-sort-view .ss-btn-primary {
-    padding: 4px 10px;
+  #algo-selection-sort-view .ss-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-selection-sort-view .ss-btn-primary:hover {
+  #algo-selection-sort-view .ss-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-selection-sort-view .ss-btn-secondary {
-    padding: 4px 8px;
+  #algo-selection-sort-view .ss-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-selection-sort-view .ss-btn-secondary:hover {
+  #algo-selection-sort-view .ss-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-selection-sort-view .ss-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-selection-sort-view .ss-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-selection-sort-view .ss-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-selection-sort-view .ss-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-selection-sort-view .ss-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-selection-sort-view .ss-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-selection-sort-view .ss-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-selection-sort-view .ss-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-selection-sort-view .ss-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 柱状图与极值选拔沙盘 */
-  #algo-selection-sort-view .ss-sandbox-container {
+  #algo-selection-sort-view .ss-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-selection-sort-view .ss-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 柱状图沙盘展示盒 */
+  #algo-selection-sort-view .ss-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: flex-end;
-    padding: 12px 6px 6px;
-    width: 100%;
-    min-height: 180px;
+    padding: 16px 12px 10px;
   }
 
   #algo-selection-sort-view .ss-bars-container {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
+    height: 100%;
     width: 100%;
-    height: 140px;
-    padding-bottom: 4px;
   }
 
-  #algo-selection-sort-view .ss-bar-wrapper {
+  #algo-selection-sort-view .ss-bar-col {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
+    flex: 1;
+    max-width: 44px;
     height: 100%;
     justify-content: flex-end;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   #algo-selection-sort-view .ss-bar-pillar {
-    width: 38px;
-    border-radius: 6px 6px 0 0;
+    width: 100%;
+    border-radius: 6px 6px 2px 2px;
     background: #cbd5e1;
+    border: 1.5px solid #94a3b8;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 12px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding-top: 4px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
-    color: #0f172a;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #334155;
   }
 
-  #algo-selection-sort-view .ss-bar-idx {
-    font-size: 9px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    color: #94a3b8;
+  #algo-selection-sort-view .ss-bar-pillar.is-target {
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #1d4ed8;
   }
 
-  #algo-selection-sort-view .ss-bar-pillar.is-target-i {
-    border: 2px dashed #2563eb;
+  #algo-selection-sort-view .ss-bar-pillar.is-min {
+    background: #fef9c3;
+    border-color: #eab308;
+    color: #854d0e;
   }
 
-  #algo-selection-sort-view .ss-bar-pillar.is-current-min {
-    background: #fbbf24;
-    color: #78350f;
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4);
-    transform: translateY(-3px);
-  }
-
-  #algo-selection-sort-view .ss-bar-pillar.is-scanning-j {
-    background: #60a5fa;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  #algo-selection-sort-view .ss-bar-pillar.is-scanning {
+    background: #f0fdf4;
+    border-color: #38bdf8;
+    color: #0369a1;
   }
 
   #algo-selection-sort-view .ss-bar-pillar.is-swapping {
-    background: #f43f5e;
-    color: #ffffff;
-    box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3);
-    transform: translateY(-5px);
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+    transform: scale(1.06);
   }
 
   #algo-selection-sort-view .ss-bar-pillar.is-sorted {
-    background: #34d399;
-    color: #064e3b;
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
   }
 
-  /* Preset Chips */
-  #algo-selection-sort-view .ss-preset-chips {
+  #algo-selection-sort-view .ss-bar-idx {
+    font-size: 9.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #94a3b8;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-selection-sort-view .ss-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
-  #algo-selection-sort-view .ss-chip {
-    padding: 2px 7px;
-    border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
+  #algo-selection-sort-view .ss-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-selection-sort-view .ss-counter-badge {
+    font-size: 11.5px;
     font-family: 'JetBrains Mono', monospace;
-    color: #475569;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-selection-sort-view .ss-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-selection-sort-view .ss-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
-    background: #eff6ff;
+  #algo-selection-sort-view .ss-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  /* Card 2: 状态监视器 */
+  #algo-selection-sort-view .ss-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-selection-sort-view .ss-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-selection-sort-view .ss-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-selection-sort-view .ss-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-selection-sort-view .ss-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -366,7 +435,7 @@
 
   #algo-selection-sort-view .ss-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -374,88 +443,290 @@
   #algo-selection-sort-view .ss-formula-box {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-selection-sort-view .ss-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-selection-sort-view .ss-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-selection-sort-view .ss-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-selection-sort-view .ss-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-selection-sort-view .ss-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-selection-sort-view .ss-playback-controls {
+  #algo-selection-sort-view .ss-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-selection-sort-view .ss-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-selection-sort-view .ss-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-selection-sort-view .ss-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-selection-sort-view .ss-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-selection-sort-view .ss-progress-wrap {
-    flex: 1;
+  #algo-selection-sort-view .ss-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-selection-sort-view .ss-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-selection-sort-view .ss-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-selection-sort-view .ss-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-selection-sort-view .ss-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-selection-sort-view .ss-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-selection-sort-view .ss-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-selection-sort-view .ss-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-selection-sort-view .ss-step-badge {
-    font-size: 11px;
+  #algo-selection-sort-view .ss-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-selection-sort-view .ss-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-selection-sort-view .ss-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-selection-sort-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-selection-sort-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-selection-sort-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-selection-sort-view .ss-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-selection-sort-view .ss-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-selection-sort-view .ss-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-selection-sort-view .ss-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-selection-sort-view .ss-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-selection-sort-view .ss-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-selection-sort-view .ss-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-selection-sort-view .ss-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-selection-sort-view .ss-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-selection-sort-view .ss-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-selection-sort-view .ss-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-selection-sort-view .ss-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -464,125 +735,201 @@
   <header class="ss-header">
     <div class="ss-header-left">
       <div class="ss-icon-btn">🎯</div>
-      <div class="ss-main-title">选择排序 · Selection Sort</div>
-      <button class="ss-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="ss-badge-mode">每轮选拔全局最小值</div>
-      <div class="ss-badge-complexity">O(n²) · O(1) 不稳定</div>
+      <h1 class="ss-main-title">选择排序 (Selection Sort)</h1>
+      <button id="btn-open-problem-modal" class="ss-btn-problem">📋 题目</button>
+      <span class="ss-badge-mode">未排序区求极值·归位交换</span>
+      <span class="ss-badge-complexity">O(n²) · O(1)</span>
     </div>
+
     <div class="ss-header-right">
-      <div class="ss-input-group">
-        <label for="input-array">数组:</label>
-        <input type="text" id="input-array" value="29, 10, 14, 37, 13" style="width: 140px;">
-      </div>
-      <button class="ss-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="ss-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="ss-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="ss-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="ss-workspace">
-    <!-- Card 1: 柱状图与极值选拔沙盘 -->
-    <section class="ss-card">
-      <div class="ss-card-header">
-        <div class="ss-card-title">
-          <span>📊</span> 数组柱状图与最小值扫描沙盘 (Pillar Track & Min Selection)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="ss-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="ss-left-section">
+
+      <!-- 卡片 1: 柱状图沙盘 -->
+      <div class="ss-card">
+        <div class="ss-card-header">
+          <div class="ss-card-title">
+            <span>📊 数组元素高度柱状沙盘 (Array Canvas)</span>
+          </div>
+          <div class="ss-legend-bar">
+            <div><span class="ss-legend-dot" style="background:#2563eb;"></span> 目标位 i</div>
+            <div><span class="ss-legend-dot" style="background:#eab308;"></span> 最小值 min</div>
+            <div><span class="ss-legend-dot" style="background:#38bdf8;"></span> 扫描中 j</div>
+            <div><span class="ss-legend-dot" style="background:#22c55e;"></span> 前缀已就位</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #fbbf24;">● 当前最小值 minIdx</span> · <span style="color: #60a5fa;">● 扫描指针 j</span> · <span style="color: #34d399;">● 已排序前缀</span>
+
+        <!-- 柱状沙盘展示盒 -->
+        <div class="ss-sandbox-wrap">
+          <div id="ss-bars-container" class="ss-bars-container"></div>
         </div>
       </div>
-      <div class="ss-card-body" style="justify-content: center;">
-        <div class="ss-sandbox-container">
-          <div class="ss-bars-container" id="ss-bars-container"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="ss-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="ss-slider" />
+        <div class="ss-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="ss-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="ss-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="ss-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
         </div>
       </div>
-      <div class="ss-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="ss-chip" data-arr="29, 10, 14, 37, 13">默认案例 (29, 10, 14, 37, 13)</button>
-        <button class="ss-chip" data-arr="64, 25, 12, 22, 11">经典随机 (64, 25, 12, 22, 11)</button>
-        <button class="ss-chip" data-arr="5, 4, 3, 2, 1">完全逆序 (5, 4, 3, 2, 1)</button>
-        <button class="ss-chip" data-arr="1, 2, 3, 4, 5">已有序数组 (1, 2, 3, 4, 5)</button>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="ss-card">
+        <div class="ss-card-header">
+          <div>
+            <div class="ss-card-title">🧭 排序状态与指标监视器 (Sorting Metrics Monitor)</div>
+            <div class="ss-card-desc">归位目标索引 i、当前最小值索引 minIdx、扫描指针 j 与比较/交换统计</div>
+          </div>
+          <span id="badge-sorted-count" class="ss-counter-badge" style="color:#16a34a; background:#f0fdf4; border-color:#86efac;">已就位: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="ss-state-space-box">
+          <div class="ss-metrics-grid">
+            <div class="ss-metric-card">
+              <span class="ss-metric-label">归位目标索引 i</span>
+              <span class="ss-metric-val" id="metric-i" style="color: #2563eb;">0</span>
+            </div>
+            <div class="ss-metric-card">
+              <span class="ss-metric-label">当前最小值 minIdx</span>
+              <span class="ss-metric-val" id="metric-min-idx" style="color: #eab308;">0</span>
+            </div>
+            <div class="ss-metric-card">
+              <span class="ss-metric-label">扫描指针 j</span>
+              <span class="ss-metric-val" id="metric-j" style="color: #38bdf8;">1</span>
+            </div>
+            <div class="ss-metric-card">
+              <span class="ss-metric-label">比较 / 交换 Comp/Swap</span>
+              <span class="ss-metric-val" id="metric-comp-swap" style="color: #f59e0b;">0 / 0</span>
+            </div>
+          </div>
+
+          <div class="ss-formula-box">
+            <span style="color:#64748b;">当前操作判定:</span>
+            <strong id="formula-action" style="color: #2563eb;">findMin(arr[i..n-1])</strong>
+          </div>
+
+          <div class="ss-live-alert">
+            <span>💡</span> <span id="ss-live-text">准备就绪，点击运行开始选择排序。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="ss-card">
-      <div class="ss-card-header">
-        <div class="ss-card-title">
-          <span>🧭</span> 排序指标监视器 (Sorting Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="ss-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="ss-dark-terminal">
+        <div class="ss-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="ss-tab-group">
+            <button id="btn-tab-code" class="ss-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="ss-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="ss-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="ss-lang-group" id="code-lang-tabs">
+            <button class="ss-lang-btn active" data-lang="java">Java</button>
+            <button class="ss-lang-btn" data-lang="cpp">C++</button>
+            <button class="ss-lang-btn" data-lang="python">Python</button>
+            <button class="ss-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="ss-font-tools">
+            <div class="ss-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="ss-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="ss-window-dots">
+              <span class="ss-dot" style="background:#ef4444;"></span>
+              <span class="ss-dot" style="background:#eab308;"></span>
+              <span class="ss-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="ss-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="ss-card-body">
-        <div class="ss-metrics-grid">
-          <div class="ss-metric-card">
-            <span class="ss-metric-label">归位目标索引 i</span>
-            <span class="ss-metric-val" id="metric-i" style="color: #2563eb;">0</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="ss-log-card">
+        <div class="ss-log-header">
+          <div class="ss-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="ss-metric-card">
-            <span class="ss-metric-label">当前最小值 minIdx</span>
-            <span class="ss-metric-val" id="metric-min-idx" style="color: #fbbf24;">0</span>
-          </div>
-          <div class="ss-metric-card">
-            <span class="ss-metric-label">扫描指针 j</span>
-            <span class="ss-metric-val" id="metric-j" style="color: #60a5fa;">1</span>
-          </div>
-          <div class="ss-metric-card">
-            <span class="ss-metric-label">比较 / 交换次数</span>
-            <span class="ss-metric-val" id="metric-comp-swap" style="color: #f59e0b;">0 / 0</span>
-          </div>
+          <span id="log-count" class="ss-log-count">0 条记录</span>
         </div>
-        <div class="ss-formula-box" id="ss-formula-box">
-          <span>当前动作:</span> <strong id="formula-action" style="color: #2563eb;">findMin(arr[i..n-1])</strong>
-        </div>
-        <div class="ss-live-alert" id="ss-live-alert">
-          <span>💡</span> <span id="ss-live-text">准备就绪，点击运行开始选择排序。</span>
+
+        <div id="log-container" class="ss-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="ss-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="ss-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="ss-card-header">
-        <div class="ss-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="ss-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="ss-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="ss-playback-bar">
-    <div class="ss-playback-controls">
-      <button class="ss-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="ss-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="ss-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="ss-modal-backdrop hidden">
+    <div class="ss-modal-content">
+      <div class="ss-modal-header">
+        <div class="ss-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="ss-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="ss-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="ss-progress-wrap">
-      <span class="ss-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>
