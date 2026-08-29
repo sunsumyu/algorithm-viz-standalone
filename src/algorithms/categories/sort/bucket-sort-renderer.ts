@@ -1,641 +1,389 @@
 /**
- * 桶排序可视化器
- * 玫瑰/粉色系玻璃拟态风格
- * 三区域可视化：上方原数组柱状图 → 中间桶分配/排序 → 下方结果收集
+ * 桶排序可视化器 — 4-Card 标准现代架构
+ * 极值范围划分、区间分桶映射、桶内单独排序、顺序归拢回填
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BUCKET_SORT_PROBLEM_HTML,
+  BUCKET_SORT_ANALYSIS_HTML,
+  BUCKET_SORT_CODE_LANGUAGES,
+} from './bucket-sort-problem-content';
+import { parseArray } from './bubble-sort-renderer';
 import template from './bucket-sort.html?raw';
 
-type Phase =
-  | 'init'
-  | 'find-range'
-  | 'create-buckets'
-  | 'distribute'
-  | 'sort-bucket'
-  | 'collect'
-  | 'done';
-
-interface BSStep {
-  array: number[];
-  min: number;
-  max: number;
+export interface BucketStep {
+  array: (number | null)[];
+  buckets: number[][];
+  minVal: number;
+  maxVal: number;
   bucketCount: number;
-  buckets: number[][];           // 各桶当前内容
-  bucketRanges: [number, number][]; // 各桶的范围 [lo, hi)
-  distributingIdx: number;       // 正在分配的元素索引 (-1 = 不在分配)
-  distributeBucket: number;      // 该元素落入哪个桶 (-1)
-  activeBucket: number;          // 当前高亮/处理的桶 (-1)
-  sortedBuckets: number[];       // 已完成排序的桶索引列表
-  sortingBucketIdx: number;      // 正在排序的桶号
-  insertI: number;               // 桶内插入排序 i (-1 = 未开始)
-  insertJ: number;               // 桶内插入排序 j
-  insertKey: number | null;      // 桶内 key
-  insertCompareIdx: number;      // 桶内比较的元素位置
-  collectUpTo: number;           // 已收集到第几个桶 (exclusive)
-  result: number[];              // 已收集的结果
-  comparisons: number;
-  moves: number;
-  phase: Phase;
+  activeBucket: number;
+  activeElem: number | null;
+  gatherCount: number;
+  phase: 'init' | 'find-minmax' | 'scatter' | 'sort-buckets' | 'gather' | 'done';
+  status: 'init' | 'find-minmax' | 'scatter' | 'sort-buckets' | 'gather' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseArray(input: string): number[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-}
-
-function bucketSortSteps(input: number[], bucketCount: number): BSStep[] {
-  const steps: BSStep[] = [];
+export function bucketSortSteps(input: number[], bucketCount = 5): BucketStep[] {
+  const steps: BucketStep[] = [];
   const array = [...input];
   const n = array.length;
-  if (bucketCount < 1) bucketCount = 1;
-  let comparisons = 0;
-  let moves = 0;
-
-  const snap = (overrides: Partial<BSStep>): BSStep => ({
-    array: [...array],
-    min: -Infinity,
-    max: Infinity,
-    bucketCount,
-    buckets: [],
-    bucketRanges: [],
-    distributingIdx: -1,
-    distributeBucket: -1,
-    activeBucket: -1,
-    sortedBuckets: [],
-    sortingBucketIdx: -1,
-    insertI: -1,
-    insertJ: -1,
-    insertKey: null,
-    insertCompareIdx: -1,
-    collectUpTo: 0,
-    result: [],
-    comparisons,
-    moves,
-    phase: 'init' as Phase,
-    message: '',
-    log: '',
-    codeLine: 0,
-    ...overrides,
-  });
-
-  // ---- init ----
-  steps.push(snap({
-    phase: 'init',
-    message: n === 0
-      ? '数组为空，无需排序。'
-      : `初始化：共 ${n} 个元素，计划使用 ${bucketCount} 个桶。`,
-    log: n === 0 ? 'empty array' : `init: ${n} elements, ${bucketCount} buckets`,
-    codeLine: 1,
-  }));
 
   if (n === 0) {
-    steps.push(snap({ phase: 'done', message: '数组为空，排序完成。', log: 'done (empty)', codeLine: 20 }));
+    steps.push({
+      array: [],
+      buckets: Array.from({ length: bucketCount }, () => []),
+      minVal: 0,
+      maxVal: 0,
+      bucketCount,
+      activeBucket: -1,
+      activeElem: null,
+      gatherCount: 0,
+      phase: 'done',
+      status: 'done',
+      message: '数组为空，无需排序。',
+      log: '空数组',
+      codeLine: 2,
+    });
     return steps;
   }
 
-  // ---- find-range ----
-  let minVal = array[0];
-  let maxVal = array[0];
-  for (let i = 1; i < n; i++) {
-    if (array[i] < minVal) minVal = array[i];
-    if (array[i] > maxVal) maxVal = array[i];
-  }
-  const range = maxVal - minVal;
-  steps.push(snap({
-    phase: 'find-range',
-    min: minVal,
-    max: maxVal,
-    message: `找到范围：最小值 ${minVal}，最大值 ${maxVal}，极差 ${range}。`,
-    log: `find range: min=${minVal}, max=${maxVal}, range=${range}`,
-    codeLine: 3,
-  }));
-
-  // ---- create-buckets ----
+  const minVal = Math.min(...array);
+  const maxVal = Math.max(...array);
   const buckets: number[][] = Array.from({ length: bucketCount }, () => []);
-  const bucketRanges: [number, number][] = [];
-  const bucketSize = range === 0 ? 1 : range / bucketCount;
-  for (let b = 0; b < bucketCount; b++) {
-    const lo = minVal + b * bucketSize;
-    const hi = b === bucketCount - 1 ? maxVal + 1 : minVal + (b + 1) * bucketSize;
-    bucketRanges.push([lo, hi]);
-  }
-  steps.push(snap({
-    phase: 'create-buckets',
-    min: minVal, max: maxVal,
-    buckets: buckets.map(b => [...b]),
-    bucketRanges,
-    message: `创建 ${bucketCount} 个空桶，每桶范围 ≈ ${(range === 0 ? 0 : bucketSize).toFixed(1)}。`,
-    log: `create ${bucketCount} buckets, size≈${bucketSize.toFixed(1)}`,
-    codeLine: 5,
-  }));
 
-  // ---- distribute ----
+  steps.push({
+    array: [...array],
+    buckets: buckets.map((b) => [...b]),
+    minVal,
+    maxVal,
+    bucketCount,
+    activeBucket: -1,
+    activeElem: null,
+    gatherCount: 0,
+    phase: 'find-minmax',
+    status: 'find-minmax',
+    message: `极值统计：min = ${minVal}, max = ${maxVal}。初始化 ${bucketCount} 个空桶容器。`,
+    log: `极值 [${minVal}..${maxVal}], 创建 ${bucketCount} 个桶`,
+    codeLine: [3, 4, 5, 6, 7],
+  });
+
+  if (minVal === maxVal) {
+    steps.push({
+      array: [...array],
+      buckets: buckets.map((b) => [...b]),
+      minVal,
+      maxVal,
+      bucketCount,
+      activeBucket: -1,
+      activeElem: null,
+      gatherCount: n,
+      phase: 'done',
+      status: 'done',
+      message: `所有元素完全相同 (${minVal})，无需额外分桶排序。`,
+      log: '元素完全相同 -> 完成',
+      codeLine: 5,
+    });
+    return steps;
+  }
+
+  // 1. Scatter 分桶
   for (let i = 0; i < n; i++) {
-    let bi: number;
-    if (range === 0) {
-      bi = 0;
-    } else {
-      bi = Math.floor((array[i] - minVal) / bucketSize);
-      if (bi >= bucketCount) bi = bucketCount - 1;
-    }
-    buckets[bi].push(array[i]);
-    moves++;
-    steps.push(snap({
-      phase: 'distribute',
-      min: minVal, max: maxVal,
-      buckets: buckets.map(b => [...b]),
-      bucketRanges,
-      distributingIdx: i,
-      distributeBucket: bi,
-      message: `将 arr[${i}]=${array[i]} 分配到桶 ${bi}（范围 [${bucketRanges[bi][0].toFixed(1)}, ${bucketRanges[bi][1].toFixed(1)})）。`,
-      log: `distribute arr[${i}]=${array[i]} → bucket ${bi}`,
-      codeLine: 7,
-    }));
+    const val = array[i];
+    const bIdx = Math.floor(((val - minVal) * (bucketCount - 1)) / (maxVal - minVal));
+    buckets[bIdx].push(val);
+
+    steps.push({
+      array: [...array],
+      buckets: buckets.map((b) => [...b]),
+      minVal,
+      maxVal,
+      bucketCount,
+      activeBucket: bIdx,
+      activeElem: val,
+      gatherCount: 0,
+      phase: 'scatter',
+      status: 'scatter',
+      message: `分桶映射：元素 arr[${i}] = ${val} 根据线性映射分配至桶 [${bIdx}]。`,
+      log: `映射 val=${val} -> 桶 [${bIdx}]`,
+      codeLine: [9, 10, 11, 12],
+    });
   }
 
-  // ---- sort-bucket (insertion sort within each bucket) ----
+  // 2. Sort 桶内排序
   for (let b = 0; b < bucketCount; b++) {
-    const bucket = buckets[b];
-    const bLen = bucket.length;
-    if (bLen <= 1) {
-      // 桶内 0/1 个元素无需排序
-      steps.push(snap({
-        phase: 'sort-bucket',
-        min: minVal, max: maxVal,
-        buckets: buckets.map(bk => [...bk]),
-        bucketRanges,
-        activeBucket: b,
-        sortingBucketIdx: b,
-        sortedBuckets: [...steps.length > 0 ? (steps[steps.length - 1].sortedBuckets) : [], b],
-        message: `桶 ${b} 只有 ${bLen} 个元素，无需排序。`,
-        log: `bucket ${b}: skip (${bLen} elem)`,
-        codeLine: 10,
-      }));
-      continue;
-    }
-
-    // 开始排序此桶
-    steps.push(snap({
-      phase: 'sort-bucket',
-      min: minVal, max: maxVal,
-      buckets: buckets.map(bk => [...bk]),
-      bucketRanges,
-      activeBucket: b,
-      sortingBucketIdx: b,
-      sortedBuckets: steps.length > 0 ? [...steps[steps.length - 1].sortedBuckets] : [],
-      insertI: -1,
-      message: `开始对桶 ${b} 内部进行插入排序（${bLen} 个元素）。`,
-      log: `sort bucket ${b} (${bLen} elements)`,
-      codeLine: 10,
-    }));
-
-    // Insertion sort on buckets[b]
-    for (let i = 1; i < bLen; i++) {
-      const key = bucket[i];
-      let j = i - 1;
-
-      // pick key
-      steps.push(snap({
-        phase: 'sort-bucket',
-        min: minVal, max: maxVal,
-        buckets: buckets.map(bk => [...bk]),
-        bucketRanges,
-        activeBucket: b,
-        sortingBucketIdx: b,
-        sortedBuckets: steps.length > 0 ? [...steps[steps.length - 1].sortedBuckets] : [],
-        insertI: i,
-        insertJ: j,
-        insertKey: key,
-        insertCompareIdx: -1,
-        message: `桶 ${b}：取出 key=${key}（桶内位置 ${i}），准备在桶内已排序区插入。`,
-        log: `bucket ${b}: pick key=${key} @ pos ${i}`,
-        codeLine: 11,
-      }));
-
-      while (j >= 0) {
-        comparisons++;
-        steps.push(snap({
-          phase: 'sort-bucket',
-          min: minVal, max: maxVal,
-          buckets: buckets.map(bk => [...bk]),
-          bucketRanges,
-          activeBucket: b,
-          sortingBucketIdx: b,
-          sortedBuckets: steps.length > 0 ? [...steps[steps.length - 1].sortedBuckets] : [],
-          insertI: i,
-          insertJ: j,
-          insertKey: key,
-          insertCompareIdx: j,
-          message: `桶 ${b} 内比较：bucket[${j}]=${bucket[j]} vs key=${key} → ${bucket[j] > key ? '需要后移' : '找到插入点'}。`,
-          log: `bucket ${b}: cmp bucket[${j}]=${bucket[j]} vs key=${key}`,
-          codeLine: 12,
-        }));
-
-        if (bucket[j] <= key) break;
-
-        bucket[j + 1] = bucket[j];
-        moves++;
-        steps.push(snap({
-          phase: 'sort-bucket',
-          min: minVal, max: maxVal,
-          buckets: buckets.map(bk => [...bk]),
-          bucketRanges,
-          activeBucket: b,
-          sortingBucketIdx: b,
-          sortedBuckets: steps.length > 0 ? [...steps[steps.length - 1].sortedBuckets] : [],
-          insertI: i,
-          insertJ: j,
-          insertKey: key,
-          insertCompareIdx: -1,
-          message: `桶 ${b} 内移位：将 ${bucket[j]} 后移到位置 ${j + 1}。`,
-          log: `bucket ${b}: shift → pos ${j + 1}`,
-          codeLine: 13,
-        }));
-
-        j--;
-      }
-
-      const insertPos = j + 1;
-      if (insertPos !== i) {
-        bucket[insertPos] = key;
-        moves++;
-      }
-      steps.push(snap({
-        phase: 'sort-bucket',
-        min: minVal, max: maxVal,
-        buckets: buckets.map(bk => [...bk]),
-        bucketRanges,
-        activeBucket: b,
-        sortingBucketIdx: b,
-        sortedBuckets: steps.length > 0 ? [...steps[steps.length - 1].sortedBuckets] : [],
-        insertI: i,
-        insertJ: j,
-        insertKey: key,
-        insertCompareIdx: -1,
-        message: `桶 ${b}：key=${key} 落入位置 ${insertPos}。`,
-        log: `bucket ${b}: insert key=${key} @ pos ${insertPos}`,
-        codeLine: 15,
-      }));
-    }
-
-    // bucket done
-    const prevSorted = steps.length > 0 ? [...steps[steps.length - 1].sortedBuckets] : [];
-    if (!prevSorted.includes(b)) prevSorted.push(b);
-    steps.push(snap({
-      phase: 'sort-bucket',
-      min: minVal, max: maxVal,
-      buckets: buckets.map(bk => [...bk]),
-      bucketRanges,
-      activeBucket: b,
-      sortingBucketIdx: b,
-      sortedBuckets: prevSorted,
-      insertI: -1,
-      insertKey: null,
-      insertCompareIdx: -1,
-      message: `桶 ${b} 排序完成：[${bucket.join(', ')}]。`,
-      log: `bucket ${b} sorted: [${bucket.join(', ')}]`,
-      codeLine: 17,
-    }));
+    buckets[b].sort((x, y) => x - y);
   }
 
-  // ---- collect ----
-  const result: number[] = [];
+  steps.push({
+    array: new Array(n).fill(null),
+    buckets: buckets.map((b) => [...b]),
+    minVal,
+    maxVal,
+    bucketCount,
+    activeBucket: -1,
+    activeElem: null,
+    gatherCount: 0,
+    phase: 'sort-buckets',
+    status: 'sort-buckets',
+    message: `桶内排序：已完成各个非空桶内部的单独排序。准备开始顺序归拢回填。`,
+    log: `各桶内部排序完毕`,
+    codeLine: 16,
+  });
+
+  // 3. Gather 归拢回填
+  const outArr: (number | null)[] = new Array(n).fill(null);
+  let writeIdx = 0;
+
   for (let b = 0; b < bucketCount; b++) {
-    for (const val of buckets[b]) {
-      result.push(val);
+    for (let k = 0; k < buckets[b].length; k++) {
+      const val = buckets[b][k];
+      outArr[writeIdx] = val;
+      writeIdx++;
+
+      steps.push({
+        array: [...outArr],
+        buckets: buckets.map((bkt) => [...bkt]),
+        minVal,
+        maxVal,
+        bucketCount,
+        activeBucket: b,
+        activeElem: val,
+        gatherCount: writeIdx,
+        phase: 'gather',
+        status: 'gather',
+        message: `归拢回填：从桶 [${b}] 取出已排序项 ${val}，写入主数组下标 ${writeIdx - 1}。`,
+        log: `归拢: 桶 [${b}] (${val}) -> arr[${writeIdx - 1}]`,
+        codeLine: [14, 15, 16, 17, 18],
+      });
     }
-    steps.push(snap({
-      phase: 'collect',
-      min: minVal, max: maxVal,
-      buckets: buckets.map(bk => [...bk]),
-      bucketRanges,
-      activeBucket: b,
-      sortedBuckets: Array.from({ length: bucketCount }, (_, i) => i),
-      collectUpTo: b + 1,
-      result: [...result],
-      message: `收集桶 ${b}（${buckets[b].length} 个元素）→ 当前结果 [${result.join(', ')}]。`,
-      log: `collect bucket ${b}: result=[${result.join(', ')}]`,
-      codeLine: 18,
-    }));
   }
 
-  // ---- done ----
-  steps.push(snap({
+  steps.push({
+    array: [...outArr],
+    buckets: buckets.map((b) => [...b]),
+    minVal,
+    maxVal,
+    bucketCount,
+    activeBucket: -1,
+    activeElem: null,
+    gatherCount: n,
     phase: 'done',
-    min: minVal, max: maxVal,
-    buckets: buckets.map(bk => [...bk]),
-    bucketRanges,
-    sortedBuckets: Array.from({ length: bucketCount }, (_, i) => i),
-    collectUpTo: bucketCount,
-    result: [...result],
-    message: `排序完成！共 ${comparisons} 次比较、${moves} 次移动。`,
-    log: `done: ${comparisons} cmps, ${moves} moves`,
-    codeLine: 20,
-  }));
+    status: 'done',
+    message: `🎉 桶排序完成！最终输出数组：[${outArr.join(', ')}]。`,
+    log: `✓ 排序完成: [${outArr.join(', ')}]`,
+    codeLine: 19,
+  });
 
   return steps;
 }
 
-export class BucketSortVisualizer extends StepVisualizer<BSStep> {
-  protected codeLines = [
-    'public void bucketSort(int[] arr, int bucketCount) {',
-    '    // 1. 找最大最小值',
-    '    int min = arr[0], max = arr[0];',
-    '    for (int x : arr) { min = Math.min(min, x); max = Math.max(max, x); }',
-    '    // 2. 计算桶范围',
-    '    double range = (max - min); double bucketSize = range / bucketCount;',
-    '    List<List<Integer>> buckets = new ArrayList<>();',
-    '    for (int i = 0; i < arr.length; i++) {  // 3. 分配元素到桶',
-    '        int bi = (int)((arr[i] - min) / bucketSize);',
-    '        if (bi >= bucketCount) bi = bucketCount - 1;',
-    '        buckets.get(bi).add(arr[i]); }',
-    '    for (List<Integer> bucket : buckets) {  // 4. 桶内插入排序',
-    '        for (int i = 1; i < bucket.size(); i++) {',
-    '            int key = bucket.get(i); int j = i - 1;',
-    '            while (j >= 0 && bucket.get(j) > key) {',
-    '                bucket.set(j + 1, bucket.get(j)); j--; }',
-    '            bucket.set(j + 1, key); } }',
-    '    int idx = 0;',
-    '    for (List<Integer> bucket : buckets)   // 5. 收集结果',
-    '        for (int val : bucket) arr[idx++] = val;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 桶排序源码';
+export class BucketSortVisualizer extends StepVisualizer<BucketStep> {
+  protected codeLanguages = BUCKET_SORT_CODE_LANGUAGES;
+  protected codeLines = BUCKET_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '桶排序 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private bucketCountInput: HTMLInputElement | null = null;
-  private statBuckets: HTMLElement | null = null;
-  private statCur: HTMLElement | null = null;
-  private statDist: HTMLElement | null = null;
-  private statSorted: HTMLElement | null = null;
-  private barsEl: HTMLElement | null = null;
-  private bucketsEl: HTMLElement | null = null;
-  private resultItemsEl: HTMLElement | null = null;
-  private resultBanner: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private bucketsRowEl: HTMLElement | null = null;
+  private mainTrackEl: HTMLElement | null = null;
+  private metricRangeEl: HTMLElement | null = null;
+  private metricBucketCountEl: HTMLElement | null = null;
+  private metricCurElemEl: HTMLElement | null = null;
+  private metricGatherCountEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#bs-array');
-    this.bucketCountInput = this.root.querySelector('#bs-bucket-count');
-    this.statBuckets = this.root.querySelector('#bs-stat-buckets');
-    this.statCur = this.root.querySelector('#bs-stat-cur');
-    this.statDist = this.root.querySelector('#bs-stat-dist');
-    this.statSorted = this.root.querySelector('#bs-stat-sorted');
-    this.barsEl = this.root.querySelector('#bs-bars');
-    this.bucketsEl = this.root.querySelector('#bs-buckets');
-    this.resultItemsEl = this.root.querySelector('#bs-result-items');
-    this.resultBanner = this.root.querySelector('#bs-result-banner');
-    this.logEl = this.root.querySelector('#bs-log');
-    this.clearLogBtn = this.root.querySelector('#bs-log-clear');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'bs-speed', speedLabel: 'bs-speed-label',
-      counter: 'step-counter', message: 'step-message',
-    });
+    this.bucketsRowEl = this.root.querySelector('#bks-buckets-row');
+    this.mainTrackEl = this.root.querySelector('#bks-main-track');
+    this.metricRangeEl = this.root.querySelector('#metric-range');
+    this.metricBucketCountEl = this.root.querySelector('#metric-bucket-count');
+    this.metricCurElemEl = this.root.querySelector('#metric-cur-elem');
+    this.metricGatherCountEl = this.root.querySelector('#metric-gather-count');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#bks-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelector('#bs-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.bs-chip').forEach((btn) => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bks-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
-        if (this.bucketCountInput) this.bucketCountInput.value = btn.dataset.buckets || '5';
+        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
         this.start();
       });
     });
-    this.clearLogBtn?.addEventListener('click', () => { if (this.logEl) this.logEl.innerHTML = ''; });
-    this.arrayInput?.addEventListener('change', () => this.start());
-    this.bucketCountInput?.addEventListener('change', () => this.start());
-  }
 
-  protected buildSteps(): BSStep[] {
-    const arr = parseArray(this.arrayInput?.value || '42,32,33,52,37,47,51,77,23,63');
-    let bc = parseInt(this.bucketCountInput?.value || '5', 10);
-    if (!Number.isFinite(bc) || bc < 1) bc = 5;
-    if (bc > arr.length) bc = arr.length;
-    return bucketSortSteps(arr, bc);
-  }
-
-  protected renderStep(step: BSStep): void {
-    this.renderStats(step);
-    this.renderBars(step);
-    this.renderBuckets(step);
-    this.renderResult(step);
-    this.renderBanner(step);
-    this.renderLogPanel(step);
-  }
-
-  private renderStats(step: BSStep): void {
-    if (this.statBuckets) this.statBuckets.textContent = String(step.bucketCount);
-    if (this.statCur) this.statCur.textContent = step.activeBucket < 0 ? '-' : String(step.activeBucket);
-    // 已分配数量 = 所有桶中元素总数
-    let distCount = 0;
-    for (const b of step.buckets) distCount += b.length;
-    if (this.statDist) this.statDist.textContent = String(distCount);
-    if (this.statSorted) this.statSorted.textContent = String(step.sortedBuckets.length);
-  }
-
-  private renderBars(step: BSStep): void {
-    if (!this.barsEl) return;
-    const maxVal = Math.max(1, ...step.array);
-    this.barsEl.innerHTML = '';
-
-    step.array.forEach((value, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'bs-bar-wrap';
-
-      const bar = document.createElement('div');
-      bar.className = 'bs-bar';
-      const h = 22 + (value / maxVal) * 60;
-      bar.style.height = `${h}px`;
-      bar.textContent = String(value);
-
-      // 着色
-      if (step.phase === 'find-range') {
-        if (value === step.min && value === step.max) {
-          bar.classList.add('bs-bar-min');
-        } else if (value === step.min) {
-          bar.classList.add('bs-bar-min');
-        } else if (value === step.max) {
-          bar.classList.add('bs-bar-max');
-        }
-      } else if (step.phase === 'distribute') {
-        if (idx === step.distributingIdx) {
-          bar.classList.add('bs-bar-active');
-        } else if (idx < step.distributingIdx) {
-          bar.classList.add('bs-bar-distributed');
-        }
-      } else if (step.phase === 'done') {
-        bar.classList.add('bs-bar-done');
-      }
-
-      wrap.appendChild(bar);
-
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'bs-idx';
-      idxLabel.textContent = String(idx);
-      wrap.appendChild(idxLabel);
-
-      // min/max markers
-      if (step.phase === 'find-range') {
-        if (value === step.min && value !== step.max) {
-          const m = document.createElement('span');
-          m.className = 'bs-bar-marker bs-marker-min';
-          m.textContent = 'MIN';
-          wrap.appendChild(m);
-        } else if (value === step.max && value !== step.min) {
-          const m = document.createElement('span');
-          m.className = 'bs-bar-marker bs-marker-max';
-          m.textContent = 'MAX';
-          wrap.appendChild(m);
-        } else if (value === step.min && value === step.max) {
-          const m = document.createElement('span');
-          m.className = 'bs-bar-marker bs-marker-min';
-          m.textContent = 'MIN=MAX';
-          wrap.appendChild(m);
-        }
-      }
-
-      this.barsEl!.appendChild(wrap);
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: BUCKET_SORT_PROBLEM_HTML,
+      analysisHtml: BUCKET_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  private renderBuckets(step: BSStep): void {
-    if (!this.bucketsEl) return;
-    this.bucketsEl.innerHTML = '';
+  protected buildSteps(): BucketStep[] {
+    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+    const raw = arrInput?.value || '29, 25, 3, 49, 9, 37, 21, 43';
+    const arr = parseArray(raw);
+    return bucketSortSteps(arr, 5);
+  }
 
-    if (step.phase === 'init' || step.phase === 'find-range') {
-      // 桶区域提示文字
-      const hint = document.createElement('div');
-      hint.style.cssText = 'color:#64748b;font-size:12px;text-align:center;padding:16px;width:100%;';
-      hint.textContent = step.phase === 'init' ? '等待确定范围...' : '即将创建桶...';
-      this.bucketsEl.appendChild(hint);
-      return;
+  protected renderStep(step: BucketStep): void {
+    const { array, buckets, minVal, maxVal, bucketCount, activeBucket, activeElem, gatherCount, phase, message } = step;
+
+    // 1. 渲染 5 个桶容器
+    if (this.bucketsRowEl) {
+      this.bucketsRowEl.innerHTML = buckets
+        .map((items, bIdx) => {
+          const isActive = bIdx === activeBucket && phase !== 'done';
+          const itemsHtml = items
+            .map((item) => `<span class="bks-item-tag">${item}</span>`)
+            .join('');
+
+          return `
+            <div class="bks-bucket-box ${isActive ? 'is-active-bucket' : ''}">
+              <div class="bks-bucket-head">Bucket [${bIdx}]</div>
+              <div class="bks-bucket-items">${itemsHtml || '<span style="font-size:9px;color:#94a3b8;">(空)</span>'}</div>
+            </div>
+          `;
+        })
+        .join('');
     }
 
-    for (let b = 0; b < step.bucketCount; b++) {
-      const bucketEl = document.createElement('div');
-      bucketEl.className = 'bs-bucket';
+    // 2. 渲染主数组
+    if (this.mainTrackEl) {
+      this.mainTrackEl.innerHTML = array
+        .map((val, idx) => {
+          const isGathered = val !== null && (phase === 'gather' || phase === 'done');
+          const isActiveElem = idx === gatherCount - 1 && phase === 'gather';
 
-      // 状态
-      if (step.phase === 'sort-bucket' && b === step.activeBucket) {
-        if (step.sortedBuckets.includes(b) && step.insertI < 0) {
-          bucketEl.classList.add('bs-bucket-sorted');
-        } else {
-          bucketEl.classList.add('bs-bucket-sorting');
-        }
-      } else if (step.phase === 'distribute' && b === step.distributeBucket) {
-        bucketEl.classList.add('bs-bucket-active');
-      } else if (step.phase === 'collect' && b === step.activeBucket) {
-        bucketEl.classList.add('bs-bucket-sorted');
-      } else if (step.phase === 'done' || (step.phase === 'collect' && b < step.collectUpTo)) {
-        bucketEl.classList.add('bs-bucket-sorted');
-      } else if (step.sortedBuckets.includes(b)) {
-        bucketEl.classList.add('bs-bucket-sorted');
-      }
+          let cellClass = 'bks-cell-box';
+          if (isActiveElem) cellClass += ' is-active-elem';
+          else if (isGathered) cellClass += ' is-gathered';
 
-      // header
-      const header = document.createElement('div');
-      header.className = 'bs-bucket-header';
-      if (step.bucketRanges[b]) {
-        const [lo, hi] = step.bucketRanges[b];
-        header.textContent = `B${b} [${lo.toFixed(0)}-${hi.toFixed(0)})`;
+          return `
+            <div class="${cellClass}">
+              <span class="val">${val !== null ? val : '—'}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricRangeEl) this.metricRangeEl.textContent = `[${minVal}, ${maxVal}]`;
+    if (this.metricBucketCountEl) this.metricBucketCountEl.textContent = `${bucketCount}`;
+    if (this.metricCurElemEl) this.metricCurElemEl.textContent = activeElem !== null ? `${activeElem}` : '—';
+    if (this.metricGatherCountEl) this.metricGatherCountEl.textContent = `${gatherCount} / ${array.length}`;
+
+    if (this.formulaActionEl) {
+      if (phase === 'scatter') {
+        this.formulaActionEl.textContent = `bIdx = (${activeElem} - ${minVal}) * ${bucketCount - 1} / ${maxVal - minVal} = ${activeBucket}`;
+      } else if (phase === 'sort-buckets') {
+        this.formulaActionEl.textContent = 'sort(bucket[0..k-1]) 桶内排序';
+      } else if (phase === 'gather') {
+        this.formulaActionEl.textContent = `arr[${gatherCount - 1}] = ${activeElem} (来自桶 [${activeBucket}])`;
+      } else if (phase === 'done') {
+        this.formulaActionEl.textContent = '桶排序完成';
       } else {
-        header.textContent = `B${b}`;
+        this.formulaActionEl.textContent = 'bIdx = (val - min) * (k - 1) / (max - min)';
       }
-      bucketEl.appendChild(header);
+    }
 
-      // items
-      const itemsEl = document.createElement('div');
-      itemsEl.className = 'bs-bucket-items';
-      const bucketData = step.buckets[b] || [];
-      bucketData.forEach((val, vi) => {
-        const itemEl = document.createElement('span');
-        itemEl.className = 'bs-bucket-item';
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
 
-        // 桶内排序高亮
-        if (step.phase === 'sort-bucket' && b === step.activeBucket) {
-          if (step.insertCompareIdx >= 0 && vi === step.insertCompareIdx) {
-            itemEl.classList.add('bs-item-compare');
-          } else if (step.insertKey !== null && vi === step.insertI) {
-            itemEl.classList.add('bs-item-active');
-          } else if (step.insertI >= 0 && vi < step.insertI) {
-            itemEl.classList.add('bs-item-sorted');
-          } else if (step.insertI < 0 && step.sortedBuckets.includes(b)) {
-            itemEl.classList.add('bs-item-sorted');
-          }
-        } else if (step.sortedBuckets.includes(b) || step.phase === 'done') {
-          itemEl.classList.add('bs-item-sorted');
-        }
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'done' ? '#f0fdf4' : phase === 'gather' ? '#faf5ff' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'done' ? '#15803d' : phase === 'gather' ? '#7e22ce' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'done' ? '#bbf7d0' : phase === 'gather' ? '#e9d5ff' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
 
-        itemEl.textContent = String(val);
-        itemsEl.appendChild(itemEl);
-      });
-      bucketEl.appendChild(itemsEl);
-      this.bucketsEl!.appendChild(bucketEl);
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderResult(step: BSStep): void {
-    if (!this.resultItemsEl) return;
-    this.resultItemsEl.innerHTML = '';
-
-    if (step.phase === 'collect' || step.phase === 'done') {
-      step.result.forEach((val) => {
-        const item = document.createElement('span');
-        item.className = 'bs-result-item';
-        item.textContent = String(val);
-        this.resultItemsEl!.appendChild(item);
-      });
-    }
-  }
-
-  private renderBanner(step: BSStep): void {
-    if (!this.resultBanner) return;
-    this.resultBanner.classList.remove('bs-done');
-    const emoji = this.resultBanner.querySelector('.bs-emoji') as HTMLElement | null;
-    if (step.phase === 'done') {
-      this.resultBanner.classList.add('bs-done');
-      if (emoji) emoji.textContent = '🎉';
-    } else if (step.phase === 'find-range') {
-      if (emoji) emoji.textContent = '🔍';
-    } else if (step.phase === 'create-buckets') {
-      if (emoji) emoji.textContent = '🪣';
-    } else if (step.phase === 'distribute') {
-      if (emoji) emoji.textContent = '📥';
-    } else if (step.phase === 'sort-bucket') {
-      if (emoji) emoji.textContent = '🔀';
-    } else if (step.phase === 'collect') {
-      if (emoji) emoji.textContent = '📤';
-    } else {
-      if (emoji) emoji.textContent = '🪣';
-    }
-  }
-
-  private renderLogPanel(step: BSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'bs-log-line' + (i === this.currentIndex ? ' bs-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'bs-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -644,11 +392,11 @@ registerAlgorithm({
   name: '桶排序',
   viewId: 'algo-bucket-sort-view',
   category: 'sort',
-  description: '将元素分配到多个桶中，桶内排序后合并得到有序序列',
+  description: '逐步演示桶排序：区间映射分流、桶内独立排序、顺序归拢回填',
   icon: '🪣',
+  difficulty: 2,
+  levelOrder: 9,
+  learningGoal: '掌握分桶映射思想、数据局部有序化与归拢还原过程',
   template,
   Visualizer: BucketSortVisualizer,
-  difficulty: 3,
-  levelOrder: 10,
-  learningGoal: '理解桶排序的分治思想：分桶 → 桶内排序 → 合并',
 });

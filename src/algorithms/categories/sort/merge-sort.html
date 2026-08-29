@@ -1,435 +1,611 @@
 <style>
-  /* === 归并排序 · 玻璃拟态 + 青色渐变 === */
+  /* === 归并排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-merge-sort-view {
-    --accent-a: #0891b2;
-    --accent-b: #06b6d4;
-    --accent-glow: rgba(6, 182, 212, .45);
-    --sorted-a: #10b981;
-    --sorted-b: #34d399;
-    --merge-a: #6366f1;
-    --merge-b: #8b5cf6;
-    --key-color: #f59e0b;
-    --split-color: #ec4899;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 15% 10%, rgba(8, 145, 178, .30), transparent 55%),
-      radial-gradient(ellipse at 85% 90%, rgba(99, 102, 241, .22), transparent 55%),
-      linear-gradient(135deg, #0a1628 0%, #0c1f2e 50%, #0f172a 100%);
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-merge-sort-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-merge-sort-view .ms-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-merge-sort-view .ms-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-merge-sort-view .ms-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-merge-sort-view .ms-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-merge-sort-view .ms-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-merge-sort-view .ms-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-merge-sort-view .ms-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-merge-sort-view .ms-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-merge-sort-view .ms-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-merge-sort-view .ms-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-merge-sort-view .ms-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-merge-sort-view .ms-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-merge-sort-view .ms-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-merge-sort-view .ms-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-merge-sort-view .ms-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-merge-sort-view .ms-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-merge-sort-view .ms-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-merge-sort-view .ms-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
-  }
-  /* hero */
-  #algo-merge-sort-view .ms-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 18, 28, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-merge-sort-view .ms-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-merge-sort-view .ms-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--merge-b));
-    color: #ecfeff; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-merge-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-merge-sort-view .ms-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-merge-sort-view .ms-tip {
-    max-width: 520px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(99, 102, 241, .08));
-    border: 1px solid rgba(6, 182, 212, .28);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-merge-sort-view .ms-tip strong { color: #67e8f9; }
-  /* main grid */
-  #algo-merge-sort-view .ms-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-merge-sort-view .ms-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+
   #algo-merge-sort-view .ms-card {
-    background: rgba(12, 24, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
+
+  #algo-merge-sort-view .ms-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
   #algo-merge-sort-view .ms-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-merge-sort-view .ms-tag {
-    font-size: 11px; color: #67e8f9; background: rgba(6, 182, 212, .14);
-    border: 1px solid rgba(6, 182, 212, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  /* input */
-  #algo-merge-sort-view .ms-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-merge-sort-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 14, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-merge-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(6, 182, 212, .15); }
-  #algo-merge-sort-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-merge-sort-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #ecfeff; transform: translateY(-1px);
-    box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-merge-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-merge-sort-view .ms-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-merge-sort-view .ms-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(6, 182, 212, .12); border: 1px solid rgba(6, 182, 212, .28);
-    color: #67e8f9; cursor: pointer; transition: all .2s;
-  }
-  #algo-merge-sort-view .ms-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #ecfeff; border-color: transparent; transform: translateY(-1px);
-  }
-  /* stats */
-  #algo-merge-sort-view .ms-stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
-  }
-  #algo-merge-sort-view .ms-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(12, 24, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-merge-sort-view .ms-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-merge-sort-view .ms-stat.ms-stat--depth::before { background: linear-gradient(180deg, #6366f1, #8b5cf6); }
-  #algo-merge-sort-view .ms-stat.ms-stat--sorted::before { background: linear-gradient(180deg, #10b981, #34d399); }
-  #algo-merge-sort-view .ms-stat.ms-stat--range::before { background: linear-gradient(180deg, #ec4899, #f43f5e); }
-  #algo-merge-sort-view .ms-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-merge-sort-view .ms-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-merge-sort-view .ms-stat--depth .ms-stat-val { color: #a5b4fc; }
-  #algo-merge-sort-view .ms-stat--sorted .ms-stat-val { color: #6ee7b7; }
-  #algo-merge-sort-view .ms-stat--range .ms-stat-val { color: #fda4af; }
-  /* visual */
-  #algo-merge-sort-view .ms-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-merge-sort-view .ms-canvas {
-    flex: 1; min-height: 0; padding: 16px 18px 10px;
-    position: relative; overflow: hidden;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-  }
-  #algo-merge-sort-view .ms-canvas::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at 50% 80%, rgba(6, 182, 212, .10), transparent 60%);
-    pointer-events: none;
-  }
-  /* main bars row */
-  #algo-merge-sort-view .ms-bars {
-    position: relative; display: flex; align-items: flex-end;
-    gap: 6px; height: 160px; padding-bottom: 24px;
-  }
-  #algo-merge-sort-view .ms-bar-wrap {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    width: 44px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-merge-sort-view .ms-bar {
-    width: 100%; border-radius: 8px 8px 4px 4px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
-    border: 1.5px solid rgba(255, 255, 255, .14);
-    display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 5px; color: #e2e8f0;
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; font-weight: 800;
-    transition: height .4s cubic-bezier(.4, 0, .2, 1),
-                background .35s, border-color .35s, box-shadow .35s, color .35s, transform .35s;
-  }
-  #algo-merge-sort-view .ms-bar.ms-in-range {
-    background: linear-gradient(180deg, rgba(6, 182, 212, .35), rgba(99, 102, 241, .20));
-    border-color: rgba(6, 182, 212, .6);
-    color: #ecfeff;
-  }
-  #algo-merge-sort-view .ms-bar.ms-split {
-    border-color: var(--split-color);
-    background: linear-gradient(180deg, rgba(236, 72, 153, .35), rgba(219, 39, 119, .15));
-    box-shadow: 0 0 0 3px rgba(236, 72, 153, .2);
-  }
-  #algo-merge-sort-view .ms-bar.ms-merge-compare {
-    border-color: var(--key-color);
-    background: linear-gradient(180deg, rgba(245, 158, 11, .45), rgba(217, 119, 6, .2));
-    color: #fff7ed;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, .25);
-    animation: ms-pulse .6s ease-in-out infinite alternate;
-  }
-  @keyframes ms-pulse {
-    from { box-shadow: 0 0 0 3px rgba(245, 158, 11, .25); }
-    to   { box-shadow: 0 0 0 5px rgba(245, 158, 11, .45); }
-  }
-  #algo-merge-sort-view .ms-bar.ms-merge-picked {
-    background: linear-gradient(180deg, rgba(6, 182, 212, .55), rgba(99, 102, 241, .30));
-    border-color: rgba(6, 182, 212, .8);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(6, 182, 212, .3);
-  }
-  #algo-merge-sort-view .ms-bar.ms-sorted {
-    background: linear-gradient(180deg, rgba(16, 185, 129, .50), rgba(52, 211, 153, .22));
-    border-color: rgba(16, 185, 129, .7);
-    color: #ecfdf5;
-    box-shadow: 0 4px 16px rgba(16, 185, 129, .2);
-  }
-  #algo-merge-sort-view .ms-bar.ms-done {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .28));
-    border-color: #34d399;
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
-  }
-  #algo-merge-sort-view .ms-idx {
-    position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
-    color: #64748b; font-size: 10px; font-weight: 600;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-  }
-  /* merge area */
-  #algo-merge-sort-view .ms-merge-area {
-    display: flex; gap: 12px; align-items: center; justify-content: center;
-    padding: 6px 0;
-    min-height: 48px;
-  }
-  #algo-merge-sort-view .ms-merge-group {
-    display: flex; gap: 4px; align-items: center;
-    padding: 6px 10px; border-radius: 10px;
-    background: rgba(255, 255, 255, .04);
-    border: 1px dashed rgba(255, 255, 255, .15);
+
+  #algo-merge-sort-view .ms-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
     position: relative;
   }
-  #algo-merge-sort-view .ms-merge-group-label {
-    position: absolute; top: -10px; left: 8px;
-    font-size: 10px; font-weight: 700; padding: 0 4px;
-    background: rgba(8, 18, 28, .9); border-radius: 4px;
+
+  /* Card 1: 原数组与辅助合并双轨沙盘 */
+  #algo-merge-sort-view .ms-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 6px;
+    width: 100%;
   }
-  #algo-merge-sort-view .ms-merge-group-label.ms-label-left { color: #67e8f9; }
-  #algo-merge-sort-view .ms-merge-group-label.ms-label-right { color: #a5b4fc; }
-  #algo-merge-sort-view .ms-merge-group-label.ms-label-result { color: #6ee7b7; }
-  #algo-merge-sort-view .ms-merge-item {
-    width: 36px; height: 36px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; font-weight: 800;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-merge-sort-view .ms-track-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    overflow-x: auto;
   }
-  #algo-merge-sort-view .ms-merge-item.ms-item-left {
-    background: rgba(6, 182, 212, .18); border: 1px solid rgba(6, 182, 212, .4); color: #67e8f9;
+
+  #algo-merge-sort-view .ms-track-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-merge-sort-view .ms-merge-item.ms-item-right {
-    background: rgba(99, 102, 241, .18); border: 1px solid rgba(99, 102, 241, .4); color: #a5b4fc;
+
+  #algo-merge-sort-view .ms-track-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
-  #algo-merge-sort-view .ms-merge-item.ms-item-result {
-    background: rgba(16, 185, 129, .18); border: 1px solid rgba(16, 185, 129, .4); color: #6ee7b7;
+
+  #algo-merge-sort-view .ms-cell-box {
+    width: 36px;
+    height: 40px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex-shrink: 0;
   }
-  #algo-merge-sort-view .ms-merge-item.ms-item-exhausted {
-    opacity: .3;
+
+  #algo-merge-sort-view .ms-cell-box .val {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
   }
-  #algo-merge-sort-view .ms-merge-item.ms-item-ptr {
-    box-shadow: 0 0 0 2px var(--key-color);
-    transform: scale(1.1);
+
+  #algo-merge-sort-view .ms-cell-box .idx {
+    font-size: 8px;
+    font-weight: 700;
+    color: #94a3b8;
   }
-  #algo-merge-sort-view .ms-merge-arrow {
-    color: #64748b; font-size: 20px; font-weight: 800;
-    display: flex; align-items: center;
+
+  #algo-merge-sort-view .ms-cell-box.in-left-seg {
+    border-color: #3b82f6;
+    background: #eff6ff;
   }
-  /* range markers */
-  #algo-merge-sort-view .ms-range-marker {
-    position: absolute; bottom: -2px; height: 4px; border-radius: 4px;
-    transition: width .4s, left .4s;
+
+  #algo-merge-sort-view .ms-cell-box.in-right-seg {
+    border-color: #a855f7;
+    background: #faf5ff;
   }
-  #algo-merge-sort-view .ms-range-marker.ms-range-current {
-    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
-    box-shadow: 0 0 8px var(--accent-a);
+
+  #algo-merge-sort-view .ms-cell-box.is-p1 {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+    transform: translateY(-3px);
   }
-  /* tree panel */
-  #algo-merge-sort-view .ms-tree {
-    padding: 12px 16px; min-height: 60px; max-height: 100px; overflow: auto;
+
+  #algo-merge-sort-view .ms-cell-box.is-p2 {
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+    transform: translateY(-3px);
   }
-  #algo-merge-sort-view .ms-tree-row {
-    display: flex; gap: 4px; align-items: center; margin-bottom: 4px;
+
+  #algo-merge-sort-view .ms-cell-box.is-buffer-filled {
+    border-color: #10b981;
+    background: #f0fdf4;
+    color: #15803d;
   }
-  #algo-merge-sort-view .ms-tree-node {
-    padding: 2px 8px; border-radius: 6px; font-size: 11px;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-weight: 600;
-    border: 1px solid rgba(255, 255, 255, .1);
-    transition: all .3s;
+
+  #algo-merge-sort-view .ms-cell-box.is-copied-back {
+    border-color: #10b981;
+    background: #f0fdf4;
   }
-  #algo-merge-sort-view .ms-tree-node.ms-node-active {
-    background: rgba(6, 182, 212, .2); border-color: rgba(6, 182, 212, .5); color: #67e8f9;
+
+  /* Preset Chips */
+  #algo-merge-sort-view .ms-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
   }
-  #algo-merge-sort-view .ms-tree-node.ms-node-merged {
-    background: rgba(16, 185, 129, .2); border-color: rgba(16, 185, 129, .5); color: #6ee7b7;
-  }
-  #algo-merge-sort-view .ms-tree-node.ms-node-pending {
+
+  #algo-merge-sort-view .ms-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
     color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  /* result banner */
-  #algo-merge-sort-view .ms-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(99, 102, 241, .06));
-    border: 1px solid rgba(6, 182, 212, .28);
-    line-height: 1.55; font-size: 14px; color: #cffafe;
+  #algo-merge-sort-view .ms-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
   }
-  #algo-merge-sort-view .ms-result .ms-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #ecfeff; box-shadow: 0 4px 14px var(--accent-glow);
+
+  /* Card 2: 状态监视器 */
+  #algo-merge-sort-view .ms-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
   }
-  #algo-merge-sort-view .ms-result.ms-result--done {
-    background: linear-gradient(135deg, rgba(16, 185, 129, .18), rgba(52, 211, 153, .08));
-    border-color: rgba(16, 185, 129, .4); color: #d1fae5;
+
+  #algo-merge-sort-view .ms-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  #algo-merge-sort-view .ms-result.ms-result--done .ms-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-merge-sort-view .ms-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
-  /* log */
-  #algo-merge-sort-view .ms-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 14, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-merge-sort-view .ms-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
   }
-  #algo-merge-sort-view .ms-log-line { display: flex; gap: 8px; }
-  #algo-merge-sort-view .ms-log-line .ms-log-num { color: #475569; flex-shrink: 0; }
-  #algo-merge-sort-view .ms-log-line.ms-log-active { color: #67e8f9; font-weight: 600; }
-  #algo-merge-sort-view .ms-log-line.ms-log-active .ms-log-num { color: var(--accent-b); }
-  /* code panel */
-  #algo-merge-sort-view .ms-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 14, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-merge-sort-view .ms-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
   }
-  #algo-merge-sort-view .ms-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-merge-sort-view .ms-controls {
-    padding: 14px 18px;
-    background: rgba(8, 14, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-merge-sort-view .ms-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
-  #algo-merge-sort-view .ms-controls .ms-ctrl-btn { min-width: 64px; }
-  #algo-merge-sort-view .ms-controls .ms-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #ecfeff; border-color: transparent;
+
+  /* 底部播放进度条控制条 */
+  #algo-merge-sort-view .ms-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
-  #algo-merge-sort-view .ms-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-merge-sort-view .ms-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-merge-sort-view .ms-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-merge-sort-view .ms-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-merge-sort-view #ms-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-merge-sort-view .ms-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-merge-sort-view .ms-code { min-height: 360px; }
+  #algo-merge-sort-view .ms-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-merge-sort-view .ms-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-merge-sort-view .ms-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-merge-sort-view .ms-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="ms-shell">
-  <div class="ms-hero">
-    <div class="ms-hero-left">
-      <span class="ms-icon">🌿</span>
-      <div>
-        <h1>归并排序</h1>
-        <div class="ms-sub">分治思想 · 递归拆分 · 有序合并 · O(n log n) · 稳定</div>
-      </div>
+<div id="algo-merge-sort-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="ms-header">
+    <div class="ms-header-left">
+      <div class="ms-icon-btn">🧩</div>
+      <div class="ms-main-title">归并排序 · Merge Sort</div>
+      <button class="ms-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="ms-badge-mode">分治拆解与双指针合并</div>
+      <div class="ms-badge-complexity">O(n log n) · O(n) 稳定</div>
     </div>
-    <div class="ms-tip"><strong>核心动画：</strong>数组被反复一分为二（青色高亮当前区间）→ 到达叶子后开始两两合并 → 合并时用两个指针逐个比较左右子数组，较小元素归入结果（金色闪烁）→ 合并完毕覆盖回原数组。</div>
-  </div>
-  <div class="ms-main">
-    <div class="ms-left">
-      <section class="ms-card">
-        <div class="ms-card-title">输入 <span class="ms-tag">数组</span></div>
-        <div class="ms-input-row">
-          <input id="ms-array" value="38,27,43,3,9,82,10">
-          <button id="ms-start">开始排序</button>
-        </div>
-        <div class="ms-examples">
-          <button class="ms-chip" data-arr="38,27,43,3,9,82,10">经典 7 元素</button>
-          <button class="ms-chip" data-arr="5,3,8,1,7,2,6,4">8 元素</button>
-          <button class="ms-chip" data-arr="10,9,8,7,6,5">完全逆序</button>
-          <button class="ms-chip" data-arr="1,2,3,4,5">已排序</button>
-          <button class="ms-chip" data-arr="3,3,1,1,2,2">含重复</button>
-        </div>
-      </section>
-
-      <div class="ms-stats">
-        <div class="ms-stat ms-stat--depth"><div class="ms-stat-label">递归深度</div><div class="ms-stat-val" id="ms-stat-depth">0</div></div>
-        <div class="ms-stat ms-stat--range"><div class="ms-stat-label">当前区间</div><div class="ms-stat-val" id="ms-stat-range">-</div></div>
-        <div class="ms-stat"><div class="ms-stat-label">比较次数</div><div class="ms-stat-val" id="ms-stat-cmp">0</div></div>
-        <div class="ms-stat"><div class="ms-stat-label">移动次数</div><div class="ms-stat-val" id="ms-stat-mv">0</div></div>
-        <div class="ms-stat ms-stat--sorted"><div class="ms-stat-label">状态</div><div class="ms-stat-val" id="ms-stat-phase">就绪</div></div>
+    <div class="ms-header-right">
+      <div class="ms-input-group">
+        <label for="input-array">数组:</label>
+        <input type="text" id="input-array" value="38, 27, 43, 3, 9, 82, 10" style="width: 160px;">
       </div>
+      <button class="ms-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="ms-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
 
-      <section class="ms-card ms-visual">
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="ms-workspace">
+    <!-- Card 1: 原数组与辅助合并双轨沙盘 -->
+    <section class="ms-card">
+      <div class="ms-card-header">
         <div class="ms-card-title">
-          排序过程
-          <span class="ms-tag" id="ms-step-tag">初始化</span>
+          <span>📊</span> 原数组与 Temp 辅助缓冲区双轨沙盘 (Main & Temp Buffer)
         </div>
-        <div class="ms-canvas">
-          <div class="ms-bars" id="ms-bars"></div>
-          <div class="ms-merge-area" id="ms-merge-area"></div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● 左段 p1</span> · <span style="color: #a855f7;">● 右段 p2</span> · <span style="color: #10b981;">● 归并缓冲区</span>
         </div>
-        <div class="ms-result" id="ms-result">
-          <span class="ms-emoji">🌿</span>
-          <div id="step-message">点击「开始排序」查看归并排序分治过程</div>
+      </div>
+      <div class="ms-card-body" style="justify-content: center;">
+        <div class="ms-sandbox-container">
+          <!-- 上轨：原数组 -->
+          <div class="ms-track-section">
+            <div class="ms-track-label">原数组 arr (分治区间 [L..R])</div>
+            <div class="ms-track-row" id="ms-main-track"></div>
+          </div>
+          <!-- 下轨：辅助 temp 缓冲区 -->
+          <div class="ms-track-section">
+            <div class="ms-track-label">辅助数组 temp 归并缓冲区</div>
+            <div class="ms-track-row" id="ms-temp-track"></div>
+          </div>
         </div>
-      </section>
+      </div>
+      <div class="ms-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="ms-chip" data-arr="38, 27, 43, 3, 9, 82, 10">经典 7 项 (38, 27, 43, 3, 9, 82, 10)</button>
+        <button class="ms-chip" data-arr="8, 7, 6, 5, 4, 3, 2, 1">完全逆序 8 项</button>
+        <button class="ms-chip" data-arr="1, 2, 3, 4, 5, 6">已有序 6 项</button>
+      </div>
+    </section>
 
-      <section class="ms-card">
-        <div class="ms-card-title">分治树 <span class="ms-tag" id="ms-tree-tag">递归结构</span></div>
-        <div class="ms-tree" id="ms-tree"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="ms-card">
+      <div class="ms-card-header">
+        <div class="ms-card-title">
+          <span>🧭</span> 归并指标监视器 (Merge Metrics Monitor)
+        </div>
+      </div>
+      <div class="ms-card-body">
+        <div class="ms-metrics-grid">
+          <div class="ms-metric-card">
+            <span class="ms-metric-label">当前区间 [L, mid, R]</span>
+            <span class="ms-metric-val" id="metric-range" style="color: #2563eb;">[0, 0, 1]</span>
+          </div>
+          <div class="ms-metric-card">
+            <span class="ms-metric-label">左指针 p1</span>
+            <span class="ms-metric-val" id="metric-p1" style="color: #3b82f6;">0</span>
+          </div>
+          <div class="ms-metric-card">
+            <span class="ms-metric-label">右指针 p2</span>
+            <span class="ms-metric-val" id="metric-p2" style="color: #a855f7;">1</span>
+          </div>
+          <div class="ms-metric-card">
+            <span class="ms-metric-label">比较 / 回填次数</span>
+            <span class="ms-metric-val" id="metric-comp-copy" style="color: #f59e0b;">0 / 0</span>
+          </div>
+        </div>
+        <div class="ms-formula-box" id="ms-formula-box">
+          <span>分治动作:</span> <strong id="formula-action" style="color: #2563eb;">merge(left, mid, right)</strong>
+        </div>
+        <div class="ms-live-alert" id="ms-live-alert">
+          <span>💡</span> <span id="ms-live-text">准备就绪，点击运行开始归并排序。</span>
+        </div>
+      </div>
+    </section>
 
-      <section class="ms-card">
-        <div class="ms-card-title">执行日志 <button id="ms-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="ms-log" id="ms-log"></div>
-      </section>
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="ms-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="ms-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="ms-card-header">
+        <div class="ms-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="ms-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="ms-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="ms-playback-bar">
+    <div class="ms-playback-controls">
+      <button class="ms-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="ms-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="ms-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="ms-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="ms-controls">
-    <button id="step-reset" class="ms-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="ms-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="ms-ctrl-btn ms-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="ms-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="ms-counter">步骤: 0 / 0</span>
-    <div class="ms-speed-wrap">
-      <span>速度</span>
-      <input id="ms-speed" type="range" min="200" max="2500" step="100" value="700">
-      <span id="ms-speed-label" style="min-width:42px;">0.7s</span>
+    <div class="ms-progress-wrap">
+      <span class="ms-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

@@ -1,438 +1,590 @@
 <style>
-  /* === 快速排序 · 玻璃感 + 橙色渐变 === */
+  /* === 快速排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-quick-sort-view {
-    --accent-a: #ea580c;
-    --accent-b: #f97316;
-    --accent-c: #fb923c;
-    --accent-glow: rgba(249, 115, 22, .45);
-    --pivot-color: #fbbf24;
-    --swap-color: #ef4444;
-    --pointer-color: #38bdf8;
-    --sorted-a: #34d399;
-    --sorted-b: #10b981;
-    --recurse-a: #a78bfa;
-    --recurse-b: #7c3aed;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 15% 10%, rgba(234, 88, 12, .30), transparent 55%),
-      radial-gradient(ellipse at 85% 90%, rgba(251, 146, 60, .22), transparent 55%),
-      linear-gradient(135deg, #1a0f08 0%, #2d1810 50%, #1f1008 100%);
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-quick-sort-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-quick-sort-view .qs-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-quick-sort-view .qs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-quick-sort-view .qs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-quick-sort-view .qs-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-quick-sort-view .qs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-quick-sort-view .qs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-quick-sort-view .qs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-quick-sort-view .qs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-quick-sort-view .qs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-quick-sort-view .qs-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-quick-sort-view .qs-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-quick-sort-view .qs-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-quick-sort-view .qs-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-quick-sort-view .qs-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-quick-sort-view .qs-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-quick-sort-view .qs-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-quick-sort-view .qs-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-quick-sort-view .qs-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
-  }
-  /* hero */
-  #algo-quick-sort-view .qs-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-quick-sort-view .qs-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-quick-sort-view .qs-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-c));
-    color: #fff7ed; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-quick-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-quick-sort-view .qs-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-quick-sort-view .qs-tip {
-    max-width: 480px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(234, 88, 12, .12), rgba(249, 115, 22, .08));
-    border: 1px solid rgba(249, 115, 22, .28);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-quick-sort-view .qs-tip strong { color: #fdba74; }
-  /* main grid */
-  #algo-quick-sort-view .qs-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-quick-sort-view .qs-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+
   #algo-quick-sort-view .qs-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
+
+  #algo-quick-sort-view .qs-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
   #algo-quick-sort-view .qs-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-quick-sort-view .qs-tag {
-    font-size: 11px; color: #fdba74; background: rgba(249, 115, 22, .14);
-    border: 1px solid rgba(249, 115, 22, .3); padding: 2px 8px; border-radius: 999px;
+
+  #algo-quick-sort-view .qs-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
-  /* input */
-  #algo-quick-sort-view .qs-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
+
+  /* Card 1: 柱状图与 Pivot 双向夹逼沙盘 */
+  #algo-quick-sort-view .qs-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 6px 6px;
+    width: 100%;
+    min-height: 180px;
   }
-  #algo-quick-sort-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
+
+  #algo-quick-sort-view .qs-bars-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 140px;
+    padding-bottom: 4px;
   }
-  #algo-quick-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(249, 115, 22, .15); }
-  #algo-quick-sort-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-quick-sort-view .qs-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
   }
-  #algo-quick-sort-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #fff7ed; transform: translateY(-1px);
-    box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-quick-sort-view .qs-bar-pillar {
+    width: 38px;
+    border-radius: 6px 6px 0 0;
+    background: #cbd5e1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  #algo-quick-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-quick-sort-view .qs-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  #algo-quick-sort-view .qs-bar-idx {
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-quick-sort-view .qs-bar-pillar.is-pivot {
+    background: #fbbf24;
+    color: #78350f;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4);
+    transform: translateY(-6px);
+  }
+
+  #algo-quick-sort-view .qs-bar-pillar.is-i-ptr {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  }
+
+  #algo-quick-sort-view .qs-bar-pillar.is-j-ptr {
+    border-color: #a855f7;
+    background: #faf5ff;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+  }
+
+  #algo-quick-sort-view .qs-bar-pillar.is-swapping {
+    background: #f43f5e;
+    color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3);
+    transform: translateY(-6px);
+  }
+
+  #algo-quick-sort-view .qs-bar-pillar.is-settled {
+    background: #34d399;
+    color: #064e3b;
+  }
+
+  /* Preset Chips */
+  #algo-quick-sort-view .qs-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
   #algo-quick-sort-view .qs-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(249, 115, 22, .12); border: 1px solid rgba(249, 115, 22, .28);
-    color: #fdba74; cursor: pointer; transition: all .2s;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
   }
   #algo-quick-sort-view .qs-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fff7ed; border-color: transparent; transform: translateY(-1px);
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
   }
-  /* stats */
-  #algo-quick-sort-view .qs-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+
+  /* Card 2: 状态监视器 */
+  #algo-quick-sort-view .qs-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
   }
-  #algo-quick-sort-view .qs-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
+
+  #algo-quick-sort-view .qs-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  #algo-quick-sort-view .qs-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+
+  #algo-quick-sort-view .qs-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
-  #algo-quick-sort-view .qs-stat.qs-stat--depth::before { background: linear-gradient(180deg, var(--recurse-a), var(--recurse-b)); }
-  #algo-quick-sort-view .qs-stat.qs-stat--pivot::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-quick-sort-view .qs-stat.qs-stat--done::before { background: linear-gradient(180deg, var(--sorted-a), var(--sorted-b)); }
-  #algo-quick-sort-view .qs-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-quick-sort-view .qs-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+
+  #algo-quick-sort-view .qs-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
   }
-  #algo-quick-sort-view .qs-stat--depth .qs-stat-val { color: #c4b5fd; }
-  #algo-quick-sort-view .qs-stat--pivot .qs-stat-val { color: #fcd34d; }
-  #algo-quick-sort-view .qs-stat--done .qs-stat-val { color: #6ee7b7; }
-  /* legend */
-  #algo-quick-sort-view .qs-legend {
-    display: flex; gap: 14px; padding: 0 16px 8px; flex-wrap: wrap;
+
+  #algo-quick-sort-view .qs-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
   }
-  #algo-quick-sort-view .qs-legend-item {
-    display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #94a3b8;
+
+  #algo-quick-sort-view .qs-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
-  #algo-quick-sort-view .qs-legend-dot {
-    width: 12px; height: 12px; border-radius: 4px;
+
+  /* 底部播放进度条控制条 */
+  #algo-quick-sort-view .qs-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
-  #algo-quick-sort-view .qs-legend-dot.dot-pivot {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    box-shadow: 0 0 6px rgba(251, 191, 36, .5);
+
+  #algo-quick-sort-view .qs-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-quick-sort-view .qs-legend-dot.dot-compare {
-    background: linear-gradient(135deg, rgba(56, 189, 248, .7), rgba(14, 165, 233, .4));
+
+  #algo-quick-sort-view .qs-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-quick-sort-view .qs-legend-dot.dot-swap {
-    background: linear-gradient(135deg, rgba(239, 68, 68, .7), rgba(220, 38, 38, .4));
+  #algo-quick-sort-view .qs-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
-  #algo-quick-sort-view .qs-legend-dot-dot-recurse {
-    background: linear-gradient(135deg, rgba(167, 139, 250, .7), rgba(124, 58, 237, .4));
+
+  #algo-quick-sort-view .qs-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #algo-quick-sort-view .qs-legend-dot.dot-sorted {
-    background: linear-gradient(135deg, #34d399, #10b981);
+
+  #algo-quick-sort-view .qs-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
   }
-  /* visual */
-  #algo-quick-sort-view .qs-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-quick-sort-view .qs-canvas {
-    flex: 1; min-height: 0; padding: 36px 18px 20px;
-    position: relative; overflow: hidden;
-    display: flex; align-items: flex-end; justify-content: center;
-  }
-  #algo-quick-sort-view .qs-canvas::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at 50% 100%, rgba(249, 115, 22, .12), transparent 60%);
-    pointer-events: none;
-  }
-  /* sub-array range indicator */
-  #algo-quick-sort-view .qs-range-bar {
-    position: absolute; bottom: 8px; height: 6px; border-radius: 3px;
-    transition: all .4s cubic-bezier(.4, 0, .2, 1);
-    opacity: .7;
-  }
-  #algo-quick-sort-view .qs-range-bar.range-active {
-    background: linear-gradient(90deg, var(--recurse-a), var(--recurse-b));
-    box-shadow: 0 0 10px rgba(167, 139, 250, .5);
-  }
-  #algo-quick-sort-view .qs-range-bar.range-done {
-    background: linear-gradient(90deg, var(--sorted-a), var(--sorted-b));
-    box-shadow: 0 0 10px rgba(52, 211, 153, .4);
-  }
-  #algo-quick-sort-view .qs-range-label {
-    position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-    font-size: 10px; font-weight: 700; white-space: nowrap;
-    color: #c4b5fd; font-family: 'JetBrains Mono', Consolas, monospace;
-  }
-  /* bars */
-  #algo-quick-sort-view .qs-bars {
-    position: relative; display: flex; align-items: flex-end;
-    gap: 6px; height: 220px; padding-bottom: 28px;
-  }
-  #algo-quick-sort-view .qs-bar-wrap {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    width: 48px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-quick-sort-view .qs-bar {
-    width: 100%; border-radius: 10px 10px 4px 4px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
-    border: 1.5px solid rgba(255, 255, 255, .14);
-    display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 6px; color: #e2e8f0;
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13px; font-weight: 800;
-    transition: height .45s cubic-bezier(.4, 0, .2, 1),
-                background .35s, border-color .35s, box-shadow .35s, color .35s, transform .35s;
-  }
-  /* default dim for elements outside recursion range */
-  #algo-quick-sort-view .qs-bar.qs-outside {
-    opacity: .35;
-  }
-  /* pivot highlight */
-  #algo-quick-sort-view .qs-bar.qs-pivot {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .6), rgba(245, 158, 11, .3));
-    border-color: var(--pivot-color);
-    color: #fff7ed;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, .3), 0 4px 18px rgba(251, 191, 36, .25);
-  }
-  /* comparing elements */
-  #algo-quick-sort-view .qs-bar.qs-compare {
-    background: linear-gradient(180deg, rgba(56, 189, 248, .5), rgba(14, 165, 233, .25));
-    border-color: #38bdf8;
-    color: #fff;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, .25);
-    animation: qs-pulse .5s ease-in-out;
-  }
-  @keyframes qs-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-  }
-  /* swapping elements */
-  #algo-quick-sort-view .qs-bar.qs-swap {
-    background: linear-gradient(180deg, rgba(239, 68, 68, .55), rgba(220, 38, 38, .25));
-    border-color: #f87171;
-    color: #fff;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, .3);
-    animation: qs-shake .4s ease-in-out;
-  }
-  @keyframes qs-shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px); }
-    40% { transform: translateX(4px); }
-    60% { transform: translateX(-3px); }
-    80% { transform: translateX(3px); }
-  }
-  /* pointer markers (i, j) */
-  #algo-quick-sort-view .qs-pointer {
-    position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
-    font-size: 11px; font-weight: 800;
-    padding: 2px 8px; border-radius: 6px;
-    animation: qs-float 1.6s ease-in-out infinite;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-  }
-  #algo-quick-sort-view .qs-pointer.ptr-i {
-    color: #34d399; background: rgba(52, 211, 153, .15); border: 1px solid #34d399;
-  }
-  #algo-quick-sort-view .qs-pointer.ptr-j {
-    color: #38bdf8; background: rgba(56, 189, 248, .15); border: 1px solid #38bdf8;
-  }
-  #algo-quick-sort-view .qs-pointer.ptr-pivot {
-    color: #fbbf24; background: rgba(251, 191, 36, .15); border: 1px solid #fbbf24;
-  }
-  @keyframes qs-float {
-    0%, 100% { transform: translate(-50%, 0); }
-    50% { transform: translate(-50%, -4px); }
-  }
-  /* sorted (pivot in final place) */
-  #algo-quick-sort-view .qs-bar.qs-sorted {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
-    border-color: var(--sorted-a);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(52, 211, 153, .25);
-  }
-  /* done - all sorted */
-  #algo-quick-sort-view .qs-bar.qs-done {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
-    border-color: var(--sorted-a);
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
-    color: #fff;
-  }
-  /* recurse range highlight (in-range elements get a subtle tint) */
-  #algo-quick-sort-view .qs-bar.qs-in-range {
-    border-color: rgba(167, 139, 250, .5);
-  }
-  #algo-quick-sort-view .qs-idx {
-    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
-    color: #64748b; font-size: 11px; font-weight: 600;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-  }
-  /* result banner */
-  #algo-quick-sort-view .qs-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(234, 88, 12, .12), rgba(249, 115, 22, .06));
-    border: 1px solid rgba(249, 115, 22, .28);
-    line-height: 1.55; font-size: 14px; color: #fed7aa;
-  }
-  #algo-quick-sort-view .qs-result .qs-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fff7ed; box-shadow: 0 4px 14px var(--accent-glow);
-  }
-  #algo-quick-sort-view .qs-result.qs-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
-  }
-  #algo-quick-sort-view .qs-result.qs-result--done .qs-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
-  }
-  /* log */
-  #algo-quick-sort-view .qs-log {
-    min-height: 90px; max-height: 140px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
-  }
-  #algo-quick-sort-view .qs-log-line { display: flex; gap: 8px; }
-  #algo-quick-sort-view .qs-log-line .qs-log-num { color: #475569; flex-shrink: 0; }
-  #algo-quick-sort-view .qs-log-line.qs-log-active { color: #fdba74; font-weight: 600; }
-  #algo-quick-sort-view .qs-log-line.qs-log-active .qs-log-num { color: var(--accent-b); }
-  /* code panel */
-  #algo-quick-sort-view .qs-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
-  }
-  #algo-quick-sort-view .qs-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-quick-sort-view .qs-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-  }
-  #algo-quick-sort-view .qs-controls .qs-ctrl-btn { min-width: 64px; }
-  #algo-quick-sort-view .qs-controls .qs-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fff7ed; border-color: transparent;
-  }
-  #algo-quick-sort-view .qs-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-quick-sort-view .qs-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
-  }
-  #algo-quick-sort-view #qs-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-quick-sort-view .qs-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-quick-sort-view .qs-code { min-height: 360px; }
+
+  #algo-quick-sort-view .qs-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="qs-shell">
-  <div class="qs-hero">
-    <div class="qs-hero-left">
-      <span class="qs-icon">⚡</span>
-      <div>
-        <h1>快速排序</h1>
-        <div class="qs-sub">分治递归 · 选取 pivot 分区 · 平均 O(n log n) · 不稳定</div>
-      </div>
+<div id="algo-quick-sort-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="qs-header">
+    <div class="qs-header-left">
+      <div class="qs-icon-btn">⚡</div>
+      <div class="qs-main-title">快速排序 · Quick Sort</div>
+      <button class="qs-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="qs-badge-mode">双指针向内夹逼 Partition</div>
+      <div class="qs-badge-complexity">O(n log n) · O(log n) 不稳定</div>
     </div>
-    <div class="qs-tip"><strong>核心动画：</strong>选基准 pivot → 左右指针 i/j 相向扫描 → 比 pivot 小的放左边，大的放右边 → pivot 归位 → 递归左右子数组。</div>
-  </div>
-  <div class="qs-main">
-    <div class="qs-left">
-      <section class="qs-card">
-        <div class="qs-card-title">输入 <span class="qs-tag">数组</span></div>
-        <div class="qs-input-row">
-          <input id="qs-array" value="8,3,5,1,7,2,9,4">
-          <button id="qs-start">开始排序</button>
-        </div>
-        <div class="qs-examples">
-          <button class="qs-chip" data-arr="8,3,5,1,7,2,9,4">默认 8 元素</button>
-          <button class="qs-chip" data-arr="5,3,8,4,2">5 元素</button>
-          <button class="qs-chip" data-arr="7,6,5,4,3,2,1">完全逆序</button>
-          <button class="qs-chip" data-arr="1,2,3,4,5,6">已排序</button>
-          <button class="qs-chip" data-arr="3,3,1,1,2,2">含重复</button>
-        </div>
-      </section>
-
-      <div class="qs-stats">
-        <div class="qs-stat qs-stat--depth"><div class="qs-stat-label">递归深度</div><div class="qs-stat-val" id="qs-stat-depth">0</div></div>
-        <div class="qs-stat"><div class="qs-stat-label">比较次数</div><div class="qs-stat-val" id="qs-stat-cmp">0</div></div>
-        <div class="qs-stat"><div class="qs-stat-label">交换次数</div><div class="qs-stat-val" id="qs-stat-swap">0</div></div>
-        <div class="qs-stat qs-stat--pivot"><div class="qs-stat-label">pivot</div><div class="qs-stat-val" id="qs-stat-pivot">-</div></div>
+    <div class="qs-header-right">
+      <div class="qs-input-group">
+        <label for="input-array">数组:</label>
+        <input type="text" id="input-array" value="6, 1, 2, 7, 9, 3, 4, 5, 10, 8" style="width: 170px;">
       </div>
+      <button class="qs-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="qs-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
 
-      <div class="qs-legend">
-        <div class="qs-legend-item"><div class="qs-legend-dot dot-pivot"></div><span>Pivot 基准</span></div>
-        <div class="qs-legend-item"><div class="qs-legend-dot dot-compare"></div><span>当前比较</span></div>
-        <div class="qs-legend-item"><div class="qs-legend-dot dot-swap"></div><span>交换</span></div>
-        <div class="qs-legend-item"><div class="qs-legend-dot dot-sorted"></div><span>已归位</span></div>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="qs-workspace">
+    <!-- Card 1: 柱状图与 Pivot 双向夹逼沙盘 -->
+    <section class="qs-card">
+      <div class="qs-card-header">
+        <div class="qs-card-title">
+          <span>📊</span> 数组柱状图与基准划分沙盘 (Pillar Track & Pivot Partition)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #fbbf24;">● 基准 pivot</span> · <span style="color: #3b82f6;">● 左指针 i</span> · <span style="color: #a855f7;">● 右指针 j</span> · <span style="color: #34d399;">● 已就位</span>
+        </div>
       </div>
-
-      <section class="qs-card qs-visual">
-        <div class="qs-card-title">排序过程</div>
-        <div class="qs-canvas">
-          <div class="qs-bars" id="qs-bars"></div>
+      <div class="qs-card-body" style="justify-content: center;">
+        <div class="qs-sandbox-container">
+          <div class="qs-bars-container" id="qs-bars-container"></div>
         </div>
-        <div class="qs-result" id="qs-result">
-          <span class="qs-emoji">⚡</span>
-          <div id="step-message">点击「开始排序」查看快速排序逐步过程</div>
-        </div>
-      </section>
+      </div>
+      <div class="qs-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="qs-chip" data-arr="6, 1, 2, 7, 9, 3, 4, 5, 10, 8">经典 10 项 (6, 1, 2, 7, 9, 3, 4, 5, 10, 8)</button>
+        <button class="qs-chip" data-arr="9, 7, 5, 3, 1">完全逆序 5 项</button>
+        <button class="qs-chip" data-arr="1, 2, 3, 4, 5">已有序 5 项</button>
+      </div>
+    </section>
 
-      <section class="qs-card">
-        <div class="qs-card-title">执行日志 <button id="qs-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="qs-log" id="qs-log"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="qs-card">
+      <div class="qs-card-header">
+        <div class="qs-card-title">
+          <span>🧭</span> 划分指标监视器 (Partition Metrics Monitor)
+        </div>
+      </div>
+      <div class="qs-card-body">
+        <div class="qs-metrics-grid">
+          <div class="qs-metric-card">
+            <span class="qs-metric-label">当前区间 [L, R]</span>
+            <span class="qs-metric-val" id="metric-range" style="color: #2563eb;">[0, 9]</span>
+          </div>
+          <div class="qs-metric-card">
+            <span class="qs-metric-label">基准值 pivot</span>
+            <span class="qs-metric-val" id="metric-pivot" style="color: #fbbf24;">6</span>
+          </div>
+          <div class="qs-metric-card">
+            <span class="qs-metric-label">指针 [i, j]</span>
+            <span class="qs-metric-val" id="metric-ij" style="color: #3b82f6;">[0, 9]</span>
+          </div>
+          <div class="qs-metric-card">
+            <span class="qs-metric-label">比较 / 交换次数</span>
+            <span class="qs-metric-val" id="metric-comp-swap" style="color: #f59e0b;">0 / 0</span>
+          </div>
+        </div>
+        <div class="qs-formula-box" id="qs-formula-box">
+          <span>当前动作:</span> <strong id="formula-action" style="color: #2563eb;">partition(arr, left, right)</strong>
+        </div>
+        <div class="qs-live-alert" id="qs-live-alert">
+          <span>💡</span> <span id="qs-live-text">准备就绪，点击运行开始快速排序。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="qs-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="qs-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="qs-card-header">
+        <div class="qs-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="qs-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="qs-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="qs-playback-bar">
+    <div class="qs-playback-controls">
+      <button class="qs-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="qs-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="qs-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="qs-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="qs-controls">
-    <button id="step-reset" class="qs-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="qs-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="qs-ctrl-btn qs-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="qs-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="qs-counter">步骤: 0 / 0</span>
-    <div class="qs-speed-wrap">
-      <span>速度</span>
-      <input id="qs-speed" type="range" min="200" max="2500" step="100" value="700">
-      <span id="qs-speed-label" style="min-width:42px;">0.7s</span>
+    <div class="qs-progress-wrap">
+      <span class="qs-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

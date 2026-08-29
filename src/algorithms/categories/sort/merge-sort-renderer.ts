@@ -1,947 +1,494 @@
 /**
- * 归并排序可视化器
- * 展示分治递归拆分 → 指针合并的完整过程：
- * - split：青色高亮当前区间，中间点分割
- * - recurse：递归进入左/右子区间
- * - merge-start：初始化临时数组 L / R
- * - merge-compare：双指针逐个比较（金色闪烁）
- * - merge-pick：较小元素归入结果（青色）
- * - merge-copy：剩余元素直接复制
- * - done：整体完成
+ * 归并排序可视化器 — 4-Card 标准现代架构
+ * 递归分治、双指针归并、临时缓冲区与写回
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  MERGE_SORT_PROBLEM_HTML,
+  MERGE_SORT_ANALYSIS_HTML,
+  MERGE_SORT_CODE_LANGUAGES,
+} from './merge-sort-problem-content';
+import { parseArray } from './bubble-sort-renderer';
 import template from './merge-sort.html?raw';
 
-type Phase =
-  | 'init'
-  | 'split'
-  | 'recurse-left'
-  | 'recurse-right'
-  | 'merge-start'
-  | 'merge-compare'
-  | 'merge-pick'
-  | 'merge-copy'
-  | 'done';
-
-interface MSTreeNode {
-  left: number;
-  right: number;
-  status: 'pending' | 'active' | 'merged';
-  sorted?: number[];
-  children: [MSTreeNode, MSTreeNode] | null;
-}
-
-interface MSStep {
+export interface MSStep {
   array: number[];
-  phase: Phase;
-  /** 当前正在处理的子数组范围 [lo, hi]（闭区间）；-1 表示无 */
-  lo: number;
-  hi: number;
-  /** 当前分割点（-1 表示非分割阶段） */
+  temp: (number | null)[];
+  left: number;
   mid: number;
-  /** 递归深度（0 为根） */
-  depth: number;
-  /** 临时左子数组（仅 merge 阶段） */
-  tempLeft: number[];
-  /** 临时右子数组 */
-  tempRight: number[];
-  /** 左指针 i（指向 tempLeft 中下一个待比较元素，-1 表示未启用） */
-  ptrI: number;
-  /** 右指针 j */
-  ptrJ: number;
-  /** 结果写入位置（array 中的下标） */
-  ptrK: number;
-  /** 当前正在比较的两个值（-1 表示不在比较态） */
-  cmpL: number;
-  cmpR: number;
-  /** 本次 pick 选中的值（-1 表示未 pick） */
-  picked: number;
-  /** 本次 copy 的值（-1 表示未 copy） */
-  copied: number;
-  /** 累计比较次数 */
+  right: number;
+  p1: number;
+  p2: number;
+  t: number;
   comparisons: number;
-  /** 累计移动次数 */
-  moves: number;
-  /** 当前正在高亮的 bar 下标（-1 表示无） */
-  highlightIdx: number;
-  /** 状态信息 */
+  copies: number;
+  phase: 'init' | 'divide' | 'compare' | 'take-left' | 'take-right' | 'copy-back' | 'done';
+  status: 'init' | 'divide' | 'compare' | 'take-left' | 'take-right' | 'copy-back' | 'done';
   message: string;
-  /** 日志文本 */
   log: string;
-  /** 代码高亮行 */
   codeLine: number | number[];
-  /** 分治树快照（深拷贝根） */
-  tree: MSTreeNode | null;
-  /** 当前树中"活跃"节点的 range（用于在树面板中高亮） */
-  treeNode: { left: number; right: number } | null;
 }
 
-function parseArray(input: string): number[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-}
-
-function cloneTree(root: MSTreeNode): MSTreeNode {
-  const node: MSTreeNode = {
-    left: root.left,
-    right: root.right,
-    status: root.status,
-    sorted: root.sorted ? [...root.sorted] : undefined,
-    children: null,
-  };
-  if (root.children) {
-    node.children = [cloneTree(root.children[0]), cloneTree(root.children[1])];
-  }
-  return node;
-}
-
-/**
- * 生成归并排序的完整步骤序列。
- * `array` 在递归过程中就地修改，每一步都拍快照保存当前状态。
- */
-function mergeSortSteps(input: number[]): MSStep[] {
+export function mergeSortSteps(input: number[]): MSStep[] {
   const steps: MSStep[] = [];
   const array = [...input];
   const n = array.length;
+  const temp: (number | null)[] = new Array(n).fill(null);
   let comparisons = 0;
-  let moves = 0;
+  let copies = 0;
 
-  // 根节点
-  const root: MSTreeNode = { left: 0, right: n - 1, status: 'pending', children: null };
+  steps.push({
+    array: [...array],
+    temp: [...temp],
+    left: -1,
+    mid: -1,
+    right: -1,
+    p1: -1,
+    p2: -1,
+    t: -1,
+    comparisons: 0,
+    copies: 0,
+    phase: 'init',
+    status: 'init',
+    message: n === 0 ? '数组为空，无需排序。' : `初始化归并排序：数组长度 n = ${n}，准备进行分治递归。`,
+    log: n === 0 ? '空数组' : `初始化: [${array.join(', ')}]`,
+    codeLine: 2,
+  });
 
-  function pushStep(
-    phase: Phase,
-    lo: number,
-    hi: number,
-    mid: number,
-    depth: number,
-    tempLeft: number[],
-    tempRight: number[],
-    ptrI: number,
-    ptrJ: number,
-    ptrK: number,
-    cmpL: number,
-    cmpR: number,
-    picked: number,
-    copied: number,
-    highlightIdx: number,
-    message: string,
-    log: string,
-    codeLine: number | number[],
-    treeNode: { left: number; right: number } | null,
-  ): void {
+  if (n <= 1) {
     steps.push({
       array: [...array],
-      phase,
-      lo,
-      hi,
-      mid,
-      depth,
-      tempLeft: [...tempLeft],
-      tempRight: [...tempRight],
-      ptrI,
-      ptrJ,
-      ptrK,
-      cmpL,
-      cmpR,
-      picked,
-      copied,
-      comparisons,
-      moves,
-      highlightIdx,
-      message,
-      log,
-      codeLine,
-      tree: cloneTree(root),
-      treeNode,
+      temp: [...temp],
+      left: 0,
+      mid: 0,
+      right: 0,
+      p1: -1,
+      p2: -1,
+      t: -1,
+      comparisons: 0,
+      copies: 0,
+      phase: 'done',
+      status: 'done',
+      message: '✅ 排序完成！',
+      log: '排序完成',
+      codeLine: 6,
     });
+    return steps;
   }
 
-  function findTreeNode(node: MSTreeNode, lo: number, hi: number): MSTreeNode | null {
-    if (node.left === lo && node.right === hi) return node;
-    if (!node.children) return null;
-    return findTreeNode(node.children[0], lo, hi) || findTreeNode(node.children[1], lo, hi);
-  }
+  const sort = (l: number, r: number) => {
+    if (l >= r) return;
+    const m = Math.floor((l + r) / 2);
 
-  function merge(arr: number[], lo: number, mid: number, hi: number, depth: number): void {
-    const L = arr.slice(lo, mid + 1);
-    const R = arr.slice(mid + 1, hi + 1);
+    steps.push({
+      array: [...array],
+      temp: [...temp],
+      left: l,
+      mid: m,
+      right: r,
+      p1: -1,
+      p2: -1,
+      t: -1,
+      comparisons,
+      copies,
+      phase: 'divide',
+      status: 'divide',
+      message: `分治拆解：划分区间 [${l}..${r}] 为左半段 [${l}..${m}] 和右半段 [${m + 1}..${r}]。`,
+      log: `Divide: [${l}..${r}] -> [${l}..${m}] + [${m + 1}..${r}]`,
+      codeLine: [3, 4, 5],
+    });
 
-    // 更新树节点为 active
-    const treeRange = findTreeNode(root, lo, hi);
-    if (treeRange) treeRange.status = 'active';
+    sort(l, m);
+    sort(m + 1, r);
+    merge(l, m, r);
+  };
 
-    pushStep(
-      'merge-start',
-      lo,
-      hi,
-      mid,
-      depth,
-      L,
-      R,
-      0,
-      0,
-      lo,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      `准备合并 [${lo}..${hi}]：L=[${L.join(',')}] R=[${R.join(',')}]，两指针从 0 开始比较。`,
-      `merge-start [${lo}..${mid}] + [${mid + 1}..${hi}]`,
-      14,
-      treeNodeOf(lo, hi),
-    );
+  const merge = (l: number, m: number, r: number) => {
+    let p1 = l;
+    let p2 = m + 1;
+    let t = l;
 
-    let i = 0;
-    let j = 0;
-    let k = lo;
+    // 清空当前区间的 temp
+    for (let k = l; k <= r; k++) temp[k] = null;
 
-    while (i < L.length && j < R.length) {
+    while (p1 <= m && p2 <= r) {
       comparisons++;
-      pushStep(
-        'merge-compare',
-        lo,
-        hi,
-        mid,
-        depth,
-        L,
-        R,
-        i,
-        j,
-        k,
-        L[i],
-        R[j],
-        -1,
-        -1,
-        -1,
-        `比较 L[${i}]=${L[i]} 与 R[${j}]=${R[j]}：${L[i] <= R[j] ? 'L ≤ R，取 L 侧' : 'L > R，取 R 侧'}。`,
-        `cmp L[${i}]=${L[i]} vs R[${j}]=${R[j]}`,
-        19,
-        treeNodeOf(lo, hi),
-      );
+      const pickLeft = array[p1] <= array[p2];
 
-      if (L[i] <= R[j]) {
-        const picked = L[i];
-        arr[k] = picked;
-        moves++;
-        i++;
-        k++;
-        pushStep(
-          'merge-pick',
-          lo,
-          hi,
-          mid,
-          depth,
-          L,
-          R,
-          i,
-          j,
-          k,
-          picked,
-          -1,
-          picked,
-          -1,
-          k - 1,
-          `将 L[${i - 1}]=${picked} 放入 arr[${k - 1}]（左指针 i=${i}）。`,
-          `pick L=${picked} → arr[${k - 1}]`,
-          21,
-          treeNodeOf(lo, hi),
-        );
+      steps.push({
+        array: [...array],
+        temp: [...temp],
+        left: l,
+        mid: m,
+        right: r,
+        p1,
+        p2,
+        t,
+        comparisons,
+        copies,
+        phase: 'compare',
+        status: 'compare',
+        message: `比较双指针元素：arr[${p1}] (${array[p1]}) vs arr[${p2}] (${array[p2]})${
+          pickLeft ? '，左侧较小' : '，右侧较小'
+        }。`,
+        log: `比较: arr[${p1}] (${array[p1]}) vs arr[${p2}] (${array[p2]})`,
+        codeLine: 11,
+      });
+
+      if (pickLeft) {
+        temp[t] = array[p1];
+        steps.push({
+          array: [...array],
+          temp: [...temp],
+          left: l,
+          mid: m,
+          right: r,
+          p1,
+          p2,
+          t,
+          comparisons,
+          copies,
+          phase: 'take-left',
+          status: 'take-left',
+          message: `选取左段元素：temp[${t}] = arr[${p1}] (${array[p1]})，p1 向右移动。`,
+          log: `temp[${t}] = arr[${p1}] (${array[p1]})`,
+          codeLine: 12,
+        });
+        p1++;
       } else {
-        const picked = R[j];
-        arr[k] = picked;
-        moves++;
-        j++;
-        k++;
-        pushStep(
-          'merge-pick',
-          lo,
-          hi,
-          mid,
-          depth,
-          L,
-          R,
-          i,
-          j,
-          k,
-          -1,
-          picked,
-          picked,
-          -1,
-          k - 1,
-          `将 R[${j - 1}]=${picked} 放入 arr[${k - 1}]（右指针 j=${j}）。`,
-          `pick R=${picked} → arr[${k - 1}]`,
-          24,
-          treeNodeOf(lo, hi),
-        );
+        temp[t] = array[p2];
+        steps.push({
+          array: [...array],
+          temp: [...temp],
+          left: l,
+          mid: m,
+          right: r,
+          p1,
+          p2,
+          t,
+          comparisons,
+          copies,
+          phase: 'take-right',
+          status: 'take-right',
+          message: `选取右段元素：temp[${t}] = arr[${p2}] (${array[p2]})，p2 向右移动。`,
+          log: `temp[${t}] = arr[${p2}] (${array[p2]})`,
+          codeLine: 13,
+        });
+        p2++;
       }
+      t++;
     }
 
-    // 复制剩余
-    while (i < L.length) {
-      const copied = L[i];
-      arr[k] = copied;
-      moves++;
-      pushStep(
-        'merge-copy',
-        lo,
-        hi,
-        mid,
-        depth,
-        L,
-        R,
-        i + 1,
-        j,
-        k + 1,
-        -1,
-        -1,
-        -1,
-        copied,
-        k,
-        `L 中还有 ${L.length - i} 个元素，直接将 L[${i}]=${copied} 复制到 arr[${k}]。`,
-        `copy L[${i}]=${copied} → arr[${k}]`,
-        29,
-        treeNodeOf(lo, hi),
-      );
-      i++;
-      k++;
+    while (p1 <= m) {
+      temp[t] = array[p1];
+      steps.push({
+        array: [...array],
+        temp: [...temp],
+        left: l,
+        mid: m,
+        right: r,
+        p1,
+        p2,
+        t,
+        comparisons,
+        copies,
+        phase: 'take-left',
+        status: 'take-left',
+        message: `左段剩余补齐：temp[${t}] = arr[${p1}] (${array[p1]})。`,
+        log: `补齐左段: temp[${t}] = ${array[p1]}`,
+        codeLine: 15,
+      });
+      p1++;
+      t++;
     }
 
-    while (j < R.length) {
-      const copied = R[j];
-      arr[k] = copied;
-      moves++;
-      pushStep(
-        'merge-copy',
-        lo,
-        hi,
-        mid,
-        depth,
-        L,
-        R,
-        i,
-        j + 1,
-        k + 1,
-        -1,
-        -1,
-        -1,
-        copied,
-        k,
-        `R 中还有 ${R.length - j} 个元素，直接将 R[${j}]=${copied} 复制到 arr[${k}]。`,
-        `copy R[${j}]=${copied} → arr[${k}]`,
-        32,
-        treeNodeOf(lo, hi),
-      );
-      j++;
-      k++;
+    while (p2 <= r) {
+      temp[t] = array[p2];
+      steps.push({
+        array: [...array],
+        temp: [...temp],
+        left: l,
+        mid: m,
+        right: r,
+        p1,
+        p2,
+        t,
+        comparisons,
+        copies,
+        phase: 'take-right',
+        status: 'take-right',
+        message: `右段剩余补齐：temp[${t}] = arr[${p2}] (${array[p2]})。`,
+        log: `补齐右段: temp[${t}] = ${array[p2]}`,
+        codeLine: 16,
+      });
+      p2++;
+      t++;
     }
 
-    // 合并完成：更新树节点为 merged
-    if (treeRange) {
-      treeRange.status = 'merged';
-      treeRange.sorted = arr.slice(lo, hi + 1);
-    }
-  }
-
-  function treeNodeOf(lo: number, hi: number): { left: number; right: number } {
-    return { left: lo, right: hi };
-  }
-
-  function mergeSortRec(
-    arr: number[],
-    lo: number,
-    hi: number,
-    depth: number,
-    isRightBranch: boolean = false,
-  ): void {
-    // 创建/标记树节点
-    const treeRange = findTreeNode(root, lo, hi);
-    if (treeRange) treeRange.status = 'active';
-
-    if (lo >= hi) {
-      // 叶子：单元素视为已排序
-      if (treeRange) {
-        treeRange.status = 'merged';
-        treeRange.sorted = [arr[lo]];
-      }
-      pushStep(
-        isRightBranch ? 'recurse-right' : 'recurse-left',
-        lo,
-        hi,
-        -1,
-        depth,
-        [],
-        [],
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        lo,
-        `到达叶子 arr[${lo}]=${arr[lo]}，单元素天然有序。`,
-        `base case arr[${lo}]=${arr[lo]}`,
-        5,
-        treeNodeOf(lo, hi),
-      );
-      return;
+    // 写回原数组
+    for (let k = l; k <= r; k++) {
+      array[k] = temp[k] as number;
+      copies++;
     }
 
-    const mid = Math.floor((lo + hi) / 2);
+    steps.push({
+      array: [...array],
+      temp: [...temp],
+      left: l,
+      mid: m,
+      right: r,
+      p1: -1,
+      p2: -1,
+      t: -1,
+      comparisons,
+      copies,
+      phase: 'copy-back',
+      status: 'copy-back',
+      message: `区间 [${l}..${r}] 归并完成并回填原数组！该区间已完全有序。`,
+      log: `Merge 完成: [${l}..${r}] 写回原数组`,
+      codeLine: 17,
+    });
+  };
 
-    // 分裂：创建子节点
-    const leftChild: MSTreeNode = { left: lo, right: mid, status: 'pending', children: null };
-    const rightChild: MSTreeNode = { left: mid + 1, right: hi, status: 'pending', children: null };
-    if (treeRange) treeRange.children = [leftChild, rightChild];
+  sort(0, n - 1);
 
-    pushStep(
-      'split',
-      lo,
-      hi,
-      mid,
-      depth,
-      [],
-      [],
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      `分割 [${lo}..${hi}]（mid=${mid}）→ 左 [${lo}..${mid}] + 右 [${mid + 1}..${hi}]。`,
-      `split [${lo}..${hi}] → [${lo}..${mid}] + [${mid + 1}..${hi}]`,
-      4,
-      treeNodeOf(lo, hi),
-    );
-
-    // 递归左半
-    pushStep(
-      'recurse-left',
-      lo,
-      mid,
-      mid,
-      depth + 1,
-      [],
-      [],
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      `递归进入左半部分 [${lo}..${mid}]，深度=${depth + 1}。`,
-      `recurse LEFT [${lo}..${mid}]`,
-      7,
-      treeNodeOf(lo, mid),
-    );
-    mergeSortRec(arr, lo, mid, depth + 1, false);
-
-    // 递归右半
-    pushStep(
-      'recurse-right',
-      mid + 1,
-      hi,
-      mid,
-      depth + 1,
-      [],
-      [],
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      `递归进入右半部分 [${mid + 1}..${hi}]，深度=${depth + 1}。`,
-      `recurse RIGHT [${mid + 1}..${hi}]`,
-      8,
-      treeNodeOf(mid + 1, hi),
-    );
-    mergeSortRec(arr, mid + 1, hi, depth + 1, true);
-
-    // 合并
-    merge(arr, lo, mid, hi, depth);
-  }
-
-  // 初始步骤
-  pushStep(
-    'init',
-    0,
-    n - 1,
-    -1,
-    0,
-    [],
-    [],
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    n === 0
-      ? '数组为空，无需排序。'
-      : `初始化：待排序数组 [${array.join(', ')}]，共 ${n} 个元素。将从 [0..${n - 1}] 开始递归拆分。`,
-    'init',
-    1,
-    { left: 0, right: n - 1 },
-  );
-
-  if (n > 1) {
-    root.status = 'active';
-    mergeSortRec(array, 0, n - 1, 0, false);
-  }
-
-  // 完成步骤
-  pushStep(
-    'done',
-    -1,
-    -1,
-    -1,
-    0,
-    [],
-    [],
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    `排序完成！共 ${comparisons} 次比较、${moves} 次移动，结果：[${array.join(', ')}]。`,
-    `done: ${comparisons} cmps, ${moves} moves`,
-    37,
-    null,
-  );
+  steps.push({
+    array: [...array],
+    temp: new Array(n).fill(null),
+    left: 0,
+    mid: Math.floor((n - 1) / 2),
+    right: n - 1,
+    p1: -1,
+    p2: -1,
+    t: -1,
+    comparisons,
+    copies,
+    phase: 'done',
+    status: 'done',
+    message: `🎉 归并排序完成！共比较 ${comparisons} 次，回填 ${copies} 次。最终数组：[${array.join(', ')}]。`,
+    log: `✓ 排序完成: [${array.join(', ')}]`,
+    codeLine: 6,
+  });
 
   return steps;
 }
 
 export class MergeSortVisualizer extends StepVisualizer<MSStep> {
-  protected codeLines = [
-    'public void mergeSort(int[] arr, int lo, int hi) {',
-    '    if (lo >= hi) return;                  // 单元素，天然有序',
-    '    int mid = lo + (hi - lo) / 2;',
-    '    mergeSort(arr, lo, mid);               // 递归排左半',
-    '    mergeSort(arr, mid + 1, hi);           // 递归排右半',
-    '    merge(arr, lo, mid, hi);               // 合并两段有序序列',
-    '}',
-    '',
-    'private void merge(int[] arr, int lo, int mid, int hi) {',
-    '    int[] L = Arrays.copyOfRange(arr, lo, mid + 1);',
-    '    int[] R = Arrays.copyOfRange(arr, mid + 1, hi + 1);',
-    '    int i = 0, j = 0, k = lo;',
-    '    while (i < L.length && j < R.length) {',
-    '        if (L[i] <= R[j]) {                // 取较小者（<= 保证稳定）',
-    '            arr[k++] = L[i++];',
-    '        } else {',
-    '            arr[k++] = R[j++];',
-    '        }',
-    '    }',
-    '    while (i < L.length) arr[k++] = L[i++];  // 复制剩余',
-    '    while (j < R.length) arr[k++] = R[j++];',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 归并排序源码';
+  protected codeLanguages = MERGE_SORT_CODE_LANGUAGES;
+  protected codeLines = MERGE_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '归并排序 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private statDepth: HTMLElement | null = null;
-  private statRange: HTMLElement | null = null;
-  private statCmp: HTMLElement | null = null;
-  private statMv: HTMLElement | null = null;
-  private statPhase: HTMLElement | null = null;
-  private barsEl: HTMLElement | null = null;
-  private mergeAreaEl: HTMLElement | null = null;
-  private treeEl: HTMLElement | null = null;
-  private stepTagEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private mainTrackEl: HTMLElement | null = null;
+  private tempTrackEl: HTMLElement | null = null;
+  private metricRangeEl: HTMLElement | null = null;
+  private metricP1El: HTMLElement | null = null;
+  private metricP2El: HTMLElement | null = null;
+  private metricCompCopyEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#ms-array');
-    this.statDepth = this.root.querySelector('#ms-stat-depth');
-    this.statRange = this.root.querySelector('#ms-stat-range');
-    this.statCmp = this.root.querySelector('#ms-stat-cmp');
-    this.statMv = this.root.querySelector('#ms-stat-mv');
-    this.statPhase = this.root.querySelector('#ms-stat-phase');
-    this.barsEl = this.root.querySelector('#ms-bars');
-    this.mergeAreaEl = this.root.querySelector('#ms-merge-area');
-    this.treeEl = this.root.querySelector('#ms-tree');
-    this.stepTagEl = this.root.querySelector('#ms-step-tag');
-    this.resultEl = this.root.querySelector('#ms-result');
-    this.logEl = this.root.querySelector('#ms-log');
-    this.clearLogBtn = this.root.querySelector('#ms-log-clear');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset',
-      prev: 'step-prev',
-      play: 'step-play',
-      next: 'step-next',
-      speed: 'ms-speed',
-      speedLabel: 'ms-speed-label',
-      counter: 'step-counter',
-      message: 'step-message',
-    });
+    this.mainTrackEl = this.root.querySelector('#ms-main-track');
+    this.tempTrackEl = this.root.querySelector('#ms-temp-track');
+    this.metricRangeEl = this.root.querySelector('#metric-range');
+    this.metricP1El = this.root.querySelector('#metric-p1');
+    this.metricP2El = this.root.querySelector('#metric-p2');
+    this.metricCompCopyEl = this.root.querySelector('#metric-comp-copy');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#ms-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelector('#ms-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.ms-chip').forEach((btn) => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ms-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
+        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
         this.start();
       });
     });
-    this.clearLogBtn?.addEventListener('click', () => {
-      if (this.logEl) this.logEl.innerHTML = '';
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: MERGE_SORT_PROBLEM_HTML,
+      analysisHtml: MERGE_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    this.arrayInput?.addEventListener('change', () => this.start());
   }
 
   protected buildSteps(): MSStep[] {
-    return mergeSortSteps(parseArray(this.arrayInput?.value || '38,27,43,3,9,82,10'));
+    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+    const raw = arrInput?.value || '38, 27, 43, 3, 9, 82, 10';
+    const arr = parseArray(raw);
+    return mergeSortSteps(arr);
   }
 
   protected renderStep(step: MSStep): void {
-    this.renderStats(step);
-    this.renderBars(step);
-    this.renderMergeArea(step);
-    this.renderTree(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
-    this.renderStepTag(step);
-  }
+    const { array, temp, left, mid, right, p1, p2, comparisons, copies, phase, message } = step;
 
-  private renderStats(step: MSStep): void {
-    if (this.statDepth) this.statDepth.textContent = String(step.depth);
-    if (this.statRange) {
-      this.statRange.textContent = step.lo < 0 || step.hi < 0 ? '-' : `[${step.lo}..${step.hi}]`;
+    // 1. 渲染主数组
+    if (this.mainTrackEl) {
+      this.mainTrackEl.innerHTML = array
+        .map((val, idx) => {
+          const inLeftSeg = left >= 0 && mid >= 0 && idx >= left && idx <= mid;
+          const inRightSeg = mid >= 0 && right >= 0 && idx > mid && idx <= right;
+          const isP1 = idx === p1;
+          const isP2 = idx === p2;
+          const isCopiedBack = phase === 'copy-back' && idx >= left && idx <= right;
+
+          let cellClass = 'ms-cell-box';
+          if (isCopiedBack) cellClass += ' is-copied-back';
+          else if (isP1) cellClass += ' in-left-seg is-p1';
+          else if (isP2) cellClass += ' in-right-seg is-p2';
+          else if (inLeftSeg) cellClass += ' in-left-seg';
+          else if (inRightSeg) cellClass += ' in-right-seg';
+
+          return `
+            <div class="${cellClass}">
+              <span class="val">${val}</span>
+              <span class="idx">${idx}</span>
+            </div>
+          `;
+        })
+        .join('');
     }
-    if (this.statCmp) this.statCmp.textContent = String(step.comparisons);
-    if (this.statMv) this.statMv.textContent = String(step.moves);
-    if (this.statPhase) {
-      const phaseMap: Record<Phase, string> = {
-        init: '就绪',
-        split: '拆分中',
-        'recurse-left': '向左',
-        'recurse-right': '向右',
-        'merge-start': '开始合并',
-        'merge-compare': '比较',
-        'merge-pick': '选取',
-        'merge-copy': '复制',
-        done: '完成',
-      };
-      this.statPhase.textContent = phaseMap[step.phase] || '-';
+
+    // 2. 渲染 Temp 辅助缓冲区
+    if (this.tempTrackEl) {
+      this.tempTrackEl.innerHTML = temp
+        .map((val, idx) => {
+          const isFilled = val !== null;
+          let cellClass = 'ms-cell-box';
+          if (isFilled) cellClass += ' is-buffer-filled';
+
+          return `
+            <div class="${cellClass}">
+              <span class="val">${val !== null ? val : '—'}</span>
+              <span class="idx">${idx}</span>
+            </div>
+          `;
+        })
+        .join('');
     }
-  }
 
-  private renderBars(step: MSStep): void {
-    const barsEl = this.barsEl;
-    if (!barsEl) return;
-    const maxVal = Math.max(1, ...step.array);
+    // 3. 更新状态监视器
+    if (this.metricRangeEl) {
+      this.metricRangeEl.textContent =
+        left >= 0 && right >= 0 ? `[${left}, ${mid}, ${right}]` : '—';
+    }
+    if (this.metricP1El) this.metricP1El.textContent = p1 >= 0 ? `${p1} (${array[p1]})` : '—';
+    if (this.metricP2El) this.metricP2El.textContent = p2 >= 0 ? `${p2} (${array[p2]})` : '—';
+    if (this.metricCompCopyEl) {
+      this.metricCompCopyEl.textContent = `${comparisons} / ${copies}`;
+    }
 
-    barsEl.innerHTML = '';
-    step.array.forEach((value, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'ms-bar-wrap';
-      wrap.dataset.idx = String(idx);
-
-      const bar = document.createElement('div');
-      bar.className = 'ms-bar';
-      const h = 28 + (value / maxVal) * 130;
-      bar.style.height = `${h}px`;
-      bar.textContent = String(value);
-
-      // 着色逻辑
-      if (step.phase === 'done') {
-        bar.classList.add('ms-done');
-      } else if (step.phase === 'init') {
-        // 初始态：全部为青色半透明
-        bar.classList.add('ms-in-range');
+    if (this.formulaActionEl) {
+      if (phase === 'divide') {
+        this.formulaActionEl.textContent = `mid = (${left} + ${right}) / 2 = ${mid}`;
+      } else if (phase === 'compare') {
+        this.formulaActionEl.textContent = `arr[${p1}] (${array[p1]}) ${
+          array[p1] <= array[p2] ? '<=' : '>'
+        } arr[${p2}] (${array[p2]})`;
+      } else if (phase === 'copy-back') {
+        this.formulaActionEl.textContent = `copyBack(temp[${left}..${right}] -> arr)`;
+      } else if (phase === 'done') {
+        this.formulaActionEl.textContent = '归并排序完成';
       } else {
-        const inRange = idx >= step.lo && idx <= step.hi;
-        if (inRange) {
-          if (step.phase === 'split') {
-            // 高亮分裂点附近的元素
-            if (idx === step.mid) {
-              bar.classList.add('ms-split');
-            } else {
-              bar.classList.add('ms-in-range');
-            }
-          } else if (
-            step.phase === 'merge-compare' ||
-            step.phase === 'merge-pick' ||
-            step.phase === 'merge-start'
-          ) {
-            bar.classList.add('ms-in-range');
-            if (step.phase === 'merge-compare' || step.phase === 'merge-pick') {
-              // 当前比较/写入的位置
-              if (idx === step.ptrK - (step.phase === 'merge-pick' ? 1 : 0)) {
-                bar.classList.add('ms-merge-picked');
-              }
-            }
-            // 在 split 阶段高亮中间点
-            if (idx === step.mid) {
-              bar.classList.add('ms-split');
-            }
-          } else if (
-            step.phase === 'merge-copy' &&
-            idx === step.ptrK - 1
-          ) {
-            bar.classList.add('ms-merge-picked');
-          } else {
-            bar.classList.add('ms-in-range');
-          }
-        } else {
-          // 当前区间外：已完成排序的（在更深层已经 merge 完成的区间显示绿色）
-          bar.classList.add('ms-sorted');
-        }
+        this.formulaActionEl.textContent = 'merge(left, mid, right)';
       }
+    }
 
-      wrap.appendChild(bar);
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'ms-idx';
-      idxLabel.textContent = String(idx);
-      wrap.appendChild(idxLabel);
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
 
-      barsEl.appendChild(wrap);
-    });
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'done' ? '#f0fdf4' : phase === 'copy-back' ? '#faf5ff' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'done' ? '#15803d' : phase === 'copy-back' ? '#7e22ce' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'done' ? '#bbf7d0' : phase === 'copy-back' ? '#e9d5ff' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
 
-    // 当前区间下划线指示
-    if (step.lo >= 0 && step.hi >= 0 && step.phase !== 'init' && step.phase !== 'done') {
-      const marker = document.createElement('div');
-      marker.className = 'ms-range-marker ms-range-current';
-      const barCount = step.array.length;
-      const totalWidth = barCount * 50 - 6; // 44px + 6px gap
-      const leftPx = (step.lo / barCount) * totalWidth;
-      const rightPx = ((step.hi + 1) / barCount) * totalWidth;
-      marker.style.width = `${rightPx - leftPx - 6}px`;
-      marker.style.left = `${leftPx}px`;
-      barsEl.appendChild(marker);
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderMergeArea(step: MSStep): void {
-    const el = this.mergeAreaEl;
-    if (!el) return;
-    el.innerHTML = '';
-
-    const inMerge =
-      step.phase === 'merge-start' ||
-      step.phase === 'merge-compare' ||
-      step.phase === 'merge-pick' ||
-      step.phase === 'merge-copy';
-
-    if (!inMerge) return;
-
-    // 左子数组
-    const leftGroup = this.makeMergeGroup('L (左)', 'ms-label-left');
-    step.tempLeft.forEach((v, i) => {
-      const item = this.makeMergeItem(v, 'ms-item-left');
-      if (i === step.ptrI && step.phase !== 'merge-copy') {
-        item.classList.add('ms-item-ptr');
-      }
-      if (step.phase === 'merge-copy' && i < step.ptrI) {
-        item.classList.add('ms-item-exhausted');
-      }
-      leftGroup.appendChild(item);
-    });
-
-    // 箭头
-    const arrow1 = document.createElement('div');
-    arrow1.className = 'ms-merge-arrow';
-    arrow1.textContent = '→';
-
-    // 右子数组
-    const rightGroup = this.makeMergeGroup('R (右)', 'ms-label-right');
-    step.tempRight.forEach((v, i) => {
-      const item = this.makeMergeItem(v, 'ms-item-right');
-      if (i === step.ptrJ && step.phase !== 'merge-copy') {
-        item.classList.add('ms-item-ptr');
-      }
-      if (step.phase === 'merge-copy' && i < step.ptrJ) {
-        item.classList.add('ms-item-exhausted');
-      }
-      rightGroup.appendChild(item);
-    });
-
-    // 箭头
-    const arrow2 = document.createElement('div');
-    arrow2.className = 'ms-merge-arrow';
-    arrow2.textContent = '→';
-
-    // 结果部分（取 arr[lo..ptrK-1]）
-    const resultGroup = this.makeMergeGroup('结果', 'ms-label-result');
-    if (step.ptrK > step.lo) {
-      for (let k = step.lo; k < step.ptrK && k < step.array.length; k++) {
-        const item = this.makeMergeItem(step.array[k], 'ms-item-result');
-        resultGroup.appendChild(item);
-      }
-    } else {
-      const placeholder = document.createElement('span');
-      placeholder.style.color = '#475569';
-      placeholder.style.fontSize = '12px';
-      placeholder.textContent = '(空)';
-      resultGroup.appendChild(placeholder);
-    }
-
-    el.appendChild(leftGroup);
-    el.appendChild(arrow1);
-    el.appendChild(rightGroup);
-    el.appendChild(arrow2);
-    el.appendChild(resultGroup);
-  }
-
-  private makeMergeGroup(label: string, labelClass: string): HTMLElement {
-    const group = document.createElement('div');
-    group.className = 'ms-merge-group';
-    const lbl = document.createElement('span');
-    lbl.className = `ms-merge-group-label ${labelClass}`;
-    lbl.textContent = label;
-    group.appendChild(lbl);
-    return group;
-  }
-
-  private makeMergeItem(value: number, cls: string): HTMLElement {
-    const item = document.createElement('div');
-    item.className = `ms-merge-item ${cls}`;
-    item.textContent = String(value);
-    return item;
-  }
-
-  private renderTree(step: MSStep): void {
-    const el = this.treeEl;
-    if (!el) return;
-    el.innerHTML = '';
-
-    if (!step.tree) return;
-
-    // 渲染树层级（按深度分组）
-    const rows = this.buildTreeRows(step.tree, step.treeNode);
-    rows.forEach((row, depth) => {
-      const rowEl = document.createElement('div');
-      rowEl.className = 'ms-tree-row';
-      // 深度指示
-      const depthLabel = document.createElement('span');
-      depthLabel.style.cssText =
-        'font-size:10px;color:#475569;font-family:"JetBrains Mono",monospace;min-width:40px;';
-      depthLabel.textContent = `L${depth}`;
-      rowEl.appendChild(depthLabel);
-      row.forEach((node) => {
-        const nodeEl = document.createElement('span');
-        let cls = 'ms-tree-node';
-        if (node.active) cls += ' ms-node-active';
-        else if (node.merged) cls += ' ms-node-merged';
-        else cls += ' ms-node-pending';
-        nodeEl.className = cls;
-        nodeEl.textContent = `[${node.left}..${node.right}]${node.sorted ? '=' + node.sorted.join('') : ''}`;
-        rowEl.appendChild(nodeEl);
-      });
-      el.appendChild(rowEl);
-    });
-  }
-
-  /**
-   * 将树按层分组，返回每层节点信息。
-   */
-  private buildTreeRows(
-    node: MSTreeNode,
-    activeRange: { left: number; right: number } | null,
-  ): { left: number; right: number; active: boolean; merged: boolean; sorted: number[] | undefined }[][] {
-    const rows: { left: number; right: number; active: boolean; merged: boolean; sorted: number[] | undefined }[][] = [];
-    const queue: { node: MSTreeNode; depth: number }[] = [{ node, depth: 0 }];
-    while (queue.length > 0) {
-      const { node: cur, depth } = queue.shift()!;
-      if (!rows[depth]) rows[depth] = [];
-      const isActive =
-        activeRange !== null &&
-        cur.left === activeRange.left &&
-        cur.right === activeRange.right &&
-        cur.status === 'active';
-      rows[depth].push({
-        left: cur.left,
-        right: cur.right,
-        active: isActive,
-        merged: cur.status === 'merged',
-        sorted: cur.sorted,
-      });
-      if (cur.children) {
-        queue.push({ node: cur.children[0], depth: depth + 1 });
-        queue.push({ node: cur.children[1], depth: depth + 1 });
-      }
-    }
-    return rows;
-  }
-
-  private renderResultBanner(step: MSStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('ms-result--done');
-    const emoji = this.resultEl.querySelector('.ms-emoji') as HTMLElement | null;
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('ms-result--done');
-      if (emoji) emoji.textContent = '🎉';
-    } else if (step.phase === 'split') {
-      if (emoji) emoji.textContent = '✂️';
-    } else if (step.phase === 'recurse-left' || step.phase === 'recurse-right') {
-      if (emoji) emoji.textContent = '🔀';
-    } else if (step.phase === 'merge-start') {
-      if (emoji) emoji.textContent = '🫱';
-    } else if (step.phase === 'merge-compare') {
-      if (emoji) emoji.textContent = '⚖️';
-    } else if (step.phase === 'merge-pick') {
-      if (emoji) emoji.textContent = '🎯';
-    } else if (step.phase === 'merge-copy') {
-      if (emoji) emoji.textContent = '📋';
-    } else {
-      if (emoji) emoji.textContent = '🌿';
-    }
-  }
-
-  private renderLogPanel(step: MSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'ms-log-line' + (i === this.currentIndex ? ' ms-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'ms-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
-
-  private renderStepTag(step: MSStep): void {
-    if (!this.stepTagEl) return;
-    const tagMap: Record<Phase, string> = {
-      init: '初始化',
-      split: '分割',
-      'recurse-left': '递归左',
-      'recurse-right': '递归右',
-      'merge-start': '合并开始',
-      'merge-compare': '比较',
-      'merge-pick': '选取',
-      'merge-copy': '复制',
-      done: '完成',
-    };
-    this.stepTagEl.textContent = tagMap[step.phase] || '-';
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -950,11 +497,11 @@ registerAlgorithm({
   name: '归并排序',
   viewId: 'algo-merge-sort-view',
   category: 'sort',
-  description: '递归拆分 + 指针合并，演示分治思想的完整过程',
-  icon: '🌿',
-  template,
-  Visualizer: MergeSortVisualizer,
+  description: '逐步演示归并排序：递归分治、双指针合并',
+  icon: '🧩',
   difficulty: 2,
   levelOrder: 5,
-  learningGoal: '理解归并排序的分治递归结构与双指针合并过程',
+  learningGoal: '掌握分治思想和双指针有序归并的过程',
+  template,
+  Visualizer: MergeSortVisualizer,
 });

@@ -1,410 +1,466 @@
 /**
- * 基数排序可视化器 (LSD)
- * 从最低位开始，按位分配到 0-9 号桶再收集
+ * 基数排序可视化器 — 4-Card 标准现代架构
+ * LSD 低位优先、按位计数统计与稳定回填
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  RADIX_SORT_PROBLEM_HTML,
+  RADIX_SORT_ANALYSIS_HTML,
+  RADIX_SORT_CODE_LANGUAGES,
+} from './radix-sort-problem-content';
+import { parseArray } from './bubble-sort-renderer';
 import template from './radix-sort.html?raw';
 
-type Phase = 'init' | 'set-digit' | 'distribute' | 'collect' | 'next-digit' | 'done';
-
-interface RSStep {
+export interface RadixStep {
   array: number[];
+  count: number[];
+  output: (number | null)[];
+  exp: number;
   maxVal: number;
-  totalDigits: number;
-  currentDigit: number;       // 当前处理到第几位 (0=个位, 1=十位, 2=百位...)
-  digitName: string;          // '个位' | '十位' | '百位' | '千位'...
-  buckets: number[][];        // 10 个桶
-  activeBucket: number;       // 当前分配到的桶 (-1 表示不在分配)
-  collectingBucket: number;   // 当前收集中的桶 (-1 表示不在收集)
-  collectedSoFar: number[];   // 已收集的元素
-  currentElement: number;     // 当前处理的元素值
-  currentElementIdx: number;  // 当前处理的元素下标
-  highlightIndices: number[]; // 需要高亮原数组的元素下标
-  distributions: number;
-  collections: number;
-  round: number;              // 当前轮次（第几位）
-  phase: Phase;
+  srcIdx: number;
+  digit: number | null;
+  outIdx: number;
+  curElem: number | null;
+  phase: 'init' | 'new-exp' | 'count-digit' | 'prefix-sum' | 'build-out' | 'write-back' | 'done';
+  status: 'init' | 'new-exp' | 'count-digit' | 'prefix-sum' | 'build-out' | 'write-back' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-const DIGIT_NAMES = ['个位', '十位', '百位', '千位', '万位', '十万位', '百万位', '千万位', '亿位'];
-
-function parseArray(input: string): number[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n) && n >= 0);
-}
-
-function getDigit(n: number, d: number): number {
-  return Math.floor(n / Math.pow(10, d)) % 10;
-}
-
-function digitCount(n: number): number {
-  if (n === 0) return 1;
-  return Math.floor(Math.log10(n)) + 1;
-}
-
-function radixSortSteps(input: number[]): RSStep[] {
-  const steps: RSStep[] = [];
+export function radixSortSteps(input: number[]): RadixStep[] {
+  const steps: RadixStep[] = [];
   const array = [...input];
   const n = array.length;
 
   if (n === 0) {
     steps.push({
-      array: [], maxVal: 0, totalDigits: 0, currentDigit: -1, digitName: '-',
-      buckets: Array.from({ length: 10 }, () => []), activeBucket: -1,
-      collectingBucket: -1, collectedSoFar: [], currentElement: 0, currentElementIdx: -1,
-      highlightIndices: [], distributions: 0, collections: 0, round: 0,
-      phase: 'init', message: '数组为空，无需排序。', log: 'empty array', codeLine: 1,
-    });
-    steps.push({
-      array: [], maxVal: 0, totalDigits: 0, currentDigit: -1, digitName: '-',
-      buckets: Array.from({ length: 10 }, () => []), activeBucket: -1,
-      collectingBucket: -1, collectedSoFar: [], currentElement: 0, currentElementIdx: -1,
-      highlightIndices: [], distributions: 0, collections: 0, round: 0,
-      phase: 'done', message: '数组为空，无需排序。', log: 'done: empty', codeLine: 18,
+      array: [],
+      count: new Array(10).fill(0),
+      output: [],
+      exp: 1,
+      maxVal: 0,
+      srcIdx: -1,
+      digit: null,
+      outIdx: -1,
+      curElem: null,
+      phase: 'done',
+      status: 'done',
+      message: '数组为空，无需排序。',
+      log: '空数组',
+      codeLine: 2,
     });
     return steps;
   }
 
   const maxVal = Math.max(...array);
-  const totalDigits = digitCount(maxVal);
-  let distributions = 0;
-  let collections = 0;
 
-  // init
   steps.push({
-    array: [...array], maxVal, totalDigits, currentDigit: -1, digitName: '-',
-    buckets: Array.from({ length: 10 }, () => []), activeBucket: -1,
-    collectingBucket: -1, collectedSoFar: [], currentElement: 0, currentElementIdx: -1,
-    highlightIndices: [], distributions: 0, collections: 0, round: 0,
+    array: [...array],
+    count: new Array(10).fill(0),
+    output: new Array(n).fill(null),
+    exp: 1,
+    maxVal,
+    srcIdx: -1,
+    digit: null,
+    outIdx: -1,
+    curElem: null,
     phase: 'init',
-    message: `初始化：数组共 ${n} 个元素，最大值 ${maxVal}，共 ${totalDigits} 位。从最低位（个位）开始 LSD 基数排序。`,
-    log: `init: max=${maxVal}, digits=${totalDigits}`,
+    status: 'init',
+    message: `初始化基数排序：数组长度 n = ${n}，最大值 max = ${maxVal}，准备从个位 (exp = 1) 开始排序。`,
+    log: `初始化: max = ${maxVal}`,
     codeLine: 2,
   });
 
-  const buckets = Array.from({ length: 10 }, (): number[] => []);
-
-  for (let d = 0; d < totalDigits; d++) {
-    const dName = DIGIT_NAMES[d] || `${d + 1}位`;
-
-    // set-digit
+  if (n <= 1) {
     steps.push({
-      array: [...array], maxVal, totalDigits, currentDigit: d, digitName: dName,
-      buckets: buckets.map((b) => [...b]), activeBucket: -1,
-      collectingBucket: -1, collectedSoFar: [], currentElement: 0, currentElementIdx: -1,
-      highlightIndices: Array.from({ length: n }, (_, i) => i), distributions, collections, round: d + 1,
-      phase: 'set-digit',
-      message: `处理${dName}（第 ${d + 1}/${totalDigits} 位），将对每个元素的${dName}数字分配到 0-9 号桶。`,
-      log: `set digit: ${dName} (pos ${d})`,
-      codeLine: 4,
+      array: [...array],
+      count: new Array(10).fill(0),
+      output: [...array],
+      exp: 1,
+      maxVal,
+      srcIdx: -1,
+      digit: null,
+      outIdx: -1,
+      curElem: null,
+      phase: 'done',
+      status: 'done',
+      message: '✅ 排序完成！',
+      log: '排序完成',
+      codeLine: 5,
+    });
+    return steps;
+  }
+
+  for (let exp = 1; Math.floor(maxVal / exp) > 0; exp *= 10) {
+    const count = new Array(10).fill(0);
+    const output: (number | null)[] = new Array(n).fill(null);
+    const expName = exp === 1 ? '个位' : exp === 10 ? '十位' : exp === 100 ? '百位' : `${exp}位`;
+
+    steps.push({
+      array: [...array],
+      count: [...count],
+      output: [...output],
+      exp,
+      maxVal,
+      srcIdx: -1,
+      digit: null,
+      outIdx: -1,
+      curElem: null,
+      phase: 'new-exp',
+      status: 'new-exp',
+      message: `进入新权位排序：exp = ${exp} (${expName})。初始化 0..9 计数桶。`,
+      log: `权位 exp = ${exp} (${expName})`,
+      codeLine: 6,
     });
 
-    // distribute each element into buckets
-    const bucketsCopy = buckets.map((b) => [...b]);
+    // 1. 统计当前位频次
     for (let i = 0; i < n; i++) {
-      const digit = getDigit(array[i], d);
-      bucketsCopy[digit].push(array[i]);
-      distributions++;
-
-      // find all indices whose current digit equals this element's digit (for highlighting)
-      const highlight: number[] = [];
-      for (let k = 0; k < n; k++) {
-        if (getDigit(array[k], d) === digit) highlight.push(k);
-      }
+      const val = array[i];
+      const d = Math.floor(val / exp) % 10;
+      count[d]++;
 
       steps.push({
-        array: [...array], maxVal, totalDigits, currentDigit: d, digitName: dName,
-        buckets: bucketsCopy.map((b) => [...b]), activeBucket: digit,
-        collectingBucket: -1, collectedSoFar: [], currentElement: array[i], currentElementIdx: i,
-        highlightIndices: highlight, distributions, collections, round: d + 1,
-        phase: 'distribute',
-        message: `分配 arr[${i}]=${array[i]}：${dName}数字为 ${digit}，放入 ${digit} 号桶。`,
-        log: `dist arr[${i}]=${array[i]} → bucket[${digit}]`,
-        codeLine: 7,
+        array: [...array],
+        count: [...count],
+        output: [...output],
+        exp,
+        maxVal,
+        srcIdx: i,
+        digit: d,
+        outIdx: -1,
+        curElem: val,
+        phase: 'count-digit',
+        status: 'count-digit',
+        message: `数位提取：arr[${i}] = ${val}，其 ${expName} 数字为 ${d}，在 count[${d}] 处计数累加至 ${count[d]}。`,
+        log: `arr[${i}]=${val} -> ${expName}数位 '${d}' (count[${d}]=${count[d]})`,
+        codeLine: 13,
       });
     }
 
-    // save distributed buckets
-    for (let b = 0; b < 10; b++) buckets[b] = [...bucketsCopy[b]];
+    // 2. 前缀和累加
+    for (let i = 1; i < 10; i++) {
+      count[i] += count[i - 1];
 
-    // collect from buckets
-    const collected: number[] = [];
-    for (let b = 0; b < 10; b++) {
-      if (buckets[b].length > 0) {
-        for (const val of buckets[b]) {
-          collected.push(val);
-          collections++;
-        }
-        steps.push({
-          array: [...array], maxVal, totalDigits, currentDigit: d, digitName: dName,
-          buckets: buckets.map((bk, bi) => bi < b ? [] : [...bk]), activeBucket: -1,
-          collectingBucket: b, collectedSoFar: [...collected],
-          currentElement: collected[collected.length - 1], currentElementIdx: -1,
-          highlightIndices: [], distributions, collections, round: d + 1,
-          phase: 'collect',
-          message: `收集 ${b} 号桶：${buckets[b].join(', ')}${b < 9 ? '，继续收集下一个非空桶' : ''}。`,
-          log: `collect bucket[${b}] = [${buckets[b].join(', ')}]`,
-          codeLine: 11,
-        });
-      }
-      buckets[b] = [];
-    }
-
-    // update array with collected order
-    for (let i = 0; i < n; i++) array[i] = collected[i];
-
-    // next-digit or done
-    if (d < totalDigits - 1) {
       steps.push({
-        array: [...array], maxVal, totalDigits, currentDigit: d, digitName: dName,
-        buckets: Array.from({ length: 10 }, () => []), activeBucket: -1,
-        collectingBucket: -1, collectedSoFar: [], currentElement: 0, currentElementIdx: -1,
-        highlightIndices: Array.from({ length: n }, (_, i) => i), distributions, collections, round: d + 1,
-        phase: 'next-digit',
-        message: `${dName}处理完毕，数组已按${dName}排序。准备处理下一位（${DIGIT_NAMES[d + 1] || `${d + 2}位`}）。`,
-        log: `next digit: ${dName} done`,
+        array: [...array],
+        count: [...count],
+        output: [...output],
+        exp,
+        maxVal,
+        srcIdx: -1,
+        digit: i,
+        outIdx: -1,
+        curElem: null,
+        phase: 'prefix-sum',
+        status: 'prefix-sum',
+        message: `前缀累加：count[${i}] += count[${i - 1}] = ${count[i]} (表示 ${expName} &le; ${i} 的元素总数)。`,
+        log: `前缀和 count[${i}] = ${count[i]}`,
         codeLine: 14,
       });
     }
+
+    // 3. 倒序稳定回填
+    for (let i = n - 1; i >= 0; i--) {
+      const val = array[i];
+      const d = Math.floor(val / exp) % 10;
+      count[d]--;
+      const outIdx = count[d];
+      output[outIdx] = val;
+
+      steps.push({
+        array: [...array],
+        count: [...count],
+        output: [...output],
+        exp,
+        maxVal,
+        srcIdx: i,
+        digit: d,
+        outIdx,
+        curElem: val,
+        phase: 'build-out',
+        status: 'build-out',
+        message: `稳定回填：arr[${i}] = ${val} (${expName}数位 ${d})，目标下标为 --count[${d}] = ${outIdx}，写入 output[${outIdx}]。`,
+        log: `回填: ${val} -> output[${outIdx}]`,
+        codeLine: [15, 16, 17],
+      });
+    }
+
+    // 4. 写回原数组
+    for (let i = 0; i < n; i++) {
+      array[i] = output[i] as number;
+    }
+
+    steps.push({
+      array: [...array],
+      count: [...count],
+      output: [...output],
+      exp,
+      maxVal,
+      srcIdx: -1,
+      digit: null,
+      outIdx: -1,
+      curElem: null,
+      phase: 'write-back',
+      status: 'write-back',
+      message: `${expName} (exp = ${exp}) 计数排序完毕，写回原数组。当前数组已按低 ${expName} 有序。`,
+      log: `${expName} 排序完成并写回原数组`,
+      codeLine: 19,
+    });
   }
 
   steps.push({
-    array: [...array], maxVal, totalDigits, currentDigit: totalDigits - 1,
-    digitName: DIGIT_NAMES[totalDigits - 1] || `${totalDigits}位`,
-    buckets: Array.from({ length: 10 }, () => []), activeBucket: -1,
-    collectingBucket: -1, collectedSoFar: [], currentElement: 0, currentElementIdx: -1,
-    highlightIndices: [], distributions, collections, round: totalDigits,
+    array: [...array],
+    count: new Array(10).fill(0),
+    output: [...array],
+    exp: 0,
+    maxVal,
+    srcIdx: -1,
+    digit: null,
+    outIdx: -1,
+    curElem: null,
     phase: 'done',
-    message: `排序完成！共处理 ${totalDigits} 位，分配 ${distributions} 次，收集 ${collections} 次。`,
-    log: `done: ${distributions} dists, ${collections} collects`,
-    codeLine: 18,
+    status: 'done',
+    message: `🎉 基数排序完成！最终排序结果：[${array.join(', ')}]。`,
+    log: `✓ 排序完成: [${array.join(', ')}]`,
+    codeLine: 8,
   });
 
   return steps;
 }
 
-export class RadixSortVisualizer extends StepVisualizer<RSStep> {
-  protected codeLines = [
-    'public void radixSort(int[] arr) {',
-    '    int max = findMax(arr);          // 找最大值，确定位数',
-    '    int digits = digitCount(max);',
-    '    for (int d = 0; d < digits; d++) {  // 从最低位到最高位',
-    '        List<Integer>[] buckets = new List[10];  // 0-9 号桶',
-    '        for (int i = 0; i < 10; i++) buckets[i] = new ArrayList<>();',
-    '        for (int num : arr) {',
-    '            int digit = (num / pow(10, d)) % 10;',
-    '            buckets[digit].add(num);   // 按当前位分配到桶',
-    '        }',
-    '        int idx = 0;',
-    '        for (int b = 0; b < 10; b++) {',
-    '            for (int num : buckets[b]) {',
-    '                arr[idx++] = num;      // 从桶中收集回数组',
-    '            }',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 基数排序源码';
+export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
+  protected codeLanguages = RADIX_SORT_CODE_LANGUAGES;
+  protected codeLines = RADIX_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '基数排序 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private statDigit: HTMLElement | null = null;
-  private statTotal: HTMLElement | null = null;
-  private statDist: HTMLElement | null = null;
-  private statCollect: HTMLElement | null = null;
-  private statRound: HTMLElement | null = null;
-  private arrayTop: HTMLElement | null = null;
-  private bucketsEl: HTMLElement | null = null;
-  private arrayBottom: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private srcTrackEl: HTMLElement | null = null;
+  private countTrackEl: HTMLElement | null = null;
+  private outTrackEl: HTMLElement | null = null;
+  private metricExpEl: HTMLElement | null = null;
+  private metricMaxValEl: HTMLElement | null = null;
+  private metricCurElemEl: HTMLElement | null = null;
+  private metricOutIdxEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#rs-array');
-    this.statDigit = this.root.querySelector('#rs-stat-digit');
-    this.statTotal = this.root.querySelector('#rs-stat-total');
-    this.statDist = this.root.querySelector('#rs-stat-dist');
-    this.statCollect = this.root.querySelector('#rs-stat-collect');
-    this.statRound = this.root.querySelector('#rs-stat-round');
-    this.arrayTop = this.root.querySelector('#rs-array-top');
-    this.bucketsEl = this.root.querySelector('#rs-buckets');
-    this.arrayBottom = this.root.querySelector('#rs-array-bottom');
-    this.resultEl = this.root.querySelector('#rs-result');
-    this.logEl = this.root.querySelector('#rs-log');
-    this.clearLogBtn = this.root.querySelector('#rs-log-clear');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'rs-speed', speedLabel: 'rs-speed-label',
-      counter: 'step-counter', message: 'step-message',
-    });
+    this.srcTrackEl = this.root.querySelector('#rx-src-track');
+    this.countTrackEl = this.root.querySelector('#rx-count-track');
+    this.outTrackEl = this.root.querySelector('#rx-out-track');
+    this.metricExpEl = this.root.querySelector('#metric-exp');
+    this.metricMaxValEl = this.root.querySelector('#metric-max-val');
+    this.metricCurElemEl = this.root.querySelector('#metric-cur-elem');
+    this.metricOutIdxEl = this.root.querySelector('#metric-out-idx');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#rx-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelector('#rs-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.rs-chip').forEach((btn) => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rx-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
+        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
         this.start();
       });
     });
-    this.clearLogBtn?.addEventListener('click', () => { if (this.logEl) this.logEl.innerHTML = ''; });
-    this.arrayInput?.addEventListener('change', () => this.start());
-  }
 
-  protected buildSteps(): RSStep[] {
-    return radixSortSteps(parseArray(this.arrayInput?.value || '170,45,75,90,802,24,2,66'));
-  }
-
-  protected renderStep(step: RSStep): void {
-    this.renderStats(step);
-    this.renderArrayBars(step);
-    this.renderBuckets(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
-  }
-
-  private renderStats(step: RSStep): void {
-    if (this.statDigit) this.statDigit.textContent = step.digitName;
-    if (this.statTotal) this.statTotal.textContent = step.totalDigits > 0 ? String(step.totalDigits) : '-';
-    if (this.statDist) this.statDist.textContent = String(step.distributions);
-    if (this.statCollect) this.statCollect.textContent = String(step.collections);
-    if (this.statRound) this.statRound.textContent = step.phase === 'init' ? '0' : String(step.round);
-  }
-
-  private renderArrayBars(step: RSStep): void {
-    // Top array: original array with highlights during distribute phase
-    const topEl = this.arrayTop;
-    const bottomEl = this.arrayBottom;
-    if (!topEl) return;
-
-    const maxVal = Math.max(1, step.maxVal, ...step.array);
-    const set = new Set(step.highlightIndices);
-
-    topEl.innerHTML = '';
-    step.array.forEach((value, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'rs-bar-wrap';
-
-      const bar = document.createElement('div');
-      bar.className = 'rs-bar';
-      const h = 24 + (value / maxVal) * 100;
-      bar.style.height = `${h}px`;
-      bar.textContent = String(value);
-
-      if (step.phase === 'done') {
-        bar.classList.add('rs-done');
-      } else if (step.phase === 'distribute' && set.has(idx)) {
-        bar.classList.add('rs-highlight');
-      }
-
-      wrap.appendChild(bar);
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'rs-idx';
-      idxLabel.textContent = String(idx);
-      wrap.appendChild(idxLabel);
-      topEl.appendChild(wrap);
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: RADIX_SORT_PROBLEM_HTML,
+      analysisHtml: RADIX_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-
-    // Bottom array: show collected order during collect phase, otherwise show final
-    if (!bottomEl) return;
-    bottomEl.innerHTML = '';
-
-    if (step.phase === 'collect' && step.collectedSoFar.length > 0) {
-      const collMaxVal = Math.max(1, ...step.collectedSoFar);
-      step.collectedSoFar.forEach((value) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'rs-bar-wrap';
-        const bar = document.createElement('div');
-        bar.className = 'rs-bar rs-highlight';
-        const h = 24 + (value / collMaxVal) * 100;
-        bar.style.height = `${h}px`;
-        bar.textContent = String(value);
-        wrap.appendChild(bar);
-        bottomEl.appendChild(wrap);
-      });
-    }
   }
 
-  private renderBuckets(step: RSStep): void {
-    if (!this.bucketsEl) return;
-    this.bucketsEl.innerHTML = '';
+  protected buildSteps(): RadixStep[] {
+    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+    const raw = arrInput?.value || '170, 45, 75, 90, 802, 24, 2, 66';
+    const arr = parseArray(raw);
+    return radixSortSteps(arr);
+  }
 
-    for (let b = 0; b < 10; b++) {
-      const bucketDiv = document.createElement('div');
-      bucketDiv.className = 'rs-bucket';
-      if (b === step.activeBucket) {
-        bucketDiv.style.borderColor = 'rgba(251, 191, 36, .8)';
-        bucketDiv.style.background = 'rgba(245, 158, 11, .15)';
-        bucketDiv.style.boxShadow = '0 0 12px rgba(251, 191, 36, .3)';
+  protected renderStep(step: RadixStep): void {
+    const { array, count, output, exp, maxVal, srcIdx, digit, outIdx, curElem, phase, message } = step;
+
+    // 1. 渲染原数组 (带数位加粗高亮)
+    if (this.srcTrackEl) {
+      this.srcTrackEl.innerHTML = array
+        .map((val, idx) => {
+          const isActive = idx === srcIdx && phase !== 'done';
+          let cellClass = 'rx-cell-box';
+          if (isActive) cellClass += ' is-active-elem';
+
+          const valStr = String(val);
+          const d = exp > 0 ? Math.floor(val / exp) % 10 : 0;
+
+          return `
+            <div class="${cellClass}">
+              <span class="val">${valStr}</span>
+              <span class="sub">${exp > 0 ? `d=${d}` : `[${idx}]`}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 2. 渲染 Count 计数表 [0..9]
+    if (this.countTrackEl) {
+      this.countTrackEl.innerHTML = count
+        .map((freq, idx) => {
+          const isActive = idx === digit && phase !== 'done';
+          let cellClass = 'rx-cell-box';
+          if (isActive) cellClass += ' is-active-digit';
+
+          return `
+            <div class="${cellClass}">
+              <span class="val">${freq}</span>
+              <span class="sub">[${idx}]</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 3. 渲染 Output 缓冲
+    if (this.outTrackEl) {
+      this.outTrackEl.innerHTML = output
+        .map((val, idx) => {
+          const isFilled = val !== null;
+          const isCurrentTarget = idx === outIdx && phase === 'build-out';
+
+          let cellClass = 'rx-cell-box';
+          if (isFilled) cellClass += ' is-filled-out';
+
+          return `
+            <div class="${cellClass}" ${isCurrentTarget ? 'style="box-shadow: 0 0 0 2px rgba(16,185,129,0.5); transform:scale(1.08);"' : ''}>
+              <span class="val">${val !== null ? val : '—'}</span>
+              <span class="sub">[${idx}]</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 4. 更新状态监视器
+    if (this.metricExpEl) {
+      const expName = exp === 1 ? '1 (个位)' : exp === 10 ? '10 (十位)' : exp === 100 ? '100 (百位)' : exp > 0 ? `${exp}` : '—';
+      this.metricExpEl.textContent = expName;
+    }
+    if (this.metricMaxValEl) this.metricMaxValEl.textContent = `${maxVal}`;
+    if (this.metricCurElemEl) {
+      this.metricCurElemEl.textContent = curElem !== null ? `${curElem} (d='${digit}')` : '—';
+    }
+    if (this.metricOutIdxEl) this.metricOutIdxEl.textContent = outIdx >= 0 ? `${outIdx}` : '—';
+
+    if (this.formulaActionEl) {
+      if (phase === 'count-digit') {
+        this.formulaActionEl.textContent = `count[(${curElem} / ${exp}) % 10] = count[${digit}]++ (${count[digit!]})`;
+      } else if (phase === 'prefix-sum') {
+        this.formulaActionEl.textContent = `count[${digit}] += count[${digit! - 1}] = ${count[digit!]}`;
+      } else if (phase === 'build-out') {
+        this.formulaActionEl.textContent = `output[--count[${digit}]] = output[${outIdx}] = ${curElem}`;
+      } else if (phase === 'write-back') {
+        this.formulaActionEl.textContent = '写回原数组 (当前权位就绪)';
+      } else if (phase === 'done') {
+        this.formulaActionEl.textContent = '基数排序完成';
+      } else {
+        this.formulaActionEl.textContent = 'digit = (x / exp) % 10';
       }
-      if (b === step.collectingBucket) {
-        bucketDiv.style.borderColor = 'rgba(52, 211, 153, .8)';
-        bucketDiv.style.background = 'rgba(52, 211, 153, .1)';
-        bucketDiv.style.boxShadow = '0 0 12px rgba(52, 211, 153, .3)';
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 5. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'done' ? '#f0fdf4' : phase === 'build-out' ? '#faf5ff' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'done' ? '#15803d' : phase === 'build-out' ? '#7e22ce' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'done' ? '#bbf7d0' : phase === 'build-out' ? '#e9d5ff' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
+    }
 
-      const label = document.createElement('div');
-      label.className = 'rs-bucket-label';
-      label.textContent = String(b);
-      bucketDiv.appendChild(label);
+    // 6. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
 
-      const items = document.createElement('div');
-      items.className = 'rs-bucket-items';
-      const itemsToShow = step.buckets[b];
-      itemsToShow.forEach((val) => {
-        const item = document.createElement('div');
-        item.className = 'rs-bucket-item';
-        item.textContent = String(val);
-        items.appendChild(item);
-      });
-      bucketDiv.appendChild(items);
-      this.bucketsEl.appendChild(bucketDiv);
+    // 7. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderResultBanner(step: RSStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('rs-result--done');
-    const emoji = this.resultEl.querySelector('.rs-emoji') as HTMLElement | null;
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('rs-result--done');
-      if (emoji) emoji.textContent = '🎉';
-    } else if (step.phase === 'distribute') {
-      if (emoji) emoji.textContent = '📦';
-    } else if (step.phase === 'collect') {
-      if (emoji) emoji.textContent = '🧺';
-    } else if (step.phase === 'set-digit') {
-      if (emoji) emoji.textContent = '🔢';
-    } else if (step.phase === 'next-digit') {
-      if (emoji) emoji.textContent = '➡️';
-    } else {
-      if (emoji) emoji.textContent = '🔟';
-    }
-  }
-
-  private renderLogPanel(step: RSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'rs-log-line' + (i === this.currentIndex ? ' rs-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'rs-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -413,11 +469,11 @@ registerAlgorithm({
   name: '基数排序',
   viewId: 'algo-radix-sort-view',
   category: 'sort',
-  description: '按位（个/十/百...）分配到 0-9 号桶再收集，从最低位开始',
-  icon: '🔟',
+  description: '逐步演示基数排序：LSD低位优先、按位计数排序与稳定收集',
+  icon: '🎯',
+  difficulty: 2,
+  levelOrder: 10,
+  learningGoal: '掌握基数排序的按位切分、桶分配与稳定收集过程',
   template,
   Visualizer: RadixSortVisualizer,
-  difficulty: 2,
-  levelOrder: 9,
-  learningGoal: '理解 LSD 基数排序的按位分配与收集过程',
 });

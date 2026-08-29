@@ -1,347 +1,366 @@
 /**
- * 插入排序可视化器
- * 重做：玻璃感 stat 面板 + key 元素"飞起漂浮"动画 + 比较/移位颜色闪烁 + 落入 drop 动画 + 完整执行日志
+ * 插入排序可视化器 — 4-Card 标准现代架构
+ * 提取 key、向前逆序扫描、元素后移腾位、精准就位插入
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  INSERTION_SORT_PROBLEM_HTML,
+  INSERTION_SORT_ANALYSIS_HTML,
+  INSERTION_SORT_CODE_LANGUAGES,
+} from './insertion-sort-problem-content';
+import { parseArray } from './bubble-sort-renderer';
 import template from './insertion-sort.html?raw';
 
-type Phase = 'init' | 'pick' | 'compare' | 'shift' | 'insert' | 'done';
-
-interface ISStep {
+export interface ISStep {
   array: number[];
-  sortedLen: number;        // 已排序区间长度（>=0 表示前 sortedLen 个已排序）
-  i: number;                // 外层 i（-1 = 未开始）
-  j: number;                // 内层 j（-1 = 未进入循环）
-  key: number | null;       // 当前要插入的 key
-  keyIndex: number;         // key 在 array 中的"原始"位置（用于定位动画 ghost）
-  insertIndex: number;      // key 最终插入的位置（-1 = 还没插入）
-  compareValue: number;     // 本次比较的 arr[j]（-1 表示不在比较态）
-  shifted: number | number[]; // 本次移位的目标下标（-1 表示无）
-  comparisons: number;
-  moves: number;
-  phase: Phase;
+  i: number;
+  key: number;
+  j: number;
+  shifts: number;
+  sortedCount: number;
+  phase: 'init' | 'pick-key' | 'compare' | 'shift' | 'insert' | 'done';
+  status: 'init' | 'pick-key' | 'compare' | 'shift' | 'insert' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseArray(input: string): number[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-}
-
-function insertionSortSteps(input: number[]): ISStep[] {
+export function insertionSortSteps(input: number[]): ISStep[] {
   const steps: ISStep[] = [];
   const array = [...input];
   const n = array.length;
-  let comparisons = 0;
-  let moves = 0;
+  let shifts = 0;
 
   steps.push({
-    array, sortedLen: Math.min(1, n), i: -1, j: -1, key: null, keyIndex: -1,
-    insertIndex: -1, compareValue: -1, shifted: -1, comparisons, moves,
+    array: [...array],
+    i: -1,
+    key: -1,
+    j: -1,
+    shifts: 0,
+    sortedCount: 1,
     phase: 'init',
-    message: n === 0 ? '数组为空，无需排序。' : `初始化：arr[0] 视为已排序区间（长度 1），从 i=1 开始向外扩展。`,
-    log: n === 0 ? 'empty array' : `init sorted prefix = [0], start from i=1`,
-    codeLine: 1,
+    status: 'init',
+    message: n === 0 ? '数组为空，无需排序。' : `初始化：数组长度 n = ${n}，首元素 arr[0] 默认构成初始有序区。`,
+    log: n === 0 ? '空数组' : `初始化: [${array.join(', ')}]`,
+    codeLine: 2,
   });
+
+  if (n <= 1) {
+    steps.push({
+      array: [...array],
+      i: 0,
+      key: array[0] ?? 0,
+      j: -1,
+      shifts: 0,
+      sortedCount: n,
+      phase: 'done',
+      status: 'done',
+      message: '✅ 排序完成！',
+      log: '排序完成',
+      codeLine: 12,
+    });
+    return steps;
+  }
 
   for (let i = 1; i < n; i++) {
     const key = array[i];
     let j = i - 1;
 
     steps.push({
-      array: [...array], sortedLen: i, i, j, key, keyIndex: i,
-      insertIndex: -1, compareValue: -1, shifted: -1, comparisons, moves,
-      phase: 'pick',
-      message: `本轮 i=${i}：取出 key=arr[${i}]=${key}，准备插入到左侧已排序区间 [0..${i - 1}]。`,
-      log: `pick key = arr[${i}] = ${key}`,
-      codeLine: 3,
+      array: [...array],
+      i,
+      key,
+      j,
+      shifts,
+      sortedCount: i,
+      phase: 'pick-key',
+      status: 'pick-key',
+      message: `提取待插入元素：key = arr[${i}] (${key})，准备在已排序区间 [0..${i - 1}] 中向前扫描找寻插入位置。`,
+      log: `提取 key = arr[${i}] (${key})`,
+      codeLine: [3, 4, 5],
     });
 
-    while (j >= 0) {
-      comparisons++;
+    while (j >= 0 && array[j] > key) {
       steps.push({
-        array: [...array], sortedLen: i, i, j, key, keyIndex: i,
-        insertIndex: -1, compareValue: array[j], shifted: -1, comparisons, moves,
+        array: [...array],
+        i,
+        key,
+        j,
+        shifts,
+        sortedCount: i,
         phase: 'compare',
-        message: `比较 arr[${j}]=${array[j]} 与 key=${key}：${array[j] > key ? `arr[${j}] > key ⇒ 需要后移` : `arr[${j}] ≤ key ⇒ 找到插入点`}。`,
-        log: `cmp arr[${j}]=${array[j]} vs key=${key}`,
-        codeLine: 5,
+        status: 'compare',
+        message: `比较：arr[${j}] (${array[j]}) > key (${key})，需要向后移动腾位。`,
+        log: `比较: arr[${j}] (${array[j]}) > key (${key}) -> 右移`,
+        codeLine: 7,
       });
 
-      if (array[j] <= key) {
-        // 找到插入点
-        break;
-      }
-
-      // 移位
       array[j + 1] = array[j];
-      moves++;
+      shifts++;
+
       steps.push({
-        array: [...array], sortedLen: i, i, j, key, keyIndex: i,
-        insertIndex: -1, compareValue: -1, shifted: j + 1, comparisons, moves,
+        array: [...array],
+        i,
+        key,
+        j,
+        shifts,
+        sortedCount: i,
         phase: 'shift',
-        message: `将 arr[${j}]=${array[j]} 后移到位置 ${j + 1}（给 key 腾位）。`,
-        log: `shift arr[${j}] -> pos ${j + 1}`,
-        codeLine: 6,
+        status: 'shift',
+        message: `元素右移：将 arr[${j}] (${array[j]}) 移动到 arr[${j + 1}]。`,
+        log: `右移 arr[${j}] -> [${j + 1}]`,
+        codeLine: 8,
       });
 
       j--;
     }
 
-    const insertPos = j + 1;
-    if (insertPos !== i) {
-      array[insertPos] = key;
-      moves++;
+    if (j >= 0) {
       steps.push({
-        array: [...array], sortedLen: i + 1, i, j, key, keyIndex: -1,
-        insertIndex: insertPos, compareValue: -1, shifted: -1, comparisons, moves,
-        phase: 'insert',
-        message: `将 key=${key} 插入到位置 ${insertPos}。本轮比较 ${comparisons} 次（累计），移动若干次。`,
-        log: `insert key=${key} @ ${insertPos}`,
-        codeLine: 8,
-      });
-    } else {
-      steps.push({
-        array: [...array], sortedLen: i + 1, i, j, key, keyIndex: -1,
-        insertIndex: insertPos, compareValue: -1, shifted: -1, comparisons, moves,
-        phase: 'insert',
-        message: `key=${key} 已在合适位置 ${insertPos}，无需移动。`,
-        log: `key already at ${insertPos}, no shift`,
-        codeLine: 8,
+        array: [...array],
+        i,
+        key,
+        j,
+        shifts,
+        sortedCount: i,
+        phase: 'compare',
+        status: 'compare',
+        message: `比较：arr[${j}] (${array[j]}) &le; key (${key})，找到插入边界！目标插入位置为下标 ${j + 1}。`,
+        log: `找到插入位置: 下标 ${j + 1}`,
+        codeLine: 7,
       });
     }
+
+    array[j + 1] = key;
+
+    steps.push({
+      array: [...array],
+      i,
+      key,
+      j: j + 1,
+      shifts,
+      sortedCount: i + 1,
+      phase: 'insert',
+      status: 'insert',
+      message: `就位插入：将 key (${key}) 放入 arr[${j + 1}]。当前有序前缀扩展至 [0..${i}]。`,
+      log: `插入 key (${key}) 到 [${j + 1}]，有序区 [0..${i}]`,
+      codeLine: 11,
+    });
   }
 
   steps.push({
-    array, sortedLen: n, i: -1, j: -1, key: null, keyIndex: -1,
-    insertIndex: -1, compareValue: -1, shifted: -1, comparisons, moves,
+    array: [...array],
+    i: n - 1,
+    key: array[n - 1],
+    j: -1,
+    shifts,
+    sortedCount: n,
     phase: 'done',
-    message: `✅ 排序完成！共 ${comparisons} 次比较、${moves} 次移动。`,
-    log: `done: ${comparisons} cmps, ${moves} moves`,
-    codeLine: 10,
+    status: 'done',
+    message: `🎉 插入排序完成！共执行 ${shifts} 次元素搬移。最终数组：[${array.join(', ')}]。`,
+    log: `✓ 排序完成: [${array.join(', ')}]`,
+    codeLine: 12,
   });
 
   return steps;
 }
 
 export class InsertionSortVisualizer extends StepVisualizer<ISStep> {
-  protected codeLines = [
-    'public void insertionSort(int[] arr) {',
-    '    for (int i = 1; i < arr.length; i++) {',
-    '        int key = arr[i];         // 本轮要插入的 key',
-    '        int j = i - 1;',
-    '        while (j >= 0 && arr[j] > key) {',
-    '            arr[j + 1] = arr[j];    // 元素后移，腾出空位',
-    '            j--;',
-    '        }',
-    '        arr[j + 1] = key;            // key 落入空位',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 插入排序源码';
+  protected codeLanguages = INSERTION_SORT_CODE_LANGUAGES;
+  protected codeLines = INSERTION_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '插入排序 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private statSorted: HTMLElement | null = null;
-  private statI: HTMLElement | null = null;
-  private statKey: HTMLElement | null = null;
-  private statCmp: HTMLElement | null = null;
-  private statMv: HTMLElement | null = null;
-  private barsEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private barsContainerEl: HTMLElement | null = null;
+  private metricIEl: HTMLElement | null = null;
+  private metricKeyEl: HTMLElement | null = null;
+  private metricJEl: HTMLElement | null = null;
+  private metricShiftsEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#is-array');
-    this.statSorted = this.root.querySelector('#is-stat-sorted');
-    this.statI = this.root.querySelector('#is-stat-i');
-    this.statKey = this.root.querySelector('#is-stat-key');
-    this.statCmp = this.root.querySelector('#is-stat-cmp');
-    this.statMv = this.root.querySelector('#is-stat-mv');
-    this.barsEl = this.root.querySelector('#is-bars');
-    this.resultEl = this.root.querySelector('#is-result');
-    this.logEl = this.root.querySelector('#is-log');
-    this.clearLogBtn = this.root.querySelector('#is-log-clear');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'is-speed', speedLabel: 'is-speed-label',
-      counter: 'step-counter', message: 'step-message',
-    });
+    this.barsContainerEl = this.root.querySelector('#is-bars-container');
+    this.metricIEl = this.root.querySelector('#metric-i');
+    this.metricKeyEl = this.root.querySelector('#metric-key');
+    this.metricJEl = this.root.querySelector('#metric-j');
+    this.metricShiftsEl = this.root.querySelector('#metric-shifts');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#is-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelector('#is-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.is-chip').forEach((btn) => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.is-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
+        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
         this.start();
       });
     });
-    this.clearLogBtn?.addEventListener('click', () => { if (this.logEl) this.logEl.innerHTML = ''; });
-    this.arrayInput?.addEventListener('change', () => this.start());
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: INSERTION_SORT_PROBLEM_HTML,
+      analysisHtml: INSERTION_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
   protected buildSteps(): ISStep[] {
-    return insertionSortSteps(parseArray(this.arrayInput?.value || '5,2,9,1,5,6'));
+    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+    const raw = arrInput?.value || '12, 11, 13, 5, 6';
+    const arr = parseArray(raw);
+    return insertionSortSteps(arr);
   }
 
   protected renderStep(step: ISStep): void {
-    this.renderStats(step);
-    this.renderBars(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
-  }
+    const { array, i, key, j, shifts, sortedCount, phase, message } = step;
 
-  private renderStats(step: ISStep): void {
-    if (this.statSorted) this.statSorted.textContent = step.phase === 'init' ? '1' : String(step.sortedLen);
-    if (this.statI) this.statI.textContent = step.i < 0 ? '-' : String(step.i);
-    if (this.statKey) this.statKey.textContent = step.key == null ? '-' : String(step.key);
-    if (this.statCmp) this.statCmp.textContent = String(step.comparisons);
-    if (this.statMv) this.statMv.textContent = String(step.moves);
-  }
+    // 1. 渲染柱状图
+    if (this.barsContainerEl) {
+      const maxVal = Math.max(...array, key, 1);
+      this.barsContainerEl.innerHTML = array
+        .map((val, idx) => {
+          const isKey = idx === i && phase === 'pick-key';
+          const isComparingJ = idx === j && phase === 'compare';
+          const isShifting = idx === j + 1 && phase === 'shift';
+          const isSorted = idx < sortedCount || phase === 'done';
 
-  private renderBars(step: ISStep): void {
-    const barsEl = this.barsEl;
-    if (!barsEl) return;
-    const maxVal = Math.max(1, ...step.array);
-    const total = step.array.length;
+          let pillarClass = 'is-bar-pillar';
+          if (isKey) pillarClass += ' is-key';
+          else if (isShifting) pillarClass += ' is-shifting';
+          else if (isComparingJ) pillarClass += ' is-comparing-j';
+          else if (isSorted) pillarClass += ' is-sorted';
 
-    // FLIP: First
-    const oldPositions = new Map<number, DOMRect>();
-    barsEl.querySelectorAll<HTMLElement>('.is-bar-wrap').forEach((el) => {
-      const idx = Number(el.dataset.idx);
-      if (Number.isFinite(idx)) oldPositions.set(idx, el.getBoundingClientRect());
-    });
+          const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
 
-    barsEl.innerHTML = '';
-    step.array.forEach((value, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'is-bar-wrap';
-      wrap.dataset.idx = String(idx);
+          return `
+            <div class="is-bar-wrapper">
+              <div class="${pillarClass}" style="height: ${heightPct}%;">
+                <span>${val}</span>
+              </div>
+              <span class="is-bar-idx">${idx}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
 
-      const bar = document.createElement('div');
-      bar.className = 'is-bar';
-      const h = 30 + (value / maxVal) * 170;
-      bar.style.height = `${h}px`;
-      bar.textContent = String(value);
+    // 2. 更新状态监视器
+    if (this.metricIEl) this.metricIEl.textContent = i >= 0 ? String(i) : '—';
+    if (this.metricKeyEl) this.metricKeyEl.textContent = key >= 0 ? String(key) : '—';
+    if (this.metricJEl) this.metricJEl.textContent = j >= 0 ? String(j) : '—';
+    if (this.metricShiftsEl) this.metricShiftsEl.textContent = String(shifts);
 
-      // 状态着色
-      if (step.phase === 'done') {
-        bar.classList.add('is-done');
-      } else if (step.phase === 'init') {
-        if (idx < step.sortedLen) bar.classList.add('is-sorted');
+    if (this.formulaActionEl) {
+      if (phase === 'pick-key') {
+        this.formulaActionEl.textContent = `key = arr[${i}] (${key})`;
+      } else if (phase === 'compare') {
+        this.formulaActionEl.textContent = `arr[${j}] (${array[j]}) ${
+          array[j] > key ? '>' : '<='
+        } key (${key})`;
+      } else if (phase === 'shift') {
+        this.formulaActionEl.textContent = `arr[${j + 1}] = arr[${j}] (${array[j + 1]})`;
+      } else if (phase === 'insert') {
+        this.formulaActionEl.textContent = `arr[${j}] = key (${key}) 插入`;
+      } else if (phase === 'done') {
+        this.formulaActionEl.textContent = '排序完成';
       } else {
-        // 排好序前缀：除掉正在被移位的元素外都已 sorted
-        const isInSortedPrefix = idx < step.sortedLen;
-        const isShiftedThisStep = typeof step.shifted === 'number'
-          ? step.shifted === idx
-          : Array.isArray(step.shifted) && step.shifted.includes(idx);
-        if (isInSortedPrefix && !isShiftedThisStep) {
-          if (step.phase === 'shift' && idx === step.i) {
-            // i 位置在 shift 阶段是空位，不显示 sorted
-          } else {
-            bar.classList.add('is-sorted');
-          }
-        }
-        // key
-        if (step.phase === 'pick' && idx === step.keyIndex) {
-          bar.classList.add('is-key');
-        }
-        // compare target
-        if (step.phase === 'compare' && idx === step.j) {
-          bar.classList.add('is-compare');
-        }
-        // shift target
-        if (step.phase === 'shift' && idx === step.j + 1) {
-          bar.classList.add('is-shift');
-        }
-        // insert: drop animation on the inserted bar
-        if (step.phase === 'insert' && idx === step.insertIndex) {
-          bar.classList.add('is-drop');
-        }
+        this.formulaActionEl.textContent = 'insert(key, arr[0..i-1])';
       }
+    }
 
-      wrap.appendChild(bar);
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'is-idx';
-      idxLabel.textContent = String(idx);
-      wrap.appendChild(idxLabel);
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
 
-      // key marker (漂浮标签)
-      if (step.phase === 'pick' && idx === step.keyIndex) {
-        const m = document.createElement('span');
-        m.className = 'is-key-marker';
-        m.textContent = '↑ key';
-        wrap.appendChild(m);
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'done' ? '#f0fdf4' : phase === 'shift' ? '#fff1f2' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'done' ? '#15803d' : phase === 'shift' ? '#e11d48' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'done' ? '#bbf7d0' : phase === 'shift' ? '#fecdd3' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
+    }
 
-      barsEl.appendChild(wrap);
-    });
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
 
-    // FLIP: Last + Invert + Play
-    requestAnimationFrame(() => {
-      barsEl.querySelectorAll<HTMLElement>('.is-bar-wrap').forEach((el) => {
-        const idx = Number(el.dataset.idx);
-        if (!Number.isFinite(idx)) return;
-        const newRect = el.getBoundingClientRect();
-        const oldRect = oldPositions.get(idx);
-        if (oldRect) {
-          const dx = oldRect.left - newRect.left;
-          if (Math.abs(dx) > 0.5) {
-            el.style.transition = 'none';
-            el.style.transform = `translateX(${dx}px)`;
-            requestAnimationFrame(() => {
-              el.style.transition = 'transform .5s cubic-bezier(.4,0,.2,1)';
-              el.style.transform = '';
-            });
-          }
-        }
-      });
-    });
-  }
-
-  private renderResultBanner(step: ISStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('is-result--done');
-    const emoji = this.resultEl.querySelector('.is-emoji') as HTMLElement | null;
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('is-result--done');
-      if (emoji) emoji.textContent = '🎉';
-    } else if (step.phase === 'pick') {
-      if (emoji) emoji.textContent = '✋';
-    } else if (step.phase === 'compare') {
-      if (emoji) emoji.textContent = '⚖️';
-    } else if (step.phase === 'shift') {
-      if (emoji) emoji.textContent = '↔️';
-    } else if (step.phase === 'insert') {
-      if (emoji) emoji.textContent = '🎯';
-    } else {
-      if (emoji) emoji.textContent = '📊';
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderLogPanel(step: ISStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'is-log-line' + (i === this.currentIndex ? ' is-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'is-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -350,11 +369,11 @@ registerAlgorithm({
   name: '插入排序',
   viewId: 'algo-insertion-sort-view',
   category: 'sort',
-  description: '逐步演示插入排序：key 元素飞起漂浮、比较、移位、落入',
-  icon: '📊',
+  description: '逐步演示插入排序：元素后移、插入到有序区合适位置',
+  icon: '🃏',
+  difficulty: 1,
+  levelOrder: 3,
+  learningGoal: '理解插入排序的摸牌原理和后移腾位过程',
   template,
   Visualizer: InsertionSortVisualizer,
-  difficulty: 1,
-  levelOrder: 1,
-  learningGoal: '理解插入排序的原地排序过程',
 });

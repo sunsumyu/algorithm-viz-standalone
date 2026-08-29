@@ -1,408 +1,600 @@
 <style>
-  /* === 计数排序 · 翠绿色玻璃感 === */
+  /* === 计数排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-counting-sort-view {
-    --accent-a: #059669;
-    --accent-b: #10b981;
-    --accent-c: #34d399;
-    --accent-glow: rgba(16, 185, 129, .45);
-    --find-color: #f59e0b;
-    --place-color: #06b6d4;
-    --done-color: #34d399;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 10% 5%, rgba(5, 150, 105, .32), transparent 55%),
-      radial-gradient(ellipse at 90% 95%, rgba(16, 185, 129, .28), transparent 55%),
-      linear-gradient(135deg, #041f17 0%, #0a2e22 50%, #0d352a 100%);
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-counting-sort-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-counting-sort-view .cs-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-counting-sort-view .cs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-counting-sort-view .cs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-counting-sort-view .cs-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-counting-sort-view .cs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-counting-sort-view .cs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-counting-sort-view .cs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-counting-sort-view .cs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-counting-sort-view .cs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-counting-sort-view .cs-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-counting-sort-view .cs-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-counting-sort-view .cs-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-counting-sort-view .cs-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-counting-sort-view .cs-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-counting-sort-view .cs-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-counting-sort-view .cs-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-counting-sort-view .cs-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-counting-sort-view .cs-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
-  }
-  /* hero */
-  #algo-counting-sort-view .cs-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(4, 20, 14, .5);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-counting-sort-view .cs-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-counting-sort-view .cs-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #ecfdf5; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-counting-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-counting-sort-view .cs-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-counting-sort-view .cs-tip {
-    max-width: 520px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(5, 150, 105, .12), rgba(16, 185, 129, .08));
-    border: 1px solid rgba(16, 185, 129, .28);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-counting-sort-view .cs-tip strong { color: #6ee7b7; }
-  /* main grid */
-  #algo-counting-sort-view .cs-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-counting-sort-view .cs-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+
   #algo-counting-sort-view .cs-card {
-    background: rgba(8, 30, 22, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
+
+  #algo-counting-sort-view .cs-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
   #algo-counting-sort-view .cs-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-counting-sort-view .cs-tag {
-    font-size: 11px; color: #6ee7b7; background: rgba(16, 185, 129, .14);
-    border: 1px solid rgba(16, 185, 129, .3); padding: 2px 8px; border-radius: 999px;
+
+  #algo-counting-sort-view .cs-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
-  /* input */
-  #algo-counting-sort-view .cs-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
+
+  /* Card 1: 三轨沙盘 (原数组 + 计数频次表 + 输出数组) */
+  #algo-counting-sort-view .cs-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 8px;
+    padding: 6px;
+    width: 100%;
   }
-  #algo-counting-sort-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(4, 20, 14, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
+
+  #algo-counting-sort-view .cs-track-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    overflow-x: auto;
   }
-  #algo-counting-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(16, 185, 129, .15); }
-  #algo-counting-sort-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-counting-sort-view .cs-track-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
   }
-  #algo-counting-sort-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #ecfdf5; transform: translateY(-1px);
-    box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-counting-sort-view .cs-track-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
   }
-  #algo-counting-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-counting-sort-view .cs-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  #algo-counting-sort-view .cs-cell-box {
+    width: 34px;
+    height: 38px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  #algo-counting-sort-view .cs-cell-box .val {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-counting-sort-view .cs-cell-box .sub {
+    font-size: 8px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-counting-sort-view .cs-cell-box.is-active-src {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  }
+
+  #algo-counting-sort-view .cs-cell-box.is-active-count {
+    border-color: #a855f7;
+    background: #faf5ff;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+  }
+
+  #algo-counting-sort-view .cs-cell-box.is-filled-out {
+    border-color: #10b981;
+    background: #f0fdf4;
+    color: #15803d;
+  }
+
+  /* Preset Chips */
+  #algo-counting-sort-view .cs-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
   #algo-counting-sort-view .cs-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(16, 185, 129, .12); border: 1px solid rgba(16, 185, 129, .28);
-    color: #6ee7b7; cursor: pointer; transition: all .2s;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
   }
   #algo-counting-sort-view .cs-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #ecfdf5; border-color: transparent; transform: translateY(-1px);
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
   }
-  /* stats */
-  #algo-counting-sort-view .cs-stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+
+  /* Card 2: 状态监视器 */
+  #algo-counting-sort-view .cs-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
   }
-  #algo-counting-sort-view .cs-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(8, 30, 22, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
+
+  #algo-counting-sort-view .cs-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  #algo-counting-sort-view .cs-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+
+  #algo-counting-sort-view .cs-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
-  #algo-counting-sort-view .cs-stat.cs-stat--max::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-counting-sort-view .cs-stat.cs-stat--count::before { background: linear-gradient(180deg, #22d3ee, #06b6d4); }
-  #algo-counting-sort-view .cs-stat.cs-stat--placed::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
-  #algo-counting-sort-view .cs-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-counting-sort-view .cs-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+
+  #algo-counting-sort-view .cs-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
   }
-  #algo-counting-sort-view .cs-stat--max .cs-stat-val { color: #fcd34d; }
-  #algo-counting-sort-view .cs-stat--count .cs-stat-val { color: #67e8f9; }
-  #algo-counting-sort-view .cs-stat--placed .cs-stat-val { color: #c4b5fd; }
-  /* visual */
-  #algo-counting-sort-view .cs-visual { flex: 1; min-height: 360px; display: flex; flex-direction: column; }
-  #algo-counting-sort-view .cs-canvas-area {
-    flex: 1; min-height: 0; padding: 16px 18px 12px;
-    display: flex; flex-direction: column; gap: 12px; overflow: hidden;
+
+  #algo-counting-sort-view .cs-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
   }
-  #algo-counting-sort-view .cs-section-label {
-    font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
-    letter-spacing: .06em; margin-bottom: 4px;
+
+  #algo-counting-sort-view .cs-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
-  #algo-counting-sort-view .cs-bars-row {
-    display: flex; align-items: flex-end; gap: 4px; height: 90px; padding-bottom: 22px;
-    position: relative;
+
+  /* 底部播放进度条控制条 */
+  #algo-counting-sort-view .cs-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
-  #algo-counting-sort-view .cs-bar-wrap {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    width: 44px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-counting-sort-view .cs-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-counting-sort-view .cs-bar {
-    width: 100%; border-radius: 8px 8px 3px 3px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
-    border: 1.5px solid rgba(255, 255, 255, .14);
-    display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 4px; color: #e2e8f0;
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; font-weight: 800;
-    transition: height .45s cubic-bezier(.4, 0, .2, 1),
-                background .35s, border-color .35s, box-shadow .35s, color .35s, transform .35s;
+
+  #algo-counting-sort-view .cs-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  /* original array bar states */
-  #algo-counting-sort-view .cs-bar.cs-bar--active {
-    background: linear-gradient(180deg, rgba(245, 158, 11, .55), rgba(217, 119, 6, .25));
-    border-color: var(--find-color);
-    color: #fff7ed;
-    box-shadow: 0 4px 18px rgba(245, 158, 11, .45);
+  #algo-counting-sort-view .cs-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
-  #algo-counting-sort-view .cs-bar.cs-bar--max {
-    background: linear-gradient(180deg, rgba(239, 68, 68, .55), rgba(220, 38, 38, .25));
-    border-color: #f87171;
-    color: #fff;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, .25);
+
+  #algo-counting-sort-view .cs-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #algo-counting-sort-view .cs-bar.cs-bar--placed {
-    background: linear-gradient(180deg, rgba(16, 185, 129, .45), rgba(5, 150, 105, .2));
-    border-color: rgba(16, 185, 129, .7);
-    color: #d1fae5;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, .25);
+
+  #algo-counting-sort-view .cs-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
   }
-  #algo-counting-sort-view .cs-bar.cs-bar--done {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
-    border-color: var(--done-color);
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
-  }
-  /* count array cells */
-  #algo-counting-sort-view .cs-count-grid {
-    display: flex; gap: 4px; align-items: flex-end; height: 90px; padding-bottom: 22px;
-    position: relative;
-  }
-  #algo-counting-sort-view .cs-count-cell {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    width: 44px;
-  }
-  #algo-counting-sort-view .cs-count-bar {
-    width: 100%; border-radius: 8px 8px 3px 3px;
-    background: linear-gradient(180deg, rgba(34, 211, 238, .35), rgba(6, 182, 212, .12));
-    border: 1.5px solid rgba(34, 211, 238, .4);
-    display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 4px; color: #ecfeff;
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; font-weight: 800;
-    transition: height .45s cubic-bezier(.4, 0, .2, 1),
-                background .35s, border-color .35s, box-shadow .35s, transform .35s;
-    min-height: 18px;
-  }
-  #algo-counting-sort-view .cs-count-bar.cs-count--active {
-    background: linear-gradient(180deg, rgba(245, 158, 11, .55), rgba(217, 119, 6, .25));
-    border-color: var(--find-color);
-    color: #fff7ed;
-    box-shadow: 0 4px 18px rgba(245, 158, 11, .45);
-    animation: cs-pulse .6s ease-in-out;
-  }
-  #algo-counting-sort-view .cs-count-bar.cs-count--prefix {
-    background: linear-gradient(180deg, rgba(168, 85, 247, .45), rgba(124, 58, 237, .2));
-    border-color: #a78bfa;
-    color: #ede9fe;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, .25);
-  }
-  #algo-counting-sort-view .cs-count-bar.cs-count--prefix-active {
-    background: linear-gradient(180deg, rgba(245, 158, 11, .55), rgba(217, 119, 6, .25));
-    border-color: var(--find-color);
-    color: #fff7ed;
-    box-shadow: 0 4px 18px rgba(245, 158, 11, .45);
-  }
-  #algo-counting-sort-view .cs-count-bar.cs-count--done {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
-    border-color: var(--done-color);
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
-  }
-  @keyframes cs-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-  }
-  /* output bars */
-  #algo-counting-sort-view .cs-bar.cs-bar--output-placed {
-    animation: cs-drop .5s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes cs-drop {
-    0% { transform: translateY(-40px) scale(1.1); opacity: .3; }
-    60% { transform: translateY(4px) scale(1.05); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  /* index labels */
-  #algo-counting-sort-view .cs-idx {
-    position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
-    color: #64748b; font-size: 10px; font-weight: 600;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-  }
-  /* active marker */
-  #algo-counting-sort-view .cs-active-marker {
-    position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-    color: var(--find-color); font-size: 10px; font-weight: 800;
-    background: rgba(245, 158, 11, .15); border: 1px solid var(--find-color);
-    padding: 1px 6px; border-radius: 6px; white-space: nowrap;
-    animation: cs-float 1.6s ease-in-out infinite;
-  }
-  @keyframes cs-float {
-    0%, 100% { transform: translate(-50%, 0); }
-    50% { transform: translate(-50%, -3px); }
-  }
-  /* result banner */
-  #algo-counting-sort-view .cs-result {
-    margin: 0 16px 12px; padding: 12px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(5, 150, 105, .12), rgba(16, 185, 129, .06));
-    border: 1px solid rgba(16, 185, 129, .28);
-    line-height: 1.55; font-size: 14px; color: #d1fae5;
-  }
-  #algo-counting-sort-view .cs-result .cs-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #ecfdf5; box-shadow: 0 4px 14px var(--accent-glow);
-  }
-  #algo-counting-sort-view .cs-result.cs-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
-  }
-  #algo-counting-sort-view .cs-result.cs-result--done .cs-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
-  }
-  /* log */
-  #algo-counting-sort-view .cs-log {
-    min-height: 70px; max-height: 120px; padding: 10px 14px;
-    overflow: auto; background: rgba(4, 20, 14, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
-  }
-  #algo-counting-sort-view .cs-log-line { display: flex; gap: 8px; }
-  #algo-counting-sort-view .cs-log-line .cs-log-num { color: #475569; flex-shrink: 0; }
-  #algo-counting-sort-view .cs-log-line.cs-log-active { color: #6ee7b7; font-weight: 600; }
-  #algo-counting-sort-view .cs-log-line.cs-log-active .cs-log-num { color: var(--accent-b); }
-  /* code panel */
-  #algo-counting-sort-view .cs-code {
-    min-height: 0; display: flex;
-    background: rgba(4, 20, 14, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
-  }
-  #algo-counting-sort-view .cs-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-counting-sort-view .cs-controls {
-    padding: 14px 18px;
-    background: rgba(4, 20, 14, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-  }
-  #algo-counting-sort-view .cs-controls .cs-ctrl-btn { min-width: 64px; }
-  #algo-counting-sort-view .cs-controls .cs-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #ecfdf5; border-color: transparent;
-  }
-  #algo-counting-sort-view .cs-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-counting-sort-view .cs-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
-  }
-  #algo-counting-sort-view #cs-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-counting-sort-view .cs-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-counting-sort-view .cs-code { min-height: 360px; }
+
+  #algo-counting-sort-view .cs-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="cs-shell">
-  <div class="cs-hero">
-    <div class="cs-hero-left">
-      <span class="cs-icon">🔢</span>
-      <div>
-        <h1>计数排序</h1>
-        <div class="cs-sub">非比较排序 · 统计每个值出现次数 · 前缀和定位 · O(n+k)</div>
+<div id="algo-counting-sort-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="cs-header">
+    <div class="cs-header-left">
+      <div class="cs-icon-btn">🔢</div>
+      <div class="cs-main-title">计数排序 · Counting Sort</div>
+      <button class="cs-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="cs-badge-mode">非比较频次统计与前缀定位</div>
+      <div class="cs-badge-complexity">O(n + k) · O(n + k) 稳定</div>
+    </div>
+    <div class="cs-header-right">
+      <div class="cs-input-group">
+        <label for="input-array">数组:</label>
+        <input type="text" id="input-array" value="4, 2, 2, 8, 3, 3, 1" style="width: 150px;">
       </div>
+      <button class="cs-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="cs-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <div class="cs-tip"><strong>核心思路：</strong>找到最大值 → 创建计数数组统计频次 → 前缀和确定位置 → 反向遍历将元素放入输出数组正确位置。</div>
-  </div>
-  <div class="cs-main">
-    <div class="cs-left">
-      <section class="cs-card">
-        <div class="cs-card-title">输入 <span class="cs-tag">非负整数数组</span></div>
-        <div class="cs-input-row">
-          <input id="cs-array" value="4,2,2,8,3,3,1">
-          <button id="cs-start">开始排序</button>
-        </div>
-        <div class="cs-examples">
-          <button class="cs-chip" data-arr="4,2,2,8,3,3,1">默认 7 元素</button>
-          <button class="cs-chip" data-arr="1,4,1,2,7,5,2">含重复</button>
-          <button class="cs-chip" data-arr="5,3,1,0,2,4">含零</button>
-          <button class="cs-chip" data-arr="3,3,3,3,3">全部相同</button>
-          <button class="cs-chip" data-arr="9,7,5,3,1">逆序</button>
-        </div>
-      </section>
+  </header>
 
-      <div class="cs-stats">
-        <div class="cs-stat cs-stat--max"><div class="cs-stat-label">最大值 max</div><div class="cs-stat-val" id="cs-stat-max">-</div></div>
-        <div class="cs-stat cs-stat--count"><div class="cs-stat-label">当前计数</div><div class="cs-stat-val" id="cs-stat-count">-</div></div>
-        <div class="cs-stat cs-stat--placed"><div class="cs-stat-label">已放置</div><div class="cs-stat-val" id="cs-stat-placed">0</div></div>
-        <div class="cs-stat"><div class="cs-stat-label">计数数组大小</div><div class="cs-stat-val" id="cs-stat-size">-</div></div>
-        <div class="cs-stat"><div class="cs-stat-label">当前阶段</div><div class="cs-stat-val" id="cs-stat-phase" style="font-size:14px;">-</div></div>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="cs-workspace">
+    <!-- Card 1: 三轨沙盘 (原数组 + 计数频次表 + 输出数组) -->
+    <section class="cs-card">
+      <div class="cs-card-header">
+        <div class="cs-card-title">
+          <span>📊</span> 原数组、计数表与输出数组三轨沙盘 (Input, Count & Output)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● 输入元素</span> · <span style="color: #a855f7;">● 频次表 count</span> · <span style="color: #10b981;">● 稳定回填 output</span>
+        </div>
       </div>
-
-      <section class="cs-card cs-visual">
-        <div class="cs-card-title">排序过程</div>
-        <div class="cs-canvas-area">
-          <div>
-            <div class="cs-section-label">原数组</div>
-            <div class="cs-bars-row" id="cs-bars-orig"></div>
+      <div class="cs-card-body" style="justify-content: center;">
+        <div class="cs-sandbox-container">
+          <!-- 上轨：原数组 -->
+          <div class="cs-track-section">
+            <div class="cs-track-label">原输入数组 arr</div>
+            <div class="cs-track-row" id="cs-src-track"></div>
           </div>
-          <div>
-            <div class="cs-section-label">计数数组 count[]</div>
-            <div class="cs-count-grid" id="cs-bars-count"></div>
+          <!-- 中轨：Count 表 -->
+          <div class="cs-track-section">
+            <div class="cs-track-label">计数数组 count (键: 数值 - min)</div>
+            <div class="cs-track-row" id="cs-count-track"></div>
           </div>
-          <div>
-            <div class="cs-section-label">输出数组 output[]</div>
-            <div class="cs-bars-row" id="cs-bars-output"></div>
+          <!-- 下轨：Output 数组 -->
+          <div class="cs-track-section">
+            <div class="cs-track-label">排序输出数组 output</div>
+            <div class="cs-track-row" id="cs-out-track"></div>
           </div>
         </div>
-        <div class="cs-result" id="cs-result">
-          <span class="cs-emoji">🔢</span>
-          <div id="step-message">点击「开始排序」查看计数排序逐步过程</div>
-        </div>
-      </section>
+      </div>
+      <div class="cs-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="cs-chip" data-arr="4, 2, 2, 8, 3, 3, 1">默认重复项 (4, 2, 2, 8, 3, 3, 1)</button>
+        <button class="cs-chip" data-arr="9, 5, 2, 7, 12, 5">区间 [2..12]</button>
+        <button class="cs-chip" data-arr="1, 1, 1, 2, 2, 3">高频重复密集体</button>
+      </div>
+    </section>
 
-      <section class="cs-card">
-        <div class="cs-card-title">执行日志 <button id="cs-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="cs-log" id="cs-log"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="cs-card">
+      <div class="cs-card-header">
+        <div class="cs-card-title">
+          <span>🧭</span> 统计指标监视器 (Counting Metrics Monitor)
+        </div>
+      </div>
+      <div class="cs-card-body">
+        <div class="cs-metrics-grid">
+          <div class="cs-metric-card">
+            <span class="cs-metric-label">极值范围 [min, max]</span>
+            <span class="cs-metric-val" id="metric-range" style="color: #2563eb;">[1, 8]</span>
+          </div>
+          <div class="cs-metric-card">
+            <span class="cs-metric-label">值域跨度 k</span>
+            <span class="cs-metric-val" id="metric-k" style="color: #0f172a;">8</span>
+          </div>
+          <div class="cs-metric-card">
+            <span class="cs-metric-label">当前处理元素</span>
+            <span class="cs-metric-val" id="metric-cur-elem" style="color: #3b82f6;">4</span>
+          </div>
+          <div class="cs-metric-card">
+            <span class="cs-metric-label">填入下标 outIdx</span>
+            <span class="cs-metric-val" id="metric-out-idx" style="color: #10b981;">0</span>
+          </div>
+        </div>
+        <div class="cs-formula-box" id="cs-formula-box">
+          <span>定位公式:</span> <strong id="formula-action" style="color: #2563eb;">output[--count[x - min]] = x</strong>
+        </div>
+        <div class="cs-live-alert" id="cs-live-alert">
+          <span>💡</span> <span id="cs-live-text">准备就绪，点击运行开始计数排序。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="cs-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="cs-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="cs-card-header">
+        <div class="cs-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="cs-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="cs-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="cs-playback-bar">
+    <div class="cs-playback-controls">
+      <button class="cs-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="cs-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="cs-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="cs-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="cs-controls">
-    <button id="step-reset" class="cs-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="cs-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="cs-ctrl-btn cs-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="cs-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="cs-counter">步骤: 0 / 0</span>
-    <div class="cs-speed-wrap">
-      <span>速度</span>
-      <input id="cs-speed" type="range" min="200" max="2500" step="100" value="700">
-      <span id="cs-speed-label" style="min-width:42px;">0.7s</span>
+    <div class="cs-progress-wrap">
+      <span class="cs-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

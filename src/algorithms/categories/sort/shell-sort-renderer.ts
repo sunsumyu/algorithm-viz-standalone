@@ -1,83 +1,91 @@
 /**
- * 希尔排序可视化器
- * 按 gap 分组的插入排序，gap 序列：n/2, n/4, ..., 1
- * 玻璃拟态风格 + 靛蓝色系配色，同组同色显示
+ * 希尔排序可视化器 — 4-Card 标准现代架构
+ * 增量折半、跨步分组插入、逐步粗排到精排
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  SHELL_SORT_PROBLEM_HTML,
+  SHELL_SORT_ANALYSIS_HTML,
+  SHELL_SORT_CODE_LANGUAGES,
+} from './shell-sort-problem-content';
+import { parseArray } from './bubble-sort-renderer';
 import template from './shell-sort.html?raw';
 
-type Phase = 'init' | 'set-gap' | 'compare' | 'shift' | 'insert' | 'reduce-gap' | 'done';
-
-interface SSStep {
+export interface ShellStep {
   array: number[];
-  gap: number;                // 当前 gap 值
-  round: number;              // 当前轮数（第几次 gap）
-  i: number;                  // 外层循环索引（从 gap 开始）
-  j: number;                  // 内层循环索引（用于比较和移位）
-  key: number | null;         // 当前要插入的 key
-  keyIndex: number;           // key 原始位置
-  insertIndex: number;        // key 最终插入位置
-  compareIndex: number;       // 比较的另一个元素位置（j - gap），-1 表示不在比较态
-  shiftedIndex: number;       // 被移位的元素位置，-1 表示无
+  gap: number;
+  i: number;
+  key: number;
+  j: number;
   comparisons: number;
-  moves: number;
-  phase: Phase;
+  shifts: number;
+  phase: 'init' | 'new-gap' | 'pick-key' | 'compare' | 'shift' | 'insert' | 'done';
+  status: 'init' | 'new-gap' | 'pick-key' | 'compare' | 'shift' | 'insert' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseArray(input: string): number[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-}
-
-function shellSortSteps(input: number[]): SSStep[] {
-  const steps: SSStep[] = [];
+export function shellSortSteps(input: number[]): ShellStep[] {
+  const steps: ShellStep[] = [];
   const array = [...input];
   const n = array.length;
   let comparisons = 0;
-  let moves = 0;
-  let round = 0;
-
-  // 计算初始 gap
-  let gap = Math.floor(n / 2);
+  let shifts = 0;
 
   steps.push({
-    array: [...array], gap, round: 0, i: -1, j: -1, key: null, keyIndex: -1,
-    insertIndex: -1, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
+    array: [...array],
+    gap: Math.floor(n / 2),
+    i: -1,
+    key: -1,
+    j: -1,
+    comparisons: 0,
+    shifts: 0,
     phase: 'init',
-    message: n === 0 ? '数组为空，无需排序。' : `初始化：gap = floor(${n}/2) = ${gap}，开始希尔排序。`,
-    log: n === 0 ? 'empty array' : `init: gap = ${gap}`,
-    codeLine: 1,
+    status: 'init',
+    message: n === 0 ? '数组为空，无需排序。' : `初始化希尔排序：数组长度 n = ${n}，初始增量 gap = ${Math.floor(n / 2)}。`,
+    log: n === 0 ? '空数组' : `初始化: [${array.join(', ')}]`,
+    codeLine: 2,
   });
 
-  if (n === 0) {
+  if (n <= 1) {
     steps.push({
-      array, gap: 0, round: 0, i: -1, j: -1, key: null, keyIndex: -1,
-      insertIndex: -1, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
+      array: [...array],
+      gap: 0,
+      i: 0,
+      key: array[0] ?? 0,
+      j: -1,
+      comparisons: 0,
+      shifts: 0,
       phase: 'done',
-      message: `✅ 排序完成！共 ${comparisons} 次比较、${moves} 次移动。`,
-      log: `done: ${comparisons} cmps, ${moves} moves`,
-      codeLine: 16,
+      status: 'done',
+      message: '✅ 排序完成！',
+      log: '排序完成',
+      codeLine: 13,
     });
     return steps;
   }
 
-  while (gap >= 1) {
-    round++;
-
+  for (let gap = Math.floor(n / 2); gap > 0; gap = Math.floor(gap / 2)) {
     steps.push({
-      array: [...array], gap, round, i: -1, j: -1, key: null, keyIndex: -1,
-      insertIndex: -1, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
-      phase: 'set-gap',
-      message: `第 ${round} 轮：gap = ${gap}，将数组分为 ${gap} 组，每组独立进行插入排序。`,
-      log: `round ${round}: gap = ${gap}`,
-      codeLine: 3,
+      array: [...array],
+      gap,
+      i: gap,
+      key: -1,
+      j: -1,
+      comparisons,
+      shifts,
+      phase: 'new-gap',
+      status: 'new-gap',
+      message: `进入新一轮增量：gap = ${gap}，对间隔为 ${gap} 的所有子序列执行分组插入排序。`,
+      log: `新增量 gap = ${gap}`,
+      codeLine: 4,
     });
 
     for (let i = gap; i < n; i++) {
@@ -85,307 +93,283 @@ function shellSortSteps(input: number[]): SSStep[] {
       let j = i;
 
       steps.push({
-        array: [...array], gap, round, i, j, key, keyIndex: i,
-        insertIndex: -1, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
-        phase: 'set-gap',
-        message: `gap=${gap}，取出 key=arr[${i}]=${key}，在组内从位置 ${i} 向前比较。`,
-        log: `pick key = arr[${i}] = ${key}, gap=${gap}`,
-        codeLine: 5,
+        array: [...array],
+        gap,
+        i,
+        key,
+        j,
+        comparisons,
+        shifts,
+        phase: 'pick-key',
+        status: 'pick-key',
+        message: `提取待插入元素：key = arr[${i}] (${key})，步长 gap = ${gap}。`,
+        log: `gap=${gap}: 提取 key = arr[${i}] (${key})`,
+        codeLine: [5, 6, 7],
       });
 
       while (j >= gap) {
         comparisons++;
-        const compareIdx = j - gap;
+        const cmp = array[j - gap] > key;
+
         steps.push({
-          array: [...array], gap, round, i, j, key, keyIndex: i,
-          insertIndex: -1, compareIndex: compareIdx, shiftedIndex: -1, comparisons, moves,
+          array: [...array],
+          gap,
+          i,
+          key,
+          j,
+          comparisons,
+          shifts,
           phase: 'compare',
-          message: `比较 arr[${j}]=${array[j]} 与 arr[${compareIdx}]=${array[compareIdx]}：${array[compareIdx] > key ? `arr[${compareIdx}] > key ⇒ 需要后移` : `arr[${compareIdx}] ≤ key ⇒ 找到插入点`}。`,
-          log: `cmp arr[${compareIdx}]=${array[compareIdx]} vs key=${key}`,
-          codeLine: 7,
-        });
-
-        if (array[compareIdx] <= key) {
-          break;
-        }
-
-        // 移位
-        array[j] = array[compareIdx];
-        moves++;
-        steps.push({
-          array: [...array], gap, round, i, j, key, keyIndex: i,
-          insertIndex: -1, compareIndex: -1, shiftedIndex: j, comparisons, moves,
-          phase: 'shift',
-          message: `将 arr[${compareIdx}]=${array[compareIdx]} 后移 gap=${gap} 位到位置 ${j}（给 key 腾位）。`,
-          log: `shift arr[${compareIdx}] -> pos ${j}`,
+          status: 'compare',
+          message: `跨步比较：arr[${j - gap}] (${array[j - gap]}) vs key (${key})${
+            cmp ? '，需要后移 gap 位' : '，无需移动'
+          }。`,
+          log: `比较 arr[${j - gap}] (${array[j - gap]}) vs key (${key})`,
           codeLine: 8,
         });
 
-        j = compareIdx;
+        if (!cmp) break;
+
+        array[j] = array[j - gap];
+        shifts++;
+
+        steps.push({
+          array: [...array],
+          gap,
+          i,
+          key,
+          j,
+          comparisons,
+          shifts,
+          phase: 'shift',
+          status: 'shift',
+          message: `跨步后移：将 arr[${j - gap}] (${array[j]}) 移动到 arr[${j}]。`,
+          log: `后移 arr[${j - gap}] -> [${j}]`,
+          codeLine: 9,
+        });
+
+        j -= gap;
       }
 
-      const insertPos = j;
-      if (insertPos !== i) {
-        array[insertPos] = key;
-        moves++;
-        steps.push({
-          array: [...array], gap, round, i, j: insertPos, key, keyIndex: -1,
-          insertIndex: insertPos, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
-          phase: 'insert',
-          message: `将 key=${key} 插入到位置 ${insertPos}。`,
-          log: `insert key=${key} @ ${insertPos}`,
-          codeLine: 10,
-        });
-      } else {
-        steps.push({
-          array: [...array], gap, round, i, j: insertPos, key, keyIndex: -1,
-          insertIndex: insertPos, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
-          phase: 'insert',
-          message: `key=${key} 已在合适位置 ${insertPos}，无需移动。`,
-          log: `key already at ${insertPos}, no shift`,
-          codeLine: 10,
-        });
-      }
-    }
+      array[j] = key;
 
-    // gap 减半
-    const newGap = Math.floor(gap / 2);
-    if (newGap >= 1) {
       steps.push({
-        array: [...array], gap: newGap, round, i: -1, j: -1, key: null, keyIndex: -1,
-        insertIndex: -1, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
-        phase: 'reduce-gap',
-        message: `本轮 gap=${gap} 的插入排序完成，gap 减半：${gap} → ${newGap}。`,
-        log: `reduce gap: ${gap} -> ${newGap}`,
-        codeLine: 13,
+        array: [...array],
+        gap,
+        i,
+        key,
+        j,
+        comparisons,
+        shifts,
+        phase: 'insert',
+        status: 'insert',
+        message: `插入就位：将 key (${key}) 插入到 arr[${j}]。`,
+        log: `插入 key (${key}) 到 [${j}]`,
+        codeLine: 12,
       });
     }
-
-    gap = newGap;
   }
 
   steps.push({
-    array, gap: 0, round, i: -1, j: -1, key: null, keyIndex: -1,
-    insertIndex: -1, compareIndex: -1, shiftedIndex: -1, comparisons, moves,
+    array: [...array],
+    gap: 0,
+    i: n - 1,
+    key: array[n - 1],
+    j: -1,
+    comparisons,
+    shifts,
     phase: 'done',
-    message: `✅ 排序完成！共 ${comparisons} 次比较、${moves} 次移动。`,
-    log: `done: ${comparisons} cmps, ${moves} moves`,
-    codeLine: 16,
+    status: 'done',
+    message: `🎉 希尔排序完成！共比较 ${comparisons} 次，跨步移动 ${shifts} 次。最终数组：[${array.join(', ')}]。`,
+    log: `✓ 排序完成: [${array.join(', ')}]`,
+    codeLine: 13,
   });
 
   return steps;
 }
 
-export class ShellSortVisualizer extends StepVisualizer<SSStep> {
-  protected codeLines = [
-    'public void shellSort(int[] arr) {',
-    '    int gap = arr.length / 2;     // 初始间隔',
-    '    while (gap >= 1) {',
-    '        for (int i = gap; i < arr.length; i++) {',
-    '            int key = arr[i];       // 当前要插入的元素',
-    '            int j = i;',
-    '            while (j >= gap && arr[j - gap] > key) {',
-    '                arr[j] = arr[j - gap]; // 元素后移 gap 位',
-    '                j -= gap;',
-    '            }',
-    '            arr[j] = key;            // key 落入空位',
-    '        }',
-    '        gap /= 2;                    // 间隔减半',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 希尔排序源码';
+export class ShellSortVisualizer extends StepVisualizer<ShellStep> {
+  protected codeLanguages = SHELL_SORT_CODE_LANGUAGES;
+  protected codeLines = SHELL_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '希尔排序 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private statGap: HTMLElement | null = null;
-  private statRound: HTMLElement | null = null;
-  private statCmp: HTMLElement | null = null;
-  private statMv: HTMLElement | null = null;
-  private barsEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private barsContainerEl: HTMLElement | null = null;
+  private metricGapEl: HTMLElement | null = null;
+  private metricIEl: HTMLElement | null = null;
+  private metricKeyEl: HTMLElement | null = null;
+  private metricCompShiftEl: HTMLElement | null = null;
+  private formulaGapEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#ss-array');
-    this.statGap = this.root.querySelector('#ss-stat-gap');
-    this.statRound = this.root.querySelector('#ss-stat-round');
-    this.statCmp = this.root.querySelector('#ss-stat-cmp');
-    this.statMv = this.root.querySelector('#ss-stat-mv');
-    this.barsEl = this.root.querySelector('#ss-bars');
-    this.resultEl = this.root.querySelector('#ss-result');
-    this.logEl = this.root.querySelector('#ss-log');
-    this.clearLogBtn = this.root.querySelector('#ss-log-clear');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'ss-speed', speedLabel: 'ss-speed-label',
-      counter: 'step-counter', message: 'step-message',
-    });
+    this.barsContainerEl = this.root.querySelector('#sh-bars-container');
+    this.metricGapEl = this.root.querySelector('#metric-gap');
+    this.metricIEl = this.root.querySelector('#metric-i');
+    this.metricKeyEl = this.root.querySelector('#metric-key');
+    this.metricCompShiftEl = this.root.querySelector('#metric-comp-shift');
+    this.formulaGapEl = this.root.querySelector('#formula-gap');
+    this.liveTextEl = this.root.querySelector('#sh-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelector('#ss-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.ss-chip').forEach((btn) => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.sh-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
+        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
         this.start();
       });
     });
-    this.clearLogBtn?.addEventListener('click', () => { if (this.logEl) this.logEl.innerHTML = ''; });
-    this.arrayInput?.addEventListener('change', () => this.start());
-  }
 
-  protected buildSteps(): SSStep[] {
-    return shellSortSteps(parseArray(this.arrayInput?.value || '5,2,9,1,5,6,4,8'));
-  }
-
-  protected renderStep(step: SSStep): void {
-    this.renderStats(step);
-    this.renderBars(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
-  }
-
-  private renderStats(step: SSStep): void {
-    if (this.statGap) this.statGap.textContent = step.gap > 0 ? String(step.gap) : '-';
-    if (this.statRound) this.statRound.textContent = String(step.round);
-    if (this.statCmp) this.statCmp.textContent = String(step.comparisons);
-    if (this.statMv) this.statMv.textContent = String(step.moves);
-  }
-
-  private renderBars(step: SSStep): void {
-    const barsEl = this.barsEl;
-    if (!barsEl) return;
-    const maxVal = Math.max(1, ...step.array);
-    const total = step.array.length;
-    const gap = step.gap;
-
-    // FLIP: First
-    const oldPositions = new Map<number, DOMRect>();
-    barsEl.querySelectorAll<HTMLElement>('.ss-bar-wrap').forEach((el) => {
-      const idx = Number(el.dataset.idx);
-      if (Number.isFinite(idx)) oldPositions.set(idx, el.getBoundingClientRect());
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: SHELL_SORT_PROBLEM_HTML,
+      analysisHtml: SHELL_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
     });
+  }
 
-    barsEl.innerHTML = '';
-    step.array.forEach((value, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'ss-bar-wrap';
-      wrap.dataset.idx = String(idx);
+  protected buildSteps(): ShellStep[] {
+    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+    const raw = arrInput?.value || '9, 8, 3, 7, 5, 6, 4, 1';
+    const arr = parseArray(raw);
+    return shellSortSteps(arr);
+  }
 
-      const bar = document.createElement('div');
-      bar.className = 'ss-bar';
-      const h = 30 + (value / maxVal) * 170;
-      bar.style.height = `${h}px`;
-      bar.textContent = String(value);
+  protected renderStep(step: ShellStep): void {
+    const { array, gap, i, key, j, comparisons, shifts, phase, message } = step;
 
-      // 状态着色
-      if (step.phase === 'done') {
-        bar.classList.add('ss-done');
-      } else if (gap > 0) {
-        // 按 gap 分组着色
-        const groupIdx = idx % gap;
-        bar.classList.add(`ss-group-${groupIdx % 5}`);
+    // 1. 渲染柱状图
+    if (this.barsContainerEl) {
+      const maxVal = Math.max(...array, key, 1);
+      this.barsContainerEl.innerHTML = array
+        .map((val, idx) => {
+          const isKey = idx === i && phase === 'pick-key';
+          const isGapPartner = j >= gap && idx === j - gap && phase === 'compare';
+          const isShifting = idx === j && phase === 'shift';
+          const isSorted = phase === 'done';
 
-        // key 高亮
-        if (step.phase === 'set-gap' && idx === step.keyIndex) {
-          bar.classList.add('ss-key');
-        }
-        // compare target
-        if (step.phase === 'compare' && (idx === step.j || idx === step.compareIndex)) {
-          if (idx === step.j) {
-            bar.classList.add('ss-key');
-          } else {
-            bar.classList.add('ss-compare');
-          }
-        }
-        // shift target
-        if (step.phase === 'shift' && idx === step.shiftedIndex) {
-          bar.classList.add('ss-shift');
-        }
-        // insert: drop animation
-        if (step.phase === 'insert' && idx === step.insertIndex) {
-          bar.classList.add('ss-drop');
-        }
+          let pillarClass = 'sh-bar-pillar';
+          if (isKey) pillarClass += ' is-key';
+          else if (isShifting) pillarClass += ' is-shifting';
+          else if (isGapPartner) pillarClass += ' is-gap-partner';
+          else if (isSorted) pillarClass += ' is-sorted';
+
+          const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
+
+          return `
+            <div class="bs-bar-wrapper">
+              <div class="${pillarClass}" style="height: ${heightPct}%;">
+                <span>${val}</span>
+              </div>
+              <span class="bs-bar-idx">${idx}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricGapEl) this.metricGapEl.textContent = gap > 0 ? String(gap) : '—';
+    if (this.metricIEl) this.metricIEl.textContent = i >= 0 ? String(i) : '—';
+    if (this.metricKeyEl) this.metricKeyEl.textContent = key >= 0 ? String(key) : '—';
+    if (this.metricCompShiftEl) {
+      this.metricCompShiftEl.textContent = `${comparisons} / ${shifts}`;
+    }
+
+    if (this.formulaGapEl) {
+      if (gap > 0) {
+        this.formulaGapEl.textContent = `当前增量 gap = ${gap}`;
+      } else {
+        this.formulaGapEl.textContent = 'gap = gap / 2';
       }
+    }
 
-      wrap.appendChild(bar);
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'ss-idx';
-      idxLabel.textContent = String(idx);
-      wrap.appendChild(idxLabel);
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
 
-      // key marker
-      if (step.phase === 'set-gap' && idx === step.keyIndex) {
-        const m = document.createElement('span');
-        m.className = 'ss-key-marker';
-        m.textContent = '↑ key';
-        wrap.appendChild(m);
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'done' ? '#f0fdf4' : phase === 'shift' ? '#fff1f2' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'done' ? '#15803d' : phase === 'shift' ? '#e11d48' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'done' ? '#bbf7d0' : phase === 'shift' ? '#fecdd3' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
+    }
 
-      barsEl.appendChild(wrap);
-    });
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
 
-    // FLIP: Last + Invert + Play
-    requestAnimationFrame(() => {
-      barsEl.querySelectorAll<HTMLElement>('.ss-bar-wrap').forEach((el) => {
-        const idx = Number(el.dataset.idx);
-        if (!Number.isFinite(idx)) return;
-        const newRect = el.getBoundingClientRect();
-        const oldRect = oldPositions.get(idx);
-        if (oldRect) {
-          const dx = oldRect.left - newRect.left;
-          if (Math.abs(dx) > 0.5) {
-            el.style.transition = 'none';
-            el.style.transform = `translateX(${dx}px)`;
-            requestAnimationFrame(() => {
-              el.style.transition = 'transform .5s cubic-bezier(.4,0,.2,1)';
-              el.style.transform = '';
-            });
-          }
-        }
-      });
-    });
-  }
-
-  private renderResultBanner(step: SSStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('ss-result--done');
-    const emoji = this.resultEl.querySelector('.ss-emoji') as HTMLElement | null;
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('ss-result--done');
-      if (emoji) emoji.textContent = '🎉';
-    } else if (step.phase === 'compare') {
-      if (emoji) emoji.textContent = '⚖️';
-    } else if (step.phase === 'shift') {
-      if (emoji) emoji.textContent = '↔️';
-    } else if (step.phase === 'insert') {
-      if (emoji) emoji.textContent = '🎯';
-    } else if (step.phase === 'reduce-gap') {
-      if (emoji) emoji.textContent = '📐';
-    } else if (step.phase === 'set-gap') {
-      if (emoji) emoji.textContent = '✋';
-    } else {
-      if (emoji) emoji.textContent = '📏';
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderLogPanel(step: SSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'ss-log-line' + (i === this.currentIndex ? ' ss-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'ss-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -394,11 +378,11 @@ registerAlgorithm({
   name: '希尔排序',
   viewId: 'algo-shell-sort-view',
   category: 'sort',
-  description: '按间隔分组进行插入排序，逐步缩小间隔至完成排序',
-  icon: '📏',
+  description: '逐步演示希尔排序：缩小增量 gap，跨步插入排序',
+  icon: '🐚',
+  difficulty: 2,
+  levelOrder: 4,
+  learningGoal: '理解希尔排序的跨步插入和缩小增量过程',
   template,
   Visualizer: ShellSortVisualizer,
-  difficulty: 2,
-  levelOrder: 7,
-  learningGoal: '理解希尔排序的分组插入排序思想',
 });

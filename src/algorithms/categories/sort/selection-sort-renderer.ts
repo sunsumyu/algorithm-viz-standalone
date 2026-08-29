@@ -1,36 +1,39 @@
 /**
- * 选择排序可视化器
- * 绿色系玻璃拟态风格 · 扫描/最小值/交换动画
+ * 选择排序可视化器 — 4-Card 标准现代架构
+ * 极值扫描、最小值锁定、原地单次交换、前缀有序扩展
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  SELECTION_SORT_PROBLEM_HTML,
+  SELECTION_SORT_ANALYSIS_HTML,
+  SELECTION_SORT_CODE_LANGUAGES,
+} from './selection-sort-problem-content';
+import { parseArray } from './bubble-sort-renderer';
 import template from './selection-sort.html?raw';
 
-type Phase = 'init' | 'scan' | 'found-min' | 'swap' | 'done';
-
-interface SSStep {
+export interface SSStep {
   array: number[];
-  sortedLen: number;          // 已排序区间长度（前 sortedLen 个已排好）
-  round: number;              // 当前轮次（从 0 开始，-1 表示未开始）
-  minIndex: number;           // 当前已发现的最小值下标
-  scanIndex: number;          // 正在扫描的元素下标（-1 表示不在扫描中）
+  i: number;
+  minIdx: number;
+  j: number;
   comparisons: number;
   swaps: number;
-  phase: Phase;
+  sortedCount: number;
+  phase: 'init' | 'set-min' | 'compare' | 'update-min' | 'swap' | 'pass-done' | 'done';
+  status: 'init' | 'set-min' | 'compare' | 'update-min' | 'swap' | 'pass-done' | 'done';
+  swapping: boolean;
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function parseArray(input: string): number[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-}
-
-function selectionSortSteps(input: number[]): SSStep[] {
+export function selectionSortSteps(input: number[]): SSStep[] {
   const steps: SSStep[] = [];
   const array = [...input];
   const n = array.length;
@@ -38,321 +41,357 @@ function selectionSortSteps(input: number[]): SSStep[] {
   let swaps = 0;
 
   steps.push({
-    array: [...array], sortedLen: 0, round: -1, minIndex: -1, scanIndex: -1,
-    comparisons, swaps,
+    array: [...array],
+    i: -1,
+    minIdx: -1,
+    j: -1,
+    comparisons: 0,
+    swaps: 0,
+    sortedCount: 0,
     phase: 'init',
-    message: n === 0 ? '数组为空，无需排序。' : `初始化：数组共 ${n} 个元素，开始选择排序。`,
-    log: n === 0 ? 'empty array' : `init: n=${n}`,
-    codeLine: 1,
+    status: 'init',
+    swapping: false,
+    message: n === 0 ? '数组为空，无需排序。' : `初始化：数组长度 n = ${n}，共需执行 ${n - 1} 轮极值选择。`,
+    log: n === 0 ? '空数组' : `初始化: [${array.join(', ')}]`,
+    codeLine: 2,
   });
+
+  if (n <= 1) {
+    steps.push({
+      array: [...array],
+      i: 0,
+      minIdx: 0,
+      j: -1,
+      comparisons: 0,
+      swaps: 0,
+      sortedCount: n,
+      phase: 'done',
+      status: 'done',
+      swapping: false,
+      message: '✅ 排序完成！',
+      log: '排序完成',
+      codeLine: 14,
+    });
+    return steps;
+  }
 
   for (let i = 0; i < n - 1; i++) {
     let minIdx = i;
 
-    // 开始新一轮
     steps.push({
-      array: [...array], sortedLen: i, round: i, minIndex: i, scanIndex: -1,
-      comparisons, swaps,
-      phase: 'found-min',
-      message: `第 ${i + 1} 轮：假定 arr[${i}]=${array[i]} 为当前最小值，从 i+1=${i + 1} 开始扫描未排序部分。`,
-      log: `round ${i + 1}: minIdx=${i}, val=${array[i]}`,
-      codeLine: 3,
+      array: [...array],
+      i,
+      minIdx,
+      j: i,
+      comparisons,
+      swaps,
+      sortedCount: i,
+      phase: 'set-min',
+      status: 'set-min',
+      swapping: false,
+      message: `第 ${i + 1} 轮选择：设定当前基准位置 i = ${i} (arr[${i}] = ${array[i]}) 为初始最小值。`,
+      log: `第 ${i + 1} 轮: 初始 min = arr[${i}] (${array[i]})`,
+      codeLine: [3, 4],
     });
 
     for (let j = i + 1; j < n; j++) {
       comparisons++;
+      const isSmaller = array[j] < array[minIdx];
 
-      // 扫描中
       steps.push({
-        array: [...array], sortedLen: i, round: i, minIndex: minIdx, scanIndex: j,
-        comparisons, swaps,
-        phase: 'scan',
-        message: `扫描 arr[${j}]=${array[j]}，与当前最小 arr[${minIdx}]=${array[minIdx]} 比较：${array[j] < array[minIdx] ? `arr[${j}] 更小，更新最小值` : `arr[${j}] 不小于当前最小，继续`}。`,
-        log: `scan arr[${j}]=${array[j]} vs min arr[${minIdx}]=${array[minIdx]}`,
-        codeLine: 5,
+        array: [...array],
+        i,
+        minIdx,
+        j,
+        comparisons,
+        swaps,
+        sortedCount: i,
+        phase: 'compare',
+        status: 'compare',
+        swapping: false,
+        message: `扫描比较：arr[${j}] (${array[j]}) vs 当前最小值 arr[${minIdx}] (${array[minIdx]})${
+          isSmaller ? '，发现更小值！' : '，无需更新。'
+        }`,
+        log: `比较: [${j}] (${array[j]}) vs min[${minIdx}] (${array[minIdx]})`,
+        codeLine: 6,
       });
 
-      if (array[j] < array[minIdx]) {
+      if (isSmaller) {
         minIdx = j;
+
         steps.push({
-          array: [...array], sortedLen: i, round: i, minIndex: minIdx, scanIndex: j,
-          comparisons, swaps,
-          phase: 'found-min',
-          message: `发现更小的值 arr[${j}]=${array[j]}，更新最小值下标为 ${j}。`,
-          log: `new min: arr[${j}]=${array[j]}`,
-          codeLine: 6,
+          array: [...array],
+          i,
+          minIdx,
+          j,
+          comparisons,
+          swaps,
+          sortedCount: i,
+          phase: 'update-min',
+          status: 'update-min',
+          swapping: false,
+          message: `更新最小值索引：minIdx 变为 ${minIdx} (值为 ${array[minIdx]})。`,
+          log: `更新 minIdx = ${minIdx} (${array[minIdx]})`,
+          codeLine: 7,
         });
       }
     }
 
-    // 扫描完毕，执行交换
     if (minIdx !== i) {
-      // 交换
-      const tmp = array[i];
+      const temp = array[i];
       array[i] = array[minIdx];
-      array[minIdx] = tmp;
+      array[minIdx] = temp;
       swaps++;
 
       steps.push({
-        array: [...array], sortedLen: i + 1, round: i, minIndex: minIdx, scanIndex: -1,
-        comparisons, swaps,
+        array: [...array],
+        i,
+        minIdx,
+        j: -1,
+        comparisons,
+        swaps,
+        sortedCount: i,
         phase: 'swap',
-        message: `交换 arr[${i}] 与 arr[${minIdx}]：最小值 ${array[i]} 放入已排序区末尾（位置 ${i}）。`,
-        log: `swap arr[${i}] <-> arr[${minIdx}]`,
-        codeLine: 8,
-      });
-    } else {
-      steps.push({
-        array: [...array], sortedLen: i + 1, round: i, minIndex: i, scanIndex: -1,
-        comparisons, swaps,
-        phase: 'swap',
-        message: `最小值已在正确位置 ${i}，无需交换。已排序区扩展到 [0..${i}]。`,
-        log: `no swap needed, min already at ${i}`,
-        codeLine: 8,
+        status: 'swap',
+        swapping: true,
+        message: `执行交换：将本轮最小值 arr[${minIdx}] (${array[i]}) 归位到 arr[${i}] (原值 ${temp})。`,
+        log: `交换 [${i}] ⇋ [${minIdx}] (${temp} ⇋ ${array[i]})`,
+        codeLine: [9, 10, 11, 12],
       });
     }
+
+    steps.push({
+      array: [...array],
+      i,
+      minIdx: i,
+      j: -1,
+      comparisons,
+      swaps,
+      sortedCount: i + 1,
+      phase: 'pass-done',
+      status: 'pass-done',
+      swapping: false,
+      message: `第 ${i + 1} 轮结束：下标 ${i} (值 ${array[i]}) 已就位，左侧已排序区扩充至 [0..${i}]。`,
+      log: `第 ${i + 1} 轮结束，[0..${i}] 已有序`,
+      codeLine: 13,
+    });
   }
 
   steps.push({
-    array: [...array], sortedLen: n, round: -1, minIndex: -1, scanIndex: -1,
-    comparisons, swaps,
+    array: [...array],
+    i: n - 1,
+    minIdx: n - 1,
+    j: -1,
+    comparisons,
+    swaps,
+    sortedCount: n,
     phase: 'done',
-    message: `排序完成！共 ${comparisons} 次比较、${swaps} 次交换。`,
-    log: `done: ${comparisons} cmps, ${swaps} swaps`,
-    codeLine: 11,
+    status: 'done',
+    swapping: false,
+    message: `🎉 选择排序完成！共比较 ${comparisons} 次，仅执行 ${swaps} 次交换。最终数组：[${array.join(', ')}]。`,
+    log: `✓ 排序完成: [${array.join(', ')}]`,
+    codeLine: 14,
   });
 
   return steps;
 }
 
 export class SelectionSortVisualizer extends StepVisualizer<SSStep> {
-  protected codeLines = [
-    'public void selectionSort(int[] arr) {',
-    '    int n = arr.length;',
-    '    for (int i = 0; i < n - 1; i++) {',
-    '        int minIdx = i;                // 记录最小值下标',
-    '        for (int j = i + 1; j < n; j++) {',
-    '            if (arr[j] < arr[minIdx]) {',
-    '                minIdx = j;            // 更新最小值下标',
-    '            }',
-    '        }',
-    '        // 交换 arr[i] 与 arr[minIdx]',
-    '        int tmp = arr[i];',
-    '        arr[i] = arr[minIdx];',
-    '        arr[minIdx] = tmp;',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 选择排序源码';
+  protected codeLanguages = SELECTION_SORT_CODE_LANGUAGES;
+  protected codeLines = SELECTION_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '选择排序 代码调试';
 
-  private arrayInput: HTMLInputElement | null = null;
-  private statSorted: HTMLElement | null = null;
-  private statRound: HTMLElement | null = null;
-  private statMin: HTMLElement | null = null;
-  private statCmp: HTMLElement | null = null;
-  private statSwap: HTMLElement | null = null;
-  private barsEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private clearLogBtn: HTMLButtonElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private barsContainerEl: HTMLElement | null = null;
+  private metricIEl: HTMLElement | null = null;
+  private metricMinIdxEl: HTMLElement | null = null;
+  private metricJEl: HTMLElement | null = null;
+  private metricCompSwapEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#is-array');
-    this.statSorted = this.root.querySelector('#is-stat-sorted');
-    this.statRound = this.root.querySelector('#is-stat-round');
-    this.statMin = this.root.querySelector('#is-stat-min');
-    this.statCmp = this.root.querySelector('#is-stat-cmp');
-    this.statSwap = this.root.querySelector('#is-stat-swap');
-    this.barsEl = this.root.querySelector('#is-bars');
-    this.resultEl = this.root.querySelector('#is-result');
-    this.logEl = this.root.querySelector('#is-log');
-    this.clearLogBtn = this.root.querySelector('#is-log-clear');
 
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'is-speed', speedLabel: 'is-speed-label',
-      counter: 'step-counter', message: 'step-message',
-    });
+    this.barsContainerEl = this.root.querySelector('#ss-bars-container');
+    this.metricIEl = this.root.querySelector('#metric-i');
+    this.metricMinIdxEl = this.root.querySelector('#metric-min-idx');
+    this.metricJEl = this.root.querySelector('#metric-j');
+    this.metricCompSwapEl = this.root.querySelector('#metric-comp-swap');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#ss-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    this.root.querySelector('#is-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.is-chip').forEach((btn) => {
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ss-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
+        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
         this.start();
       });
     });
-    this.clearLogBtn?.addEventListener('click', () => { if (this.logEl) this.logEl.innerHTML = ''; });
-    this.arrayInput?.addEventListener('change', () => this.start());
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: SELECTION_SORT_PROBLEM_HTML,
+      analysisHtml: SELECTION_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
   protected buildSteps(): SSStep[] {
-    return selectionSortSteps(parseArray(this.arrayInput?.value || '5,2,9,1,5,6'));
+    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
+    const raw = arrInput?.value || '29, 10, 14, 37, 13';
+    const arr = parseArray(raw);
+    return selectionSortSteps(arr);
   }
 
   protected renderStep(step: SSStep): void {
-    this.renderStats(step);
-    this.renderBars(step);
-    this.renderResultBanner(step);
-    this.renderLogPanel(step);
-  }
+    const { array, i, minIdx, j, comparisons, swaps, sortedCount, phase, swapping, message } = step;
 
-  private renderStats(step: SSStep): void {
-    if (this.statSorted) this.statSorted.textContent = String(step.sortedLen);
-    if (this.statRound) this.statRound.textContent = step.round < 0 ? '-' : String(step.round + 1);
-    if (this.statMin) {
-      if (step.minIndex >= 0 && step.minIndex < step.array.length) {
-        this.statMin.textContent = String(step.array[step.minIndex]);
+    // 1. 渲染柱状图
+    if (this.barsContainerEl) {
+      const maxVal = Math.max(...array, 1);
+      this.barsContainerEl.innerHTML = array
+        .map((val, idx) => {
+          const isTargetI = idx === i && phase !== 'done';
+          const isCurrentMin = idx === minIdx && phase !== 'done';
+          const isScanningJ = idx === j && !swapping && phase === 'compare';
+          const isSwapping = (idx === i || idx === minIdx) && swapping;
+          const isSorted = idx < sortedCount || phase === 'done';
+
+          let pillarClass = 'ss-bar-pillar';
+          if (isSwapping) pillarClass += ' is-swapping';
+          else if (isCurrentMin) pillarClass += ' is-current-min';
+          else if (isScanningJ) pillarClass += ' is-scanning-j';
+          else if (isSorted) pillarClass += ' is-sorted';
+          else if (isTargetI) pillarClass += ' is-target-i';
+
+          const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
+
+          return `
+            <div class="ss-bar-wrapper">
+              <div class="${pillarClass}" style="height: ${heightPct}%;">
+                <span>${val}</span>
+              </div>
+              <span class="ss-bar-idx">${idx}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricIEl) this.metricIEl.textContent = i >= 0 ? String(i) : '—';
+    if (this.metricMinIdxEl) {
+      this.metricMinIdxEl.textContent = minIdx >= 0 ? `${minIdx} (${array[minIdx]})` : '—';
+    }
+    if (this.metricJEl) this.metricJEl.textContent = j >= 0 ? String(j) : '—';
+    if (this.metricCompSwapEl) {
+      this.metricCompSwapEl.textContent = `${comparisons} / ${swaps}`;
+    }
+
+    if (this.formulaActionEl) {
+      if (swapping) {
+        this.formulaActionEl.textContent = `swap(arr[${i}], arr[${minIdx}]) 归位`;
+      } else if (phase === 'compare') {
+        this.formulaActionEl.textContent = `arr[${j}] (${array[j]}) ${
+          array[j] < array[minIdx] ? '<' : '>='
+        } arr[${minIdx}] (${array[minIdx]})`;
+      } else if (phase === 'update-min') {
+        this.formulaActionEl.textContent = `minIdx = ${minIdx} (${array[minIdx]})`;
+      } else if (phase === 'pass-done') {
+        this.formulaActionEl.textContent = `第 ${i + 1} 轮就位完毕`;
+      } else if (phase === 'done') {
+        this.formulaActionEl.textContent = '排序完成';
       } else {
-        this.statMin.textContent = '-';
+        this.formulaActionEl.textContent = 'findMin(arr[i..n-1])';
       }
     }
-    if (this.statCmp) this.statCmp.textContent = String(step.comparisons);
-    if (this.statSwap) this.statSwap.textContent = String(step.swaps);
-  }
 
-  private renderBars(step: SSStep): void {
-    const barsEl = this.barsEl;
-    if (!barsEl) return;
-    const maxVal = Math.max(1, ...step.array);
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
 
-    // FLIP: First — capture old positions
-    const oldPositions = new Map<number, DOMRect>();
-    barsEl.querySelectorAll<HTMLElement>('.is-bar-wrap').forEach((el) => {
-      const idx = Number(el.dataset.idx);
-      if (Number.isFinite(idx)) oldPositions.set(idx, el.getBoundingClientRect());
-    });
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'done' ? '#f0fdf4' : swapping ? '#fff1f2' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'done' ? '#15803d' : swapping ? '#e11d48' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'done' ? '#bbf7d0' : swapping ? '#fecdd3' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
 
-    barsEl.innerHTML = '';
-    step.array.forEach((value, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'is-bar-wrap';
-      wrap.dataset.idx = String(idx);
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
 
-      const bar = document.createElement('div');
-      bar.className = 'is-bar';
-      const h = 30 + (value / maxVal) * 170;
-      bar.style.height = `${h}px`;
-      bar.textContent = String(value);
-
-      // 状态着色
-      if (step.phase === 'done') {
-        bar.classList.add('is-done');
-      } else if (step.phase === 'init') {
-        // all neutral
-      } else {
-        // 已排序部分
-        if (idx < step.sortedLen) {
-          bar.classList.add('is-sorted');
-        }
-
-        // swap phase: 高亮交换的两个位置
-        if (step.phase === 'swap') {
-          // 在 swap 阶段，数组已经交换完毕，但我们要标记被交换的两个位置
-          // round 是交换前 i 的位置，minIndex 是交换前最小值的下标
-          if (idx === step.round || idx === step.minIndex) {
-            bar.classList.add('is-swapping');
-          }
-        }
-
-        // scanning element
-        if (step.phase === 'scan' && idx === step.scanIndex) {
-          bar.classList.add('is-scanning');
-        }
-
-        // current minimum
-        if ((step.phase === 'found-min' || step.phase === 'scan') && idx === step.minIndex) {
-          // 如果同时在扫描且 minIndex 就是当前扫描的（刚更新），则不叠加
-          if (!(step.phase === 'scan' && idx === step.scanIndex)) {
-            bar.classList.add('is-min-found');
-          }
-        }
-        if (step.phase === 'swap' && idx === step.minIndex && step.minIndex !== step.round) {
-          bar.classList.add('is-min-found');
-        }
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
+    }
 
-      wrap.appendChild(bar);
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'is-idx';
-      idxLabel.textContent = String(idx);
-      wrap.appendChild(idxLabel);
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
 
-      // min marker
-      if (step.phase === 'found-min' && idx === step.minIndex) {
-        const m = document.createElement('span');
-        m.className = 'is-marker is-marker--min';
-        m.textContent = 'min';
-        wrap.appendChild(m);
-      }
-
-      // scan marker
-      if (step.phase === 'scan' && idx === step.scanIndex) {
-        const m = document.createElement('span');
-        m.className = 'is-marker is-marker--scan';
-        m.textContent = 'scan';
-        wrap.appendChild(m);
-      }
-
-      barsEl.appendChild(wrap);
-    });
-
-    // FLIP: Last + Invert + Play
-    requestAnimationFrame(() => {
-      barsEl.querySelectorAll<HTMLElement>('.is-bar-wrap').forEach((el) => {
-        const idx = Number(el.dataset.idx);
-        if (!Number.isFinite(idx)) return;
-        const newRect = el.getBoundingClientRect();
-        const oldRect = oldPositions.get(idx);
-        if (oldRect) {
-          const dx = oldRect.left - newRect.left;
-          if (Math.abs(dx) > 0.5) {
-            el.style.transition = 'none';
-            el.style.transform = `translateX(${dx}px)`;
-            requestAnimationFrame(() => {
-              el.style.transition = 'transform .5s cubic-bezier(.4,0,.2,1)';
-              el.style.transform = '';
-            });
-          }
-        }
-      });
-    });
-  }
-
-  private renderResultBanner(step: SSStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.classList.remove('is-result--done');
-    const emoji = this.resultEl.querySelector('.is-emoji') as HTMLElement | null;
-    if (step.phase === 'done') {
-      this.resultEl.classList.add('is-result--done');
-      if (emoji) emoji.textContent = '🎉';
-    } else if (step.phase === 'scan') {
-      if (emoji) emoji.textContent = '🔍';
-    } else if (step.phase === 'found-min') {
-      if (emoji) emoji.textContent = '🎯';
-    } else if (step.phase === 'swap') {
-      if (emoji) emoji.textContent = '🔄';
-    } else {
-      if (emoji) emoji.textContent = '🎯';
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderLogPanel(step: SSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'is-log-line' + (i === this.currentIndex ? ' is-log-active' : '');
-      const num = document.createElement('span');
-      num.className = 'is-log-num';
-      num.textContent = `${String(i + 1).padStart(2, '0')}.`;
-      const text = document.createElement('span');
-      text.textContent = s.log;
-      row.appendChild(num);
-      row.appendChild(text);
-      this.logEl!.appendChild(row);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -361,11 +400,11 @@ registerAlgorithm({
   name: '选择排序',
   viewId: 'algo-selection-sort-view',
   category: 'sort',
-  description: '逐步演示选择排序：扫描找最小值、标记、交换到已排序区末尾',
+  description: '逐步演示选择排序：未排序区间选出最小值并交换',
   icon: '🎯',
+  difficulty: 1,
+  levelOrder: 1,
+  learningGoal: '掌握选择排序的最小值选取和交换机制',
   template,
   Visualizer: SelectionSortVisualizer,
-  difficulty: 1,
-  levelOrder: 3,
-  learningGoal: '理解选择排序的选最小-交换过程',
 });

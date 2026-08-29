@@ -1,369 +1,578 @@
 <style>
-  /* === 冒泡排序 · 玻璃感 + 蓝紫渐变 === */
+  /* === 冒泡排序 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-bubble-sort-view {
-    --accent-a: #6366f1;
-    --accent-b: #a855f7;
-    --accent-glow: rgba(139, 92, 246, .45);
-    --sorted-a: #06b6d4;
-    --sorted-b: #8b5cf6;
-    --key-color: #f59e0b;
-    --swap-color: #ec4899;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 15% 10%, rgba(99, 102, 241, .32), transparent 55%),
-      radial-gradient(ellipse at 85% 90%, rgba(168, 85, 247, .28), transparent 55%),
-      linear-gradient(135deg, #0c0a1f 0%, #1a1442 50%, #1e1050 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-bubble-sort-view .bs-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-bubble-sort-view * {
+    box-sizing: border-box;
   }
-  /* hero */
-  #algo-bubble-sort-view .bs-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-bubble-sort-view .bs-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-bubble-sort-view .bs-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-bubble-sort-view .bs-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #f5f3ff; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-bubble-sort-view .bs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-bubble-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-bubble-sort-view .bs-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-bubble-sort-view .bs-tip {
-    max-width: 480px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, .12), rgba(168, 85, 247, .08));
-    border: 1px solid rgba(139, 92, 246, .28);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+
+  #algo-bubble-sort-view .bs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-bubble-sort-view .bs-tip strong { color: #c4b5fd; }
-  /* main grid */
-  #algo-bubble-sort-view .bs-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-bubble-sort-view .bs-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-bubble-sort-view .bs-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-bubble-sort-view .bs-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-bubble-sort-view .bs-tag {
-    font-size: 11px; color: #c4b5fd; background: rgba(139, 92, 246, .14);
-    border: 1px solid rgba(139, 92, 246, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  /* input */
-  #algo-bubble-sort-view .bs-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-bubble-sort-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-bubble-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(168, 85, 247, .15); }
-  #algo-bubble-sort-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-bubble-sort-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #f5f3ff; transform: translateY(-1px);
-    box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-bubble-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-bubble-sort-view .bs-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-bubble-sort-view .bs-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(139, 92, 246, .12); border: 1px solid rgba(139, 92, 246, .28);
-    color: #c4b5fd; cursor: pointer; transition: all .2s;
-  }
-  #algo-bubble-sort-view .bs-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #f5f3ff; border-color: transparent; transform: translateY(-1px);
-  }
-  /* stats */
-  #algo-bubble-sort-view .bs-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-  }
-  #algo-bubble-sort-view .bs-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-bubble-sort-view .bs-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-bubble-sort-view .bs-stat.bs-stat--sorted::before { background: linear-gradient(180deg, var(--sorted-a), var(--sorted-b)); }
-  #algo-bubble-sort-view .bs-stat.bs-stat--swap::before { background: linear-gradient(180deg, #f472b6, #ec4899); }
-  #algo-bubble-sort-view .bs-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-bubble-sort-view .bs-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-bubble-sort-view .bs-stat--sorted .bs-stat-val { color: #c4b5fd; }
-  #algo-bubble-sort-view .bs-stat--swap .bs-stat-val { color: #f9a8d4; }
-  /* visual */
-  #algo-bubble-sort-view .bs-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-bubble-sort-view .bs-canvas {
-    flex: 1; min-height: 0; padding: 36px 18px 20px;
-    position: relative; overflow: hidden;
-    display: flex; align-items: flex-end; justify-content: center;
-  }
-  #algo-bubble-sort-view .bs-canvas::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at 50% 100%, rgba(139, 92, 246, .12), transparent 60%);
-    pointer-events: none;
-  }
-  #algo-bubble-sort-view .bs-bars {
-    position: relative; display: flex; align-items: flex-end;
-    gap: 6px; height: 220px; padding-bottom: 28px;
-  }
-  #algo-bubble-sort-view .bs-bar-wrap {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    width: 48px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-bubble-sort-view .bs-bar {
-    width: 100%; border-radius: 10px 10px 4px 4px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
-    border: 1.5px solid rgba(255, 255, 255, .14);
-    display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 6px; color: #e2e8f0;
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13px; font-weight: 800;
-    transition: height .45s cubic-bezier(.4, 0, .2, 1),
-                background .35s, border-color .35s, box-shadow .35s, color .35s, transform .35s;
-  }
-  /* sorted */
-  #algo-bubble-sort-view .bs-bar.bs-sorted {
-    background: linear-gradient(180deg, rgba(139, 92, 246, .5), rgba(99, 102, 241, .25));
-    border-color: rgba(139, 92, 246, .8);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(139, 92, 246, .25);
-  }
-  /* comparing */
-  #algo-bubble-sort-view .bs-bar.bs-compare {
-    background: linear-gradient(180deg, rgba(245, 158, 11, .55), rgba(217, 119, 6, .25));
-    border-color: #fbbf24;
-    color: #fff7ed;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, .3);
-  }
-  /* swapping */
-  #algo-bubble-sort-view .bs-bar.bs-swapping {
-    background: linear-gradient(180deg, rgba(236, 72, 153, .55), rgba(219, 39, 119, .25));
-    border-color: #f472b6;
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(236, 72, 153, .4);
-    animation: bs-swap-pulse .45s ease-in-out;
-  }
-  @keyframes bs-swap-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-  }
-  /* pass done marker */
-  #algo-bubble-sort-view .bs-bar.bs-pass-done {
-    border-color: rgba(6, 182, 212, .6);
-    box-shadow: 0 0 12px rgba(6, 182, 212, .3);
-  }
-  /* all done */
-  #algo-bubble-sort-view .bs-bar.bs-done {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
-    border-color: #34d399;
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
-  }
-  #algo-bubble-sort-view .bs-idx {
-    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
-    color: #64748b; font-size: 11px; font-weight: 600;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-  }
-  #algo-bubble-sort-view .bs-compare-marker {
-    position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
-    color: #fbbf24; font-size: 11px; font-weight: 800;
-    background: rgba(245, 158, 11, .15); border: 1px solid #fbbf24;
-    padding: 2px 8px; border-radius: 6px;
-    animation: bs-float 1.6s ease-in-out infinite;
+
+  #algo-bubble-sort-view .bs-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
     white-space: nowrap;
   }
-  @keyframes bs-float {
-    0%, 100% { transform: translate(-50%, 0); }
-    50% { transform: translate(-50%, -4px); }
+
+  #algo-bubble-sort-view .bs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  /* swap arrow between bars */
-  #algo-bubble-sort-view .bs-swap-arrow {
-    position: absolute; top: -28px;
-    color: #f472b6; font-size: 18px; font-weight: 800;
-    animation: bs-swap-bounce .45s ease-in-out;
+  #algo-bubble-sort-view .bs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  @keyframes bs-swap-bounce {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(4px); }
+
+  #algo-bubble-sort-view .bs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  /* sorted area overlay */
-  #algo-bubble-sort-view .bs-sorted-overlay {
-    position: absolute; right: 0; bottom: 0; height: 4px;
-    background: linear-gradient(90deg, var(--sorted-b), var(--sorted-a));
-    border-radius: 4px;
-    transition: width .5s cubic-bezier(.4, 0, .2, 1), opacity .35s;
-    box-shadow: 0 0 12px var(--sorted-a);
+
+  #algo-bubble-sort-view .bs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  /* result banner */
-  #algo-bubble-sort-view .bs-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, .12), rgba(168, 85, 247, .06));
-    border: 1px solid rgba(139, 92, 246, .28);
-    line-height: 1.55; font-size: 14px; color: #ede9fe;
+
+  #algo-bubble-sort-view .bs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-bubble-sort-view .bs-result .bs-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #f5f3ff; box-shadow: 0 4px 14px var(--accent-glow);
+
+  #algo-bubble-sort-view .bs-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
   }
-  #algo-bubble-sort-view .bs-result.bs-result--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-bubble-sort-view .bs-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
   }
-  #algo-bubble-sort-view .bs-result.bs-result--done .bs-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-bubble-sort-view .bs-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
   }
-  /* log */
-  #algo-bubble-sort-view .bs-log {
-    min-height: 90px; max-height: 140px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-bubble-sort-view .bs-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-bubble-sort-view .bs-log-line { display: flex; gap: 8px; }
-  #algo-bubble-sort-view .bs-log-line .bs-log-num { color: #475569; flex-shrink: 0; }
-  #algo-bubble-sort-view .bs-log-line.bs-log-active { color: #c4b5fd; font-weight: 600; }
-  #algo-bubble-sort-view .bs-log-line.bs-log-active .bs-log-num { color: var(--accent-b); }
-  /* code panel */
-  #algo-bubble-sort-view .bs-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+  #algo-bubble-sort-view .bs-btn-primary:hover {
+    background: #1d4ed8;
   }
-  #algo-bubble-sort-view .bs-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-bubble-sort-view .bs-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-bubble-sort-view .bs-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-bubble-sort-view .bs-controls .bs-ctrl-btn { min-width: 64px; }
-  #algo-bubble-sort-view .bs-controls .bs-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #f5f3ff; border-color: transparent;
+  #algo-bubble-sort-view .bs-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
   }
-  #algo-bubble-sort-view .bs-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-bubble-sort-view .bs-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
   }
-  #algo-bubble-sort-view .bs-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-bubble-sort-view .bs-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
-  #algo-bubble-sort-view #bs-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-bubble-sort-view .bs-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-bubble-sort-view .bs-code { min-height: 360px; }
+
+  #algo-bubble-sort-view .bs-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-bubble-sort-view .bs-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-bubble-sort-view .bs-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 柱状图与冒泡动画沙盘 */
+  #algo-bubble-sort-view .bs-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 6px 6px;
+    width: 100%;
+    min-height: 180px;
+  }
+
+  #algo-bubble-sort-view .bs-bars-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 140px;
+    padding-bottom: 4px;
+  }
+
+  #algo-bubble-sort-view .bs-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  #algo-bubble-sort-view .bs-bar-pillar {
+    width: 38px;
+    border-radius: 6px 6px 0 0;
+    background: #cbd5e1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  #algo-bubble-sort-view .bs-bar-idx {
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-bubble-sort-view .bs-bar-pillar.is-comparing {
+    background: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    transform: translateY(-3px);
+  }
+
+  #algo-bubble-sort-view .bs-bar-pillar.is-swapping {
+    background: #f43f5e;
+    color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3);
+    transform: translateY(-5px);
+  }
+
+  #algo-bubble-sort-view .bs-bar-pillar.is-sorted {
+    background: #34d399;
+    color: #064e3b;
+  }
+
+  /* Preset Chips */
+  #algo-bubble-sort-view .bs-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-bubble-sort-view .bs-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-bubble-sort-view .bs-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-bubble-sort-view .bs-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-bubble-sort-view .bs-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-bubble-sort-view .bs-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-bubble-sort-view .bs-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-bubble-sort-view .bs-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-bubble-sort-view .bs-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-bubble-sort-view .bs-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-bubble-sort-view .bs-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-bubble-sort-view .bs-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-bubble-sort-view .bs-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-bubble-sort-view .bs-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-bubble-sort-view .bs-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-bubble-sort-view .bs-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="bs-shell">
-  <div class="bs-hero">
-    <div class="bs-hero-left">
-      <span class="bs-icon">🫧</span>
-      <div>
-        <h1>冒泡排序</h1>
-        <div class="bs-sub">相邻元素两两比较，大元素像气泡一样浮到右端 · 稳定 · O(n²)</div>
+<div id="algo-bubble-sort-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="bs-header">
+    <div class="bs-header-left">
+      <div class="bs-icon-btn">🌪️</div>
+      <div class="bs-main-title">冒泡排序 · Bubble Sort</div>
+      <button class="bs-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="bs-badge-mode">相邻两两交换</div>
+      <div class="bs-badge-complexity">O(n²) · O(1) 稳定</div>
+    </div>
+    <div class="bs-header-right">
+      <div class="bs-input-group">
+        <label for="input-array">数组:</label>
+        <input type="text" id="input-array" value="5, 2, 9, 1, 5, 6" style="width: 140px;">
       </div>
+      <button class="bs-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="bs-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <div class="bs-tip"><strong>核心动画：</strong>每轮从左到右逐个比较相邻元素，若逆序则交换；一轮结束后最大元素「冒泡」到最右端，后续轮次不再涉及已就位的尾部。</div>
-  </div>
-  <div class="bs-main">
-    <div class="bs-left">
-      <section class="bs-card">
-        <div class="bs-card-title">输入 <span class="bs-tag">数组</span></div>
-        <div class="bs-input-row">
-          <input id="bs-array" value="5,2,9,1,5,6">
-          <button id="bs-start">开始排序</button>
-        </div>
-        <div class="bs-examples">
-          <button class="bs-chip" data-arr="5,2,9,1,5,6">默认 6 元素</button>
-          <button class="bs-chip" data-arr="3,1,4,1,5,9,2,6">8 元素</button>
-          <button class="bs-chip" data-arr="5,4,3,2,1">完全逆序</button>
-          <button class="bs-chip" data-arr="1,2,3,4,5">已排序</button>
-          <button class="bs-chip" data-arr="2,2,2,1">含重复</button>
-        </div>
-      </section>
+  </header>
 
-      <div class="bs-stats">
-        <div class="bs-stat bs-stat--sorted"><div class="bs-stat-label">轮数</div><div class="bs-stat-val" id="bs-stat-pass">0</div></div>
-        <div class="bs-stat"><div class="bs-stat-label">比较次数</div><div class="bs-stat-val" id="bs-stat-cmp">0</div></div>
-        <div class="bs-stat bs-stat--swap"><div class="bs-stat-label">交换次数</div><div class="bs-stat-val" id="bs-stat-swap">0</div></div>
-        <div class="bs-stat"><div class="bs-stat-label">已就位</div><div class="bs-stat-val" id="bs-stat-sorted">0</div></div>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="bs-workspace">
+    <!-- Card 1: 柱状图与冒泡动画沙盘 -->
+    <section class="bs-card">
+      <div class="bs-card-header">
+        <div class="bs-card-title">
+          <span>📊</span> 数组柱状图与相邻元素比较沙盘 (Pillar Track & Comparison)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #60a5fa;">● 比较中</span> · <span style="color: #f43f5e;">● 交换中</span> · <span style="color: #34d399;">● 已就位</span>
+        </div>
       </div>
-
-      <section class="bs-card bs-visual">
-        <div class="bs-card-title">排序过程</div>
-        <div class="bs-canvas">
-          <div class="bs-bars" id="bs-bars"></div>
+      <div class="bs-card-body" style="justify-content: center;">
+        <div class="bs-sandbox-container">
+          <div class="bs-bars-container" id="bs-bars-container"></div>
         </div>
-        <div class="bs-result" id="bs-result">
-          <span class="bs-emoji">🫧</span>
-          <div id="step-message">点击「开始排序」查看冒泡排序逐步过程</div>
-        </div>
-      </section>
+      </div>
+      <div class="bs-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="bs-chip" data-arr="5, 2, 9, 1, 5, 6">默认乱序 (5, 2, 9, 1, 5, 6)</button>
+        <button class="bs-chip" data-arr="1, 2, 3, 4, 5, 6">完全有序 (早停演示)</button>
+        <button class="bs-chip" data-arr="6, 5, 4, 3, 2, 1">完全逆序 (最坏情况)</button>
+        <button class="bs-chip" data-arr="8, 4, 2, 9, 3">经典小规模 (8, 4, 2, 9, 3)</button>
+      </div>
+    </section>
 
-      <section class="bs-card">
-        <div class="bs-card-title">执行日志 <button id="bs-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="bs-log" id="bs-log"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="bs-card">
+      <div class="bs-card-header">
+        <div class="bs-card-title">
+          <span>🧭</span> 排序指标监视器 (Sorting Metrics Monitor)
+        </div>
+      </div>
+      <div class="bs-card-body">
+        <div class="bs-metrics-grid">
+          <div class="bs-metric-card">
+            <span class="bs-metric-label">当前轮次 pass</span>
+            <span class="bs-metric-val" id="metric-pass" style="color: #3b82f6;">0</span>
+          </div>
+          <div class="bs-metric-card">
+            <span class="bs-metric-label">比对索引 [j, j+1]</span>
+            <span class="bs-metric-val" id="metric-j" style="color: #a855f7;">[0, 1]</span>
+          </div>
+          <div class="bs-metric-card">
+            <span class="bs-metric-label">累计比较 / 交换</span>
+            <span class="bs-metric-val" id="metric-comp-swap" style="color: #f59e0b;">0 / 0</span>
+          </div>
+          <div class="bs-metric-card">
+            <span class="bs-metric-label">末尾就位数量</span>
+            <span class="bs-metric-val" id="metric-sorted-count" style="color: #10b981;">0</span>
+          </div>
+        </div>
+        <div class="bs-formula-box" id="bs-formula-box">
+          <span>当前动作:</span> <strong id="formula-action" style="color: #2563eb;">compare(arr[j], arr[j+1])</strong>
+        </div>
+        <div class="bs-live-alert" id="bs-live-alert">
+          <span>💡</span> <span id="bs-live-text">准备就绪，点击运行开始冒泡排序。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="bs-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="bs-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="bs-card-header">
+        <div class="bs-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="bs-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="bs-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="bs-playback-bar">
+    <div class="bs-playback-controls">
+      <button class="bs-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="bs-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="bs-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="bs-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="bs-controls">
-    <button id="step-reset" class="bs-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="bs-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="bs-ctrl-btn bs-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="bs-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="bs-counter">步骤: 0 / 0</span>
-    <div class="bs-speed-wrap">
-      <span>速度</span>
-      <input id="bs-speed" type="range" min="200" max="2500" step="100" value="700">
-      <span id="bs-speed-label" style="min-width:42px;">0.7s</span>
+    <div class="bs-progress-wrap">
+      <span class="bs-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>
