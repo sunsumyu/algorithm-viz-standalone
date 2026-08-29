@@ -1,354 +1,629 @@
 <style>
-  /* === 赎金信 · 玻璃感 + 字符计数 + 消耗动画 === */
+  /* === 赎金信 (LeetCode 383) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-ransom-note-view {
-    --accent-a: #ef4444;
-    --accent-b: #dc2626;
-    --accent-glow: rgba(239, 68, 68, .45);
-    --match-color: #34d399;
-    --conflict-color: #f87171;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(239, 68, 68, .25), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(220, 38, 38, .25), transparent 55%),
-      linear-gradient(135deg, #1a0505 0%, #2a0f0f 50%, #2a1212 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-ransom-note-view .rn-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-ransom-note-view * {
+    box-sizing: border-box;
   }
-  #algo-ransom-note-view .rn-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-ransom-note-view .rn-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-ransom-note-view .rn-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-ransom-note-view .rn-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a0a; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-ransom-note-view .rn-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-ransom-note-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-ransom-note-view .rn-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-ransom-note-view .rn-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(239, 68, 68, .12), rgba(220, 38, 38, .08));
-    border: 1px solid rgba(239, 68, 68, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-ransom-note-view .rn-tip strong { color: #fca5a5; }
-  #algo-ransom-note-view .rn-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-ransom-note-view .rn-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-ransom-note-view .rn-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-ransom-note-view .rn-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-ransom-note-view .rn-tag {
-    font-size: 11px; color: #fca5a5; background: rgba(239, 68, 68, .14);
-    border: 1px solid rgba(239, 68, 68, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-ransom-note-view .rn-input-row {
-    display: grid; grid-template-columns: 1fr 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-ransom-note-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-ransom-note-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(239, 68, 68, .15); }
-  #algo-ransom-note-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-ransom-note-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #2a0a0a; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-ransom-note-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-ransom-note-view .rn-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-ransom-note-view .rn-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(220, 38, 38, .12); border: 1px solid rgba(220, 38, 38, .28);
-    color: #fca5a5; cursor: pointer; transition: all .2s;
-  }
-  #algo-ransom-note-view .rn-example-btn:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a0a; border-color: transparent; transform: translateY(-1px);
-  }
-  /* 统计 */
-  #algo-ransom-note-view .rn-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #algo-ransom-note-view .rn-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-ransom-note-view .rn-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-ransom-note-view .rn-stat--idx::before { background: linear-gradient(180deg, #f87171, #ef4444); }
-  #algo-ransom-note-view .rn-stat--idx .rn-stat-val { color: #fca5a5; }
-  #algo-ransom-note-view .rn-stat--cur::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
-  #algo-ransom-note-view .rn-stat--cur .rn-stat-val { color: #fca5a5; }
-  #algo-ransom-note-view .rn-stat--count::before { background: linear-gradient(180deg, #fb923c, #f97316); }
-  #algo-ransom-note-view .rn-stat--count .rn-stat-val { color: #fed7aa; }
-  #algo-ransom-note-view .rn-stat--status::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-ransom-note-view .rn-stat--status .rn-stat-val { color: #6ee7b7; }
-  #algo-ransom-note-view .rn-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-ransom-note-view .rn-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 18px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* 可视化区域 */
-  #algo-ransom-note-view .rn-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
-  #algo-ransom-note-view .rn-area {
-    flex: 1; min-height: 0; padding: 18px; overflow: auto;
-    display: flex; flex-direction: column; gap: 18px;
-  }
-  #algo-ransom-note-view .rn-block-title { color: #94a3b8; font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
-  #algo-ransom-note-view .rn-strings { display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-ransom-note-view .rn-char {
-    width: 38px; height: 48px; border-radius: 10px;
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800;
-    color: #cbd5e1; transition: all .35s cubic-bezier(.4, 0, .2, 1);
-    position: relative;
-  }
-  #algo-ransom-note-view .rn-char.current {
-    border-color: var(--accent-a);
-    background: linear-gradient(180deg, rgba(239, 68, 68, .35), rgba(220, 38, 38, .12));
-    transform: translateY(-6px) scale(1.1);
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, .25), 0 8px 22px rgba(239, 68, 68, .4);
-    color: #fecaca;
-    animation: rn-pulse 1.2s ease-in-out infinite;
-  }
-  #algo-ransom-note-view .rn-char.consumed {
-    opacity: .35;
-    border-color: rgba(255, 255, 255, .05);
-    background: rgba(0, 0, 0, .3);
-  }
-  #algo-ransom-note-view .rn-char.checked-ok {
-    border-color: var(--match-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .25), rgba(16, 185, 129, .08));
-    color: #6ee7b7;
-  }
-  #algo-ransom-note-view .rn-char.checked-fail {
-    border-color: var(--conflict-color);
-    background: linear-gradient(180deg, rgba(248, 113, 113, .25), rgba(239, 68, 68, .08));
-    color: #fecaca;
-    animation: rn-shake .5s ease-in-out;
-  }
-  @keyframes rn-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, .25), 0 8px 22px rgba(239, 68, 68, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, .12), 0 10px 28px rgba(239, 68, 68, .55); }
-  }
-  @keyframes rn-shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px); }
-    40% { transform: translateX(4px); }
-    60% { transform: translateX(-3px); }
-    80% { transform: translateX(3px); }
-  }
-  /* 计数表 */
-  #algo-ransom-note-view .rn-count-table { display: flex; flex-wrap: wrap; gap: 6px; }
-  #algo-ransom-note-view .rn-count-cell {
-    min-width: 50px; padding: 6px 8px; border-radius: 8px;
-    background: rgba(8, 8, 24, .55); border: 1px solid rgba(255, 255, 255, .1);
-    text-align: center; font-family: 'JetBrains Mono', monospace;
-    transition: all .3s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-ransom-note-view .rn-count-cell .ch { color: #fca5a5; font-size: 14px; font-weight: 800; }
-  #algo-ransom-note-view .rn-count-cell .cnt { color: #cbd5e1; font-size: 16px; font-weight: 700; }
-  #algo-ransom-note-view .rn-count-cell.changed {
-    border-color: var(--accent-a);
-    background: linear-gradient(180deg, rgba(239, 68, 68, .25), rgba(220, 38, 38, .08));
-    animation: rn-pop .45s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes rn-pop {
-    0% { transform: scale(.85); }
-    55% { transform: scale(1.18); }
-    100% { transform: scale(1); }
-  }
-  #algo-ransom-note-view .rn-count-cell.changed .cnt { color: #fca5a5; }
-  #algo-ransom-note-view .rn-count-cell.zero .cnt { color: #6ee7b7; }
-  /* 结果横幅 */
-  #algo-ransom-note-view .rn-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(239, 68, 68, .12), rgba(220, 38, 38, .06));
-    border: 1px solid rgba(239, 68, 68, .28);
-    line-height: 1.55; font-size: 14px; color: #fca5a5;
-  }
-  #algo-ransom-note-view .rn-result .rn-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a0a; box-shadow: 0 4px 14px var(--accent-glow);
+
+  #algo-ransom-note-view .rn-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-ransom-note-view .rn-result.rn-result--success {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
-    animation: rn-burst-banner .6s cubic-bezier(.34, 1.56, .64, 1);
+
+  #algo-ransom-note-view .rn-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-ransom-note-view .rn-result.rn-result--success .rn-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-ransom-note-view .rn-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  @keyframes rn-burst-banner {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 28px rgba(52, 211, 153, .5); }
-    100% { transform: scale(1); }
+  #algo-ransom-note-view .rn-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-ransom-note-view .rn-result.rn-result--fail {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(239, 68, 68, .06));
-    border-color: rgba(248, 113, 113, .35); color: #fecaca;
-    animation: rn-shake-banner .5s ease-in-out;
+
+  #algo-ransom-note-view .rn-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-ransom-note-view .rn-result.rn-result--fail .rn-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+
+  #algo-ransom-note-view .rn-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  @keyframes rn-shake-banner {
+
+  #algo-ransom-note-view .rn-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-ransom-note-view .rn-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-ransom-note-view .rn-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-ransom-note-view .rn-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-ransom-note-view .rn-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-ransom-note-view .rn-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-ransom-note-view .rn-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-ransom-note-view .rn-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-ransom-note-view .rn-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-ransom-note-view .rn-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-ransom-note-view .rn-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-ransom-note-view .rn-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-ransom-note-view .rn-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 字符串与 26 字符频次库存沙盘 */
+  #algo-ransom-note-view .rn-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 10px;
+    padding: 6px;
+    width: 100%;
+  }
+
+  #algo-ransom-note-view .rn-strings-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    width: 100%;
+  }
+
+  #algo-ransom-note-view .rn-string-track {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-ransom-note-view .rn-string-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-ransom-note-view .rn-char-cells {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-ransom-note-view .rn-char-box {
+    width: 32px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.2s;
+  }
+
+  #algo-ransom-note-view .rn-char-box.is-active {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #2563eb;
+    transform: scale(1.1);
+  }
+
+  /* 26 字符库存网格 */
+  #algo-ransom-note-view .rn-buckets-grid {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 4px;
+    width: 100%;
+    max-width: 540px;
+  }
+
+  #algo-ransom-note-view .rn-bucket-cell {
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 3px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s;
+  }
+
+  #algo-ransom-note-view .rn-bucket-char {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-ransom-note-view .rn-bucket-count {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-ransom-note-view .rn-bucket-cell.is-pos {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #2563eb;
+  }
+
+  #algo-ransom-note-view .rn-bucket-cell.is-overdraft {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #dc2626;
+    animation: rn-shake 0.3s ease-in-out;
+  }
+
+  #algo-ransom-note-view .rn-bucket-cell.is-target {
+    box-shadow: 0 0 0 2px #3b82f6;
+    transform: scale(1.08);
+  }
+
+  @keyframes rn-shake {
     0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
   }
-  /* 日志 */
-  #algo-ransom-note-view .rn-log {
-    min-height: 80px; max-height: 120px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  /* Preset Chips */
+  #algo-ransom-note-view .rn-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
   }
-  #algo-ransom-note-view .rn-log .active { color: #fca5a5; font-weight: 600; }
-  /* 代码 */
-  #algo-ransom-note-view .rn-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-ransom-note-view .rn-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-ransom-note-view .rn-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* 控制栏 */
-  #algo-ransom-note-view .rn-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+  #algo-ransom-note-view .rn-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
   }
-  #algo-ransom-note-view .rn-controls .rn-ctrl-btn { min-width: 64px; }
-  #algo-ransom-note-view .rn-controls .rn-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a0a; border-color: transparent;
+
+  /* Card 2: 状态监视器 */
+  #algo-ransom-note-view .rn-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
   }
-  #algo-ransom-note-view .rn-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-ransom-note-view .rn-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  #algo-ransom-note-view .rn-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-ransom-note-view .rn-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
-  #algo-ransom-note-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-ransom-note-view .rn-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-ransom-note-view .rn-code { min-height: 360px; }
+
+  #algo-ransom-note-view .rn-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-ransom-note-view .rn-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-ransom-note-view .rn-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-ransom-note-view .rn-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-ransom-note-view .rn-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-ransom-note-view .rn-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-ransom-note-view .rn-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-ransom-note-view .rn-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-ransom-note-view .rn-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="rn-shell">
-  <div class="rn-hero">
-    <div class="rn-hero-left">
-      <span class="rn-icon">📰</span>
-      <div>
-        <h1>赎金信（字符计数）</h1>
-        <div class="rn-sub">LeetCode 383 · 用字符频率表判断能否构造赎金信</div>
+<div id="algo-ransom-note-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="rn-header">
+    <div class="rn-header-left">
+      <div class="rn-icon-btn">📰</div>
+      <div class="rn-main-title">赎金信 · Ransom Note</div>
+      <button class="rn-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="rn-badge-mode">26 字符频次库存</div>
+      <div class="rn-badge-complexity">O(m+n) · O(1)</div>
+    </div>
+    <div class="rn-header-right">
+      <div class="rn-input-group">
+        <label for="input-ransom">ransomNote:</label>
+        <input type="text" id="input-ransom" value="aa" style="width: 50px;">
       </div>
-    </div>
-    <div class="rn-tip"><strong>核心动画：</strong>当前字符<span style="color:#fca5a5">红色脉冲</span>上浮；计数格变化时<span style="color:#fca5a5">弹性 pop</span>；杂志字符被消耗后<span style="color:#94a3b8">灰化</span>；通过时<span style="color:#6ee7b7">绿色 burst 爆发</span>，失败则<span style="color:#fca5a5">抖动</span>。</div>
-  </div>
-  <div class="rn-main">
-    <div class="rn-left">
-      <section class="rn-card">
-        <div class="rn-card-title">输入 <span class="rn-tag">ransomNote / magazine</span></div>
-        <div class="rn-input-row">
-          <input id="rn-note-input" value="aa" placeholder="赎金信 ransomNote">
-          <input id="rn-mag-input" value="aab" placeholder="杂志 magazine">
-          <button id="rn-start">开始比对</button>
-        </div>
-        <div class="rn-examples">
-          <button class="rn-example-btn" data-note="a" data-mag="b">a / b → false</button>
-          <button class="rn-example-btn" data-note="aa" data-mag="ab">aa / ab → false</button>
-          <button class="rn-example-btn" data-note="aa" data-mag="aab">aa / aab → true</button>
-        </div>
-      </section>
-
-      <div class="rn-stats">
-        <div class="rn-stat rn-stat--idx"><div class="rn-stat-label">字符索引</div><div class="rn-stat-val" id="rn-idx">-</div></div>
-        <div class="rn-stat rn-stat--cur"><div class="rn-stat-label">当前字符</div><div class="rn-stat-val" id="rn-cur">-</div></div>
-        <div class="rn-stat rn-stat--count"><div class="rn-stat-label">剩余计数</div><div class="rn-stat-val" id="rn-count">-</div></div>
-        <div class="rn-stat rn-stat--status"><div class="rn-stat-label">状态</div><div class="rn-stat-val" id="rn-status">就绪</div></div>
+      <div class="rn-input-group">
+        <label for="input-magazine">magazine:</label>
+        <input type="text" id="input-magazine" value="aab" style="width: 60px;">
       </div>
+      <button class="rn-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="rn-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
 
-      <section class="rn-card rn-visual">
-        <div class="rn-card-title">字符串与频率表 <span class="rn-tag">Map</span></div>
-        <div class="rn-area" id="rn-area"></div>
-        <div class="rn-result" id="step-message-banner">
-          <span class="rn-emoji">📰</span>
-          <div id="step-message">点击「开始比对」观看字符计数 + 消耗动画</div>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="rn-workspace">
+    <!-- Card 1: 字符串与 26 字符库存沙盘 -->
+    <section class="rn-card">
+      <div class="rn-card-header">
+        <div class="rn-card-title">
+          <span>📊</span> 字符库存与赎金信扣减沙盘 (Magazine Stock & Ransom Deduct)
         </div>
-      </section>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #2563eb;">magazine(+) 进库</span> · <span style="color: #dc2626;">ransomNote(-) 消耗</span>
+        </div>
+      </div>
+      <div class="rn-card-body" style="justify-content: center;">
+        <div class="rn-sandbox-container">
+          <!-- 上部：magazine 和 ransomNote 字符串 -->
+          <div class="rn-strings-row">
+            <div class="rn-string-track">
+              <div class="rn-string-label">杂志库 magazine (供应)</div>
+              <div class="rn-char-cells" id="rn-track-mag"></div>
+            </div>
+            <div class="rn-string-track">
+              <div class="rn-string-label">赎金信 ransomNote (消耗)</div>
+              <div class="rn-char-cells" id="rn-track-ran"></div>
+            </div>
+          </div>
+          <!-- 下部：26 字符频次库存 -->
+          <div style="font-size: 11px; font-weight: 700; color: #64748b;">
+            字符库存表 record[26] (透支小于 0 则无法构成)
+          </div>
+          <div class="rn-buckets-grid" id="rn-buckets-grid"></div>
+        </div>
+      </div>
+      <div class="rn-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="rn-chip" data-r="a" data-m="b">示例 1 ("a" / "b" -> false)</button>
+        <button class="rn-chip" data-r="aa" data-m="ab">示例 2 ("aa" / "ab" -> false)</button>
+        <button class="rn-chip" data-r="aa" data-m="aab">示例 3 ("aa" / "aab" -> true)</button>
+        <button class="rn-chip" data-r="secret" data-m="recreates">多字符匹配 ("secret" / "recreates")</button>
+      </div>
+    </section>
 
-      <section class="rn-card">
-        <div class="rn-card-title">执行日志</div>
-        <div class="rn-log" id="rn-log"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="rn-card">
+      <div class="rn-card-header">
+        <div class="rn-card-title">
+          <span>🧭</span> 字符库存消耗监视器 (Stock Monitor)
+        </div>
+      </div>
+      <div class="rn-card-body">
+        <div class="rn-metrics-grid">
+          <div class="rn-metric-card">
+            <span class="rn-metric-label">当前阶段</span>
+            <span class="rn-metric-val" id="metric-phase" style="color: #3b82f6;">就绪</span>
+          </div>
+          <div class="rn-metric-card">
+            <span class="rn-metric-label">当前字符</span>
+            <span class="rn-metric-val" id="metric-char" style="color: #a855f7;">—</span>
+          </div>
+          <div class="rn-metric-card">
+            <span class="rn-metric-label">剩余库存量</span>
+            <span class="rn-metric-val" id="metric-stock" style="color: #f59e0b;">—</span>
+          </div>
+          <div class="rn-metric-card">
+            <span class="rn-metric-label">判定结果</span>
+            <span class="rn-metric-val" id="metric-res" style="color: #10b981;">待判定</span>
+          </div>
+        </div>
+        <div class="rn-live-alert" id="rn-live-alert">
+          <span>💡</span> <span id="rn-live-text">准备就绪，点击运行开始赎金信库存匹配。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="rn-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="rn-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="rn-card-header">
+        <div class="rn-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="rn-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="rn-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="rn-playback-bar">
+    <div class="rn-playback-controls">
+      <button class="rn-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="rn-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="rn-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="rn-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="rn-controls">
-    <button id="step-reset" class="rn-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="rn-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="rn-ctrl-btn rn-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="rn-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="rn-counter">步骤: 0 / 0</span>
-    <div class="rn-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    <div class="rn-progress-wrap">
+      <span class="rn-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

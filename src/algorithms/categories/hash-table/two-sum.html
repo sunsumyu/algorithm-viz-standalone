@@ -1,348 +1,656 @@
 <style>
-  /* === 两数之和 · 玻璃感 + 哈希表查表 + 命中爆发 === */
+  /* === 两数之和 (LeetCode 1) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-two-sum-view {
-    --accent-a: #22d3ee;
-    --accent-b: #3b82f6;
-    --accent-glow: rgba(34, 211, 238, .45);
-    --match-color: #34d399;
-    --conflict-color: #f87171;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(34, 211, 238, .25), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, .25), transparent 55%),
-      linear-gradient(135deg, #06121f 0%, #0f1a30 50%, #14122a 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-two-sum-view .ts-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-two-sum-view * {
+    box-sizing: border-box;
   }
-  #algo-two-sum-view .ts-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-two-sum-view .ts-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-two-sum-view .ts-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-two-sum-view .ts-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-two-sum-view .ts-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-two-sum-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-two-sum-view .ts-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-two-sum-view .ts-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(34, 211, 238, .12), rgba(59, 130, 246, .08));
-    border: 1px solid rgba(34, 211, 238, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-two-sum-view .ts-tip strong { color: #67e8f9; }
-  #algo-two-sum-view .ts-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-two-sum-view .ts-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-two-sum-view .ts-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-two-sum-view .ts-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-two-sum-view .ts-tag {
-    font-size: 11px; color: #67e8f9; background: rgba(34, 211, 238, .14);
-    border: 1px solid rgba(34, 211, 238, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-two-sum-view .ts-input-row {
-    display: grid; grid-template-columns: 1fr 110px auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-two-sum-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-two-sum-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(34, 211, 238, .15); }
-  #algo-two-sum-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-two-sum-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #06121f; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-two-sum-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-two-sum-view .ts-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-two-sum-view .ts-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(59, 130, 246, .12); border: 1px solid rgba(59, 130, 246, .28);
-    color: #93c5fd; cursor: pointer; transition: all .2s;
-  }
-  #algo-two-sum-view .ts-example-btn:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent; transform: translateY(-1px);
-  }
-  /* 统计 */
-  #algo-two-sum-view .ts-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #algo-two-sum-view .ts-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-two-sum-view .ts-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-two-sum-view .ts-stat--i::before { background: linear-gradient(180deg, #22d3ee, #06b6d4); }
-  #algo-two-sum-view .ts-stat--i .ts-stat-val { color: #67e8f9; }
-  #algo-two-sum-view .ts-stat--cur::before { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-  #algo-two-sum-view .ts-stat--cur .ts-stat-val { color: #93c5fd; }
-  #algo-two-sum-view .ts-stat--comp::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
-  #algo-two-sum-view .ts-stat--comp .ts-stat-val { color: #c4b5fd; }
-  #algo-two-sum-view .ts-stat--res::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-two-sum-view .ts-stat--res .ts-stat-val { color: #6ee7b7; }
-  #algo-two-sum-view .ts-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-two-sum-view .ts-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 20px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* 数组可视化 */
-  #algo-two-sum-view .ts-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
-  #algo-two-sum-view .ts-track {
-    flex: 1; min-height: 0; padding: 24px 18px;
-    overflow: auto; display: flex; align-items: center; gap: 10px;
-    justify-content: center;
-  }
-  #algo-two-sum-view .ts-cell {
-    position: relative; min-width: 54px; height: 64px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+
+  #algo-two-sum-view .ts-icon-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-two-sum-view .ts-cell .idx { color: #64748b; font-size: 11px; }
-  #algo-two-sum-view .ts-cell .val { color: #cbd5e1; font-weight: 800; font-size: 20px; }
-  #algo-two-sum-view .ts-cell.current {
-    border-color: var(--accent-a);
-    background: linear-gradient(180deg, rgba(34, 211, 238, .35), rgba(6, 182, 212, .12));
-    transform: translateY(-6px) scale(1.08);
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, .25), 0 8px 22px rgba(34, 211, 238, .4);
-    animation: ts-pulse 1.2s ease-in-out infinite;
-  }
-  @keyframes ts-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(34, 211, 238, .25), 0 8px 22px rgba(34, 211, 238, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(34, 211, 238, .12), 0 10px 28px rgba(34, 211, 238, .55); }
-  }
-  #algo-two-sum-view .ts-cell.current .val { color: #a5f3fc; }
-  #algo-two-sum-view .ts-cell.pair {
-    border-color: var(--match-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
-    animation: ts-match-burst .6s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes ts-match-burst {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 24px rgba(52, 211, 153, .6); }
-    100% { transform: scale(1); }
-  }
-  #algo-two-sum-view .ts-cell.pair .val { color: #a7f3d0; }
-  /* 哈希表 */
-  #algo-two-sum-view .ts-map {
-    padding: 14px 16px; background: rgba(8, 8, 24, .45); border-top: 1px solid rgba(255, 255, 255, .06);
-    min-height: 80px;
-  }
-  #algo-two-sum-view .ts-map-title { color: #94a3b8; font-size: 12px; margin-bottom: 8px; }
-  #algo-two-sum-view .ts-map-items { display: flex; flex-wrap: wrap; gap: 8px; }
-  #algo-two-sum-view .ts-map-item {
-    padding: 6px 10px; border-radius: 8px;
-    background: rgba(59, 130, 246, .15); border: 1px solid rgba(59, 130, 246, .3);
-    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #cbd5e1;
-    animation: ts-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes ts-slide-in {
-    0% { transform: translateY(8px) scale(.85); opacity: 0; }
-    60% { transform: translateY(-2px) scale(1.08); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  #algo-two-sum-view .ts-map-item.hit {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    color: #06121f; border-color: transparent;
-    animation: ts-hit-pop .5s cubic-bezier(.34, 1.56, .64, 1);
-    box-shadow: 0 0 18px rgba(52, 211, 153, .55);
-  }
-  @keyframes ts-hit-pop {
-    0% { transform: scale(.6); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-  }
-  /* 结果横幅 */
-  #algo-two-sum-view .ts-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(34, 211, 238, .12), rgba(59, 130, 246, .06));
-    border: 1px solid rgba(34, 211, 238, .28);
-    line-height: 1.55; font-size: 14px; color: #a5f3fc;
-  }
-  #algo-two-sum-view .ts-result .ts-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; box-shadow: 0 4px 14px var(--accent-glow);
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-two-sum-view .ts-result.ts-result--success {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-two-sum-view .ts-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-two-sum-view .ts-result.ts-result--success .ts-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-two-sum-view .ts-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-two-sum-view .ts-result.ts-result--fail {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(59, 130, 246, .06));
-    border-color: rgba(248, 113, 113, .35); color: #fecaca;
-    animation: ts-shake .5s ease-in-out;
+  #algo-two-sum-view .ts-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-two-sum-view .ts-result.ts-result--fail .ts-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+
+  #algo-two-sum-view .ts-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  @keyframes ts-shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+
+  #algo-two-sum-view .ts-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  /* 日志 */
-  #algo-two-sum-view .ts-log {
-    min-height: 90px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-two-sum-view .ts-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-two-sum-view .ts-log .active { color: #67e8f9; font-weight: 600; }
-  /* 代码 */
-  #algo-two-sum-view .ts-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-two-sum-view .ts-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
   }
-  #algo-two-sum-view .ts-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* 控制栏 */
-  #algo-two-sum-view .ts-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-two-sum-view .ts-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
   }
-  #algo-two-sum-view .ts-controls .ts-ctrl-btn { min-width: 64px; }
-  #algo-two-sum-view .ts-controls .ts-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #06121f; border-color: transparent;
+
+  #algo-two-sum-view .ts-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
   }
-  #algo-two-sum-view .ts-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-two-sum-view .ts-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-two-sum-view .ts-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  #algo-two-sum-view .ts-btn-primary:hover {
+    background: #1d4ed8;
   }
-  #algo-two-sum-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-two-sum-view .ts-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-two-sum-view .ts-code { min-height: 360px; }
+
+  #algo-two-sum-view .ts-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-two-sum-view .ts-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-two-sum-view .ts-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-two-sum-view .ts-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-two-sum-view .ts-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-two-sum-view .ts-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-two-sum-view .ts-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 数组与哈希映射沙盘 */
+  #algo-two-sum-view .ts-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 8px;
+    width: 100%;
+  }
+
+  #algo-two-sum-view .ts-track-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-two-sum-view .ts-track-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-two-sum-view .ts-track-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 18px 8px 4px;
+  }
+
+  #algo-two-sum-view .ts-cell-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  #algo-two-sum-view .ts-cell-box {
+    width: 44px;
+    height: 48px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  #algo-two-sum-view .ts-cell-box .val {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-two-sum-view .ts-cell-box .idx {
+    font-size: 9px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-two-sum-view .ts-cell-box.is-current {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    transform: translateY(-4px);
+  }
+
+  #algo-two-sum-view .ts-cell-box.is-matched {
+    border-color: #22c55e;
+    background: #f0fdf4;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+    transform: translateY(-4px);
+  }
+
+  #algo-two-sum-view .ts-ptr-badge {
+    position: absolute;
+    top: -20px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  /* 哈希表展示区 */
+  #algo-two-sum-view .ts-map-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 8px;
+    min-height: 48px;
+    width: 100%;
+  }
+
+  #algo-two-sum-view .ts-map-chip {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-two-sum-view .ts-map-chip.is-target-key {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  }
+
+  /* Preset Chips */
+  #algo-two-sum-view .ts-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-two-sum-view .ts-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-two-sum-view .ts-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-two-sum-view .ts-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-two-sum-view .ts-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-two-sum-view .ts-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-two-sum-view .ts-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-two-sum-view .ts-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-two-sum-view .ts-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-two-sum-view .ts-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-two-sum-view .ts-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-two-sum-view .ts-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-two-sum-view .ts-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-two-sum-view .ts-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-two-sum-view .ts-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-two-sum-view .ts-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="ts-shell">
-  <div class="ts-hero">
-    <div class="ts-hero-left">
-      <span class="ts-icon">🔗</span>
-      <div>
-        <h1>两数之和（哈希表）</h1>
-        <div class="ts-sub">LeetCode 1 · 一次遍历，map 记录「值→下标」，命中 complement 即返回</div>
+<div id="algo-two-sum-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="ts-header">
+    <div class="ts-header-left">
+      <div class="ts-icon-btn">🔗</div>
+      <div class="ts-main-title">两数之和 · Two Sum</div>
+      <button class="ts-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="ts-badge-mode">哈希表一次遍历</div>
+      <div class="ts-badge-complexity">O(n) · O(n)</div>
+    </div>
+    <div class="ts-header-right">
+      <div class="ts-input-group">
+        <label for="input-nums">数组:</label>
+        <input type="text" id="input-nums" value="2, 7, 11, 15" style="width: 130px;" placeholder="逗号分隔">
       </div>
-    </div>
-    <div class="ts-tip"><strong>核心动画：</strong>当前元素<span style="color:#67e8f9">青色脉冲</span>上浮；哈希表条目<span style="color:#93c5fd">滑入</span>；命中 complement 时<span style="color:#6ee7b7">绿色 burst 爆发</span>；未命中则存入并继续。</div>
-  </div>
-  <div class="ts-main">
-    <div class="ts-left">
-      <section class="ts-card">
-        <div class="ts-card-title">输入 <span class="ts-tag">数组 / target</span></div>
-        <div class="ts-input-row">
-          <input id="ts-array-input" value="2,7,11,15" placeholder="数组 nums">
-          <input id="ts-target-input" value="9" placeholder="target">
-          <button id="ts-start">开始查找</button>
-        </div>
-        <div class="ts-examples">
-          <button class="ts-example-btn" data-arr="2,7,11,15" data-tgt="9">target=9</button>
-          <button class="ts-example-btn" data-arr="3,2,4" data-tgt="6">target=6</button>
-          <button class="ts-example-btn" data-arr="3,3" data-tgt="6">重复值</button>
-        </div>
-      </section>
-
-      <div class="ts-stats">
-        <div class="ts-stat ts-stat--i"><div class="ts-stat-label">当前 i</div><div class="ts-stat-val" id="ts-i">0</div></div>
-        <div class="ts-stat ts-stat--cur"><div class="ts-stat-label">nums[i]</div><div class="ts-stat-val" id="ts-cur">-</div></div>
-        <div class="ts-stat ts-stat--comp"><div class="ts-stat-label">complement</div><div class="ts-stat-val" id="ts-comp">-</div></div>
-        <div class="ts-stat ts-stat--res"><div class="ts-stat-label">结果</div><div class="ts-stat-val" id="ts-result">-</div></div>
+      <div class="ts-input-group">
+        <label for="input-target">target:</label>
+        <input type="number" id="input-target" value="9" style="width: 45px;">
       </div>
-
-      <section class="ts-card ts-visual">
-        <div class="ts-card-title">数组与哈希表 <span class="ts-tag">值 → 下标</span></div>
-        <div class="ts-track" id="ts-track"></div>
-        <div class="ts-map">
-          <div class="ts-map-title">哈希表 map（值 → 下标）</div>
-          <div class="ts-map-items" id="ts-map-items"></div>
-        </div>
-        <div class="ts-result" id="step-message-banner">
-          <span class="ts-emoji">🔗</span>
-          <div id="step-message">点击「开始查找」观看哈希查表 + 命中爆发动画</div>
-        </div>
-      </section>
-
-      <section class="ts-card">
-        <div class="ts-card-title">执行日志</div>
-        <div class="ts-log" id="ts-log"></div>
-      </section>
+      <button class="ts-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="ts-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <aside class="ts-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="ts-controls">
-    <button id="step-reset" class="ts-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="ts-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="ts-ctrl-btn ts-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="ts-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="ts-counter">步骤: 0 / 0</span>
-    <div class="ts-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="ts-workspace">
+    <!-- Card 1: 数组与哈希映射沙盘 -->
+    <section class="ts-card">
+      <div class="ts-card-header">
+        <div class="ts-card-title">
+          <span>📊</span> 数组遍历与哈希表映射沙盘 (Array & Hash Map)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● 当前指针 i</span> · <span style="color: #22c55e;">● 目标匹配对</span>
+        </div>
+      </div>
+      <div class="ts-card-body" style="justify-content: center;">
+        <div class="ts-sandbox-container">
+          <!-- 上轨：原数组与当前指针 -->
+          <div class="ts-track-section">
+            <div class="ts-track-label">
+              <span>输入数组 nums</span>
+            </div>
+            <div class="ts-track-row" id="ts-track-row"></div>
+          </div>
+          <!-- 下轨：HashMap 键值对 -->
+          <div class="ts-track-section">
+            <div class="ts-track-label">
+              <span>哈希表 HashMap (Key: 数值, Value: 下标)</span>
+            </div>
+            <div class="ts-map-grid" id="ts-map-grid"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ts-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="ts-chip" data-nums="2, 7, 11, 15" data-target="9">LeetCode 示例 1 ([2,7,11,15], target=9)</button>
+        <button class="ts-chip" data-nums="3, 2, 4" data-target="6">LeetCode 示例 2 ([3,2,4], target=6)</button>
+        <button class="ts-chip" data-nums="3, 3" data-target="6">重复数值 ([3,3], target=6)</button>
+        <button class="ts-chip" data-nums="1, 5, 8, 12, 19, 23" data-target="31">大数值匹配 (target=31)</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="ts-card">
+      <div class="ts-card-header">
+        <div class="ts-card-title">
+          <span>🧭</span> 补数查找监视器 (Complement Monitor)
+        </div>
+      </div>
+      <div class="ts-card-body">
+        <div class="ts-metrics-grid">
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">当前位置 i</span>
+            <span class="ts-metric-val" id="metric-i" style="color: #3b82f6;">0</span>
+          </div>
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">当前数值 nums[i]</span>
+            <span class="ts-metric-val" id="metric-cur-val">2</span>
+          </div>
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">待查找补数 complement</span>
+            <span class="ts-metric-val" id="metric-comp" style="color: #f59e0b;">7</span>
+          </div>
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">哈希命中状态</span>
+            <span class="ts-metric-val" id="metric-status" style="color: #10b981;">未命中</span>
+          </div>
+        </div>
+        <div class="ts-formula-box" id="ts-formula-box">
+          <span>查找方程:</span> complement = <strong id="formula-target" style="color: #2563eb;">9</strong> - <strong id="formula-num" style="color: #3b82f6;">2</strong> = <strong id="formula-comp" style="color: #f59e0b;">7</strong>
+        </div>
+        <div class="ts-live-alert" id="ts-live-alert">
+          <span>💡</span> <span id="ts-live-text">准备就绪，点击运行开始两数之和哈希查找。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="ts-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="ts-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="ts-card-header">
+        <div class="ts-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="ts-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="ts-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="ts-playback-bar">
+    <div class="ts-playback-controls">
+      <button class="ts-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="ts-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="ts-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="ts-progress-wrap">
+      <span class="ts-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

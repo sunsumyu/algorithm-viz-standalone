@@ -1,336 +1,384 @@
 /**
- * 赎金信可视化器（字符计数）
- * LeetCode 383
+ * 赎金信可视化器 — 4-Card 标准现代架构
+ * LeetCode 383：26 字符哈希库存数组
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  RANSOM_NOTE_PROBLEM_HTML,
+  RANSOM_NOTE_ANALYSIS_HTML,
+  RANSOM_NOTE_CODE_LANGUAGES,
+} from './ransom-note-problem-content';
 import template from './ransom-note.html?raw';
 
-interface RNStep {
-  note: string;
-  mag: string;
-  phase: 'build' | 'check';
-  i: number;
-  charCount: Map<string, number>;
-  countEntries: [string, number][];
-  status: 'init' | 'count-mag' | 'check-char' | 'consume' | 'fail' | 'success';
+export interface RansomNoteStep {
+  ransomNote: string;
+  magazine: string;
+  phase: 'check-length' | 'stock-mag' | 'deduct-ran' | 'done';
+  charIndex: number;
+  currentChar: string | null;
+  targetSlot: number | null;
+  record: number[];
+  canConstruct: boolean;
+  overdraftSlot: number | null;
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildRNSteps(note: string, mag: string): RNStep[] {
-  const steps: RNStep[] = [];
-  const count = new Map<string, number>();
+export function buildRansomNoteSteps(ransomNote: string, magazine: string): RansomNoteStep[] {
+  const steps: RansomNoteStep[] = [];
+  const record = new Array(26).fill(0);
 
-  // 初始状态
+  if (ransomNote.length > magazine.length) {
+    steps.push({
+      ransomNote,
+      magazine,
+      phase: 'check-length',
+      charIndex: -1,
+      currentChar: null,
+      targetSlot: null,
+      record: [...record],
+      canConstruct: false,
+      overdraftSlot: null,
+      message: `赎金信长度 (${ransomNote.length}) 大于杂志库长度 (${magazine.length})，字符总数不足，直接返回 false。`,
+      log: `长度不足: ${ransomNote.length} > ${magazine.length} => false`,
+      codeLine: 2,
+    });
+    return steps;
+  }
+
   steps.push({
-    note, mag, phase: 'build', i: -1,
-    charCount: new Map(count), countEntries: [],
-    status: 'init',
-    message: '创建空的字符频率表 Map，准备统计 magazine 中各字符出现次数。',
-    log: '初始化空 Map。',
-    codeLine: [1, 2],
+    ransomNote,
+    magazine,
+    phase: 'check-length',
+    charIndex: -1,
+    currentChar: null,
+    targetSlot: null,
+    record: [...record],
+    canConstruct: true,
+    overdraftSlot: null,
+    message: `长度校验通过 (ransomNote: ${ransomNote.length}, magazine: ${magazine.length})，初始化 26 槽位字符库存表 record。`,
+    log: `初始化库存 record[26]`,
+    codeLine: 3,
   });
 
-  // Build 阶段：统计 magazine 中每个字符的频率
-  for (let i = 0; i < mag.length; i++) {
-    const ch = mag[i];
-    const prev = count.get(ch) || 0;
-    count.set(ch, prev + 1);
+  // 1. 扫描 magazine 进库
+  for (let i = 0; i < magazine.length; i++) {
+    const char = magazine[i];
+    const slot = char.charCodeAt(0) - 'a'.charCodeAt(0);
+    record[slot]++;
+
     steps.push({
-      note, mag, phase: 'build', i,
-      charCount: new Map(count),
-      countEntries: [...count.entries()],
-      status: 'count-mag',
-      message: `magazine[${i}] = '${ch}'，count['${ch}'] = ${prev} → ${prev + 1}。`,
-      log: `统计 magazine[${i}] '${ch}' → count=${prev + 1}。`,
-      codeLine: [3, 4, 5],
+      ransomNote,
+      magazine,
+      phase: 'stock-mag',
+      charIndex: i,
+      currentChar: char,
+      targetSlot: slot,
+      record: [...record],
+      canConstruct: true,
+      overdraftSlot: null,
+      message: `杂志库进库 magazine[${i}] = '${char}'：槽位 [${slot}] 库存 +1 (现存 ${record[slot]})。`,
+      log: `杂志入库 '${char}': record[${slot}] = ${record[slot]}`,
+      codeLine: [4, 5],
     });
   }
 
-  // Check 阶段：逐个检查 ransomNote 中的字符
-  for (let i = 0; i < note.length; i++) {
-    const ch = note[i];
-    const cur = count.get(ch);
+  // 2. 扫描 ransomNote 消耗
+  for (let j = 0; j < ransomNote.length; j++) {
+    const char = ransomNote[j];
+    const slot = char.charCodeAt(0) - 'a'.charCodeAt(0);
+    record[slot]--;
 
-    // 检查字符是否可用
-    if (cur === undefined || cur === 0) {
+    if (record[slot] < 0) {
       steps.push({
-        note, mag, phase: 'check', i,
-        charCount: new Map(count),
-        countEntries: [...count.entries()],
-        status: 'fail',
-        message: `ransomNote[${i}] = '${ch}'，但 count 中没有或已为 0，无法构造！返回 false。`,
-        log: `检查 note[${i}] '${ch}' → 不可用，失败！`,
+        ransomNote,
+        magazine,
+        phase: 'deduct-ran',
+        charIndex: j,
+        currentChar: char,
+        targetSlot: slot,
+        record: [...record],
+        canConstruct: false,
+        overdraftSlot: slot,
+        message: `⚠️ 赎金信扣减 ransomNote[${j}] = '${char}'：槽位 [${slot}] 库存不足透支 (record[${slot}] = ${record[slot]} < 0)！无法构成赎金信，返回 false。`,
+        log: `✗ 透支: 字符 '${char}' 不足 (record[${slot}] < 0)`,
         codeLine: [7, 8, 9],
       });
       return steps;
     }
 
-    // 检查字符（即将消耗）
     steps.push({
-      note, mag, phase: 'check', i,
-      charCount: new Map(count),
-      countEntries: [...count.entries()],
-      status: 'check-char',
-      message: `ransomNote[${i}] = '${ch}'，count['${ch}'] = ${cur}，剩余足够，准备消耗。`,
-      log: `检查 note[${i}] '${ch}' → count=${cur}，可用。`,
+      ransomNote,
+      magazine,
+      phase: 'deduct-ran',
+      charIndex: j,
+      currentChar: char,
+      targetSlot: slot,
+      record: [...record],
+      canConstruct: true,
+      overdraftSlot: null,
+      message: `赎金信扣减 ransomNote[${j}] = '${char}'：槽位 [${slot}] 消耗 1 (剩余库存 ${record[slot]})。`,
+      log: `消耗 '${char}': record[${slot}] 剩余 ${record[slot]}`,
       codeLine: [7, 8],
-    });
-
-    // 消耗字符
-    count.set(ch, cur - 1);
-    steps.push({
-      note, mag, phase: 'check', i,
-      charCount: new Map(count),
-      countEntries: [...count.entries()],
-      status: 'consume',
-      message: `消耗 '${ch}'：count['${ch}'] = ${cur} → ${cur - 1}。`,
-      log: `消耗 note[${i}] '${ch}' → count=${cur - 1}。`,
-      codeLine: [11],
     });
   }
 
-  // 成功
   steps.push({
-    note, mag, phase: 'check', i: note.length,
-    charCount: new Map(count),
-    countEntries: [...count.entries()],
-    status: 'success',
-    message: '所有字符都能从 magazine 中获取，可以构造赎金信！返回 true。',
-    log: '全部通过，返回 true。',
-    codeLine: [13],
+    ransomNote,
+    magazine,
+    phase: 'done',
+    charIndex: -1,
+    currentChar: null,
+    targetSlot: null,
+    record: [...record],
+    canConstruct: true,
+    overdraftSlot: null,
+    message: `🎉 赎金信所有字符均已成功在杂志库中找到并扣减！可以构成赎金信，返回 true。`,
+    log: `✓ 成功构成赎金信 (true)`,
+    codeLine: 12,
   });
 
   return steps;
 }
 
-export class RansomNoteVisualizer extends StepVisualizer<RNStep> {
-  protected codeLines = [
-    'public boolean canConstruct(String ransomNote, String magazine) {',
-    '    HashMap<Character, Integer> count = new HashMap<>();',
-    '    for (char ch : magazine.toCharArray()) {',
-    '        count.put(ch, count.getOrDefault(ch, 0) + 1);',
-    '    }',
-    '    for (char ch : ransomNote.toCharArray()) {',
-    '        if (!count.containsKey(ch) || count.get(ch) == 0) {',
-    '            return false;',
-    '        }',
-    '        count.put(ch, count.get(ch) - 1);',
-    '    }',
-    '    return true;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 赎金信代码';
+export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
+  protected codeLanguages = RANSOM_NOTE_CODE_LANGUAGES;
+  protected codeLines = RANSOM_NOTE_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '赎金信 代码调试';
 
-  private noteInput: HTMLInputElement | null = null;
-  private magInput: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private areaEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private idxEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private countEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private trackMagEl: HTMLElement | null = null;
+  private trackRanEl: HTMLElement | null = null;
+  private bucketsGridEl: HTMLElement | null = null;
+  private metricPhaseEl: HTMLElement | null = null;
+  private metricCharEl: HTMLElement | null = null;
+  private metricStockEl: HTMLElement | null = null;
+  private metricResEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.noteInput = this.root.querySelector('#rn-note-input');
-    this.magInput = this.root.querySelector('#rn-mag-input');
-    this.btnStart = this.root.querySelector('#rn-start');
-    this.exampleButtons = this.root.querySelectorAll('.rn-example-btn');
-    this.areaEl = this.root.querySelector('#rn-area');
-    this.logEl = this.root.querySelector('#rn-log');
-    this.idxEl = this.root.querySelector('#rn-idx');
-    this.curEl = this.root.querySelector('#rn-cur');
-    this.countEl = this.root.querySelector('#rn-count');
-    this.statusEl = this.root.querySelector('#rn-status');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        if (this.noteInput) this.noteInput.value = btn.dataset.note || '';
-        if (this.magInput) this.magInput.value = btn.dataset.mag || '';
+
+    this.trackMagEl = this.root.querySelector('#rn-track-mag');
+    this.trackRanEl = this.root.querySelector('#rn-track-ran');
+    this.bucketsGridEl = this.root.querySelector('#rn-buckets-grid');
+    this.metricPhaseEl = this.root.querySelector('#metric-phase');
+    this.metricCharEl = this.root.querySelector('#metric-char');
+    this.metricStockEl = this.root.querySelector('#metric-stock');
+    this.metricResEl = this.root.querySelector('#metric-res');
+    this.liveTextEl = this.root.querySelector('#rn-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rn-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rInput = this.root?.querySelector('#input-ransom') as HTMLInputElement | null;
+        const mInput = this.root?.querySelector('#input-magazine') as HTMLInputElement | null;
+        if (rInput && btn.dataset.r) rInput.value = btn.dataset.r;
+        if (mInput && btn.dataset.m) mInput.value = btn.dataset.m;
         this.start();
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: RANSOM_NOTE_PROBLEM_HTML,
+      analysisHtml: RANSOM_NOTE_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
+  }
+
+  protected buildSteps(): RansomNoteStep[] {
+    const rInput = this.root?.querySelector('#input-ransom') as HTMLInputElement | null;
+    const mInput = this.root?.querySelector('#input-magazine') as HTMLInputElement | null;
+    const ransom = rInput?.value || 'aa';
+    const mag = mInput?.value || 'aab';
+    return buildRansomNoteSteps(ransom, mag);
+  }
+
+  protected renderStep(step: RansomNoteStep): void {
+    const {
+      ransomNote,
+      magazine,
+      phase,
+      charIndex,
+      currentChar,
+      targetSlot,
+      record,
+      canConstruct,
+      overdraftSlot,
+      message,
+    } = step;
+
+    // 1. 渲染 magazine 和 ransomNote 字符流
+    if (this.trackMagEl) {
+      this.trackMagEl.innerHTML = magazine
+        .split('')
+        .map((ch, idx) => {
+          const isActive = phase === 'stock-mag' && charIndex === idx;
+          return `
+            <div class="rn-char-box ${isActive ? 'is-active' : ''}">
+              <span>${ch}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    if (this.trackRanEl) {
+      this.trackRanEl.innerHTML = ransomNote
+        .split('')
+        .map((ch, idx) => {
+          const isActive = phase === 'deduct-ran' && charIndex === idx;
+          return `
+            <div class="rn-char-box ${isActive ? 'is-active' : ''}">
+              <span>${ch}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 2. 渲染 26 字符库存网格
+    if (this.bucketsGridEl) {
+      this.bucketsGridEl.innerHTML = record
+        .map((count, idx) => {
+          const char = String.fromCharCode(97 + idx);
+          const isTarget = targetSlot === idx;
+          const isOverdraft = overdraftSlot === idx;
+
+          let cellClass = 'rn-bucket-cell';
+          if (isOverdraft) cellClass += ' is-overdraft';
+          else if (count > 0) cellClass += ' is-pos';
+          if (isTarget) cellClass += ' is-target';
+
+          return `
+            <div class="${cellClass}">
+              <span class="rn-bucket-char">${char}</span>
+              <span class="rn-bucket-count">${count}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricPhaseEl) {
+      const phaseNames: Record<string, string> = {
+        'check-length': '长度检查',
+        'stock-mag': '杂志入库',
+        'deduct-ran': '赎金信扣减',
+        done: '完成',
       };
-    });
-  }
-
-  protected buildSteps(): RNStep[] {
-    let note = (this.noteInput?.value || 'aa').toLowerCase().replace(/[^a-z]/g, '').slice(0, 12);
-    let mag = (this.magInput?.value || 'aab').toLowerCase().replace(/[^a-z]/g, '').slice(0, 12);
-    if (note.length === 0) note = 'aa';
-    if (mag.length === 0) mag = 'aab';
-    if (this.noteInput) this.noteInput.value = note;
-    if (this.magInput) this.magInput.value = mag;
-    return buildRNSteps(note, mag);
-  }
-
-  protected renderStep(step: RNStep): void {
-    // 更新统计
-    if (this.idxEl) this.idxEl.textContent = step.i >= 0 ? String(step.i) : '-';
-    if (this.curEl) {
-      const srcStr = step.phase === 'build' ? step.mag : step.note;
-      this.curEl.textContent = step.i >= 0 && step.i < srcStr.length ? srcStr[step.i] : '-';
+      this.metricPhaseEl.textContent = phaseNames[phase] || phase;
     }
-    if (this.countEl) {
-      const srcStr = step.phase === 'build' ? step.mag : step.note;
-      if (step.i >= 0 && step.i < srcStr.length) {
-        const ch = srcStr[step.i];
-        const c = step.charCount.get(ch);
-        this.countEl.textContent = c !== undefined ? String(c) : '-';
+    if (this.metricCharEl) this.metricCharEl.textContent = currentChar ? `'${currentChar}'` : '—';
+    if (this.metricStockEl) {
+      this.metricStockEl.textContent = targetSlot !== null ? String(record[targetSlot]) : '—';
+    }
+    if (this.metricResEl) {
+      if (overdraftSlot !== null) {
+        this.metricResEl.textContent = '✗ false (不足)';
+        this.metricResEl.style.color = '#ef4444';
+      } else if (phase === 'done') {
+        this.metricResEl.textContent = '✓ true (满足)';
+        this.metricResEl.style.color = '#10b981';
       } else {
-        this.countEl.textContent = '-';
+        this.metricResEl.textContent = '计算中...';
+        this.metricResEl.style.color = '#3b82f6';
       }
     }
-    if (this.statusEl) this.statusEl.textContent = this.statusText(step.status);
 
-    // 渲染可视化区域
-    if (this.areaEl) {
-      this.areaEl.innerHTML = '';
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
 
-      // Magazine 字符串（顶部）
-      this.areaEl.appendChild(this.makeMagBlock(step));
-      // 频率表（中间）
-      this.areaEl.appendChild(this.makeCountBlock(step));
-      // RansomNote 字符串（底部）
-      this.areaEl.appendChild(this.makeNoteBlock(step));
-    }
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        overdraftSlot !== null ? '#fef2f2' : phase === 'done' ? '#f0fdf4' : '#eff6ff';
+      logEntry.style.color =
+        overdraftSlot !== null ? '#b91c1c' : phase === 'done' ? '#15803d' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (overdraftSlot !== null ? '#fecaca' : phase === 'done' ? '#bbf7d0' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
 
-    this.renderLogLine(step);
-  }
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
 
-  private makeMagBlock(step: RNStep): HTMLElement {
-    const wrap = document.createElement('div');
-    const t = document.createElement('div');
-    t.className = 'rn-block-title';
-    t.textContent = `magazine = "${step.mag}"`;
-    wrap.appendChild(t);
-    const row = document.createElement('div');
-    row.className = 'rn-strings';
-    if (step.mag.length === 0) {
-      row.innerHTML = '<span style="color:#6c7086">（空）</span>';
-    } else {
-      // 计算每个 magazine 字符被消耗了多少次
-      const consumedCount = new Map<string, number>();
-      if (step.phase === 'check' || step.status === 'success') {
-        // 统计 note 中已检查的字符消耗
-        const checkLimit = step.status === 'success' ? step.note.length : (step.status === 'fail' ? step.i : step.i + 1);
-        for (let j = 0; j < Math.min(checkLimit, step.note.length); j++) {
-          const ch = step.note[j];
-          consumedCount.set(ch, (consumedCount.get(ch) || 0) + 1);
-        }
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
-      // 追踪每个字符被消耗的第几次出现
-      const consumedTracker = new Map<string, number>();
-      [...step.mag].forEach((ch, i) => {
-        const c = document.createElement('div');
-        c.className = 'rn-char';
-
-        // 确定此字符是否已被消耗
-        const totalConsumed = consumedTracker.get(ch) || 0;
-        const neededForThisChar = (consumedCount.get(ch) || 0);
-        const thisIsConsumed = totalConsumed < neededForThisChar;
-        consumedTracker.set(ch, totalConsumed + 1);
-
-        const isCurrent = step.phase === 'build' && step.i === i;
-        if (isCurrent) c.classList.add('current');
-        if (thisIsConsumed && !isCurrent) c.classList.add('consumed');
-        c.textContent = ch;
-        row.appendChild(c);
-      });
-    }
-    wrap.appendChild(row);
-    return wrap;
-  }
-
-  private makeCountBlock(step: RNStep): HTMLElement {
-    const wrap = document.createElement('div');
-    const t = document.createElement('div');
-    t.className = 'rn-block-title';
-    t.textContent = '字符频率表 count (Map)';
-    wrap.appendChild(t);
-    const table = document.createElement('div');
-    table.className = 'rn-count-table';
-
-    const sorted = step.countEntries.sort((a, b) => a[0].localeCompare(b[0]));
-    const currentChar = step.i >= 0
-      ? (step.phase === 'build' ? step.mag[step.i] : step.note[step.i])
-      : '';
-
-    sorted.forEach(([ch, cnt]) => {
-      const cell = document.createElement('div');
-      cell.className = 'rn-count-cell';
-      if (ch === currentChar) cell.classList.add('changed');
-      if (cnt === 0) cell.classList.add('zero');
-      cell.innerHTML = `<div class="ch">${ch}</div><div class="cnt">${cnt}</div>`;
-      table.appendChild(cell);
-    });
-
-    if (sorted.length === 0) {
-      table.innerHTML = '<span style="color:#6c7086;font-size:12px;">（空 Map）</span>';
     }
 
-    wrap.appendChild(table);
-    return wrap;
-  }
-
-  private makeNoteBlock(step: RNStep): HTMLElement {
-    const wrap = document.createElement('div');
-    const t = document.createElement('div');
-    t.className = 'rn-block-title';
-    t.textContent = `ransomNote = "${step.note}"`;
-    wrap.appendChild(t);
-    const row = document.createElement('div');
-    row.className = 'rn-strings';
-    if (step.note.length === 0) {
-      row.innerHTML = '<span style="color:#6c7086">（空）</span>';
-    } else {
-      [...step.note].forEach((ch, i) => {
-        const c = document.createElement('div');
-        c.className = 'rn-char';
-
-        if (step.phase === 'check') {
-          if (step.status === 'fail' && i === step.i) {
-            c.classList.add('checked-fail');
-          } else if (i < step.i || (i === step.i && (step.status === 'consume' || step.status === 'success'))) {
-            c.classList.add('checked-ok');
-          } else if (i === step.i && step.status === 'check-char') {
-            c.classList.add('current');
-          }
-        }
-
-        c.textContent = ch;
-        row.appendChild(c);
-      });
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
     }
-    wrap.appendChild(row);
-    return wrap;
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private statusText(s: RNStep['status']): string {
-    return {
-      init: '初始化',
-      'count-mag': '统计 magazine',
-      'check-char': '检查字符',
-      consume: '消耗字符',
-      fail: '构造失败',
-      success: '构造成功',
-    }[s];
-  }
-
-  private renderLogLine(step: RNStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -341,11 +389,9 @@ registerAlgorithm({
   category: 'hash-table',
   description: '用字符频率表判断赎金信能否由杂志构造',
   icon: '📰',
-  template,
-  Visualizer: RansomNoteVisualizer,
   difficulty: 1,
   levelOrder: 5,
   learningGoal: '掌握用 Map 统计字符频率的方法',
+  template,
+  Visualizer: RansomNoteVisualizer,
 });
-
-export {};

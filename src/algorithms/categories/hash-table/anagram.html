@@ -1,327 +1,639 @@
 <style>
-  /* === 字母异位词 · 玻璃感 + 计数表抵消 + 全零爆发 === */
+  /* === 有效的字母异位词 (LeetCode 242) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-anagram-view {
-    --accent-a: #f472b6;
-    --accent-b: #fb7185;
-    --accent-glow: rgba(244, 114, 182, .45);
-    --match-color: #34d399;
-    --conflict-color: #f87171;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(244, 114, 182, .25), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(251, 113, 133, .25), transparent 55%),
-      linear-gradient(135deg, #220a18 0%, #2a0f22 50%, #2a1230 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-anagram-view .an-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-anagram-view * {
+    box-sizing: border-box;
   }
-  #algo-anagram-view .an-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-anagram-view .an-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-anagram-view .an-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-anagram-view .an-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a18; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-anagram-view .an-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-anagram-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-anagram-view .an-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-anagram-view .an-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(244, 114, 182, .12), rgba(251, 113, 133, .08));
-    border: 1px solid rgba(244, 114, 182, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-anagram-view .an-tip strong { color: #f9a8d4; }
-  #algo-anagram-view .an-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-anagram-view .an-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-anagram-view .an-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-anagram-view .an-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-anagram-view .an-tag {
-    font-size: 11px; color: #f9a8d4; background: rgba(244, 114, 182, .14);
-    border: 1px solid rgba(244, 114, 182, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-anagram-view .an-input-row {
-    display: grid; grid-template-columns: 1fr 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-anagram-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-anagram-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(244, 114, 182, .15); }
-  #algo-anagram-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-anagram-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #2a0a18; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-anagram-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-anagram-view .an-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-anagram-view .an-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(251, 113, 133, .12); border: 1px solid rgba(251, 113, 133, .28);
-    color: #fda4af; cursor: pointer; transition: all .2s;
-  }
-  #algo-anagram-view .an-example-btn:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a18; border-color: transparent; transform: translateY(-1px);
-  }
-  /* 统计 */
-  #algo-anagram-view .an-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  #algo-anagram-view .an-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-anagram-view .an-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-anagram-view .an-stat--cur::before { background: linear-gradient(180deg, #f472b6, #ec4899); }
-  #algo-anagram-view .an-stat--cur .an-stat-val { color: #f9a8d4; }
-  #algo-anagram-view .an-stat--phase::before { background: linear-gradient(180deg, #fb7185, #f43f5e); }
-  #algo-anagram-view .an-stat--phase .an-stat-val { color: #fda4af; }
-  #algo-anagram-view .an-stat--res::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-anagram-view .an-stat--res .an-stat-val { color: #6ee7b7; }
-  #algo-anagram-view .an-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-anagram-view .an-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 18px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* 可视化区域 */
-  #algo-anagram-view .an-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
-  #algo-anagram-view .an-area {
-    flex: 1; min-height: 0; padding: 18px; overflow: auto;
-    display: flex; flex-direction: column; gap: 18px;
-  }
-  #algo-anagram-view .an-block-title { color: #94a3b8; font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
-  #algo-anagram-view .an-strings { display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-anagram-view .an-char {
-    width: 38px; height: 48px; border-radius: 10px;
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800;
-    color: #cbd5e1; transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-anagram-view .an-char.current {
-    border-color: var(--accent-a);
-    background: linear-gradient(180deg, rgba(244, 114, 182, .35), rgba(236, 72, 153, .12));
-    transform: translateY(-6px) scale(1.1);
-    box-shadow: 0 0 0 3px rgba(244, 114, 182, .25), 0 8px 22px rgba(244, 114, 182, .4);
-    color: #fbcfe8;
-    animation: an-pulse 1.2s ease-in-out infinite;
-  }
-  @keyframes an-pulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(244, 114, 182, .25), 0 8px 22px rgba(244, 114, 182, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(244, 114, 182, .12), 0 10px 28px rgba(244, 114, 182, .55); }
-  }
-  /* 计数表 */
-  #algo-anagram-view .an-count-table { display: flex; flex-wrap: wrap; gap: 6px; }
-  #algo-anagram-view .an-count-cell {
-    min-width: 50px; padding: 6px 8px; border-radius: 8px;
-    background: rgba(8, 8, 24, .55); border: 1px solid rgba(255, 255, 255, .1);
-    text-align: center; font-family: 'JetBrains Mono', monospace;
-    transition: all .3s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-anagram-view .an-count-cell .ch { color: #93c5fd; font-size: 14px; font-weight: 800; }
-  #algo-anagram-view .an-count-cell .cnt { color: #cbd5e1; font-size: 16px; font-weight: 700; }
-  #algo-anagram-view .an-count-cell.changed {
-    border-color: var(--accent-a);
-    background: linear-gradient(180deg, rgba(244, 114, 182, .25), rgba(236, 72, 153, .08));
-    animation: an-pop .45s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes an-pop {
-    0% { transform: scale(.85); }
-    55% { transform: scale(1.18); }
-    100% { transform: scale(1); }
-  }
-  #algo-anagram-view .an-count-cell.changed .cnt { color: #f9a8d4; }
-  #algo-anagram-view .an-count-cell.zero .cnt { color: #6ee7b7; }
-  /* 结果横幅 */
-  #algo-anagram-view .an-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(244, 114, 182, .12), rgba(251, 113, 133, .06));
-    border: 1px solid rgba(244, 114, 182, .28);
-    line-height: 1.55; font-size: 14px; color: #f9a8d4;
-  }
-  #algo-anagram-view .an-result .an-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a18; box-shadow: 0 4px 14px var(--accent-glow);
+
+  #algo-anagram-view .an-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-anagram-view .an-result.an-result--success {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
-    animation: an-burst-banner .6s cubic-bezier(.34, 1.56, .64, 1);
+
+  #algo-anagram-view .an-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-anagram-view .an-result.an-result--success .an-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-anagram-view .an-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  @keyframes an-burst-banner {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 28px rgba(52, 211, 153, .5); }
-    100% { transform: scale(1); }
+  #algo-anagram-view .an-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-anagram-view .an-result.an-result--fail {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(251, 113, 133, .06));
-    border-color: rgba(248, 113, 113, .35); color: #fecaca;
-    animation: an-shake .5s ease-in-out;
+
+  #algo-anagram-view .an-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-anagram-view .an-result.an-result--fail .an-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+
+  #algo-anagram-view .an-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  @keyframes an-shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+
+  #algo-anagram-view .an-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  /* 日志 */
-  #algo-anagram-view .an-log {
-    min-height: 80px; max-height: 120px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-anagram-view .an-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
   }
-  #algo-anagram-view .an-log .active { color: #f9a8d4; font-weight: 600; }
-  /* 代码 */
-  #algo-anagram-view .an-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-anagram-view .an-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
   }
-  #algo-anagram-view .an-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* 控制栏 */
-  #algo-anagram-view .an-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-anagram-view .an-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
   }
-  #algo-anagram-view .an-controls .an-ctrl-btn { min-width: 64px; }
-  #algo-anagram-view .an-controls .an-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #2a0a18; border-color: transparent;
+
+  #algo-anagram-view .an-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-anagram-view .an-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+  #algo-anagram-view .an-btn-primary:hover {
+    background: #1d4ed8;
   }
-  #algo-anagram-view .an-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-anagram-view .an-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-anagram-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-anagram-view .an-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-anagram-view .an-code { min-height: 360px; }
+  #algo-anagram-view .an-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-anagram-view .an-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-anagram-view .an-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-anagram-view .an-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-anagram-view .an-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-anagram-view .an-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 字符串与 26 字符哈希桶沙盘 */
+  #algo-anagram-view .an-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 10px;
+    padding: 6px;
+    width: 100%;
+  }
+
+  #algo-anagram-view .an-strings-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    width: 100%;
+  }
+
+  #algo-anagram-view .an-string-track {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-anagram-view .an-string-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-anagram-view .an-char-cells {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-anagram-view .an-char-box {
+    width: 32px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.2s;
+  }
+
+  #algo-anagram-view .an-char-box.is-active {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #2563eb;
+    transform: scale(1.1);
+  }
+
+  /* 26 字符哈希桶栅格 */
+  #algo-anagram-view .an-buckets-grid {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 4px;
+    width: 100%;
+    max-width: 540px;
+  }
+
+  #algo-anagram-view .an-bucket-cell {
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 3px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s;
+  }
+
+  #algo-anagram-view .an-bucket-char {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-anagram-view .an-bucket-count {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-anagram-view .an-bucket-cell.is-pos {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #2563eb;
+  }
+
+  #algo-anagram-view .an-bucket-cell.is-neg {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #dc2626;
+  }
+
+  #algo-anagram-view .an-bucket-cell.is-target {
+    box-shadow: 0 0 0 2px #3b82f6;
+    transform: scale(1.08);
+  }
+
+  /* Preset Chips */
+  #algo-anagram-view .an-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-anagram-view .an-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-anagram-view .an-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-anagram-view .an-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-anagram-view .an-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-anagram-view .an-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-anagram-view .an-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-anagram-view .an-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-anagram-view .an-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-anagram-view .an-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-anagram-view .an-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-anagram-view .an-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-anagram-view .an-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-anagram-view .an-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-anagram-view .an-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-anagram-view .an-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="an-shell">
-  <div class="an-hero">
-    <div class="an-hero-left">
-      <span class="an-icon">🔤</span>
-      <div>
-        <h1>有效的字母异位词（哈希计数）</h1>
-        <div class="an-sub">LeetCode 242 · 26 长计数数组，s 计数 t 抵消，全零即异位词</div>
+<div id="algo-anagram-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="an-header">
+    <div class="an-header-left">
+      <div class="an-icon-btn">🔤</div>
+      <div class="an-main-title">有效的字母异位词 · Valid Anagram</div>
+      <button class="an-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="an-badge-mode">26 长度哈希数组</div>
+      <div class="an-badge-complexity">O(n) · O(1)</div>
+    </div>
+    <div class="an-header-right">
+      <div class="an-input-group">
+        <label for="input-s">s:</label>
+        <input type="text" id="input-s" value="anagram" style="width: 75px;">
       </div>
-    </div>
-    <div class="an-tip"><strong>核心动画：</strong>当前字符<span style="color:#f9a8d4">粉色脉冲</span>上浮；计数格变化时<span style="color:#f9a8d4">弹性 pop</span>；全零通过时<span style="color:#6ee7b7">绿色 burst 爆发</span>，非零则<span style="color:#fca5a5">抖动</span>。</div>
-  </div>
-  <div class="an-main">
-    <div class="an-left">
-      <section class="an-card">
-        <div class="an-card-title">输入 <span class="an-tag">字符串 s / t</span></div>
-        <div class="an-input-row">
-          <input id="an-s-input" value="anagram" placeholder="字符串 s">
-          <input id="an-t-input" value="nagaram" placeholder="字符串 t">
-          <button id="an-start">开始比对</button>
-        </div>
-        <div class="an-examples">
-          <button class="an-example-btn" data-s="anagram" data-t="nagaram">异位词</button>
-          <button class="an-example-btn" data-s="rat" data-t="car">非异位词</button>
-          <button class="an-example-btn" data-s="listen" data-t="silent">listen/silent</button>
-        </div>
-      </section>
-
-      <div class="an-stats">
-        <div class="an-stat an-stat--cur"><div class="an-stat-label">当前字符</div><div class="an-stat-val" id="an-cur">-</div></div>
-        <div class="an-stat an-stat--phase"><div class="an-stat-label">阶段</div><div class="an-stat-val" id="an-phase">就绪</div></div>
-        <div class="an-stat an-stat--res"><div class="an-stat-label">结论</div><div class="an-stat-val" id="an-result">-</div></div>
+      <div class="an-input-group">
+        <label for="input-t">t:</label>
+        <input type="text" id="input-t" value="nagaram" style="width: 75px;">
       </div>
+      <button class="an-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="an-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
 
-      <section class="an-card an-visual">
-        <div class="an-card-title">字符串与计数表 <span class="an-tag">count[26]</span></div>
-        <div class="an-area" id="an-area"></div>
-        <div class="an-result" id="step-message-banner">
-          <span class="an-emoji">🔤</span>
-          <div id="step-message">点击「开始比对」观看计数抵消 + 全零爆发动画</div>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="an-workspace">
+    <!-- Card 1: 字符串与 26 字符哈希桶沙盘 -->
+    <section class="an-card">
+      <div class="an-card-header">
+        <div class="an-card-title">
+          <span>📊</span> 字符串双轨与 26 字符频次哈希桶 (String & Frequency Buckets)
         </div>
-      </section>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #2563eb;">s(+) 累加</span> · <span style="color: #dc2626;">t(-) 抵消</span>
+        </div>
+      </div>
+      <div class="an-card-body" style="justify-content: center;">
+        <div class="an-sandbox-container">
+          <!-- 上部：s 和 t 字符串轨迹 -->
+          <div class="an-strings-row">
+            <div class="an-string-track">
+              <div class="an-string-label">字符串 s (增加计数)</div>
+              <div class="an-char-cells" id="an-track-s"></div>
+            </div>
+            <div class="an-string-track">
+              <div class="an-string-label">字符串 t (扣减计数)</div>
+              <div class="an-char-cells" id="an-track-t"></div>
+            </div>
+          </div>
+          <!-- 下部：26 字符频次哈希桶 -->
+          <div style="font-size: 11px; font-weight: 700; color: #64748b;">
+            哈希计数数组 record[26] (全部为 0 则互为异位词)
+          </div>
+          <div class="an-buckets-grid" id="an-buckets-grid"></div>
+        </div>
+      </div>
+      <div class="an-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="an-chip" data-s="anagram" data-t="nagaram">LeetCode 示例 1 (anagram / nagaram)</button>
+        <button class="an-chip" data-s="rat" data-t="car">LeetCode 示例 2 (rat / car)</button>
+        <button class="an-chip" data-s="listen" data-t="silent">经典案例 (listen / silent)</button>
+        <button class="an-chip" data-s="aacc" data-t="ccac">频次不匹配 (aacc / ccac)</button>
+      </div>
+    </section>
 
-      <section class="an-card">
-        <div class="an-card-title">执行日志</div>
-        <div class="an-log" id="an-log"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="an-card">
+      <div class="an-card-header">
+        <div class="an-card-title">
+          <span>🧭</span> 字符频次状态监视器 (Frequency Monitor)
+        </div>
+      </div>
+      <div class="an-card-body">
+        <div class="an-metrics-grid">
+          <div class="an-metric-card">
+            <span class="an-metric-label">当前阶段</span>
+            <span class="an-metric-val" id="metric-phase" style="color: #3b82f6;">就绪</span>
+          </div>
+          <div class="an-metric-card">
+            <span class="an-metric-label">当前字符</span>
+            <span class="an-metric-val" id="metric-char" style="color: #a855f7;">—</span>
+          </div>
+          <div class="an-metric-card">
+            <span class="an-metric-label">哈希槽位</span>
+            <span class="an-metric-val" id="metric-slot" style="color: #f59e0b;">—</span>
+          </div>
+          <div class="an-metric-card">
+            <span class="an-metric-label">最终判定</span>
+            <span class="an-metric-val" id="metric-res" style="color: #10b981;">待判定</span>
+          </div>
+        </div>
+        <div class="an-formula-box" id="an-formula-box">
+          <span>哈希映射计算:</span> <strong id="formula-calc" style="color: #2563eb;">'a' - 'a' = 0</strong>
+        </div>
+        <div class="an-live-alert" id="an-live-alert">
+          <span>💡</span> <span id="an-live-text">准备就绪，点击运行开始字符哈希统计。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="an-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="an-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="an-card-header">
+        <div class="an-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="an-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="an-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="an-playback-bar">
+    <div class="an-playback-controls">
+      <button class="an-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="an-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="an-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="an-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="an-controls">
-    <button id="step-reset" class="an-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="an-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="an-ctrl-btn an-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="an-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="an-counter">步骤: 0 / 0</span>
-    <div class="an-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    <div class="an-progress-wrap">
+      <span class="an-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

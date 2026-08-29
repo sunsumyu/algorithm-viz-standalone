@@ -1,361 +1,670 @@
 <style>
-  /* === 三数之和 · 玻璃感 + 双指针扫描 + 命中爆发 === */
+  /* === 三数之和 (LeetCode 15) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-three-sum-view {
-    --accent-a: #a78bfa;
-    --accent-b: #6366f1;
-    --accent-glow: rgba(167, 139, 250, .45);
-    --match-color: #34d399;
-    --i-color: #a78bfa;
-    --l-color: #34d399;
-    --r-color: #f9e2af;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(167, 139, 250, .25), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(99, 102, 241, .25), transparent 55%),
-      linear-gradient(135deg, #120a22 0%, #161038 50%, #1a1230 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-three-sum-view .th-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-three-sum-view * {
+    box-sizing: border-box;
   }
-  #algo-three-sum-view .th-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-three-sum-view .th-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-three-sum-view .th-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-three-sum-view .th-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1e1230; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-three-sum-view .th-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-three-sum-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-three-sum-view .th-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-three-sum-view .th-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(99, 102, 241, .08));
-    border: 1px solid rgba(167, 139, 250, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-three-sum-view .th-tip strong { color: #c4b5fd; }
-  #algo-three-sum-view .th-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-three-sum-view .th-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-three-sum-view .th-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-three-sum-view .th-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-three-sum-view .th-tag {
-    font-size: 11px; color: #c4b5fd; background: rgba(167, 139, 250, .14);
-    border: 1px solid rgba(167, 139, 250, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-three-sum-view .th-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-three-sum-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-three-sum-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(167, 139, 250, .15); }
-  #algo-three-sum-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-three-sum-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #1e1230; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-three-sum-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-three-sum-view .th-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-three-sum-view .th-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(99, 102, 241, .12); border: 1px solid rgba(99, 102, 241, .28);
-    color: #a5b4fc; cursor: pointer; transition: all .2s;
-  }
-  #algo-three-sum-view .th-example-btn:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1e1230; border-color: transparent; transform: translateY(-1px);
-  }
-  /* 统计 */
-  #algo-three-sum-view .th-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #algo-three-sum-view .th-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-three-sum-view .th-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-three-sum-view .th-stat--i::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
-  #algo-three-sum-view .th-stat--i .th-stat-val { color: #c4b5fd; }
-  #algo-three-sum-view .th-stat--lr::before { background: linear-gradient(180deg, #34d399, #10b981); }
-  #algo-three-sum-view .th-stat--lr .th-stat-val { color: #6ee7b7; }
-  #algo-three-sum-view .th-stat--sum::before { background: linear-gradient(180deg, #6366f1, #4f46e5); }
-  #algo-three-sum-view .th-stat--sum .th-stat-val { color: #a5b4fc; }
-  #algo-three-sum-view .th-stat--count::before { background: linear-gradient(180deg, #f9e2af, #fbbf24); }
-  #algo-three-sum-view .th-stat--count .th-stat-val { color: #fde68a; }
-  #algo-three-sum-view .th-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-three-sum-view .th-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 18px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* 数组可视化 */
-  #algo-three-sum-view .th-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
-  #algo-three-sum-view .th-track {
-    flex: 1; min-height: 0; padding: 28px 18px 24px;
-    overflow: auto; display: flex; align-items: center; gap: 10px;
-    justify-content: center;
-  }
-  #algo-three-sum-view .th-cell {
-    position: relative; min-width: 50px; height: 60px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+
+  #algo-three-sum-view .th-icon-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-three-sum-view .th-cell .idx { color: #64748b; font-size: 11px; }
-  #algo-three-sum-view .th-cell .val { color: #cbd5e1; font-weight: 800; font-size: 18px; }
-  #algo-three-sum-view .th-ptr { position: absolute; top: -18px; font-size: 11px; font-weight: 800; }
-  #algo-three-sum-view .th-cell.i {
-    border-color: var(--i-color);
-    background: linear-gradient(180deg, rgba(167, 139, 250, .35), rgba(139, 92, 246, .12));
-    transform: translateY(-6px) scale(1.08);
-    box-shadow: 0 0 0 3px rgba(167, 139, 250, .25), 0 8px 22px rgba(167, 139, 250, .4);
-    animation: th-pulse-i 1.2s ease-in-out infinite;
-  }
-  @keyframes th-pulse-i {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(167, 139, 250, .25), 0 8px 22px rgba(167, 139, 250, .4); }
-    50% { box-shadow: 0 0 0 6px rgba(167, 139, 250, .12), 0 10px 28px rgba(167, 139, 250, .55); }
-  }
-  #algo-three-sum-view .th-cell.i .val { color: #ddd6fe; }
-  #algo-three-sum-view .th-cell.left {
-    border-color: var(--l-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .3), rgba(16, 185, 129, .1));
-    transform: translateY(-4px) scale(1.05);
-    animation: th-pulse-l 1.2s ease-in-out infinite;
-  }
-  @keyframes th-pulse-l {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, .22), 0 6px 18px rgba(52, 211, 153, .35); }
-    50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, .1), 0 8px 24px rgba(52, 211, 153, .5); }
-  }
-  #algo-three-sum-view .th-cell.left .val { color: #a7f3d0; }
-  #algo-three-sum-view .th-cell.right {
-    border-color: var(--r-color);
-    background: linear-gradient(180deg, rgba(249, 226, 175, .3), rgba(251, 191, 36, .1));
-    transform: translateY(-4px) scale(1.05);
-    animation: th-pulse-r 1.2s ease-in-out infinite;
-  }
-  @keyframes th-pulse-r {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(249, 226, 175, .22), 0 6px 18px rgba(249, 226, 175, .35); }
-    50% { box-shadow: 0 0 0 6px rgba(249, 226, 175, .1), 0 8px 24px rgba(249, 226, 175, .5); }
-  }
-  #algo-three-sum-view .th-cell.right .val { color: #fde68a; }
-  #algo-three-sum-view .th-cell.triplet {
-    border-color: var(--match-color);
-    background: linear-gradient(180deg, rgba(52, 211, 153, .4), rgba(16, 185, 129, .15));
-    animation: th-match-burst .65s cubic-bezier(.34, 1.56, .64, 1);
-    box-shadow: 0 0 0 4px rgba(52, 211, 153, .25), 0 0 26px rgba(52, 211, 153, .55);
-  }
-  @keyframes th-match-burst {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.28); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 28px rgba(52, 211, 153, .65); }
-    100% { transform: scale(1); }
-  }
-  #algo-three-sum-view .th-cell.triplet .val { color: #a7f3d0; }
-  /* 结果列表 */
-  #algo-three-sum-view .th-results {
-    padding: 12px 16px; background: rgba(8, 8, 24, .45); border-top: 1px solid rgba(255, 255, 255, .06);
-    max-height: 90px; overflow: auto;
-  }
-  #algo-three-sum-view .th-results-title { color: #94a3b8; font-size: 12px; margin-bottom: 6px; }
-  #algo-three-sum-view .th-result-chip {
-    display: inline-block; padding: 5px 10px; margin: 0 6px 6px 0; border-radius: 8px;
-    background: rgba(52, 211, 153, .15); border: 1px solid rgba(52, 211, 153, .35);
-    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6ee7b7;
-    animation: th-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes th-slide-in {
-    0% { transform: translateY(8px) scale(.85); opacity: 0; }
-    60% { transform: translateY(-2px) scale(1.08); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  /* 结果横幅 */
-  #algo-three-sum-view .th-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(167, 139, 250, .12), rgba(99, 102, 241, .06));
-    border: 1px solid rgba(167, 139, 250, .28);
-    line-height: 1.55; font-size: 14px; color: #ddd6fe;
-  }
-  #algo-three-sum-view .th-result .th-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1e1230; box-shadow: 0 4px 14px var(--accent-glow);
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-three-sum-view .th-result.th-result--success {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-three-sum-view .th-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-three-sum-view .th-result.th-result--success .th-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-three-sum-view .th-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-three-sum-view .th-result.th-result--fail {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(99, 102, 241, .06));
-    border-color: rgba(248, 113, 113, .35); color: #fecaca;
-    animation: th-shake .5s ease-in-out;
+  #algo-three-sum-view .th-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-three-sum-view .th-result.th-result--fail .th-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+
+  #algo-three-sum-view .th-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  @keyframes th-shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+
+  #algo-three-sum-view .th-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  /* 日志 */
-  #algo-three-sum-view .th-log {
-    min-height: 80px; max-height: 120px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-three-sum-view .th-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-three-sum-view .th-log .active { color: #c4b5fd; font-weight: 600; }
-  /* 代码 */
-  #algo-three-sum-view .th-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-three-sum-view .th-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
   }
-  #algo-three-sum-view .th-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* 控制栏 */
-  #algo-three-sum-view .th-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-three-sum-view .th-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
   }
-  #algo-three-sum-view .th-controls .th-ctrl-btn { min-width: 64px; }
-  #algo-three-sum-view .th-controls .th-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1e1230; border-color: transparent;
+
+  #algo-three-sum-view .th-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
   }
-  #algo-three-sum-view .th-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-three-sum-view .th-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-three-sum-view .th-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  #algo-three-sum-view .th-btn-primary:hover {
+    background: #1d4ed8;
   }
-  #algo-three-sum-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-three-sum-view .th-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-three-sum-view .th-code { min-height: 360px; }
+
+  #algo-three-sum-view .th-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-three-sum-view .th-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-three-sum-view .th-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-three-sum-view .th-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-three-sum-view .th-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-three-sum-view .th-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-three-sum-view .th-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 排序数组与三指针沙盘 */
+  #algo-three-sum-view .th-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 8px;
+    width: 100%;
+  }
+
+  #algo-three-sum-view .th-track-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-three-sum-view .th-track-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-three-sum-view .th-track-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 20px 8px 4px;
+  }
+
+  #algo-three-sum-view .th-cell-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  #algo-three-sum-view .th-cell-box {
+    width: 44px;
+    height: 48px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  #algo-three-sum-view .th-cell-box .val {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-three-sum-view .th-cell-box .idx {
+    font-size: 9px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-three-sum-view .th-cell-box.is-i {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    transform: translateY(-4px);
+  }
+
+  #algo-three-sum-view .th-cell-box.is-left {
+    border-color: #10b981;
+    background: #f0fdf4;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    transform: translateY(-4px);
+  }
+
+  #algo-three-sum-view .th-cell-box.is-right {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    transform: translateY(-4px);
+  }
+
+  #algo-three-sum-view .th-pointer-tags {
+    position: absolute;
+    top: -22px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  #algo-three-sum-view .th-ptr-badge {
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  #algo-three-sum-view .th-ptr-badge.i {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+  #algo-three-sum-view .th-ptr-badge.left {
+    background: #10b981;
+    color: #ffffff;
+  }
+  #algo-three-sum-view .th-ptr-badge.right {
+    background: #f59e0b;
+    color: #ffffff;
+  }
+
+  /* 结果三元组卡片展示区 */
+  #algo-three-sum-view .th-results-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 6px;
+    min-height: 40px;
+    width: 100%;
+  }
+
+  #algo-three-sum-view .th-result-chip {
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #15803d;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Preset Chips */
+  #algo-three-sum-view .th-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-three-sum-view .th-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-three-sum-view .th-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-three-sum-view .th-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-three-sum-view .th-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-three-sum-view .th-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-three-sum-view .th-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-three-sum-view .th-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-three-sum-view .th-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-three-sum-view .th-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-three-sum-view .th-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-three-sum-view .th-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-three-sum-view .th-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-three-sum-view .th-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-three-sum-view .th-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-three-sum-view .th-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="th-shell">
-  <div class="th-hero">
-    <div class="th-hero-left">
-      <span class="th-icon">🎯</span>
-      <div>
-        <h1>三数之和（排序 + 双指针）</h1>
-        <div class="th-sub">LeetCode 15 · 排序后固定 i，left/right 双指针逼近 -nums[i]，去重收集三元组</div>
+<div id="algo-three-sum-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="th-header">
+    <div class="th-header-left">
+      <div class="th-icon-btn">🎯</div>
+      <div class="th-main-title">三数之和 · 3Sum</div>
+      <button class="th-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="th-badge-mode">排序 + 双指针去重</div>
+      <div class="th-badge-complexity">O(n²) · O(1)</div>
+    </div>
+    <div class="th-header-right">
+      <div class="th-input-group">
+        <label for="input-nums">数组:</label>
+        <input type="text" id="input-nums" value="-1, 0, 1, 2, -1, -4" style="width: 170px;" placeholder="逗号分隔">
       </div>
+      <button class="th-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="th-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <div class="th-tip"><strong>核心动画：</strong>i 指 <span style="color:#c4b5fd">紫色脉冲</span>，L/R 双指针<span style="color:#6ee7b7">绿</span>/<span style="color:#fde68a">黄</span>色脉动；命中三元组时<span style="color:#6ee7b7">绿色 burst 爆发</span>；结果 chip 滑入。</div>
-  </div>
-  <div class="th-main">
-    <div class="th-left">
-      <section class="th-card">
-        <div class="th-card-title">输入数组 <span class="th-tag">未排序</span></div>
-        <div class="th-input-row">
-          <input id="th-input" value="-1,0,1,2,-1,-4" placeholder="nums">
-          <button id="th-start">开始查找</button>
-        </div>
-        <div class="th-examples">
-          <button class="th-example-btn" data-val="-1,0,1,2,-1,-4">示例</button>
-          <button class="th-example-btn" data-val="0,0,0,0">全零</button>
-          <button class="th-example-btn" data-val="-2,0,1,1,2">多组</button>
-        </div>
-      </section>
+  </header>
 
-      <div class="th-stats">
-        <div class="th-stat th-stat--i"><div class="th-stat-label">i</div><div class="th-stat-val" id="th-i">0</div></div>
-        <div class="th-stat th-stat--lr"><div class="th-stat-label">left / right</div><div class="th-stat-val" id="th-lr">-</div></div>
-        <div class="th-stat th-stat--sum"><div class="th-stat-label">三数和</div><div class="th-stat-val" id="th-sum">-</div></div>
-        <div class="th-stat th-stat--count"><div class="th-stat-label">结果组数</div><div class="th-stat-val" id="th-count">0</div></div>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="th-workspace">
+    <!-- Card 1: 排序数组与三指针沙盘 -->
+    <section class="th-card">
+      <div class="th-card-header">
+        <div class="th-card-title">
+          <span>📊</span> 升序数组与三指针沙盘 (Sorted Array & 3 Pointers)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● i</span> · <span style="color: #10b981;">● left</span> · <span style="color: #f59e0b;">● right</span>
+        </div>
       </div>
-
-      <section class="th-card th-visual">
-        <div class="th-card-title">数组与双指针 <span class="th-tag">i / L / R</span></div>
-        <div class="th-track" id="th-track"></div>
-        <div class="th-results">
-          <div class="th-results-title">已找到的三元组</div>
-          <div id="th-results-list"></div>
+      <div class="th-card-body" style="justify-content: center;">
+        <div class="th-sandbox-container">
+          <!-- 上轨：升序数组与三指针 -->
+          <div class="th-track-section">
+            <div class="th-track-label">
+              <span>排序后数组 (Sorted Array)</span>
+            </div>
+            <div class="th-track-row" id="th-track-row"></div>
+          </div>
+          <!-- 下轨：已捕获的三元组答案 -->
+          <div class="th-track-section">
+            <div class="th-track-label">
+              <span>已找到的不重复三元组解 (Triplets)</span>
+            </div>
+            <div class="th-results-grid" id="th-results-grid"></div>
+          </div>
         </div>
-        <div class="th-result" id="step-message-banner">
-          <span class="th-emoji">🎯</span>
-          <div id="step-message">点击「开始查找」观看排序 + 双指针扫描 + 命中爆发动画</div>
-        </div>
-      </section>
+      </div>
+      <div class="th-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="th-chip" data-nums="-1, 0, 1, 2, -1, -4">LeetCode 示例 1 ([-1,0,1,2,-1,-4])</button>
+        <button class="th-chip" data-nums="0, 1, 1">无合法解 ([0,1,1])</button>
+        <button class="th-chip" data-nums="0, 0, 0">全零三元组 ([0,0,0])</button>
+        <button class="th-chip" data-nums="-2, 0, 1, 1, 2">多重解 ([-2,0,1,1,2])</button>
+      </div>
+    </section>
 
-      <section class="th-card">
-        <div class="th-card-title">执行日志</div>
-        <div class="th-log" id="th-log"></div>
-      </section>
+    <!-- Card 2: 状态监视器 -->
+    <section class="th-card">
+      <div class="th-card-header">
+        <div class="th-card-title">
+          <span>🧭</span> 求和与去重监视器 (Sum & Dedup Monitor)
+        </div>
+      </div>
+      <div class="th-card-body">
+        <div class="th-metrics-grid">
+          <div class="th-metric-card">
+            <span class="th-metric-label">固定基准 i</span>
+            <span class="th-metric-val" id="metric-i" style="color: #3b82f6;">—</span>
+          </div>
+          <div class="th-metric-card">
+            <span class="th-metric-label">左指针 left</span>
+            <span class="th-metric-val" id="metric-left" style="color: #10b981;">—</span>
+          </div>
+          <div class="th-metric-card">
+            <span class="th-metric-label">右指针 right</span>
+            <span class="th-metric-val" id="metric-right" style="color: #f59e0b;">—</span>
+          </div>
+          <div class="th-metric-card">
+            <span class="th-metric-label">三数之和 sum</span>
+            <span class="th-metric-val" id="metric-sum" style="color: #a855f7;">—</span>
+          </div>
+        </div>
+        <div class="th-formula-box" id="th-formula-box">
+          <span>当前求和:</span> <strong id="formula-i" style="color: #3b82f6;">nums[i]</strong> + <strong id="formula-left" style="color: #10b981;">nums[left]</strong> + <strong id="formula-right" style="color: #f59e0b;">nums[right]</strong> = <strong id="formula-sum" style="color: #a855f7;">sum</strong>
+        </div>
+        <div class="th-live-alert" id="th-live-alert">
+          <span>💡</span> <span id="th-live-text">准备就绪，点击运行开始三数之和双指针扫描。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="th-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="th-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="th-card-header">
+        <div class="th-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="th-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="th-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="th-playback-bar">
+    <div class="th-playback-controls">
+      <button class="th-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="th-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="th-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="th-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="th-controls">
-    <button id="step-reset" class="th-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="th-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="th-ctrl-btn th-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="th-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="th-counter">步骤: 0 / 0</span>
-    <div class="th-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+    <div class="th-progress-wrap">
+      <span class="th-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

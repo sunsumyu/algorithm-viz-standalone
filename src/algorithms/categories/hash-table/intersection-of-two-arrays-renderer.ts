@@ -1,318 +1,303 @@
 /**
- * 两个数组的交集可视化器（哈希集合）
- * LeetCode 349/350
+ * 两个数组的交集可视化器 — 4-Card 标准现代架构
+ * LeetCode 349：哈希集合 HashSet
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  INTERSECTION_ARRAYS_PROBLEM_HTML,
+  INTERSECTION_ARRAYS_ANALYSIS_HTML,
+  INTERSECTION_ARRAYS_CODE_LANGUAGES,
+} from './intersection-of-two-arrays-problem-content';
 import template from './intersection-of-two-arrays.html?raw';
 
-interface IAStep {
-  arr1: number[];
-  arr2: number[];
-  phase: 'build-set' | 'scan';
-  i: number;
-  currentSet: number[];
-  result: number[];
-  status: 'init' | 'add-set' | 'check' | 'found' | 'skip' | 'done';
+export interface IntersectionStep {
+  nums1: number[];
+  nums2: number[];
+  phase: 'build-set1' | 'scan-nums2' | 'done';
+  idx1: number;
+  idx2: number;
+  currentVal: number | null;
+  set1: number[];
+  resultSet: number[];
+  isHit: boolean;
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildIntersectionSteps(nums1: number[], nums2: number[]): IAStep[] {
-  const steps: IAStep[] = [];
-  const set = new Set<number>();
-  const result: number[] = [];
+export function parseNumArray(input: string, defaultArr: number[]): number[] {
+  const arr = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  return arr.length > 0 ? arr : defaultArr;
+}
 
-  // Init step
-  steps.push({
-    arr1: nums1,
-    arr2: nums2,
-    phase: 'build-set',
-    i: 0,
-    currentSet: [],
-    result: [],
-    status: 'init',
-    message: `开始阶段一：将 nums1 = [${nums1.join(', ')}] 的元素逐个加入哈希集合。`,
-    log: '初始化空集合，准备构建哈希集合。',
-    codeLine: [1, 2],
-  });
+export function buildIntersectionSteps(nums1: number[], nums2: number[]): IntersectionStep[] {
+  const steps: IntersectionStep[] = [];
+  const set1 = new Set<number>();
+  const resultSet = new Set<number>();
 
-  // Phase 1: Build set from nums1
+  // 1. 将 nums1 存入 set1
   for (let i = 0; i < nums1.length; i++) {
-    const alreadyExists = set.has(nums1[i]);
-    set.add(nums1[i]);
+    const val = nums1[i];
+    set1.add(val);
+
     steps.push({
-      arr1: nums1,
-      arr2: nums2,
-      phase: 'build-set',
-      i,
-      currentSet: [...set],
-      result: [],
-      status: 'add-set',
-      message: `i=${i}，将 nums1[${i}]=${nums1[i]} 加入集合${!alreadyExists ? '' : '（重复值，Set 自动去重）'}。集合：{${[...set].join(', ')}}`,
-      log: `Set.add(${nums1[i]})，集合大小=${set.size}`,
-      codeLine: 2,
+      nums1,
+      nums2,
+      phase: 'build-set1',
+      idx1: i,
+      idx2: -1,
+      currentVal: val,
+      set1: Array.from(set1),
+      resultSet: [],
+      isHit: false,
+      message: `遍历 nums1[${i}] = ${val}，将其存入集合 set1。set1 当前大小为 ${set1.size}。`,
+      log: `set1.add(${val}) -> [${Array.from(set1).join(', ')}]`,
+      codeLine: [7, 8],
     });
   }
 
-  // Transition to scan phase
-  steps.push({
-    arr1: nums1,
-    arr2: nums2,
-    phase: 'scan',
-    i: 0,
-    currentSet: [...set],
-    result: [],
-    status: 'check',
-    message: `阶段二：集合构建完毕 {${[...set].join(', ')}}，开始扫描 nums2 = [${nums2.join(', ')}]。`,
-    log: '切换到阶段二：扫描 nums2，查找集合中的交集元素。',
-    codeLine: [3, 4],
-  });
-
-  // Phase 2: Scan nums2 for intersection
-  for (let i = 0; i < nums2.length; i++) {
-    if (set.has(nums2[i]) && !result.includes(nums2[i])) {
-      result.push(nums2[i]);
-      steps.push({
-        arr1: nums1,
-        arr2: nums2,
-        phase: 'scan',
-        i,
-        currentSet: [...set],
-        result: [...result],
-        status: 'found',
-        message: `i=${i}，nums2[${i}]=${nums2[i]} 在集合中且结果未包含，加入交集结果！result = [${result.join(', ')}]`,
-        log: `✓ 找到交集元素 ${nums2[i]}`,
-        codeLine: [5, 6],
-      });
-    } else if (set.has(nums2[i])) {
-      steps.push({
-        arr1: nums1,
-        arr2: nums2,
-        phase: 'scan',
-        i,
-        currentSet: [...set],
-        result: [...result],
-        status: 'skip',
-        message: `i=${i}，nums2[${i}]=${nums2[i]} 在集合中但已在结果里，跳过。`,
-        log: `~ ${nums2[i]} 已存在结果中，跳过重复`,
-        codeLine: 5,
-      });
-    } else {
-      steps.push({
-        arr1: nums1,
-        arr2: nums2,
-        phase: 'scan',
-        i,
-        currentSet: [...set],
-        result: [...result],
-        status: 'skip',
-        message: `i=${i}，nums2[${i}]=${nums2[i]} 不在集合中，跳过。`,
-        log: `✗ ${nums2[i]} 不在集合中`,
-        codeLine: 5,
-      });
+  // 2. 遍历 nums2 查询 set1
+  for (let j = 0; j < nums2.length; j++) {
+    const val = nums2[j];
+    const hit = set1.has(val);
+    if (hit) {
+      resultSet.add(val);
     }
+
+    steps.push({
+      nums1,
+      nums2,
+      phase: 'scan-nums2',
+      idx1: -1,
+      idx2: j,
+      currentVal: val,
+      set1: Array.from(set1),
+      resultSet: Array.from(resultSet),
+      isHit: hit,
+      message: hit
+        ? `🎉 检查 nums2[${j}] = ${val}：在 set1 中存在！将其存入交集结果集 resultSet (现为 [${Array.from(resultSet).join(', ')}])。`
+        : `检查 nums2[${j}] = ${val}：不在 set1 中，跳过。`,
+      log: hit ? `✓ 命中交集: ${val}` : `比对 nums2[${j}]=${val} (未命中)`,
+      codeLine: hit ? [10, 11] : 10,
+    });
   }
 
-  // Done
   steps.push({
-    arr1: nums1,
-    arr2: nums2,
-    phase: 'scan',
-    i: nums2.length,
-    currentSet: [...set],
-    result: [...result],
-    status: 'done',
-    message: result.length > 0
-      ? `扫描完成！交集结果：[${result.join(', ')}]`
-      : '扫描完成！两个数组没有交集。',
-    log: result.length > 0
-      ? `返回 [${result.join(', ')}]`
-      : '无交集元素',
-    codeLine: 8,
+    nums1,
+    nums2,
+    phase: 'done',
+    idx1: -1,
+    idx2: -1,
+    currentVal: null,
+    set1: Array.from(set1),
+    resultSet: Array.from(resultSet),
+    isHit: false,
+    message: `🎉 交集求解完成！最终交集为 [${Array.from(resultSet).join(', ')}]。`,
+    log: `求解完成: 交集共 ${resultSet.size} 个元素`,
+    codeLine: 14,
   });
 
   return steps;
 }
 
-export class IntersectionArraysVisualizer extends StepVisualizer<IAStep> {
-  protected codeLines = [
-    'public int[] intersection(int[] nums1, int[] nums2) {',
-    '    HashSet<Integer> set = new HashSet<>();',
-    '    for (int num : nums1) set.add(num);',
-    '    ArrayList<Integer> result = new ArrayList<>();',
-    '    for (int num : nums2) {',
-    '        if (set.contains(num) && !result.contains(num)) {',
-    '            result.add(num);',
-    '        }',
-    '    }',
-    '    return result.stream().mapToInt(i -> i).toArray();',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 两个数组的交集代码';
+export class IntersectionOfTwoArraysVisualizer extends StepVisualizer<IntersectionStep> {
+  protected codeLanguages = INTERSECTION_ARRAYS_CODE_LANGUAGES;
+  protected codeLines = INTERSECTION_ARRAYS_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '两个数组的交集 代码调试';
 
-  private arr1Input: HTMLInputElement | null = null;
-  private arr2Input: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private arr1Track: HTMLElement | null = null;
-  private arr2Track: HTMLElement | null = null;
-  private setEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private iEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private setSizeEl: HTMLElement | null = null;
-  private resultCountEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private row1El: HTMLElement | null = null;
+  private row2El: HTMLElement | null = null;
+  private set1ChipsEl: HTMLElement | null = null;
+  private resultChipsEl: HTMLElement | null = null;
+  private metricPhaseEl: HTMLElement | null = null;
+  private metricCurValEl: HTMLElement | null = null;
+  private metricHitEl: HTMLElement | null = null;
+  private metricResCountEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.arr1Input = this.root.querySelector('#ia-arr1-input');
-    this.arr2Input = this.root.querySelector('#ia-arr2-input');
-    this.btnStart = this.root.querySelector('#ia-start');
-    this.exampleButtons = this.root.querySelectorAll('.ia-example-btn');
-    this.arr1Track = this.root.querySelector('#ia-arr1-track');
-    this.arr2Track = this.root.querySelector('#ia-arr2-track');
-    this.setEl = this.root.querySelector('#ia-set-items');
-    this.logEl = this.root.querySelector('#ia-log');
-    this.resultEl = this.root.querySelector('#ia-result');
-    this.iEl = this.root.querySelector('#ia-i');
-    this.curEl = this.root.querySelector('#ia-cur');
-    this.setSizeEl = this.root.querySelector('#ia-set-size');
-    this.resultCountEl = this.root.querySelector('#ia-result-count');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        if (this.arr1Input) this.arr1Input.value = btn.dataset.arr1 || '';
-        if (this.arr2Input) this.arr2Input.value = btn.dataset.arr2 || '';
+
+    this.row1El = this.root.querySelector('#ia-row-1');
+    this.row2El = this.root.querySelector('#ia-row-2');
+    this.set1ChipsEl = this.root.querySelector('#ia-set1-chips');
+    this.resultChipsEl = this.root.querySelector('#ia-result-chips');
+    this.metricPhaseEl = this.root.querySelector('#metric-phase');
+    this.metricCurValEl = this.root.querySelector('#metric-cur-val');
+    this.metricHitEl = this.root.querySelector('#metric-hit');
+    this.metricResCountEl = this.root.querySelector('#metric-res-count');
+    this.liveTextEl = this.root.querySelector('#ia-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ia-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const n1Input = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
+        const n2Input = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
+        if (n1Input && btn.dataset.n1) n1Input.value = btn.dataset.n1;
+        if (n2Input && btn.dataset.n2) n2Input.value = btn.dataset.n2;
         this.start();
-      };
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: INTERSECTION_ARRAYS_PROBLEM_HTML,
+      analysisHtml: INTERSECTION_ARRAYS_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  protected buildSteps(): IAStep[] {
-    const nums1 = (this.arr1Input?.value || '1,2,2,1')
-      .split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
-    if (nums1.length === 0) nums1.push(1, 2, 2, 1);
-    const nums2 = (this.arr2Input?.value || '2,2')
-      .split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
-    if (nums2.length === 0) nums2.push(2, 2);
+  protected buildSteps(): IntersectionStep[] {
+    const n1Input = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
+    const n2Input = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
+    const nums1 = parseNumArray(n1Input?.value || '1, 2, 2, 1', [1, 2, 2, 1]);
+    const nums2 = parseNumArray(n2Input?.value || '2, 2', [2, 2]);
     return buildIntersectionSteps(nums1, nums2);
   }
 
-  protected renderStep(step: IAStep): void {
-    // Stats
-    if (this.iEl) this.iEl.textContent = String(step.i);
-    if (this.curEl) {
-      if (step.phase === 'build-set' && step.i < step.arr1.length) {
-        this.curEl.textContent = String(step.arr1[step.i]);
-      } else if (step.phase === 'scan' && step.i < step.arr2.length) {
-        this.curEl.textContent = String(step.arr2[step.i]);
+  protected renderStep(step: IntersectionStep): void {
+    const { nums1, nums2, phase, idx1, idx2, currentVal, set1, resultSet, isHit, message } = step;
+
+    // 1. 渲染 nums1 和 nums2
+    const renderCells = (arr: number[], activeIdx: number) =>
+      arr
+        .map(
+          (num, idx) => `
+        <div class="ia-val-box ${idx === activeIdx ? 'is-active' : ''}">
+          <span>${num}</span>
+        </div>
+      `
+        )
+        .join('');
+
+    if (this.row1El) this.row1El.innerHTML = renderCells(nums1, idx1);
+    if (this.row2El) this.row2El.innerHTML = renderCells(nums2, idx2);
+
+    // 2. 渲染 set1 与 resultSet
+    if (this.set1ChipsEl) {
+      this.set1ChipsEl.innerHTML =
+        set1.length === 0
+          ? '<span style="color:#94a3b8; font-size:10.5px;">(空)</span>'
+          : set1.map((num) => `<div class="ia-set-chip">${num}</div>`).join('');
+    }
+
+    if (this.resultChipsEl) {
+      this.resultChipsEl.innerHTML =
+        resultSet.length === 0
+          ? '<span style="color:#94a3b8; font-size:10.5px;">(空)</span>'
+          : resultSet.map((num) => `<div class="ia-set-chip is-res">${num}</div>`).join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricPhaseEl) {
+      this.metricPhaseEl.textContent =
+        phase === 'build-set1' ? '构建 set1' : phase === 'scan-nums2' ? '遍历 nums2 匹配' : '完成';
+    }
+    if (this.metricCurValEl) {
+      this.metricCurValEl.textContent = currentVal !== null ? String(currentVal) : '—';
+    }
+    if (this.metricHitEl) {
+      if (phase === 'scan-nums2') {
+        this.metricHitEl.textContent = isHit ? '✓ 命中' : '✗ 未命中';
+        this.metricHitEl.style.color = isHit ? '#10b981' : '#64748b';
       } else {
-        this.curEl.textContent = '-';
+        this.metricHitEl.textContent = '—';
       }
     }
-    if (this.setSizeEl) this.setSizeEl.textContent = String(step.currentSet.length);
-    if (this.resultCountEl) this.resultCountEl.textContent = String(step.result.length);
-
-    // Render arr1 track
-    if (this.arr1Track) {
-      this.arr1Track.innerHTML = '';
-      step.arr1.forEach((value, index) => {
-        const cell = document.createElement('div');
-        cell.className = 'ia-cell';
-        if (step.phase === 'build-set' && index === step.i && step.i < step.arr1.length) {
-          cell.classList.add('current');
-        }
-        if (step.currentSet.includes(value)) {
-          cell.classList.add('in-set');
-        }
-        cell.innerHTML = `<span class="idx">${index}</span><span class="val">${value}</span>`;
-        this.arr1Track?.appendChild(cell);
-      });
+    if (this.metricResCountEl) {
+      this.metricResCountEl.textContent = `${resultSet.length} 个`;
     }
 
-    // Render arr2 track
-    if (this.arr2Track) {
-      this.arr2Track.innerHTML = '';
-      step.arr2.forEach((value, index) => {
-        const cell = document.createElement('div');
-        cell.className = 'ia-cell';
-        if (step.phase === 'scan' && index === step.i && step.i < step.arr2.length) {
-          if (step.status === 'found') {
-            cell.classList.add('match');
-          } else if (step.status === 'skip') {
-            cell.classList.add('scanned');
-          } else {
-            cell.classList.add('current');
-          }
-        }
-        if (step.phase === 'scan' && index < step.i && step.status !== 'init' && step.status !== 'check') {
-          if (step.result.includes(value)) {
-            cell.classList.add('already-result');
-          }
-        }
-        cell.innerHTML = `<span class="idx">${index}</span><span class="val">${value}</span>`;
-        this.arr2Track?.appendChild(cell);
-      });
-    }
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
 
-    // Render hash set items
-    if (this.setEl) {
-      this.setEl.innerHTML = '';
-      if (step.currentSet.length === 0) {
-        this.setEl.innerHTML = '<span style="color:#6c7086">（空）</span>';
-      } else {
-        const currentValue = step.phase === 'build-set' && step.i < step.arr1.length ? step.arr1[step.i] : null;
-        step.currentSet.forEach((value) => {
-          const item = document.createElement('span');
-          item.className = 'ia-set-item';
-          if (step.phase === 'build-set' && step.status === 'add-set' && value === currentValue) {
-            item.classList.add('just-added');
-          }
-          item.textContent = String(value);
-          this.setEl?.appendChild(item);
-        });
-      }
-    }
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = isHit || phase === 'done' ? '#f0fdf4' : '#eff6ff';
+      logEntry.style.color = isHit || phase === 'done' ? '#15803d' : '#1d4ed8';
+      logEntry.style.border = '1px solid ' + (isHit || phase === 'done' ? '#bbf7d0' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
 
-    // Render result chips
-    if (this.resultEl) {
-      this.resultEl.innerHTML = '';
-      const emoji = document.createElement('span');
-      emoji.className = 'ia-emoji';
-      emoji.innerHTML = '&#128256;';
-      this.resultEl.appendChild(emoji);
-      if (step.result.length === 0) {
-        const empty = document.createElement('span');
-        empty.className = 'ia-empty-text';
-        empty.textContent = step.status === 'done' ? '两个数组没有交集' : '结果将在此显示';
-        this.resultEl.appendChild(empty);
-      } else {
-        step.result.forEach((value) => {
-          const chip = document.createElement('span');
-          chip.className = 'ia-result-chip';
-          chip.textContent = String(value);
-          this.resultEl?.appendChild(chip);
-        });
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
 
-    this.renderLogLine(step);
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: IAStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -322,12 +307,10 @@ registerAlgorithm({
   viewId: 'algo-intersection-arrays-view',
   category: 'hash-table',
   description: '用哈希集合求两个数组的交集元素',
-  icon: '\u{1F500}',
-  template,
-  Visualizer: IntersectionArraysVisualizer,
+  icon: '🔀',
   difficulty: 1,
   levelOrder: 1,
   learningGoal: '掌握用 Set 去重后高效求交集的思路',
+  template,
+  Visualizer: IntersectionOfTwoArraysVisualizer,
 });
-
-export {};

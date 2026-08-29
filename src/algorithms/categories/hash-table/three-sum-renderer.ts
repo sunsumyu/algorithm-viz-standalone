@@ -1,10 +1,19 @@
 /**
- * 三数之和可视化器（排序 + 双指针）
- * LeetCode 15
+ * 三数之和可视化器 — 4-Card 标准现代架构
+ * LeetCode 15：排序 + 双指针 + 去重剪枝
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  THREE_SUM_PROBLEM_HTML,
+  THREE_SUM_ANALYSIS_HTML,
+  THREE_SUM_CODE_LANGUAGES,
+} from './three-sum-problem-content';
 import template from './three-sum.html?raw';
 
 export interface ThreeSumStep {
@@ -13,214 +22,410 @@ export interface ThreeSumStep {
   left: number;
   right: number;
   sum: number | null;
-  results: number[][];
-  status: 'sort' | 'fix-i' | 'check' | 'shrink-l' | 'shrink-r' | 'found' | 'skip-i' | 'done';
+  results: [number, number, number][];
+  status:
+    | 'init'
+    | 'sort'
+    | 'i-check'
+    | 'i-skip'
+    | 'compare'
+    | 'found'
+    | 'left-advance'
+    | 'right-advance'
+    | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-export function buildThreeSumSteps(input: number[]): ThreeSumStep[] {
+export function parseThreeSumArray(input: string): number[] {
+  const arr = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  return arr.length >= 3 ? arr : [-1, 0, 1, 2, -1, -4];
+}
+
+export function buildThreeSumSteps(rawNums: number[]): ThreeSumStep[] {
   const steps: ThreeSumStep[] = [];
-  const nums = [...input].sort((a, b) => a - b);
-  const results: number[][] = [];
+  const nums = [...rawNums];
+  const results: [number, number, number][] = [];
 
   steps.push({
-    array: nums, i: -1, left: -1, right: -1, sum: null, results: [], status: 'sort',
-    message: `先排序：${nums.join(', ')}。然后固定 i，用 left、right 双指针。`,
-    log: '排序完成。',
-    codeLine: 2,
+    array: [...nums],
+    i: -1,
+    left: -1,
+    right: -1,
+    sum: null,
+    results: [],
+    status: 'init',
+    message: `初始数组: [${nums.join(', ')}]，准备进行升序排序。`,
+    log: `初始化原始数组: [${nums.join(', ')}]`,
+    codeLine: 1,
   });
 
-  for (let i = 0; i < nums.length - 2; i++) {
-    if (nums[i] > 0) break;
+  nums.sort((a, b) => a - b);
+  steps.push({
+    array: [...nums],
+    i: -1,
+    left: -1,
+    right: -1,
+    sum: null,
+    results: [],
+    status: 'sort',
+    message: `对数组进行升序排序: [${nums.join(', ')}]。接下来使用外层循环固定 i，配合双指针 left、right 寻找三数之和为 0。`,
+    log: `完成升序排序: [${nums.join(', ')}]`,
+    codeLine: 3,
+  });
+
+  const n = nums.length;
+  for (let i = 0; i < n - 2; i++) {
+    if (nums[i] > 0) {
+      steps.push({
+        array: [...nums],
+        i,
+        left: -1,
+        right: -1,
+        sum: null,
+        results: [...results],
+        status: 'i-skip',
+        message: `nums[${i}] = ${nums[i]} > 0，因为数组已升序排序，后续所有数字均大于 0，三数之和不可能为 0，提前终止搜索（剪枝）。`,
+        log: `nums[${i}]=${nums[i]} > 0，剪枝终止`,
+        codeLine: 5,
+      });
+      break;
+    }
+
     if (i > 0 && nums[i] === nums[i - 1]) {
       steps.push({
-        array: nums, i, left: -1, right: -1, sum: null, results: results.map((r) => [...r]), status: 'skip-i',
-        message: `nums[i]=${nums[i]} 与上一个相同，跳过去重。`,
-        log: `跳过重复 i=${i}。`,
-        codeLine: 4,
+        array: [...nums],
+        i,
+        left: -1,
+        right: -1,
+        sum: null,
+        results: [...results],
+        status: 'i-skip',
+        message: `nums[${i}] = ${nums[i]} 与前一个元素 nums[${i - 1}] = ${nums[i - 1]} 重复，跳过当前 i 以避免产生重复三元组解（去重）。`,
+        log: `跳过重复元素 nums[${i}]=${nums[i]}`,
+        codeLine: 6,
       });
       continue;
     }
 
     let left = i + 1;
-    let right = nums.length - 1;
+    let right = n - 1;
+
     steps.push({
-      array: nums, i, left, right, sum: null, results: results.map((r) => [...r]), status: 'fix-i',
-      message: `固定 i=${i}（值 ${nums[i]}），left=${left}，right=${right}，目标和 = ${-nums[i]}。`,
-      log: `固定 i=${i}。`,
-      codeLine: [5, 6],
+      array: [...nums],
+      i,
+      left,
+      right,
+      sum: nums[i] + nums[left] + nums[right],
+      results: [...results],
+      status: 'i-check',
+      message: `固定 i=${i} (nums[${i}]=${nums[i]})，初始化双指针 left=${left} (nums[${left}]=${nums[left]})，right=${right} (nums[${right}]=${nums[right]})。`,
+      log: `固定 i=${i}, left=${left}, right=${right}`,
+      codeLine: 7,
     });
 
     while (left < right) {
       const sum = nums[i] + nums[left] + nums[right];
-      steps.push({
-        array: nums, i, left, right, sum, results: results.map((r) => [...r]), status: 'check',
-        message: `三数和 = ${nums[i]} + ${nums[left]} + ${nums[right]} = ${sum}。`,
-        log: `sum=${sum}。`,
-        codeLine: [7, 8],
-      });
 
-      if (sum < 0) {
-        left++;
-        steps.push({
-          array: nums, i, left, right, sum, results: results.map((r) => [...r]), status: 'shrink-l',
-          message: `sum < 0，和太小，left 右移 → ${left}。`,
-          log: `left -> ${left}。`,
-          codeLine: 9,
-        });
-      } else if (sum > 0) {
-        right--;
-        steps.push({
-          array: nums, i, left, right, sum, results: results.map((r) => [...r]), status: 'shrink-r',
-          message: `sum > 0，和太大，right 左移 → ${right}。`,
-          log: `right -> ${right}。`,
-          codeLine: 11,
-        });
-      } else {
+      if (sum === 0) {
         results.push([nums[i], nums[left], nums[right]]);
         steps.push({
-          array: nums, i, left, right, sum, results: results.map((r) => [...r]), status: 'found',
-          message: `命中！三元组 [${nums[i]}, ${nums[left]}, ${nums[right]}] 加入结果。`,
-          log: `找到 [${nums[i]},${nums[left]},${nums[right]}]。`,
-          codeLine: 12,
+          array: [...nums],
+          i,
+          left,
+          right,
+          sum: 0,
+          results: [...results],
+          status: 'found',
+          message: `🎉 找到解！nums[${i}] (${nums[i]}) + nums[${left}] (${nums[left]}) + nums[${right}] (${nums[right]}) = 0。记录三元组 [${nums[i]}, ${nums[left]}, ${nums[right]}]。`,
+          log: `✓ 命中三元组: [${nums[i]}, ${nums[left]}, ${nums[right]}]`,
+          codeLine: [10, 11],
         });
-        // 去重
-        while (left < right && nums[left] === nums[left + 1]) left++;
-        while (left < right && nums[right] === nums[right - 1]) right--;
+
+        // 去重 left 和 right
+        while (left < right && nums[left] === nums[left + 1]) {
+          left++;
+        }
+        while (left < right && nums[right] === nums[right - 1]) {
+          right--;
+        }
+
         left++;
         right--;
+
+        if (left < right) {
+          steps.push({
+            array: [...nums],
+            i,
+            left,
+            right,
+            sum: nums[i] + nums[left] + nums[right],
+            results: [...results],
+            status: 'compare',
+            message: `去重后双指针同时内缩：left 移至 ${left}，right 移至 ${right}，继续寻找。`,
+            log: `双指针内缩: left=${left}, right=${right}`,
+            codeLine: 14,
+          });
+        }
+      } else if (sum < 0) {
         steps.push({
-          array: nums, i, left, right, sum, results: results.map((r) => [...r]), status: 'found',
-          message: `去重并移动指针：left -> ${left}，right -> ${right}。`,
-          log: `去重后 left=${left}, right=${right}。`,
-          codeLine: [13, 14, 15, 16],
+          array: [...nums],
+          i,
+          left,
+          right,
+          sum,
+          results: [...results],
+          status: 'left-advance',
+          message: `三数之和 sum = ${nums[i]} + ${nums[left]} + ${nums[right]} = ${sum} < 0，和偏小，将 left 右移以增大和。`,
+          log: `sum=${sum} < 0, left++ (${left} -> ${left + 1})`,
+          codeLine: 16,
         });
+        left++;
+      } else {
+        steps.push({
+          array: [...nums],
+          i,
+          left,
+          right,
+          sum,
+          results: [...results],
+          status: 'right-advance',
+          message: `三数之和 sum = ${nums[i]} + ${nums[left]} + ${nums[right]} = ${sum} > 0，和偏大，将 right 左移以减小和。`,
+          log: `sum=${sum} > 0, right-- (${right} -> ${right - 1})`,
+          codeLine: 18,
+        });
+        right--;
       }
     }
   }
 
   steps.push({
-    array: nums, i: nums.length, left: -1, right: -1, sum: null, results: results.map((r) => [...r]), status: 'done',
-    message: `结束，共找到 ${results.length} 组三元组。`,
-    log: `返回 ${results.length} 组。`,
-    codeLine: 19,
+    array: [...nums],
+    i: -1,
+    left: -1,
+    right: -1,
+    sum: null,
+    results: [...results],
+    status: 'done',
+    message: `🎉 搜索完成！共找到 ${results.length} 个不重复的三元组解：${JSON.stringify(results)}。`,
+    log: `三数之和求解完毕，共 ${results.length} 组解`,
+    codeLine: 23,
   });
+
   return steps;
 }
 
 export class ThreeSumVisualizer extends StepVisualizer<ThreeSumStep> {
-  protected codeLines = [
-    'public List<List<Integer>> threeSum(int[] nums) {',
-    '    Arrays.sort(nums);',
-    '    List<List<Integer>> result = new ArrayList<>();',
-    '    for (int i = 0; i < nums.length - 2; i++) {',
-    '        if (i > 0 && nums[i] == nums[i - 1]) continue;',
-    '        int left = i + 1, right = nums.length - 1;',
-    '        while (left < right) {',
-    '            int sum = nums[i] + nums[left] + nums[right];',
-    '            if (sum < 0) {',
-    '                left++;',
-    '            } else if (sum > 0) {',
-    '                right--;',
-    '            } else {',
-    '                result.add(Arrays.asList(nums[i], nums[left], nums[right]));',
-    '                while (left < right && nums[left] == nums[left + 1]) left++;',
-    '                while (left < right && nums[right] == nums[right - 1]) right--;',
-    '                left++; right--;',
-    '            }',
-    '        }',
-    '    }',
-    '    return result;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 三数之和代码';
+  protected codeLanguages = THREE_SUM_CODE_LANGUAGES;
+  protected codeLines = THREE_SUM_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '三数之和 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private trackEl: HTMLElement | null = null;
-  private resultsEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private iEl: HTMLElement | null = null;
-  private lrEl: HTMLElement | null = null;
-  private sumEl: HTMLElement | null = null;
-  private countEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private trackRowEl: HTMLElement | null = null;
+  private resultsGridEl: HTMLElement | null = null;
+  private metricIEl: HTMLElement | null = null;
+  private metricLeftEl: HTMLElement | null = null;
+  private metricRightEl: HTMLElement | null = null;
+  private metricSumEl: HTMLElement | null = null;
+  private formulaIEl: HTMLElement | null = null;
+  private formulaLeftEl: HTMLElement | null = null;
+  private formulaRightEl: HTMLElement | null = null;
+  private formulaSumEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#th-input');
-    this.btnStart = this.root.querySelector('#th-start');
-    this.exampleButtons = this.root.querySelectorAll('.th-example-btn');
-    this.trackEl = this.root.querySelector('#th-track');
-    this.resultsEl = this.root.querySelector('#th-results-list');
-    this.logEl = this.root.querySelector('#th-log');
-    this.iEl = this.root.querySelector('#th-i');
-    this.lrEl = this.root.querySelector('#th-lr');
-    this.sumEl = this.root.querySelector('#th-sum');
-    this.countEl = this.root.querySelector('#th-count');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => { if (this.inputEl) this.inputEl.value = btn.dataset.val || ''; this.start(); };
+
+    this.trackRowEl = this.root.querySelector('#th-track-row');
+    this.resultsGridEl = this.root.querySelector('#th-results-grid');
+    this.metricIEl = this.root.querySelector('#metric-i');
+    this.metricLeftEl = this.root.querySelector('#metric-left');
+    this.metricRightEl = this.root.querySelector('#metric-right');
+    this.metricSumEl = this.root.querySelector('#metric-sum');
+    this.formulaIEl = this.root.querySelector('#formula-i');
+    this.formulaLeftEl = this.root.querySelector('#formula-left');
+    this.formulaRightEl = this.root.querySelector('#formula-right');
+    this.formulaSumEl = this.root.querySelector('#formula-sum');
+    this.liveTextEl = this.root.querySelector('#th-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.th-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
+        if (numsInput && btn.dataset.nums) numsInput.value = btn.dataset.nums;
+        this.start();
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: THREE_SUM_PROBLEM_HTML,
+      analysisHtml: THREE_SUM_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): ThreeSumStep[] {
-    const nums = (this.inputEl?.value || '-1,0,1,2,-1,-4')
-      .split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
-    if (nums.length < 3) nums.push(-1, 0, 1, 2, -1, -4);
+    const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
+    const nums = parseThreeSumArray(numsInput?.value || '-1, 0, 1, 2, -1, -4');
     return buildThreeSumSteps(nums);
   }
 
   protected renderStep(step: ThreeSumStep): void {
-    if (this.iEl) this.iEl.textContent = step.i < step.array.length ? String(step.i) : '-';
-    if (this.lrEl) this.lrEl.textContent = step.left >= 0 ? `${step.left}/${step.right}` : '-';
-    if (this.sumEl) this.sumEl.textContent = step.sum === null ? '-' : String(step.sum);
-    if (this.countEl) this.countEl.textContent = String(step.results.length);
+    const { array, i, left, right, sum, results, status, message } = step;
 
-    if (this.trackEl) {
-      this.trackEl.innerHTML = '';
-      // 判断当前是否命中三元组（用最后一条 found 状态的结果）
-      const triplet = step.status === 'found' && step.results.length > 0 ? step.results[step.results.length - 1] : null;
-      step.array.forEach((value, index) => {
-        const cell = document.createElement('div');
-        cell.className = 'th-cell';
-        let ptr = '';
-        if (index === step.i) { cell.classList.add('i'); ptr = '<span class="th-ptr" style="color:#f5c2e7">i</span>'; }
-        if (index === step.left) { cell.classList.add('left'); ptr = '<span class="th-ptr" style="color:#a6e3a1">L</span>'; }
-        if (index === step.right) { cell.classList.add('right'); ptr = '<span class="th-ptr" style="color:#f9e2af">R</span>'; }
-        if (triplet && triplet.includes(value)) cell.classList.add('triplet');
-        cell.innerHTML = `${ptr}<span class="idx">${index}</span><span class="val">${value}</span>`;
-        this.trackEl?.appendChild(cell);
-      });
+    // 1. 渲染排序数组与三指针
+    if (this.trackRowEl) {
+      this.trackRowEl.innerHTML = array
+        .map((num, idx) => {
+          const isI = i === idx;
+          const isLeft = left === idx;
+          const isRight = right === idx;
+
+          let boxClasses = 'th-cell-box';
+          if (isI) boxClasses += ' is-i';
+          if (isLeft) boxClasses += ' is-left';
+          if (isRight) boxClasses += ' is-right';
+
+          const badges: string[] = [];
+          if (isI) badges.push('<span class="th-ptr-badge i">i</span>');
+          if (isLeft) badges.push('<span class="th-ptr-badge left">L</span>');
+          if (isRight) badges.push('<span class="th-ptr-badge right">R</span>');
+
+          return `
+            <div class="th-cell-wrapper">
+              <div class="th-pointer-tags">${badges.join('')}</div>
+              <div class="${boxClasses}">
+                <span class="val">${num}</span>
+                <span class="idx">[${idx}]</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
     }
-    if (this.resultsEl) {
-      this.resultsEl.innerHTML = '';
-      if (step.results.length === 0) {
-        this.resultsEl.innerHTML = '<span style="color:#6c7086">（暂无）</span>';
+
+    // 2. 渲染已捕获解
+    if (this.resultsGridEl) {
+      if (results.length === 0) {
+        this.resultsGridEl.innerHTML = '<span style="color: #94a3b8; font-size: 11px;">(暂无三元组解)</span>';
       } else {
-        step.results.forEach((r) => {
-          const chip = document.createElement('span');
-          chip.className = 'th-result-chip';
-          chip.textContent = `[${r.join(', ')}]`;
-          this.resultsEl?.appendChild(chip);
-        });
+        this.resultsGridEl.innerHTML = results
+          .map(
+            ([a, b, c]) => `
+          <div class="th-result-chip">
+            <span>[${a}, ${b}, ${c}]</span>
+          </div>
+        `
+          )
+          .join('');
       }
     }
-    this.renderLogLine(step);
+
+    // 3. 更新状态监视器
+    if (this.metricIEl) {
+      this.metricIEl.textContent = i >= 0 ? `[${i}]=${array[i]}` : '—';
+    }
+    if (this.metricLeftEl) {
+      this.metricLeftEl.textContent = left >= 0 ? `[${left}]=${array[left]}` : '—';
+    }
+    if (this.metricRightEl) {
+      this.metricRightEl.textContent = right >= 0 ? `[${right}]=${array[right]}` : '—';
+    }
+    if (this.metricSumEl) {
+      this.metricSumEl.textContent = sum !== null ? String(sum) : '—';
+      this.metricSumEl.style.color = sum === 0 ? '#10b981' : sum !== null && sum < 0 ? '#3b82f6' : '#f59e0b';
+    }
+
+    if (this.formulaIEl) this.formulaIEl.textContent = i >= 0 ? String(array[i]) : 'nums[i]';
+    if (this.formulaLeftEl) this.formulaLeftEl.textContent = left >= 0 ? String(array[left]) : 'nums[left]';
+    if (this.formulaRightEl) this.formulaRightEl.textContent = right >= 0 ? String(array[right]) : 'nums[right]';
+    if (this.formulaSumEl) this.formulaSumEl.textContent = sum !== null ? String(sum) : 'sum';
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = status === 'found' ? '#f0fdf4' : '#eff6ff';
+      logEntry.style.color = status === 'found' ? '#15803d' : '#1d4ed8';
+      logEntry.style.border = '1px solid ' + (status === 'found' ? '#bbf7d0' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: ThreeSumStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -231,9 +436,9 @@ registerAlgorithm({
   category: 'hash-table',
   description: '排序后双指针求和为0的三元组',
   icon: '🎯',
-  template,
-  Visualizer: ThreeSumVisualizer,
   difficulty: 3,
   levelOrder: 2,
   learningGoal: '掌握排序 + 双指针 + 去重的三数求和技巧',
+  template,
+  Visualizer: ThreeSumVisualizer,
 });

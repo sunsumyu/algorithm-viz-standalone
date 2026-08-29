@@ -1,211 +1,299 @@
 /**
- * 哈希表理论基础可视化器
- * 演示哈希函数、插入、查找、冲突处理等核心概念
+ * 哈希表理论基础可视化器 — 4-Card 标准现代架构
+ * 演示哈希函数映射、哈希碰撞与拉链法链表挂载
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  HASH_TABLE_THEORY_PROBLEM_HTML,
+  HASH_TABLE_THEORY_ANALYSIS_HTML,
+  HASH_TABLE_THEORY_CODE_LANGUAGES,
+} from './hash-table-theory-problem-content';
 import template from './hash-table-theory.html?raw';
 
-interface HTStep {
-  table: (number | null)[];
-  action: 'init' | 'hash' | 'collision' | 'insert' | 'search' | 'found' | 'not-found';
-  key: number;
-  index: number;
+export interface HTTStep {
+  buckets: number[][];
+  currentKey: number | null;
+  targetSlot: number | null;
+  isCollision: boolean;
+  loadFactor: number;
+  status: 'init' | 'hash-calc' | 'insert' | 'collision-chain' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildHTSteps(keys: number[]): HTStep[] {
-  const size = 7;
-  const table: (number | null)[] = new Array(size).fill(null);
-  const steps: HTStep[] = [];
+export function parseKeysList(input: string): number[] {
+  const arr = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  return arr.length > 0 ? arr : [12, 18, 24, 7, 13];
+}
 
-  // Step 0: init
+export function buildTheorySteps(keys: number[], bucketSize: number = 6): HTTStep[] {
+  const steps: HTTStep[] = [];
+  const buckets: number[][] = Array.from({ length: bucketSize }, () => []);
+  let totalInserted = 0;
+
   steps.push({
-    table: [...table],
-    action: 'init',
-    key: 0,
-    index: -1,
-    message: '初始化哈希表，size = 7，所有桶为空。使用 hash(key) = key % 7 作为哈希函数。',
-    log: '初始化空表 (size=7)。',
-    codeLine: 0,
+    buckets: buckets.map((b) => [...b]),
+    currentKey: null,
+    targetSlot: null,
+    isCollision: false,
+    loadFactor: 0,
+    status: 'init',
+    message: `初始化容量为 ${bucketSize} 的哈希表，哈希函数为 hash(key) = key % ${bucketSize}。准备依次插入 Key 列表: [${keys.join(', ')}]。`,
+    log: `初始化哈希表 (Size=${bucketSize})`,
+    codeLine: 2,
   });
 
-  // Insert each key
-  for (const key of keys) {
-    const idx = key % size;
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const slot = key % bucketSize;
+    const isColl = buckets[slot].length > 0;
 
-    // Check for collision
-    if (table[idx] !== null) {
-      steps.push({
-        table: [...table],
-        action: 'collision',
-        key,
-        index: idx,
-        message: `计算 hash(${key}) = ${key} % ${size} = ${idx}，冲突! 下标 ${idx} 已被 ${table[idx]} 占用。`,
-        log: `hash(${key})=${idx} 冲突 (已有 ${table[idx]})。`,
-        codeLine: [0, 1],
-      });
-    } else {
-      steps.push({
-        table: [...table],
-        action: 'hash',
-        key,
-        index: idx,
-        message: `计算 hash(${key}) = ${key} % ${size} = ${idx}，下标 ${idx} 为空，直接插入。`,
-        log: `hash(${key})=${idx}，桶为空。`,
-        codeLine: [0, 1],
-      });
-    }
-
-    // Insert
-    table[idx] = key;
     steps.push({
-      table: [...table],
-      action: 'insert',
-      key,
-      index: idx,
-      message: `插入 ${key} 到下标 ${idx}，table[${idx}] = ${key}。`,
-      log: `插入 table[${idx}] = ${key}。`,
-      codeLine: [3, 4, 5],
+      buckets: buckets.map((b) => [...b]),
+      currentKey: key,
+      targetSlot: slot,
+      isCollision: isColl,
+      loadFactor: Number((totalInserted / bucketSize).toFixed(2)),
+      status: 'hash-calc',
+      message: `计算哈希值：key = ${key}，hash(${key}) = ${key} % ${bucketSize} = ${slot}。定位到桶 [${slot}]。`,
+      log: `计算 hash(${key}) = ${slot}`,
+      codeLine: 5,
+    });
+
+    buckets[slot].push(key);
+    totalInserted++;
+    const loadFactor = Number((totalInserted / bucketSize).toFixed(2));
+
+    steps.push({
+      buckets: buckets.map((b) => [...b]),
+      currentKey: key,
+      targetSlot: slot,
+      isCollision: isColl,
+      loadFactor,
+      status: isColl ? 'collision-chain' : 'insert',
+      message: isColl
+        ? `⚠️ 发生哈希碰撞！桶 [${slot}] 中已有元素 [${buckets[slot].slice(0, -1).join(', ')}]。使用拉链法将新节点 ${key} 挂载到链表末尾。`
+        : `槽位 [${slot}] 当前为空，直接将 key = ${key} 存入桶 [${slot}]。`,
+      log: isColl ? `⚠️ 碰撞挂载: 桶 [${slot}] -> ${key}` : `直接插入: 桶 [${slot}] -> ${key}`,
+      codeLine: isColl ? 9 : [6, 9],
     });
   }
 
-  // Search for an existing key (use the last inserted key)
-  const searchKey1 = keys[keys.length - 1] ?? 5;
-  const idx1 = searchKey1 % size;
   steps.push({
-    table: [...table],
-    action: 'search',
-    key: searchKey1,
-    index: idx1,
-    message: `查找 ${searchKey1}: hash(${searchKey1}) = ${searchKey1} % ${size} = ${idx1}，检查 table[${idx1}]。`,
-    log: `查找 ${searchKey1}: hash=${idx1}。`,
-    codeLine: [7, 8],
-  });
-  steps.push({
-    table: [...table],
-    action: 'found',
-    key: searchKey1,
-    index: idx1,
-    message: `找到! table[${idx1}] = ${table[idx1]} == ${searchKey1}，查找成功。`,
-    log: `命中: table[${idx1}] = ${searchKey1}。`,
-    codeLine: 9,
-  });
-
-  // Search for a non-existing key
-  const searchKey2 = 99;
-  const idx2 = searchKey2 % size;
-  steps.push({
-    table: [...table],
-    action: 'search',
-    key: searchKey2,
-    index: idx2,
-    message: `查找 ${searchKey2}: hash(${searchKey2}) = ${searchKey2} % ${size} = ${idx2}，检查 table[${idx2}]。`,
-    log: `查找 ${searchKey2}: hash=${idx2}。`,
-    codeLine: [7, 8],
-  });
-  steps.push({
-    table: [...table],
-    action: 'not-found',
-    key: searchKey2,
-    index: idx2,
-    message: `未找到! table[${idx2}] = ${table[idx2] === null ? 'null' : table[idx2]} ≠ ${searchKey2}，查找失败。`,
-    log: `未命中: table[${idx2}] = null。`,
-    codeLine: 9,
+    buckets: buckets.map((b) => [...b]),
+    currentKey: null,
+    targetSlot: null,
+    isCollision: false,
+    loadFactor: Number((totalInserted / bucketSize).toFixed(2)),
+    status: 'done',
+    message: `🎉 所有 Key 已全部完成插入！哈希表当前元素总数 ${totalInserted}，最终装载因子 α = ${(totalInserted / bucketSize).toFixed(2)}。`,
+    log: `演示完毕: 共插入 ${totalInserted} 个键`,
+    codeLine: 10,
   });
 
   return steps;
 }
 
-export class HashTableTheoryVisualizer extends StepVisualizer<HTStep> {
-  protected codeLines = [
-    'public int hash(int key, int size) {',
-    '    return key % size;',
-    '}',
-    'public void insert(int[] table, int key) {',
-    '    int idx = hash(key, table.length);',
-    '    table[idx] = key;',
-    '}',
-    'public boolean search(int[] table, int key) {',
-    '    int idx = hash(key, table.length);',
-    '    return table[idx] == key;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 哈希表操作代码';
+export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
+  protected codeLanguages = HASH_TABLE_THEORY_CODE_LANGUAGES;
+  protected codeLines = HASH_TABLE_THEORY_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '哈希表实现原理 代码演示';
 
-  private keysInput: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private trackEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
+  private currentKeys: number[] = [12, 18, 24, 7, 13];
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private bucketsListEl: HTMLElement | null = null;
+  private metricKeyEl: HTMLElement | null = null;
+  private metricSlotEl: HTMLElement | null = null;
+  private metricCollisionEl: HTMLElement | null = null;
+  private metricLoadEl: HTMLElement | null = null;
+  private formulaCalcEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.keysInput = this.root.querySelector('#ht-keys-input');
-    this.btnStart = this.root.querySelector('#ht-start');
-    this.exampleButtons = this.root.querySelectorAll('.ht-example-btn');
-    this.trackEl = this.root.querySelector('#ht-track');
-    this.logEl = this.root.querySelector('#ht-log');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        if (this.keysInput) this.keysInput.value = btn.dataset.keys || '';
-        this.start();
-      };
-    });
-  }
 
-  protected buildSteps(): HTStep[] {
-    const keys = (this.keysInput?.value || '5,12,19,26,3,10')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => Number.isFinite(n));
-    if (keys.length === 0) keys.push(5, 12, 19, 26, 3, 10);
-    return buildHTSteps(keys);
-  }
+    this.bucketsListEl = this.root.querySelector('#htt-buckets-list');
+    this.metricKeyEl = this.root.querySelector('#metric-key');
+    this.metricSlotEl = this.root.querySelector('#metric-slot');
+    this.metricCollisionEl = this.root.querySelector('#metric-collision');
+    this.metricLoadEl = this.root.querySelector('#metric-load');
+    this.formulaCalcEl = this.root.querySelector('#formula-calc');
+    this.liveTextEl = this.root.querySelector('#htt-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-  protected renderStep(step: HTStep): void {
-    if (this.trackEl) {
-      this.trackEl.innerHTML = '';
-      step.table.forEach((value, index) => {
-        const cell = document.createElement('div');
-        cell.className = 'ht-cell';
-        if (value !== null) cell.classList.add('filled');
-        if (index === step.index) {
-          if (step.action === 'found') cell.classList.add('found');
-          else if (step.action === 'not-found') cell.classList.add('not-found');
-          else cell.classList.add('active');
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
         }
-        cell.innerHTML = `<span class="idx">${index}</span><span class="val">${value ?? '-'}</span>`;
-        this.trackEl?.appendChild(cell);
       });
     }
-    this.renderLogLine(step);
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.htt-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.keys) {
+          this.currentKeys = parseKeysList(btn.dataset.keys);
+        }
+        this.start();
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: HASH_TABLE_THEORY_PROBLEM_HTML,
+      analysisHtml: HASH_TABLE_THEORY_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
   }
 
-  private renderLogLine(step: HTStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      let prefix = '';
-      switch (s.action) {
-        case 'init': prefix = '⚡'; break;
-        case 'hash': prefix = '🔢'; break;
-        case 'collision': prefix = '💥'; break;
-        case 'insert': prefix = '⬇️'; break;
-        case 'search': prefix = '🔍'; break;
-        case 'found': prefix = '✅'; break;
-        case 'not-found': prefix = '❌'; break;
+  protected buildSteps(): HTTStep[] {
+    return buildTheorySteps(this.currentKeys, 6);
+  }
+
+  protected renderStep(step: HTTStep): void {
+    const { buckets, currentKey, targetSlot, isCollision, loadFactor, status, message } = step;
+
+    // 1. 渲染哈希桶阵列与链表
+    if (this.bucketsListEl) {
+      this.bucketsListEl.innerHTML = buckets
+        .map((chain, slotIdx) => {
+          const isTarget = targetSlot === slotIdx;
+          let rowClass = 'htt-bucket-row';
+          if (isTarget) rowClass += ' is-target';
+
+          const nodesHtml =
+            chain.length === 0
+              ? '<span style="color:#94a3b8; font-size:10px; font-style:italic;">null (空)</span>'
+              : chain
+                  .map((k, kIdx) => {
+                    const isNew = isTarget && kIdx === chain.length - 1 && (status === 'insert' || status === 'collision-chain');
+                    return `
+                    <div class="htt-chain-node ${isNew ? 'is-new' : ''}">
+                      <span>key: ${k}</span>
+                    </div>
+                    ${kIdx < chain.length - 1 ? '<span style="color:#94a3b8;">&rarr;</span>' : ''}
+                  `;
+                  })
+                  .join('');
+
+          return `
+            <div class="${rowClass}">
+              <div class="htt-slot-badge">桶 [${slotIdx}]</div>
+              <div class="htt-chain-nodes">${nodesHtml}</div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // 2. 更新状态监视器
+    if (this.metricKeyEl) this.metricKeyEl.textContent = currentKey !== null ? String(currentKey) : '—';
+    if (this.metricSlotEl) this.metricSlotEl.textContent = targetSlot !== null ? `[${targetSlot}]` : '—';
+    if (this.metricCollisionEl) {
+      if (status === 'collision-chain') {
+        this.metricCollisionEl.textContent = '⚠️ 发生碰撞';
+        this.metricCollisionEl.style.color = '#ef4444';
+      } else if (status === 'insert') {
+        this.metricCollisionEl.textContent = '无碰撞';
+        this.metricCollisionEl.style.color = '#10b981';
+      } else {
+        this.metricCollisionEl.textContent = '—';
+        this.metricCollisionEl.style.color = '#64748b';
       }
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${prefix} ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+    }
+    if (this.metricLoadEl) this.metricLoadEl.textContent = String(loadFactor);
+
+    if (this.formulaCalcEl) {
+      if (currentKey !== null && targetSlot !== null) {
+        this.formulaCalcEl.textContent = `hash(${currentKey}) = ${currentKey} % 6 = ${targetSlot}`;
+      } else {
+        this.formulaCalcEl.textContent = 'hash(key) = key % 6';
+      }
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = isCollision ? '#fef2f2' : status === 'done' ? '#f0fdf4' : '#eff6ff';
+      logEntry.style.color = isCollision ? '#b91c1c' : status === 'done' ? '#15803d' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' + (isCollision ? '#fecaca' : status === 'done' ? '#bbf7d0' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
+  }
+
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -216,11 +304,9 @@ registerAlgorithm({
   category: 'hash-table',
   description: '哈希表的核心概念、哈希函数与冲突处理',
   icon: '📖',
-  template,
-  Visualizer: HashTableTheoryVisualizer,
   difficulty: 1,
   levelOrder: 0,
   learningGoal: '理解哈希表的原理、哈希函数和冲突处理方法',
+  template,
+  Visualizer: HashTableTheoryVisualizer,
 });
-
-export {};

@@ -1,342 +1,297 @@
 /**
- * 快乐数可视化器（哈希集合判环）
- * LeetCode 202
+ * 快乐数可视化器 — 4-Card 标准现代架构
+ * LeetCode 202：HashSet 判环
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  HAPPY_NUMBER_PROBLEM_HTML,
+  HAPPY_NUMBER_ANALYSIS_HTML,
+  HAPPY_NUMBER_CODE_LANGUAGES,
+} from './happy-number-problem-content';
 import template from './happy-number.html?raw';
 
-interface HNStep {
-  number: number;
-  digits: number[];
-  squares: number[];
-  sum: number;
+export interface HappyNumberStep {
+  n: number;
+  nextN: number;
+  formula: string;
   seen: number[];
-  iteration: number;
-  status: 'init' | 'decompose' | 'square' | 'sum' | 'check-seen' | 'happy' | 'cycle';
+  cycleNode: number | null;
+  status: 'init' | 'compute' | 'check' | 'happy' | 'cycle';
+  isHappy: boolean;
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildHappyNumberSteps(n: number): HNStep[] {
-  const steps: HNStep[] = [];
-  const seen = new Set<number>();
-  let iteration = 0;
+export function getNextSquareSum(n: number): { sum: number; formula: string } {
+  let sum = 0;
+  let temp = n;
+  const parts: string[] = [];
 
-  steps.push({
-    number: n, digits: [], squares: [], sum: 0, seen: [], iteration: 0, status: 'init',
-    message: `从 n=${n} 开始，每次将数字替换为其各位数字的平方和，直到得到 1（快乐数）或检测到循环（非快乐数）。`,
-    log: `初始值 n=${n}。`,
-    codeLine: [1, 2],
-  });
-
-  while (n !== 1 && !seen.has(n)) {
-    // Check seen
-    steps.push({
-      number: n, digits: [], squares: [], sum: 0, seen: [...seen], iteration, status: 'check-seen',
-      message: `检查 n=${n} 是否在 seen 集合中：${seen.has(n) ? '是，发现循环！' : '否，继续处理。'}`,
-      log: `检查 ${n} 是否在 seen 中。`,
-      codeLine: [3, 4],
-    });
-
-    if (seen.has(n)) {
-      steps.push({
-        number: n, digits: [], squares: [], sum: 0, seen: [...seen], iteration, status: 'cycle',
-        message: `发现循环！n=${n} 已经出现过，说明进入无限循环，不是快乐数。`,
-        log: `${n} 在 seen 中，循环！`,
-        codeLine: [3, 4],
-      });
-      return steps;
-    }
-
-    // Add to seen
-    seen.add(n);
-    steps.push({
-      number: n, digits: [], squares: [], sum: 0, seen: [...seen], iteration, status: 'check-seen',
-      message: `将 n=${n} 加入 seen 集合，开始分解数字。`,
-      log: `seen.add(${n})。`,
-      codeLine: [4],
-    });
-
-    // Decompose
-    const digits: number[] = [];
-    let temp = n;
-    while (temp > 0) {
-      digits.unshift(temp % 10);
-      temp = Math.floor(temp / 10);
-    }
-
-    steps.push({
-      number: n, digits, squares: [], sum: 0, seen: [...seen], iteration, status: 'decompose',
-      message: `将 ${n} 分解为数字：${digits.join(', ')}。`,
-      log: `${n} 分解为 [${digits.join(', ')}]。`,
-      codeLine: [6, 7],
-    });
-
-    // Square
-    const squares = digits.map((d) => d * d);
-    steps.push({
-      number: n, digits, squares, sum: 0, seen: [...seen], iteration, status: 'square',
-      message: `计算各位数字的平方：${digits.map((d, i) => `${d}²=${squares[i]}`).join(', ')}。`,
-      log: `平方：${digits.map((d, i) => `${d}²=${squares[i]}`).join(', ')}。`,
-      codeLine: [8],
-    });
-
-    // Sum
-    const sum = squares.reduce((a, b) => a + b, 0);
-    steps.push({
-      number: n, digits, squares, sum, seen: [...seen], iteration, status: 'sum',
-      message: `求和：${squares.join(' + ')} = ${sum}。`,
-      log: `求和 = ${sum}。`,
-      codeLine: [8, 9],
-    });
-
-    // Update n
-    n = sum;
-    iteration++;
-    steps.push({
-      number: n, digits: [], squares: [], sum: 0, seen: [...seen], iteration, status: 'sum',
-      message: `令 n = ${n}，继续下一轮迭代。`,
-      log: `n = ${n}，进入下一轮。`,
-      codeLine: [10],
-    });
+  while (temp > 0) {
+    const d = temp % 10;
+    sum += d * d;
+    parts.unshift(`${d}²`);
+    temp = Math.floor(temp / 10);
   }
 
-  // Check final result
-  if (n === 1) {
+  const formula = parts.join(' + ') + ` = ${sum}`;
+  return { sum, formula };
+}
+
+export function buildHappyNumberSteps(initialN: number): HappyNumberStep[] {
+  const steps: HappyNumberStep[] = [];
+  const seen = new Set<number>();
+  let cur = initialN;
+
+  steps.push({
+    n: cur,
+    nextN: cur,
+    formula: '',
+    seen: [],
+    cycleNode: null,
+    status: 'init',
+    isHappy: false,
+    message: `初始数字 n = ${cur}，初始化空哈希集合 HashSet seen。`,
+    log: `开始计算 n = ${cur}`,
+    codeLine: 2,
+  });
+
+  while (cur !== 1 && !seen.has(cur)) {
+    const { sum, formula } = getNextSquareSum(cur);
+    seen.add(cur);
+
     steps.push({
-      number: n, digits: [], squares: [], sum: 0, seen: [...seen], iteration, status: 'happy',
-      message: `n=1，是快乐数！经过 ${iteration} 次迭代，各位数字平方和最终收敛到 1。`,
-      log: `n=1，是快乐数！`,
-      codeLine: [3, 11],
+      n: cur,
+      nextN: sum,
+      formula,
+      seen: Array.from(seen),
+      cycleNode: null,
+      status: 'compute',
+      isHappy: false,
+      message: `将 ${cur} 加入 seen 集合。计算各位平方和: ${formula}。`,
+      log: `${cur} -> ${formula}`,
+      codeLine: [4, 5],
+    });
+
+    cur = sum;
+  }
+
+  if (cur === 1) {
+    steps.push({
+      n: 1,
+      nextN: 1,
+      formula: '1² = 1',
+      seen: Array.from(seen),
+      cycleNode: null,
+      status: 'happy',
+      isHappy: true,
+      message: `🎉 平方和收敛到 1！数字 ${initialN} 是快乐数，返回 true。`,
+      log: `✓ 收敛到 1，是快乐数！`,
+      codeLine: 7,
+    });
+  } else {
+    steps.push({
+      n: cur,
+      nextN: cur,
+      formula: `已存在于 HashSet 中`,
+      seen: Array.from(seen),
+      cycleNode: cur,
+      status: 'cycle',
+      isHappy: false,
+      message: `⚠️ 检测到死循环！数字 ${cur} 之前已经在 seen 集合中出现过，陷入死循环，不是快乐数，返回 false。`,
+      log: `✗ 检测到循环节点 ${cur}，返回 false`,
+      codeLine: 7,
     });
   }
 
   return steps;
 }
 
-export class HappyNumberVisualizer extends StepVisualizer<HNStep> {
-  protected codeLines = [
-    'public boolean isHappy(int n) {',
-    '    HashSet<Integer> seen = new HashSet<>();',
-    '    while (n != 1 && !seen.contains(n)) {',
-    '        seen.add(n);',
-    '        int sum = 0;',
-    '        while (n > 0) {',
-    '            int d = n % 10;',
-    '            sum += d * d;',
-    '            n = n / 10;',
-    '        }',
-    '        n = sum;',
-    '    }',
-    '    return n == 1;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 快乐数代码';
+export class HappyNumberVisualizer extends StepVisualizer<HappyNumberStep> {
+  protected codeLanguages = HAPPY_NUMBER_CODE_LANGUAGES;
+  protected codeLines = HAPPY_NUMBER_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '快乐数 代码调试';
 
-  private numberInput: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private areaEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private curNumEl: HTMLElement | null = null;
-  private iterationEl: HTMLElement | null = null;
-  private seenSizeEl: HTMLElement | null = null;
+  private formulaTextEl: HTMLElement | null = null;
+  private setTrackEl: HTMLElement | null = null;
+  private metricNEl: HTMLElement | null = null;
+  private metricNextEl: HTMLElement | null = null;
+  private metricSetSizeEl: HTMLElement | null = null;
+  private metricResEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.numberInput = this.root.querySelector('#hn-number-input');
-    this.btnStart = this.root.querySelector('#hn-start');
-    this.exampleButtons = this.root.querySelectorAll('.hn-example-btn');
-    this.areaEl = this.root.querySelector('#hn-area');
-    this.logEl = this.root.querySelector('#hn-log');
+
     this.curNumEl = this.root.querySelector('#hn-cur-num');
-    this.iterationEl = this.root.querySelector('#hn-iteration');
-    this.seenSizeEl = this.root.querySelector('#hn-seen-size');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        if (this.numberInput) this.numberInput.value = btn.dataset.num || '19';
+    this.formulaTextEl = this.root.querySelector('#hn-formula-text');
+    this.setTrackEl = this.root.querySelector('#hn-set-track');
+    this.metricNEl = this.root.querySelector('#metric-n');
+    this.metricNextEl = this.root.querySelector('#metric-next');
+    this.metricSetSizeEl = this.root.querySelector('#metric-set-size');
+    this.metricResEl = this.root.querySelector('#metric-res');
+    this.liveTextEl = this.root.querySelector('#hn-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.hn-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const nInput = this.root?.querySelector('#input-n') as HTMLInputElement | null;
+        if (nInput && btn.dataset.n) nInput.value = btn.dataset.n;
         this.start();
-      };
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: HAPPY_NUMBER_PROBLEM_HTML,
+      analysisHtml: HAPPY_NUMBER_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  protected buildSteps(): HNStep[] {
-    const n = parseInt(this.numberInput?.value || '19', 10) || 19;
-    return buildHappyNumberSteps(n);
+  protected buildSteps(): HappyNumberStep[] {
+    const nInput = this.root?.querySelector('#input-n') as HTMLInputElement | null;
+    const n = parseInt(nInput?.value || '19', 10);
+    return buildHappyNumberSteps(isNaN(n) || n <= 0 ? 19 : n);
   }
 
-  protected renderStep(step: HNStep): void {
-    if (this.curNumEl) this.curNumEl.textContent = String(step.number);
-    if (this.iterationEl) this.iterationEl.textContent = String(step.iteration);
-    if (this.seenSizeEl) this.seenSizeEl.textContent = String(step.seen.length);
+  protected renderStep(step: HappyNumberStep): void {
+    const { n, nextN, formula, seen, cycleNode, status, isHappy, message } = step;
 
-    if (this.areaEl) {
-      this.areaEl.innerHTML = '';
+    // 1. 渲染数字拆解
+    if (this.curNumEl) this.curNumEl.textContent = String(n);
+    if (this.formulaTextEl) this.formulaTextEl.textContent = formula || '等待计算...';
 
-      // Current number display
-      const numDisplay = document.createElement('div');
-      numDisplay.className = 'hn-current-number';
-      if (step.status === 'happy') numDisplay.classList.add('hn-happy');
-      if (step.status === 'cycle') numDisplay.classList.add('hn-cycle');
-      numDisplay.textContent = String(step.number);
-      this.areaEl.appendChild(numDisplay);
+    // 2. 渲染 HashSet
+    if (this.setTrackEl) {
+      if (seen.length === 0) {
+        this.setTrackEl.innerHTML = '<span style="color: #94a3b8; font-size: 11px;">(HashSet 当前为空)</span>';
+      } else {
+        this.setTrackEl.innerHTML = seen
+          .map((num) => {
+            const isCycle = cycleNode === num;
+            const isOne = num === 1 || (status === 'happy' && num === seen[seen.length - 1]);
+            let chipClass = 'hn-set-chip';
+            if (isCycle) chipClass += ' is-cycle';
+            else if (isOne) chipClass += ' is-one';
 
-      // Decomposition and squares
-      if (step.digits.length > 0) {
-        const decomposeBlock = document.createElement('div');
-        decomposeBlock.className = 'hn-decompose';
-
-        const label = document.createElement('div');
-        label.className = 'hn-decompose-label';
-        label.textContent = step.status === 'decompose' ? '数字分解' : '平方计算';
-        decomposeBlock.appendChild(label);
-
-        const digitsRow = document.createElement('div');
-        digitsRow.className = 'hn-digits';
-
-        step.digits.forEach((digit, i) => {
-          const box = document.createElement('div');
-          box.className = 'hn-digit-box';
-          box.style.animationDelay = `${i * 0.1}s`;
-
-          const digitEl = document.createElement('div');
-          digitEl.className = 'hn-digit';
-          digitEl.textContent = String(digit);
-          box.appendChild(digitEl);
-
-          if (step.squares.length > 0) {
-            const opEl = document.createElement('div');
-            opEl.className = 'hn-op';
-            opEl.textContent = '²';
-            box.appendChild(opEl);
-
-            const sqEl = document.createElement('div');
-            sqEl.className = 'hn-sq';
-            sqEl.textContent = `=${step.squares[i]}`;
-            box.appendChild(sqEl);
-          }
-
-          digitsRow.appendChild(box);
-
-          if (i < step.digits.length - 1) {
-            const sep = document.createElement('span');
-            sep.className = 'hn-digit-sep';
-            sep.textContent = step.squares.length > 0 ? '+' : ',';
-            digitsRow.appendChild(sep);
-          }
-        });
-
-        decomposeBlock.appendChild(digitsRow);
-        this.areaEl.appendChild(decomposeBlock);
-
-        // Sum display
-        if (step.squares.length > 0 && step.sum > 0) {
-          const sumRow = document.createElement('div');
-          sumRow.className = 'hn-sum-row';
-
-          const sumLabel = document.createElement('span');
-          sumLabel.className = 'hn-sum-label';
-          sumLabel.textContent = '求和 =';
-          sumRow.appendChild(sumLabel);
-
-          const sumVal = document.createElement('span');
-          sumVal.className = 'hn-sum-val';
-          sumVal.textContent = String(step.sum);
-          sumRow.appendChild(sumVal);
-
-          this.areaEl.appendChild(sumRow);
-        }
-      }
-
-      // Seen set
-      if (step.seen.length > 0) {
-        const seenWrap = document.createElement('div');
-        seenWrap.className = 'hn-seen-wrap';
-
-        const seenTitle = document.createElement('div');
-        seenTitle.className = 'hn-seen-title';
-        seenTitle.textContent = '已见集合 (seen)';
-        seenWrap.appendChild(seenTitle);
-
-        const seenItems = document.createElement('div');
-        seenItems.className = 'hn-seen-items';
-
-        step.seen.forEach((num, i) => {
-          const chip = document.createElement('span');
-          chip.className = 'hn-seen-chip';
-          if (i === step.seen.length - 1 && step.status === 'check-seen') {
-            chip.classList.add('hn-seen-latest');
-          }
-          if (num === step.number && step.status === 'cycle') {
-            chip.classList.add('hn-seen-hit');
-          }
-          chip.textContent = String(num);
-          seenItems.appendChild(chip);
-        });
-
-        seenWrap.appendChild(seenItems);
-        this.areaEl.appendChild(seenWrap);
-      }
-
-      // Chain of numbers visited
-      if (step.seen.length > 0 || step.status === 'happy') {
-        const chainWrap = document.createElement('div');
-        chainWrap.className = 'hn-chain-wrap';
-
-        const chainTitle = document.createElement('div');
-        chainTitle.className = 'hn-chain-title';
-        chainTitle.textContent = '访问序列';
-        chainWrap.appendChild(chainTitle);
-
-        const chain = document.createElement('div');
-        chain.className = 'hn-chain';
-
-        const sequence = [...step.seen];
-        if (step.status !== 'cycle' && step.status !== 'happy') {
-          sequence.push(step.number);
-        }
-
-        sequence.forEach((num, i) => {
-          const node = document.createElement('span');
-          node.className = 'hn-chain-node';
-          if (num === step.number && step.status === 'happy') {
-            node.classList.add('hn-chain-happy');
-          } else if (num === step.number && step.status !== 'cycle') {
-            node.classList.add('hn-chain-current');
-          }
-          node.textContent = String(num);
-          chain.appendChild(node);
-
-          if (i < sequence.length - 1) {
-            const arrow = document.createElement('span');
-            arrow.className = 'hn-chain-arrow';
-            arrow.textContent = '→';
-            chain.appendChild(arrow);
-          }
-        });
-
-        chainWrap.appendChild(chain);
-        this.areaEl.appendChild(chainWrap);
+            return `
+              <div class="${chipClass}">
+                <span>${num}</span>
+              </div>
+            `;
+          })
+          .join('');
       }
     }
 
-    this.renderLogLine(step);
+    // 3. 更新状态监视器
+    if (this.metricNEl) this.metricNEl.textContent = String(n);
+    if (this.metricNextEl) this.metricNextEl.textContent = String(nextN);
+    if (this.metricSetSizeEl) this.metricSetSizeEl.textContent = `${seen.length} 个`;
+    if (this.metricResEl) {
+      if (status === 'happy') {
+        this.metricResEl.textContent = '✓ 快乐数';
+        this.metricResEl.style.color = '#10b981';
+      } else if (status === 'cycle') {
+        this.metricResEl.textContent = '✗ 死循环';
+        this.metricResEl.style.color = '#ef4444';
+      } else {
+        this.metricResEl.textContent = '计算中...';
+        this.metricResEl.style.color = '#3b82f6';
+      }
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background = status === 'happy' ? '#f0fdf4' : status === 'cycle' ? '#fef2f2' : '#eff6ff';
+      logEntry.style.color = status === 'happy' ? '#15803d' : status === 'cycle' ? '#b91c1c' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' + (status === 'happy' ? '#bbf7d0' : status === 'cycle' ? '#fecaca' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: HNStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -347,11 +302,9 @@ registerAlgorithm({
   category: 'hash-table',
   description: '用哈希集合检测平方和循环，判断快乐数',
   icon: '😊',
-  template,
-  Visualizer: HappyNumberVisualizer,
   difficulty: 1,
   levelOrder: 2,
   learningGoal: '掌握用 Set 检测循环的方法',
+  template,
+  Visualizer: HappyNumberVisualizer,
 });
-
-export {};
