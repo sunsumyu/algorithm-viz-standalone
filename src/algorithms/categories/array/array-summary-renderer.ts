@@ -351,9 +351,24 @@ export class ArraySummaryVisualizer extends StepVisualizer<ASStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeTopic = this.root?.querySelector('#badge-topic');
+    if (badgeTopic) {
+      const topicNames: Record<string, string> = {
+        intro: '全景导读',
+        basics: '基础理论',
+        'two-pointer': '双指针三剑客',
+        'binary-search': '二分查找',
+        'prefix-sum': '前缀和差分',
+        matrix: '螺旋模拟',
+        patterns: '总结升华',
+        done: '通关大吉',
+      };
+      badgeTopic.textContent = topicNames[section] || section;
     }
   }
 

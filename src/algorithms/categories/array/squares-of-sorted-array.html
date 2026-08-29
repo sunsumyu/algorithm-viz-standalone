@@ -1,5 +1,5 @@
 <style>
-  /* === 有序数组的平方 (LeetCode 977) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 有序数组的平方 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-sorted-squares-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-sorted-squares-view .sq-btn-problem {
@@ -120,539 +121,929 @@
   #algo-sorted-squares-view .sq-input-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-sorted-squares-view .sq-input-group label {
+    gap: 4px;
     font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
   }
 
   #algo-sorted-squares-view .sq-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  #algo-sorted-squares-view .sq-btn-primary {
-    padding: 4px 10px;
+  #algo-sorted-squares-view .sq-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-sorted-squares-view .sq-btn-primary:hover {
+  #algo-sorted-squares-view .sq-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-sorted-squares-view .sq-btn-secondary {
-    padding: 4px 8px;
+  #algo-sorted-squares-view .sq-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-sorted-squares-view .sq-btn-secondary:hover {
+  #algo-sorted-squares-view .sq-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-sorted-squares-view .sq-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-sorted-squares-view .sq-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-sorted-squares-view .sq-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-sorted-squares-view .sq-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-sorted-squares-view .sq-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-sorted-squares-view .sq-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-sorted-squares-view .sq-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-sorted-squares-view .sq-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-sorted-squares-view .sq-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 原数组与结果数组双轨沙盘 */
-  #algo-sorted-squares-view .sq-dual-track-container {
+  #algo-sorted-squares-view .sq-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-sorted-squares-view .sq-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 双轨沙盘展示盒 */
+  #algo-sorted-squares-view .sq-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
-    gap: 12px;
-    padding: 8px;
-    width: 100%;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 12px;
   }
 
   #algo-sorted-squares-view .sq-track-section {
-    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    gap: 3px;
+    width: 100%;
   }
 
   #algo-sorted-squares-view .sq-track-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     color: #64748b;
-    display: flex;
-    align-items: center;
-    gap: 6px;
   }
 
   #algo-sorted-squares-view .sq-track-row {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
     gap: 8px;
     width: 100%;
-    overflow-x: auto;
-    padding: 20px 8px 4px;
+    flex-wrap: wrap;
   }
 
   #algo-sorted-squares-view .sq-cell-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    position: relative;
+    gap: 3px;
+  }
+
+  #algo-sorted-squares-view .sq-pointer-tags {
+    min-height: 14px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  #algo-sorted-squares-view .sq-ptr-badge {
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 4px;
+  }
+
+  #algo-sorted-squares-view .sq-ptr-badge.left {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+  }
+
+  #algo-sorted-squares-view .sq-ptr-badge.right {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+
+  #algo-sorted-squares-view .sq-ptr-badge.write {
+    background: #faf5ff;
+    color: #9333ea;
+    border: 1px solid #e9d5ff;
   }
 
   #algo-sorted-squares-view .sq-cell-box {
-    width: 44px;
-    height: 48px;
-    border-radius: 10px;
-    background: #f8fafc;
-    border: 2px solid #cbd5e1;
+    min-width: 38px;
+    height: 40px;
+    padding: 2px 4px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     font-family: 'JetBrains Mono', monospace;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
   }
 
   #algo-sorted-squares-view .sq-cell-box .val {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
+    line-height: 1.1;
   }
 
   #algo-sorted-squares-view .sq-cell-box .sq-val {
-    font-size: 9.5px;
-    font-weight: 700;
+    font-size: 9px;
     color: #64748b;
+    font-weight: 600;
   }
 
   #algo-sorted-squares-view .sq-cell-box .idx {
-    font-size: 9px;
-    font-weight: 700;
+    font-size: 8.5px;
     color: #94a3b8;
   }
 
   #algo-sorted-squares-view .sq-cell-box.is-active-left {
     border-color: #3b82f6;
     background: #eff6ff;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    transform: translateY(-3px);
+    transform: scale(1.05);
   }
 
   #algo-sorted-squares-view .sq-cell-box.is-active-right {
     border-color: #f59e0b;
     background: #fffbeb;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
-    transform: translateY(-3px);
+    transform: scale(1.05);
   }
 
   #algo-sorted-squares-view .sq-cell-box.is-writing {
     border-color: #a855f7;
     background: #faf5ff;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+    transform: scale(1.05);
   }
 
   #algo-sorted-squares-view .sq-cell-box.is-filled {
-    background: #f0fdf4;
     border-color: #22c55e;
+    background: #f0fdf4;
   }
+
   #algo-sorted-squares-view .sq-cell-box.is-filled .val {
     color: #15803d;
   }
 
-  #algo-sorted-squares-view .sq-pointer-tags {
-    position: absolute;
-    top: -22px;
-    display: flex;
-    gap: 3px;
-    align-items: center;
-  }
-
-  #algo-sorted-squares-view .sq-ptr-badge {
-    padding: 1px 4px;
-    border-radius: 4px;
-    font-size: 9px;
-    font-weight: 800;
-    font-family: 'JetBrains Mono', monospace;
-    white-space: nowrap;
-  }
-  #algo-sorted-squares-view .sq-ptr-badge.left {
-    background: #3b82f6;
-    color: #ffffff;
-  }
-  #algo-sorted-squares-view .sq-ptr-badge.right {
-    background: #f59e0b;
-    color: #ffffff;
-  }
-  #algo-sorted-squares-view .sq-ptr-badge.write {
-    background: #a855f7;
-    color: #ffffff;
-  }
-
-  /* Preset Chips */
+  /* 预设案例 Chips */
   #algo-sorted-squares-view .sq-preset-chips {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-sorted-squares-view .sq-chip {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10px;
     color: #475569;
     cursor: pointer;
     transition: all 0.15s;
   }
   #algo-sorted-squares-view .sq-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
     background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-sorted-squares-view .sq-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-sorted-squares-view .sq-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-sorted-squares-view .sq-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-sorted-squares-view .sq-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-sorted-squares-view .sq-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-sorted-squares-view .sq-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-sorted-squares-view .sq-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-sorted-squares-view .sq-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-sorted-squares-view .sq-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
-  #algo-squares-sorted-array-view .sq-metric-card {
-    background: #f8fafc;
+  #algo-sorted-squares-view .sq-metric-card {
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
 
-  #algo-squares-sorted-array-view .sq-metric-label {
+  #algo-sorted-squares-view .sq-metric-label {
     font-size: 10px;
     font-weight: 700;
     color: #64748b;
     text-transform: uppercase;
   }
 
-  #algo-squares-sorted-array-view .sq-metric-val {
+  #algo-sorted-squares-view .sq-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
 
-  #algo-squares-sorted-array-view .sq-compare-box {
+  #algo-sorted-squares-view .sq-compare-box {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 8px 12px;
-    background: #f8fafc;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
   }
 
-  #algo-squares-sorted-array-view .sq-live-alert {
-    padding: 8px 10px;
+  #algo-sorted-squares-view .sq-live-alert {
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-squares-sorted-array-view .sq-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-sorted-squares-view .sq-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-sorted-squares-view .sq-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-sorted-squares-view .sq-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-squares-sorted-array-view .sq-playback-controls {
+  #algo-sorted-squares-view .sq-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-squares-sorted-array-view .sq-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-sorted-squares-view .sq-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-squares-sorted-array-view .sq-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-sorted-squares-view .sq-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-squares-sorted-array-view .sq-progress-wrap {
-    flex: 1;
+  #algo-sorted-squares-view .sq-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-sorted-squares-view .sq-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-sorted-squares-view .sq-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-sorted-squares-view .sq-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-squares-sorted-array-view .sq-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-sorted-squares-view .sq-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-sorted-squares-view .sq-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-sorted-squares-view .sq-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-squares-sorted-array-view .sq-step-badge {
-    font-size: 11px;
+  #algo-sorted-squares-view .sq-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-sorted-squares-view .sq-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-sorted-squares-view .sq-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-sorted-squares-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-sorted-squares-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-sorted-squares-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-sorted-squares-view .sq-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-sorted-squares-view .sq-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-sorted-squares-view .sq-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-sorted-squares-view .sq-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-sorted-squares-view .sq-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-sorted-squares-view .sq-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-sorted-squares-view .sq-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-sorted-squares-view .sq-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-sorted-squares-view .sq-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-sorted-squares-view .sq-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-sorted-squares-view .sq-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-sorted-squares-view .sq-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div id="algo-squares-sorted-array-view">
+<div id="algo-sorted-squares-view">
   <!-- 1. 顶栏 Header -->
   <header class="sq-header">
     <div class="sq-header-left">
       <div class="sq-icon-btn">📐</div>
-      <div class="sq-main-title">有序数组的平方 · Squares of a Sorted Array</div>
-      <button class="sq-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 题目与解析
-      </button>
-      <div class="sq-badge-mode">首尾对撞双指针</div>
-      <div class="sq-badge-complexity">O(n) · O(1)</div>
+      <h1 class="sq-main-title">有序数组的平方 (Squares of a Sorted Array)</h1>
+      <button id="btn-open-problem-modal" class="sq-btn-problem">📋 题目</button>
+      <span class="sq-badge-mode">首尾对撞双指针·平方比较倒序回填</span>
+      <span class="sq-badge-complexity">O(n) · O(1)</span>
     </div>
+
     <div class="sq-header-right">
       <div class="sq-input-group">
-        <label for="input-nums">有序数组:</label>
-        <input type="text" id="input-nums" value="-4, -1, 0, 3, 10" style="width: 160px;" placeholder="升序逗号分隔">
+        <label for="input-nums">数组:</label>
+        <input type="text" id="input-nums" value="-4, -1, 0, 3, 10" style="width: 160px;" placeholder="升序逗号分隔" />
       </div>
-      <button class="sq-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="sq-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="sq-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="sq-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="sq-workspace">
-    <!-- Card 1: 原数组与结果数组双轨沙盘 -->
-    <section class="sq-card">
-      <div class="sq-card-header">
-        <div class="sq-card-title">
-          <span>📊</span> 首尾对撞双指针与结果数组 (Dual-Pointer Sandbox)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="sq-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="sq-left-section">
+
+      <!-- 卡片 1: 双轨沙盘 -->
+      <div class="sq-card">
+        <div class="sq-card-header">
+          <div class="sq-card-title">
+            <span>📊 首尾对撞双指针与结果数组沙盘 (Dual-Pointer Sandbox)</span>
+          </div>
+          <div class="sq-legend-bar">
+            <div><span class="sq-legend-dot" style="background:#3b82f6;"></span> left 比较</div>
+            <div><span class="sq-legend-dot" style="background:#f59e0b;"></span> right 平方</div>
+            <div><span class="sq-legend-dot" style="background:#9333ea;"></span> writeIdx 倒序填充</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #3b82f6;">● left</span> 比较 <span style="color: #f59e0b;">● right</span> 平方 · <span style="color: #a855f7;">● writeIdx</span> 倒序填充
-        </div>
-      </div>
-      <div class="sq-card-body" style="justify-content: center;">
-        <div class="sq-dual-track-container">
-          <!-- 上轨：原数组与 Left/Right 指针 -->
+
+        <!-- 双轨沙盘展示盒 -->
+        <div class="sq-sandbox-wrap">
           <div class="sq-track-section">
-            <div class="sq-track-label">
-              <span>输入数组 nums (双指针向内收缩)</span>
-            </div>
-            <div class="sq-track-row" id="sq-input-track"></div>
+            <div class="sq-track-label">输入数组 nums (双指针向内收缩):</div>
+            <div id="sq-input-track" class="sq-track-row"></div>
           </div>
-          <!-- 下轨：结果数组与 WriteIdx 指针 -->
           <div class="sq-track-section">
-            <div class="sq-track-label">
-              <span>结果数组 result (从右向左填充较大平方)</span>
+            <div class="sq-track-label">结果数组 result (从右向左填充较大平方):</div>
+            <div id="sq-output-track" class="sq-track-row"></div>
+          </div>
+        </div>
+
+        <!-- 预设案例 Chips -->
+        <div class="sq-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="sq-chip" data-nums="-4, -1, 0, 3, 10">LeetCode 示例 1 ([-4, -1, 0, 3, 10])</button>
+          <button class="sq-chip" data-nums="-7, -3, 2, 3, 11">LeetCode 示例 2 ([-7, -3, 2, 3, 11])</button>
+          <button class="sq-chip" data-nums="-5, -4, -3, -2, -1">全负数 ([-5, -4, -3, -2, -1])</button>
+          <button class="sq-chip" data-nums="1, 2, 3, 4, 5">全正数 ([1, 2, 3, 4, 5])</button>
+        </div>
+      </div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="sq-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="sq-slider" />
+        <div class="sq-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="sq-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="sq-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="sq-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="sq-card">
+        <div class="sq-card-header">
+          <div>
+            <div class="sq-card-title">🧭 比较与写入监视器 (Comparison Monitor)</div>
+            <div class="sq-card-desc">左指针 left、右指针 right、写入下标与较大平方填入值</div>
+          </div>
+          <span id="badge-write" class="sq-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">写入: result[4]</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="sq-state-space-box">
+          <div class="sq-metrics-grid">
+            <div class="sq-metric-card">
+              <span class="sq-metric-label">左指针 left</span>
+              <span class="sq-metric-val" id="metric-left" style="color: #3b82f6;">0</span>
             </div>
-            <div class="sq-track-row" id="sq-output-track"></div>
+            <div class="sq-metric-card">
+              <span class="sq-metric-label">右指针 right</span>
+              <span class="sq-metric-val" id="metric-right" style="color: #f59e0b;">0</span>
+            </div>
+            <div class="sq-metric-card">
+              <span class="sq-metric-label">写入下标 i</span>
+              <span class="sq-metric-val" id="metric-write" style="color: #9333ea;">0</span>
+            </div>
+            <div class="sq-metric-card">
+              <span class="sq-metric-label">较大平方填入值</span>
+              <span class="sq-metric-val" id="metric-val" style="color: #10b981;">-</span>
+            </div>
+          </div>
+
+          <div class="sq-compare-box" id="sq-compare-box">
+            <span style="color: #3b82f6; font-weight: 700;" id="cmp-left-sq">nums[0]² = 16</span>
+            <span style="color: #64748b; font-weight: 800;" id="cmp-op">VS</span>
+            <span style="color: #f59e0b; font-weight: 700;" id="cmp-right-sq">nums[4]² = 100</span>
+          </div>
+
+          <div class="sq-live-alert">
+            <span>💡</span> <span id="sq-live-text">准备就绪，点击运行开始双指针平方归并。</span>
           </div>
         </div>
       </div>
-      <div class="sq-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="sq-chip" data-nums="-4, -1, 0, 3, 10">LeetCode 示例 1 ([-4, -1, 0, 3, 10])</button>
-        <button class="sq-chip" data-nums="-7, -3, 2, 3, 11">LeetCode 示例 2 ([-7, -3, 2, 3, 11])</button>
-        <button class="sq-chip" data-nums="-5, -4, -3, -2, -1">全负数 ([-5, -4, -3, -2, -1])</button>
-        <button class="sq-chip" data-nums="1, 2, 3, 4, 5">全正数 ([1, 2, 3, 4, 5])</button>
-      </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="sq-card">
-      <div class="sq-card-header">
-        <div class="sq-card-title">
-          <span>🧭</span> 比较与写入监视器 (Comparison Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="sq-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="sq-dark-terminal">
+        <div class="sq-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="sq-tab-group">
+            <button id="btn-tab-code" class="sq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sq-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sq-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="sq-lang-group" id="code-lang-tabs">
+            <button class="sq-lang-btn active" data-lang="java">Java</button>
+            <button class="sq-lang-btn" data-lang="cpp">C++</button>
+            <button class="sq-lang-btn" data-lang="python">Python</button>
+            <button class="sq-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="sq-font-tools">
+            <div class="sq-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="sq-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="sq-window-dots">
+              <span class="sq-dot" style="background:#ef4444;"></span>
+              <span class="sq-dot" style="background:#eab308;"></span>
+              <span class="sq-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="sq-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="sq-card-body">
-        <div class="sq-metrics-grid">
-          <div class="sq-metric-card">
-            <span class="sq-metric-label">左指针 left</span>
-            <span class="sq-metric-val" id="metric-left" style="color: #3b82f6;">0</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="sq-log-card">
+        <div class="sq-log-header">
+          <div class="sq-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="sq-metric-card">
-            <span class="sq-metric-label">右指针 right</span>
-            <span class="sq-metric-val" id="metric-right" style="color: #f59e0b;">0</span>
-          </div>
-          <div class="sq-metric-card">
-            <span class="sq-metric-label">写入下标 i</span>
-            <span class="sq-metric-val" id="metric-write" style="color: #a855f7;">0</span>
-          </div>
-          <div class="sq-metric-card">
-            <span class="sq-metric-label">较大平方填入值</span>
-            <span class="sq-metric-val" id="metric-val" style="color: #10b981;">-</span>
-          </div>
+          <span id="log-count" class="sq-log-count">0 条记录</span>
         </div>
-        <div class="sq-compare-box" id="sq-compare-box">
-          <span style="color: #3b82f6; font-weight: 700;" id="cmp-left-sq">nums[0]² = 16</span>
-          <span style="color: #64748b; font-weight: 800;" id="cmp-op">VS</span>
-          <span style="color: #f59e0b; font-weight: 700;" id="cmp-right-sq">nums[4]² = 100</span>
-        </div>
-        <div class="sq-live-alert" id="sq-live-alert">
-          <span>💡</span> <span id="sq-live-text">准备就绪，点击运行开始双指针平方归并。</span>
+
+        <div id="log-container" class="sq-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="sq-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="sq-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="sq-card-header">
-        <div class="sq-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="sq-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="sq-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="sq-playback-bar">
-    <div class="sq-playback-controls">
-      <button class="sq-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="sq-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="sq-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="sq-modal-backdrop hidden">
+    <div class="sq-modal-content">
+      <div class="sq-modal-header">
+        <div class="sq-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="sq-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="sq-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="sq-progress-wrap">
-      <span class="sq-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>
