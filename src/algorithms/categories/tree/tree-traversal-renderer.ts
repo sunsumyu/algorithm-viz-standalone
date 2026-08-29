@@ -309,9 +309,15 @@ export class TreeTraversalVisualizer extends StepVisualizer<TTStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeMode = this.root?.querySelector('#badge-mode-name');
+    if (badgeMode) {
+      badgeMode.textContent =
+        mode === 'pre' ? '前序遍历 (根-左-右)' : mode === 'in' ? '中序遍历 (左-根-右)' : '后序遍历 (左-右-根)';
     }
   }
 

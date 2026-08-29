@@ -357,9 +357,14 @@ export class BuildTreeVisualizer extends StepVisualizer<BTStep> {
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgeRoot = this.root?.querySelector('#badge-root-val');
+    if (badgeRoot) {
+      badgeRoot.textContent = action === 'done' ? '构造完成' : rootVal != null ? `root: ${rootVal}` : '待切分';
     }
   }
 

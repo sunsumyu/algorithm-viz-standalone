@@ -1,5 +1,5 @@
 <style>
-  /* === 路径总和 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 路径总和 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-path-sum-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-path-sum-view .ps-btn-problem {
@@ -120,168 +121,284 @@
   #algo-path-sum-view .ps-input-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-path-sum-view .ps-input-group label {
+    gap: 4px;
     font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
   }
 
   #algo-path-sum-view .ps-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  #algo-path-sum-view .ps-btn-primary {
-    padding: 4px 10px;
+  #algo-path-sum-view .ps-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-path-sum-view .ps-btn-primary:hover {
+  #algo-path-sum-view .ps-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-path-sum-view .ps-btn-secondary {
-    padding: 4px 8px;
+  #algo-path-sum-view .ps-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-path-sum-view .ps-btn-secondary:hover {
+  #algo-path-sum-view .ps-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-path-sum-view .ps-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-path-sum-view .ps-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-path-sum-view .ps-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-path-sum-view .ps-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-path-sum-view .ps-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-path-sum-view .ps-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-path-sum-view .ps-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-path-sum-view .ps-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-path-sum-view .ps-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 树结构 SVG 画布 */
-  #algo-path-sum-view .ps-tree-svg-wrap {
+  #algo-path-sum-view .ps-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-path-sum-view .ps-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* SVG 树沙盘展示盒 */
+  #algo-path-sum-view .ps-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  #algo-path-sum-view .ps-tree-svg-container {
     width: 100%;
     height: 100%;
-    min-height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* Preset Chips */
+  /* 预设案例 Chips */
   #algo-path-sum-view .ps-preset-chips {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-path-sum-view .ps-chip {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10px;
     color: #475569;
     cursor: pointer;
     transition: all 0.15s;
   }
   #algo-path-sum-view .ps-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
     background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-path-sum-view .ps-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-path-sum-view .ps-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-path-sum-view .ps-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-path-sum-view .ps-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-path-sum-view .ps-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-path-sum-view .ps-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-path-sum-view .ps-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-path-sum-view .ps-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-path-sum-view .ps-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-path-sum-view .ps-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -296,7 +413,7 @@
 
   #algo-path-sum-view .ps-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -305,87 +422,290 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-path-sum-view .ps-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-path-sum-view .ps-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-path-sum-view .ps-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-path-sum-view .ps-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-path-sum-view .ps-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-path-sum-view .ps-playback-controls {
+  #algo-path-sum-view .ps-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-path-sum-view .ps-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-path-sum-view .ps-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-path-sum-view .ps-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-path-sum-view .ps-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-path-sum-view .ps-progress-wrap {
-    flex: 1;
+  #algo-path-sum-view .ps-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-path-sum-view .ps-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-path-sum-view .ps-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-path-sum-view .ps-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-path-sum-view .ps-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-path-sum-view .ps-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-path-sum-view .ps-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-path-sum-view .ps-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-path-sum-view .ps-step-badge {
-    font-size: 11px;
+  #algo-path-sum-view .ps-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-path-sum-view .ps-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-path-sum-view .ps-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-path-sum-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-path-sum-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-path-sum-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-path-sum-view .ps-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-path-sum-view .ps-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-path-sum-view .ps-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-path-sum-view .ps-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-path-sum-view .ps-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-path-sum-view .ps-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-path-sum-view .ps-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-path-sum-view .ps-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-path-sum-view .ps-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-path-sum-view .ps-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-path-sum-view .ps-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-path-sum-view .ps-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -394,126 +714,215 @@
   <header class="ps-header">
     <div class="ps-header-left">
       <div class="ps-icon-btn">🎯</div>
-      <div class="ps-main-title">路径总和 · Path Sum</div>
-      <button class="ps-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="ps-badge-mode">根到叶深度优先减法回溯</div>
-      <div class="ps-badge-complexity">O(n) · O(h)</div>
+      <h1 class="ps-main-title">路径总和 (Path Sum)</h1>
+      <button id="btn-open-problem-modal" class="ps-btn-problem">📋 题目</button>
+      <span class="ps-badge-mode">根到叶子路径回溯·目标值递减</span>
+      <span class="ps-badge-complexity">O(n) · O(h)</span>
     </div>
+
     <div class="ps-header-right">
       <div class="ps-input-group">
-        <label for="input-tree">树数组:</label>
-        <input type="text" id="input-tree" value="5, 4, 8, 11, null, 13, 4, 7, 2" style="width: 170px;">
+        <label for="input-tree">二叉树层序:</label>
+        <input type="text" id="input-tree" value="5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1" style="width: 140px;" placeholder="逗号分隔" />
       </div>
       <div class="ps-input-group">
         <label for="input-target">targetSum:</label>
-        <input type="number" id="input-target" value="22" style="width: 50px;">
+        <input type="number" id="input-target" value="22" style="width: 50px;" />
       </div>
-      <button class="ps-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="ps-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="ps-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="ps-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="ps-workspace">
-    <!-- Card 1: 树结构 SVG 画布 -->
-    <section class="ps-card">
-      <div class="ps-card-header">
-        <div class="ps-card-title">
-          <span>📊</span> 路径回溯与目标和校验沙盘 (Path Sum Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="ps-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="ps-left-section">
+
+      <!-- 卡片 1: 树拓扑沙盘 -->
+      <div class="ps-card">
+        <div class="ps-card-header">
+          <div class="ps-card-title">
+            <span>📊 二叉树拓扑与路径回溯沙盘 (Tree & Path Sandbox)</span>
+          </div>
+          <div class="ps-legend-bar">
+            <div><span class="ps-legend-dot" style="background:#fbbf24;"></span> 当前回溯路径节点</div>
+            <div><span class="ps-legend-dot" style="background:#10b981;"></span> 满足目标路径</div>
+            <div><span class="ps-legend-dot" style="background:#3b82f6;"></span> 叶子终点</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #fbbf24;">● 当前栈帧节点</span> · <span style="color: #3b82f6;">● 当前路径</span> · <span style="color: #10b981;">● 命中目标和路径</span>
+
+        <!-- 树拓扑沙盘展示盒 -->
+        <div class="ps-sandbox-wrap">
+          <div id="tree-svg-container" class="ps-tree-svg-container"></div>
+        </div>
+
+        <!-- 预设案例 Chips -->
+        <div class="ps-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="ps-chip" data-tree="5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1" data-target="22">LeetCode 经典 ([5,4,8...], target=22)</button>
+          <button class="ps-chip" data-tree="1, 2, 3" data-target="5">无解案例 ([1,2,3], target=5)</button>
+          <button class="ps-chip" data-tree="1, 2" data-target="3">简单两节点 ([1,2], target=3)</button>
         </div>
       </div>
-      <div class="ps-card-body" style="justify-content: center; align-items: center;">
-        <div class="ps-tree-svg-wrap" id="ps-tree-svg-container"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="ps-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="ps-slider" />
+        <div class="ps-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="ps-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="ps-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="ps-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="ps-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="ps-chip" data-tree="5, 4, 8, 11, null, 13, 4, 7, 2" data-t="22">存在路径 5->4->11->2 (和 22)</button>
-        <button class="ps-chip" data-tree="1, 2, 3" data-t="5">不存在和为 5 的路径</button>
-        <button class="ps-chip" data-tree="1, 2" data-t="0">单侧树 targetSum=0</button>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="ps-card">
+        <div class="ps-card-header">
+          <div>
+            <div class="ps-card-title">🧭 路径累加与叶子判定监视器 (Path Sum Monitor)</div>
+            <div class="ps-card-desc">当前节点、当前累加和、剩余差额与判定结果</div>
+          </div>
+          <span id="badge-verdict" class="ps-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">待判定</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="ps-state-space-box">
+          <div class="ps-metrics-grid">
+            <div class="ps-metric-card">
+              <span class="ps-metric-label">当前节点 curr</span>
+              <span class="ps-metric-val" id="metric-curr" style="color: #fbbf24;">5</span>
+            </div>
+            <div class="ps-metric-card">
+              <span class="ps-metric-label">当前累加和 / 目标</span>
+              <span class="ps-metric-val" id="metric-sum" style="color: #2563eb;">5 / 22</span>
+            </div>
+            <div class="ps-metric-card">
+              <span class="ps-metric-label">剩余差额 remain</span>
+              <span class="ps-metric-val" id="metric-remain" style="color: #9333ea;">17</span>
+            </div>
+            <div class="ps-metric-card">
+              <span class="ps-metric-label">判定结果</span>
+              <span class="ps-metric-val" id="metric-verdict" style="color: #10b981;">待判定</span>
+            </div>
+          </div>
+
+          <div class="ps-formula-box" id="ps-formula-box">
+            <span>叶子节点判定:</span> <strong id="formula-action" style="color: #2563eb;">isLeaf && node.val == targetSum</strong>
+          </div>
+
+          <div class="ps-live-alert">
+            <span>💡</span> <span id="ps-live-text">准备就绪，点击运行开始搜索路径总和。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="ps-card">
-      <div class="ps-card-header">
-        <div class="ps-card-title">
-          <span>🧭</span> 路径和指标监视器 (Path Sum Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="ps-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="ps-dark-terminal">
+        <div class="ps-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="ps-tab-group">
+            <button id="btn-tab-code" class="sq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sq-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sq-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="ps-lang-group" id="code-lang-tabs">
+            <button class="ps-lang-btn active" data-lang="java">Java</button>
+            <button class="ps-lang-btn" data-lang="cpp">C++</button>
+            <button class="ps-lang-btn" data-lang="python">Python</button>
+            <button class="ps-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="ps-font-tools">
+            <div class="ps-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="ps-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="ps-window-dots">
+              <span class="ps-dot" style="background:#ef4444;"></span>
+              <span class="ps-dot" style="background:#eab308;"></span>
+              <span class="ps-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="ps-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="ps-card-body">
-        <div class="ps-metrics-grid">
-          <div class="ps-metric-card">
-            <span class="ps-metric-label">当前节点 curr</span>
-            <span class="ps-metric-val" id="metric-curr" style="color: #fbbf24;">5</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="ps-log-card">
+        <div class="ps-log-header">
+          <div class="ps-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="ps-metric-card">
-            <span class="ps-metric-label">当前累加和 / 目标</span>
-            <span class="ps-metric-val" id="metric-sum" style="color: #2563eb;">5 / 22</span>
-          </div>
-          <div class="ps-metric-card">
-            <span class="ps-metric-label">剩余差额 remain</span>
-            <span class="ps-metric-val" id="metric-remain" style="color: #a855f7;">17</span>
-          </div>
-          <div class="ps-metric-card">
-            <span class="ps-metric-label">判定结果</span>
-            <span class="ps-metric-val" id="metric-verdict" style="color: #10b981;">待判定</span>
-          </div>
+          <span id="log-count" class="ps-log-count">0 条记录</span>
         </div>
-        <div class="ps-formula-box" id="ps-formula-box">
-          <span>叶子节点判定:</span> <strong id="formula-action" style="color: #2563eb;">isLeaf && node.val == targetSum</strong>
-        </div>
-        <div class="ps-live-alert" id="ps-live-alert">
-          <span>💡</span> <span id="ps-live-text">准备就绪，点击运行开始搜索路径总和。</span>
+
+        <div id="log-container" class="ps-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="ps-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="ps-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="ps-card-header">
-        <div class="ps-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="ps-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="ps-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="ps-playback-bar">
-    <div class="ps-playback-controls">
-      <button class="ps-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="ps-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="ps-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="ps-modal-backdrop hidden">
+    <div class="ps-modal-content">
+      <div class="ps-modal-header">
+        <div class="ps-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="ps-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="ps-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="ps-progress-wrap">
-      <span class="ps-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

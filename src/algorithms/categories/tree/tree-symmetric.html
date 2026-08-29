@@ -1,5 +1,5 @@
 <style>
-  /* === 对称二叉树 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 对称二叉树 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-tree-symmetric-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-tree-symmetric-view .ts-btn-problem {
@@ -120,168 +121,284 @@
   #algo-tree-symmetric-view .ts-input-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-tree-symmetric-view .ts-input-group label {
+    gap: 4px;
     font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
   }
 
   #algo-tree-symmetric-view .ts-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  #algo-tree-symmetric-view .ts-btn-primary {
-    padding: 4px 10px;
+  #algo-tree-symmetric-view .ts-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-tree-symmetric-view .ts-btn-primary:hover {
+  #algo-tree-symmetric-view .ts-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-tree-symmetric-view .ts-btn-secondary {
-    padding: 4px 8px;
+  #algo-tree-symmetric-view .ts-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-tree-symmetric-view .ts-btn-secondary:hover {
+  #algo-tree-symmetric-view .ts-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-tree-symmetric-view .ts-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-tree-symmetric-view .ts-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-tree-symmetric-view .ts-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-tree-symmetric-view .ts-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-tree-symmetric-view .ts-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-tree-symmetric-view .ts-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-tree-symmetric-view .ts-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-tree-symmetric-view .ts-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-tree-symmetric-view .ts-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 树结构 SVG 画布 */
-  #algo-tree-symmetric-view .ts-tree-svg-wrap {
+  #algo-tree-symmetric-view .ts-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-tree-symmetric-view .ts-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* SVG 树沙盘展示盒 */
+  #algo-tree-symmetric-view .ts-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  #algo-tree-symmetric-view .ts-tree-svg-container {
     width: 100%;
     height: 100%;
-    min-height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* Preset Chips */
+  /* 预设案例 Chips */
   #algo-tree-symmetric-view .ts-preset-chips {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-tree-symmetric-view .ts-chip {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10px;
     color: #475569;
     cursor: pointer;
     transition: all 0.15s;
   }
   #algo-tree-symmetric-view .ts-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
     background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-tree-symmetric-view .ts-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-symmetric-view .ts-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-tree-symmetric-view .ts-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-tree-symmetric-view .ts-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-symmetric-view .ts-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-tree-symmetric-view .ts-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-tree-symmetric-view .ts-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-tree-symmetric-view .ts-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-tree-symmetric-view .ts-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-tree-symmetric-view .ts-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -296,7 +413,7 @@
 
   #algo-tree-symmetric-view .ts-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -305,87 +422,290 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-tree-symmetric-view .ts-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-tree-symmetric-view .ts-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-tree-symmetric-view .ts-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-tree-symmetric-view .ts-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-tree-symmetric-view .ts-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-tree-symmetric-view .ts-playback-controls {
+  #algo-tree-symmetric-view .ts-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-tree-symmetric-view .ts-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-tree-symmetric-view .ts-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-tree-symmetric-view .ts-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-tree-symmetric-view .ts-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-tree-symmetric-view .ts-progress-wrap {
-    flex: 1;
+  #algo-tree-symmetric-view .ts-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-tree-symmetric-view .ts-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-symmetric-view .ts-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-tree-symmetric-view .ts-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-tree-symmetric-view .ts-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-tree-symmetric-view .ts-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-tree-symmetric-view .ts-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-tree-symmetric-view .ts-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-tree-symmetric-view .ts-step-badge {
-    font-size: 11px;
+  #algo-tree-symmetric-view .ts-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-tree-symmetric-view .ts-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-tree-symmetric-view .ts-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-tree-symmetric-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-tree-symmetric-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-tree-symmetric-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-tree-symmetric-view .ts-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-tree-symmetric-view .ts-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-symmetric-view .ts-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-tree-symmetric-view .ts-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-tree-symmetric-view .ts-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-tree-symmetric-view .ts-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-tree-symmetric-view .ts-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-tree-symmetric-view .ts-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-tree-symmetric-view .ts-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-tree-symmetric-view .ts-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-tree-symmetric-view .ts-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-tree-symmetric-view .ts-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -394,122 +714,211 @@
   <header class="ts-header">
     <div class="ts-header-left">
       <div class="ts-icon-btn">🪞</div>
-      <div class="ts-main-title">对称二叉树 · Symmetric Tree</div>
-      <button class="ts-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
-        <span>📖</span> 算法与解析
-      </button>
-      <div class="ts-badge-mode">内外侧双向镜像递归对比</div>
-      <div class="ts-badge-complexity">O(n) · O(h)</div>
+      <h1 class="ts-main-title">对称二叉树 (Symmetric Tree)</h1>
+      <button id="btn-open-problem-modal" class="ts-btn-problem">📋 题目</button>
+      <span class="ts-badge-mode">内外侧递归比对·轴对称校验</span>
+      <span class="ts-badge-complexity">O(n) · O(h)</span>
     </div>
+
     <div class="ts-header-right">
       <div class="ts-input-group">
-        <label for="input-tree">树数组:</label>
-        <input type="text" id="input-tree" value="1, 2, 2, 3, 4, 4, 3" style="width: 150px;">
+        <label for="input-tree">二叉树层序:</label>
+        <input type="text" id="input-tree" value="1, 2, 2, 3, 4, 4, 3" style="width: 140px;" placeholder="逗号分隔" />
       </div>
-      <button class="ts-btn-primary" id="btn-generate">
-        <span>▶</span> 运行
+      <button id="btn-generate" class="ts-btn-generate">
+        <span>▶ 运行</span>
       </button>
-      <button class="ts-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="ts-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="ts-workspace">
-    <!-- Card 1: 树结构 SVG 画布 -->
-    <section class="ts-card">
-      <div class="ts-card-header">
-        <div class="ts-card-title">
-          <span>📊</span> 镜像对称比对沙盘 (Mirror Symmetry Canvas)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="ts-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="ts-left-section">
+
+      <!-- 卡片 1: 树拓扑沙盘 -->
+      <div class="ts-card">
+        <div class="ts-card-header">
+          <div class="ts-card-title">
+            <span>📊 二叉树拓扑与轴对称比对沙盘 (Tree & Symmetry Sandbox)</span>
+          </div>
+          <div class="ts-legend-bar">
+            <div><span class="ts-legend-dot" style="background:#3b82f6;"></span> 左侧节点 left</div>
+            <div><span class="ts-legend-dot" style="background:#a855f7;"></span> 右侧节点 right</div>
+            <div><span class="ts-legend-dot" style="background:#ef4444;"></span> 不对称失配</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #3b82f6;">● 左镜像节点 left</span> · <span style="color: #a855f7;">● 右镜像节点 right</span> · <span style="color: #ef4444;">● 不匹配</span>
+
+        <!-- 树拓扑沙盘展示盒 -->
+        <div class="ts-sandbox-wrap">
+          <div id="tree-svg-container" class="ts-tree-svg-container"></div>
+        </div>
+
+        <!-- 预设案例 Chips -->
+        <div class="ts-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="ts-chip" data-tree="1, 2, 2, 3, 4, 4, 3">对称树 ([1,2,2,3,4,4,3])</button>
+          <button class="ts-chip" data-tree="1, 2, 2, null, 3, null, 3">不对称 ([1,2,2,null,3,null,3])</button>
+          <button class="ts-chip" data-tree="1, 2, 3">三节点不对称 ([1,2,3])</button>
         </div>
       </div>
-      <div class="ts-card-body" style="justify-content: center; align-items: center;">
-        <div class="ts-tree-svg-wrap" id="ts-tree-svg-container"></div>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="ts-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="ts-slider" />
+        <div class="ts-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="ts-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="ts-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="ts-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="ts-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="ts-chip" data-tree="1, 2, 2, 3, 4, 4, 3">对称树 [1, 2, 2, 3, 4, 4, 3]</button>
-        <button class="ts-chip" data-tree="1, 2, 2, null, 3, null, 3">非对称树 [1, 2, 2, null, 3, null, 3]</button>
-        <button class="ts-chip" data-tree="1, 2, 2, 2, null, 2">结构不对称案例</button>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="ts-card">
+        <div class="ts-card-header">
+          <div>
+            <div class="ts-card-title">🧭 镜像比对与判定监视器 (Symmetry Monitor)</div>
+            <div class="ts-card-desc">左侧节点、右侧节点、数值匹配与最终判定</div>
+          </div>
+          <span id="badge-verdict" class="ts-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">校验中...</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="ts-state-space-box">
+          <div class="ts-metrics-grid">
+            <div class="ts-metric-card">
+              <span class="ts-metric-label">左侧节点 left</span>
+              <span class="ts-metric-val" id="metric-left" style="color: #3b82f6;">2</span>
+            </div>
+            <div class="ts-metric-card">
+              <span class="ts-metric-label">右侧节点 right</span>
+              <span class="ts-metric-val" id="metric-right" style="color: #a855f7;">2</span>
+            </div>
+            <div class="ts-metric-card">
+              <span class="ts-metric-label">数值匹配</span>
+              <span class="ts-metric-val" id="metric-match" style="color: #10b981;">left == right</span>
+            </div>
+            <div class="ts-metric-card">
+              <span class="ts-metric-label">判定结果</span>
+              <span class="ts-metric-val" id="metric-verdict" style="color: #2563eb;">校验中...</span>
+            </div>
+          </div>
+
+          <div class="ts-formula-box" id="ts-formula-box">
+            <span>当前递归动作:</span> <strong id="formula-action" style="color: #2563eb;">check(root.left, root.right)</strong>
+          </div>
+
+          <div class="ts-live-alert">
+            <span>💡</span> <span id="ts-live-text">准备就绪，点击运行开始检查对称二叉树。</span>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="ts-card">
-      <div class="ts-card-header">
-        <div class="ts-card-title">
-          <span>🧭</span> 镜像指标监视器 (Symmetry Metrics Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="ts-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="ts-dark-terminal">
+        <div class="ts-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="ts-tab-group">
+            <button id="btn-tab-code" class="sq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sq-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="sq-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="ts-lang-group" id="code-lang-tabs">
+            <button class="ts-lang-btn active" data-lang="java">Java</button>
+            <button class="ts-lang-btn" data-lang="cpp">C++</button>
+            <button class="ts-lang-btn" data-lang="python">Python</button>
+            <button class="ts-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="ts-font-tools">
+            <div class="ts-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="ts-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="ts-window-dots">
+              <span class="ts-dot" style="background:#ef4444;"></span>
+              <span class="ts-dot" style="background:#eab308;"></span>
+              <span class="ts-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="ts-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="ts-card-body">
-        <div class="ts-metrics-grid">
-          <div class="ts-metric-card">
-            <span class="ts-metric-label">左侧节点 left</span>
-            <span class="ts-metric-val" id="metric-left" style="color: #3b82f6;">2</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="ts-log-card">
+        <div class="ts-log-header">
+          <div class="ts-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="ts-metric-card">
-            <span class="ts-metric-label">右侧节点 right</span>
-            <span class="ts-metric-val" id="metric-right" style="color: #a855f7;">2</span>
-          </div>
-          <div class="ts-metric-card">
-            <span class="ts-metric-label">数值匹配</span>
-            <span class="ts-metric-val" id="metric-match" style="color: #10b981;">left == right</span>
-          </div>
-          <div class="ts-metric-card">
-            <span class="ts-metric-label">判定结果</span>
-            <span class="ts-metric-val" id="metric-verdict" style="color: #2563eb;">校验中...</span>
-          </div>
+          <span id="log-count" class="ts-log-count">0 条记录</span>
         </div>
-        <div class="ts-formula-box" id="ts-formula-box">
-          <span>当前递归动作:</span> <strong id="formula-action" style="color: #2563eb;">check(root.left, root.right)</strong>
-        </div>
-        <div class="ts-live-alert" id="ts-live-alert">
-          <span>💡</span> <span id="ts-live-text">准备就绪，点击运行开始检查对称二叉树。</span>
+
+        <div id="log-container" class="ts-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="ts-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="ts-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="ts-card-header">
-        <div class="ts-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="ts-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="ts-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="ts-playback-bar">
-    <div class="ts-playback-controls">
-      <button class="ts-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="ts-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="ts-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="ts-modal-backdrop hidden">
+    <div class="ts-modal-content">
+      <div class="ts-modal-header">
+        <div class="ts-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="ts-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="ts-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="ts-progress-wrap">
-      <span class="ts-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>
