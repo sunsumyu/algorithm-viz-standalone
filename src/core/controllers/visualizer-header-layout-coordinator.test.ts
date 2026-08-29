@@ -172,4 +172,35 @@ describe('VisualizerHeaderLayoutCoordinator Deep Module Guard (Normalizer Patter
     const modified = visualizerHeaderLayoutCoordinator.normalizeHeaderControls(root as unknown as HTMLElement);
     expect(modified).toBe(false);
   });
+
+  it('should keep all multiple input groups (e.g., nums and target) together before generate and reset buttons', () => {
+    const root = new MockElement('div', 'algo-view', 'algo-two-sum-view');
+    const headerRight = new MockElement('div', 'ts-header-right');
+    root.appendChild(headerRight);
+
+    // 两个输入框：数组 + target
+    const inputGroup1 = new MockElement('div', 'ts-input-group');
+    inputGroup1.appendChild(new MockElement('input', 'input-nums'));
+
+    const inputGroup2 = new MockElement('div', 'ts-input-group');
+    inputGroup2.appendChild(new MockElement('input', 'input-target'));
+
+    const btnGen = new MockElement('button', 'ts-btn-generate', 'btn-generate', '▶ 运行');
+    const btnReset = new MockElement('button', 'ts-btn-reset', 'btn-reset', '重置');
+
+    // 放入混乱顺序，例如输入框被拆散
+    headerRight.appendChild(inputGroup1);
+    headerRight.appendChild(btnGen);
+    headerRight.appendChild(btnReset);
+    headerRight.appendChild(inputGroup2);
+
+    const modified = visualizerHeaderLayoutCoordinator.normalizeHeaderControls(root as unknown as HTMLElement);
+    expect(modified).toBe(true);
+
+    expect(headerRight.children.length).toBe(4);
+    expect(headerRight.children[0]).toBe(inputGroup1);
+    expect(headerRight.children[1]).toBe(inputGroup2);
+    expect(headerRight.children[2]).toBe(btnGen);
+    expect(headerRight.children[3]).toBe(btnReset);
+  });
 });

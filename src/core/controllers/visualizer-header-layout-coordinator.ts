@@ -88,7 +88,7 @@ export class VisualizerHeaderLayoutCoordinator {
     // 1. 识别并归类各个组件
     let presetContainer: HTMLElement | null = null;
     const loosePresetChips: HTMLElement[] = [];
-    let inputGroup: HTMLElement | null = null;
+    const inputGroups: HTMLElement[] = [];
     let generateBtn: HTMLElement | null = null;
     let resetBtn: HTMLElement | null = null;
     const otherElements: HTMLElement[] = [];
@@ -106,13 +106,9 @@ export class VisualizerHeaderLayoutCoordinator {
         continue;
       }
 
-      // 输入框组
+      // 输入框组 (支持多个输入框与参数项)
       if (this.isInputGroup(child)) {
-        if (!inputGroup) {
-          inputGroup = child;
-        } else {
-          otherElements.push(child);
-        }
+        inputGroups.push(child);
         continue;
       }
 
@@ -157,15 +153,15 @@ export class VisualizerHeaderLayoutCoordinator {
       }
     }
 
-    // 2. 如果没有预设用例，或者没有输入框，无需调整
-    if (!presetContainer && !inputGroup) {
+    // 2. 如果没有预设用例，且没有输入框，且没有运行/重置按钮，无需调整
+    if (!presetContainer && inputGroups.length === 0 && !generateBtn && !resetBtn) {
       return false;
     }
 
-    // 3. 构建理想排序数组
+    // 3. 构建理想排序数组：Presets ➔ ALL Inputs ➔ Generate/Run ➔ Reset ➔ Others
     const ordered: HTMLElement[] = [];
     if (presetContainer) ordered.push(presetContainer);
-    if (inputGroup) ordered.push(inputGroup);
+    ordered.push(...inputGroups);
     if (generateBtn) ordered.push(generateBtn);
     if (resetBtn) ordered.push(resetBtn);
     ordered.push(...otherElements);
@@ -255,15 +251,25 @@ export class VisualizerHeaderLayoutCoordinator {
    * 判断是否为输入框组
    */
   private isInputGroup(el: HTMLElement): boolean {
+    const tagName = (el.tagName || '').toUpperCase();
+    if (tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA') {
+      return true;
+    }
+
     const cls = el.className || '';
     if (typeof cls === 'string' && (
       cls.includes('input-group') ||
-      cls.includes('-input-group')
+      cls.includes('-input-group') ||
+      cls.includes('input-item') ||
+      cls.includes('form-group') ||
+      cls.includes('param-group') ||
+      cls.includes('control-group') ||
+      cls.includes('input-wrap')
     )) {
       return true;
     }
 
-    if (el.querySelector('input')) {
+    if (el.querySelector && (el.querySelector('input') || el.querySelector('select') || el.querySelector('textarea'))) {
       return true;
     }
 
