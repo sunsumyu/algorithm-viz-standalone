@@ -859,25 +859,31 @@ input[type="number"]::-webkit-outer-spin-button {
   text-align: center;
 }
 
-/* ===== 全局顶栏自适应与控件组响应式布局规范 ===== */
-[class*="-header"] {
+/* ===== 全局算法视图顶栏与控件组布局规范 ===== */
+[id^="algo-"] > header,
+.algo-view > header,
+header[class*="-header"] {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 12px !important;
   width: 100% !important;
-  min-width: 0 !important;
-  flex-wrap: nowrap !important;
   box-sizing: border-box !important;
+  flex-wrap: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
-/* 左侧标题与核心组件：强防压缩，永久显示 */
-[class*="-header-left"] {
+/* 左侧标题与核心信息区：紧凑靠左排布，严禁 space-between 扩散 */
+[id^="algo-"] > header > [class*="header-left"],
+header > [class*="header-left"],
+.header-left {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
   flex-shrink: 0 !important;
-  min-width: max-content !important;
+  width: auto !important;
+  min-width: 0 !important;
 }
 
 [class*="-icon-btn"] {
@@ -887,6 +893,7 @@ input[type="number"]::-webkit-outer-spin-button {
 [class*="-main-title"] {
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+  margin: 0 !important;
 }
 
 [class*="-btn-problem"] {
@@ -894,9 +901,8 @@ input[type="number"]::-webkit-outer-spin-button {
   white-space: nowrap !important;
 }
 
-/* 仅在非常紧凑时允许模式徽章进行微缩或隐藏 */
 [class*="-badge-mode"] {
-  max-width: 180px !important;
+  max-width: 240px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -908,37 +914,27 @@ input[type="number"]::-webkit-outer-spin-button {
   white-space: nowrap !important;
 }
 
-/* 右侧控制区：自适应占据剩余宽度，并在空间不足时平滑微缩或横向滚动 */
-[class*="-header-right"] {
+/* 右侧控制与操作区：靠右排列，元素间距适中且绝不重叠 */
+[id^="algo-"] > header > [class*="header-right"],
+header > [class*="header-right"],
+.header-right {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  gap: 6px !important;
-  flex-shrink: 1 !important;
-  min-width: 0 !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  width: auto !important;
   flex-wrap: nowrap !important;
 }
 
-/* 预设用例组 (支持自适应与优雅平滑横向滚动) */
+/* 预设用例组 */
 .header-preset-group,
 [class*="-preset-chips"],
 [class*="-preset-group"] {
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
-  flex-shrink: 1 !important;
-  min-width: 0 !important;
-  overflow-x: auto !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-.header-preset-group::-webkit-scrollbar,
-[class*="-preset-chips"]::-webkit-scrollbar,
-[class*="-preset-group"]::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  flex-shrink: 0 !important;
 }
 
 .header-preset-group button,
@@ -966,35 +962,36 @@ input[type="number"]::-webkit-outer-spin-button {
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.12);
 }
 
-/* 输入框组自适应约束 */
+/* 输入框组：自然宽度，防重叠 */
 [class*="-input-group"],
 .input-group {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  flex-shrink: 1 !important;
+  gap: 5px !important;
+  flex-shrink: 0 !important;
   white-space: nowrap !important;
-  min-width: 0 !important;
+  width: auto !important;
 }
 
 [class*="-input-str"],
 [class*="-input-group"] input[type="text"] {
-  max-width: 170px !important;
-  min-width: 70px !important;
-  flex-shrink: 1 !important;
+  width: 170px !important;
+  max-width: 200px !important;
+  min-width: 90px !important;
+  flex-shrink: 0 !important;
   box-sizing: border-box !important;
 }
 
 [class*="-input-num"],
 [class*="-input-group"] input[type="number"],
 [class*="-input-k"] {
-  max-width: 55px !important;
+  width: 48px !important;
   min-width: 36px !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
 }
 
-/* 按钮组强防收缩 */
+/* 按钮组强防收缩与防重叠 */
 [class*="-btn-generate"],
 [class*="-btn-reset"],
 #btn-generate,
@@ -1006,11 +1003,7 @@ input[type="number"]::-webkit-outer-spin-button {
 /* ===== 响应式多级断点适配 ===== */
 @media (max-width: 1300px) {
   [class*="-badge-mode"] {
-    max-width: 140px !important;
-  }
-  [class*="-input-str"],
-  [class*="-input-group"] input[type="text"] {
-    max-width: 140px !important;
+    max-width: 160px !important;
   }
 }
 
@@ -1021,24 +1014,8 @@ input[type="number"]::-webkit-outer-spin-button {
   [class*="-badge-complexity"] {
     display: none !important;
   }
-  [class*="-input-str"],
-  [class*="-input-group"] input[type="text"] {
-    max-width: 110px !important;
-  }
 }
 
-@media (max-width: 860px) {
-  [class*="-header"] {
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    padding: 6px 10px !important;
-  }
-  [class*="-header-right"] {
-    width: 100% !important;
-    justify-content: space-between !important;
-    overflow-x: auto !important;
-  }
-}
 
 
 
