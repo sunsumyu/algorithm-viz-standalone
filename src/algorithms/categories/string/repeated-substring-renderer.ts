@@ -1,364 +1,367 @@
 /**
- * 重复的子字符串可视化器
- * LeetCode 459
+ * 重复的子字符串可视化器 — 4-Card 标准现代架构
+ * LeetCode 459：KMP 前缀表周期性整除推导
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  REPEATED_SUBSTRING_PROBLEM_HTML,
+  REPEATED_SUBSTRING_ANALYSIS_HTML,
+  REPEATED_SUBSTRING_CODE_LANGUAGES,
+} from './repeated-substring-problem-content';
+import { computeNextArray } from './implement-str-str-renderer';
 import template from './repeated-substring.html?raw';
 
 export interface RPSStep {
   s: string;
+  next: number[];
+  n: number;
+  maxLPS: number;
   patternLen: number;
-  patternCount: number;
-  attemptIndex: number;
-  status: 'init' | 'try-length' | 'check-match' | 'match' | 'mismatch' | 'found' | 'not-found';
+  patternStr: string;
+  isRepeated: boolean;
+  tiles: string[];
+  phase: 'init' | 'compute-next' | 'check-period' | 'found' | 'not-found';
+  status: 'init' | 'compute-next' | 'check-period' | 'found' | 'not-found';
   message: string;
   log: string;
   codeLine: number | number[];
-  patternStr?: string;
-  chunkStart?: number;
-  chunkOk?: boolean;
 }
 
-export function buildRPSSteps(input: string): RPSStep[] {
+export function buildRPSSteps(s: string): RPSStep[] {
   const steps: RPSStep[] = [];
-  const n = input.length;
+  const n = s.length;
 
-  steps.push({
-    s: input,
-    patternLen: 0,
-    patternCount: 0,
-    attemptIndex: 0,
-    status: 'init',
-    message: `字符串 s="${input}"，长度 n=${n}。开始枚举候选子串长度。`,
-    log: `初始化，n=${n}。`,
-    codeLine: [1, 2],
-  });
-
-  let attemptIndex = 0;
-
-  for (let len = 1; len <= n / 2; len++) {
-    attemptIndex++;
-
+  if (n <= 1) {
     steps.push({
-      s: input,
-      patternLen: len,
-      patternCount: 0,
-      attemptIndex,
-      status: 'try-length',
-      message: `尝试候选长度 len=${len}。`,
-      log: `尝试 len=${len}。`,
-      codeLine: 3,
+      s,
+      next: n === 1 ? [0] : [],
+      n,
+      maxLPS: 0,
+      patternLen: n,
+      patternStr: s,
+      isRepeated: false,
+      tiles: [s],
+      phase: 'not-found',
+      status: 'not-found',
+      message: `字符串长度为 ${n} &le; 1，无法由子串重复构成，直接返回 false。`,
+      log: `长度不足 2 -> false`,
+      codeLine: 2,
     });
-
-    if (n % len !== 0) {
-      steps.push({
-        s: input,
-        patternLen: len,
-        patternCount: 0,
-        attemptIndex,
-        status: 'try-length',
-        message: `n=${n} 不能被 len=${len} 整除，跳过此候选长度。`,
-        log: `n % len !== 0，跳过 len=${len}。`,
-        codeLine: 4,
-      });
-      continue;
-    }
-
-    const patternCount = n / len;
-    const pattern = input.substring(0, len);
-
-    steps.push({
-      s: input,
-      patternLen: len,
-      patternCount,
-      attemptIndex,
-      status: 'try-length',
-      message: `n=${n} 可被 len=${len} 整除，提取模式串 pattern="${pattern}"。`,
-      log: `提取 pattern="${pattern}"。`,
-      codeLine: [5, 6],
-      patternStr: pattern,
-    });
-
-    let ok = true;
-    for (let i = len; i < n; i += len) {
-      const chunk = input.substring(i, i + len);
-      const matches = chunk === pattern;
-      const chunkIdx = (i / len) - 1; // 0-based chunk index after pattern
-
-      steps.push({
-        s: input,
-        patternLen: len,
-        patternCount,
-        attemptIndex,
-        status: 'check-match',
-        message: `比较分块[${i}..${i + len - 1}]="${chunk}" 与模式串 "${pattern}" → ${matches ? '匹配' : '不匹配'}。`,
-        log: `  分块[${i}..${i + len - 1}]="${chunk}" ${matches ? '==' : '!='} "${pattern}"。`,
-        codeLine: [8, 9, 10],
-        patternStr: pattern,
-        chunkStart: i,
-        chunkOk: matches,
-      });
-
-      if (!matches) {
-        steps.push({
-          s: input,
-          patternLen: len,
-          patternCount,
-          attemptIndex,
-          status: 'mismatch',
-          message: `分块不匹配，候选长度 len=${len} 失败，尝试下一个长度。`,
-          log: `  len=${len} 不成立。`,
-          codeLine: [10, 11],
-          patternStr: pattern,
-          chunkStart: i,
-          chunkOk: false,
-        });
-        ok = false;
-        break;
-      }
-
-      steps.push({
-        s: input,
-        patternLen: len,
-        patternCount,
-        attemptIndex,
-        status: 'match',
-        message: `分块[${i}..${i + len - 1}] 匹配成功。`,
-        log: `  分块 ${chunkIdx + 1} 匹配。`,
-        codeLine: [8, 9],
-        patternStr: pattern,
-        chunkStart: i,
-        chunkOk: true,
-      });
-    }
-
-    if (ok) {
-      steps.push({
-        s: input,
-        patternLen: len,
-        patternCount,
-        attemptIndex,
-        status: 'found',
-        message: `所有分块均匹配！字符串可由 "${pattern}" 重复 ${patternCount} 次构成。`,
-        log: `✓ 找到！pattern="${pattern}"，重复 ${patternCount} 次。`,
-        codeLine: 12,
-        patternStr: pattern,
-      });
-      return steps;
-    }
+    return steps;
   }
 
+  const next = computeNextArray(s);
+  const maxLPS = next[n - 1];
+  const patternLen = n - maxLPS;
+  const patternStr = s.substring(0, patternLen);
+  const isDivisible = maxLPS > 0 && n % patternLen === 0;
+
   steps.push({
-    s: input,
+    s,
+    next,
+    n,
+    maxLPS: 0,
     patternLen: 0,
-    patternCount: 0,
-    attemptIndex,
-    status: 'not-found',
-    message: `所有候选长度均不成立，字符串 "${input}" 不能由重复子串构成。`,
-    log: `✗ 未找到重复子串。`,
-    codeLine: 14,
+    patternStr: '',
+    isRepeated: false,
+    tiles: [],
+    phase: 'init',
+    status: 'init',
+    message: `初始化分析：字符串 "${s}" (长度 n = ${n})。构建 KMP 前缀表 next。`,
+    log: `初始化字符串 "${s}" (n=${n})`,
+    codeLine: [3, 4],
   });
+
+  steps.push({
+    s,
+    next,
+    n,
+    maxLPS,
+    patternLen: 0,
+    patternStr: '',
+    isRepeated: false,
+    tiles: [],
+    phase: 'compute-next',
+    status: 'compute-next',
+    message: `计算得到前缀表 next = [${next.join(', ')}]。末尾项 next[${n - 1}] = ${maxLPS}，表示最长相等前后缀长度为 ${maxLPS}。`,
+    log: `next[${n - 1}] = ${maxLPS} (最长相等前后缀)`,
+    codeLine: 6,
+  });
+
+  steps.push({
+    s,
+    next,
+    n,
+    maxLPS,
+    patternLen,
+    patternStr,
+    isRepeated: false,
+    tiles: [],
+    phase: 'check-period',
+    status: 'check-period',
+    message: `计算潜在最小重复子串周期：patternLen = n - next[n - 1] = ${n} - ${maxLPS} = ${patternLen}。候选子串为 "${patternStr}"。`,
+    log: `计算周期: patternLen = ${n} - ${maxLPS} = ${patternLen} ("${patternStr}")`,
+    codeLine: 8,
+  });
+
+  // 构造周期平铺
+  const repeatCount = Math.floor(n / patternLen);
+  const tiles: string[] = [];
+  for (let k = 0; k < repeatCount; k++) {
+    tiles.push(patternStr);
+  }
+
+  if (isDivisible) {
+    steps.push({
+      s,
+      next,
+      n,
+      maxLPS,
+      patternLen,
+      patternStr,
+      isRepeated: true,
+      tiles,
+      phase: 'found',
+      status: 'found',
+      message: `🎉 判定成功！maxLPS(${maxLPS}) > 0 且 ${n} % ${patternLen} == 0 (整除)。字符串可由子串 "${patternStr}" 重复 ${repeatCount} 次构成，返回 true。`,
+      log: `✓ 成功: "${patternStr}" 重复 ${repeatCount} 次 -> true`,
+      codeLine: 9,
+    });
+  } else {
+    steps.push({
+      s,
+      next,
+      n,
+      maxLPS,
+      patternLen,
+      patternStr,
+      isRepeated: false,
+      tiles: [],
+      phase: 'not-found',
+      status: 'not-found',
+      message: `⚠️ 判定失败！maxLPS = ${maxLPS}，${n} % ${patternLen} = ${n % patternLen} != 0 (不能整除)。无法由重复子串构成，返回 false。`,
+      log: `✗ 不能整除 (${n} % ${patternLen} != 0) -> false`,
+      codeLine: 9,
+    });
+  }
 
   return steps;
 }
 
-const CHUNK_COLORS = ['match-0', 'match-1', 'match-2', 'match-3'];
-
 export class RepeatedSubstringVisualizer extends StepVisualizer<RPSStep> {
-  protected codeLines = [
-    'public boolean repeatedSubstringPattern(String s) {',
-    '    int n = s.length();',
-    '    for (int len = 1; len <= n / 2; len++) {',
-    '        if (n % len != 0) continue;',
-    '        String pattern = s.substring(0, len);',
-    '        boolean ok = true;',
-    '        for (int i = len; i < n; i += len) {',
-    '            if (!s.substring(i, i + len).equals(pattern)) {',
-    '                ok = false; break;',
-    '            }',
-    '        }',
-    '        if (ok) return true;',
-    '    }',
-    '    return false;',
-    '}',
-  ];
-  protected codePanelTitle = '重复的子字符串代码 (Java)';
+  protected codeLanguages = REPEATED_SUBSTRING_CODE_LANGUAGES;
+  protected codeLines = REPEATED_SUBSTRING_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '重复的子字符串 代码调试';
 
-  private inputEl: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private trackEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private patLenEl: HTMLElement | null = null;
-  private patCountEl: HTMLElement | null = null;
-  private attemptEl: HTMLElement | null = null;
-  private foundEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private trackRowEl: HTMLElement | null = null;
+  private tileRowEl: HTMLElement | null = null;
+  private metricNEl: HTMLElement | null = null;
+  private metricLpsEl: HTMLElement | null = null;
+  private metricPeriodEl: HTMLElement | null = null;
+  private metricResEl: HTMLElement | null = null;
+  private formulaDivEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.inputEl = this.root.querySelector('#rps-input');
-    this.btnStart = this.root.querySelector('#rps-start');
-    this.exampleButtons = this.root.querySelectorAll('.rps-example-btn');
-    this.trackEl = this.root.querySelector('#rps-track');
-    this.logEl = this.root.querySelector('#rps-log');
-    this.patLenEl = this.root.querySelector('#rps-pat-len');
-    this.patCountEl = this.root.querySelector('#rps-pat-count');
-    this.attemptEl = this.root.querySelector('#rps-attempt');
-    this.foundEl = this.root.querySelector('#rps-found');
-    this.resultEl = this.root.querySelector('#rps-result');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        const s = btn.dataset.s || 'abab';
-        if (this.inputEl) this.inputEl.value = s;
+
+    this.trackRowEl = this.root.querySelector('#rps-track-row');
+    this.tileRowEl = this.root.querySelector('#rps-tile-row');
+    this.metricNEl = this.root.querySelector('#metric-n');
+    this.metricLpsEl = this.root.querySelector('#metric-lps');
+    this.metricPeriodEl = this.root.querySelector('#metric-period');
+    this.metricResEl = this.root.querySelector('#metric-res');
+    this.formulaDivEl = this.root.querySelector('#formula-div');
+    this.liveTextEl = this.root.querySelector('#rps-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.rps-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
+        if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;
         this.start();
-      };
+      });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: REPEATED_SUBSTRING_PROBLEM_HTML,
+      analysisHtml: REPEATED_SUBSTRING_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): RPSStep[] {
-    let s = this.inputEl?.value || 'abab';
-    if (s.length === 0) s = 'abab';
-    if (this.inputEl) this.inputEl.value = s;
-    return buildRPSSteps(s);
+    const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
+    const str = sInput?.value || 'abab';
+    return buildRPSSteps(str);
   }
 
   protected renderStep(step: RPSStep): void {
-    if (this.patLenEl) this.patLenEl.textContent = step.patternLen > 0 ? String(step.patternLen) : '-';
-    if (this.patCountEl) this.patCountEl.textContent = step.patternCount > 0 ? String(step.patternCount) : '-';
-    if (this.attemptEl) this.attemptEl.textContent = step.attemptIndex > 0 ? String(step.attemptIndex) : '-';
-    if (this.foundEl) {
-      if (step.status === 'found') this.foundEl.textContent = '✓ 是';
-      else if (step.status === 'not-found') this.foundEl.textContent = '✗ 否';
-      else this.foundEl.textContent = '...';
+    const { s, next, n, maxLPS, patternLen, patternStr, isRepeated, tiles, phase, message } = step;
+
+    // 1. 渲染字符与 Next 表网格
+    if (this.trackRowEl) {
+      this.trackRowEl.innerHTML = s
+        .split('')
+        .map((ch, idx) => {
+          const inPattern = patternLen > 0 && idx < patternLen && (phase === 'check-period' || phase === 'found');
+          const isLastNode = idx === n - 1;
+
+          let cellClass = 'rps-cell-box';
+          if (inPattern) cellClass += ' in-pattern';
+          if (isLastNode) cellClass += ' is-last-node';
+
+          const nextVal = next[idx] !== undefined ? next[idx] : '-';
+
+          return `
+            <div class="${cellClass}">
+              <span class="val">${ch}</span>
+              <span class="next-val">next:${nextVal}</span>
+            </div>
+          `;
+        })
+        .join('');
     }
 
-    if (this.resultEl) {
-      this.resultEl.className = 'rps-result';
-      this.resultEl.textContent = '';
-      if (step.status === 'found') {
-        this.resultEl.classList.add('found');
-        this.resultEl.textContent = `✓ 字符串可由 "${step.patternStr}" 重复 ${step.patternCount} 次构成`;
-      } else if (step.status === 'not-found') {
-        this.resultEl.classList.add('not-found');
-        this.resultEl.textContent = `✗ 字符串不能由重复子串构成`;
+    // 2. 渲染周期拆解平铺
+    if (this.tileRowEl) {
+      if (tiles.length === 0) {
+        this.tileRowEl.innerHTML =
+          '<span style="color:#94a3b8; font-size:11px; font-style:italic;">(等待周期整除分析...)</span>';
+      } else {
+        this.tileRowEl.innerHTML = tiles
+          .map(
+            (t, tIdx) => `
+          <div class="rps-tile-unit">
+            <span>[${tIdx + 1}] "${t}"</span>
+          </div>
+        `
+          )
+          .join('');
       }
     }
 
-    if (this.trackEl) {
-      this.trackEl.innerHTML = '';
-      const chars = [...step.s];
-
-      // Row 1: Original string
-      const row1 = document.createElement('div');
-      row1.className = 'rps-row';
-      const label1 = document.createElement('span');
-      label1.className = 'rps-row-label';
-      label1.textContent = '原字符串';
-      row1.appendChild(label1);
-      const cells1 = document.createElement('div');
-      cells1.className = 'rps-cells';
-      chars.forEach((ch, idx) => {
-        const cell = document.createElement('div');
-        cell.className = 'rps-cell';
-        cell.innerHTML = `<span class="idx">${idx}</span><span class="val">${ch}</span>`;
-        cells1.appendChild(cell);
-      });
-      row1.appendChild(cells1);
-      this.trackEl.appendChild(row1);
-
-      // Row 2: Pattern / chunk visualization (only when we have a pattern)
-      if (step.patternLen > 0 && step.patternStr) {
-        const row2 = document.createElement('div');
-        row2.className = 'rps-row';
-        const label2 = document.createElement('span');
-        label2.className = 'rps-row-label';
-        const isSkip = step.status === 'try-length' && step.patternCount === 0;
-        label2.textContent = isSkip ? '跳过' : `len=${step.patternLen}`;
-        row2.appendChild(label2);
-        const cells2 = document.createElement('div');
-        cells2.className = 'rps-cells';
-
-        const len = step.patternLen;
-        const n = step.s.length;
-        const currentChunkStart = step.chunkStart;
-
-        for (let i = 0; i < n; i += len) {
-          const chunkEnd = Math.min(i + len, n);
-          for (let j = i; j < chunkEnd; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'rps-cell';
-
-            if (isSkip) {
-              cell.classList.add('skipped');
-            } else if (i === 0) {
-              // Pattern section
-              cell.classList.add('pattern');
-            } else if (currentChunkStart != null && i === currentChunkStart) {
-              // Current chunk being compared
-              cell.classList.add(step.chunkOk ? 'match-ok' : 'match-bad');
-            } else {
-              // Other chunks - use alternating colors
-              const chunkIdx = i / len;
-              const colorIdx = (chunkIdx - 1) % CHUNK_COLORS.length;
-              cell.classList.add(CHUNK_COLORS[colorIdx]);
-            }
-
-            cell.innerHTML = `<span class="idx">${j}</span><span class="val">${chars[j]}</span>`;
-            cells2.appendChild(cell);
-          }
-        }
-        row2.appendChild(cells2);
-        this.trackEl.appendChild(row2);
-      }
-
-      // Row 3: Show all repetitions when found
-      if (step.status === 'found' && step.patternStr) {
-        const row3 = document.createElement('div');
-        row3.className = 'rps-row';
-        const label3 = document.createElement('span');
-        label3.className = 'rps-row-label';
-        label3.textContent = '重复';
-        row3.appendChild(label3);
-        const cells3 = document.createElement('div');
-        cells3.className = 'rps-cells';
-
-        const len = step.patternLen;
-        const n = step.s.length;
-
-        for (let i = 0; i < n; i += len) {
-          const chunkEnd = Math.min(i + len, n);
-          for (let j = i; j < chunkEnd; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'rps-cell';
-            const chunkIdx = i / len;
-            const colorIdx = chunkIdx % CHUNK_COLORS.length;
-            cell.classList.add(CHUNK_COLORS[colorIdx]);
-            cell.innerHTML = `<span class="idx">${j}</span><span class="val">${chars[j]}</span>`;
-            cells3.appendChild(cell);
-          }
-        }
-        row3.appendChild(cells3);
-        this.trackEl.appendChild(row3);
+    // 3. 更新状态监视器
+    if (this.metricNEl) this.metricNEl.textContent = String(n);
+    if (this.metricLpsEl) this.metricLpsEl.textContent = phase !== 'init' ? String(maxLPS) : '—';
+    if (this.metricPeriodEl) {
+      this.metricPeriodEl.textContent = patternLen > 0 ? `${patternLen} ("${patternStr}")` : '—';
+    }
+    if (this.metricResEl) {
+      if (phase === 'found') {
+        this.metricResEl.textContent = '✓ true';
+        this.metricResEl.style.color = '#10b981';
+      } else if (phase === 'not-found') {
+        this.metricResEl.textContent = '✗ false';
+        this.metricResEl.style.color = '#ef4444';
+      } else {
+        this.metricResEl.textContent = '分析中...';
+        this.metricResEl.style.color = '#3b82f6';
       }
     }
 
-    this.renderLogLine(step);
+    if (this.formulaDivEl) {
+      if (patternLen > 0) {
+        this.formulaDivEl.textContent = `${n} % (${n} - ${maxLPS}) = ${n} % ${patternLen} = ${n % patternLen} ${
+          isRepeated ? '== 0 (整除)' : '!= 0 (不整除)'
+        }`;
+      } else {
+        this.formulaDivEl.textContent = 'n % (n - next[n-1]) == 0';
+      }
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        phase === 'found' ? '#f0fdf4' : phase === 'not-found' ? '#fef2f2' : '#eff6ff';
+      logEntry.style.color =
+        phase === 'found' ? '#15803d' : phase === 'not-found' ? '#b91c1c' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (phase === 'found' ? '#bbf7d0' : phase === 'not-found' ? '#fecaca' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: RPSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -369,11 +372,9 @@ registerAlgorithm({
   category: 'string',
   description: '判断字符串是否可由重复子串构成',
   icon: '🔁',
-  template,
-  Visualizer: RepeatedSubstringVisualizer,
   difficulty: 2,
   levelOrder: 7,
-  learningGoal: '掌握枚举因子长度 + 分块匹配的方法',
+  learningGoal: '掌握用 KMP 前缀表判断重复子串的数学原理',
+  template,
+  Visualizer: RepeatedSubstringVisualizer,
 });
-
-export {};

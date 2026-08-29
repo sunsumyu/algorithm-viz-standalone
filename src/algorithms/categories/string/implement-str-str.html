@@ -1,511 +1,636 @@
 <style>
+  /* === 实现 strStr() KMP (LeetCode 28) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-str-str-view {
     width: 100%;
     height: 100%;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(99, 102, 241, 0.18), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(59, 130, 246, 0.18), transparent 55%),
-      linear-gradient(135deg, #181229, #1a162c, #11131d);
-    color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-str-str-view .ss-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+
+  #algo-str-str-view * {
+    box-sizing: border-box;
   }
-  #algo-str-str-view .ss-header {
-    padding: 14px 18px;
+
+  /* 1. 顶栏 Header */
+  #algo-str-str-view .kmp-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 18px;
+    gap: 10px;
     flex-shrink: 0;
+    width: 100%;
   }
-  #algo-str-str-view .ss-header-left {
+
+  #algo-str-str-view .kmp-header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-str-str-view .ss-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #6366f1, #3b82f6);
+
+  #algo-str-str-view .kmp-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-str-str-view h2 {
-    margin: 0 0 5px;
-    font-size: 22px;
+
+  #algo-str-str-view .kmp-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #6366f1, #3b82f6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-str-str-view .ss-desc {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  #algo-str-str-view .ss-tip {
-    max-width: 420px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.24);
-    color: #c7d2fe;
-    font-size: 13px;
-    line-height: 1.55;
-  }
-  #algo-str-str-view .ss-tip strong { color: #6366f1; }
-  #algo-str-str-view .ss-main {
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 14px;
-    padding: 14px;
-    overflow: hidden;
-  }
-  #algo-str-str-view .ss-left {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-  /* Glass cards */
-  #algo-str-str-view .glass-card,
-  #algo-str-str-view .ss-card {
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    overflow: hidden;
-  }
-  #algo-str-str-view .ss-card-title {
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex;
-    justify-content: space-between;
-    color: #e2e8f0;
+
+  #algo-str-str-view .kmp-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
     font-weight: 700;
-    font-size: 14px;
-  }
-  #algo-str-str-view .ss-input-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 14px;
-  }
-  #algo-str-str-view input {
-    width: 100%;
-    padding: 9px 11px;
-    border-radius: 10px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
-    color: #e2e8f0;
-    font-family: Consolas, monospace;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  #algo-str-str-view input:focus {
-    border-color: rgba(99, 102, 241, 0.5);
-  }
-  #algo-str-str-view button {
-    padding: 8px 14px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    border-radius: 10px;
-    background: rgba(100, 116, 139, 0.2);
-    color: #e2e8f0;
     cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-str-str-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #6366f1, #3b82f6);
-    border-color: transparent;
-    color: #1e1e2e;
+  #algo-str-str-view .kmp-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-str-str-view button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+
+  #algo-str-str-view .kmp-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-str-str-view .ss-examples {
-    padding: 0 14px 14px;
+
+  #algo-str-str-view .kmp-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-str-str-view .kmp-header-right {
     display: flex;
+    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-shrink: 0;
   }
-  #algo-str-str-view .ss-example-btn {
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 12px;
+
+  #algo-str-str-view .kmp-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
   }
-  /* Stat panel */
-  #algo-str-str-view .ss-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+
+  #algo-str-str-view .kmp-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
   }
-  #algo-str-str-view .ss-stat {
-    position: relative;
-    overflow: hidden;
-    padding: 12px 12px 12px 18px;
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  #algo-str-str-view .ss-stat::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #6366f1, #3b82f6);
-    border-radius: 2px 0 0 2px;
-  }
-  #algo-str-str-view .ss-stat label {
-    display: block;
-    margin-bottom: 6px;
-    color: #94a3b8;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+
+  #algo-str-str-view .kmp-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
     font-weight: 600;
   }
-  #algo-str-str-view .ss-stat span {
-    color: #6366f1;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 20px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
+
+  #algo-str-str-view .kmp-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-str-str-view .ss-visual {
-    flex: 1;
-    min-height: 230px;
-    display: flex;
-    flex-direction: column;
+  #algo-str-str-view .kmp-btn-primary:hover {
+    background: #1d4ed8;
   }
-  #algo-str-str-view .ss-track {
+
+  #algo-str-str-view .kmp-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-str-str-view .kmp-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-str-str-view .kmp-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
     flex: 1;
     min-height: 0;
-    padding: 28px 18px 18px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-str-str-view .kmp-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-str-str-view .kmp-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-str-str-view .kmp-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-str-str-view .kmp-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
     overflow: auto;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    position: relative;
   }
-  #algo-str-str-view .ss-row {
+
+  /* Card 1: 主串/模式串滑动对齐与 Next 表沙盘 */
+  #algo-str-str-view .kmp-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 6px;
+    width: 100%;
+  }
+
+  #algo-str-str-view .kmp-rails-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 6px;
+  }
+
+  #algo-str-str-view .kmp-rail-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
+    gap: 4px;
   }
-  #algo-str-str-view .ss-row-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #94a3b8;
-    min-width: 70px;
+
+  #algo-str-str-view .kmp-rail-label {
+    width: 70px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    flex-shrink: 0;
   }
-  #algo-str-str-view .ss-cell {
-    width: 50px;
-    height: 56px;
-    border-radius: 12px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
+
+  #algo-str-str-view .kmp-cell-box {
+    width: 32px;
+    height: 38px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    transition: all 0.25s ease;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    transform-origin: center bottom;
+    flex-shrink: 0;
   }
-  #algo-str-str-view .ss-cell .idx {
-    color: #64748b;
-    font-size: 11px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  }
-  #algo-str-str-view .ss-cell .val {
-    color: #e2e8f0;
+
+  #algo-str-str-view .kmp-cell-box .val {
+    font-size: 13px;
     font-weight: 800;
-    font-size: 20px;
+    color: #0f172a;
   }
-  #algo-str-str-view .ss-cell.matched {
-    background: rgba(34, 197, 94, 0.14);
-    border-color: #22c55e;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
-  }
-  #algo-str-str-view .ss-cell.current {
-    border-color: #f97316;
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
-    animation: pulseCurrent 1.2s infinite;
-  }
-  #algo-str-str-view .ss-cell.mismatch {
-    animation: mismatchShake 0.4s ease;
-    border-color: #ef4444;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
-  }
-  #algo-str-str-view .ss-cell.found {
-    background: rgba(34, 197, 94, 0.2);
-    border-color: #22c55e;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
-  }
-  #algo-str-str-view .ss-ptr {
-    position: absolute;
-    top: -18px;
-    font-size: 11px;
+
+  #algo-str-str-view .kmp-cell-box .idx {
+    font-size: 8px;
     font-weight: 700;
-  }
-  #algo-str-str-view .ss-ptr.ptr-i { color: #6366f1; }
-  #algo-str-str-view .ss-ptr.ptr-j { color: #3b82f6; }
-  #algo-str-str-view .ss-next-table {
-    padding: 10px 14px;
-    background: rgba(17, 17, 27, 0.5);
-    border-radius: 10px;
-    margin: 0 18px 18px;
-  }
-  #algo-str-str-view .ss-next-table-title {
-    font-size: 12px;
     color: #94a3b8;
-    margin-bottom: 8px;
-    font-weight: 600;
   }
-  #algo-str-str-view .ss-next-grid {
+
+  #algo-str-str-view .kmp-cell-box.is-i-ptr {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  }
+
+  #algo-str-str-view .kmp-cell-box.is-j-ptr {
+    border-color: #a855f7;
+    background: #faf5ff;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+  }
+
+  #algo-str-str-view .kmp-cell-box.is-match {
+    border-color: #10b981;
+    background: #f0fdf4;
+    color: #15803d;
+  }
+
+  #algo-str-str-view .kmp-cell-box.is-mismatch {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  /* Next 表展示 */
+  #algo-str-str-view .kmp-next-table {
     display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  #algo-str-str-view .kmp-next-cell {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Preset Chips */
+  #algo-str-str-view .kmp-preset-chips {
+    display: flex;
+    align-items: center;
     gap: 6px;
     flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
   }
-  #algo-str-str-view .ss-next-item {
+
+  #algo-str-str-view .kmp-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-str-str-view .kmp-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-str-str-view .kmp-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-str-str-view .kmp-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 2px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    min-width: 36px;
   }
-  #algo-str-str-view .ss-next-item .next-idx {
+
+  #algo-str-str-view .kmp-metric-label {
     font-size: 10px;
-    color: #64748b;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  }
-  #algo-str-str-view .ss-next-item .next-val {
-    font-size: 14px;
-    color: #6366f1;
     font-weight: 700;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    color: #64748b;
+    text-transform: uppercase;
   }
-  #algo-str-str-view .ss-message {
-    margin: 0 16px 16px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(99, 102, 241, 0.22);
-    background: rgba(99, 102, 241, 0.08);
-    line-height: 1.5;
+
+  #algo-str-str-view .kmp-metric-val {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 14px;
-    color: #c7d2fe;
+    font-weight: 800;
+    color: #0f172a;
   }
-  #algo-str-str-view .ss-log {
-    min-height: 80px;
-    max-height: 110px;
-    padding: 10px 14px;
-    overflow: auto;
-    background: rgba(17, 17, 27, 0.7);
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  #algo-str-str-view .kmp-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    line-height: 1.7;
-    color: #94a3b8;
   }
-  #algo-str-str-view .ss-log .active {
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.05);
-    font-weight: 600;
-  }
-  #algo-str-str-view .ss-code {
-    min-height: 0;
+
+  #algo-str-str-view .kmp-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
     display: flex;
-    background: rgba(17, 17, 27, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    backdrop-filter: blur(18px) saturate(160%);
+    align-items: flex-start;
+    gap: 6px;
   }
-  #algo-str-str-view .ss-code [data-code-panel] {
-    flex: 1;
-    min-width: 0;
+
+  /* 底部播放进度条控制条 */
+  #algo-str-str-view .kmp-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
-  /* Unified controls bar */
-  #algo-str-str-view .ss-controls {
-    padding: 12px 16px;
-    background: rgba(24, 24, 37, 0.9);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+  #algo-str-str-view .kmp-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-str-str-view .kmp-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  #algo-str-str-view .ss-controls button {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 11px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
   }
-  #algo-str-str-view .ss-controls #step-play {
-    background: linear-gradient(135deg, #6366f1, #3b82f6);
-    border: none;
-    color: #1e1e2e;
+  #algo-str-str-view .kmp-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
-  #algo-str-str-view .ss-controls button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+
+  #algo-str-str-view .kmp-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #algo-str-str-view .ss-controls button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
+
+  #algo-str-str-view .kmp-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
   }
-  #algo-str-str-view .ss-counter {
-    color: #94a3b8;
-    font-size: 14px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  }
-  #algo-str-str-view .control-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  #algo-str-str-view #step-speed {
-    accent-color: #6366f1;
-    width: 100px;
-  }
-  /* Keyframe animations */
-  @keyframes pulseCurrent {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); }
-  }
-  @keyframes mismatchShake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px); }
-    40% { transform: translateX(4px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
-  @media (max-width: 1100px) {
-    #algo-str-str-view .ss-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-str-str-view .ss-code { min-height: 360px; }
+
+  #algo-str-str-view .kmp-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="ss-page">
-  <div class="ss-header">
-    <div class="ss-header-left">
-      <div class="ss-icon-badge">🔍</div>
-      <div>
-        <h2>实现strStr()（KMP算法）</h2>
-        <p class="ss-desc">LeetCode 28 · 字符串匹配的高效算法</p>
+<div id="algo-str-str-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="kmp-header">
+    <div class="kmp-header-left">
+      <div class="kmp-icon-btn">🔍</div>
+      <div class="kmp-main-title">实现 strStr() · KMP 算法</div>
+      <button class="kmp-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="kmp-badge-mode">KMP 前缀表模式匹配</div>
+      <div class="kmp-badge-complexity">O(m+n) · O(m)</div>
+    </div>
+    <div class="kmp-header-right">
+      <div class="kmp-input-group">
+        <label for="input-haystack">haystack:</label>
+        <input type="text" id="input-haystack" value="sadbutsad" style="width: 80px;">
       </div>
-    </div>
-    <div class="ss-tip"><strong>KMP 算法：</strong>通过预处理模式串构建 next 数组，在失配时利用已匹配信息跳过不必要的比较，时间复杂度 O(n+m)。</div>
-  </div>
-  <div class="ss-main">
-    <div class="ss-left">
-      <section class="ss-card">
-        <div class="ss-card-title">输入字符串</div>
-        <div class="ss-input-row">
-          <input id="ss-haystack" placeholder="haystack" value="hello">
-          <input id="ss-needle" placeholder="needle" value="ll">
-          <button id="ss-start">开始匹配</button>
-        </div>
-        <div class="ss-examples">
-          <button class="ss-example-btn" data-h="hello" data-n="ll">hello / ll → 2</button>
-          <button class="ss-example-btn" data-h="aaaaa" data-n="bba">aaaaa / bba → -1</button>
-          <button class="ss-example-btn" data-h="abcabdabc" data-n="abc">abcabdabc / abc → 0</button>
-        </div>
-      </section>
-      <div class="ss-stats">
-        <div class="ss-stat"><label>haystack 指针 i</label><span id="ss-i">0</span></div>
-        <div class="ss-stat"><label>needle 指针 j</label><span id="ss-j">0</span></div>
-        <div class="ss-stat"><label>当前匹配长度</label><span id="ss-match-len">0</span></div>
-        <div class="ss-stat"><label>找到位置</label><span id="ss-found">-1</span></div>
+      <div class="kmp-input-group">
+        <label for="input-needle">needle:</label>
+        <input type="text" id="input-needle" value="sad" style="width: 50px;">
       </div>
-      <section class="ss-card ss-visual">
-        <div class="ss-card-title">字符串匹配过程</div>
-        <div class="ss-track" id="ss-track"></div>
-        <div class="ss-next-table">
-          <div class="ss-next-table-title">Next 数组（失败函数）</div>
-          <div class="ss-next-grid" id="ss-next-grid"></div>
+      <button class="kmp-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="kmp-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="kmp-workspace">
+    <!-- Card 1: 滑动轨与 Next 数组沙盘 -->
+    <section class="kmp-card">
+      <div class="kmp-card-header">
+        <div class="kmp-card-title">
+          <span>📊</span> 主串与模式串对齐滑动沙盘 (Haystack & Needle Rail)
         </div>
-        <div class="ss-message" id="step-message">点击开始匹配</div>
-      </section>
-      <section class="ss-card">
-        <div class="ss-card-title">执行日志</div>
-        <div class="ss-log" id="ss-log"></div>
-      </section>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● 主串 i</span> · <span style="color: #a855f7;">● 模式串 j</span> · <span style="color: #10b981;">● 匹配</span>
+        </div>
+      </div>
+      <div class="kmp-card-body" style="justify-content: center;">
+        <div class="kmp-sandbox-container">
+          <!-- 上部：主串与模式串双轨 -->
+          <div class="kmp-rails-container">
+            <div class="kmp-rail-row">
+              <span class="kmp-rail-label">haystack:</span>
+              <div id="kmp-haystack-cells" style="display: flex; gap: 4px;"></div>
+            </div>
+            <div class="kmp-rail-row">
+              <span class="kmp-rail-label">needle:</span>
+              <div id="kmp-needle-cells" style="display: flex; gap: 4px;"></div>
+            </div>
+          </div>
+          <!-- 下部：Next 前缀表 -->
+          <div style="font-size: 11px; font-weight: 700; color: #64748b;">
+            模式串前缀表 next[0..m-1]
+          </div>
+          <div class="kmp-next-table" id="kmp-next-table"></div>
+        </div>
+      </div>
+      <div class="kmp-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="kmp-chip" data-h="sadbutsad" data-n="sad">示例 1 ("sadbutsad", "sad")</button>
+        <button class="kmp-chip" data-h="leetcode" data-n="leeto">示例 2 ("leetcode", "leeto" -> -1)</button>
+        <button class="kmp-chip" data-h="aabaabaafa" data-n="aabaaf">经典 KMP ("aabaabaafa", "aabaaf")</button>
+        <button class="kmp-chip" data-h="hello" data-n="ll">简短匹配 ("hello", "ll")</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="kmp-card">
+      <div class="kmp-card-header">
+        <div class="kmp-card-title">
+          <span>🧭</span> 指针与匹配监视器 (Match Monitor)
+        </div>
+      </div>
+      <div class="kmp-card-body">
+        <div class="kmp-metrics-grid">
+          <div class="kmp-metric-card">
+            <span class="kmp-metric-label">主串指针 i</span>
+            <span class="kmp-metric-val" id="metric-i" style="color: #3b82f6;">0</span>
+          </div>
+          <div class="kmp-metric-card">
+            <span class="kmp-metric-label">模式串指针 j</span>
+            <span class="kmp-metric-val" id="metric-j" style="color: #a855f7;">0</span>
+          </div>
+          <div class="kmp-metric-card">
+            <span class="kmp-metric-label">匹配状态</span>
+            <span class="kmp-metric-val" id="metric-match-state" style="color: #10b981;">匹配中</span>
+          </div>
+          <div class="kmp-metric-card">
+            <span class="kmp-metric-label">最终下标</span>
+            <span class="kmp-metric-val" id="metric-res" style="color: #0f172a;">待判定</span>
+          </div>
+        </div>
+        <div class="kmp-formula-box" id="kmp-formula-box">
+          <span>回退公式:</span> <strong id="formula-kmp" style="color: #2563eb;">j = next[j - 1]</strong>
+        </div>
+        <div class="kmp-live-alert" id="kmp-live-alert">
+          <span>💡</span> <span id="kmp-live-text">准备就绪，点击运行开始 KMP 字符串匹配。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="kmp-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="kmp-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="kmp-card-header">
+        <div class="kmp-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="kmp-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="kmp-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="kmp-playback-bar">
+    <div class="kmp-playback-controls">
+      <button class="kmp-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="kmp-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="kmp-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="ss-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="ss-controls">
-    <button id="step-reset">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-        <path d="M3 3v5h5" />
-      </svg>
-      重置
-    </button>
-    <button id="step-prev">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-      上一步
-    </button>
-    <button id="step-play">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M5 3l14 9-14 9V3z" />
-      </svg>
-      播放
-    </button>
-    <button id="step-next">
-      下一步
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m9 18 6-6-6-6" />
-      </svg>
-    </button>
-    <div class="control-divider"></div>
-    <span id="step-counter" class="ss-counter">步骤: 0 / 0</span>
-    <div style="display:flex; align-items:center; gap:0.5rem;">
-      <span class="ss-counter">速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" class="ss-counter">0.9s</span>
+    <div class="kmp-progress-wrap">
+      <span class="kmp-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

@@ -1,462 +1,609 @@
 <style>
+  /* === 反转字符串 (LeetCode 344) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-reverse-string-view {
     width: 100%;
     height: 100%;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(251, 191, 36, 0.18), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(251, 146, 60, 0.18), transparent 55%),
-      linear-gradient(135deg, #181229, #1a162c, #11131d);
-    color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-reverse-string-view .rs-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+
+  #algo-reverse-string-view * {
+    box-sizing: border-box;
   }
+
+  /* 1. 顶栏 Header */
   #algo-reverse-string-view .rs-header {
-    padding: 14px 18px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 18px;
+    justify-content: space-between;
+    gap: 10px;
     flex-shrink: 0;
+    width: 100%;
   }
+
   #algo-reverse-string-view .rs-header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-reverse-string-view .rs-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #fbbf24, #fb923c);
+
+  #algo-reverse-string-view .rs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-reverse-string-view h2 {
-    margin: 0 0 5px;
-    font-size: 22px;
+
+  #algo-reverse-string-view .rs-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #fbbf24, #fb923c);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-reverse-string-view .rs-desc {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 13px;
-    line-height: 1.5;
+
+  #algo-reverse-string-view .rs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-reverse-string-view .rs-tip {
-    max-width: 420px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    background: rgba(251, 191, 36, 0.1);
-    border: 1px solid rgba(251, 191, 36, 0.24);
-    color: #fde68a;
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-reverse-string-view .rs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-reverse-string-view .rs-tip strong { color: #fbbf24; }
-  #algo-reverse-string-view .rs-main {
+
+  #algo-reverse-string-view .rs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-reverse-string-view .rs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-reverse-string-view .rs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-reverse-string-view .rs-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-reverse-string-view .rs-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-reverse-string-view .rs-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-reverse-string-view .rs-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-reverse-string-view .rs-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-reverse-string-view .rs-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reverse-string-view .rs-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-reverse-string-view .rs-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 14px;
-    padding: 14px;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-reverse-string-view .rs-left {
-    min-width: 0;
-    min-height: 0;
+
+  #algo-reverse-string-view .rs-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-  /* Glass cards */
-  #algo-reverse-string-view .glass-card,
-  #algo-reverse-string-view .rs-card {
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
-  #algo-reverse-string-view .rs-card-title {
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  #algo-reverse-string-view .rs-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
     display: flex;
-    justify-content: space-between;
-    color: #e2e8f0;
-    font-weight: 700;
-    font-size: 14px;
-  }
-  #algo-reverse-string-view .rs-input-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
     align-items: center;
-    padding: 14px;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-reverse-string-view input {
-    width: 100%;
-    padding: 9px 11px;
-    border-radius: 10px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
-    color: #e2e8f0;
-    font-family: Consolas, monospace;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  #algo-reverse-string-view input:focus {
-    border-color: rgba(251, 191, 36, 0.5);
-  }
-  #algo-reverse-string-view button {
-    padding: 8px 14px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    border-radius: 10px;
-    background: rgba(100, 116, 139, 0.2);
-    color: #e2e8f0;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
-  }
-  #algo-reverse-string-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #fbbf24, #fb923c);
-    border-color: transparent;
-    color: #1e1e2e;
-  }
-  #algo-reverse-string-view button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  #algo-reverse-string-view .rs-examples {
-    padding: 0 14px 14px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  #algo-reverse-string-view .rs-example-btn {
-    padding: 6px 10px;
-    border-radius: 999px;
+
+  #algo-reverse-string-view .rs-card-title {
     font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  /* Stat panel */
-  #algo-reverse-string-view .rs-stats {
+
+  #algo-reverse-string-view .rs-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 字符数组与对撞双指针沙盘 */
+  #algo-reverse-string-view .rs-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 8px;
+    width: 100%;
+  }
+
+  #algo-reverse-string-view .rs-track-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 22px 8px 6px;
+  }
+
+  #algo-reverse-string-view .rs-cell-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  #algo-reverse-string-view .rs-cell-box {
+    width: 46px;
+    height: 50px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  #algo-reverse-string-view .rs-cell-box .val {
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-reverse-string-view .rs-cell-box .idx {
+    font-size: 9px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-reverse-string-view .rs-cell-box.is-left {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    transform: translateY(-4px);
+  }
+
+  #algo-reverse-string-view .rs-cell-box.is-right {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    transform: translateY(-4px);
+  }
+
+  #algo-reverse-string-view .rs-cell-box.is-swapping {
+    border-color: #10b981;
+    background: #f0fdf4;
+    transform: translateY(-6px) scale(1.05);
+  }
+
+  #algo-reverse-string-view .rs-pointer-tags {
+    position: absolute;
+    top: -22px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  #algo-reverse-string-view .rs-ptr-badge {
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  #algo-reverse-string-view .rs-ptr-badge.left {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+  #algo-reverse-string-view .rs-ptr-badge.right {
+    background: #f59e0b;
+    color: #ffffff;
+  }
+
+  /* Preset Chips */
+  #algo-reverse-string-view .rs-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-reverse-string-view .rs-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reverse-string-view .rs-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-reverse-string-view .rs-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 8px;
   }
-  #algo-reverse-string-view .rs-stat {
-    position: relative;
-    overflow: hidden;
-    padding: 12px 12px 12px 18px;
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  #algo-reverse-string-view .rs-stat::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #fbbf24, #fb923c);
-    border-radius: 2px 0 0 2px;
-  }
-  #algo-reverse-string-view .rs-stat label {
-    display: block;
-    margin-bottom: 6px;
-    color: #94a3b8;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-  }
-  #algo-reverse-string-view .rs-stat span {
-    color: #fbbf24;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 20px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-reverse-string-view .rs-visual {
-    flex: 1;
-    min-height: 230px;
+
+  #algo-reverse-string-view .rs-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
     display: flex;
     flex-direction: column;
+    gap: 2px;
   }
-  #algo-reverse-string-view .rs-track {
-    flex: 1;
-    min-height: 0;
-    padding: 28px 18px 18px;
-    overflow: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-  #algo-reverse-string-view .rs-cell {
-    width: 50px;
-    height: 56px;
-    border-radius: 12px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    transition: all 0.25s ease;
-    position: relative;
-    transform-origin: center bottom;
-  }
-  #algo-reverse-string-view .rs-cell .idx {
+
+  #algo-reverse-string-view .rs-metric-label {
+    font-size: 10px;
+    font-weight: 700;
     color: #64748b;
-    font-size: 11px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    text-transform: uppercase;
   }
-  #algo-reverse-string-view .rs-cell .val {
-    color: #e2e8f0;
+
+  #algo-reverse-string-view .rs-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
     font-weight: 800;
-    font-size: 20px;
+    color: #0f172a;
   }
-  #algo-reverse-string-view .rs-cell.left {
-    border-color: #fbbf24;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
-    animation: pulseLeft 1.2s infinite;
+
+  #algo-reverse-string-view .rs-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
   }
-  #algo-reverse-string-view .rs-cell.right {
-    border-color: #fb923c;
-    box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.18);
-    animation: pulseRight 1.2s infinite;
+
+  #algo-reverse-string-view .rs-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
-  #algo-reverse-string-view .rs-cell.swapped {
-    background: rgba(251, 191, 36, 0.14);
-    border-color: #fbbf24;
-    animation: swapArc 0.6s ease;
+
+  /* 底部播放进度条控制条 */
+  #algo-reverse-string-view .rs-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
-  #algo-reverse-string-view .rs-ptr {
-    position: absolute;
-    top: -18px;
+
+  #algo-reverse-string-view .rs-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-reverse-string-view .rs-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reverse-string-view .rs-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-reverse-string-view .rs-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-reverse-string-view .rs-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-reverse-string-view .rs-step-badge {
     font-size: 11px;
     font-weight: 700;
-  }
-  #algo-reverse-string-view .rs-ptr.left { color: #fbbf24; }
-  #algo-reverse-string-view .rs-ptr.right { color: #fb923c; }
-  #algo-reverse-string-view .rs-message {
-    margin: 0 16px 16px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(251, 191, 36, 0.22);
-    background: rgba(251, 191, 36, 0.08);
-    line-height: 1.5;
-    font-size: 14px;
-    color: #fde68a;
-  }
-  #algo-reverse-string-view .rs-log {
-    min-height: 80px;
-    max-height: 110px;
-    padding: 10px 14px;
-    overflow: auto;
-    background: rgba(17, 17, 27, 0.7);
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: #94a3b8;
-  }
-  #algo-reverse-string-view .rs-log .active {
-    color: #fbbf24;
-    background: rgba(251, 191, 36, 0.05);
-    font-weight: 600;
-  }
-  #algo-reverse-string-view .rs-code {
-    min-height: 0;
-    display: flex;
-    background: rgba(17, 17, 27, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    backdrop-filter: blur(18px) saturate(160%);
-  }
-  #algo-reverse-string-view .rs-code [data-code-panel] {
-    flex: 1;
-    min-width: 0;
-  }
-  /* Unified controls bar */
-  #algo-reverse-string-view .rs-controls {
-    padding: 12px 16px;
-    background: rgba(24, 24, 37, 0.9);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  #algo-reverse-string-view .rs-controls button {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  #algo-reverse-string-view .rs-controls #step-play {
-    background: linear-gradient(135deg, #fbbf24, #fb923c);
-    border: none;
-    color: #1e1e2e;
-  }
-  #algo-reverse-string-view .rs-controls button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
-  }
-  #algo-reverse-string-view .rs-controls button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-  }
-  #algo-reverse-string-view .rs-counter {
-    color: #94a3b8;
-    font-size: 14px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  }
-  #algo-reverse-string-view .control-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  #algo-reverse-string-view #step-speed {
-    accent-color: #fbbf24;
-    width: 100px;
-  }
-  /* Keyframe animations */
-  @keyframes pulseLeft {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
-  }
-  @keyframes pulseRight {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(251, 146, 60, 0); }
-  }
-  @keyframes swapArc {
-    0% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(8deg); }
-    100% { transform: translateY(0) rotate(0deg); }
-  }
-  @keyframes mismatchShake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px); }
-    40% { transform: translateX(4px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
-  #algo-reverse-string-view .rs-cell.swapped.mismatch {
-    animation: mismatchShake 0.4s ease;
-  }
-  @media (max-width: 1100px) {
-    #algo-reverse-string-view .rs-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-reverse-string-view .rs-code { min-height: 360px; }
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="rs-page">
-  <div class="rs-header">
+<div id="algo-reverse-string-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="rs-header">
     <div class="rs-header-left">
-      <div class="rs-icon-badge">↔️</div>
-      <div>
-        <h2>反转字符串（双指针）</h2>
-        <p class="rs-desc">LeetCode 344：原地反转字符数组</p>
+      <div class="rs-icon-btn">↔️</div>
+      <div class="rs-main-title">反转字符串 · Reverse String</div>
+      <button class="rs-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="rs-badge-mode">首尾双指针对撞</div>
+      <div class="rs-badge-complexity">O(n) · O(1)</div>
+    </div>
+    <div class="rs-header-right">
+      <div class="rs-input-group">
+        <label for="input-s">字符数组:</label>
+        <input type="text" id="input-s" value="hello" style="width: 90px;" placeholder="字符串">
       </div>
+      <button class="rs-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="rs-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <div class="rs-tip"><strong>首尾双指针：</strong>left、right 从两端向中间逼近，每步交换两个字符并各自内移。动画演示交换弧线。</div>
-  </div>
-  <div class="rs-main">
-    <div class="rs-left">
-      <section class="rs-card">
-        <div class="rs-card-title">输入字符串</div>
-        <div class="rs-input-row">
-          <input id="rs-input" value="hello">
-          <button id="rs-start">开始反转</button>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="rs-workspace">
+    <!-- Card 1: 字符数组与对撞双指针沙盘 -->
+    <section class="rs-card">
+      <div class="rs-card-header">
+        <div class="rs-card-title">
+          <span>📊</span> 字符数组与首尾对撞双指针沙盘 (Character Array & 2 Pointers)
         </div>
-        <div class="rs-examples">
-          <button class="rs-example-btn" data-val="hello">hello</button>
-          <button class="rs-example-btn" data-val="abcdef">abcdef</button>
-          <button class="rs-example-btn" data-val="算法">算法</button>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● left</span> · <span style="color: #f59e0b;">● right</span> · <span style="color: #10b981;">● swap 交换</span>
         </div>
-      </section>
-      <div class="rs-stats">
-        <div class="rs-stat"><label>left</label><span id="rs-left">0</span></div>
-        <div class="rs-stat"><label>right</label><span id="rs-right">0</span></div>
-        <div class="rs-stat"><label>交换次数</label><span id="rs-swap">0</span></div>
       </div>
-      <section class="rs-card rs-visual">
-        <div class="rs-card-title">字符数组</div>
-        <div class="rs-track" id="rs-track"></div>
-        <div class="rs-message" id="step-message">点击开始反转</div>
-      </section>
-      <section class="rs-card">
-        <div class="rs-card-title">执行日志</div>
-        <div class="rs-log" id="rs-log"></div>
-      </section>
+      <div class="rs-card-body" style="justify-content: center;">
+        <div class="rs-sandbox-container">
+          <div class="rs-track-row" id="rs-track-row"></div>
+        </div>
+      </div>
+      <div class="rs-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="rs-chip" data-s="hello">示例 1 ("hello")</button>
+        <button class="rs-chip" data-s="Hannah">示例 2 ("Hannah")</button>
+        <button class="rs-chip" data-s="algorithm">奇数长度 ("algorithm")</button>
+        <button class="rs-chip" data-s="radar">回文字符串 ("radar")</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="rs-card">
+      <div class="rs-card-header">
+        <div class="rs-card-title">
+          <span>🧭</span> 指针与交换监视器 (Pointer & Swap Monitor)
+        </div>
+      </div>
+      <div class="rs-card-body">
+        <div class="rs-metrics-grid">
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">左指针 left</span>
+            <span class="rs-metric-val" id="metric-left" style="color: #3b82f6;">0</span>
+          </div>
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">右指针 right</span>
+            <span class="rs-metric-val" id="metric-right" style="color: #f59e0b;">4</span>
+          </div>
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">交换次数</span>
+            <span class="rs-metric-val" id="metric-swaps" style="color: #10b981;">0</span>
+          </div>
+          <div class="rs-metric-card">
+            <span class="rs-metric-label">执行状态</span>
+            <span class="rs-metric-val" id="metric-status" style="color: #0f172a;">就绪</span>
+          </div>
+        </div>
+        <div class="rs-formula-box" id="rs-formula-box">
+          <span>交换动作:</span> <strong id="formula-swap" style="color: #10b981;">swap(s[left], s[right])</strong>
+        </div>
+        <div class="rs-live-alert" id="rs-live-alert">
+          <span>💡</span> <span id="rs-live-text">准备就绪，点击运行开始双指针字符串反转。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="rs-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="rs-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="rs-card-header">
+        <div class="rs-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="rs-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="rs-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="rs-playback-bar">
+    <div class="rs-playback-controls">
+      <button class="rs-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="rs-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="rs-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="rs-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="rs-controls">
-    <button id="step-reset">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-        <path d="M3 3v5h5" />
-      </svg>
-      重置
-    </button>
-    <button id="step-prev">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-      上一步
-    </button>
-    <button id="step-play">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M5 3l14 9-14 9V3z" />
-      </svg>
-      播放
-    </button>
-    <button id="step-next">
-      下一步
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m9 18 6-6-6-6" />
-      </svg>
-    </button>
-    <div class="control-divider"></div>
-    <span id="step-counter" class="rs-counter">步骤: 0 / 0</span>
-    <div style="display:flex; align-items:center; gap:0.5rem;">
-      <span class="rs-counter">速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" class="rs-counter">0.9s</span>
+    <div class="rs-progress-wrap">
+      <span class="rs-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

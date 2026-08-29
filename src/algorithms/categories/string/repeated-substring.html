@@ -1,509 +1,609 @@
 <style>
+  /* === 重复的子字符串 (LeetCode 459) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-repeated-substring-view {
     width: 100%;
     height: 100%;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(236, 72, 153, 0.18), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(219, 39, 119, 0.18), transparent 55%),
-      linear-gradient(135deg, #181229, #1a162c, #11131d);
-    color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-repeated-substring-view .rps-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+
+  #algo-repeated-substring-view * {
+    box-sizing: border-box;
   }
+
+  /* 1. 顶栏 Header */
   #algo-repeated-substring-view .rps-header {
-    padding: 14px 18px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 18px;
+    justify-content: space-between;
+    gap: 10px;
     flex-shrink: 0;
+    width: 100%;
   }
+
   #algo-repeated-substring-view .rps-header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-repeated-substring-view .rps-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #ec4899, #db2777);
+
+  #algo-repeated-substring-view .rps-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-repeated-substring-view h2 {
-    margin: 0 0 5px;
-    font-size: 22px;
+
+  #algo-repeated-substring-view .rps-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #ec4899, #db2777);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-repeated-substring-view .rps-desc {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 13px;
-    line-height: 1.5;
+
+  #algo-repeated-substring-view .rps-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-repeated-substring-view .rps-tip {
-    max-width: 420px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    background: rgba(236, 72, 153, 0.1);
-    border: 1px solid rgba(236, 72, 153, 0.24);
-    color: #fbcfe8;
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-repeated-substring-view .rps-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-repeated-substring-view .rps-tip strong { color: #ec4899; }
-  #algo-repeated-substring-view .rps-main {
+
+  #algo-repeated-substring-view .rps-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-repeated-substring-view .rps-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-repeated-substring-view .rps-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-repeated-substring-view .rps-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-repeated-substring-view .rps-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-repeated-substring-view .rps-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-repeated-substring-view .rps-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-repeated-substring-view .rps-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-repeated-substring-view .rps-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-repeated-substring-view .rps-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-repeated-substring-view .rps-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 14px;
-    padding: 14px;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-repeated-substring-view .rps-left {
-    min-width: 0;
-    min-height: 0;
+
+  #algo-repeated-substring-view .rps-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-  /* Glass cards */
-  #algo-repeated-substring-view .glass-card,
-  #algo-repeated-substring-view .rps-card {
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
-  #algo-repeated-substring-view .rps-card-title {
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  #algo-repeated-substring-view .rps-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
     display: flex;
-    justify-content: space-between;
-    color: #e2e8f0;
-    font-weight: 700;
-    font-size: 14px;
-  }
-  #algo-repeated-substring-view .rps-input-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
     align-items: center;
-    padding: 14px;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-repeated-substring-view input {
-    width: 100%;
-    padding: 9px 11px;
-    border-radius: 10px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
-    color: #e2e8f0;
-    font-family: Consolas, monospace;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  #algo-repeated-substring-view input:focus {
-    border-color: rgba(236, 72, 153, 0.5);
-  }
-  #algo-repeated-substring-view button {
-    padding: 8px 14px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    border-radius: 10px;
-    background: rgba(100, 116, 139, 0.2);
-    color: #e2e8f0;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
-  }
-  #algo-repeated-substring-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #ec4899, #db2777);
-    border-color: transparent;
-    color: #1e1e2e;
-  }
-  #algo-repeated-substring-view button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  #algo-repeated-substring-view .rps-examples {
-    padding: 0 14px 14px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  #algo-repeated-substring-view .rps-example-btn {
-    padding: 6px 10px;
-    border-radius: 999px;
+
+  #algo-repeated-substring-view .rps-card-title {
     font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  /* Stat panel */
-  #algo-repeated-substring-view .rps-stats {
+
+  #algo-repeated-substring-view .rps-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: KMP Next 数组与周期瓷砖平铺沙盘 */
+  #algo-repeated-substring-view .rps-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 6px;
+    width: 100%;
+  }
+
+  #algo-repeated-substring-view .rps-tracks-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 6px;
+  }
+
+  #algo-repeated-substring-view .rps-track-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  #algo-repeated-substring-view .rps-cell-box {
+    width: 34px;
+    height: 40px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  #algo-repeated-substring-view .rps-cell-box .val {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-repeated-substring-view .rps-cell-box .next-val {
+    font-size: 9px;
+    font-weight: 700;
+    color: #2563eb;
+  }
+
+  #algo-repeated-substring-view .rps-cell-box.in-pattern {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  #algo-repeated-substring-view .rps-cell-box.is-last-node {
+    border-color: #a855f7;
+    background: #faf5ff;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+  }
+
+  #algo-repeated-substring-view .rps-tile-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 6px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  #algo-repeated-substring-view .rps-tile-unit {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1.5px solid #3b82f6;
+    color: #1d4ed8;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  /* Preset Chips */
+  #algo-repeated-substring-view .rps-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-repeated-substring-view .rps-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-repeated-substring-view .rps-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-repeated-substring-view .rps-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 8px;
   }
-  #algo-repeated-substring-view .rps-stat {
-    position: relative;
-    overflow: hidden;
-    padding: 12px 12px 12px 18px;
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+
+  #algo-repeated-substring-view .rps-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  #algo-repeated-substring-view .rps-stat::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #ec4899, #db2777);
-    border-radius: 2px 0 0 2px;
-  }
-  #algo-repeated-substring-view .rps-stat label {
-    display: block;
-    margin-bottom: 6px;
-    color: #94a3b8;
-    font-size: 12px;
+
+  #algo-repeated-substring-view .rps-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
   }
-  #algo-repeated-substring-view .rps-stat span {
-    color: #ec4899;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 20px;
+
+  #algo-repeated-substring-view .rps-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
     font-weight: 800;
-    font-variant-numeric: tabular-nums;
+    color: #0f172a;
   }
-  #algo-repeated-substring-view .rps-visual {
-    flex: 1;
-    min-height: 230px;
+
+  #algo-repeated-substring-view .rps-formula-box {
     display: flex;
-    flex-direction: column;
-  }
-  #algo-repeated-substring-view .rps-track {
-    flex: 1;
-    min-height: 0;
-    padding: 28px 18px 18px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-  }
-  #algo-repeated-substring-view .rps-row {
-    display: flex;
     gap: 6px;
-    align-items: center;
-  }
-  #algo-repeated-substring-view .rps-row-label {
-    color: #94a3b8;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    font-weight: 600;
-    width: 60px;
-    text-align: right;
+  }
+
+  #algo-repeated-substring-view .rps-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-repeated-substring-view .rps-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
     flex-shrink: 0;
   }
-  #algo-repeated-substring-view .rps-cells {
+
+  #algo-repeated-substring-view .rps-playback-controls {
     display: flex;
-    gap: 4px;
     align-items: center;
+    gap: 6px;
   }
-  #algo-repeated-substring-view .rps-cell {
-    width: 44px;
-    height: 50px;
-    border-radius: 10px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    transition: all 0.25s ease;
-    position: relative;
-  }
-  #algo-repeated-substring-view .rps-cell .idx {
-    color: #64748b;
-    font-size: 10px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  }
-  #algo-repeated-substring-view .rps-cell .val {
-    color: #e2e8f0;
-    font-weight: 800;
-    font-size: 18px;
-  }
-  #algo-repeated-substring-view .rps-cell.pattern {
-    border-color: #ec4899;
-    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.18);
-    background: rgba(236, 72, 153, 0.12);
-  }
-  #algo-repeated-substring-view .rps-cell.match-0 {
-    border-color: #a78bfa;
-    background: rgba(167, 139, 250, 0.12);
-    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.15);
-  }
-  #algo-repeated-substring-view .rps-cell.match-1 {
-    border-color: #38bdf8;
-    background: rgba(56, 189, 248, 0.12);
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
-  }
-  #algo-repeated-substring-view .rps-cell.match-2 {
-    border-color: #34d399;
-    background: rgba(52, 211, 153, 0.12);
-    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.15);
-  }
-  #algo-repeated-substring-view .rps-cell.match-3 {
-    border-color: #fbbf24;
-    background: rgba(251, 191, 36, 0.12);
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.15);
-  }
-  #algo-repeated-substring-view .rps-cell.match-ok {
-    border-color: #4ade80;
-    background: rgba(74, 222, 128, 0.12);
-    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.15);
-  }
-  #algo-repeated-substring-view .rps-cell.match-bad {
-    border-color: #f87171;
-    background: rgba(248, 113, 113, 0.12);
-    box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15);
-    animation: rpsShake 0.4s ease;
-  }
-  #algo-repeated-substring-view .rps-cell.skipped {
-    opacity: 0.35;
-  }
-  /* Result banner */
-  #algo-repeated-substring-view .rps-result {
-    margin: 0 16px 8px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 14px;
-    display: none;
-  }
-  #algo-repeated-substring-view .rps-result.found {
-    display: block;
-    border: 1px solid rgba(74, 222, 128, 0.3);
-    background: rgba(74, 222, 128, 0.1);
-    color: #4ade80;
-  }
-  #algo-repeated-substring-view .rps-result.not-found {
-    display: block;
-    border: 1px solid rgba(248, 113, 113, 0.3);
-    background: rgba(248, 113, 113, 0.1);
-    color: #f87171;
-  }
-  #algo-repeated-substring-view .rps-message {
-    margin: 0 16px 8px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(236, 72, 153, 0.22);
-    background: rgba(236, 72, 153, 0.08);
-    line-height: 1.5;
-    font-size: 14px;
-    color: #fbcfe8;
-  }
-  #algo-repeated-substring-view .rps-log {
-    min-height: 80px;
-    max-height: 110px;
-    padding: 10px 14px;
-    overflow: auto;
-    background: rgba(17, 17, 27, 0.7);
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: #94a3b8;
-  }
-  #algo-repeated-substring-view .rps-log .active {
-    color: #ec4899;
-    background: rgba(236, 72, 153, 0.05);
-    font-weight: 600;
-  }
-  #algo-repeated-substring-view .rps-code {
-    min-height: 0;
-    display: flex;
-    background: rgba(17, 17, 27, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    backdrop-filter: blur(18px) saturate(160%);
-  }
-  #algo-repeated-substring-view .rps-code [data-code-panel] {
-    flex: 1;
-    min-width: 0;
-  }
-  /* Unified controls bar */
-  #algo-repeated-substring-view .rps-controls {
-    padding: 12px 16px;
-    background: rgba(24, 24, 37, 0.9);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+  #algo-repeated-substring-view .rps-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  #algo-repeated-substring-view .rps-controls button {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 11px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
   }
-  #algo-repeated-substring-view .rps-controls #step-play {
-    background: linear-gradient(135deg, #ec4899, #db2777);
-    border: none;
-    color: #1e1e2e;
+  #algo-repeated-substring-view .rps-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
-  #algo-repeated-substring-view .rps-controls button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+
+  #algo-repeated-substring-view .rps-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #algo-repeated-substring-view .rps-controls button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
+
+  #algo-repeated-substring-view .rps-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
   }
-  #algo-repeated-substring-view .rps-counter {
-    color: #94a3b8;
-    font-size: 14px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  }
-  #algo-repeated-substring-view .control-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  #algo-repeated-substring-view #step-speed {
-    accent-color: #ec4899;
-    width: 100px;
-  }
-  /* Keyframe animations */
-  @keyframes rpsShake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px); }
-    40% { transform: translateX(4px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
-  @keyframes rpsPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(236, 72, 153, 0); }
-  }
-  @media (max-width: 1100px) {
-    #algo-repeated-substring-view .rps-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-repeated-substring-view .rps-code { min-height: 360px; }
+
+  #algo-repeated-substring-view .rps-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="rps-page">
-  <div class="rps-header">
+<div id="algo-repeated-substring-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="rps-header">
     <div class="rps-header-left">
-      <div class="rps-icon-badge">🔁</div>
-      <div>
-        <h2>重复的子字符串</h2>
-        <p class="rps-desc">LeetCode 459 · 判断字符串是否由重复子串构成</p>
+      <div class="rps-icon-btn">🔁</div>
+      <div class="rps-main-title">重复的子字符串 · Repeated Substring</div>
+      <button class="rps-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="rps-badge-mode">KMP 周期性整除推导</div>
+      <div class="rps-badge-complexity">O(n) · O(n)</div>
+    </div>
+    <div class="rps-header-right">
+      <div class="rps-input-group">
+        <label for="input-s">s:</label>
+        <input type="text" id="input-s" value="abab" style="width: 90px;">
       </div>
+      <button class="rps-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="rps-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <div class="rps-tip"><strong>枚举因子长度：</strong>从 len=1 到 n/2 逐个尝试，若 n 能被 len 整除，则提取 s[0..len-1] 作为模式串，依次对比每个等长分块是否相同。</div>
-  </div>
-  <div class="rps-main">
-    <div class="rps-left">
-      <section class="rps-card">
-        <div class="rps-card-title">输入字符串</div>
-        <div class="rps-input-row">
-          <input id="rps-input" value="abab">
-          <button id="rps-start">开始检测</button>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="rps-workspace">
+    <!-- Card 1: KMP Next 数组与周期瓷砖平铺沙盘 -->
+    <section class="rps-card">
+      <div class="rps-card-header">
+        <div class="rps-card-title">
+          <span>📊</span> Next 前缀表与周期子串平铺沙盘 (Next Array & Periodic Tiles)
         </div>
-        <div class="rps-examples">
-          <button class="rps-example-btn" data-s="abab">abab (true)</button>
-          <button class="rps-example-btn" data-s="aba">aba (false)</button>
-          <button class="rps-example-btn" data-s="abcabcabc">abcabcabc (true)</button>
-          <button class="rps-example-btn" data-s="aabaaba">aabaaba (false)</button>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● 最小周期子串</span> · <span style="color: #a855f7;">● next[n-1] 尾项</span>
         </div>
-      </section>
-      <div class="rps-stats">
-        <div class="rps-stat"><label>候选长度</label><span id="rps-pat-len">-</span></div>
-        <div class="rps-stat"><label>候选份数 (n/len)</label><span id="rps-pat-count">-</span></div>
-        <div class="rps-stat"><label>当前尝试</label><span id="rps-attempt">-</span></div>
-        <div class="rps-stat"><label>匹配结果</label><span id="rps-found">-</span></div>
       </div>
-      <section class="rps-card rps-visual">
-        <div class="rps-card-title">字符串可视化</div>
-        <div class="rps-track" id="rps-track"></div>
-        <div class="rps-result" id="rps-result"></div>
-        <div class="rps-message" id="step-message">点击开始检测</div>
-      </section>
-      <section class="rps-card">
-        <div class="rps-card-title">执行日志</div>
-        <div class="rps-log" id="rps-log"></div>
-      </section>
+      <div class="rps-card-body" style="justify-content: center;">
+        <div class="rps-sandbox-container">
+          <!-- 上部：字符与 Next 表网格 -->
+          <div class="rps-tracks-wrap">
+            <div style="font-size: 11px; font-weight: 700; color: #64748b;">字符与 Next 值</div>
+            <div class="rps-track-row" id="rps-track-row"></div>
+          </div>
+          <!-- 下部：周期平铺分解 -->
+          <div style="font-size: 11px; font-weight: 700; color: #64748b;">周期单元拆解平铺</div>
+          <div class="rps-tile-row" id="rps-tile-row"></div>
+        </div>
+      </div>
+      <div class="rps-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="rps-chip" data-s="abab">示例 1 ("abab" -> true)</button>
+        <button class="rps-chip" data-s="aba">示例 2 ("aba" -> false)</button>
+        <button class="rps-chip" data-s="abcabcabcabc">示例 3 ("abcabcabcabc" -> true)</button>
+        <button class="rps-chip" data-s="aaaa">纯单字符 ("aaaa" -> true)</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="rps-card">
+      <div class="rps-card-header">
+        <div class="rps-card-title">
+          <span>🧭</span> 周期性整除监视器 (Periodic Divisible Monitor)
+        </div>
+      </div>
+      <div class="rps-card-body">
+        <div class="rps-metrics-grid">
+          <div class="rps-metric-card">
+            <span class="rps-metric-label">总长度 n</span>
+            <span class="rps-metric-val" id="metric-n" style="color: #0f172a;">4</span>
+          </div>
+          <div class="rps-metric-card">
+            <span class="rps-metric-label">最长相等前后缀</span>
+            <span class="rps-metric-val" id="metric-lps" style="color: #a855f7;">2</span>
+          </div>
+          <div class="rps-metric-card">
+            <span class="rps-metric-label">最小周期 patternLen</span>
+            <span class="rps-metric-val" id="metric-period" style="color: #2563eb;">2</span>
+          </div>
+          <div class="rps-metric-card">
+            <span class="rps-metric-label">判定结果</span>
+            <span class="rps-metric-val" id="metric-res" style="color: #10b981;">待判定</span>
+          </div>
+        </div>
+        <div class="rps-formula-box" id="rps-formula-box">
+          <span>整除判定:</span> <strong id="formula-div" style="color: #2563eb;">n % (n - next[n-1]) == 0</strong>
+        </div>
+        <div class="rps-live-alert" id="rps-live-alert">
+          <span>💡</span> <span id="rps-live-text">准备就绪，点击运行开始重复子字符串判定。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="rps-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="rps-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="rps-card-header">
+        <div class="rps-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="rps-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="rps-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="rps-playback-bar">
+    <div class="rps-playback-controls">
+      <button class="rps-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="rps-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="rps-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="rps-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="rps-controls">
-    <button id="step-reset">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-        <path d="M3 3v5h5" />
-      </svg>
-      重置
-    </button>
-    <button id="step-prev">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-      上一步
-    </button>
-    <button id="step-play">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M5 3l14 9-14 9V3z" />
-      </svg>
-      播放
-    </button>
-    <button id="step-next">
-      下一步
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m9 18 6-6-6-6" />
-      </svg>
-    </button>
-    <div class="control-divider"></div>
-    <span id="step-counter" class="rps-counter">步骤: 0 / 0</span>
-    <div style="display:flex; align-items:center; gap:0.5rem;">
-      <span class="rps-counter">速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" class="rps-counter">0.9s</span>
+    <div class="rps-progress-wrap">
+      <span class="rps-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

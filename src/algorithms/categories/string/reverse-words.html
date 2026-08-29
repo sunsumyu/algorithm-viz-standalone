@@ -1,500 +1,651 @@
 <style>
+  /* === 翻转字符串里的单词 (LeetCode 151) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-reverse-words-view {
     width: 100%;
     height: 100%;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(167, 139, 250, 0.18), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(192, 132, 252, 0.18), transparent 55%),
-      linear-gradient(135deg, #181229, #1a162c, #11131d);
-    color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-reverse-words-view .rw-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+
+  #algo-reverse-words-view * {
+    box-sizing: border-box;
   }
+
+  /* 1. 顶栏 Header */
   #algo-reverse-words-view .rw-header {
-    padding: 14px 18px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 18px;
+    justify-content: space-between;
+    gap: 10px;
     flex-shrink: 0;
+    width: 100%;
   }
+
   #algo-reverse-words-view .rw-header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-reverse-words-view .rw-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #a78bfa, #c084fc);
+
+  #algo-reverse-words-view .rw-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-reverse-words-view h2 {
-    margin: 0 0 5px;
-    font-size: 22px;
+
+  #algo-reverse-words-view .rw-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #a78bfa, #c084fc);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
-  #algo-reverse-words-view .rw-desc {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  #algo-reverse-words-view .rw-tip {
-    max-width: 440px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    background: rgba(167, 139, 250, 0.1);
-    border: 1px solid rgba(167, 139, 250, 0.24);
-    color: #e9d5ff;
-    font-size: 13px;
-    line-height: 1.55;
-  }
-  #algo-reverse-words-view .rw-tip strong { color: #a78bfa; }
-  #algo-reverse-words-view .rw-main {
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;
-    gap: 14px;
-    padding: 14px;
-    overflow: hidden;
-  }
-  #algo-reverse-words-view .rw-left {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-  /* Glass cards */
-  #algo-reverse-words-view .glass-card,
-  #algo-reverse-words-view .rw-card {
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    overflow: hidden;
-  }
-  #algo-reverse-words-view .rw-card-title {
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex;
-    justify-content: space-between;
-    color: #e2e8f0;
-    font-weight: 700;
-    font-size: 14px;
-  }
-  #algo-reverse-words-view .rw-input-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 14px;
-  }
-  #algo-reverse-words-view input {
-    width: 100%;
-    padding: 9px 11px;
-    border-radius: 10px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
-    color: #e2e8f0;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  #algo-reverse-words-view input:focus {
-    border-color: rgba(167, 139, 250, 0.5);
-  }
-  #algo-reverse-words-view button {
-    padding: 8px 14px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    border-radius: 10px;
-    background: rgba(100, 116, 139, 0.2);
-    color: #e2e8f0;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
-  }
-  #algo-reverse-words-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #a78bfa, #c084fc);
-    border-color: transparent;
-    color: #1e1e2e;
-  }
-  #algo-reverse-words-view button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  #algo-reverse-words-view .rw-examples {
-    padding: 0 14px 14px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  #algo-reverse-words-view .rw-example-btn {
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-  }
-  /* Stat panel */
-  #algo-reverse-words-view .rw-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-  }
-  #algo-reverse-words-view .rw-stat {
-    position: relative;
-    overflow: hidden;
-    padding: 12px 12px 12px 18px;
-    backdrop-filter: blur(18px) saturate(160%);
-    background: rgba(20, 18, 38, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-  #algo-reverse-words-view .rw-stat::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #a78bfa, #c084fc);
-    border-radius: 2px 0 0 2px;
-  }
-  #algo-reverse-words-view .rw-stat label {
-    display: block;
-    margin-bottom: 6px;
-    color: #94a3b8;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-  }
-  #algo-reverse-words-view .rw-stat span {
-    color: #a78bfa;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 18px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-reverse-words-view .rw-visual {
-    flex: 1;
-    min-height: 240px;
-    display: flex;
-    flex-direction: column;
-  }
-  #algo-reverse-words-view .rw-area {
-    flex: 1;
-    min-height: 0;
-    padding: 18px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  #algo-reverse-words-view .rw-block-title {
-    color: #94a3b8;
-    font-size: 12px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  /* Char block style */
-  #algo-reverse-words-view .rw-chars-block {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    min-height: 48px;
-    align-items: center;
-  }
-  #algo-reverse-words-view .rw-char {
-    width: 30px;
-    height: 38px;
+
+  #algo-reverse-words-view .rw-btn-problem {
+    padding: 2px 7px;
     border-radius: 6px;
-    border: 1px solid rgba(100, 116, 139, 0.3);
-    background: rgba(17, 17, 27, 0.7);
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-reverse-words-view .rw-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-reverse-words-view .rw-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-reverse-words-view .rw-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-reverse-words-view .rw-header-right {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 16px;
-    font-weight: 700;
-    color: #e2e8f0;
-    transition: all 0.2s;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-reverse-words-view .rw-char.space {
-    background: transparent;
-    border-color: transparent;
+
+  #algo-reverse-words-view .rw-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-reverse-words-view .rw-input-group label {
+    font-size: 11px;
+    font-weight: 700;
     color: #64748b;
   }
-  #algo-reverse-words-view .rw-char.current {
-    border-color: #a78bfa;
-    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
-    animation: pulseChar 1.2s infinite;
-  }
-  /* Words block */
-  #algo-reverse-words-view .rw-words-block {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  #algo-reverse-words-view .rw-word {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(100, 116, 139, 0.25);
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 15px;
-    color: #e2e8f0;
-    transition: all 0.2s;
-  }
-  #algo-reverse-words-view .rw-word.current {
-    background: linear-gradient(135deg, #a78bfa, #c084fc);
-    color: #1e1e2e;
-    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
-  }
-  /* Result banner */
-  #algo-reverse-words-view .rw-result-block {
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: rgba(167, 139, 250, 0.1);
-    border: 1px solid rgba(167, 139, 250, 0.35);
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 15px;
-    color: #c4b5fd;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  #algo-reverse-words-view .rw-message {
-    margin: 0 16px 16px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(167, 139, 250, 0.25);
-    background: rgba(167, 139, 250, 0.08);
-    line-height: 1.5;
-    font-size: 14px;
-    color: #e9d5ff;
-  }
-  #algo-reverse-words-view .rw-log {
-    min-height: 80px;
-    max-height: 110px;
-    padding: 10px 14px;
-    overflow: auto;
-    background: rgba(17, 17, 27, 0.7);
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: #94a3b8;
-  }
-  #algo-reverse-words-view .rw-log .active {
-    color: #a78bfa;
-    background: rgba(167, 139, 250, 0.05);
-    font-weight: 600;
-  }
-  #algo-reverse-words-view .rw-code {
-    min-height: 0;
-    display: flex;
-    background: rgba(17, 17, 27, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    backdrop-filter: blur(18px) saturate(160%);
-  }
-  #algo-reverse-words-view .rw-code [data-code-panel] {
-    flex: 1;
-    min-width: 0;
-  }
-  /* Unified controls bar */
-  #algo-reverse-words-view .rw-controls {
-    padding: 12px 16px;
-    background: rgba(24, 24, 37, 0.9);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  #algo-reverse-words-view .rw-controls button {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  #algo-reverse-words-view .rw-controls .btn-primary {
-    background: linear-gradient(135deg, #a78bfa, #c084fc);
+
+  #algo-reverse-words-view .rw-input-group input {
+    background: transparent;
     border: none;
-    color: #1e1e2e;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
   }
-  #algo-reverse-words-view .rw-controls button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(167, 139, 250, 0.25);
+
+  #algo-reverse-words-view .rw-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-reverse-words-view .rw-controls button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
+  #algo-reverse-words-view .rw-btn-primary:hover {
+    background: #1d4ed8;
   }
-  #algo-reverse-words-view .rw-counter {
-    color: #94a3b8;
+
+  #algo-reverse-words-view .rw-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reverse-words-view .rw-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-reverse-words-view .rw-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-reverse-words-view .rw-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #algo-reverse-words-view .rw-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-reverse-words-view .rw-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-reverse-words-view .rw-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 三步反转沙盘 */
+  #algo-reverse-words-view .rw-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 6px;
+    width: 100%;
+  }
+
+  /* 阶段指示器 */
+  #algo-reverse-words-view .rw-stages-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+  }
+
+  #algo-reverse-words-view .rw-stage-pill {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-reverse-words-view .rw-stage-pill.is-active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #2563eb;
+    font-weight: 800;
+  }
+
+  #algo-reverse-words-view .rw-stage-pill.is-done {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+  }
+
+  #algo-reverse-words-view .rw-track-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 22px 8px 6px;
+  }
+
+  #algo-reverse-words-view .rw-cell-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  #algo-reverse-words-view .rw-cell-box {
+    width: 34px;
+    height: 42px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  #algo-reverse-words-view .rw-cell-box .val {
     font-size: 14px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-weight: 800;
+    color: #0f172a;
   }
-  #algo-reverse-words-view .control-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.1);
+
+  #algo-reverse-words-view .rw-cell-box .idx {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #94a3b8;
   }
-  #algo-reverse-words-view #step-speed {
-    accent-color: #a78bfa;
-    width: 100px;
+
+  #algo-reverse-words-view .rw-cell-box.in-word-window {
+    border-color: #3b82f6;
+    background: #eff6ff;
   }
-  /* Keyframe animations */
-  @keyframes pulseChar {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(167, 139, 250, 0); }
+
+  #algo-reverse-words-view .rw-cell-box.is-space {
+    background: #f1f5f9;
+    border-style: dashed;
   }
-  @keyframes matchBurst {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.15); filter: brightness(1.1); }
-    100% { transform: scale(1); }
+
+  #algo-reverse-words-view .rw-cell-box.is-left {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+    transform: translateY(-4px);
   }
-  @keyframes mismatchShake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px); }
-    40% { transform: translateX(4px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+
+  #algo-reverse-words-view .rw-cell-box.is-right {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+    transform: translateY(-4px);
   }
-  @keyframes slideInResult {
-    0% {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
+
+  #algo-reverse-words-view .rw-cell-box.is-swapping {
+    border-color: #10b981;
+    background: #f0fdf4;
+    transform: translateY(-6px) scale(1.05);
   }
-  #algo-reverse-words-view .rw-char.current.animate-match {
-    animation: matchBurst 0.5s ease;
+
+  #algo-reverse-words-view .rw-pointer-tags {
+    position: absolute;
+    top: -22px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
   }
-  #algo-reverse-words-view .rw-word.animate-match {
-    animation: matchBurst 0.5s ease;
+
+  #algo-reverse-words-view .rw-ptr-badge {
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
   }
-  #algo-reverse-words-view .rw-result-block {
-    animation: slideInResult 0.5s ease;
+  #algo-reverse-words-view .rw-ptr-badge.left {
+    background: #3b82f6;
+    color: #ffffff;
   }
-  @media (max-width: 1100px) {
-    #algo-reverse-words-view .rw-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-reverse-words-view .rw-code { min-height: 360px; }
+  #algo-reverse-words-view .rw-ptr-badge.right {
+    background: #f59e0b;
+    color: #ffffff;
+  }
+
+  /* Preset Chips */
+  #algo-reverse-words-view .rw-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-reverse-words-view .rw-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reverse-words-view .rw-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-reverse-words-view .rw-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-reverse-words-view .rw-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-reverse-words-view .rw-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-reverse-words-view .rw-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-reverse-words-view .rw-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-reverse-words-view .rw-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-reverse-words-view .rw-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-reverse-words-view .rw-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-reverse-words-view .rw-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-reverse-words-view .rw-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-reverse-words-view .rw-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-reverse-words-view .rw-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-reverse-words-view .rw-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="rw-page">
-  <div class="rw-header">
+<div id="algo-reverse-words-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="rw-header">
     <div class="rw-header-left">
-      <div class="rw-icon-badge">🔃</div>
-      <div>
-        <h2>翻转字符串里的单词（双指针）</h2>
-        <p class="rw-desc">LeetCode 151：反转句子中的单词顺序，并去除多余空格</p>
+      <div class="rw-icon-btn">🔃</div>
+      <div class="rw-main-title">翻转字符串里的单词 · Reverse Words</div>
+      <button class="rw-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 题目与解析
+      </button>
+      <div class="rw-badge-mode">经典三步原地反转</div>
+      <div class="rw-badge-complexity">O(n) · O(1)</div>
+    </div>
+    <div class="rw-header-right">
+      <div class="rw-input-group">
+        <label for="input-s">s:</label>
+        <input type="text" id="input-s" value="  the sky is blue  " style="width: 140px;">
       </div>
+      <button class="rw-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="rw-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-    <div class="rw-tip"><strong>三步法：</strong>① 移除多余空格；② 整体反转；③ 逐个单词反转。动画演示逐词提取、补全、倒序拼接过程。</div>
-  </div>
-  <div class="rw-main">
-    <div class="rw-left">
-      <section class="rw-card">
-        <div class="rw-card-title">输入句子</div>
-        <div class="rw-input-row">
-          <input id="rw-input" value="  the sky is blue  ">
-          <button id="rw-start">开始反转</button>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="rw-workspace">
+    <!-- Card 1: 三步反转沙盘 -->
+    <section class="rw-card">
+      <div class="rw-card-header">
+        <div class="rw-card-title">
+          <span>📊</span> 字符串三步反转演进沙盘 (3-Phase Inversion Sandbox)
         </div>
-        <div class="rw-examples">
-          <button class="rw-example-btn" data-val="  the sky is blue  ">the sky is blue</button>
-          <button class="rw-example-btn" data-val="  hello world  ">含首尾空格</button>
-          <button class="rw-example-btn" data-val="a good   example">多空格</button>
+        <div class="rw-stages-row">
+          <div class="rw-stage-pill" id="pill-step-1">1. 去除多余空格</div>
+          <div class="rw-stage-pill" id="pill-step-2">2. 整体反转</div>
+          <div class="rw-stage-pill" id="pill-step-3">3. 各单词反转</div>
         </div>
-      </section>
-      <div class="rw-stats">
-        <div class="rw-stat"><label>阶段</label><span id="rw-phase">就绪</span></div>
-        <div class="rw-stat"><label>单词数</label><span id="rw-wordcount">0</span></div>
-        <div class="rw-stat"><label>当前单词</label><span id="rw-curword">-</span></div>
       </div>
-      <section class="rw-card rw-visual">
-        <div class="rw-card-title">处理过程</div>
-        <div class="rw-area" id="rw-area"></div>
-        <div class="rw-message" id="step-message">点击开始反转</div>
-      </section>
-      <section class="rw-card">
-        <div class="rw-card-title">执行日志</div>
-        <div class="rw-log" id="rw-log"></div>
-      </section>
+      <div class="rw-card-body" style="justify-content: center;">
+        <div class="rw-sandbox-container">
+          <div class="rw-track-row" id="rw-track-row"></div>
+        </div>
+      </div>
+      <div class="rw-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="rw-chip" data-s="the sky is blue">示例 1 ("the sky is blue")</button>
+        <button class="rw-chip" data-s="  hello world  ">多空格 ("  hello world  ")</button>
+        <button class="rw-chip" data-s="a good   example">中间多空格 ("a good   example")</button>
+        <button class="rw-chip" data-s="Alice loves Bob">两端紧凑 ("Alice loves Bob")</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="rw-card">
+      <div class="rw-card-header">
+        <div class="rw-card-title">
+          <span>🧭</span> 阶段与单词窗口监视器 (Phase & Window Monitor)
+        </div>
+      </div>
+      <div class="rw-card-body">
+        <div class="rw-metrics-grid">
+          <div class="rw-metric-card">
+            <span class="rw-metric-label">当前阶段</span>
+            <span class="rw-metric-val" id="metric-phase" style="color: #3b82f6;">去空格</span>
+          </div>
+          <div class="rw-metric-card">
+            <span class="rw-metric-label">左指针 left</span>
+            <span class="rw-metric-val" id="metric-left" style="color: #2563eb;">—</span>
+          </div>
+          <div class="rw-metric-card">
+            <span class="rw-metric-label">右指针 right</span>
+            <span class="rw-metric-val" id="metric-right" style="color: #f59e0b;">—</span>
+          </div>
+          <div class="rw-metric-card">
+            <span class="rw-metric-label">有效长度</span>
+            <span class="rw-metric-val" id="metric-length" style="color: #10b981;">0</span>
+          </div>
+        </div>
+        <div class="rw-formula-box" id="rw-formula-box">
+          <span>当前操作:</span> <strong id="formula-op" style="color: #2563eb;">去空格 -> 整体反转 -> 局部反转</strong>
+        </div>
+        <div class="rw-live-alert" id="rw-live-alert">
+          <span>💡</span> <span id="rw-live-text">准备就绪，点击运行开始翻转字符串里的单词。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="rw-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="rw-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="rw-card-header">
+        <div class="rw-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="rw-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="rw-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="rw-playback-bar">
+    <div class="rw-playback-controls">
+      <button class="rw-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="rw-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="rw-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-    <aside class="rw-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="rw-controls">
-    <button id="step-reset">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-        <path d="M3 3v5h5" />
-      </svg>
-      重置
-    </button>
-    <button id="step-prev">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-      上一步
-    </button>
-    <button id="step-play">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M5 3l14 9-14 9V3z" />
-      </svg>
-      播放
-    </button>
-    <button id="step-next">
-      下一步
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m9 18 6-6-6-6" />
-      </svg>
-    </button>
-    <div class="control-divider"></div>
-    <span id="step-counter" class="rw-counter">步骤: 0 / 0</span>
-    <div style="display:flex; align-items:center; gap:0.5rem;">
-      <span class="rw-counter">速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" class="rw-counter">0.9s</span>
+    <div class="rw-progress-wrap">
+      <span class="rw-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
     </div>
-  </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>
