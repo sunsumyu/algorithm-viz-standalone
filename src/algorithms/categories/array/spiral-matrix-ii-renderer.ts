@@ -223,7 +223,6 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
   protected codeLines = SPIRAL_MATRIX_II_CODE_LANGUAGES['java'];
   protected codePanelTitle = '螺旋矩阵 II 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private gridWrapperEl: HTMLElement | null = null;
   private metricNumEl: HTMLElement | null = null;
   private metricDirEl: HTMLElement | null = null;
@@ -253,36 +252,8 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.sp-chip').forEach((btn) => {
@@ -296,7 +267,7 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: SPIRAL_MATRIX_II_PROBLEM_HTML,
       analysisHtml: SPIRAL_MATRIX_II_ANALYSIS_HTML,
@@ -328,8 +299,11 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
           else if (isFilled) boxClasses += ' is-filled';
 
           html += `
-            <div class="${boxClasses}" title="(${r}, ${c})">
-              ${val > 0 ? val : '·'}
+            <div class="sp-cell-wrapper">
+              <div class="${boxClasses}">
+                <span class="val">${val > 0 ? val : ''}</span>
+                <span class="rc">(${r},${c})</span>
+              </div>
             </div>
           `;
         }
@@ -337,21 +311,18 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
       this.gridWrapperEl.innerHTML = html;
     }
 
-    // 2. 更新状态监视器
-    if (this.metricNumEl) this.metricNumEl.textContent = num > 0 ? String(num) : '—';
-    if (this.metricDirEl) this.metricDirEl.textContent = dir;
+    // 2. 状态与边界监视器更新
+    if (this.metricNumEl) this.metricNumEl.textContent = status === 'done' ? '完成' : `${num}`;
+    if (this.metricDirEl) this.metricDirEl.textContent = status === 'done' ? '完成' : `${dir}`;
     if (this.metricPosEl) {
       this.metricPosEl.textContent = currentRow >= 0 && currentCol >= 0 ? `(${currentRow}, ${currentCol})` : '—';
     }
-    if (this.metricProgEl) {
-      const filledCount = matrix.flat().filter((x) => x > 0).length;
-      this.metricProgEl.textContent = `${filledCount} / ${n * n}`;
-    }
+    if (this.metricProgEl) this.metricProgEl.textContent = `${Math.min(num, n * n)} / ${n * n}`;
 
-    if (this.boundTopEl) this.boundTopEl.textContent = String(top);
-    if (this.boundBottomEl) this.boundBottomEl.textContent = String(bottom);
-    if (this.boundLeftEl) this.boundLeftEl.textContent = String(left);
-    if (this.boundRightEl) this.boundRightEl.textContent = String(right);
+    if (this.boundTopEl) this.boundTopEl.textContent = `top = ${top}`;
+    if (this.boundBottomEl) this.boundBottomEl.textContent = `bottom = ${bottom}`;
+    if (this.boundLeftEl) this.boundLeftEl.textContent = `left = ${left}`;
+    if (this.boundRightEl) this.boundRightEl.textContent = `right = ${right}`;
 
     if (this.liveTextEl) this.liveTextEl.textContent = message;
 
@@ -361,9 +332,9 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
       const logEntry = document.createElement('div');
       logEntry.style.padding = '4px 8px';
       logEntry.style.borderRadius = '6px';
-      logEntry.style.background = status === 'done' ? '#f0fdf4' : status === 'turn' ? '#fffbeb' : '#eff6ff';
-      logEntry.style.color = status === 'done' ? '#15803d' : status === 'turn' ? '#b45309' : '#1d4ed8';
-      logEntry.style.border = '1px solid ' + (status === 'done' ? '#bbf7d0' : status === 'turn' ? '#fde68a' : '#bfdbfe');
+      logEntry.style.background = status === 'done' ? '#f0fdf4' : status === 'fill' ? '#eff6ff' : '#f8fafc';
+      logEntry.style.color = status === 'done' ? '#15803d' : status === 'fill' ? '#1d4ed8' : '#334155';
+      logEntry.style.border = '1px solid ' + (status === 'done' ? '#bbf7d0' : status === 'fill' ? '#bfdbfe' : '#e2e8f0');
       logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
 
       this.logContainer.appendChild(logEntry);
@@ -375,9 +346,9 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
     }
 
     // 4. 同步代码高亮
-    if (this.terminalInstance) {
+    if (this.codeTerminal) {
       const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
+      this.codeTerminal.highlightLine(line);
     }
 
     // 5. 更新底部播放控制条
@@ -401,7 +372,7 @@ export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
+    if (this.codeTerminal) this.codeTerminal.highlightLine(0);
   }
 }
 
