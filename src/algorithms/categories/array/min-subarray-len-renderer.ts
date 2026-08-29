@@ -128,7 +128,6 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
   protected codeLines = MIN_SUBARRAY_LEN_CODE_LANGUAGES['java'];
   protected codePanelTitle = '长度最小的子数组 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private trackRowEl: HTMLElement | null = null;
   private metricLeftEl: HTMLElement | null = null;
   private metricRightEl: HTMLElement | null = null;
@@ -156,36 +155,8 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.sw-chip').forEach((btn) => {
@@ -199,7 +170,7 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: MIN_SUBARRAY_LEN_PROBLEM_HTML,
       analysisHtml: MIN_SUBARRAY_LEN_ANALYSIS_HTML,
@@ -254,7 +225,7 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
         .join('');
     }
 
-    // 2. 更新状态监视器
+    // 2. 状态看板与度量更新
     if (this.metricLeftEl) this.metricLeftEl.textContent = status === 'done' ? '结束' : String(left);
     if (this.metricRightEl) this.metricRightEl.textContent = status === 'done' ? '结束' : String(right);
     if (this.metricSumEl) this.metricSumEl.textContent = `${sum} / ${target}`;
@@ -262,16 +233,16 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
       this.metricMinLenEl.textContent = minLen === Infinity ? '∞' : String(minLen);
     }
 
-    // 进度刻度条
-    if (this.gaugeLabelEl) this.gaugeLabelEl.textContent = `sum: ${sum} / target: ${target}`;
+    // 仪表盘进度
+    const progressPct = Math.min(100, Math.round((sum / target) * 100));
+    if (this.gaugeLabelEl) this.gaugeLabelEl.textContent = `${sum} / ${target}`;
     if (this.gaugeFillEl) {
-      const percentage = Math.min(100, Math.round((sum / target) * 100));
-      this.gaugeFillEl.style.width = `${percentage}%`;
-      this.gaugeFillEl.style.background = sum >= target ? '#10b981' : '#3b82f6';
+      this.gaugeFillEl.style.width = `${progressPct}%`;
+      this.gaugeFillEl.style.background = sum >= target ? '#10b981' : '#2563eb';
     }
     if (this.gaugeStatusEl) {
-      this.gaugeStatusEl.textContent = sum >= target ? '✓ 满足条件' : '未达标';
-      this.gaugeStatusEl.style.color = sum >= target ? '#10b981' : '#3b82f6';
+      this.gaugeStatusEl.textContent = sum >= target ? '达标 (≥ target)' : '扩展中 (< target)';
+      this.gaugeStatusEl.style.color = sum >= target ? '#059669' : '#2563eb';
     }
 
     if (this.liveTextEl) this.liveTextEl.textContent = message;
@@ -295,23 +266,6 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
       }
     }
 
-    // 4. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 5. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
-
     const badgeMinLen = this.root?.querySelector('#badge-min-len');
     if (badgeMinLen) {
       badgeMinLen.textContent = minLen !== Infinity ? `最小长度: ${minLen}` : '最小长度: ∞';
@@ -322,7 +276,7 @@ export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
+    if (this.codeTerminal) this.codeTerminal.highlightLine(0);
   }
 }
 

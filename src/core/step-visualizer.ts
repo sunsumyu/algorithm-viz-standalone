@@ -17,6 +17,11 @@ import {
   saveViewportMode,
 } from './interfaces';
 import { CodePanel, HighlightTarget } from './code-panel';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+  DarkCodeTerminalConfig,
+} from './renderers/dark-code-terminal-presenter';
 
 export interface StepBase {
   /** 语义锚点标识（如 'update', 'loop-outer', 'return'），优先用于代码高亮与多语言对齐 */
@@ -34,6 +39,7 @@ export interface StepBase {
 export abstract class StepVisualizer<TStep extends StepBase> implements IVisualizer {
   protected root: HTMLElement | null = null;
   protected codePanel: CodePanel | null = null;
+  protected codeTerminal: DarkCodeTerminalInstance | null = null;
   protected steps: TStep[] = [];
   protected currentIndex = 0;
   protected isPlaying = false;
@@ -42,16 +48,19 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   protected stepMode: ExecutionStepMode = getSavedStepMode();
   protected viewportMode: DpViewportMode = getSavedViewportMode();
 
-  // 子类在 initDOMElements 中填充这些引用
+  // 子类在 initDOMElements 中填充这些引用（或由 bindPlaybackControls 自动发现）
   protected btnStart: HTMLButtonElement | null = null;
   protected btnReset: HTMLButtonElement | null = null;
   protected btnPrev: HTMLButtonElement | null = null;
   protected btnPlay: HTMLButtonElement | null = null;
   protected btnNext: HTMLButtonElement | null = null;
+  protected progressSlider: HTMLInputElement | null = null;
   protected speedSlider: HTMLInputElement | null = null;
+  protected speedSelect: HTMLSelectElement | null = null;
   protected speedLabel: HTMLElement | null = null;
   protected stepCounter: HTMLElement | null = null;
   protected messageEl: HTMLElement | null = null;
+  protected liveMessageEl: HTMLElement | null = null;
   protected modeSelectorEl: HTMLElement | null = null;
   protected viewportSelectorEl: HTMLElement | null = null;
 
@@ -119,6 +128,17 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     }
   }
 
+  /** 挂载并托管暗色代码终端深模块 */
+  public mountTerminal(config: DarkCodeTerminalConfig): DarkCodeTerminalInstance {
+    this.codeTerminal = DarkCodeTerminalPresenter.mount(this.root, config);
+    return this.codeTerminal;
+  }
+
+  /** 手动设置暗色代码终端实例 */
+  public setTerminal(instance: DarkCodeTerminalInstance | null): void {
+    this.codeTerminal = instance;
+  }
+
   /** 根据 logContainerId / clearLogButtonId 绑定 DOM 元素 */
   protected bindLogContainer(): void {
     if (this.clearLogButtonId) {
@@ -155,37 +175,68 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     container.scrollTop = container.scrollHeight;
   }
 
-  /** 绑定通用播放控制按钮（按约定 id 命名） */
+  /** 绑定通用播放控制按钮与进度条、速度选择器（支持现代与传统选择器智能匹配） */
   protected bindPlaybackControls(
-    ids: { reset?: string; prev?: string; play?: string; next?: string; speed?: string; speedLabel?: string; counter?: string; message?: string; modeSelector?: string; viewportSelector?: string } = {}
+    ids: {
+      reset?: string;
+      prev?: string;
+      play?: string;
+      next?: string;
+      start?: string;
+      speed?: string;
+      speedLabel?: string;
+      counter?: string;
+      message?: string;
+      progress?: string;
+      liveText?: string;
+      modeSelector?: string;
+      viewportSelector?: string;
+    } = {}
   ): void {
     if (!this.root) return;
-    const resetId = ids.reset || 'step-reset';
-    const prevId = ids.prev || 'step-prev';
-    const playId = ids.play || 'step-play';
-    const nextId = ids.next || 'step-next';
-    const speedId = ids.speed || 'step-speed';
-    const speedLabelId = ids.speedLabel || 'step-speed-label';
-    const counterId = ids.counter || 'step-counter';
-    const messageId = ids.message || 'step-message';
-    const modeSelectorId = ids.modeSelector || 'step-mode-selector';
-    const viewportSelectorId = ids.viewportSelector || 'dp-viewport-selector';
 
-    this.btnReset = this.root.querySelector(`#${resetId}`) as HTMLButtonElement | null;
-    this.btnPrev = this.root.querySelector(`#${prevId}`) as HTMLButtonElement | null;
-    this.btnPlay = this.root.querySelector(`#${playId}`) as HTMLButtonElement | null;
-    this.btnNext = this.root.querySelector(`#${nextId}`) as HTMLButtonElement | null;
-    this.speedSlider = this.root.querySelector(`#${speedId}`) as HTMLInputElement | null;
-    this.speedLabel = this.root.querySelector(`#${speedLabelId}`) as HTMLElement | null;
-    this.stepCounter = this.root.querySelector(`#${counterId}`) as HTMLElement | null;
-    this.messageEl = this.root.querySelector(`#${messageId}`) as HTMLElement | null;
-    this.modeSelectorEl = this.root.querySelector(`#${modeSelectorId}`) as HTMLElement | null;
-    this.viewportSelectorEl = this.root.querySelector(`#${viewportSelectorId}`) as HTMLElement | null;
+    // 智能选择器匹配（优先使用自定义 ID，其次自适应现代 4-Card 选择器，最后回退传统 ID）
+    const queryEl = <T extends HTMLElement>(customId: string | undefined, defaultSelectors: string[]): T | null => {
+      if (customId) {
+        return this.root!.querySelector(`#${customId}`) as T | null;
+      }
+      for (const selector of defaultSelectors) {
+        const el = this.root!.querySelector(selector) as T | null;
+        if (el) return el;
+      }
+      return null;
+    };
 
+    this.btnStart = queryEl<HTMLButtonElement>(ids.start, ['#btn-generate', '#btn-start', '#step-start']);
+    this.btnReset = queryEl<HTMLButtonElement>(ids.reset, ['#btn-reset', '#step-reset']);
+    this.btnPrev = queryEl<HTMLButtonElement>(ids.prev, ['#btn-step-prev', '#step-prev', '#btn-prev']);
+    this.btnPlay = queryEl<HTMLButtonElement>(ids.play, ['#btn-play-pause', '#step-play', '#btn-play']);
+    this.btnNext = queryEl<HTMLButtonElement>(ids.next, ['#btn-step-next', '#step-next', '#btn-next']);
+
+    this.speedSlider = queryEl<HTMLInputElement>(ids.speed, ['#step-speed', '#slider-speed']);
+    this.speedSelect = queryEl<HTMLSelectElement>(ids.speed, ['#select-speed', '#step-speed-select']);
+    this.speedLabel = queryEl<HTMLElement>(ids.speedLabel, ['#step-speed-label', '#speed-value']);
+    this.progressSlider = queryEl<HTMLInputElement>(ids.progress, ['#slider-progress', '#step-progress', '#timeline-slider']);
+    this.stepCounter = queryEl<HTMLElement>(ids.counter, ['#metric-step', '#step-counter', '#step-count']);
+    this.messageEl = queryEl<HTMLElement>(ids.message, ['#step-message', '#msg-box']);
+    this.liveMessageEl = queryEl<HTMLElement>(ids.liveText, ['#step-live-text', '[id$="-live-text"]', '.live-text', '[data-live-text]']);
+    this.modeSelectorEl = queryEl<HTMLElement>(ids.modeSelector, ['#step-mode-selector']);
+    this.viewportSelectorEl = queryEl<HTMLElement>(ids.viewportSelector, ['#dp-viewport-selector']);
+
+    if (this.btnStart) this.btnStart.onclick = () => this.start();
     if (this.btnReset) this.btnReset.onclick = () => this.reset();
     if (this.btnPrev) this.btnPrev.onclick = () => this.prevStep();
     if (this.btnPlay) this.btnPlay.onclick = () => this.togglePlay();
     if (this.btnNext) this.btnNext.onclick = () => this.nextStep();
+
+    if (this.progressSlider) {
+      this.progressSlider.oninput = (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      };
+    }
 
     if (this.speedSlider) {
       this.speedSlider.oninput = (e) => {
@@ -193,7 +244,19 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
         if (this.speedLabel) this.speedLabel.textContent = (this.playbackSpeed / 1000).toFixed(1) + 's';
       };
     }
-    if (this.speedLabel) this.speedLabel.textContent = (this.playbackSpeed / 1000).toFixed(1) + 's';
+
+    if (this.speedSelect) {
+      this.speedSelect.onchange = (e) => {
+        const val = parseInt((e.target as HTMLSelectElement).value, 10);
+        if (!isNaN(val) && val > 0) {
+          this.playbackSpeed = val;
+        }
+      };
+    }
+
+    if (this.speedLabel && this.speedSlider) {
+      this.speedLabel.textContent = (this.playbackSpeed / 1000).toFixed(1) + 's';
+    }
 
     this.bindModeSelector();
     this.bindViewportSelector();
@@ -295,8 +358,23 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     const step = this.steps[this.currentIndex];
     this.renderStep(step);
     if (this.messageEl && step.message != null) this.messageEl.textContent = step.message;
-    if (this.stepCounter) this.stepCounter.textContent = `步骤: ${this.currentIndex + 1} / ${this.steps.length}`;
-    if (step.codeLine != null) this.codePanel?.highlight(step.codeLine);
+    if (this.liveMessageEl && step.message != null) this.liveMessageEl.textContent = step.message;
+    if (this.stepCounter) {
+      const counterText = this.stepCounter.textContent || '';
+      if (counterText.includes('步骤:') || counterText.includes('步骤：')) {
+        this.stepCounter.textContent = `步骤: ${this.currentIndex + 1} / ${this.steps.length}`;
+      } else {
+        this.stepCounter.textContent = `${this.currentIndex + 1} / ${this.steps.length}`;
+      }
+    }
+    if (this.progressSlider) {
+      this.progressSlider.max = String(Math.max(0, this.steps.length - 1));
+      this.progressSlider.value = String(this.currentIndex);
+    }
+    if (step.codeLine != null) {
+      this.codePanel?.highlight(step.codeLine);
+      this.codeTerminal?.highlightLine(step.codeLine);
+    }
     // 更新代码面板下方变量监视器（支持 step.vars 与 step.metrics 双向同步）
     const stepAny = step as { vars?: StepVar[]; metrics?: Record<string, unknown> };
     const effectiveVars: StepVar[] | undefined = stepAny.vars || (
@@ -385,14 +463,27 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     return this.currentIndex;
   }
 
-
   protected updateButtons(): void {
-    if (!this.btnPrev || !this.btnNext || !this.btnPlay) return;
     const finished = this.currentIndex >= this.steps.length - 1;
-    this.btnPrev.disabled = this.currentIndex === 0;
-    this.btnNext.disabled = finished;
-    this.btnPlay.disabled = finished;
-    this.btnPlay.textContent = this.isPlaying ? '暂停' : finished ? '完成' : '播放';
+    if (this.btnPrev) this.btnPrev.disabled = this.currentIndex === 0;
+    if (this.btnNext) this.btnNext.disabled = finished;
+    if (this.btnPlay) {
+      this.btnPlay.disabled = finished && !this.isPlaying;
+      const playText = this.isPlaying ? '暂停' : finished ? '完成' : '播放';
+      const playIcon = this.isPlaying ? '⏸' : finished ? '✓' : '▶';
+
+      const iconSpan = this.btnPlay.querySelector('.icon');
+      if (iconSpan) {
+        iconSpan.textContent = playIcon;
+      } else {
+        const currentText = this.btnPlay.textContent || '';
+        if (currentText.includes('▶') || currentText.includes('⏸') || currentText.includes('✓')) {
+          this.btnPlay.textContent = `${playIcon} ${playText}`;
+        } else {
+          this.btnPlay.textContent = playText;
+        }
+      }
+    }
   }
 
   public destroy(): void {
@@ -410,5 +501,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     this.steps = [];
     this.currentIndex = 0;
     this.codePanel?.destroy();
+    this.codeTerminal?.destroy();
+    this.codeTerminal = null;
   }
 }

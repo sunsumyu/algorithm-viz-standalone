@@ -152,36 +152,8 @@ export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.sq-chip').forEach((btn) => {
@@ -195,7 +167,7 @@ export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: SQUARES_OF_SORTED_ARRAY_PROBLEM_HTML,
       analysisHtml: SQUARES_OF_SORTED_ARRAY_ANALYSIS_HTML,
@@ -218,31 +190,29 @@ export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
         .map((num, idx) => {
           const isLeft = left === idx && status !== 'done';
           const isRight = right === idx && status !== 'done';
-          const isSelected = (status === 'write-left' && isLeft) || (status === 'write-right' && isRight);
+          const isSelected = isLeft || isRight;
 
-          let boxClasses = 'sq-cell-box';
-          if (isLeft) boxClasses += ' is-active-left';
-          if (isRight) boxClasses += ' is-active-right';
+          let boxClass = 'sq-cell-box';
+          if (status === 'write-left' && isLeft) boxClass += ' selected-left';
+          else if (status === 'write-right' && isRight) boxClass += ' selected-right';
+          else if (isSelected) boxClass += ' comparing';
 
           const badges: string[] = [];
           if (isLeft && isRight) {
-            badges.push('<span class="sq-ptr-badge left">left</span>');
-            badges.push('<span class="sq-ptr-badge right">right</span>');
+            badges.push('<span class="sq-ptr-badge left">L</span>');
+            badges.push('<span class="sq-ptr-badge right">R</span>');
           } else {
             if (isLeft) badges.push('<span class="sq-ptr-badge left">left</span>');
             if (isRight) badges.push('<span class="sq-ptr-badge right">right</span>');
           }
-
-          const sqVal = num * num;
 
           return `
             <div class="sq-cell-wrapper">
               <div class="sq-pointer-tags">
                 ${badges.join('')}
               </div>
-              <div class="${boxClasses}">
+              <div class="${boxClass}">
                 <span class="val">${num}</span>
-                <span class="sq-val">${sqVal}</span>
                 <span class="idx">[${idx}]</span>
               </div>
             </div>
@@ -254,24 +224,21 @@ export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
     // 2. 渲染结果数组 (下轨)
     if (this.outputTrackEl) {
       this.outputTrackEl.innerHTML = result
-        .map((num, idx) => {
-          const isWrite = writeIdx === idx && status !== 'done';
-          const isFilled = num !== null;
+        .map((val, idx) => {
+          const isWriting = writeIdx === idx && status !== 'done';
+          const hasVal = val !== null;
 
-          let boxClasses = 'sq-cell-box';
-          if (isWrite) boxClasses += ' is-writing';
-          if (isFilled) boxClasses += ' is-filled';
-
-          const badges: string[] = [];
-          if (isWrite) badges.push('<span class="sq-ptr-badge write">write</span>');
+          let boxClass = 'sq-cell-box';
+          if (isWriting) boxClass += ' write-target';
+          else if (hasVal) boxClass += ' filled';
 
           return `
             <div class="sq-cell-wrapper">
               <div class="sq-pointer-tags">
-                ${badges.join('')}
+                ${isWriting ? '<span class="sq-ptr-badge write">write</span>' : ''}
               </div>
-              <div class="${boxClasses}">
-                <span class="val">${num !== null ? num : '—'}</span>
+              <div class="${boxClass}">
+                <span class="val">${val !== null ? val : '—'}</span>
                 <span class="idx">[${idx}]</span>
               </div>
             </div>
@@ -319,23 +286,6 @@ export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
         this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
-
-    // 5. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 6. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
 
     const badgeWrite = this.root?.querySelector('#badge-write');
     if (badgeWrite) {

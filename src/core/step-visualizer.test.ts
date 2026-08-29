@@ -121,4 +121,130 @@ describe('StepVisualizer Deep Module Guard', () => {
     visualizer.destroy();
     expect(visualizer.getIsPlaying()).toBe(false);
   });
+
+  it('应该自动识别并绑定现代 4-Card 控制器（按钮、进度条、计数器与暗色终端）', async () => {
+    class MockDomNode {
+      public tagName: string;
+      public id: string;
+      public value: string = '0';
+      public max: string = '0';
+      public textContent: string = '';
+      public disabled: boolean = false;
+      public children: MockDomNode[] = [];
+      public parentNode: MockDomNode | null = null;
+      public attributes: Record<string, string> = {};
+      public oninput: ((e: any) => void) | null = null;
+      public onchange: ((e: any) => void) | null = null;
+      public onclick: ((e: any) => void) | null = null;
+      private listeners: Record<string, Function[]> = {};
+
+      constructor(tagName: string, id: string = '', textContent: string = '') {
+        this.tagName = tagName.toUpperCase();
+        this.id = id;
+        this.textContent = textContent;
+      }
+
+      public appendChild(child: MockDomNode) {
+        this.children.push(child);
+        child.parentNode = this;
+      }
+
+      public querySelector(selector: string): MockDomNode | null {
+        for (const child of this.children) {
+          if (selector === `#${child.id}`) return child;
+          if (selector.startsWith('#') && selector.includes(child.id)) return child;
+          const found = child.querySelector(selector);
+          if (found) return found;
+        }
+        return null;
+      }
+
+      public querySelectorAll(selector: string): MockDomNode[] {
+        const res: MockDomNode[] = [];
+        for (const child of this.children) {
+          if (selector.includes(child.id)) res.push(child);
+          res.push(...child.querySelectorAll(selector));
+        }
+        return res;
+      }
+
+      public click() {
+        if (this.onclick) this.onclick({ target: this });
+      }
+
+      public dispatchEvent(event: { type: string }) {
+        if (event.type === 'input' && this.oninput) {
+          this.oninput({ target: this });
+        }
+        if (event.type === 'change' && this.onchange) {
+          this.onchange({ target: this });
+        }
+      }
+    }
+
+    const root = new MockDomNode('div', 'algo-view');
+    const btnGen = new MockDomNode('button', 'btn-generate', '运行');
+    const btnReset = new MockDomNode('button', 'btn-reset', '重置');
+    const btnPrev = new MockDomNode('button', 'btn-step-prev', '上一步');
+    const btnPlay = new MockDomNode('button', 'btn-play-pause', '▶ 播放');
+    const btnNext = new MockDomNode('button', 'btn-step-next', '下一步');
+    const slider = new MockDomNode('input', 'slider-progress');
+    const speedSelect = new MockDomNode('select', 'select-speed');
+    const counter = new MockDomNode('span', 'metric-step', '0 / 0');
+    const liveText = new MockDomNode('span', 'step-live-text', '等待就绪');
+
+    root.appendChild(btnGen);
+    root.appendChild(btnReset);
+    root.appendChild(btnPrev);
+    root.appendChild(btnPlay);
+    root.appendChild(btnNext);
+    root.appendChild(slider);
+    root.appendChild(speedSelect);
+    root.appendChild(counter);
+    root.appendChild(liveText);
+
+    const highlightedLines: any[] = [];
+    const mockTerminal = {
+      highlightLine: (line: any) => highlightedLines.push(line),
+      switchLanguage: () => {},
+      switchTab: () => {},
+      getCurrentLanguage: () => 'java',
+      getFontSize: () => 12,
+      destroy: vi.fn(),
+    };
+
+    const viz = new TestStepVisualizer();
+    viz.setTerminal(mockTerminal as any);
+    await viz.init({ root: root as unknown as HTMLElement, algorithmId: 'test-algo', viewId: 'algo-test-view' });
+
+    // 验证初始状态同步
+    expect(slider.max).toBe('2');
+    expect(slider.value).toBe('0');
+    expect(counter.textContent).toBe('1 / 3');
+    expect(liveText.textContent).toBe('Step 1');
+    expect(highlightedLines).toContain(1);
+
+    // 模拟点击下一步
+    btnNext.click();
+    expect(slider.value).toBe('1');
+    expect(counter.textContent).toBe('2 / 3');
+    expect(liveText.textContent).toBe('Step 2');
+    expect(highlightedLines).toContain(2);
+
+    // 模拟拖动进度条跳转
+    slider.value = '2';
+    slider.dispatchEvent({ type: 'input' });
+    expect(viz.getCurrentIndex()).toBe(2);
+    expect(counter.textContent).toBe('3 / 3');
+    expect(btnPlay.textContent).toContain('完成');
+
+    // 模拟切换速度
+    speedSelect.value = '300';
+    speedSelect.dispatchEvent({ type: 'change' });
+    expect(viz.getPlaybackSpeed()).toBe(300);
+
+    // 验证 destroy 释放
+    viz.destroy();
+    expect(mockTerminal.destroy).toHaveBeenCalled();
+  });
 });
