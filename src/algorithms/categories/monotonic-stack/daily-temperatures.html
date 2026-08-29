@@ -688,6 +688,12 @@
 
     <!-- 参数与操作工具组 -->
     <div class="dt-header-right">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="dt-chip" data-temperatures="73,74,75,71,69,72,76,73">示例 1 (8天)</button>
+        <button class="dt-chip" data-temperatures="30,40,50,60">示例 2 (单调递增)</button>
+        <button class="dt-chip" data-temperatures="89,62,70,58,47,76,100">波谷反弹</button>
+      </div>
+
       <div class="dt-input-group">
         <span>temperatures:</span>
         <input type="text" id="input-temperatures" value="73,74,75,71,69,72,76,73" class="dt-input-str" placeholder="73,74,75,71,69,72,76,73" />
@@ -700,12 +706,6 @@
       <button id="btn-reset" class="dt-btn-reset">
         重置
       </button>
-
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <button class="dt-chip" data-temperatures="73,74,75,71,69,72,76,73">示例 1 (8天)</button>
-        <button class="dt-chip" data-temperatures="30,40,50,60">示例 2 (单调递增)</button>
-        <button class="dt-chip" data-temperatures="89,62,70,58,47,76,100">波谷反弹</button>
-      </div>
     </div>
   </header>
 

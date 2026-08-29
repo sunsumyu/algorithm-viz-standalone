@@ -9,6 +9,7 @@
  */
 
 import { IVisualizer, VisualizerContext } from './interfaces';
+import { visualizerHeaderLayoutCoordinator } from './controllers/visualizer-header-layout-coordinator';
 
 export interface MountRequest {
   algorithmId: string;
@@ -91,6 +92,7 @@ export class ViewMountEngine {
     if (req.templateContent) {
       container.innerHTML = req.templateContent;
       this.ensureBackButton(container, req.navigateBack);
+      visualizerHeaderLayoutCoordinator.normalizeHeaderControls(container);
     }
 
     // 4. 实例化并挂载 Visualizer

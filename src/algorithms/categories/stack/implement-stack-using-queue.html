@@ -688,6 +688,11 @@
 
     <!-- 参数与操作工具组 -->
     <div class="ms-header-right">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="ms-chip" data-val="push 1, push 2, top, pop, empty">经典示例</button>
+        <button class="ms-chip" data-val="push 10, push 20, push 30, pop, top, pop">三次压栈与连续出栈</button>
+      </div>
+
       <div class="ms-input-group">
         <span>操作序列:</span>
         <input type="text" id="input-ops" value="push 1, push 2, top, pop, empty" class="ms-input-str" placeholder="push 1, push 2, top, pop, empty" />
@@ -700,11 +705,6 @@
       <button id="btn-reset" class="ms-btn-reset">
         重置
       </button>
-
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <button class="ms-chip" data-val="push 1, push 2, top, pop, empty">经典示例</button>
-        <button class="ms-chip" data-val="push 10, push 20, push 30, pop, top, pop">三次压栈与连续出栈</button>
-      </div>
     </div>
   </header>
 

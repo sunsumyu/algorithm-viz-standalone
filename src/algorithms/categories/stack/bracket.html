@@ -688,6 +688,12 @@
 
     <!-- 参数与操作工具组 -->
     <div class="bracket-header-right">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="bracket-chip" data-val="()[]{}">标准混合</button>
+        <button class="bracket-chip" data-val="{[()]}">深层嵌套</button>
+        <button class="bracket-chip" data-val="([)]">交叉错位 (False)</button>
+      </div>
+
       <div class="bracket-input-group">
         <span>s:</span>
         <input type="text" id="input-brackets" value="()[]{}" class="bracket-input-str" placeholder="()[]{}" />
@@ -700,12 +706,6 @@
       <button id="btn-reset" class="bracket-btn-reset">
         重置
       </button>
-
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <button class="bracket-chip" data-val="()[]{}">标准混合</button>
-        <button class="bracket-chip" data-val="{[()]}">深层嵌套</button>
-        <button class="bracket-chip" data-val="([)]">交叉错位 (False)</button>
-      </div>
     </div>
   </header>
 

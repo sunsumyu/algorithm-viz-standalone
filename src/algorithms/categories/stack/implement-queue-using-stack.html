@@ -688,6 +688,12 @@
 
     <!-- 参数与操作工具组 -->
     <div class="mq-header-right">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button class="mq-chip" data-val="push 1, push 2, peek, pop, empty">经典示例</button>
+        <button class="mq-chip" data-val="push 1, push 2, push 3, pop, push 4, pop, pop, pop">交替出入队</button>
+        <button class="mq-chip" data-val="push 10, push 20, push 30, peek, pop, peek">连续窥探</button>
+      </div>
+
       <div class="mq-input-group">
         <span>操作序列:</span>
         <input type="text" id="input-ops" value="push 1, push 2, peek, pop, empty" class="mq-input-str" placeholder="push 1, push 2, peek, pop, empty" />
@@ -700,12 +706,6 @@
       <button id="btn-reset" class="mq-btn-reset">
         重置
       </button>
-
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <button class="mq-chip" data-val="push 1, push 2, peek, pop, empty">经典示例</button>
-        <button class="mq-chip" data-val="push 1, push 2, push 3, pop, push 4, pop, pop, pop">交替出入队</button>
-        <button class="mq-chip" data-val="push 10, push 20, push 30, peek, pop, peek">连续窥探</button>
-      </div>
     </div>
   </header>
 
