@@ -346,10 +346,17 @@ class AlgoNavigationManager {
           : ''
       }
 
-      <button id="algo-nav-shortcuts-btn" class="algo-nav-btn algo-nav-shortcuts" type="button" title="快捷键速查与自定义配置 (?)">
-        <span class="nav-btn-icon">⌨️</span>
-        <span class="nav-btn-text">快捷键</span>
-      </button>
+      <div class="algo-nav-group">
+        <button id="algo-nav-shortcuts-btn" class="algo-nav-btn algo-nav-shortcuts" type="button" title="快捷键速查与自定义配置 (?)">
+          <span class="nav-btn-icon">⌨️</span>
+          <span class="nav-btn-text">快捷键</span>
+        </button>
+
+        <button id="algo-nav-settings-btn" class="algo-nav-btn algo-nav-settings" type="button" title="软件全局设置 (Ctrl + ,)">
+          <span class="nav-btn-icon">⚙️</span>
+          <span class="nav-btn-text">设置</span>
+        </button>
+      </div>
     `;
 
     // 绑定事件
@@ -369,6 +376,12 @@ class AlgoNavigationManager {
     shortcutsBtn?.addEventListener('click', async () => {
       const { shortcutManagerModal } = await import('./shortcuts/shortcut-manager-modal');
       shortcutManagerModal.open();
+    });
+
+    const settingsBtn = document.getElementById('algo-nav-settings-btn');
+    settingsBtn?.addEventListener('click', async () => {
+      const { appSettingsModal } = await import('./settings/app-settings-modal');
+      appSettingsModal.open();
     });
   }
 

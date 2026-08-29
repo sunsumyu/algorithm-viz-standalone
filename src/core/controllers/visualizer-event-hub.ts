@@ -19,6 +19,8 @@ export interface VisualizerEventMap {
   'view-mode:change': { mode: '2d' | '3d' };
   /** 主题风格变更事件 */
   'theme:change': { themeId: string };
+  /** 全局设置配置变更事件 */
+  'settings:change': any;
   /** 布局分隔条拖拽变更事件 */
   'layout:resize': { splitterId: string; size: number };
 }

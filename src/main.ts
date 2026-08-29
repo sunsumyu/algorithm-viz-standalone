@@ -7,16 +7,21 @@
 
 import './styles/visualizer-theme.css';
 import './styles/shortcut-modal.css';
+import './styles/settings-modal.css';
 import { pluginLoader } from './core/plugin-loader';
 import { setupTauriWindowControls } from './core/tauri-window-controls';
 import { algorithmVizPlugin } from './plugins/algorithm-viz/index';
 import { algorithmManager } from './core/algorithm-manager';
 import { shortcutController } from './core/controllers/keyboard-shortcut-controller';
 import { shortcutManagerModal } from './core/shortcuts/shortcut-manager-modal';
+import { appSettingsRepo } from './core/settings/app-settings-repository';
+import { appSettingsModal } from './core/settings/app-settings-modal';
 
 if (typeof window !== 'undefined') {
   (window as unknown as { algorithmManager: typeof algorithmManager }).algorithmManager = algorithmManager;
   (window as unknown as { shortcutManagerModal: typeof shortcutManagerModal }).shortcutManagerModal = shortcutManagerModal;
+  (window as unknown as { appSettingsModal: typeof appSettingsModal }).appSettingsModal = appSettingsModal;
+  (window as unknown as { appSettingsRepo: typeof appSettingsRepo }).appSettingsRepo = appSettingsRepo;
 }
 
 /**
@@ -39,6 +44,19 @@ async function main(): Promise<void> {
     setupTauriWindowControls().catch((err) => {
       console.warn('[Main] Window controls init warning:', err);
     });
+
+    // 3. 绑定主页全局设置与快捷键按钮点击事件
+    const titlebarSettingsBtn = document.getElementById('titlebar-settings-btn');
+    titlebarSettingsBtn?.addEventListener('click', () => appSettingsModal.open());
+
+    const contentSettingsBtn = document.getElementById('content-settings-btn');
+    contentSettingsBtn?.addEventListener('click', () => appSettingsModal.open());
+
+    const titlebarShortcutsBtn = document.getElementById('titlebar-shortcuts-btn');
+    titlebarShortcutsBtn?.addEventListener('click', () => shortcutManagerModal.open());
+
+    const contentShortcutsBtn = document.getElementById('content-shortcuts-btn');
+    contentShortcutsBtn?.addEventListener('click', () => shortcutManagerModal.open());
 
     const totalTime = (performance.now() - startTime).toFixed(1);
     console.log(`[Main] Application ready in ${totalTime}ms (Total ${algorithmManager.getAllAlgorithms().length} algorithms active)`);
