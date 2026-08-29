@@ -287,9 +287,15 @@ export class IntersectionOfTwoArraysVisualizer extends StepVisualizer<Intersecti
       slider.max = String(this.steps.length - 1);
       slider.value = String(this.currentStepIndex);
     }
-    const indicator = this.root?.querySelector('#step-indicator');
-    if (indicator) {
-      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    const badgePhase = this.root?.querySelector('#badge-phase');
+    if (badgePhase) {
+      badgePhase.textContent =
+        phase === 'build-set1' ? '构建 set1' : phase === 'scan-nums2' ? '遍历 nums2 匹配' : '完成';
     }
   }
 

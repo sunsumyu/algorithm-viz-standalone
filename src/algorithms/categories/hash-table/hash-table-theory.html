@@ -1,5 +1,5 @@
 <style>
-  /* === 哈希表理论基础 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 哈希表理论基础 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-hash-table-theory-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-hash-table-theory-view .htt-btn-problem {
@@ -117,103 +118,133 @@
     flex-shrink: 0;
   }
 
-  #algo-hash-table-theory-view .htt-btn-primary {
-    padding: 4px 10px;
+  #algo-hash-table-theory-view .htt-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-hash-table-theory-view .htt-btn-primary:hover {
+  #algo-hash-table-theory-view .htt-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-hash-table-theory-view .htt-btn-secondary {
-    padding: 4px 8px;
+  #algo-hash-table-theory-view .htt-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-hash-table-theory-view .htt-btn-secondary:hover {
+  #algo-hash-table-theory-view .htt-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-hash-table-theory-view .htt-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-hash-table-theory-view .htt-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-hash-table-theory-view .htt-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-hash-table-theory-view .htt-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-hash-table-theory-view .htt-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-hash-table-theory-view .htt-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-hash-table-theory-view .htt-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-hash-table-theory-view .htt-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-hash-table-theory-view .htt-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 哈希桶阵列与链表冲突沙盘 */
-  #algo-hash-table-theory-view .htt-sandbox-container {
-    flex: 1;
+  #algo-hash-table-theory-view .htt-legend-bar {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: space-around;
     gap: 10px;
-    padding: 6px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-hash-table-theory-view .htt-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 哈希桶沙盘展示盒 */
+  #algo-hash-table-theory-view .htt-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
     width: 100%;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
   }
 
   #algo-hash-table-theory-view .htt-buckets-list {
@@ -221,107 +252,193 @@
     flex-direction: column;
     gap: 6px;
     width: 100%;
-    max-width: 500px;
+    max-width: 440px;
   }
 
   #algo-hash-table-theory-view .htt-bucket-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 4px 8px;
-    transition: all 0.2s;
-  }
-
-  #algo-hash-table-theory-view .htt-bucket-row.is-target {
-    border-color: #3b82f6;
-    background: #eff6ff;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 
   #algo-hash-table-theory-view .htt-slot-badge {
-    width: 44px;
-    padding: 2px 4px;
-    border-radius: 4px;
-    background: #e2e8f0;
+    width: 60px;
+    height: 28px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1.5px solid #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     color: #475569;
-    text-align: center;
+    flex-shrink: 0;
+  }
+  #algo-hash-table-theory-view .htt-slot-badge.is-target {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
   }
 
   #algo-hash-table-theory-view .htt-chain-nodes {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex: 1;
-    overflow-x: auto;
+    flex-wrap: wrap;
   }
 
-  #algo-hash-table-theory-view .htt-chain-node {
-    padding: 2px 6px;
+  #algo-hash-table-theory-view .htt-node-box {
+    padding: 3px 8px;
     border-radius: 6px;
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
     color: #0f172a;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-
-  #algo-hash-table-theory-view .htt-chain-node.is-new {
+  #algo-hash-table-theory-view .htt-node-box.is-new {
     border-color: #10b981;
-    background: #f0fdf4;
-    color: #15803d;
+    background: #ecfdf5;
+    color: #047857;
+  }
+  #algo-hash-table-theory-view .htt-node-box.is-collision {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    color: #b45309;
   }
 
-  /* Preset Chips */
+  /* 预设案例 Chips */
   #algo-hash-table-theory-view .htt-preset-chips {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-hash-table-theory-view .htt-chip {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 10px;
     color: #475569;
     cursor: pointer;
     transition: all 0.15s;
   }
   #algo-hash-table-theory-view .htt-chip:hover {
-    border-color: #3b82f6;
-    color: #2563eb;
     background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
   }
 
-  /* Card 2: 状态监视器 */
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-hash-table-theory-view .htt-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-hash-table-theory-view .htt-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-hash-table-theory-view .htt-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-hash-table-theory-view .htt-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-hash-table-theory-view .htt-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-hash-table-theory-view .htt-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-hash-table-theory-view .htt-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-hash-table-theory-view .htt-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   #algo-hash-table-theory-view .htt-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
   }
 
   #algo-hash-table-theory-view .htt-metric-card {
-    background: #f8fafc;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -336,7 +453,7 @@
 
   #algo-hash-table-theory-view .htt-metric-val {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
   }
@@ -345,87 +462,290 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
-    background: #f8fafc;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   #algo-hash-table-theory-view .htt-live-alert {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.4;
     display: flex;
     align-items: flex-start;
     gap: 6px;
   }
 
-  /* 底部播放进度条控制条 */
-  #algo-hash-table-theory-view .htt-playback-bar {
-    background: #ffffff;
-    border-radius: 12px;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-hash-table-theory-view .htt-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-hash-table-theory-view .htt-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-hash-table-theory-view .htt-terminal-header {
+    background: #1e293b;
     padding: 6px 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
     flex-shrink: 0;
   }
 
-  #algo-hash-table-theory-view .htt-playback-controls {
+  #algo-hash-table-theory-view .htt-tab-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  #algo-hash-table-theory-view .htt-ctrl-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #algo-hash-table-theory-view .htt-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-hash-table-theory-view .htt-ctrl-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+  #algo-hash-table-theory-view .htt-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  #algo-hash-table-theory-view .htt-progress-wrap {
-    flex: 1;
+  #algo-hash-table-theory-view .htt-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-hash-table-theory-view .htt-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-hash-table-theory-view .htt-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-hash-table-theory-view .htt-font-tools {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #algo-hash-table-theory-view .htt-progress-wrap input[type="range"] {
-    flex: 1;
-    accent-color: #2563eb;
+  #algo-hash-table-theory-view .htt-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-hash-table-theory-view .htt-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-hash-table-theory-view .htt-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
 
-  #algo-hash-table-theory-view .htt-step-badge {
-    font-size: 11px;
+  #algo-hash-table-theory-view .htt-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-hash-table-theory-view .htt-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-hash-table-theory-view .htt-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-hash-table-theory-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-hash-table-theory-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+  }
+  #algo-hash-table-theory-view .code-line-num {
     color: #475569;
-    white-space: nowrap;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-hash-table-theory-view .htt-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-hash-table-theory-view .htt-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-hash-table-theory-view .htt-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-hash-table-theory-view .htt-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-hash-table-theory-view .htt-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-hash-table-theory-view .htt-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-hash-table-theory-view .htt-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-hash-table-theory-view .htt-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-hash-table-theory-view .htt-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-hash-table-theory-view .htt-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-hash-table-theory-view .htt-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-hash-table-theory-view .htt-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
@@ -434,120 +754,207 @@
   <header class="htt-header">
     <div class="htt-header-left">
       <div class="htt-icon-btn">📖</div>
-      <div class="htt-main-title">哈希表理论基础 · Hash Table Theory</div>
-      <button class="htt-btn-problem" id="btn-problem-info" title="查看理论全景">
-        <span>📖</span> 原理与解析
-      </button>
-      <div class="htt-badge-mode">哈希函数与冲突解决</div>
-      <div class="htt-badge-complexity">O(1) 平均访问</div>
+      <h1 class="htt-main-title">哈希表理论基础 (Hash Table Theory)</h1>
+      <button id="btn-open-problem-modal" class="htt-btn-problem">📋 理论全景</button>
+      <span class="htt-badge-mode">哈希映射·拉链法冲突处理</span>
+      <span class="htt-badge-complexity">O(1) 平均访问</span>
     </div>
+
     <div class="htt-header-right">
-      <button class="htt-btn-primary" id="btn-generate">
-        <span>▶</span> 运行演示
+      <button id="btn-generate" class="htt-btn-generate">
+        <span>▶ 运行演示</span>
       </button>
-      <button class="htt-btn-secondary" id="btn-reset">
-        <span>↺</span> 重置
+      <button id="btn-reset" class="htt-btn-reset">
+        重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="htt-workspace">
-    <!-- Card 1: 哈希桶阵列与链表冲突沙盘 -->
-    <section class="htt-card">
-      <div class="htt-card-header">
-        <div class="htt-card-title">
-          <span>📊</span> 哈希桶阵列与拉链法链表沙盘 (Buckets & Chaining)
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="htt-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="htt-left-section">
+
+      <!-- 卡片 1: 哈希桶阵列与链表沙盘 -->
+      <div class="htt-card">
+        <div class="htt-card-header">
+          <div class="htt-card-title">
+            <span>📊 哈希桶阵列与拉链法链表沙盘 (Buckets & Chaining)</span>
+          </div>
+          <div class="htt-legend-bar">
+            <div><span class="htt-legend-dot" style="background:#2563eb;"></span> 目标槽位</div>
+            <div><span class="htt-legend-dot" style="background:#10b981;"></span> 新插入节点</div>
+            <div><span class="htt-legend-dot" style="background:#f59e0b;"></span> 碰撞冲突</div>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          哈希函数: hash(key) = key % 6
-        </div>
-      </div>
-      <div class="htt-card-body" style="justify-content: center;">
-        <div class="htt-sandbox-container">
+
+        <!-- 哈希桶展示盒 -->
+        <div class="htt-sandbox-wrap">
           <div class="htt-buckets-list" id="htt-buckets-list"></div>
         </div>
+
+        <!-- 预设案例 Chips -->
+        <div class="htt-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="htt-chip" data-keys="12, 18, 24, 7, 13">连续碰撞案例 (12, 18, 24 -> 桶 0)</button>
+          <button class="htt-chip" data-keys="5, 11, 17, 23, 29">桶 5 重度碰撞</button>
+          <button class="htt-chip" data-keys="1, 2, 3, 4, 5">均匀分散分布</button>
+        </div>
       </div>
-      <div class="htt-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="htt-chip" data-keys="12, 18, 24, 7, 13">连续碰撞案例 (12, 18, 24 -> 桶 0)</button>
-        <button class="htt-chip" data-keys="5, 11, 17, 23, 29">桶 5 重度碰撞</button>
-        <button class="htt-chip" data-keys="1, 2, 3, 4, 5">均匀分散分布</button>
+
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="htt-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="htt-slider" />
+        <div class="htt-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="htt-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="htt-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="htt-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
       </div>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="htt-card">
+        <div class="htt-card-header">
+          <div>
+            <div class="htt-card-title">🧭 哈希计算与碰撞监视器 (Collision Monitor)</div>
+            <div class="htt-card-desc">当前键、哈希槽位、碰撞判定与装载因子</div>
+          </div>
+          <span id="badge-collision" class="htt-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="htt-state-space-box">
+          <div class="htt-metrics-grid">
+            <div class="htt-metric-card">
+              <span class="htt-metric-label">当前键 Key</span>
+              <span class="htt-metric-val" id="metric-key" style="color: #2563eb;">—</span>
+            </div>
+            <div class="htt-metric-card">
+              <span class="htt-metric-label">目标槽位 Slot</span>
+              <span class="htt-metric-val" id="metric-slot" style="color: #9333ea;">—</span>
+            </div>
+            <div class="htt-metric-card">
+              <span class="htt-metric-label">碰撞判定</span>
+              <span class="htt-metric-val" id="metric-collision" style="color: #f59e0b;">否</span>
+            </div>
+            <div class="htt-metric-card">
+              <span class="htt-metric-label">装载因子 Load</span>
+              <span class="htt-metric-val" id="metric-load" style="color: #10b981;">0.00</span>
+            </div>
+          </div>
+
+          <div class="htt-formula-box" id="htt-formula-box">
+            <span>哈希函数:</span> <strong id="formula-calc" style="color: #2563eb;">hash(key) = key % 6</strong>
+          </div>
+
+          <div class="htt-live-alert">
+            <span>💡</span> <span id="htt-live-text">准备就绪，点击运行开始哈希表拉链法演示。</span>
+          </div>
+        </div>
+      </div>
+
     </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="htt-card">
-      <div class="htt-card-header">
-        <div class="htt-card-title">
-          <span>🧭</span> 哈希计算与碰撞监视器 (Collision Monitor)
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="htt-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="htt-dark-terminal">
+        <div class="htt-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="htt-tab-group">
+            <button id="btn-tab-code" class="sq-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="sq-tab-item">📋 理论全景</button>
+            <button id="btn-tab-analysis" class="sq-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="htt-lang-group" id="code-lang-tabs">
+            <button class="htt-lang-btn active" data-lang="java">Java</button>
+            <button class="htt-lang-btn" data-lang="cpp">C++</button>
+            <button class="htt-lang-btn" data-lang="python">Python</button>
+            <button class="htt-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="htt-font-tools">
+            <div class="htt-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="htt-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="htt-window-dots">
+              <span class="htt-dot" style="background:#ef4444;"></span>
+              <span class="htt-dot" style="background:#eab308;"></span>
+              <span class="htt-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="htt-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
         </div>
       </div>
-      <div class="htt-card-body">
-        <div class="htt-metrics-grid">
-          <div class="htt-metric-card">
-            <span class="htt-metric-label">当前插入 Key</span>
-            <span class="htt-metric-val" id="metric-key" style="color: #3b82f6;">—</span>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="htt-log-card">
+        <div class="htt-log-header">
+          <div class="htt-log-header-title">
+            <span>📜 执行日志</span>
           </div>
-          <div class="htt-metric-card">
-            <span class="htt-metric-label">目标槽位 Slot</span>
-            <span class="htt-metric-val" id="metric-slot" style="color: #a855f7;">—</span>
-          </div>
-          <div class="htt-metric-card">
-            <span class="htt-metric-label">碰撞冲突</span>
-            <span class="htt-metric-val" id="metric-collision" style="color: #f59e0b;">否</span>
-          </div>
-          <div class="htt-metric-card">
-            <span class="htt-metric-label">装载因子 α</span>
-            <span class="htt-metric-val" id="metric-load" style="color: #10b981;">0.00</span>
-          </div>
+          <span id="log-count" class="htt-log-count">0 条记录</span>
         </div>
-        <div class="htt-formula-box" id="htt-formula-box">
-          <span>哈希取模计算:</span> <strong id="formula-calc" style="color: #2563eb;">hash(key) = key % 6</strong>
-        </div>
-        <div class="htt-live-alert" id="htt-live-alert">
-          <span>💡</span> <span id="htt-live-text">准备就绪，点击运行开始哈希表存取演示。</span>
+
+        <div id="log-container" class="htt-log-body">
+          <!-- 动态填充日志条目 -->
         </div>
       </div>
+
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="htt-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
-
-    <!-- Card 4: 执行日志流 -->
-    <section class="htt-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="htt-card-header">
-        <div class="htt-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
-        </div>
-        <span class="htt-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="htt-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
-      </div>
-    </section>
   </main>
 
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="htt-playback-bar">
-    <div class="htt-playback-controls">
-      <button class="htt-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="htt-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="htt-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="htt-modal-backdrop hidden">
+    <div class="htt-modal-content">
+      <div class="htt-modal-header">
+        <div class="htt-modal-title">
+          <span>📋 算法原理与理论全景</span>
+        </div>
+        <button id="btn-close-problem-modal" class="htt-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="htt-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
-    <div class="htt-progress-wrap">
-      <span class="htt-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
+  </div>
 </div>

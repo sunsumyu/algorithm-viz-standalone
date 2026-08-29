@@ -1,5 +1,5 @@
 <style>
-  /* === 三数之和 (LeetCode 15) · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
+  /* === 三数之和 (LeetCode 15) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-three-sum-view {
     width: 100%;
     height: 100%;
@@ -65,6 +65,7 @@
     color: #0f172a;
     letter-spacing: -0.01em;
     white-space: nowrap;
+    margin: 0;
   }
 
   #algo-three-sum-view .th-btn-problem {
@@ -120,126 +121,149 @@
   #algo-three-sum-view .th-input-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 2px 6px;
-  }
-
-  #algo-three-sum-view .th-input-group label {
+    gap: 4px;
     font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
   }
 
   #algo-three-sum-view .th-input-group input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  #algo-three-sum-view .th-btn-primary {
-    padding: 4px 10px;
+  #algo-three-sum-view .th-btn-generate {
+    padding: 4px 12px;
     border-radius: 8px;
     background: #2563eb;
     color: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-three-sum-view .th-btn-primary:hover {
+  #algo-three-sum-view .th-btn-generate:hover {
     background: #1d4ed8;
   }
 
-  #algo-three-sum-view .th-btn-secondary {
-    padding: 4px 8px;
+  #algo-three-sum-view .th-btn-reset {
+    padding: 4px 10px;
     border-radius: 8px;
     background: #ffffff;
     color: #475569;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
   }
-  #algo-three-sum-view .th-btn-secondary:hover {
+  #algo-three-sum-view .th-btn-reset:hover {
     background: #f1f5f9;
-    color: #1e293b;
+    color: #0f172a;
   }
 
-  /* 2. 主体 4-Card 栅格 */
-  #algo-three-sum-view .th-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 8px;
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-three-sum-view .th-main-layout {
     flex: 1;
     min-height: 0;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-three-sum-view .th-card {
-    background: #ffffff;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-three-sum-view .th-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     overflow: hidden;
-    min-width: 0;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-three-sum-view .th-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   #algo-three-sum-view .th-card-header {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    gap: 8px;
   }
 
   #algo-three-sum-view .th-card-title {
     font-size: 12px;
-    font-weight: 700;
-    color: #334155;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  #algo-three-sum-view .th-card-body {
-    flex: 1;
-    min-height: 0;
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  #algo-three-sum-view .th-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
 
-  /* Card 1: 排序数组与三指针沙盘 */
-  #algo-three-sum-view .th-sandbox-container {
+  #algo-three-sum-view .th-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-three-sum-view .th-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 排序数组与三指针沙盘展示盒 */
+  #algo-three-sum-view .th-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
     flex: 1;
+    min-height: 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: space-around;
-    gap: 12px;
     padding: 8px;
-    width: 100%;
+    overflow: auto;
+    gap: 8px;
   }
 
   #algo-three-sum-view .th-track-section {
@@ -247,11 +271,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   #algo-three-sum-view .th-track-label {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
     color: #64748b;
     display: flex;
@@ -263,25 +287,25 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
     overflow-x: auto;
-    padding: 20px 8px 4px;
+    padding: 16px 4px 4px;
   }
 
   #algo-three-sum-view .th-cell-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     position: relative;
   }
 
   #algo-three-sum-view .th-cell-box {
-    width: 44px;
-    height: 48px;
-    border-radius: 10px;
-    background: #f8fafc;
+    width: 38px;
+    height: 42px;
+    border-radius: 8px;
+    background: #ffffff;
     border: 2px solid #cbd5e1;
     display: flex;
     flex-direction: column;
@@ -293,13 +317,13 @@
   }
 
   #algo-three-sum-view .th-cell-box .val {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 800;
     color: #0f172a;
   }
 
   #algo-three-sum-view .th-cell-box .idx {
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 700;
     color: #94a3b8;
   }
@@ -307,27 +331,27 @@
   #algo-three-sum-view .th-cell-box.is-i {
     border-color: #3b82f6;
     background: #eff6ff;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    transform: translateY(-4px);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    transform: translateY(-3px);
   }
 
   #algo-three-sum-view .th-cell-box.is-left {
     border-color: #10b981;
     background: #f0fdf4;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-    transform: translateY(-4px);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    transform: translateY(-3px);
   }
 
   #algo-three-sum-view .th-cell-box.is-right {
     border-color: #f59e0b;
     background: #fffbeb;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
-    transform: translateY(-4px);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+    transform: translateY(-3px);
   }
 
   #algo-three-sum-view .th-pointer-tags {
     position: absolute;
-    top: -22px;
+    top: -18px;
     display: flex;
     align-items: center;
     gap: 2px;
@@ -336,7 +360,7 @@
   #algo-three-sum-view .th-ptr-badge {
     padding: 1px 4px;
     border-radius: 4px;
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 800;
     font-family: 'JetBrains Mono', monospace;
     white-space: nowrap;
@@ -359,21 +383,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
-    padding: 6px;
-    min-height: 40px;
+    padding: 4px;
+    min-height: 32px;
     width: 100%;
   }
 
   #algo-three-sum-view .th-result-chip {
-    padding: 3px 8px;
-    border-radius: 8px;
+    padding: 2px 7px;
+    border-radius: 6px;
     background: #f0fdf4;
     border: 1px solid #86efac;
     color: #15803d;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
@@ -386,15 +410,13 @@
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
-    padding: 4px 10px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
   }
 
   #algo-three-sum-view .th-chip {
     padding: 2px 7px;
     border-radius: 6px;
-    background: #ffffff;
+    background: #f8fafc;
     border: 1px solid #e2e8f0;
     font-size: 10.5px;
     font-family: 'JetBrains Mono', monospace;
@@ -408,84 +430,24 @@
     background: #eff6ff;
   }
 
-  /* Card 2: 状态监视器 */
-  #algo-three-sum-view .th-metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  #algo-three-sum-view .th-metric-card {
-    background: #f8fafc;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  #algo-three-sum-view .th-metric-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-  }
-
-  #algo-three-sum-view .th-metric-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    font-weight: 800;
-    color: #0f172a;
-  }
-
-  #algo-three-sum-view .th-formula-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-  }
-
-  #algo-three-sum-view .th-live-alert {
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #1e40af;
-    font-size: 11.5px;
-    line-height: 1.5;
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-  }
-
-  /* 底部播放进度条控制条 */
+  /* 播放控制条 Playback Bar */
   #algo-three-sum-view .th-playback-bar {
     background: #ffffff;
-    border-radius: 12px;
-    padding: 6px 12px;
+    border-radius: 14px;
+    padding: 6px 14px;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
-    margin-top: 8px;
     flex-shrink: 0;
   }
 
-  #algo-three-sum-view .th-playback-controls {
+  #algo-three-sum-view .th-play-btn-group {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-shrink: 0;
   }
 
   #algo-three-sum-view .th-ctrl-btn {
@@ -507,6 +469,17 @@
     color: #0f172a;
   }
 
+  #algo-three-sum-view .th-btn-play {
+    width: 64px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-weight: 700;
+  }
+  #algo-three-sum-view .th-btn-play:hover {
+    background: #1d4ed8;
+  }
+
   #algo-three-sum-view .th-progress-wrap {
     flex: 1;
     display: flex;
@@ -514,17 +487,135 @@
     gap: 8px;
   }
 
-  #algo-three-sum-view .th-progress-wrap input[type="range"] {
+  #algo-three-sum-view .th-slider {
     flex: 1;
+    height: 4px;
     accent-color: #2563eb;
+    cursor: pointer;
   }
 
-  #algo-three-sum-view .th-step-badge {
+  #algo-three-sum-view .th-step-counter {
     font-size: 11px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
     color: #475569;
     white-space: nowrap;
+  }
+
+  #algo-three-sum-view .th-speed-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+
+  #algo-three-sum-view .th-speed-wrap select {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 11px;
+    background: #ffffff;
+    color: #0f172a;
+    outline: none;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-three-sum-view .th-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  #algo-three-sum-view .th-metric-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-three-sum-view .th-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-three-sum-view .th-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-three-sum-view .th-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    flex-shrink: 0;
+  }
+
+  #algo-three-sum-view .th-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-three-sum-view .th-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-three-sum-view .th-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 38%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #algo-three-sum-view .th-log-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
   }
 </style>
 
@@ -533,7 +624,7 @@
   <header class="th-header">
     <div class="th-header-left">
       <div class="th-icon-btn">🎯</div>
-      <div class="th-main-title">三数之和 · 3Sum</div>
+      <h1 class="th-main-title">三数之和 (LeetCode 15)</h1>
       <button class="th-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
         <span>📖</span> 题目与解析
       </button>
@@ -545,29 +636,36 @@
         <label for="input-nums">数组:</label>
         <input type="text" id="input-nums" value="-1, 0, 1, 2, -1, -4" style="width: 170px;" placeholder="逗号分隔">
       </div>
-      <button class="th-btn-primary" id="btn-generate">
+      <button class="th-btn-generate" id="btn-generate">
         <span>▶</span> 运行
       </button>
-      <button class="th-btn-secondary" id="btn-reset">
+      <button class="th-btn-reset" id="btn-reset">
         <span>↺</span> 重置
       </button>
     </div>
   </header>
 
-  <!-- 2. 主体 4-Card 栅格 -->
-  <main class="th-workspace">
-    <!-- Card 1: 排序数组与三指针沙盘 -->
-    <section class="th-card">
-      <div class="th-card-header">
-        <div class="th-card-title">
-          <span>📊</span> 升序数组与三指针沙盘 (Sorted Array & 3 Pointers)
+  <!-- 2. 主演示区 4-Card 布局 (左 54% 右 46%) -->
+  <main class="th-main-layout">
+    <!-- 左侧区域：Card 1 + Playback Bar + Card 2 -->
+    <section class="th-left-section">
+      <!-- Card 1: 排序数组与三指针沙盘 -->
+      <div class="th-card">
+        <div class="th-card-header">
+          <div>
+            <div class="th-card-title">
+              <span>📊</span> 升序数组与三指针沙盘
+            </div>
+            <div class="th-card-desc">排序后固定外层基准 i，双指针 left / right 对撞搜索</div>
+          </div>
+          <div class="th-legend-bar">
+            <span><span class="th-legend-dot" style="background: #3b82f6;"></span>基准 i</span>
+            <span><span class="th-legend-dot" style="background: #10b981;"></span>左指针 left</span>
+            <span><span class="th-legend-dot" style="background: #f59e0b;"></span>右指针 right</span>
+          </div>
         </div>
-        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
-          <span style="color: #3b82f6;">● i</span> · <span style="color: #10b981;">● left</span> · <span style="color: #f59e0b;">● right</span>
-        </div>
-      </div>
-      <div class="th-card-body" style="justify-content: center;">
-        <div class="th-sandbox-container">
+
+        <div class="th-sandbox-wrap">
           <!-- 上轨：升序数组与三指针 -->
           <div class="th-track-section">
             <div class="th-track-label">
@@ -583,24 +681,50 @@
             <div class="th-results-grid" id="th-results-grid"></div>
           </div>
         </div>
-      </div>
-      <div class="th-preset-chips">
-        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-        <button class="th-chip" data-nums="-1, 0, 1, 2, -1, -4">LeetCode 示例 1 ([-1,0,1,2,-1,-4])</button>
-        <button class="th-chip" data-nums="0, 1, 1">无合法解 ([0,1,1])</button>
-        <button class="th-chip" data-nums="0, 0, 0">全零三元组 ([0,0,0])</button>
-        <button class="th-chip" data-nums="-2, 0, 1, 1, 2">多重解 ([-2,0,1,1,2])</button>
-      </div>
-    </section>
 
-    <!-- Card 2: 状态监视器 -->
-    <section class="th-card">
-      <div class="th-card-header">
-        <div class="th-card-title">
-          <span>🧭</span> 求和与去重监视器 (Sum & Dedup Monitor)
+        <div class="th-preset-chips">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+          <button class="th-chip" data-nums="-1, 0, 1, 2, -1, -4">示例 1 ([-1,0,1,2,-1,-4])</button>
+          <button class="th-chip" data-nums="0, 1, 1">无合法解 ([0,1,1])</button>
+          <button class="th-chip" data-nums="0, 0, 0">全零 ([0,0,0])</button>
+          <button class="th-chip" data-nums="-2, 0, 1, 1, 2">多重解 ([-2,0,1,1,2])</button>
         </div>
       </div>
-      <div class="th-card-body">
+
+      <!-- 播放控制条 Playback Bar -->
+      <div class="th-playback-bar">
+        <div class="th-play-btn-group">
+          <button class="th-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+          <button class="th-ctrl-btn th-btn-play" id="btn-play-pause" title="播放/暂停">播放</button>
+          <button class="th-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+        </div>
+        <div class="th-progress-wrap">
+          <input type="range" class="th-slider" id="slider-progress" min="0" max="0" value="0">
+          <div class="th-step-counter">
+            <span id="step-cur">1</span> / <span id="step-total">1</span>
+          </div>
+        </div>
+        <div class="th-speed-wrap">
+          <label>速度:</label>
+          <select id="select-speed">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Card 2: 状态监视器 -->
+      <div class="th-card">
+        <div class="th-card-header">
+          <div>
+            <div class="th-card-title">
+              <span>🧭</span> 求和与去重监视器 (Sum & Dedup Monitor)
+            </div>
+            <div class="th-card-desc">监控三指针指向元素、三数之和与剪枝逻辑</div>
+          </div>
+        </div>
+
         <div class="th-metrics-grid">
           <div class="th-metric-card">
             <span class="th-metric-label">固定基准 i</span>
@@ -619,52 +743,34 @@
             <span class="th-metric-val" id="metric-sum" style="color: #a855f7;">—</span>
           </div>
         </div>
+
         <div class="th-formula-box" id="th-formula-box">
-          <span>当前求和:</span> <strong id="formula-i" style="color: #3b82f6;">nums[i]</strong> + <strong id="formula-left" style="color: #10b981;">nums[left]</strong> + <strong id="formula-right" style="color: #f59e0b;">nums[right]</strong> = <strong id="formula-sum" style="color: #a855f7;">sum</strong>
+          <span>求和:</span> <strong id="formula-i" style="color: #3b82f6;">nums[i]</strong> + <strong id="formula-left" style="color: #10b981;">nums[left]</strong> + <strong id="formula-right" style="color: #f59e0b;">nums[right]</strong> = <strong id="formula-sum" style="color: #a855f7;">sum</strong>
         </div>
+
         <div class="th-live-alert" id="th-live-alert">
           <span>💡</span> <span id="th-live-text">准备就绪，点击运行开始三数之和双指针扫描。</span>
         </div>
       </div>
     </section>
 
-    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
-    <section class="th-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
-    </section>
+    <!-- 右侧区域：Card 3 + Card 4 -->
+    <section class="th-right-section">
+      <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 挂载) -->
+      <div id="code-terminal-card" style="flex: 1 1 62%; min-height: 0; display: flex; flex-direction: column;"></div>
 
-    <!-- Card 4: 执行日志流 -->
-    <section class="th-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-      <div class="th-card-header">
-        <div class="th-card-title">
-          <span>📜</span> 执行日志流 (Execution Trace Log)
+      <!-- Card 4: 执行日志流 -->
+      <div class="th-log-card">
+        <div class="th-card-header">
+          <div class="th-card-title">
+            <span>📜</span> 执行日志流 (Execution Trace Log)
+          </div>
+          <span class="th-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
         </div>
-        <span class="th-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
-      </div>
-      <div class="th-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-        <!-- 日志条目动态渲染 -->
+        <div class="th-log-container" id="log-container">
+          <!-- 日志条目动态渲染 -->
+        </div>
       </div>
     </section>
   </main>
-
-  <!-- 3. 底部进度与控制栏 -->
-  <footer class="th-playback-bar">
-    <div class="th-playback-controls">
-      <button class="th-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
-      <button class="th-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
-      <button class="th-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
-    </div>
-    <div class="th-progress-wrap">
-      <span class="th-step-badge" id="step-indicator">步骤 0 / 0</span>
-      <input type="range" id="slider-progress" min="0" max="0" value="0">
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
-      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
-        <option value="1200">慢速</option>
-        <option value="600" selected>正常</option>
-        <option value="250">快速</option>
-      </select>
-    </div>
-  </footer>
 </div>
