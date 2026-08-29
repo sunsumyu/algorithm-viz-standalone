@@ -757,3 +757,105 @@ input[type="number"]::-webkit-outer-spin-button {
   box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
 }
 
+/* ===== 暗色代码终端 Universal Dark Code Terminal Header 统一样式 ===== */
+#btn-tab-code,
+#btn-tab-problem,
+#btn-tab-analysis,
+.sq-tab-item,
+[class*="-tab-item"] {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+#btn-tab-code.active,
+#btn-tab-problem.active,
+#btn-tab-analysis.active,
+.sq-tab-item.active,
+[class*="-tab-item"].active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+#btn-tab-code:hover:not(.active),
+#btn-tab-problem:hover:not(.active),
+#btn-tab-analysis:hover:not(.active),
+.sq-tab-item:hover:not(.active),
+[class*="-tab-item"]:hover:not(.active) {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sq-lang-btn,
+[class*="-lang-btn"] {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.sq-lang-btn.active,
+[class*="-lang-btn"].active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.sq-lang-btn:hover:not(.active),
+[class*="-lang-btn"]:hover:not(.active) {
+  color: #cbd5e1;
+}
+
+.sq-font-scaler,
+[class*="-font-scaler"] {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 1px 4px;
+}
+
+.sq-font-scaler button,
+[class*="-font-scaler"] button {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 3px;
+  transition: color 0.15s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.sq-font-scaler button:hover,
+[class*="-font-scaler"] button:hover {
+  color: #ffffff;
+}
+
+.sq-font-scaler span,
+[class*="-font-scaler"] span {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  color: #cbd5e1;
+  min-width: 14px;
+  text-align: center;
+}
+
