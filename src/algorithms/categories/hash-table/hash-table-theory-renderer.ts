@@ -110,14 +110,12 @@ export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
   protected codePanelTitle = '哈希表实现原理 代码演示';
 
   private currentKeys: number[] = [12, 18, 24, 7, 13];
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private bucketsListEl: HTMLElement | null = null;
   private metricKeyEl: HTMLElement | null = null;
   private metricSlotEl: HTMLElement | null = null;
   private metricCollisionEl: HTMLElement | null = null;
   private metricLoadEl: HTMLElement | null = null;
   private formulaCalcEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
   private logContainer: HTMLElement | null = null;
   private logCountEl: HTMLElement | null = null;
 
@@ -130,40 +128,11 @@ export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
     this.metricCollisionEl = this.root.querySelector('#metric-collision');
     this.metricLoadEl = this.root.querySelector('#metric-load');
     this.formulaCalcEl = this.root.querySelector('#formula-calc');
-    this.liveTextEl = this.root.querySelector('#htt-live-text');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.htt-chip').forEach((btn) => {
@@ -176,7 +145,7 @@ export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: HASH_TABLE_THEORY_PROBLEM_HTML,
       analysisHtml: HASH_TABLE_THEORY_ANALYSIS_HTML,
@@ -249,8 +218,6 @@ export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
       }
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
     // 3. 更新日志流
     if (this.logContainer) {
       const stepIndex = this.currentStepIndex;
@@ -271,23 +238,6 @@ export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
       }
     }
 
-    // 4. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 5. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
-
     const badgeCollision = this.root?.querySelector('#badge-collision');
     if (badgeCollision) {
       badgeCollision.textContent =
@@ -299,7 +249,6 @@ export class HashTableTheoryVisualizer extends StepVisualizer<HTTStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 

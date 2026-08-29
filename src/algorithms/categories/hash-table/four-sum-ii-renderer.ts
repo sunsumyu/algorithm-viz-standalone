@@ -179,7 +179,6 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
   protected codePanelTitle = '四数相加 II 代码调试';
 
   private currentDemo = 1;
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private rowAEl: HTMLElement | null = null;
   private rowBEl: HTMLElement | null = null;
   private rowCEl: HTMLElement | null = null;
@@ -190,7 +189,6 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
   private metricIncEl: HTMLElement | null = null;
   private metricCountEl: HTMLElement | null = null;
   private formulaCalcEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
   private logContainer: HTMLElement | null = null;
   private logCountEl: HTMLElement | null = null;
 
@@ -207,40 +205,11 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
     this.metricIncEl = this.root.querySelector('#metric-inc');
     this.metricCountEl = this.root.querySelector('#metric-count');
     this.formulaCalcEl = this.root.querySelector('#formula-calc');
-    this.liveTextEl = this.root.querySelector('#fs2-live-text');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.fs2-chip').forEach((btn) => {
@@ -251,7 +220,7 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: FOUR_SUM_II_PROBLEM_HTML,
       analysisHtml: FOUR_SUM_II_ANALYSIS_HTML,
@@ -332,8 +301,6 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
       }
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
     // 4. 更新日志流
     if (this.logContainer) {
       const stepIndex = this.currentStepIndex;
@@ -353,23 +320,6 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
       }
     }
 
-    // 5. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 6. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
-
     const badgePhase = this.root?.querySelector('#badge-phase');
     if (badgePhase) {
       badgePhase.textContent = phase.startsWith('group1') ? 'Group 1 (A+B)' : 'Group 2 (C+D)';
@@ -380,7 +330,6 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 

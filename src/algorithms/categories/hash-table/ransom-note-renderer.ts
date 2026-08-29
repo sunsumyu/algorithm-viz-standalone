@@ -153,7 +153,6 @@ export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
   protected codeLines = RANSOM_NOTE_CODE_LANGUAGES['java'];
   protected codePanelTitle = '赎金信 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private trackMagEl: HTMLElement | null = null;
   private trackRanEl: HTMLElement | null = null;
   private bucketsGridEl: HTMLElement | null = null;
@@ -161,7 +160,6 @@ export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
   private metricCharEl: HTMLElement | null = null;
   private metricStockEl: HTMLElement | null = null;
   private metricResEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
   private logContainer: HTMLElement | null = null;
   private logCountEl: HTMLElement | null = null;
 
@@ -175,40 +173,11 @@ export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
     this.metricCharEl = this.root.querySelector('#metric-char');
     this.metricStockEl = this.root.querySelector('#metric-stock');
     this.metricResEl = this.root.querySelector('#metric-res');
-    this.liveTextEl = this.root.querySelector('#rn-live-text');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.rn-chip').forEach((btn) => {
@@ -222,7 +191,7 @@ export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: RANSOM_NOTE_PROBLEM_HTML,
       analysisHtml: RANSOM_NOTE_ANALYSIS_HTML,
@@ -331,8 +300,6 @@ export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
       }
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
     // 4. 更新日志流
     if (this.logContainer) {
       const stepIndex = this.currentStepIndex;
@@ -355,30 +322,12 @@ export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
         this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
     }
-
-    // 5. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 6. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
   }
 
   public reset(): void {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
