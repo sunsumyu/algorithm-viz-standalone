@@ -1,22 +1,31 @@
 /**
- * 路径总和可视化器
- * LeetCode 112
- * 判断是否存在从根节点到叶子节点的路径，使得路径上所有节点值之和等于目标值
+ * 路径总和可视化器 — 4-Card 标准现代架构
+ * 递归减法回溯、叶子节点精确判定、路径高亮与成功早停
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  PATH_SUM_PROBLEM_HTML,
+  PATH_SUM_ANALYSIS_HTML,
+  PATH_SUM_CODE_LANGUAGES,
+} from './path-sum-problem-content';
+import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
 import template from './path-sum.html?raw';
 
 export interface PSStep {
   tree: TreeNode | null;
   current: number | null;
+  targetSum: number;
+  currentSum: number;
+  remain: number;
   path: number[];
-  remaining: number;
-  depth: number;
-  found: boolean | null;
-  action: 'enter' | 'subtract' | 'leaf-check' | 'recurse' | 'backtrack' | 'done';
+  found: boolean;
+  action: 'enter' | 'check-leaf' | 'match' | 'leave' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
@@ -24,298 +33,333 @@ export interface PSStep {
 
 export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[] {
   const steps: PSStep[] = [];
+  const currentPath: number[] = [];
+  let found = false;
 
   steps.push({
-    tree: root, current: null, path: [], remaining: targetSum, depth: 0, found: null,
+    tree: root,
+    current: null,
+    targetSum,
+    currentSum: 0,
+    remain: targetSum,
+    path: [],
+    found: false,
     action: 'enter',
-    message: `目标和 = ${targetSum}，从根节点开始递归搜索`,
-    log: `开始，目标 = ${targetSum}`,
-    codeLine: [1, 2],
+    message: root ? `初始化路径总和搜索：targetSum = ${targetSum}，从根节点 ${root.val} 开始递归。` : '空树，返回 false。',
+    log: root ? `开始搜索 targetSum = ${targetSum}` : '空树 -> false',
+    codeLine: 2,
   });
 
   if (!root) {
     steps.push({
-      tree: null, current: null, path: [], remaining: targetSum, depth: 0, found: false,
+      tree: null,
+      current: null,
+      targetSum,
+      currentSum: 0,
+      remain: targetSum,
+      path: [],
+      found: false,
       action: 'done',
-      message: '空树，不存在路径',
-      log: '空树 → false',
-      codeLine: 2,
+      message: '❌ 空树不存在根到叶路径，返回 false。',
+      log: '✓ 未找到目标路径 (false)',
+      codeLine: 3,
     });
     return steps;
   }
 
-  const search = (node: TreeNode | null, remaining: number, path: number[], depth: number): boolean => {
-    if (!node) {
-      steps.push({
-        tree: root, current: null, path: [...path], remaining, depth, found: null,
-        action: 'enter',
-        message: '到达空节点，返回 false',
-        log: '空节点 → false',
-        codeLine: 3,
-      });
-      return false;
-    }
+  const dfs = (node: TreeNode | null, remain: number, runningSum: number): boolean => {
+    if (!node || found) return false;
 
-    // 进入节点
-    path.push(node.val);
-    const newRemaining = remaining - node.val;
+    currentPath.push(node.val);
+    const newSum = runningSum + node.val;
+    const isLeaf = !node.left && !node.right;
 
     steps.push({
-      tree: root, current: node.val, path: [...path], remaining: newRemaining, depth, found: null,
-      action: 'subtract',
-      message: `进入节点 ${node.val}，剩余目标: ${remaining} - ${node.val} = ${newRemaining}`,
-      log: `进入 ${node.val}，剩余 = ${newRemaining}`,
-      codeLine: 5,
+      tree: root,
+      current: node.val,
+      targetSum,
+      currentSum: newSum,
+      remain: targetSum - newSum,
+      path: [...currentPath],
+      found: false,
+      action: 'enter',
+      message: `进入节点 ${node.val}：当前路径 [${currentPath.join(' -> ')}]，当前累加和 = ${newSum} (目标 ${targetSum})。`,
+      log: `进入 ${node.val} (和=${newSum})`,
+      codeLine: 4,
     });
 
-    // 叶子节点检查
-    const isLeaf = !node.left && !node.right;
     if (isLeaf) {
+      const match = node.val === remain;
       steps.push({
-        tree: root, current: node.val, path: [...path], remaining: newRemaining, depth, found: null,
-        action: 'leaf-check',
-        message: `到达叶子节点 ${node.val}，检查剩余目标是否为 0: ${newRemaining}`,
-        log: `叶子 ${node.val}，剩余=${newRemaining}`,
-        codeLine: 6,
+        tree: root,
+        current: node.val,
+        targetSum,
+        currentSum: newSum,
+        remain: targetSum - newSum,
+        path: [...currentPath],
+        found: match,
+        action: match ? 'match' : 'check-leaf',
+        message: match
+          ? `🎯 成功到达叶子节点 ${node.val}！路径总和恰好等于 ${targetSum}！`
+          : `到达叶子节点 ${node.val}，累加和 ${newSum} &ne; ${targetSum}，回溯。`,
+        log: match ? `✓ 命中路径: [${currentPath.join('->')}] = ${targetSum}` : `叶子 ${node.val} 和不符`,
+        codeLine: match ? 6 : 5,
       });
 
-      if (newRemaining === 0) {
-        steps.push({
-          tree: root, current: node.val, path: [...path], remaining: newRemaining, depth, found: true,
-          action: 'done',
-          message: `✅ 找到路径！和为 ${targetSum}，路径: [${path.join(' → ')}]`,
-          log: `✅ 找到！[${path.join('→')}]`,
-          codeLine: 7,
-        });
+      if (match) {
+        found = true;
         return true;
       }
     }
 
-    // 递归左右子树
+    if (node.left && dfs(node.left, remain - node.val, newSum)) return true;
+    if (node.right && dfs(node.right, remain - node.val, newSum)) return true;
+
+    currentPath.pop();
+
     steps.push({
-      tree: root, current: node.val, path: [...path], remaining: newRemaining, depth, found: null,
-      action: 'recurse',
-      message: `节点 ${node.val} 不是目标叶子，递归搜索左右子树`,
-      log: `递归子树 (${node.val})`,
-      codeLine: 9,
-    });
-
-    const leftFound = search(node.left, newRemaining, path, depth + 1);
-    if (leftFound) return true;
-
-    const rightFound = search(node.right, newRemaining, path, depth + 1);
-    if (rightFound) return true;
-
-    // 回溯
-    path.pop();
-    steps.push({
-      tree: root, current: node.val, path: [...path], remaining, depth, found: null,
-      action: 'backtrack',
-      message: `回溯：离开节点 ${node.val}，恢复目标 ${remaining}`,
-      log: `回溯离开 ${node.val}`,
-      codeLine: 12,
+      tree: root,
+      current: node.val,
+      targetSum,
+      currentSum: runningSum,
+      remain: targetSum - runningSum,
+      path: [...currentPath],
+      found: false,
+      action: 'leave',
+      message: `回溯离开节点 ${node.val}。`,
+      log: `离开 ${node.val}`,
+      codeLine: [9, 10],
     });
 
     return false;
   };
 
-  const found = search(root, targetSum, [], 0);
+  dfs(root, targetSum, 0);
 
-  if (!found) {
-    steps.push({
-      tree: root, current: null, path: [], remaining: targetSum, depth: 0, found: false,
-      action: 'done',
-      message: `❌ 没有找到路径和为 ${targetSum} 的路径`,
-      log: `❌ 未找到`,
-      codeLine: 14,
-    });
-  }
+  steps.push({
+    tree: root,
+    current: null,
+    targetSum,
+    currentSum: found ? targetSum : 0,
+    remain: found ? 0 : targetSum,
+    path: found ? [...currentPath] : [],
+    found,
+    action: 'done',
+    message: found
+      ? `🎉 搜索成功！存在根到叶路径的和为 ${targetSum}。`
+      : `❌ 搜索结束，不存在和为 ${targetSum} 的根到叶路径。`,
+    log: found ? `✓ 存在目标路径 (true)` : `✗ 不存在目标路径 (false)`,
+    codeLine: found ? 6 : 3,
+  });
 
   return steps;
 }
 
 export class PathSumVisualizer extends StepVisualizer<PSStep> {
-  protected codeLines = [
-    'public boolean hasPathSum(TreeNode root, int targetSum) {',
-    '    if (root == null) return false;',
-    '    // 空节点不存在路径',
-    '',
-    '    // 累减节点值',
-    '    targetSum -= root.val;',
-    '    if (root.left == null && root.right == null && targetSum == 0) return true;',
-    '    // 到达叶子且剩余为 0 → 找到',
-    '',
-    '    // 递归搜索左右子树',
-    '    return hasPathSum(root.left, targetSum)',
-    '        || hasPathSum(root.right, targetSum);',
-    '    // 都不是 → 回溯',
-    '    // 都不存在这样的路径',
-    '}',
-  ];
-  protected codePanelTitle = '路径总和代码 (Java)';
+  protected codeLanguages = PATH_SUM_CODE_LANGUAGES;
+  protected codeLines = PATH_SUM_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '路径总和 代码调试';
 
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private remainingEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private pathEl: HTMLElement | null = null;
-  private targetInput: HTMLInputElement | null = null;
-
-  private treeData: (number | null)[] = [5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1];
-  private targetSum: number = 22;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private treeSvgContainer: HTMLElement | null = null;
+  private metricCurrEl: HTMLElement | null = null;
+  private metricSumEl: HTMLElement | null = null;
+  private metricRemainEl: HTMLElement | null = null;
+  private metricVerdictEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.treeEl = this.root.querySelector('#ps-tree');
-    this.logEl = this.root.querySelector('#ps-log');
-    this.depthEl = this.root.querySelector('#ps-depth');
-    this.remainingEl = this.root.querySelector('#ps-remaining');
-    this.currentEl = this.root.querySelector('#ps-current');
-    this.resultEl = this.root.querySelector('#ps-result');
-    this.pathEl = this.root.querySelector('#ps-path');
-    this.targetInput = this.root.querySelector('#ps-target') as HTMLInputElement;
-    this.bindPlaybackControls({ message: 'ps-message' });
 
-    this.root.querySelectorAll<HTMLButtonElement>('.ps-example-btn').forEach((btn) => {
+    this.treeSvgContainer = this.root.querySelector('#ps-tree-svg-container');
+    this.metricCurrEl = this.root.querySelector('#metric-curr');
+    this.metricSumEl = this.root.querySelector('#metric-sum');
+    this.metricRemainEl = this.root.querySelector('#metric-remain');
+    this.metricVerdictEl = this.root.querySelector('#metric-verdict');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#ps-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ps-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const d = btn.dataset.id;
-        if (d === '1') { this.treeData = [5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1]; this.targetSum = 22; }
-        else if (d === '2') { this.treeData = [1, 2, 3]; this.targetSum = 5; }
-        else { this.treeData = []; this.targetSum = 0; }
-        if (this.targetInput) this.targetInput.value = String(this.targetSum);
+        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+        const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
+        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
+        if (targetInput && btn.dataset.t) targetInput.value = btn.dataset.t;
         this.start();
       });
     });
 
-    this.root.querySelector('#ps-start')?.addEventListener('click', () => {
-      this.start();
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: PATH_SUM_PROBLEM_HTML,
+      analysisHtml: PATH_SUM_ANALYSIS_HTML,
+      initialLang: 'java',
     });
+  }
+
+  private parseTreeInput(raw: string): (number | null)[] {
+    return raw
+      .split(/[,，\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+      .filter((n) => n === null || !isNaN(n));
   }
 
   protected buildSteps(): PSStep[] {
-    const root = buildTree(this.treeData);
-    if (this.targetInput) this.targetSum = parseInt(this.targetInput.value) || 0;
-    return buildPSSteps(root, this.targetSum);
+    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
+    const raw = treeInput?.value || '5, 4, 8, 11, null, 13, 4, 7, 2';
+    const t = parseInt(targetInput?.value || '22', 10);
+    const arr = this.parseTreeInput(raw);
+    const root = buildTree(arr);
+    return buildPSSteps(root, isNaN(t) ? 22 : t);
   }
 
   protected renderStep(step: PSStep): void {
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.remainingEl) this.remainingEl.textContent = String(step.remaining);
-    if (this.currentEl) this.currentEl.textContent = step.current !== null ? String(step.current) : '-';
-    if (this.resultEl && step.found !== null) {
-      this.resultEl.textContent = step.found ? '是' : '否';
-      this.resultEl.style.color = step.found ? '#a6e3a1' : '#f38ba8';
-    }
-    // Handle message classes directly since messageEl conflicts with base class
-    const msgEl = this.root?.querySelector('#ps-message') as HTMLElement | null;
-    if (msgEl) {
-      msgEl.className = 'ps-message';
-      if (step.action === 'leaf-check' || step.found === true) msgEl.classList.add('success');
-      if (step.found === false) msgEl.classList.add('error');
+    const { tree, current, targetSum, currentSum, remain, path, found, action, message } = step;
+
+    // 1. 渲染 SVG 树拓扑
+    if (this.treeSvgContainer) {
+      const highlight = current != null ? new Set([current]) : new Set<number>();
+      const secondaryHighlight = new Set<number>(path);
+      const secondaryColor = found ? '#10b981' : '#3b82f6';
+
+      renderTreeSVG(
+        this.treeSvgContainer,
+        tree,
+        highlight,
+        found ? '#10b981' : '#fbbf24',
+        secondaryHighlight,
+        secondaryColor,
+      );
     }
 
-    this.renderTree(step);
-    this.renderPath(step);
-    this.renderLogLine(step);
+    // 2. 更新状态监视器
+    if (this.metricCurrEl) this.metricCurrEl.textContent = current != null ? `${current}` : '—';
+    if (this.metricSumEl) this.metricSumEl.textContent = `${currentSum} / ${targetSum}`;
+    if (this.metricRemainEl) this.metricRemainEl.textContent = `${remain}`;
+    if (this.metricVerdictEl) {
+      if (found) {
+        this.metricVerdictEl.textContent = '存在路径 (True)';
+        this.metricVerdictEl.style.color = '#10b981';
+      } else if (action === 'done' && !found) {
+        this.metricVerdictEl.textContent = '不存在 (False)';
+        this.metricVerdictEl.style.color = '#ef4444';
+      } else {
+        this.metricVerdictEl.textContent = '搜索中...';
+        this.metricVerdictEl.style.color = '#2563eb';
+      }
+    }
+
+    if (this.formulaActionEl) {
+      if (action === 'match') {
+        this.formulaActionEl.textContent = `命中: 叶子节点且路径和等于 ${targetSum} -> return true`;
+      } else if (action === 'check-leaf') {
+        this.formulaActionEl.textContent = `叶子节点累加和 ${currentSum} != ${targetSum}`;
+      } else {
+        this.formulaActionEl.textContent = 'hasPathSum(left, remain - val) || hasPathSum(right, remain - val)';
+      }
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'match' || (action === 'done' && found)
+          ? '#f0fdf4'
+          : action === 'done' && !found
+          ? '#fff1f2'
+          : '#eff6ff';
+      logEntry.style.color =
+        action === 'match' || (action === 'done' && found)
+          ? '#15803d'
+          : action === 'done' && !found
+          ? '#e11d48'
+          : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'match' || (action === 'done' && found)
+          ? '#bbf7d0'
+          : action === 'done' && !found
+          ? '#fecdd3'
+          : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderTree(step: PSStep): void {
-    if (!this.treeEl || !step.tree) {
-      if (this.treeEl) this.treeEl.innerHTML = '<span style="color:#6c7086">空树</span>';
-      return;
-    }
-    this.treeEl.innerHTML = '';
-    const levelHeight = 44;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '280');
-    svg.setAttribute('viewBox', '0 0 600 280');
-
-    const pathSet = new Set(step.path);
-
-    const drawNode = (node: TreeNode, x: number, y: number, spread: number, depth: number) => {
-      const isCurrent = step.current === node.val;
-      const isOnPath = pathSet.has(node.val);
-
-      if (node.left) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.left, x - spread, y + levelHeight, spread / 2, depth + 1);
-      }
-      if (node.right) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.right, x + spread, y + levelHeight, spread / 2, depth + 1);
-      }
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(x)); circle.setAttribute('cy', String(y)); circle.setAttribute('r', '18');
-      let fill = '#45475a';
-      let stroke = '#6c7086';
-      if (isCurrent) { fill = '#fab387'; stroke = '#fab387'; }
-      else if (isOnPath) { fill = '#5e6472'; stroke = '#fab387'; }
-      else if (step.found === false) { fill = '#313244'; }
-      circle.setAttribute('fill', fill);
-      circle.setAttribute('stroke', stroke);
-      circle.setAttribute('stroke-width', '2');
-      svg.appendChild(circle);
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(x)); text.setAttribute('y', String(y + 5));
-      text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#cdd6f4');
-      text.setAttribute('font-size', '12'); text.setAttribute('font-weight', 'bold');
-      text.textContent = String(node.val);
-      svg.appendChild(text);
-    };
-    drawNode(step.tree, 300, 30, 100, 0);
-    this.treeEl.appendChild(svg);
-  }
-
-  private renderPath(step: PSStep): void {
-    if (!this.pathEl) return;
-    const pathEl = this.pathEl;
-    pathEl.innerHTML = '';
-    if (step.path.length === 0) {
-      pathEl.innerHTML = '<span style="color:#6c7086; font-size:0.78rem;">（空）</span>';
-      return;
-    }
-    step.path.forEach((val, i) => {
-      const chip = document.createElement('span');
-      chip.className = 'ps-path-chip';
-      if (step.current === val) chip.classList.add('current');
-      chip.textContent = String(val);
-      pathEl.appendChild(chip);
-      if (i < step.path.length - 1) {
-        const arrow = document.createElement('span');
-        arrow.className = 'ps-path-arrow';
-        arrow.textContent = '→';
-        pathEl.appendChild(arrow);
-      }
-    });
-    const sumEl = document.createElement('span');
-    sumEl.style.cssText = 'margin-left:0.5rem; font-size:0.78rem; color:#585b70;';
-    const total = step.path.reduce((a, b) => a + b, 0);
-    sumEl.textContent = `(和=${total})`;
-    pathEl.appendChild(sumEl);
-  }
-
-  private renderLogLine(step: PSStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -324,11 +368,11 @@ registerAlgorithm({
   name: '路径总和',
   viewId: 'algo-path-sum-view',
   category: 'tree',
-  description: '判断是否存在根到叶子的路径，路径和等于目标值',
-  icon: '🛤️',
+  description: '判断二叉树中是否存在根到叶节点和等于目标值的路径',
+  icon: '🎯',
+  difficulty: 1,
+  levelOrder: 6,
+  learningGoal: '掌握二叉树根到叶路径回溯与减法计数的技巧',
   template,
   Visualizer: PathSumVisualizer,
-  difficulty: 2,
-  levelOrder: 8,
-  learningGoal: '掌握递归回溯求解根到叶子路径总和的技巧',
 });

@@ -1,470 +1,537 @@
-<!-- 二叉树前中后序遍历 LeetCode 144/94/145 -->
 <style>
+  /* === 二叉树遍历 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-tree-traversal-view {
-    padding: 1.5rem;
-    color: #cdd6f4;
-    max-width: 1400px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
-  @keyframes tt-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
-  }
-
-  @keyframes tt-pop-in {
-    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  @keyframes tt-glow {
-    0%, 100% { filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4)); }
-    50% { filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.8)); }
-  }
-
-  .tt-theme {
-    --accent-a: rgb(52, 211, 153);
-    --accent-b: rgb(251, 191, 36);
-    --bg-start: 20, 18, 38;
-    --bg-mid: 25, 23, 50;
-    --bg-end: 35, 32, 60;
-  }
-
-  .tt-container {
-    position: relative;
-    min-height: calc(100vh - 3rem);
-  }
-
-  .tt-root {
-    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.18), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.18), transparent 55%),
-                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
-    min-height: 100%;
-    padding: 1.5rem;
-    border-radius: 20px;
-  }
-
-  .tt-header {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  }
-
-  .tt-header-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .tt-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
-  }
-
-  .tt-title {
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-  }
-
-  .tt-desc {
-    color: #9399b2;
-    margin-bottom: 0.75rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  .tt-tip {
-    background: rgba(251, 191, 36, 0.1);
-    border: 1px solid rgba(251, 191, 36, 0.2);
-    border-radius: 10px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    color: var(--accent-b);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .tt-layout {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 1rem;
-  }
-
-  @media (max-width: 1100px) {
-    .tt-layout { grid-template-columns: 1fr; }
-  }
-
-  .tt-main {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .tt-controls {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-  }
-
-  .tt-btn {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    border: none;
-    border-radius: 10px;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
-  }
-
-  .tt-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
-  }
-
-  .tt-mode {
-    display: flex;
-    gap: 0.3rem;
-    align-items: center;
-  }
-
-  .tt-mode-btn {
-    background: rgba(49, 50, 68, 0.6);
-    color: #cdd6f4;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-size: 0.82rem;
-    transition: all 0.2s;
-  }
-
-  .tt-mode-btn:hover {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .tt-mode-btn.active {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    font-weight: 600;
-    border-color: transparent;
-  }
-
-  .tt-example {
-    background: rgba(255, 255, 255, 0.05);
-    color: #cdd6f4;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
-  }
-
-  .tt-example:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .tt-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.6rem;
-    margin-bottom: 1rem;
-  }
-
-  .tt-stat-wrapper {
-    position: relative;
-    background: rgba(15, 14, 26, 0.5);
-    border-radius: 10px;
-    padding: 0.6rem;
-    text-align: center;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .tt-stat-wrapper::before {
-    content: '';
-    position: absolute;
-    left: 2px;
-    top: 2px;
-    bottom: 2px;
-    width: 3px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-    border-radius: 3px;
+  #algo-tree-traversal-view * {
+    box-sizing: border-box;
   }
 
-  .tt-stat-label {
-    font-size: 0.7rem;
-    color: #6c7086;
-    margin-bottom: 0.25rem;
+  /* 1. 顶栏 Header */
+  #algo-tree-traversal-view .tt-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .tt-stat-val {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--accent-a);
-    font-variant-numeric: tabular-nums;
-    font-family: ui-monospace, SFMono-Regular, monospace;
+  #algo-tree-traversal-view .tt-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .tt-tree {
-    background: rgba(15, 14, 26, 0.5);
+  #algo-tree-traversal-view .tt-icon-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
-    padding: 1rem;
-    min-height: 220px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.75rem;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .tt-result {
-    background: rgba(15, 14, 26, 0.5);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    align-items: center;
-    min-height: 44px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+  #algo-tree-traversal-view .tt-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .tt-result-label {
-    color: #6c7086;
-    font-size: 0.8rem;
-    margin-right: 0.4rem;
-  }
-
-  .tt-result-val {
-    background: rgba(49, 50, 68, 0.6);
-    padding: 0.25rem 0.55rem;
+  #algo-tree-traversal-view .tt-btn-problem {
+    padding: 2px 7px;
     border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.2s;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-tree-traversal-view .tt-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .tt-result-val.current {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    animation: tt-glow 1.5s ease-in-out infinite;
-  }
-
-  .tt-message {
-    background: rgba(15, 14, 26, 0.5);
-    border-left: 3px solid var(--accent-a);
+  #algo-tree-traversal-view .tt-mode-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #f1f5f9;
+    padding: 2px;
     border-radius: 8px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
+    border: 1px solid #e2e8f0;
   }
 
-  .tt-log {
-    background: rgba(15, 14, 26, 0.5);
+  #algo-tree-traversal-view .tt-mode-btn {
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  #algo-tree-traversal-view .tt-mode-btn.is-active {
+    background: #ffffff;
+    color: #2563eb;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  #algo-tree-traversal-view .tt-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-tree-traversal-view .tt-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-traversal-view .tt-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 0.75rem;
-    max-height: 140px;
-    overflow-y: auto;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 0.78rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .tt-log div { padding: 2px 0; color: #9399b2; }
-
-  .tt-log div.active {
-    color: #cdd6f4;
-    font-weight: 600;
-    background: rgba(52, 211, 153, 0.15);
-    border-radius: 4px;
     padding: 2px 6px;
   }
 
-  .tt-right {
+  #algo-tree-traversal-view .tt-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-tree-traversal-view .tt-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-tree-traversal-view .tt-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-tree-traversal-view .tt-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-tree-traversal-view .tt-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-traversal-view .tt-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-tree-traversal-view .tt-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-tree-traversal-view .tt-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
 
-  .tt-playback {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1rem;
-  }
-
-  .tt-pb-row {
+  #algo-tree-traversal-view .tt-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
     display: flex;
-    gap: 0.5rem;
     align-items: center;
-    margin-bottom: 0.75rem;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
 
-  .tt-pb-btn {
+  #algo-tree-traversal-view .tt-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-tree-traversal-view .tt-card-body {
     flex: 1;
-    background: rgba(49, 50, 68, 0.6);
-    color: #cdd6f4;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.5rem;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 树结构 SVG 交互画布 */
+  #algo-tree-traversal-view .tt-tree-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Preset Chips */
+  #algo-tree-traversal-view .tt-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-tree-traversal-view .tt-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
     cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
+    transition: all 0.15s;
+  }
+  #algo-tree-traversal-view .tt-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
   }
 
-  .tt-pb-btn:hover:not(:disabled) {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
+  /* Card 2: 状态监视器 */
+  #algo-tree-traversal-view .tt-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
-  .tt-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  #algo-tree-traversal-view .tt-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .tt-pb-btn.play {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  #algo-tree-traversal-view .tt-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
 
-  .tt-pb-btn.play:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
+  #algo-tree-traversal-view .tt-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
   }
 
-  .tt-speed-row {
+  #algo-tree-traversal-view .tt-seq-box {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: #6c7086;
-    margin-bottom: 0.5rem;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    overflow-x: auto;
   }
 
-  .tt-speed-row input[type="range"] {
+  #algo-tree-traversal-view .tt-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-tree-traversal-view .tt-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-traversal-view .tt-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-tree-traversal-view .tt-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-traversal-view .tt-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-tree-traversal-view .tt-progress-wrap {
     flex: 1;
-    accent-color: var(--accent-a);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  .tt-speed-row span {
-    font-variant-numeric: tabular-nums;
+  #algo-tree-traversal-view .tt-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
   }
 
-  .tt-counter {
-    color: #6c7086;
-    font-size: 0.8rem;
-    text-align: center;
-  }
-
-  /* Tree node animations */
-  svg circle.current-node {
-    animation: tt-pulse 1.2s infinite;
-    stroke: var(--accent-a);
-    stroke-width: 3;
-  }
-
-  svg circle.visited-node {
-    animation: tt-pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  svg line {
-    transition: stroke 0.3s, stroke-width 0.3s;
+  #algo-tree-traversal-view .tt-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="tt-container">
-  <div class="tt-root">
-    <div class="tt-header">
-      <div class="tt-header-content">
-        <div class="tt-icon-badge">🌳</div>
-        <div>
-          <h1 class="tt-title">二叉树前中后序遍历</h1>
-          <div class="tt-desc">LeetCode 144/94/145 · 递归遍历：前序「根左右」、中序「左根右」、后序「左右根」。点击切换模式查看不同访问顺序。</div>
-        </div>
+<div id="algo-tree-traversal-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="tt-header">
+    <div class="tt-header-left">
+      <div class="tt-icon-btn">🌲</div>
+      <div class="tt-main-title">二叉树遍历 · Tree Traversal</div>
+      <button class="tt-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="tt-mode-group">
+        <button class="tt-mode-btn is-active" data-mode="pre">前序 (Pre)</button>
+        <button class="tt-mode-btn" data-mode="in">中序 (In)</button>
+        <button class="tt-mode-btn" data-mode="post">后序 (Post)</button>
       </div>
-      <div class="tt-tip">💡 核心动画：进入节点→按模式访问→递归左右→离开节点，对比三种顺序差异</div>
+      <div class="tt-badge-complexity">O(n) · O(h)</div>
     </div>
-
-    <div class="tt-layout">
-      <div class="tt-main">
-        <div class="tt-controls">
-          <div class="tt-mode">
-            <button class="tt-mode-btn active" data-mode="pre">前序</button>
-            <button class="tt-mode-btn" data-mode="in">中序</button>
-            <button class="tt-mode-btn" data-mode="post">后序</button>
-          </div>
-          <button id="tt-start" class="tt-btn">开始遍历</button>
-          <button class="tt-example" data-id="1">示例树1</button>
-          <button class="tt-example" data-id="2">示例树2</button>
-        </div>
-
-        <div class="tt-stats">
-          <div class="tt-stat-wrapper"><div class="tt-stat-label">当前节点</div><div class="tt-stat-val" id="tt-cur">-</div></div>
-          <div class="tt-stat-wrapper"><div class="tt-stat-label">递归深度</div><div class="tt-stat-val" id="tt-depth">0</div></div>
-          <div class="tt-stat-wrapper"><div class="tt-stat-label">已访问</div><div class="tt-stat-val" id="tt-visited">0</div></div>
-          <div class="tt-stat-wrapper"><div class="tt-stat-label">结果长度</div><div class="tt-stat-val" id="tt-len">0</div></div>
-        </div>
-
-        <div class="tt-tree" id="tt-tree"></div>
-
-        <div class="tt-result">
-          <span class="tt-result-label">访问序列：</span>
-          <div id="tt-result"></div>
-        </div>
-
-        <div class="tt-message" id="step-message">选择遍历模式后点击「开始遍历」。</div>
-
-        <div class="tt-log" id="tt-log"></div>
+    <div class="tt-header-right">
+      <div class="tt-input-group">
+        <label for="input-tree">层序数组:</label>
+        <input type="text" id="input-tree" value="1, 2, 3, 4, 5, 6, 7" style="width: 140px;">
       </div>
-
-      <div class="tt-right">
-        <div data-code-panel></div>
-        <div class="tt-playback">
-          <div class="tt-pb-row">
-            <button id="step-reset" class="tt-pb-btn">⏮重置</button>
-            <button id="step-prev" class="tt-pb-btn">◀上一步</button>
-            <button id="step-play" class="tt-pb-btn play">▶播放</button>
-            <button id="step-next" class="tt-pb-btn">下一步▶</button>
-          </div>
-          <div class="tt-speed-row">
-            <span>速度</span>
-            <input id="step-speed" type="range" min="200" max="2000" step="100" value="800" />
-            <span id="step-speed-label">0.8s</span>
-          </div>
-          <div class="tt-counter" id="step-counter">步骤: 1 / 1</div>
-        </div>
-      </div>
+      <button class="tt-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="tt-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-  </div>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="tt-workspace">
+    <!-- Card 1: 树结构 SVG 交互画布 -->
+    <section class="tt-card">
+      <div class="tt-card-header">
+        <div class="tt-card-title">
+          <span>📊</span> 二叉树拓扑结构与递归执行沙盘 (Binary Tree Canvas)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #fbbf24;">● 当前访问节点</span> · <span style="color: #3b82f6;">● 当前栈帧路径</span> · <span style="color: #34d399;">● 已输出</span>
+        </div>
+      </div>
+      <div class="tt-card-body" style="justify-content: center; align-items: center;">
+        <div class="tt-tree-svg-wrap" id="tt-tree-svg-container"></div>
+      </div>
+      <div class="tt-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设树结构:</span>
+        <button class="tt-chip" data-tree="1, 2, 3, 4, 5, 6, 7">满二叉树 7 节点</button>
+        <button class="tt-chip" data-tree="1, null, 2, 3">经典斜树 [1, null, 2, 3]</button>
+        <button class="tt-chip" data-tree="3, 9, 20, null, null, 15, 7">典型不平衡二叉树</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="tt-card">
+      <div class="tt-card-header">
+        <div class="tt-card-title">
+          <span>🧭</span> 遍历指标监视器 (Traversal Metrics Monitor)
+        </div>
+      </div>
+      <div class="tt-card-body">
+        <div class="tt-metrics-grid">
+          <div class="tt-metric-card">
+            <span class="tt-metric-label">当前节点 val</span>
+            <span class="tt-metric-val" id="metric-cur-node" style="color: #fbbf24;">1</span>
+          </div>
+          <div class="tt-metric-card">
+            <span class="tt-metric-label">调用栈深度 depth</span>
+            <span class="tt-metric-val" id="metric-depth" style="color: #2563eb;">0</span>
+          </div>
+          <div class="tt-metric-card">
+            <span class="tt-metric-label">已访问节点数</span>
+            <span class="tt-metric-val" id="metric-visited-count" style="color: #0f172a;">0</span>
+          </div>
+          <div class="tt-metric-card">
+            <span class="tt-metric-label">当前遍历模式</span>
+            <span class="tt-metric-val" id="metric-mode-name" style="color: #3b82f6;">前序 (根左右)</span>
+          </div>
+        </div>
+        <div class="tt-seq-box" id="tt-seq-box">
+          <span style="color: #64748b; font-weight: 700;">输出序列:</span>
+          <span id="traversal-result" style="color: #10b981; font-weight: 800;">[ ]</span>
+        </div>
+        <div class="tt-live-alert" id="tt-live-alert">
+          <span>💡</span> <span id="tt-live-text">准备就绪，点击运行开始二叉树遍历。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="tt-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="tt-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="tt-card-header">
+        <div class="tt-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="tt-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="tt-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="tt-playback-bar">
+    <div class="tt-playback-controls">
+      <button class="tt-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="tt-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="tt-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+    </div>
+    <div class="tt-progress-wrap">
+      <span class="tt-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

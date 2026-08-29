@@ -1,443 +1,515 @@
-<!-- 验证二叉搜索树 LeetCode 98 -->
 <style>
+  /* === 验证二叉搜索树 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-valid-bst-view {
-    padding: 1.5rem;
-    color: #cdd6f4;
-    max-width: 1400px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, sans-serif;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  @keyframes vb-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
+  #algo-valid-bst-view * {
+    box-sizing: border-box;
   }
 
-  @keyframes vb-pop-in {
-    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  @keyframes vb-shake-red {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-    20%, 40%, 60%, 80% { transform: translateX(4px); }
-  }
-
-  @keyframes vb-invalid-glow {
-    0%, 100% { filter: drop-shadow(0 0 6px rgba(243, 139, 168, 0.6)); }
-    50% { filter: drop-shadow(0 0 16px rgba(243, 139, 168, 1)); }
-  }
-
-  @keyframes vb-valid-glow {
-    0%, 100% { filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.4)); }
-    50% { filter: drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
-  }
-
-  .vb-theme {
-    --accent-a: rgb(52, 211, 153);
-    --accent-b: rgb(167, 139, 250);
-    --bg-start: 20, 18, 38;
-    --bg-mid: 25, 23, 50;
-    --bg-end: 35, 32, 60;
-    --invalid: rgb(243, 139, 168);
-  }
-
-  .vb-container {
-    position: relative;
-    min-height: calc(100vh - 3rem);
-  }
-
-  .vb-root {
-    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.18), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.18), transparent 55%),
-                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
-    min-height: 100%;
-    padding: 1.5rem;
-    border-radius: 20px;
-  }
-
-  .vb-header {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
+  /* 1. 顶栏 Header */
+  #algo-valid-bst-view .vb-header {
+    background: #ffffff;
     border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  }
-
-  .vb-header-content {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .vb-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+  #algo-valid-bst-view .vb-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-valid-bst-view .vb-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .vb-title {
-    font-size: 22px;
+  #algo-valid-bst-view .vb-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .vb-desc {
-    color: #9399b2;
-    margin-bottom: 0.75rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  .vb-tip {
-    background: rgba(167, 139, 250, 0.1);
-    border: 1px solid rgba(167, 139, 250, 0.2);
-    border-radius: 10px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    color: var(--accent-b);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .vb-layout {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 1rem;
-  }
-
-  @media (max-width: 1100px) {
-    .vb-layout { grid-template-columns: 1fr; }
-  }
-
-  .vb-main {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .vb-controls {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-  }
-
-  .vb-btn {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    border: none;
-    border-radius: 10px;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
+  #algo-valid-bst-view .vb-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
     cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-valid-bst-view .vb-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .vb-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
+  #algo-valid-bst-view .vb-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .vb-example {
-    background: rgba(255, 255, 255, 0.05);
-    color: #cdd6f4;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  #algo-valid-bst-view .vb-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-valid-bst-view .vb-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-valid-bst-view .vb-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 0.4rem 0.8rem;
+    padding: 2px 6px;
+  }
+
+  #algo-valid-bst-view .vb-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-valid-bst-view .vb-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-valid-bst-view .vb-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
     cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-valid-bst-view .vb-btn-primary:hover {
+    background: #1d4ed8;
   }
 
-  .vb-example:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+  #algo-valid-bst-view .vb-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-valid-bst-view .vb-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
   }
 
-  .vb-stats {
+  /* 2. 主体 4-Card 栅格 */
+  #algo-valid-bst-view .vb-workspace {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.6rem;
-    margin-bottom: 1rem;
-  }
-
-  .vb-stat-wrapper {
-    position: relative;
-    background: rgba(15, 14, 26, 0.5);
-    border-radius: 10px;
-    padding: 0.6rem;
-    text-align: center;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
     overflow: hidden;
   }
 
-  .vb-stat-wrapper::before {
-    content: '';
-    position: absolute;
-    left: 2px;
-    top: 2px;
-    bottom: 2px;
-    width: 3px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-    border-radius: 3px;
+  #algo-valid-bst-view .vb-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
 
-  .vb-stat-label {
-    font-size: 0.7rem;
-    color: #6c7086;
-    margin-bottom: 0.25rem;
+  #algo-valid-bst-view .vb-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
 
-  .vb-stat-val {
-    font-size: 1.2rem;
+  #algo-valid-bst-view .vb-card-title {
+    font-size: 12px;
     font-weight: 700;
-    color: var(--accent-a);
-    font-variant-numeric: tabular-nums;
-    font-family: ui-monospace, SFMono-Regular, monospace;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .vb-stat-wrapper.invalid {
-    background: rgba(243, 139, 168, 0.1);
+  #algo-valid-bst-view .vb-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
 
-  .vb-stat-wrapper.invalid::before {
-    background: linear-gradient(180deg, var(--invalid), #ff6b6b);
-  }
-
-  .vb-stat-wrapper.invalid .vb-stat-val {
-    color: var(--invalid);
-  }
-
-  .vb-tree {
-    background: rgba(15, 14, 26, 0.5);
-    border-radius: 10px;
-    padding: 1rem;
-    min-height: 240px;
+  /* Card 1: 树结构 SVG 画布 */
+  #algo-valid-bst-view .vb-tree-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
   }
 
-  .vb-message {
-    background: rgba(15, 14, 26, 0.5);
-    border-left: 3px solid var(--accent-a);
+  /* Preset Chips */
+  #algo-valid-bst-view .vb-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-valid-bst-view .vb-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-valid-bst-view .vb-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-valid-bst-view .vb-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-valid-bst-view .vb-metric-card {
+    background: #f8fafc;
     border-radius: 8px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  .vb-message.success {
-    border-left-color: var(--accent-a);
-    background: rgba(52, 211, 153, 0.08);
-  }
-
-  .vb-message.fail {
-    border-left-color: var(--invalid);
-    background: rgba(243, 139, 168, 0.08);
-  }
-
-  .vb-log {
-    background: rgba(15, 14, 26, 0.5);
-    border-radius: 8px;
-    padding: 0.75rem;
-    max-height: 140px;
-    overflow-y: auto;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 0.78rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .vb-log div { padding: 2px 0; color: #9399b2; }
-
-  .vb-log div.active {
-    color: #cdd6f4;
-    font-weight: 600;
-    background: rgba(52, 211, 153, 0.15);
-    border-radius: 4px;
-    padding: 2px 6px;
-  }
-
-  .vb-log div.invalid-line {
-    color: var(--invalid);
-    background: rgba(243, 139, 168, 0.12);
-    font-weight: 600;
-    border-radius: 4px;
-    padding: 2px 6px;
-  }
-
-  .vb-right {
+    border: 1px solid #e2e8f0;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 2px;
   }
 
-  .vb-playback {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1rem;
+  #algo-valid-bst-view .vb-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
 
-  .vb-pb-row {
+  #algo-valid-bst-view .vb-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-valid-bst-view .vb-formula-box {
     display: flex;
-    gap: 0.5rem;
     align-items: center;
-    margin-bottom: 0.75rem;
-  }
-
-  .vb-pb-btn {
-    flex: 1;
-    background: rgba(49, 50, 68, 0.6);
-    color: #cdd6f4;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 0.5rem;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
   }
 
-  .vb-pb-btn:hover:not(:disabled) {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
+  #algo-valid-bst-view .vb-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .vb-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .vb-pb-btn.play {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
-  }
-
-  .vb-pb-btn.play:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
-  }
-
-  .vb-speed-row {
+  /* 底部播放进度条控制条 */
+  #algo-valid-bst-view .vb-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: #6c7086;
-    margin-bottom: 0.5rem;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
 
-  .vb-speed-row input[type="range"] {
+  #algo-valid-bst-view .vb-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-valid-bst-view .vb-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-valid-bst-view .vb-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-valid-bst-view .vb-progress-wrap {
     flex: 1;
-    accent-color: var(--accent-a);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  .vb-speed-row span {
-    font-variant-numeric: tabular-nums;
+  #algo-valid-bst-view .vb-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
   }
 
-  .vb-counter {
-    color: #6c7086;
-    font-size: 0.8rem;
-    text-align: center;
-  }
-
-  /* Tree node animations */
-  svg circle.current-node {
-    animation: vb-pulse 1.2s infinite;
-    stroke: var(--accent-a);
-    stroke-width: 3;
-  }
-
-  svg circle.new-visited {
-    animation: vb-pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  svg circle.invalid-node {
-    animation: vb-shake-red 0.5s ease-in-out, vb-invalid-glow 1s ease-in-out infinite;
-  }
-
-  svg circle.valid-node {
-    animation: vb-valid-glow 2s ease-in-out infinite;
-  }
-
-  svg line {
-    transition: stroke 0.3s, stroke-width 0.3s;
+  #algo-valid-bst-view .vb-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="vb-container">
-  <div class="vb-root">
-    <div class="vb-header">
-      <div class="vb-header-content">
-        <div class="vb-icon-badge">🔍</div>
-        <div>
-          <h1 class="vb-title">验证二叉搜索树</h1>
-          <div class="vb-desc">LeetCode 98 · 中序遍历须严格递增；或递归传递 (min, max) 区间，节点值必须在区间内。</div>
-        </div>
-      </div>
-      <div class="vb-tip">💡 核心动画：中序遍历→检查递增性→非法节点抖动变红→最终判定合法/非法</div>
+<div id="algo-valid-bst-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="vb-header">
+    <div class="vb-header-left">
+      <div class="vb-icon-btn">⚖️</div>
+      <div class="vb-main-title">验证二叉搜索树 · Validate BST</div>
+      <button class="vb-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="vb-badge-mode">中序遍历严格单调递增验证</div>
+      <div class="vb-badge-complexity">O(n) · O(h)</div>
     </div>
+    <div class="vb-header-right">
+      <div class="vb-input-group">
+        <label for="input-tree">树数组:</label>
+        <input type="text" id="input-tree" value="2, 1, 3" style="width: 140px;">
+      </div>
+      <button class="vb-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="vb-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
+    </div>
+  </header>
 
-    <div class="vb-layout">
-      <div class="vb-main">
-        <div class="vb-controls">
-          <button id="vb-start" class="vb-btn">开始校验</button>
-          <button class="vb-example" data-id="1">合法BST</button>
-          <button class="vb-example" data-id="2">非法BST</button>
-          <button class="vb-example" data-id="3">单节点</button>
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="vb-workspace">
+    <!-- Card 1: 树结构 SVG 画布 -->
+    <section class="vb-card">
+      <div class="vb-card-header">
+        <div class="vb-card-title">
+          <span>📊</span> 二叉树拓扑结构与递增性校验沙盘 (BST Inorder Checker)
         </div>
-        <div class="vb-stats">
-          <div class="vb-stat-wrapper"><div class="vb-stat-label">当前节点</div><div class="vb-stat-val" id="vb-cur">-</div></div>
-          <div class="vb-stat-wrapper"><div class="vb-stat-label">区间 (min,max)</div><div class="vb-stat-val" id="vb-range">-</div></div>
-          <div class="vb-stat-wrapper"><div class="vb-stat-label">前驱值</div><div class="vb-stat-val" id="vb-prev">-∞</div></div>
-          <div class="vb-stat-wrapper"><div class="vb-stat-label">是否合法</div><div class="vb-stat-val" id="vb-valid">-</div></div>
-        </div>
-        <div class="vb-tree" id="vb-tree"></div>
-        <div class="vb-message" id="step-message">点击「开始校验」查看中序递增验证。</div>
-        <div class="vb-log" id="vb-log"></div>
-      </div>
-      <div class="vb-right">
-        <div data-code-panel></div>
-        <div class="vb-playback">
-          <div class="vb-pb-row">
-            <button id="step-reset" class="vb-pb-btn">⏮重置</button>
-            <button id="step-prev" class="vb-pb-btn">◀上一步</button>
-            <button id="step-play" class="vb-pb-btn play">▶播放</button>
-            <button id="step-next" class="vb-pb-btn">下一步▶</button>
-          </div>
-          <div class="vb-speed-row">
-            <span>速度</span>
-            <input id="step-speed" type="range" min="200" max="2000" step="100" value="800" />
-            <span id="step-speed-label">0.8s</span>
-          </div>
-          <div class="vb-counter" id="step-counter">步骤: 1 / 1</div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #fbbf24;">● 当前节点</span> · <span style="color: #3b82f6;">● 前驱 prev</span> · <span style="color: #ef4444;">● 违规节点</span>
         </div>
       </div>
+      <div class="vb-card-body" style="justify-content: center; align-items: center;">
+        <div class="vb-tree-svg-wrap" id="vb-tree-svg-container"></div>
+      </div>
+      <div class="vb-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="vb-chip" data-tree="2, 1, 3">有效 BST [2, 1, 3]</button>
+        <button class="vb-chip" data-tree="5, 1, 4, null, null, 3, 6">无效 BST (4的子树3违规)</button>
+        <button class="vb-chip" data-tree="10, 5, 15, null, null, 6, 20">右子树中包含小于根的值 (6 < 10)</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="vb-card">
+      <div class="vb-card-header">
+        <div class="vb-card-title">
+          <span>🧭</span> 校验指标监视器 (Validation Metrics Monitor)
+        </div>
+      </div>
+      <div class="vb-card-body">
+        <div class="vb-metrics-grid">
+          <div class="vb-metric-card">
+            <span class="vb-metric-label">当前节点 curr</span>
+            <span class="vb-metric-val" id="metric-curr" style="color: #fbbf24;">2</span>
+          </div>
+          <div class="vb-metric-card">
+            <span class="vb-metric-label">前驱节点 prev</span>
+            <span class="vb-metric-val" id="metric-prev" style="color: #3b82f6;">null</span>
+          </div>
+          <div class="vb-metric-card">
+            <span class="vb-metric-label">单调条件</span>
+            <span class="vb-metric-val" id="metric-condition" style="color: #10b981;">curr > prev</span>
+          </div>
+          <div class="vb-metric-card">
+            <span class="vb-metric-label">判定结果</span>
+            <span class="vb-metric-val" id="metric-verdict" style="color: #2563eb;">校验中...</span>
+          </div>
+        </div>
+        <div class="vb-formula-box" id="vb-formula-box">
+          <span>校验规则:</span> <strong id="formula-action" style="color: #2563eb;">prev == null || curr.val > prev.val</strong>
+        </div>
+        <div class="vb-live-alert" id="vb-live-alert">
+          <span>💡</span> <span id="vb-live-text">准备就绪，点击运行开始验证二叉搜索树。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="vb-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="vb-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="vb-card-header">
+        <div class="vb-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="vb-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="vb-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="vb-playback-bar">
+    <div class="vb-playback-controls">
+      <button class="vb-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="vb-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="vb-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
     </div>
-  </div>
+    <div class="vb-progress-wrap">
+      <span class="vb-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

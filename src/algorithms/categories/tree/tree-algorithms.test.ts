@@ -6,6 +6,10 @@ import { buildTSSteps } from './tree-symmetric-renderer';
 import { buildTDSteps } from './tree-depth-renderer';
 import { buildPSSteps } from './path-sum-renderer';
 import { buildBTLSteps } from './binary-tree-level-renderer';
+import { buildTreeInvertSteps } from './tree-invert-renderer';
+import { buildBSTSearchSteps } from './bst-search-renderer';
+import { buildTreeSteps } from './build-tree-renderer';
+import { buildLCASteps } from './lca-renderer';
 
 describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', () => {
   describe('Tree Traversal (前/中/后序遍历)', () => {
@@ -110,6 +114,62 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       const steps = buildBTLSteps(null);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.result).toEqual([]);
+    });
+  });
+
+  describe('Tree Invert (翻转二叉树)', () => {
+    it('14. 翻转满二叉树 [4, 2, 7, 1, 3, 6, 9] 产生镜像树', () => {
+      const root = buildTreeFromArr([4, 2, 7, 1, 3, 6, 9]);
+      const steps = buildTreeInvertSteps(root);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.invertedCount).toBe(7);
+      expect(lastStep.tree?.left?.val).toBe(7);
+      expect(lastStep.tree?.right?.val).toBe(2);
+    });
+  });
+
+  describe('BST Search (BST 节点搜索)', () => {
+    it('15. 在 BST [4, 2, 7, 1, 3] 中搜索 2 命中目标', () => {
+      const root = buildTreeFromArr([4, 2, 7, 1, 3]);
+      const steps = buildBSTSearchSteps(root, 2);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.found).toBe(true);
+      expect(lastStep.targetSubtree?.val).toBe(2);
+    });
+
+    it('16. 在 BST [4, 2, 7, 1, 3] 中搜索 5 返回未找到', () => {
+      const root = buildTreeFromArr([4, 2, 7, 1, 3]);
+      const steps = buildBSTSearchSteps(root, 5);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.found).toBe(false);
+    });
+  });
+
+  describe('Build Tree (前中序构造二叉树)', () => {
+    it('17. 根据 pre=[3,9,20,15,7] in=[9,3,15,20,7] 成功构造二叉树', () => {
+      const pre = [3, 9, 20, 15, 7];
+      const inArr = [9, 3, 15, 20, 7];
+      const steps = buildTreeSteps(pre, inArr);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.tree?.val).toBe(3);
+      expect(lastStep.tree?.left?.val).toBe(9);
+      expect(lastStep.tree?.right?.val).toBe(20);
+    });
+  });
+
+  describe('LCA (二叉树最近公共祖先)', () => {
+    it('18. 在 [3, 5, 1, 6, 2, 0, 8, null, null, 7, 4] 中查找 p=5, q=1 的 LCA 为 3', () => {
+      const root = buildTreeFromArr([3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]);
+      const steps = buildLCASteps(root, 5, 1);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.lcaResult).toBe(3);
+    });
+
+    it('19. 在 [3, 5, 1, 6, 2, 0, 8, null, null, 7, 4] 中查找 p=5, q=4 的 LCA 为 5', () => {
+      const root = buildTreeFromArr([3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]);
+      const steps = buildLCASteps(root, 5, 4);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.lcaResult).toBe(5);
     });
   });
 });

@@ -1,527 +1,345 @@
 /**
- * 二叉树翻转可视化器
- * 支持代码联动高亮演示
+ * 翻转二叉树可视化器 — 4-Card 标准现代架构
+ * 递归遍历、左右孩子指针互换、动态树结构更新与日志追踪
  */
 
-import { IVisualizer, VisualizerContext } from '../../../core/interfaces';
-import { CodePanel } from '../../../core/code-panel';
+import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  TREE_INVERT_PROBLEM_HTML,
+  TREE_INVERT_ANALYSIS_HTML,
+  TREE_INVERT_CODE_LANGUAGES,
+} from './tree-invert-problem-content';
+import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
 import template from './tree-invert.html?raw';
 
-interface TreeNode {
-  value: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-  x?: number;
-  y?: number;
-  highlight?: string;
-}
-
-interface AnimationStep {
+export interface InvertStep {
   tree: TreeNode | null;
+  current: number | null;
+  leftVal: number | null;
+  rightVal: number | null;
+  invertedCount: number;
+  isSwapping: boolean;
+  action: 'enter' | 'swap' | 'leave' | 'done';
   message: string;
-  swapPair: { left: number | null; right: number | null; parent: number } | null;
-  codeLine: number;
+  log: string;
+  codeLine: number | number[];
 }
 
-/**
- * 创建示例二叉树
- */
-function createSampleTree(depth: number = 3): TreeNode {
-  if (depth === 0) return { value: Math.floor(Math.random() * 100), left: null, right: null };
-  
-  const node: TreeNode = {
-    value: Math.floor(Math.random() * 100),
-    left: createSampleTree(depth - 1),
-    right: createSampleTree(depth - 1)
-  };
-  return node;
-}
-
-/**
- * 创建固定示例树
- */
-function createFixedTree(): TreeNode {
-  return {
-    value: 4,
-    left: {
-      value: 2,
-      left: { value: 1, left: null, right: null },
-      right: { value: 3, left: null, right: null }
-    },
-    right: {
-      value: 7,
-      left: { value: 6, left: null, right: null },
-      right: { value: 9, left: null, right: null }
-    }
-  };
-}
-
-/**
- * 复制树
- */
 function cloneTree(node: TreeNode | null): TreeNode | null {
   if (!node) return null;
   return {
-    value: node.value,
+    val: node.val,
     left: cloneTree(node.left),
     right: cloneTree(node.right),
-    highlight: node.highlight || 'None'
   };
 }
 
-/**
- * 翻转树并生成步骤，绑定代码行号
- */
-function invertTreeWithSteps(root: TreeNode | null): AnimationStep[] {
-  const steps: AnimationStep[] = [];
+export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
+  const steps: InvertStep[] = [];
+  const workingTree = cloneTree(root);
+  let invertedCount = 0;
 
-  // 代码行号映射（对应伪代码）
-  // 1: function invertTree(root) {
-  // 2:     if (root === null) {
-  // 3:         return null;
-  // 4:     }
-  // 5:     
-  // 6:     // 交换左右子树
-  // 7:     const temp = root.left;
-  // 8:     root.left = root.right;
-  // 9:     root.right = temp;
-  // 10:    
-  // 11:    // 递归翻转子树
-  // 12:    invertTree(root.left);
-  // 13:    invertTree(root.right);
-  // 14:    
-  // 15:    return root;
-  // 16: }
-
-  // 初始状态
   steps.push({
-    tree: cloneTree(root),
-    message: '初始二叉树',
-    swapPair: null,
-    codeLine: 1,
+    tree: cloneTree(workingTree),
+    current: null,
+    leftVal: null,
+    rightVal: null,
+    invertedCount: 0,
+    isSwapping: false,
+    action: 'enter',
+    message: workingTree ? `初始化翻转二叉树：从根节点 ${workingTree.val} 开始递归。` : '空树，无需翻转。',
+    log: workingTree ? '开始翻转二叉树' : '空树',
+    codeLine: 2,
   });
 
-  function invert(node: TreeNode | null): TreeNode | null {
-    if (!node) {
-      steps.push({
-        tree: cloneTree(root),
-        message: '到达空节点，返回 null',
-        swapPair: null,
-        codeLine: 3,
-      });
-      return null;
-    }
+  if (!workingTree) {
+    steps.push({
+      tree: null,
+      current: null,
+      leftVal: null,
+      rightVal: null,
+      invertedCount: 0,
+      isSwapping: false,
+      action: 'done',
+      message: '✅ 翻转完成，返回 null。',
+      log: '✓ 翻转完成 (null)',
+      codeLine: 3,
+    });
+    return steps;
+  }
 
-    // 标记当前节点
-    const treeCopy = cloneTree(root);
-    const currentNode = findNode(treeCopy, node.value);
-    if (currentNode) currentNode.highlight = 'Current';
+  const invert = (node: TreeNode | null) => {
+    if (!node) return;
 
-    if (node.left && node.right) {
-      steps.push({
-        tree: treeCopy,
-        message: `访问节点 ${node.value}，准备交换左右子树`,
-        swapPair: { left: node.left.value, right: node.right.value, parent: node.value },
-        codeLine: 7,
-      });
+    const lVal = node.left ? node.left.val : null;
+    const rVal = node.right ? node.right.val : null;
 
-      // 执行交换
-      const temp = node.left;
-      node.left = node.right;
-      node.right = temp;
+    steps.push({
+      tree: cloneTree(workingTree),
+      current: node.val,
+      leftVal: lVal,
+      rightVal: rVal,
+      invertedCount,
+      isSwapping: false,
+      action: 'enter',
+      message: `进入节点 ${node.val}：准备互换其左孩子 (${lVal ?? 'null'}) 与右孩子 (${rVal ?? 'null'})。`,
+      log: `进入 ${node.val} (L=${lVal ?? 'null'}, R=${rVal ?? 'null'})`,
+      codeLine: [4, 5],
+    });
 
-      // 更新原始树
-      const originalNode = findNode(root, node.value);
-      if (originalNode) {
-        const tempOrig = originalNode.left;
-        originalNode.left = originalNode.right;
-        originalNode.right = tempOrig;
-      }
+    // 交换左右子树
+    const temp = node.left;
+    node.left = node.right;
+    node.right = temp;
+    invertedCount++;
 
-      // 标记交换后的节点
-      const swappedTree = cloneTree(root);
-      const swappedNode = findNode(swappedTree, node.value);
-      if (swappedNode) {
-        swappedNode.highlight = 'Swap';
-        if (swappedNode.left) swappedNode.left.highlight = 'Swap';
-        if (swappedNode.right) swappedNode.right.highlight = 'Swap';
-      }
+    steps.push({
+      tree: cloneTree(workingTree),
+      current: node.val,
+      leftVal: node.left ? node.left.val : null,
+      rightVal: node.right ? node.right.val : null,
+      invertedCount,
+      isSwapping: true,
+      action: 'swap',
+      message: `互换完成：节点 ${node.val} 的左孩子变为 ${node.left ? node.left.val : 'null'}，右孩子变为 ${
+        node.right ? node.right.val : 'null'
+      }。`,
+      log: `节点 ${node.val} 左右互换完成`,
+      codeLine: [6, 7],
+    });
 
-      steps.push({
-        tree: swappedTree,
-        message: `节点 ${node.value}: 左 ${node.left?.value || 'null'} ↔ 右 ${node.right?.value || 'null'} 已交换`,
-        swapPair: { left: node.left?.value || null, right: node.right?.value || null, parent: node.value },
-        codeLine: 9,
-      });
-    } else if (node.left || node.right) {
-      steps.push({
-        tree: treeCopy,
-        message: `节点 ${node.value}: 只有一个子节点，交换`,
-        swapPair: { left: node.left?.value || null, right: node.right?.value || null, parent: node.value },
-        codeLine: 8,
-      });
-
-      const temp = node.left;
-      node.left = node.right;
-      node.right = temp;
-
-      const originalNode = findNode(root, node.value);
-      if (originalNode) {
-        const tempOrig = originalNode.left;
-        originalNode.left = originalNode.right;
-        originalNode.right = tempOrig;
-      }
-    } else {
-      steps.push({
-        tree: treeCopy,
-        message: `节点 ${node.value}: 叶子节点，无需交换`,
-        swapPair: null,
-        codeLine: 7,
-      });
-    }
-
-    // 递归处理子树
     invert(node.left);
     invert(node.right);
 
-    return node;
-  }
+    steps.push({
+      tree: cloneTree(workingTree),
+      current: node.val,
+      leftVal: node.left ? node.left.val : null,
+      rightVal: node.right ? node.right.val : null,
+      invertedCount,
+      isSwapping: false,
+      action: 'leave',
+      message: `离开节点 ${node.val}（该子树左右翻转完毕）。`,
+      log: `离开 ${node.val}`,
+      codeLine: [9, 10],
+    });
+  };
 
-  invert(root);
+  invert(workingTree);
 
-  // 最终状态
   steps.push({
-    tree: cloneTree(root),
-    message: '翻转完成！',
-    swapPair: null,
-    codeLine: 15,
+    tree: cloneTree(workingTree),
+    current: null,
+    leftVal: null,
+    rightVal: null,
+    invertedCount,
+    isSwapping: false,
+    action: 'done',
+    message: `🎉 翻转二叉树全部完成！共翻转 ${invertedCount} 个子树节点。`,
+    log: `✓ 全部翻转完成`,
+    codeLine: 11,
   });
 
   return steps;
 }
 
-/**
- * 在树中查找节点
- */
-function findNode(root: TreeNode | null, value: number): TreeNode | null {
-  if (!root) return null;
-  if (root.value === value) return root;
-  return findNode(root.left, value) || findNode(root.right, value);
-}
+export class TreeInvertVisualizer extends StepVisualizer<InvertStep> {
+  protected codeLanguages = TREE_INVERT_CODE_LANGUAGES;
+  protected codeLines = TREE_INVERT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '翻转二叉树 代码调试';
 
-export class TreeInvertVisualizer implements IVisualizer {
-  private steps: AnimationStep[] = [];
-  private currentIndex: number = 0;
-  private isPlaying: boolean = false;
-  private playbackSpeed: number = 1000;
-  private timer: number | null = null;
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private treeSvgContainer: HTMLElement | null = null;
+  private metricCurrEl: HTMLElement | null = null;
+  private metricLeftEl: HTMLElement | null = null;
+  private metricRightEl: HTMLElement | null = null;
+  private metricInvertedCountEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
-  // 作用域根元素
-  private root: HTMLElement | null = null;
-  private codePanel: CodePanel | null = null;
-
-  // DOM Elements
-  private btnPrev: HTMLButtonElement | null = null;
-  private btnNext: HTMLButtonElement | null = null;
-  private btnPlayPause: HTMLButtonElement | null = null;
-  private btnReset: HTMLButtonElement | null = null;
-  private btnBack: HTMLButtonElement | null = null;
-  private navigateBack: (() => void) | null = null;
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private statusEl: HTMLElement | null = null;
-  private speedSlider: HTMLInputElement | null = null;
-  private speedLabel: HTMLElement | null = null;
-
-  private codeLines: string[] = [
-    "public TreeNode invertTree(TreeNode root) {",
-    "    if (root == null) {",
-    "        return null;",
-    "    }",
-    "    ",
-    "    // 交换左右子树",
-    "    TreeNode temp = root.left;",
-    "    root.left = root.right;",
-    "    root.right = temp;",
-    "    ",
-    "    // 递归翻转子树",
-    "    invertTree(root.left);",
-    "    invertTree(root.right);",
-    "    ",
-    "    return root;",
-    "}"
-  ];
-
-  public async init(context?: VisualizerContext): Promise<void> {
-    console.log('[TreeInvertVisualizer] init called');
-    if (context && context.root) {
-      this.root = context.root;
-      this.navigateBack = context.navigateBack ?? null;
-    } else {
-      this.root = document.getElementById('algo-tree-invert-view') as HTMLElement | null;
-    }
-    this.initDOMElements();
-    this.setupEventListeners();
-    this.initCodePanel();
-    await this.initializeTree();
-  }
-
-  private initDOMElements(): void {
+  protected initDOMElements(): void {
     if (!this.root) return;
-    const root = this.root;
 
-    this.btnPrev = root.querySelector('#tree-invert-prev') as HTMLButtonElement;
-    this.btnNext = root.querySelector('#tree-invert-next') as HTMLButtonElement;
-    this.btnPlayPause = root.querySelector('#tree-invert-play') as HTMLButtonElement;
-    this.btnReset = root.querySelector('#tree-invert-reset') as HTMLButtonElement;
-    this.btnBack = root.querySelector('#btn-back') as HTMLButtonElement;
-    this.canvas = root.querySelector('#tree-invert-canvas') as HTMLCanvasElement;
-    this.statusEl = root.querySelector('#tree-invert-status') as HTMLElement;
-    this.speedSlider = root.querySelector('#tree-invert-speed') as HTMLInputElement;
-    this.speedLabel = root.querySelector('#tree-invert-speed-label') as HTMLElement;
+    this.treeSvgContainer = this.root.querySelector('#ti-tree-svg-container');
+    this.metricCurrEl = this.root.querySelector('#metric-curr');
+    this.metricLeftEl = this.root.querySelector('#metric-left');
+    this.metricRightEl = this.root.querySelector('#metric-right');
+    this.metricInvertedCountEl = this.root.querySelector('#metric-inverted-count');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#ti-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
-    }
-  }
+    // 绑定播放控制
+    this.bindPlaybackControls();
 
-  private initCodePanel(): void {
-    const codeContainer = this.root?.querySelector('[data-code-panel]') as HTMLElement | null;
-    if (codeContainer) {
-      this.codePanel = new CodePanel(codeContainer, {
-        lines: this.codeLines,
-        title: '代码 (Java)',
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
       });
     }
-  }
 
-  private setupEventListeners(): void {
-    if (this.btnPrev) this.btnPrev.onclick = () => this.prevStep();
-    if (this.btnNext) this.btnNext.onclick = () => this.nextStep();
-    if (this.btnPlayPause) this.btnPlayPause.onclick = () => this.togglePlay();
-    if (this.btnReset) this.btnReset.onclick = () => this.reset();
-    if (this.btnBack) {
-      this.btnBack.onclick = () => {
-        this.navigateBack?.();
-      };
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
     }
 
-    if (this.speedSlider && this.speedLabel) {
-      this.speedSlider.oninput = (e) => {
-        this.playbackSpeed = parseInt((e.target as HTMLInputElement).value);
-        this.speedLabel!.textContent = (this.playbackSpeed / 1000).toFixed(1) + 's';
-      };
-    }
-  }
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.ti-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
+        this.start();
+      });
+    });
 
-  private async initializeTree(): Promise<void> {
-    const tree = createFixedTree();
-    this.steps = invertTreeWithSteps(cloneTree(tree));
-    this.currentIndex = 0;
-    this.renderCanvas();
-    this.updateButtons();
-  }
-
-  public togglePlay(): void {
-    if (this.isPlaying) {
-      this.pause();
-    } else {
-      this.play();
-    }
-  }
-
-  public play(): void {
-    if (this.steps.length === 0 || this.currentIndex >= this.steps.length - 1) return;
-    this.isPlaying = true;
-    this.tick();
-    this.updateButtons();
-  }
-
-  public pause(): void {
-    this.isPlaying = false;
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-    this.updateButtons();
-  }
-
-  private tick = () => {
-    if (!this.isPlaying) return;
-
-    this.timer = window.setTimeout(() => {
-      if (this.currentIndex < this.steps.length - 1) {
-        this.nextStep();
-        if (this.isPlaying) this.tick();
-      } else {
-        this.pause();
-      }
-    }, this.playbackSpeed);
-  }
-
-  private nextStep(): void {
-    if (this.currentIndex >= this.steps.length - 1) return;
-    this.currentIndex++;
-    this.renderCanvas();
-    this.updateButtons();
-  }
-
-  private prevStep(): void {
-    if (this.currentIndex <= 0) return;
-    this.currentIndex--;
-    this.renderCanvas();
-    this.updateButtons();
-  }
-
-  private reset(): void {
-    this.pause();
-    this.currentIndex = 0;
-    this.renderCanvas();
-    this.updateButtons();
-  }
-
-  private renderCanvas(): void {
-    if (!this.canvas || !this.ctx || !this.statusEl) return;
-
-    // Resize canvas
-    const parent = this.canvas.parentElement;
-    this.canvas.width = parent?.clientWidth || 600;
-    this.canvas.height = parent?.clientHeight || 400;
-
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    if (this.steps.length === 0) {
-      this.statusEl.textContent = '点击卡片加载二叉树翻转演示';
-      return;
-    }
-
-    const step = this.steps[this.currentIndex];
-    this.statusEl.textContent = step.message;
-
-    if (step.tree) {
-      this.drawTree(step.tree);
-    }
-
-    // 同步高亮代码行
-    if (this.codePanel) {
-      this.codePanel.highlight(step.codeLine);
-    }
-  }
-
-  private drawTree(root: TreeNode | null): void {
-    if (!root || !this.ctx || !this.canvas) return;
-
-    this.layoutTree(root, this.canvas.width, this.canvas.height);
-    this.drawEdges(root);
-    this.drawNodes(root);
-  }
-
-  private layoutTree(root: TreeNode, width: number, height: number): void {
-    const nodes: { node: TreeNode; depth: number }[] = [];
-    let maxDepth = 0;
-
-    const traverse = (node: TreeNode | null, depth: number) => {
-      if (!node) return;
-      if (depth > maxDepth) maxDepth = depth;
-      traverse(node.left, depth + 1);
-      nodes.push({ node, depth });
-      traverse(node.right, depth + 1);
-    };
-
-    traverse(root, 0);
-
-    const count = nodes.length;
-    const xGap = width / (count + 1);
-    const yGap = height / (maxDepth + 3);
-
-    nodes.forEach((entry, index) => {
-      entry.node.x = (index + 1) * xGap;
-      entry.node.y = (entry.depth + 1) * yGap;
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: TREE_INVERT_PROBLEM_HTML,
+      analysisHtml: TREE_INVERT_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
-  private drawEdges(node: TreeNode | null): void {
-    if (!node || !this.ctx) return;
+  private parseTreeInput(raw: string): (number | null)[] {
+    return raw
+      .split(/[,，\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+      .filter((n) => n === null || !isNaN(n));
+  }
 
-    const drawLine = (from: TreeNode, to: TreeNode | null) => {
-      if (!to) return;
-      this.ctx!.beginPath();
-      this.ctx!.moveTo(from.x!, from.y!);
-      this.ctx!.lineTo(to.x!, to.y!);
-      this.ctx!.stroke();
-    };
+  protected buildSteps(): InvertStep[] {
+    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+    const raw = treeInput?.value || '4, 2, 7, 1, 3, 6, 9';
+    const arr = this.parseTreeInput(raw);
+    const root = buildTree(arr);
+    return buildTreeInvertSteps(root);
+  }
 
-    if (node.left) {
-      drawLine(node, node.left);
-      this.drawEdges(node.left);
+  protected renderStep(step: InvertStep): void {
+    const { tree, current, leftVal, rightVal, invertedCount, isSwapping, action, message } = step;
+
+    // 1. 渲染 SVG 树拓扑
+    if (this.treeSvgContainer) {
+      const highlight = current != null ? new Set([current]) : new Set<number>();
+      const secondaryHighlight = new Set<number>();
+      if (leftVal != null) secondaryHighlight.add(leftVal);
+      if (rightVal != null) secondaryHighlight.add(rightVal);
+
+      renderTreeSVG(
+        this.treeSvgContainer,
+        tree,
+        highlight,
+        isSwapping ? '#f43f5e' : '#fbbf24',
+        secondaryHighlight,
+        '#3b82f6',
+      );
     }
-    if (node.right) {
-      drawLine(node, node.right);
-      this.drawEdges(node.right);
+
+    // 2. 更新状态监视器
+    if (this.metricCurrEl) this.metricCurrEl.textContent = current != null ? `${current}` : '—';
+    if (this.metricLeftEl) this.metricLeftEl.textContent = leftVal != null ? `${leftVal}` : 'null';
+    if (this.metricRightEl) this.metricRightEl.textContent = rightVal != null ? `${rightVal}` : 'null';
+    if (this.metricInvertedCountEl) this.metricInvertedCountEl.textContent = `${invertedCount}`;
+
+    if (this.formulaActionEl) {
+      if (isSwapping) {
+        this.formulaActionEl.textContent = `swap(node.left, node.right) (${leftVal} ⇋ ${rightVal})`;
+      } else if (action === 'done') {
+        this.formulaActionEl.textContent = '翻转二叉树完成';
+      } else {
+        this.formulaActionEl.textContent = 'swap(root.left, root.right)';
+      }
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done' ? '#f0fdf4' : isSwapping ? '#fff1f2' : '#eff6ff';
+      logEntry.style.color =
+        action === 'done' ? '#15803d' : isSwapping ? '#e11d48' : '#1d4ed8';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done' ? '#bbf7d0' : isSwapping ? '#fecdd3' : '#bfdbfe');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private drawNodes(node: TreeNode | null): void {
-    if (!node || !this.ctx) return;
-
-    const radius = 24;
-
-    let fill = '#313244';
-    switch (node.highlight) {
-      case 'Current':
-        fill = '#89b4fa';
-        break;
-      case 'Swap':
-        fill = '#f9e2af';
-        break;
-    }
-
-    this.ctx.beginPath();
-    this.ctx.arc(node.x!, node.y!, radius, 0, Math.PI * 2);
-    this.ctx.fillStyle = fill;
-    this.ctx.fill();
-    this.ctx.strokeStyle = '#11111b';
-    this.ctx.lineWidth = 2;
-    this.ctx.stroke();
-
-    this.ctx.fillStyle = '#e5e9f0';
-    this.ctx.font = '14px system-ui, sans-serif';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-    this.ctx.fillText(node.value.toString(), node.x!, node.y!);
-
-    this.drawNodes(node.left);
-    this.drawNodes(node.right);
-  }
-
-  private updateButtons(): void {
-    if (!this.btnPrev || !this.btnNext || !this.btnPlayPause) return;
-
-    this.btnPrev.disabled = this.currentIndex === 0;
-    this.btnNext.disabled = this.currentIndex >= this.steps.length - 1;
-
-    const isFinished = this.currentIndex >= this.steps.length - 1;
-    this.btnPlayPause.textContent = this.isPlaying ? '暂停' : (isFinished ? '完成' : '播放');
-  }
-
-  public destroy(): void {
-    this.pause();
-    this.steps = [];
-    this.currentIndex = 0;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'tree-invert',
-  name: '二叉树翻转',
+  name: '翻转二叉树',
   viewId: 'algo-tree-invert-view',
   category: 'tree',
-  description: '递归翻转二叉树的左右子树',
+  description: '递归遍历二叉树并互换每一个节点的左右子节点',
   icon: '🔄',
+  difficulty: 1,
+  levelOrder: 7,
+  learningGoal: '掌握二叉树子节点指针交换与递归翻转的基本思路',
   template,
   Visualizer: TreeInvertVisualizer,
-  difficulty: 1,
-  levelOrder: 6,
-  learningGoal: '掌握递归翻转二叉树的自底向上方法',
 });

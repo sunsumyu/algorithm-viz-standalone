@@ -1,366 +1,386 @@
 /**
- * 从先序与中序遍历序列构造二叉树可视化器
- * LeetCode 105
+ * 从前序与中序遍历构造二叉树可视化器 — 4-Card 标准现代架构
+ * 前序定根、中序切分左右子树、递归组装与拓扑实时绘制
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  BUILD_TREE_PROBLEM_HTML,
+  BUILD_TREE_ANALYSIS_HTML,
+  BUILD_TREE_CODE_LANGUAGES,
+} from './build-tree-problem-content';
+import { TreeNode, renderTreeSVG } from './tree-template';
+import { parseArray } from '../sort/bubble-sort-renderer';
 import template from './build-tree.html?raw';
 
-interface TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-}
-
-interface BTStep {
-  tree: TreeNode | null;       // 当前构建的树（包含已构建部分）
+export interface BTStep {
+  tree: TreeNode | null;
   preorder: number[];
   inorder: number[];
-  preStart: number;
-  preEnd: number;
-  inStart: number;
-  inEnd: number;
-  currentRoot: number | null;
-  depth: number;
-  leftSize: number;
-  built: number;
-  action: 'start' | 'find-root' | 'find-split' | 'build-left' | 'build-right' | 'done';
+  pL: number;
+  pR: number;
+  iL: number;
+  iR: number;
+  rootVal: number | null;
+  inRoot: number;
+  leftLen: number;
+  action: 'enter' | 'split' | 'leave' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] {
-  const steps: BTStep[] = [];
-  let built = 0;
-
-  const build = (
-    preStart: number, preEnd: number,
-    inStart: number, inEnd: number,
-    depth: number,
-    builtTree: TreeNode | null
-  ): { node: TreeNode | null; tree: TreeNode | null } => {
-    if (preStart > preEnd) {
-      return { node: null, tree: builtTree };
-    }
-
-    // 1. 先序第一个元素是根
-    const rootVal = preorder[preStart];
-
-    steps.push({
-      tree: builtTree,
-      preorder: [...preorder],
-      inorder: [...inorder],
-      preStart, preEnd, inStart, inEnd,
-      currentRoot: rootVal,
-      depth, leftSize: 0, built,
-      action: 'find-root',
-      message: `先序[${preStart}..${preEnd}]第一个元素 = ${rootVal} → 当前子树的根`,
-      log: `先序首位 = ${rootVal}（根）`,
-      codeLine: [5, 6],
-    });
-
-    // 2. 在中序中找到根的位置
-    let rootIdx = inStart;
-    while (rootIdx <= inEnd && inorder[rootIdx] !== rootVal) rootIdx++;
-
-    const leftSize = rootIdx - inStart;
-    built++;
-
-    steps.push({
-      tree: builtTree,
-      preorder: [...preorder],
-      inorder: [...inorder],
-      preStart, preEnd, inStart, inEnd,
-      currentRoot: rootVal,
-      depth, leftSize, built,
-      action: 'find-split',
-      message: `中序[${inStart}..${inEnd}]中 ${rootVal} 在位置 ${rootIdx}，左子树大小 = ${leftSize}`,
-      log: `中序分割: 左=${leftSize}，右=${preEnd - preStart - leftSize}`,
-      codeLine: [7, 8, 9],
-    });
-
-    // 3. 构建左子树
-    if (leftSize > 0) {
-      steps.push({
-        tree: builtTree,
-        preorder: [...preorder],
-        inorder: [...inorder],
-        preStart: preStart + 1, preEnd: preStart + leftSize,
-        inStart, inEnd: rootIdx - 1,
-        currentRoot: rootVal,
-        depth: depth + 1, leftSize, built,
-        action: 'build-left',
-        message: `递归构建左子树：先序[${preStart + 1}..${preStart + leftSize}]，中序[${inStart}..${rootIdx - 1}]`,
-        log: `递归左子树`,
-        codeLine: [11, 12],
-      });
-    }
-
-    const leftResult = build(preStart + 1, preStart + leftSize, inStart, rootIdx - 1, depth + 1, builtTree);
-    const leftNode = leftResult.node;
-
-    // 4. 构建右子树
-    const rightSize = preEnd - preStart - leftSize;
-    if (rightSize > 0) {
-      steps.push({
-        tree: builtTree,
-        preorder: [...preorder],
-        inorder: [...inorder],
-        preStart: preStart + leftSize + 1, preEnd,
-        inStart: rootIdx + 1, inEnd,
-        currentRoot: rootVal,
-        depth: depth + 1, leftSize, built,
-        action: 'build-right',
-        message: `递归构建右子树：先序[${preStart + leftSize + 1}..${preEnd}]，中序[${rootIdx + 1}..${inEnd}]`,
-        log: `递归右子树`,
-        codeLine: [14, 15],
-      });
-    }
-
-    const rightResult = build(preStart + leftSize + 1, preEnd, rootIdx + 1, inEnd, depth + 1, leftResult.tree);
-    const rightNode = rightResult.node;
-
-    // 创建节点
-    const node: TreeNode = { val: rootVal, left: leftNode, right: rightNode };
-    // 更新树为当前节点作为根
-    const currentTree = depth === 0 ? node : (leftResult.tree || rightResult.tree || node);
-
-    steps.push({
-      tree: depth === 0 ? node : builtTree,
-      preorder: [...preorder],
-      inorder: [...inorder],
-      preStart, preEnd, inStart, inEnd,
-      currentRoot: rootVal,
-      depth, leftSize, built,
-      action: 'find-root',
-      message: `节点 ${rootVal} 构建完成${leftNode ? `，左子 = ${leftNode.val}` : ''}${rightNode ? `，右子 = ${rightNode.val}` : ''}`,
-      log: `${rootVal} 构建完成`,
-      codeLine: [16, 17],
-    });
-
-    if (depth === 0) builtTree = node;
-
-    return { node, tree: builtTree };
+function cloneTree(node: TreeNode | null): TreeNode | null {
+  if (!node) return null;
+  return {
+    val: node.val,
+    left: cloneTree(node.left),
+    right: cloneTree(node.right),
   };
+}
+
+export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] {
+  const steps: BTStep[] = [];
+  const n = preorder.length;
+
+  if (n === 0 || inorder.length !== n) {
+    steps.push({
+      tree: null,
+      preorder,
+      inorder,
+      pL: -1,
+      pR: -1,
+      iL: -1,
+      iR: -1,
+      rootVal: null,
+      inRoot: -1,
+      leftLen: 0,
+      action: 'done',
+      message: '数组为空或长度不匹配，无法构造二叉树。',
+      log: '空数组/长度不匹配',
+      codeLine: 2,
+    });
+    return steps;
+  }
+
+  const inMap = new Map<number, number>();
+  inorder.forEach((val, idx) => inMap.set(val, idx));
 
   steps.push({
     tree: null,
     preorder: [...preorder],
     inorder: [...inorder],
-    preStart: 0, preEnd: preorder.length - 1, inStart: 0, inEnd: inorder.length - 1,
-    currentRoot: null,
-    depth: 0, leftSize: 0, built: 0,
-    action: 'start',
-    message: `开始构造二叉树。先序长度 = ${preorder.length}，中序长度 = ${inorder.length}`,
-    log: `开始构造`,
-    codeLine: [1, 2, 3],
+    pL: 0,
+    pR: n - 1,
+    iL: 0,
+    iR: n - 1,
+    rootVal: null,
+    inRoot: -1,
+    leftLen: 0,
+    action: 'enter',
+    message: `初始化前中序构造：数组长度 n = ${n}，已建立中序索引哈希表。`,
+    log: `初始化 pre=[${preorder.join(',')}] in=[${inorder.join(',')}]`,
+    codeLine: [3, 4],
   });
 
-  const result = build(0, preorder.length - 1, 0, inorder.length - 1, 0, null);
+  const build = (pL: number, pR: number, iL: number, iR: number): TreeNode | null => {
+    if (pL > pR || iL > iR) return null;
+
+    const rootVal = preorder[pL];
+    const rootNode: TreeNode = { val: rootVal, left: null, right: null };
+    const inRoot = inMap.get(rootVal)!;
+    const leftLen = inRoot - iL;
+
+    steps.push({
+      tree: cloneTree(rootNode),
+      preorder: [...preorder],
+      inorder: [...inorder],
+      pL,
+      pR,
+      iL,
+      iR,
+      rootVal,
+      inRoot,
+      leftLen,
+      action: 'split',
+      message: `区间切分：选定根节点 ${rootVal}。中序根位于下标 ${inRoot}，划分左子树长度 ${leftLen}，右子树长度 ${
+        iR - inRoot
+      }。`,
+      log: `根 ${rootVal}: inRoot=${inRoot}, leftLen=${leftLen}`,
+      codeLine: [8, 9, 10, 11],
+    });
+
+    rootNode.left = build(pL + 1, pL + leftLen, iL, inRoot - 1);
+    rootNode.right = build(pL + leftLen + 1, pR, inRoot + 1, iR);
+
+    steps.push({
+      tree: cloneTree(rootNode),
+      preorder: [...preorder],
+      inorder: [...inorder],
+      pL,
+      pR,
+      iL,
+      iR,
+      rootVal,
+      inRoot,
+      leftLen,
+      action: 'leave',
+      message: `子树组装完成：以 ${rootVal} 为根的子树构造完毕。`,
+      log: `节点 ${rootVal} 子树组装完毕`,
+      codeLine: [12, 13, 14],
+    });
+
+    return rootNode;
+  };
+
+  const finalTree = build(0, n - 1, 0, n - 1);
 
   steps.push({
-    tree: result.tree,
+    tree: cloneTree(finalTree),
     preorder: [...preorder],
     inorder: [...inorder],
-    preStart: 0, preEnd: preorder.length - 1, inStart: 0, inEnd: inorder.length - 1,
-    currentRoot: result.tree?.val ?? null,
-    depth: 0, leftSize: 0, built: preorder.length,
+    pL: 0,
+    pR: n - 1,
+    iL: 0,
+    iR: n - 1,
+    rootVal: null,
+    inRoot: -1,
+    leftLen: 0,
     action: 'done',
-    message: `✅ 二叉树构建完成！共 ${preorder.length} 个节点`,
-    log: `构建完成`,
-    codeLine: [19, 20],
+    message: '🎉 前中序构造二叉树全部完成！',
+    log: '✓ 构造完成',
+    codeLine: 5,
   });
 
   return steps;
 }
 
 export class BuildTreeVisualizer extends StepVisualizer<BTStep> {
-  protected codeLines = [
-    'public TreeNode buildTree(int[] preorder, int[] inorder) {',
-    '    if (preorder.length == 0) return null;',
-    '',
-    '    private TreeNode build(int preL, int preR, int inL, int inR) {',
-    '        // 先序首位 = 根',
-    '        int rootVal = preorder[preL];',
-    '        // 中序中找根位置',
-    '        int rootIdx = inL;',
-    '        while (rootIdx <= inR && inorder[rootIdx] != rootVal) rootIdx++;',
-    '        int leftSize = rootIdx - inL;',
-    '',
-    '        // 递归构建左子树',
-    '        TreeNode left = build(preL+1, preL+leftSize, inL, rootIdx-1);',
-    '',
-    '        // 递归构建右子树',
-    '        TreeNode right = build(preL+leftSize+1, preR, rootIdx+1, inR);',
-    '',
-    '        return new TreeNode(rootVal, left, right);',
-    '    }',
-    '    return build(0, preorder.length-1, 0, inorder.length-1);',
-    '}',
-  ];
-  protected codePanelTitle = '构造二叉树代码 (Java)';
+  protected codeLanguages = BUILD_TREE_CODE_LANGUAGES;
+  protected codeLines = BUILD_TREE_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '前中序构造二叉树 代码调试';
 
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private rootNodeEl: HTMLElement | null = null;
-  private leftSizeEl: HTMLElement | null = null;
-  private builtEl: HTMLElement | null = null;
-  private preChipsEl: HTMLElement | null = null;
-  private inChipsEl: HTMLElement | null = null;
-
-  private preorder: number[] = [3, 9, 20, 15, 7];
-  private inorder: number[] = [9, 3, 15, 20, 7];
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private treeSvgContainer: HTMLElement | null = null;
+  private preCellsEl: HTMLElement | null = null;
+  private inCellsEl: HTMLElement | null = null;
+  private metricRootValEl: HTMLElement | null = null;
+  private metricPreRangeEl: HTMLElement | null = null;
+  private metricInRangeEl: HTMLElement | null = null;
+  private metricInRootEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.treeEl = this.root.querySelector('#bt-tree');
-    this.logEl = this.root.querySelector('#bt-log');
-    this.depthEl = this.root.querySelector('#bt-depth');
-    this.rootNodeEl = this.root.querySelector('#bt-root-node');
-    this.leftSizeEl = this.root.querySelector('#bt-left-size');
-    this.builtEl = this.root.querySelector('#bt-built');
-    this.preChipsEl = this.root.querySelector('#bt-pre-chips');
-    this.inChipsEl = this.root.querySelector('#bt-in-chips');
-    this.bindPlaybackControls({ message: 'bt-message' });
 
-    this.root.querySelectorAll<HTMLButtonElement>('.bt-example-btn').forEach((btn) => {
+    this.treeSvgContainer = this.root.querySelector('#bt-tree-svg-container');
+    this.preCellsEl = this.root.querySelector('#pre-cells');
+    this.inCellsEl = this.root.querySelector('#in-cells');
+    this.metricRootValEl = this.root.querySelector('#metric-root-val');
+    this.metricPreRangeEl = this.root.querySelector('#metric-pre-range');
+    this.metricInRangeEl = this.root.querySelector('#metric-in-range');
+    this.metricInRootEl = this.root.querySelector('#metric-in-root');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#bt-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.bt-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const d = btn.dataset.id;
-        if (d === '1') { this.preorder = [3, 9, 20, 15, 7]; this.inorder = [9, 3, 15, 20, 7]; }
-        else if (d === '2') { this.preorder = [1, 2, 3]; this.inorder = [3, 2, 1]; }
-        else if (d === '3') { this.preorder = [5, 4, 11, 7, 2, 8, 13, 1, 9]; this.inorder = [7, 11, 2, 4, 5, 13, 8, 1, 9]; }
+        const preInput = this.root?.querySelector('#input-pre') as HTMLInputElement | null;
+        const inInput = this.root?.querySelector('#input-in') as HTMLInputElement | null;
+        if (preInput && btn.dataset.pre) preInput.value = btn.dataset.pre;
+        if (inInput && btn.dataset.in) inInput.value = btn.dataset.in;
         this.start();
       });
+    });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: BUILD_TREE_PROBLEM_HTML,
+      analysisHtml: BUILD_TREE_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): BTStep[] {
-    return buildTreeSteps(this.preorder, this.inorder);
+    const preInput = this.root?.querySelector('#input-pre') as HTMLInputElement | null;
+    const inInput = this.root?.querySelector('#input-in') as HTMLInputElement | null;
+    const rawPre = preInput?.value || '3, 9, 20, 15, 7';
+    const rawIn = inInput?.value || '9, 3, 15, 20, 7';
+    const pre = parseArray(rawPre);
+    const inArr = parseArray(rawIn);
+    return buildTreeSteps(pre, inArr);
   }
 
   protected renderStep(step: BTStep): void {
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.rootNodeEl) this.rootNodeEl.textContent = step.currentRoot !== null ? String(step.currentRoot) : '-';
-    if (this.leftSizeEl) this.leftSizeEl.textContent = String(step.leftSize);
-    if (this.builtEl) this.builtEl.textContent = String(step.built);
-    // Set message classes for styling (base class handles textContent)
-    const msgEl = this.root?.querySelector('#bt-message') as HTMLElement | null;
-    if (msgEl) {
-      msgEl.className = 'bt-message';
-      if (step.action === 'done') msgEl.classList.add('success');
+    const { tree, preorder, inorder, pL, pR, iL, iR, rootVal, inRoot, leftLen, action, message } = step;
+
+    // 1. 渲染 SVG 树拓扑
+    if (this.treeSvgContainer) {
+      const highlight = rootVal != null ? new Set([rootVal]) : new Set<number>();
+      renderTreeSVG(this.treeSvgContainer, tree, highlight, '#fbbf24');
     }
 
-    this.renderTree(step);
-    this.renderChips(step);
-    this.renderLogLine(step);
-  }
+    // 2. 渲染 Preorder / Inorder 数组区间切分
+    if (this.preCellsEl) {
+      this.preCellsEl.innerHTML = preorder
+        .map((val, idx) => {
+          const isRoot = idx === pL && action !== 'done';
+          const inLeft = idx > pL && idx <= pL + leftLen && action !== 'done';
+          const inRight = idx > pL + leftLen && idx <= pR && action !== 'done';
 
-  private renderTree(step: BTStep): void {
-    if (!this.treeEl) return;
-    if (!step.tree) {
-      this.treeEl.innerHTML = '<span style="color:#6c7086">开始构建...</span>';
-      return;
+          let cellClass = 'bt-cell';
+          if (isRoot) cellClass += ' is-root';
+          else if (inLeft) cellClass += ' in-left';
+          else if (inRight) cellClass += ' in-right';
+
+          return `<span class="${cellClass}">${val}</span>`;
+        })
+        .join('');
     }
-    this.treeEl.innerHTML = '';
-    const levelHeight = 44;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '300');
-    svg.setAttribute('viewBox', '0 0 600 300');
 
-    const drawNode = (node: TreeNode, x: number, y: number, spread: number) => {
-      const isRoot = step.currentRoot === node.val;
+    if (this.inCellsEl) {
+      this.inCellsEl.innerHTML = inorder
+        .map((val, idx) => {
+          const isRoot = idx === inRoot && action !== 'done';
+          const inLeft = idx >= iL && idx < inRoot && action !== 'done';
+          const inRight = idx > inRoot && idx <= iR && action !== 'done';
 
-      if (node.left) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.left, x - spread, y + levelHeight, spread / 2);
+          let cellClass = 'bt-cell';
+          if (isRoot) cellClass += ' is-root';
+          else if (inLeft) cellClass += ' in-left';
+          else if (inRight) cellClass += ' in-right';
+
+          return `<span class="${cellClass}">${val}</span>`;
+        })
+        .join('');
+    }
+
+    // 3. 更新状态监视器
+    if (this.metricRootValEl) this.metricRootValEl.textContent = rootVal != null ? `${rootVal}` : '—';
+    if (this.metricPreRangeEl) {
+      this.metricPreRangeEl.textContent = pL >= 0 && pR >= 0 ? `[${pL}, ${pR}]` : '—';
+    }
+    if (this.metricInRangeEl) {
+      this.metricInRangeEl.textContent = iL >= 0 && iR >= 0 ? `[${iL}, ${iR}]` : '—';
+    }
+    if (this.metricInRootEl) {
+      this.metricInRootEl.textContent = inRoot >= 0 ? `${inRoot} (leftLen=${leftLen})` : '—';
+    }
+
+    if (this.formulaActionEl) {
+      if (action === 'split') {
+        this.formulaActionEl.textContent = `root=${rootVal}, leftLen=${leftLen}, inRoot=${inRoot}`;
+      } else if (action === 'done') {
+        this.formulaActionEl.textContent = '二叉树构造完成';
+      } else {
+        this.formulaActionEl.textContent = 'leftLen = inRoot - iL';
       }
-      if (node.right) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.right, x + spread, y + levelHeight, spread / 2);
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 4. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'done' ? '#f0fdf4' : action === 'split' ? '#eff6ff' : '#f8fafc';
+      logEntry.style.color =
+        action === 'done' ? '#15803d' : action === 'split' ? '#1d4ed8' : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'done' ? '#bbf7d0' : action === 'split' ? '#bfdbfe' : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(x)); circle.setAttribute('cy', String(y)); circle.setAttribute('r', '18');
-      let fill = '#45475a';
-      let stroke = '#6c7086';
-      if (isRoot) { fill = '#8be9fd'; stroke = '#8be9fd'; }
-      circle.setAttribute('fill', fill);
-      circle.setAttribute('stroke', stroke);
-      circle.setAttribute('stroke-width', '2');
-      svg.appendChild(circle);
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(x)); text.setAttribute('y', String(y + 5));
-      text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#1e1e2e');
-      text.setAttribute('font-size', '12'); text.setAttribute('font-weight', 'bold');
-      text.textContent = String(node.val);
-      svg.appendChild(text);
-    };
-    drawNode(step.tree, 300, 30, 120);
-    this.treeEl.appendChild(svg);
-  }
-
-  private renderChips(step: BTStep): void {
-    if (this.preChipsEl) {
-      this.preChipsEl.innerHTML = '';
-      step.preorder.forEach((val, i) => {
-        const chip = document.createElement('span');
-        chip.className = 'bt-traversal-chip pre';
-        const inRange = i >= step.preStart && i <= step.preEnd;
-        if (inRange) chip.classList.add('used');
-        if (i === step.preStart && step.currentRoot !== null) chip.classList.add('active');
-        chip.textContent = String(val);
-        this.preChipsEl!.appendChild(chip);
-      });
     }
-    if (this.inChipsEl) {
-      this.inChipsEl.innerHTML = '';
-      step.inorder.forEach((val, i) => {
-        const chip = document.createElement('span');
-        chip.className = 'bt-traversal-chip in';
-        const inRange = i >= step.inStart && i <= step.inEnd;
-        if (inRange) chip.classList.add('used');
-        if (val === step.currentRoot) chip.classList.add('active');
-        chip.textContent = String(val);
-        this.inChipsEl!.appendChild(chip);
-      });
+
+    // 5. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 6. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
     }
   }
 
-  private renderLogLine(step: BTStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'build-tree',
-  name: '构造二叉树（先序+中序）',
+  name: '前中序构造二叉树',
   viewId: 'algo-build-tree-view',
   category: 'tree',
-  description: '从先序和中序遍历序列重建二叉树，理解分治构建',
-  icon: '🏗️',
+  description: '根据前序遍历与中序遍历序列递归切分并构造完整二叉树',
+  icon: '🔨',
+  difficulty: 2,
+  levelOrder: 9,
+  learningGoal: '掌握通过前序定位根节点与中序切分左右子树区间的构造技巧',
   template,
   Visualizer: BuildTreeVisualizer,
-  difficulty: 3,
-  levelOrder: 9,
-  learningGoal: '掌握通过先序定位根、中序分割左右子树的构建方法',
 });

@@ -1,20 +1,30 @@
 /**
- * 二叉树最大深度可视化器
- * LeetCode 104
+ * 二叉树最大深度可视化器 — 4-Card 标准现代架构
+ * 后序自底向上高度归约、左右子树深度比对、SVG 拓扑高度标注
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  TREE_DEPTH_PROBLEM_HTML,
+  TREE_DEPTH_ANALYSIS_HTML,
+  TREE_DEPTH_CODE_LANGUAGES,
+} from './tree-depth-problem-content';
+import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
 import template from './tree-depth.html?raw';
 
 export interface TDStep {
   tree: TreeNode | null;
   current: number | null;
-  depth: number;
-  heights: Map<number, number>; // 节点值 -> 高度
+  leftDepth: number;
+  rightDepth: number;
   maxDepth: number;
-  action: 'enter' | 'compute' | 'leave';
+  depthsMap: Map<number, number>;
+  action: 'enter' | 'left-done' | 'right-done' | 'return-depth';
   message: string;
   log: string;
   codeLine: number | number[];
@@ -22,191 +32,287 @@ export interface TDStep {
 
 export function buildTDSteps(root: TreeNode | null): TDStep[] {
   const steps: TDStep[] = [];
-  const heights = new Map<number, number>();
-  let maxDepth = 0;
+  const depthsMap = new Map<number, number>();
 
   steps.push({
-    tree: root, current: null, depth: 0, heights: new Map(), maxDepth: 0,
+    tree: root,
+    current: null,
+    leftDepth: 0,
+    rightDepth: 0,
+    maxDepth: 0,
+    depthsMap: new Map(depthsMap),
     action: 'enter',
-    message: `后序求深度：先递归左右子树，再取较大者 +1。`,
-    log: '开始求深度。',
-    codeLine: [1, 2],
+    message: root ? `初始化最大深度计算：根节点为 ${root.val}，采用后序自底向上归约。` : '空树，最大深度为 0。',
+    log: root ? '初始化最大深度计算' : '空树 -> 深度 0',
+    codeLine: 2,
   });
 
-  const dfs = (node: TreeNode | null, depth: number): number => {
-    if (!node) {
-      steps.push({
-        tree: root, current: null, depth, heights: new Map(heights), maxDepth,
-        action: 'enter',
-        message: `空节点，返回高度 0。`,
-        log: `空节点 → 0`,
-        codeLine: 3,
-      });
-      return 0;
-    }
+  if (!root) {
     steps.push({
-      tree: root, current: node.val, depth, heights: new Map(heights), maxDepth,
+      tree: null,
+      current: null,
+      leftDepth: 0,
+      rightDepth: 0,
+      maxDepth: 0,
+      depthsMap: new Map(depthsMap),
+      action: 'return-depth',
+      message: '✅ 空树最大深度为 0。',
+      log: '✓ 最大深度 = 0',
+      codeLine: 3,
+    });
+    return steps;
+  }
+
+  const getDepth = (node: TreeNode | null): number => {
+    if (!node) return 0;
+
+    steps.push({
+      tree: root,
+      current: node.val,
+      leftDepth: 0,
+      rightDepth: 0,
+      maxDepth: 0,
+      depthsMap: new Map(depthsMap),
       action: 'enter',
-      message: `进入节点 ${node.val}，先求左子树深度。`,
-      log: `进入 ${node.val}`,
-      codeLine: 4,
+      message: `进入节点 ${node.val}：开始递归求其左子树最大深度。`,
+      log: `进入 ${node.val} -> 求左深度`,
+      codeLine: [4, 5],
     });
-    const left = dfs(node.left, depth + 1);
+
+    const l = getDepth(node.left);
+
     steps.push({
-      tree: root, current: node.val, depth, heights: new Map(heights), maxDepth,
-      action: 'enter',
-      message: `节点 ${node.val} 的左子树深度 = ${left}，再求右子树。`,
-      log: `${node.val}.left = ${left}`,
-      codeLine: 4,
+      tree: root,
+      current: node.val,
+      leftDepth: l,
+      rightDepth: 0,
+      maxDepth: 0,
+      depthsMap: new Map(depthsMap),
+      action: 'left-done',
+      message: `节点 ${node.val} 左子树深度计算完毕：leftDepth = ${l}。开始求右子树深度。`,
+      log: `节点 ${node.val}: leftDepth = ${l}`,
+      codeLine: [5, 6],
     });
-    const right = dfs(node.right, depth + 1);
-    const h = Math.max(left, right) + 1;
-    heights.set(node.val, h);
-    if (depth + 1 > maxDepth) maxDepth = depth + 1;
+
+    const r = getDepth(node.right);
+
+    const curHeight = 1 + Math.max(l, r);
+    depthsMap.set(node.val, curHeight);
+
     steps.push({
-      tree: root, current: node.val, depth, heights: new Map(heights), maxDepth,
-      action: 'compute',
-      message: `节点 ${node.val}：max(左${left}, 右${right}) + 1 = ${h}。`,
-      log: `${node.val} 高度=${h}`,
-      codeLine: 5,
+      tree: root,
+      current: node.val,
+      leftDepth: l,
+      rightDepth: r,
+      maxDepth: curHeight,
+      depthsMap: new Map(depthsMap),
+      action: 'return-depth',
+      message: `节点 ${node.val} 高度归约：1 + max(${l}, ${r}) = ${curHeight}。将此高度返回上一层。`,
+      log: `节点 ${node.val}: height = 1 + max(${l}, ${r}) = ${curHeight}`,
+      codeLine: 7,
     });
-    return h;
+
+    return curHeight;
   };
 
-  dfs(root, 0);
+  const totalMax = getDepth(root);
 
   steps.push({
-    tree: root, current: null, depth: 0, heights: new Map(heights), maxDepth,
-    action: 'leave',
-    message: `完成，二叉树最大深度 = ${maxDepth}。`,
-    log: `最大深度 = ${maxDepth}`,
-    codeLine: 6,
+    tree: root,
+    current: null,
+    leftDepth: 0,
+    rightDepth: 0,
+    maxDepth: totalMax,
+    depthsMap: new Map(depthsMap),
+    action: 'return-depth',
+    message: `🎉 计算完成！二叉树的最大深度为 ${totalMax}。`,
+    log: `✓ 最大深度 = ${totalMax}`,
+    codeLine: 2,
   });
+
   return steps;
 }
 
 export class TreeDepthVisualizer extends StepVisualizer<TDStep> {
-  protected codeLines = [
-    'public int maxDepth(TreeNode root) {',
-    '    if (root == null) return 0;',
-    '    // 空节点深度为 0',
-    '    int left = maxDepth(root.left);',
-    '    int right = maxDepth(root.right);',
-    '    return Math.max(left, right) + 1;',
-    '}',
-  ];
-  protected codePanelTitle = '最大深度代码 (Java)';
+  protected codeLanguages = TREE_DEPTH_CODE_LANGUAGES;
+  protected codeLines = TREE_DEPTH_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '二叉树最大深度 代码调试';
 
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private hEl: HTMLElement | null = null;
-  private maxEl: HTMLElement | null = null;
-
-  private treeData: (number | null)[] = [3, 9, 20, null, null, 15, 7];
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private treeSvgContainer: HTMLElement | null = null;
+  private metricCurrEl: HTMLElement | null = null;
+  private metricLeftDepthEl: HTMLElement | null = null;
+  private metricRightDepthEl: HTMLElement | null = null;
+  private metricMaxDepthEl: HTMLElement | null = null;
+  private formulaActionEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.treeEl = this.root.querySelector('#td-tree');
-    this.logEl = this.root.querySelector('#td-log');
-    this.curEl = this.root.querySelector('#td-cur');
-    this.depthEl = this.root.querySelector('#td-depth');
-    this.hEl = this.root.querySelector('#td-h');
-    this.maxEl = this.root.querySelector('#td-max');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#td-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.td-example').forEach((btn) => {
+
+    this.treeSvgContainer = this.root.querySelector('#td-tree-svg-container');
+    this.metricCurrEl = this.root.querySelector('#metric-curr');
+    this.metricLeftDepthEl = this.root.querySelector('#metric-left-depth');
+    this.metricRightDepthEl = this.root.querySelector('#metric-right-depth');
+    this.metricMaxDepthEl = this.root.querySelector('#metric-max-depth');
+    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.liveTextEl = this.root.querySelector('#td-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>.bind(this.root)('.td-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const d = btn.dataset.id;
-        if (d === '1') this.treeData = [3, 9, 20, null, null, 15, 7];
-        else if (d === '2') this.treeData = [1, 2, 3, 4, 5];
-        else this.treeData = [];
+        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
         this.start();
       });
     });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: TREE_DEPTH_PROBLEM_HTML,
+      analysisHtml: TREE_DEPTH_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
+  }
+
+  private parseTreeInput(raw: string): (number | null)[] {
+    return raw
+      .split(/[,，\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+      .filter((n) => n === null || !isNaN(n));
   }
 
   protected buildSteps(): TDStep[] {
-    const root = buildTree(this.treeData);
+    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+    const raw = treeInput?.value || '3, 9, 20, null, null, 15, 7';
+    const arr = this.parseTreeInput(raw);
+    const root = buildTree(arr);
     return buildTDSteps(root);
   }
 
   protected renderStep(step: TDStep): void {
-    if (this.curEl) this.curEl.textContent = step.current !== null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.hEl) this.hEl.textContent = step.current !== null ? String(step.heights.get(step.current) ?? '?') : '-';
-    if (this.maxEl) this.maxEl.textContent = String(step.maxDepth);
-    this.renderTree(step);
-    this.renderLogLine(step);
-  }
+    const { tree, current, leftDepth, rightDepth, maxDepth, depthsMap, action, message } = step;
 
-  private renderTree(step: TDStep): void {
-    if (!this.treeEl || !step.tree) {
-      if (this.treeEl) this.treeEl.innerHTML = '<span style="color:#6c7086">空树</span>';
-      return;
+    // 1. 渲染 SVG 树拓扑
+    if (this.treeSvgContainer) {
+      const highlight = current != null ? new Set([current]) : new Set<number>();
+      const secondaryHighlight = new Set<number>(depthsMap.keys());
+      const labels = new Map<number, string>();
+      depthsMap.forEach((depth, nodeVal) => {
+        labels.set(nodeVal, `h:${depth}`);
+      });
+
+      renderTreeSVG(
+        this.treeSvgContainer,
+        tree,
+        highlight,
+        '#fbbf24',
+        secondaryHighlight,
+        '#34d399',
+        labels,
+      );
     }
-    this.treeEl.innerHTML = '';
-    const levelHeight = 44;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '260');
-    svg.setAttribute('viewBox', '0 0 600 260');
-    const drawNode = (node: TreeNode, x: number, y: number, spread: number) => {
-      const isCurrent = step.current === node.val;
-      if (node.left) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.left, x - spread, y + levelHeight, spread / 2);
+
+    // 2. 更新状态监视器
+    if (this.metricCurrEl) this.metricCurrEl.textContent = current != null ? `${current}` : '—';
+    if (this.metricLeftDepthEl) this.metricLeftDepthEl.textContent = `${leftDepth}`;
+    if (this.metricRightDepthEl) this.metricRightDepthEl.textContent = `${rightDepth}`;
+    if (this.metricMaxDepthEl) this.metricMaxDepthEl.textContent = `${maxDepth}`;
+
+    if (this.formulaActionEl) {
+      if (action === 'return-depth') {
+        this.formulaActionEl.textContent = `1 + Math.max(${leftDepth}, ${rightDepth}) = ${maxDepth}`;
+      } else {
+        this.formulaActionEl.textContent = '1 + Math.max(leftDepth, rightDepth)';
       }
-      if (node.right) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.right, x + spread, y + levelHeight, spread / 2);
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'return-depth' ? '#f0fdf4' : action === 'enter' ? '#eff6ff' : '#f8fafc';
+      logEntry.style.color =
+        action === 'return-depth' ? '#15803d' : action === 'enter' ? '#1d4ed8' : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'return-depth' ? '#bbf7d0' : action === 'enter' ? '#bfdbfe' : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
       }
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(x)); circle.setAttribute('cy', String(y)); circle.setAttribute('r', '16');
-      const h = step.heights.get(node.val);
-      circle.setAttribute('fill', isCurrent ? '#f38ba8' : h != null ? '#a6e3a1' : '#45475a');
-      circle.setAttribute('stroke', isCurrent ? '#f38ba8' : '#6c7086');
-      circle.setAttribute('stroke-width', '2');
-      svg.appendChild(circle);
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(x)); text.setAttribute('y', String(y + 5));
-      text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#cdd6f4');
-      text.setAttribute('font-size', '12'); text.setAttribute('font-weight', 'bold');
-      text.textContent = String(node.val);
-      svg.appendChild(text);
-      if (h != null) {
-        const hlabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        hlabel.setAttribute('x', String(x)); hlabel.setAttribute('y', String(y - 22));
-        hlabel.setAttribute('text-anchor', 'middle'); hlabel.setAttribute('fill', '#a6e3a1');
-        hlabel.setAttribute('font-size', '10');
-        hlabel.textContent = `h=${h}`;
-        svg.appendChild(hlabel);
-      }
-    };
-    drawNode(step.tree, 300, 30, 110);
-    this.treeEl.appendChild(svg);
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: TDStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
@@ -215,11 +321,11 @@ registerAlgorithm({
   name: '二叉树最大深度',
   viewId: 'algo-tree-depth-view',
   category: 'tree',
-  description: '后序遍历求高度：max(左,右)+1',
+  description: '自底向上后序归约计算二叉树的最大深度',
   icon: '📏',
+  difficulty: 1,
+  levelOrder: 4,
+  learningGoal: '掌握通过后序遍历自底向上归约子树深度的核心模型',
   template,
   Visualizer: TreeDepthVisualizer,
-  difficulty: 1,
-  levelOrder: 2,
-  learningGoal: '理解递归求树深度的分治思想',
 });

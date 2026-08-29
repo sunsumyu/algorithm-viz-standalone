@@ -1,11 +1,20 @@
 /**
- * 二叉树前中后序遍历可视化器
- * LeetCode 144/94/145
+ * 二叉树前中后序遍历可视化器 — 4-Card 标准现代架构
+ * 递归前序/中序/后序遍历、SVG 拓扑高亮、实时访问序列与代码同步
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  TREE_TRAVERSAL_PROBLEM_HTML,
+  TREE_TRAVERSAL_ANALYSIS_HTML,
+  TREE_TRAVERSAL_CODE_LANGUAGES,
+} from './tree-traversal-problem-content';
+import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
 import template from './tree-traversal.html?raw';
 
 export type Mode = 'pre' | 'in' | 'post';
@@ -16,7 +25,7 @@ export interface TTStep {
   current: number | null;
   depth: number;
   visited: number;
-  result: number[];   // 已收集的访问序列
+  result: number[];
   action: 'enter' | 'visit' | 'leave';
   message: string;
   log: string;
@@ -30,210 +39,300 @@ export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
 
   const modeName = mode === 'pre' ? '前序（根左右）' : mode === 'in' ? '中序（左根右）' : '后序（左右根）';
   steps.push({
-    tree: root, mode, current: null, depth: 0, visited: 0, result: [],
+    tree: root,
+    mode,
+    current: null,
+    depth: 0,
+    visited: 0,
+    result: [],
     action: 'enter',
-    message: `开始${modeName}遍历。`,
-    log: `开始${modeName}遍历。`,
+    message: root ? `开始${modeName}遍历：根节点为 ${root.val}。` : '空树，无需遍历。',
+    log: root ? `开始${modeName}遍历` : '空树',
     codeLine: 1,
   });
+
+  if (!root) {
+    steps.push({
+      tree: null,
+      mode,
+      current: null,
+      depth: 0,
+      visited: 0,
+      result: [],
+      action: 'leave',
+      message: '✅ 遍历完成，返回空序列 []。',
+      log: '遍历完成: []',
+      codeLine: 4,
+    });
+    return steps;
+  }
 
   const visit = (node: TreeNode, depth: number) => {
     visited++;
     result.push(node.val);
     steps.push({
-      tree: root, mode, current: node.val, depth, visited, result: [...result],
+      tree: root,
+      mode,
+      current: node.val,
+      depth,
+      visited,
+      result: [...result],
       action: 'visit',
-      message: `${modeName} 访问节点 ${node.val}（深度 ${depth}），加入结果。`,
-      log: `访问 ${node.val} → [${result.join(',')}]`,
-      codeLine: mode === 'pre' ? 2 : mode === 'in' ? 3 : 4,
+      message: `${modeName} 访问节点 ${node.val}（深度 ${depth}），加入结果序列。`,
+      log: `访问节点 ${node.val} -> [${result.join(', ')}]`,
+      codeLine: mode === 'pre' ? 5 : mode === 'in' ? 12 : 19,
     });
   };
 
   const traverse = (node: TreeNode | null, depth: number) => {
     if (!node) return;
     steps.push({
-      tree: root, mode, current: node.val, depth, visited, result: [...result],
+      tree: root,
+      mode,
+      current: node.val,
+      depth,
+      visited,
+      result: [...result],
       action: 'enter',
-      message: `进入节点 ${node.val}（深度 ${depth}）。`,
-      log: `进入 ${node.val}`,
-      codeLine: 1,
+      message: `进入节点 ${node.val}（当前栈深度 ${depth}）。`,
+      log: `进入 ${node.val} (depth ${depth})`,
+      codeLine: mode === 'pre' ? 4 : mode === 'in' ? 10 : 16,
     });
+
     if (mode === 'pre') visit(node, depth);
     traverse(node.left, depth + 1);
     if (mode === 'in') visit(node, depth);
     traverse(node.right, depth + 1);
     if (mode === 'post') visit(node, depth);
+
     steps.push({
-      tree: root, mode, current: node.val, depth, visited, result: [...result],
+      tree: root,
+      mode,
+      current: node.val,
+      depth,
+      visited,
+      result: [...result],
       action: 'leave',
-      message: `离开节点 ${node.val}（子树处理完毕）。`,
+      message: `离开节点 ${node.val}（该子树所有分支处理完毕，弹出栈帧）。`,
       log: `离开 ${node.val}`,
-      codeLine: 5,
+      codeLine: mode === 'pre' ? 7 : mode === 'in' ? 14 : 21,
     });
   };
 
   traverse(root, 0);
 
   steps.push({
-    tree: root, mode, current: null, depth: 0, visited, result: [...result],
+    tree: root,
+    mode,
+    current: null,
+    depth: 0,
+    visited,
+    result: [...result],
     action: 'leave',
-    message: `${modeName}遍历完成，结果：[${result.join(', ')}]。`,
-    log: `完成：[${result.join(', ')}]`,
-    codeLine: 6,
+    message: `🎉 ${modeName}遍历完成！最终收集序列：[${result.join(', ')}]。`,
+    log: `✓ 完成: [${result.join(', ')}]`,
+    codeLine: 1,
   });
+
   return steps;
 }
 
 export class TreeTraversalVisualizer extends StepVisualizer<TTStep> {
-  protected codeLines = [
-    'void traverse(TreeNode node) {',
-    '    if (node == null) return;',
-    '    // 前序：res.add(node.val);  ← 根',
-    '    traverse(node.left);          ← 左',
-    '    // 中序：res.add(node.val);  ← 根',
-    '    traverse(node.right);         ← 右',
-    '    // 后序：res.add(node.val);  ← 根',
-    '}',
-  ];
-  protected codePanelTitle = '遍历代码（前/中/后序）(Java)';
+  protected codeLanguages = TREE_TRAVERSAL_CODE_LANGUAGES;
+  protected codeLines = TREE_TRAVERSAL_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '二叉树遍历 代码调试';
 
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private visitedEl: HTMLElement | null = null;
-  private lenEl: HTMLElement | null = null;
-
-  private mode: Mode = 'pre';
-  private treeData: (number | null)[] = [1, 2, 3, 4, 5, null, 6];
+  private currentMode: Mode = 'pre';
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
+  private treeSvgContainer: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private metricDepthEl: HTMLElement | null = null;
+  private metricVisitedCountEl: HTMLElement | null = null;
+  private metricModeNameEl: HTMLElement | null = null;
+  private resultSeqEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.treeEl = this.root.querySelector('#tt-tree');
-    this.logEl = this.root.querySelector('#tt-log');
-    this.resultEl = this.root.querySelector('#tt-result');
-    this.curEl = this.root.querySelector('#tt-cur');
-    this.depthEl = this.root.querySelector('#tt-depth');
-    this.visitedEl = this.root.querySelector('#tt-visited');
-    this.lenEl = this.root.querySelector('#tt-len');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#tt-start')?.addEventListener('click', () => this.start());
+
+    this.treeSvgContainer = this.root.querySelector('#tt-tree-svg-container');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.metricDepthEl = this.root.querySelector('#metric-depth');
+    this.metricVisitedCountEl = this.root.querySelector('#metric-visited-count');
+    this.metricModeNameEl = this.root.querySelector('#metric-mode-name');
+    this.resultSeqEl = this.root.querySelector('#traversal-result');
+    this.liveTextEl = this.root.querySelector('#tt-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 模式切换按钮
     this.root.querySelectorAll<HTMLButtonElement>('.tt-mode-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.root?.querySelectorAll<HTMLButtonElement>('.tt-mode-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.mode = btn.dataset.mode as Mode;
+        this.root?.querySelectorAll('.tt-mode-btn').forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        this.currentMode = (btn.dataset.mode as Mode) || 'pre';
         this.start();
       });
     });
-    this.root.querySelectorAll<HTMLButtonElement>('.tt-example').forEach((btn) => {
+
+    // 绑定播放控制
+    this.bindPlaybackControls();
+
+    // 运行与重置
+    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
+    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
+
+    // 进度条 Scrubber
+    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10);
+        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
+          this.goToStep(val);
+        }
+      });
+    }
+
+    // 步进控制
+    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
+    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
+    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
+
+    // 速度选择
+    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
+    if (speedSelect) {
+      speedSelect.addEventListener('change', () => {
+        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
+      });
+    }
+
+    // 示例 Chips
+    this.root.querySelectorAll<HTMLButtonElement>('.tt-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const d = btn.dataset.id;
-        this.treeData = d === '1' ? [1, 2, 3, 4, 5, null, 6] : [5, 4, 6, 1, 2];
+        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
         this.start();
       });
     });
+
+    // 挂载暗色代码终端深模块
+    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+      codeLanguages: this.codeLanguages,
+      problemHtml: TREE_TRAVERSAL_PROBLEM_HTML,
+      analysisHtml: TREE_TRAVERSAL_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
+  }
+
+  private parseTreeInput(raw: string): (number | null)[] {
+    return raw
+      .split(/[,，\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+      .filter((n) => n === null || !isNaN(n));
   }
 
   protected buildSteps(): TTStep[] {
-    const root = buildTree(this.treeData);
-    return buildTTSteps(root, this.mode);
+    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
+    const raw = treeInput?.value || '1, 2, 3, 4, 5, 6, 7';
+    const arr = this.parseTreeInput(raw);
+    const root = buildTree(arr);
+    return buildTTSteps(root, this.currentMode);
   }
 
   protected renderStep(step: TTStep): void {
-    if (this.curEl) this.curEl.textContent = step.current !== null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.visitedEl) this.visitedEl.textContent = String(step.visited);
-    if (this.lenEl) this.lenEl.textContent = String(step.result.length);
-    this.renderTree(step);
-    this.renderResult(step);
-    this.renderLogLine(step);
-  }
+    const { tree, mode, current, depth, visited, result, action, message } = step;
 
-  private renderTree(step: TTStep): void {
-    if (!this.treeEl || !step.tree) return;
-    this.treeEl.innerHTML = '';
-    const levelHeight = 42;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '240');
-    svg.setAttribute('viewBox', '0 0 600 240');
-    const drawNode = (node: TreeNode, x: number, y: number, spread: number) => {
-      const isCurrent = step.current === node.val;
-      if (node.left) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.left, x - spread, y + levelHeight, spread / 2);
-      }
-      if (node.right) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.right, x + spread, y + levelHeight, spread / 2);
-      }
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(x)); circle.setAttribute('cy', String(y)); circle.setAttribute('r', '16');
-      circle.setAttribute('fill', isCurrent ? '#f38ba8' : '#45475a');
-      circle.setAttribute('stroke', isCurrent ? '#f38ba8' : '#6c7086');
-      circle.setAttribute('stroke-width', '2');
-      svg.appendChild(circle);
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(x)); text.setAttribute('y', String(y + 5));
-      text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#cdd6f4');
-      text.setAttribute('font-size', '12'); text.setAttribute('font-weight', 'bold');
-      text.textContent = String(node.val);
-      svg.appendChild(text);
-    };
-    drawNode(step.tree, 300, 30, 110);
-    this.treeEl.appendChild(svg);
-  }
-
-  private renderResult(step: TTStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.innerHTML = '';
-    if (step.result.length === 0) {
-      this.resultEl.innerHTML = '<span style="color:#6c7086">（空）</span>';
-      return;
+    // 1. 渲染 SVG 树拓扑
+    if (this.treeSvgContainer) {
+      const highlight = current != null ? new Set([current]) : new Set<number>();
+      const secondaryHighlight = new Set<number>(result);
+      renderTreeSVG(
+        this.treeSvgContainer,
+        tree,
+        highlight,
+        '#fbbf24',
+        secondaryHighlight,
+        '#34d399',
+      );
     }
-    step.result.forEach((val) => {
-      const el = document.createElement('span');
-      el.className = 'tt-result-val';
-      if (val === step.current) el.classList.add('current');
-      el.textContent = String(val);
-      this.resultEl!.appendChild(el);
-    });
+
+    // 2. 更新状态监视器
+    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = current != null ? `${current}` : '—';
+    if (this.metricDepthEl) this.metricDepthEl.textContent = `${depth}`;
+    if (this.metricVisitedCountEl) this.metricVisitedCountEl.textContent = `${visited}`;
+    if (this.metricModeNameEl) {
+      this.metricModeNameEl.textContent =
+        mode === 'pre' ? '前序 (根左右)' : mode === 'in' ? '中序 (左根右)' : '后序 (左右根)';
+    }
+    if (this.resultSeqEl) {
+      this.resultSeqEl.textContent = `[ ${result.join(', ')} ]`;
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const stepIndex = this.currentStepIndex;
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '4px 8px';
+      logEntry.style.borderRadius = '6px';
+      logEntry.style.background =
+        action === 'visit' ? '#f0fdf4' : action === 'enter' ? '#eff6ff' : '#f8fafc';
+      logEntry.style.color =
+        action === 'visit' ? '#15803d' : action === 'enter' ? '#1d4ed8' : '#64748b';
+      logEntry.style.border =
+        '1px solid ' +
+        (action === 'visit' ? '#bbf7d0' : action === 'enter' ? '#bfdbfe' : '#e2e8f0');
+      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
+
+      this.logContainer.appendChild(logEntry);
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+      }
+    }
+
+    // 4. 同步代码高亮
+    if (this.terminalInstance) {
+      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
+      this.terminalInstance.highlightLine(line);
+    }
+
+    // 5. 更新底部播放控制条
+    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
+    if (slider) {
+      slider.max = String(this.steps.length - 1);
+      slider.value = String(this.currentStepIndex);
+    }
+    const indicator = this.root?.querySelector('#step-indicator');
+    if (indicator) {
+      indicator.textContent = `步骤 ${this.currentStepIndex + 1} / ${this.steps.length}`;
+    }
   }
 
-  private renderLogLine(step: TTStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    if (this.logContainer) this.logContainer.innerHTML = '';
+    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
 registerAlgorithm({
   id: 'tree-traversal',
-  name: '二叉树前中后序遍历',
+  name: '二叉树遍历',
   viewId: 'algo-tree-traversal-view',
   category: 'tree',
-  description: '递归实现前序/中序/后序遍历，对比三种访问顺序',
-  icon: '🌳',
-  template,
-  Visualizer: TreeTraversalVisualizer,
+  description: '前序、中序、后序深度优先遍历过程演示',
+  icon: '🌲',
   difficulty: 1,
   levelOrder: 1,
-  learningGoal: '掌握二叉树的前/中/后序遍历递归与非递归写法',
+  learningGoal: '掌握前序/中序/后序三种遍历顺序及递归本质',
+  template,
+  Visualizer: TreeTraversalVisualizer,
 });

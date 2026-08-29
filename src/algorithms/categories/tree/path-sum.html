@@ -1,467 +1,519 @@
-<!-- 路径总和 LeetCode 112 -->
 <style>
+  /* === 路径总和 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-path-sum-view {
-    padding: 1.5rem;
-    color: #cdd6f4;
-    max-width: 1400px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
-  @keyframes ps-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(250, 179, 135, 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(250, 179, 135, 0); }
-  }
-
-  @keyframes ps-pop-in {
-    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  @keyframes ps-glow {
-    0%, 100% { filter: drop-shadow(0 0 6px rgba(166, 227, 161, 0.4)); }
-    50% { filter: drop-shadow(0 0 14px rgba(166, 227, 161, 0.8)); }
-  }
-
-  .ps-theme {
-    --accent-a: rgb(250, 179, 135);
-    --accent-b: rgb(166, 227, 161);
-    --bg-start: 20, 18, 38;
-    --bg-mid: 25, 23, 50;
-    --bg-end: 35, 32, 60;
-  }
-
-  .ps-viz-container {
-    position: relative;
-    min-height: calc(100vh - 3rem);
-  }
-
-  .ps-root {
-    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.3), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.3), transparent 55%),
-                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
-    min-height: 100%;
-    padding: 1.5rem;
-    border-radius: 20px;
-  }
-
-  .ps-header {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .ps-header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .ps-back-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    color: #cdd6f4;
-  }
-
-  .ps-back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .ps-title {
-    font-size: 22px;
-    font-weight: 800;
-    margin: 0;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .ps-subtitle {
-    font-size: 0.78rem;
-    color: #6c7086;
-    margin-top: 0.2rem;
-  }
-
-  .ps-tip {
-    background: rgba(250, 179, 135, 0.1);
-    border: 1px solid rgba(250, 179, 135, 0.25);
-    border-radius: 10px;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.78rem;
-    color: #fab387;
-    max-width: 280px;
-  }
-
-  .ps-main-content {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 1rem;
-  }
-
-  .ps-left-col {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .ps-panel {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-path-sum-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-path-sum-view .ps-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .ps-panel-header {
-    background: rgba(25, 24, 42, 0.6);
-    padding: 0.6rem 0.9rem;
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--accent-a);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  #algo-path-sum-view .ps-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .ps-tree-container {
-    padding: 1rem;
-    min-height: 260px;
+  #algo-path-sum-view .ps-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .ps-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    padding: 0.8rem;
-  }
-
-  .ps-stat-item {
-    text-align: center;
-  }
-
-  .ps-stat-value {
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: var(--accent-a);
-  }
-
-  .ps-stat-label {
-    font-size: 0.65rem;
-    color: #6c7086;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .ps-controls {
-    display: flex;
-    gap: 0.3rem;
-    padding: 0.8rem;
-    flex-wrap: wrap;
-  }
-
-  .ps-btn {
-    background: rgba(49, 50, 68, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cdd6f4;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
 
-  .ps-btn:hover:not(:disabled) {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
+  #algo-path-sum-view .ps-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .ps-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .ps-btn-play {
-    flex: 1;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    font-weight: 600;
-    min-width: 70px;
-  }
-
-  .ps-message {
-    text-align: center;
-    padding: 0.65rem;
-    font-size: 0.88rem;
-    color: #9399b2;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.2s;
-  }
-
-  .ps-message.success {
-    color: var(--accent-b);
-    font-weight: 600;
-  }
-
-  .ps-message.error {
-    color: #f38ba8;
-    font-weight: 600;
-  }
-
-  .ps-path-display {
-    padding: 0.8rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    align-items: center;
-  }
-
-  .ps-path-chip {
+  #algo-path-sum-view .ps-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 28px;
-    padding: 0 0.45rem;
-    border-radius: 8px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    background: rgba(250, 179, 135, 0.15);
-    border: 1px solid rgba(250, 179, 135, 0.4);
-    color: #fab387;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-path-sum-view .ps-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .ps-path-chip.current {
-    background: rgba(250, 179, 135, 0.35);
-    border-color: #fab387;
-    animation: ps-pop-in 0.4s ease;
-  }
-
-  .ps-path-chip.leaf {
-    background: rgba(166, 227, 161, 0.25);
-    border-color: #a6e3a1;
-    color: #a6e3a1;
-  }
-
-  .ps-path-arrow {
-    color: #6c7086;
-    font-size: 0.7rem;
-  }
-
-  .ps-log {
-    padding: 0.6rem 0.8rem;
-    max-height: 150px;
-    overflow-y: auto;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 0.75rem;
-    line-height: 1.6;
-  }
-
-  .ps-log div {
-    color: #6c7086;
-    transition: color 0.2s;
-  }
-
-  .ps-log div.active {
-    color: var(--accent-a);
-    font-weight: 600;
-  }
-
-  .ps-example-row {
-    display: flex;
-    gap: 0.4rem;
-    padding: 0.8rem;
-    flex-wrap: wrap;
-  }
-
-  .ps-example-btn {
-    background: rgba(49, 50, 68, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 999px;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.72rem;
-    color: #cdd6f4;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .ps-example-btn:hover {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: var(--accent-a);
-  }
-
-  .ps-input-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    padding: 0.8rem;
-  }
-
-  .ps-input-row label {
-    font-size: 0.8rem;
-    color: #9399b2;
-  }
-
-  .ps-input-num {
-    background: rgba(49, 50, 68, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  #algo-path-sum-view .ps-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
     border-radius: 6px;
-    padding: 0.4rem 0.6rem;
-    color: #cdd6f4;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 0.85rem;
-    width: 80px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-path-sum-view .ps-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-path-sum-view .ps-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-path-sum-view .ps-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-path-sum-view .ps-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-path-sum-view .ps-input-group input {
+    background: transparent;
+    border: none;
     outline: none;
-    transition: border-color 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
   }
 
-  .ps-input-num:focus {
-    border-color: var(--accent-a);
+  #algo-path-sum-view .ps-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-path-sum-view .ps-btn-primary:hover {
+    background: #1d4ed8;
   }
 
-  .ps-code-col {
+  #algo-path-sum-view .ps-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-path-sum-view .ps-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-path-sum-view .ps-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-path-sum-view .ps-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
 
-  @media (max-width: 1100px) {
-    .ps-main-content {
-      grid-template-columns: 1fr;
-    }
+  #algo-path-sum-view .ps-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-path-sum-view .ps-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-path-sum-view .ps-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 树结构 SVG 画布 */
+  #algo-path-sum-view .ps-tree-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Preset Chips */
+  #algo-path-sum-view .ps-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-path-sum-view .ps-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-path-sum-view .ps-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-path-sum-view .ps-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-path-sum-view .ps-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-path-sum-view .ps-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-path-sum-view .ps-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-path-sum-view .ps-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-path-sum-view .ps-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-path-sum-view .ps-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-path-sum-view .ps-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-path-sum-view .ps-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-path-sum-view .ps-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-path-sum-view .ps-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-path-sum-view .ps-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-path-sum-view .ps-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="ps-viz-container">
-  <div class="ps-root ps-theme">
-    <div class="ps-header">
-      <div class="ps-header-left">
-        <button id="btn-back" class="ps-back-btn" title="返回">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div>
-          <h1 class="ps-title">路径总和</h1>
-          <div class="ps-subtitle">LeetCode 112 · 判断是否存在根到叶子的路径和等于目标值</div>
-        </div>
-      </div>
-      <div class="ps-tip">💡 思路：递归遍历到叶子节点，累减路径值，到叶子时判断是否恰好为0</div>
+<div id="algo-path-sum-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="ps-header">
+    <div class="ps-header-left">
+      <div class="ps-icon-btn">🎯</div>
+      <div class="ps-main-title">路径总和 · Path Sum</div>
+      <button class="ps-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="ps-badge-mode">根到叶深度优先减法回溯</div>
+      <div class="ps-badge-complexity">O(n) · O(h)</div>
     </div>
-
-    <div class="ps-main-content">
-      <div class="ps-left-col">
-        <div class="ps-panel">
-          <div class="ps-panel-header">🌳 二叉树结构</div>
-          <div id="ps-tree" class="ps-tree-container"></div>
-          <div id="ps-message" class="ps-message">设置目标和后点击「开始查找」</div>
-        </div>
-
-        <div class="ps-panel">
-          <div class="ps-panel-header">📊 统计面板</div>
-          <div class="ps-stats">
-            <div class="ps-stat-item">
-              <div class="ps-stat-value" id="ps-depth">0</div>
-              <div class="ps-stat-label">深度</div>
-            </div>
-            <div class="ps-stat-item">
-              <div class="ps-stat-value" id="ps-remaining">0</div>
-              <div class="ps-stat-label">剩余目标</div>
-            </div>
-            <div class="ps-stat-item">
-              <div class="ps-stat-value" id="ps-current">-</div>
-              <div class="ps-stat-label">当前节点</div>
-            </div>
-            <div class="ps-stat-item">
-              <div class="ps-stat-value" id="ps-result">?</div>
-              <div class="ps-stat-label">结果</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="ps-panel">
-          <div class="ps-panel-header">🛤️ 当前路径</div>
-          <div id="ps-path" class="ps-path-display"></div>
-        </div>
-
-        <div class="ps-panel">
-          <div class="ps-panel-header">📋 执行日志</div>
-          <div id="ps-log" class="ps-log"></div>
-        </div>
+    <div class="ps-header-right">
+      <div class="ps-input-group">
+        <label for="input-tree">树数组:</label>
+        <input type="text" id="input-tree" value="5, 4, 8, 11, null, 13, 4, 7, 2" style="width: 170px;">
       </div>
-
-      <div class="ps-code-col">
-        <div class="ps-panel" style="flex:1;">
-          <div class="ps-panel-header">代码</div>
-          <div data-code-panel style="flex:1;min-height:260px;overflow:hidden;"></div>
-        </div>
-
-        <div class="ps-panel" style="margin-top:0.75rem;">
-          <div class="ps-panel-header">⚙️ 控制</div>
-          <div class="ps-controls">
-            <button id="step-reset" class="ps-btn" title="重置">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
-            </button>
-            <button id="step-prev" class="ps-btn" title="上一步">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
-            </button>
-            <button id="step-play" class="ps-btn ps-btn-play">播放</button>
-            <button id="step-next" class="ps-btn" title="下一步">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
-            </button>
-          </div>
-          <div style="padding: 0 0.8rem 0.6rem;">
-            <span style="font-size: 0.78rem; color: #6c7086;" id="step-counter">步骤: 0 / 0</span>
-            <input type="range" id="step-speed" min="200" max="2000" value="900" step="100"
-                   style="width:100%; margin-top:0.4rem; accent-color: var(--accent-a);" />
-            <div style="text-align:center; font-size:0.72rem; color:#585b70;">
-              速度: <span id="step-speed-label">0.9s</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="ps-panel" style="margin-top:0.75rem;">
-          <div class="ps-panel-header">🎯 目标和</div>
-          <div class="ps-input-row">
-            <label>targetSum:</label>
-            <input type="number" id="ps-target" class="ps-input-num" value="22">
-            <button id="ps-start" class="ps-btn ps-btn-play" style="flex:none; width:auto; padding: 0 1rem;">开始查找</button>
-          </div>
-        </div>
-
-        <div class="ps-panel" style="margin-top:0.75rem;">
-          <div class="ps-panel-header">📌 示例</div>
-          <div class="ps-example-row">
-            <button class="ps-example-btn" data-id="1">示例1: [5,4,8,11,null,13,4,7,2,null,null,null,1]</button>
-            <button class="ps-example-btn" data-id="2">示例2: [1,2,3]</button>
-            <button class="ps-example-btn" data-id="3">空树 []</button>
-          </div>
-        </div>
+      <div class="ps-input-group">
+        <label for="input-target">targetSum:</label>
+        <input type="number" id="input-target" value="22" style="width: 50px;">
       </div>
+      <button class="ps-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="ps-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-  </div>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="ps-workspace">
+    <!-- Card 1: 树结构 SVG 画布 -->
+    <section class="ps-card">
+      <div class="ps-card-header">
+        <div class="ps-card-title">
+          <span>📊</span> 路径回溯与目标和校验沙盘 (Path Sum Canvas)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #fbbf24;">● 当前栈帧节点</span> · <span style="color: #3b82f6;">● 当前路径</span> · <span style="color: #10b981;">● 命中目标和路径</span>
+        </div>
+      </div>
+      <div class="ps-card-body" style="justify-content: center; align-items: center;">
+        <div class="ps-tree-svg-wrap" id="ps-tree-svg-container"></div>
+      </div>
+      <div class="ps-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="ps-chip" data-tree="5, 4, 8, 11, null, 13, 4, 7, 2" data-t="22">存在路径 5->4->11->2 (和 22)</button>
+        <button class="ps-chip" data-tree="1, 2, 3" data-t="5">不存在和为 5 的路径</button>
+        <button class="ps-chip" data-tree="1, 2" data-t="0">单侧树 targetSum=0</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="ps-card">
+      <div class="ps-card-header">
+        <div class="ps-card-title">
+          <span>🧭</span> 路径和指标监视器 (Path Sum Metrics Monitor)
+        </div>
+      </div>
+      <div class="ps-card-body">
+        <div class="ps-metrics-grid">
+          <div class="ps-metric-card">
+            <span class="ps-metric-label">当前节点 curr</span>
+            <span class="ps-metric-val" id="metric-curr" style="color: #fbbf24;">5</span>
+          </div>
+          <div class="ps-metric-card">
+            <span class="ps-metric-label">当前累加和 / 目标</span>
+            <span class="ps-metric-val" id="metric-sum" style="color: #2563eb;">5 / 22</span>
+          </div>
+          <div class="ps-metric-card">
+            <span class="ps-metric-label">剩余差额 remain</span>
+            <span class="ps-metric-val" id="metric-remain" style="color: #a855f7;">17</span>
+          </div>
+          <div class="ps-metric-card">
+            <span class="ps-metric-label">判定结果</span>
+            <span class="ps-metric-val" id="metric-verdict" style="color: #10b981;">待判定</span>
+          </div>
+        </div>
+        <div class="ps-formula-box" id="ps-formula-box">
+          <span>叶子节点判定:</span> <strong id="formula-action" style="color: #2563eb;">isLeaf && node.val == targetSum</strong>
+        </div>
+        <div class="ps-live-alert" id="ps-live-alert">
+          <span>💡</span> <span id="ps-live-text">准备就绪，点击运行开始搜索路径总和。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="ps-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="ps-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="ps-card-header">
+        <div class="ps-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="ps-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="ps-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="ps-playback-bar">
+    <div class="ps-playback-controls">
+      <button class="ps-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="ps-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="ps-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+    </div>
+    <div class="ps-progress-wrap">
+      <span class="ps-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

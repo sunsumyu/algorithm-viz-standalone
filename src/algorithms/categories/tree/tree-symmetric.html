@@ -1,472 +1,515 @@
-<!-- 对称二叉树 LeetCode 101 -->
 <style>
+  /* === 对称二叉树 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-tree-symmetric-view {
-    padding: 1.5rem;
-    color: #cdd6f4;
-    max-width: 1400px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
-  @keyframes ts-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
-  }
-
-  @keyframes ts-pop-in {
-    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  @keyframes ts-glow {
-    0%, 100% { filter: drop-shadow(0 0 6px rgba(137, 180, 250, 0.4)); }
-    50% { filter: drop-shadow(0 0 14px rgba(137, 180, 250, 0.8)); }
-  }
-
-  .ts-theme {
-    --accent-a: rgb(166, 227, 161);
-    --accent-b: rgb(137, 180, 250);
-    --bg-start: 20, 18, 38;
-    --bg-mid: 25, 23, 50;
-    --bg-end: 35, 32, 60;
-  }
-
-  .ts-viz-container {
-    position: relative;
-    min-height: calc(100vh - 3rem);
-  }
-
-  .ts-root {
-    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.3), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.3), transparent 55%),
-                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
-    min-height: 100%;
-    padding: 1.5rem;
-    border-radius: 20px;
-  }
-
-  .ts-header {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .ts-header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .ts-back-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    color: #cdd6f4;
-  }
-
-  .ts-back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .ts-title {
-    font-size: 22px;
-    font-weight: 800;
-    margin: 0;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .ts-subtitle {
-    font-size: 0.78rem;
-    color: #6c7086;
-    margin-top: 0.2rem;
-  }
-
-  .ts-tip {
-    background: rgba(166, 227, 161, 0.1);
-    border: 1px solid rgba(166, 227, 161, 0.25);
-    border-radius: 10px;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.78rem;
-    color: #a6e3a1;
-    max-width: 280px;
-  }
-
-  .ts-main-content {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 1rem;
-  }
-
-  .ts-left-col {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .ts-panel {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-tree-symmetric-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-tree-symmetric-view .ts-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .ts-panel-header {
-    background: rgba(25, 24, 42, 0.6);
-    padding: 0.6rem 0.9rem;
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--accent-a);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .ts-tree-container {
-    padding: 1rem;
-    min-height: 260px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .ts-compare-panel {
-    padding: 1rem;
-  }
-
-  .ts-compare-row {
+  #algo-tree-symmetric-view .ts-header-left {
     display: flex;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .ts-compare-box {
-    flex: 1;
-    background: rgba(15, 14, 26, 0.5);
+  #algo-tree-symmetric-view .ts-icon-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
-    padding: 0.6rem;
-    min-height: 80px;
-  }
-
-  .ts-compare-box h4 {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6c7086;
-    margin: 0 0 0.4rem 0;
-  }
-
-  .ts-chip-list {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-  }
-
-  .ts-chip {
-    display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 28px;
-    padding: 0 0.45rem;
-    border-radius: 8px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    transition: all 0.2s;
-  }
-
-  .ts-chip.left-side {
-    background: rgba(166, 227, 161, 0.15);
-    border: 1px solid rgba(166, 227, 161, 0.4);
-    color: #a6e3a1;
-  }
-
-  .ts-chip.right-side {
-    background: rgba(137, 180, 250, 0.15);
-    border: 1px solid rgba(137, 180, 250, 0.4);
-    color: #89b4fa;
-  }
-
-  .ts-chip.match {
-    background: rgba(166, 227, 161, 0.25);
-    border-color: #a6e3a1;
-    color: #a6e3a1;
-    animation: ts-pop-in 0.4s ease;
-  }
-
-  .ts-chip.mismatch {
-    background: rgba(243, 139, 168, 0.25);
-    border-color: #f38ba8;
-    color: #f38ba8;
-    animation: ts-pulse 0.5s ease;
-  }
-
-  .ts-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    padding: 0.8rem;
-  }
-
-  .ts-stat-item {
-    text-align: center;
-  }
-
-  .ts-stat-value {
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: var(--accent-a);
-  }
-
-  .ts-stat-label {
-    font-size: 0.65rem;
-    color: #6c7086;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .ts-controls {
-    display: flex;
-    gap: 0.3rem;
-    padding: 0.8rem;
-    flex-wrap: wrap;
-  }
-
-  .ts-btn {
-    background: rgba(49, 50, 68, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cdd6f4;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
 
-  .ts-btn:hover:not(:disabled) {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
+  #algo-tree-symmetric-view .ts-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .ts-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .ts-btn-play {
-    flex: 1;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    font-weight: 600;
-    min-width: 70px;
-  }
-
-  .ts-message {
-    text-align: center;
-    padding: 0.65rem;
-    font-size: 0.88rem;
-    color: #9399b2;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.2s;
-  }
-
-  .ts-message.success {
-    color: var(--accent-a);
-    font-weight: 600;
-  }
-
-  .ts-message.error {
-    color: #f38ba8;
-    font-weight: 600;
-  }
-
-  .ts-example-row {
-    display: flex;
-    gap: 0.4rem;
-    padding: 0.8rem;
-    flex-wrap: wrap;
-  }
-
-  .ts-example-btn {
-    background: rgba(49, 50, 68, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 999px;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.72rem;
-    color: #cdd6f4;
+  #algo-tree-symmetric-view .ts-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-tree-symmetric-view .ts-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .ts-example-btn:hover {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: var(--accent-a);
+  #algo-tree-symmetric-view .ts-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .ts-log {
-    padding: 0.6rem 0.8rem;
-    max-height: 150px;
-    overflow-y: auto;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 0.75rem;
-    line-height: 1.6;
+  #algo-tree-symmetric-view .ts-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
 
-  .ts-log div {
-    color: #6c7086;
-    transition: color 0.2s;
+  #algo-tree-symmetric-view .ts-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
-  .ts-log div.active {
-    color: var(--accent-a);
+  #algo-tree-symmetric-view .ts-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-tree-symmetric-view .ts-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-tree-symmetric-view .ts-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
     font-weight: 600;
   }
 
-  .ts-code-col {
+  #algo-tree-symmetric-view .ts-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-tree-symmetric-view .ts-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-tree-symmetric-view .ts-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-symmetric-view .ts-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-tree-symmetric-view .ts-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-tree-symmetric-view .ts-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
 
-  @media (max-width: 1100px) {
-    .ts-main-content {
-      grid-template-columns: 1fr;
-    }
+  #algo-tree-symmetric-view .ts-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-symmetric-view .ts-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-tree-symmetric-view .ts-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 树结构 SVG 画布 */
+  #algo-tree-symmetric-view .ts-tree-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Preset Chips */
+  #algo-tree-symmetric-view .ts-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-tree-symmetric-view .ts-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-symmetric-view .ts-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-tree-symmetric-view .ts-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-tree-symmetric-view .ts-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-tree-symmetric-view .ts-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-tree-symmetric-view .ts-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-tree-symmetric-view .ts-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-tree-symmetric-view .ts-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-tree-symmetric-view .ts-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-symmetric-view .ts-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-tree-symmetric-view .ts-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-tree-symmetric-view .ts-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-tree-symmetric-view .ts-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-tree-symmetric-view .ts-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-tree-symmetric-view .ts-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="ts-viz-container">
-  <div class="ts-root ts-theme">
-    <div class="ts-header">
-      <div class="ts-header-left">
-        <button id="btn-back" class="ts-back-btn" title="返回">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div>
-          <h1 class="ts-title">对称二叉树</h1>
-          <div class="ts-subtitle">LeetCode 101 · 递归对比左右子树镜像</div>
-        </div>
-      </div>
-      <div class="ts-tip">💡 思路：左子树的左 = 右子树的右，左子树的右 = 右子树的左</div>
+<div id="algo-tree-symmetric-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="ts-header">
+    <div class="ts-header-left">
+      <div class="ts-icon-btn">🪞</div>
+      <div class="ts-main-title">对称二叉树 · Symmetric Tree</div>
+      <button class="ts-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="ts-badge-mode">内外侧双向镜像递归对比</div>
+      <div class="ts-badge-complexity">O(n) · O(h)</div>
     </div>
-
-    <div class="ts-main-content">
-      <div class="ts-left-col">
-        <div class="ts-panel">
-          <div class="ts-panel-header">🌳 二叉树结构</div>
-          <div id="ts-tree" class="ts-tree-container"></div>
-          <div id="ts-message" class="ts-message">点击上方示例查看对称判定过程</div>
-        </div>
-
-        <div class="ts-panel">
-          <div class="ts-panel-header">📊 统计面板</div>
-          <div class="ts-stats">
-            <div class="ts-stat-item">
-              <div class="ts-stat-value" id="ts-depth">0</div>
-              <div class="ts-stat-label">深度</div>
-            </div>
-            <div class="ts-stat-item">
-              <div class="ts-stat-value" id="ts-compared">0</div>
-              <div class="ts-stat-label">对比次数</div>
-            </div>
-            <div class="ts-stat-item">
-              <div class="ts-stat-value" id="ts-matches">0</div>
-              <div class="ts-stat-label">匹配</div>
-            </div>
-            <div class="ts-stat-item">
-              <div class="ts-stat-value" id="ts-result">?</div>
-              <div class="ts-stat-label">结果</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="ts-panel">
-          <div class="ts-panel-header">🔍 镜像对比</div>
-          <div class="ts-compare-panel">
-            <div class="ts-compare-row">
-              <div class="ts-compare-box">
-                <h4>左子树 (L)</h4>
-                <div id="ts-left-chips" class="ts-chip-list"></div>
-              </div>
-              <div class="ts-compare-box">
-                <h4>右子树 (R)</h4>
-                <div id="ts-right-chips" class="ts-chip-list"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="ts-panel">
-          <div class="ts-panel-header">📋 执行日志</div>
-          <div id="ts-log" class="ts-log"></div>
-        </div>
+    <div class="ts-header-right">
+      <div class="ts-input-group">
+        <label for="input-tree">树数组:</label>
+        <input type="text" id="input-tree" value="1, 2, 2, 3, 4, 4, 3" style="width: 150px;">
       </div>
-
-      <div class="ts-code-col">
-        <div class="ts-panel" style="flex:1;">
-          <div class="ts-panel-header">代码</div>
-          <div data-code-panel style="flex:1;min-height:260px;overflow:hidden;"></div>
-        </div>
-
-        <div class="ts-panel" style="margin-top:0.75rem;">
-          <div class="ts-panel-header">⚙️ 控制</div>
-          <div class="ts-controls">
-            <button id="step-reset" class="ts-btn" title="重置">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
-            </button>
-            <button id="step-prev" class="ts-btn" title="上一步">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
-            </button>
-            <button id="step-play" class="ts-btn ts-btn-play">播放</button>
-            <button id="step-next" class="ts-btn" title="下一步">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
-            </button>
-          </div>
-          <div style="padding: 0 0.8rem 0.6rem;">
-            <span style="font-size: 0.78rem; color: #6c7086;" id="step-counter">步骤: 0 / 0</span>
-            <input type="range" id="step-speed" min="200" max="2000" value="900" step="100"
-                   style="width:100%; margin-top:0.4rem; accent-color: var(--accent-a);" />
-            <div style="text-align:center; font-size:0.72rem; color:#585b70;">
-              速度: <span id="step-speed-label">0.9s</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="ts-panel" style="margin-top:0.75rem;">
-          <div class="ts-panel-header">📌 示例</div>
-          <div class="ts-example-row">
-            <button class="ts-example-btn" data-id="1">对称树 [1,2,2,3,4,4,3]</button>
-            <button class="ts-example-btn" data-id="2">非对称 [1,2,2,null,3,null,3]</button>
-            <button class="ts-example-btn" data-id="3">单层对称 [1,2,2]</button>
-          </div>
-        </div>
-      </div>
+      <button class="ts-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="ts-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-  </div>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="ts-workspace">
+    <!-- Card 1: 树结构 SVG 画布 -->
+    <section class="ts-card">
+      <div class="ts-card-header">
+        <div class="ts-card-title">
+          <span>📊</span> 镜像对称比对沙盘 (Mirror Symmetry Canvas)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #3b82f6;">● 左镜像节点 left</span> · <span style="color: #a855f7;">● 右镜像节点 right</span> · <span style="color: #ef4444;">● 不匹配</span>
+        </div>
+      </div>
+      <div class="ts-card-body" style="justify-content: center; align-items: center;">
+        <div class="ts-tree-svg-wrap" id="ts-tree-svg-container"></div>
+      </div>
+      <div class="ts-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="ts-chip" data-tree="1, 2, 2, 3, 4, 4, 3">对称树 [1, 2, 2, 3, 4, 4, 3]</button>
+        <button class="ts-chip" data-tree="1, 2, 2, null, 3, null, 3">非对称树 [1, 2, 2, null, 3, null, 3]</button>
+        <button class="ts-chip" data-tree="1, 2, 2, 2, null, 2">结构不对称案例</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="ts-card">
+      <div class="ts-card-header">
+        <div class="ts-card-title">
+          <span>🧭</span> 镜像指标监视器 (Symmetry Metrics Monitor)
+        </div>
+      </div>
+      <div class="ts-card-body">
+        <div class="ts-metrics-grid">
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">左侧节点 left</span>
+            <span class="ts-metric-val" id="metric-left" style="color: #3b82f6;">2</span>
+          </div>
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">右侧节点 right</span>
+            <span class="ts-metric-val" id="metric-right" style="color: #a855f7;">2</span>
+          </div>
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">数值匹配</span>
+            <span class="ts-metric-val" id="metric-match" style="color: #10b981;">left == right</span>
+          </div>
+          <div class="ts-metric-card">
+            <span class="ts-metric-label">判定结果</span>
+            <span class="ts-metric-val" id="metric-verdict" style="color: #2563eb;">校验中...</span>
+          </div>
+        </div>
+        <div class="ts-formula-box" id="ts-formula-box">
+          <span>当前递归动作:</span> <strong id="formula-action" style="color: #2563eb;">check(root.left, root.right)</strong>
+        </div>
+        <div class="ts-live-alert" id="ts-live-alert">
+          <span>💡</span> <span id="ts-live-text">准备就绪，点击运行开始检查对称二叉树。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="ts-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="ts-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="ts-card-header">
+        <div class="ts-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="ts-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="ts-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="ts-playback-bar">
+    <div class="ts-playback-controls">
+      <button class="ts-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="ts-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="ts-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+    </div>
+    <div class="ts-progress-wrap">
+      <span class="ts-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

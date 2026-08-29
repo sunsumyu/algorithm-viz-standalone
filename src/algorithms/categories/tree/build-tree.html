@@ -1,452 +1,601 @@
-<!-- 构造二叉树（从先序+中序）LeetCode 105 -->
 <style>
+  /* === 构造二叉树 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-build-tree-view {
-    padding: 1.5rem;
-    color: #cdd6f4;
-    max-width: 1400px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
-  @keyframes bt-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 233, 253, 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(139, 233, 253, 0); }
-  }
-
-  @keyframes bt-pop-in {
-    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  .bt-theme {
-    --accent-a: rgb(139, 233, 253);
-    --accent-b: rgb(205, 214, 244);
-    --bg-start: 20, 18, 38;
-    --bg-mid: 25, 23, 50;
-    --bg-end: 35, 32, 60;
-  }
-
-  .bt-viz-container {
-    position: relative;
-    min-height: calc(100vh - 3rem);
-  }
-
-  .bt-root {
-    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.3), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.3), transparent 55%),
-                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
-    min-height: 100%;
-    padding: 1.5rem;
-    border-radius: 20px;
-  }
-
-  .bt-header {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .bt-header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .bt-back-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    color: #cdd6f4;
-  }
-
-  .bt-back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .bt-title {
-    font-size: 22px;
-    font-weight: 800;
-    margin: 0;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .bt-subtitle {
-    font-size: 0.78rem;
-    color: #6c7086;
-    margin-top: 0.2rem;
-  }
-
-  .bt-tip {
-    background: rgba(139, 233, 253, 0.1);
-    border: 1px solid rgba(139, 233, 253, 0.25);
-    border-radius: 10px;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.78rem;
-    color: #8be9fd;
-    max-width: 300px;
-  }
-
-  .bt-main-content {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 1rem;
-  }
-
-  .bt-left-col {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .bt-panel {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-build-tree-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-build-tree-view .bt-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .bt-panel-header {
-    background: rgba(25, 24, 42, 0.6);
-    padding: 0.6rem 0.9rem;
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--accent-a);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  #algo-build-tree-view .bt-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .bt-tree-container {
-    padding: 1rem;
-    min-height: 260px;
+  #algo-build-tree-view .bt-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .bt-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    padding: 0.8rem;
-  }
-
-  .bt-stat-item {
-    text-align: center;
-  }
-
-  .bt-stat-value {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: var(--accent-a);
-  }
-
-  .bt-stat-label {
-    font-size: 0.65rem;
-    color: #6c7086;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .bt-controls {
-    display: flex;
-    gap: 0.3rem;
-    padding: 0.8rem;
-    flex-wrap: wrap;
-  }
-
-  .bt-btn {
-    background: rgba(49, 50, 68, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cdd6f4;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
 
-  .bt-btn:hover:not(:disabled) {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
+  #algo-build-tree-view .bt-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .bt-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .bt-btn-play {
-    flex: 1;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    font-weight: 600;
-    min-width: 70px;
-  }
-
-  .bt-message {
-    text-align: center;
-    padding: 0.65rem;
-    font-size: 0.88rem;
-    color: #9399b2;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.2s;
-  }
-
-  .bt-message.success {
-    color: var(--accent-a);
-    font-weight: 600;
-  }
-
-  .bt-traversal-display {
-    padding: 0.8rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .bt-traversal-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .bt-traversal-label {
-    font-size: 0.72rem;
-    color: #6c7086;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    min-width: 50px;
-  }
-
-  .bt-traversal-chip {
+  #algo-build-tree-view .bt-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-width: 30px;
-    height: 26px;
-    padding: 0 0.4rem;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-build-tree-view .bt-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-build-tree-view .bt-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
     border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    transition: all 0.2s;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .bt-traversal-chip.pre {
-    background: rgba(139, 233, 253, 0.15);
-    border: 1px solid rgba(139, 233, 253, 0.4);
-    color: #8be9fd;
+  #algo-build-tree-view .bt-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
 
-  .bt-traversal-chip.in {
-    background: rgba(205, 214, 244, 0.15);
-    border: 1px solid rgba(205, 214, 244, 0.4);
-    color: #cdd6f4;
-  }
-
-  .bt-traversal-chip.active {
-    background: rgba(139, 233, 253, 0.35);
-    border-color: #8be9fd;
-    animation: bt-pop-in 0.3s ease;
-  }
-
-  .bt-traversal-chip.used {
-    background: rgba(139, 233, 253, 0.25);
-    border-color: #8be9fd;
-  }
-
-  .bt-traversal-chip.used.in {
-    background: rgba(205, 214, 244, 0.25);
-    border-color: #cdd6f4;
-  }
-
-  .bt-log {
-    padding: 0.6rem 0.8rem;
-    max-height: 150px;
-    overflow-y: auto;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 0.75rem;
-    line-height: 1.6;
-  }
-
-  .bt-log div {
-    color: #6c7086;
-    transition: color 0.2s;
-  }
-
-  .bt-log div.active {
-    color: var(--accent-a);
-    font-weight: 600;
-  }
-
-  .bt-example-row {
+  #algo-build-tree-view .bt-header-right {
     display: flex;
-    gap: 0.4rem;
-    padding: 0.8rem;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
-  .bt-example-btn {
-    background: rgba(49, 50, 68, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 999px;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.72rem;
-    color: #cdd6f4;
+  #algo-build-tree-view .bt-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 2px 6px;
+  }
+
+  #algo-build-tree-view .bt-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-build-tree-view .bt-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-build-tree-view .bt-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-build-tree-view .bt-btn-primary:hover {
+    background: #1d4ed8;
   }
 
-  .bt-example-btn:hover {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: var(--accent-a);
+  #algo-build-tree-view .bt-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-build-tree-view .bt-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
   }
 
-  .bt-code-col {
+  /* 2. 主体 4-Card 栅格 */
+  #algo-build-tree-view .bt-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-build-tree-view .bt-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
 
-  @media (max-width: 1100px) {
-    .bt-main-content {
-      grid-template-columns: 1fr;
-    }
+  #algo-build-tree-view .bt-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-build-tree-view .bt-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-build-tree-view .bt-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 树结构 SVG 画布与区间切分沙盘 */
+  #algo-build-tree-view .bt-sandbox-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+  }
+
+  #algo-build-tree-view .bt-tree-svg-wrap {
+    flex: 1;
+    width: 100%;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #algo-build-tree-view .bt-arrays-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 6px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  #algo-build-tree-view .bt-arr-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  #algo-build-tree-view .bt-arr-label {
+    font-weight: 800;
+    color: #64748b;
+    width: 65px;
+    flex-shrink: 0;
+  }
+
+  #algo-build-tree-view .bt-cells-wrap {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  #algo-build-tree-view .bt-cell {
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.15s;
+  }
+
+  #algo-build-tree-view .bt-cell.is-root {
+    background: #fef3c7;
+    border-color: #fbbf24;
+    color: #78350f;
+  }
+
+  #algo-build-tree-view .bt-cell.in-left {
+    background: #eff6ff;
+    border-color: #60a5fa;
+    color: #1e40af;
+  }
+
+  #algo-build-tree-view .bt-cell.in-right {
+    background: #faf5ff;
+    border-color: #c084fc;
+    color: #6b21a8;
+  }
+
+  /* Preset Chips */
+  #algo-build-tree-view .bt-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-build-tree-view .bt-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-build-tree-view .bt-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  /* Card 2: 状态监视器 */
+  #algo-build-tree-view .bt-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  #algo-build-tree-view .bt-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-build-tree-view .bt-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-build-tree-view .bt-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-build-tree-view .bt-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  #algo-build-tree-view .bt-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-build-tree-view .bt-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-build-tree-view .bt-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-build-tree-view .bt-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-build-tree-view .bt-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-build-tree-view .bt-progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-build-tree-view .bt-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
+  }
+
+  #algo-build-tree-view .bt-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="bt-viz-container">
-  <div class="bt-root bt-theme">
-    <div class="bt-header">
-      <div class="bt-header-left">
-        <button id="btn-back" class="bt-back-btn" title="返回">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div>
-          <h1 class="bt-title">构造二叉树</h1>
-          <div class="bt-subtitle">LeetCode 105 · 从先序和中序遍历序列构造二叉树</div>
-        </div>
-      </div>
-      <div class="bt-tip">💡 先序确定根，中序划分左右子树范围</div>
+<div id="algo-build-tree-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="bt-header">
+    <div class="bt-header-left">
+      <div class="bt-icon-btn">🔨</div>
+      <div class="bt-main-title">前中序构造二叉树 · Build Tree</div>
+      <button class="bt-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="bt-badge-mode">前序定根与中序区间切分</div>
+      <div class="bt-badge-complexity">O(n) · O(n)</div>
     </div>
-
-    <div class="bt-main-content">
-      <div class="bt-left-col">
-        <div class="bt-panel">
-          <div class="bt-panel-header">🌳 构建中的二叉树</div>
-          <div id="bt-tree" class="bt-tree-container"></div>
-          <div id="bt-message" class="bt-message">点击上方示例查看构建过程</div>
-        </div>
-
-        <div class="bt-panel">
-          <div class="bt-panel-header">📊 状态</div>
-          <div class="bt-stats">
-            <div class="bt-stat-item">
-              <div class="bt-stat-value" id="bt-depth">0</div>
-              <div class="bt-stat-label">深度</div>
-            </div>
-            <div class="bt-stat-item">
-              <div class="bt-stat-value" id="bt-root-node">-</div>
-              <div class="bt-stat-label">当前根</div>
-            </div>
-            <div class="bt-stat-item">
-              <div class="bt-stat-value" id="bt-left-size">0</div>
-              <div class="bt-stat-label">左子树大小</div>
-            </div>
-            <div class="bt-stat-item">
-              <div class="bt-stat-value" id="bt-built">0</div>
-              <div class="bt-stat-label">已建节点</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bt-panel">
-          <div class="bt-panel-header">📐 遍历序列</div>
-          <div class="bt-traversal-display">
-            <div class="bt-traversal-row">
-              <span class="bt-traversal-label">先序:</span>
-              <div id="bt-pre-chips" style="display:flex; gap:0.3rem; flex-wrap:wrap;"></div>
-            </div>
-            <div class="bt-traversal-row">
-              <span class="bt-traversal-label">中序:</span>
-              <div id="bt-in-chips" style="display:flex; gap:0.3rem; flex-wrap:wrap;"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bt-panel">
-          <div class="bt-panel-header">📋 执行日志</div>
-          <div id="bt-log" class="bt-log"></div>
-        </div>
+    <div class="bt-header-right">
+      <div class="bt-input-group">
+        <label for="input-pre">pre:</label>
+        <input type="text" id="input-pre" value="3, 9, 20, 15, 7" style="width: 110px;">
       </div>
-
-      <div class="bt-code-col">
-        <div class="bt-panel" style="flex:1;">
-          <div class="bt-panel-header">代码</div>
-          <div data-code-panel style="flex:1;min-height:260px;overflow:hidden;"></div>
-        </div>
-
-        <div class="bt-panel" style="margin-top:0.75rem;">
-          <div class="bt-panel-header">⚙️ 控制</div>
-          <div class="bt-controls">
-            <button id="step-reset" class="bt-btn" title="重置">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
-            </button>
-            <button id="step-prev" class="bt-btn" title="上一步">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
-            </button>
-            <button id="step-play" class="bt-btn bt-btn-play">播放</button>
-            <button id="step-next" class="bt-btn" title="下一步">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
-            </button>
-          </div>
-          <div style="padding: 0 0.8rem 0.6rem;">
-            <span style="font-size: 0.78rem; color: #6c7086;" id="step-counter">步骤: 0 / 0</span>
-            <input type="range" id="step-speed" min="200" max="2000" value="900" step="100"
-                   style="width:100%; margin-top:0.4rem; accent-color: var(--accent-a);" />
-            <div style="text-align:center; font-size:0.72rem; color:#585b70;">
-              速度: <span id="step-speed-label">0.9s</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="bt-panel" style="margin-top:0.75rem;">
-          <div class="bt-panel-header">📌 示例</div>
-          <div class="bt-example-row">
-            <button class="bt-example-btn" data-id="1">示例1: [3,9,20,15,7]</button>
-            <button class="bt-example-btn" data-id="2">示例2: [1,2,3]</button>
-            <button class="bt-example-btn" data-id="3">示例3: [5,4,8,11,13,4,7,2,1]</button>
-          </div>
-        </div>
+      <div class="bt-input-group">
+        <label for="input-in">in:</label>
+        <input type="text" id="input-in" value="9, 3, 15, 20, 7" style="width: 110px;">
       </div>
+      <button class="bt-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="bt-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-  </div>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="bt-workspace">
+    <!-- Card 1: 树结构 SVG 画布与区间切分沙盘 -->
+    <section class="bt-card">
+      <div class="bt-card-header">
+        <div class="bt-card-title">
+          <span>📊</span> 构造进度拓扑与数组切分沙盘 (Build Tree Canvas)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #fbbf24;">● 当前根 root</span> · <span style="color: #3b82f6;">● 左子树区间</span> · <span style="color: #a855f7;">● 右子树区间</span>
+        </div>
+      </div>
+      <div class="bt-card-body" style="justify-content: center; align-items: center;">
+        <div class="bt-sandbox-container">
+          <div class="bt-tree-svg-wrap" id="bt-tree-svg-container"></div>
+          <div class="bt-arrays-section">
+            <div class="bt-arr-row">
+              <span class="bt-arr-label">Preorder:</span>
+              <div class="bt-cells-wrap" id="pre-cells"></div>
+            </div>
+            <div class="bt-arr-row">
+              <span class="bt-arr-label">Inorder:</span>
+              <div class="bt-cells-wrap" id="in-cells"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bt-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="bt-chip" data-pre="3, 9, 20, 15, 7" data-in="9, 3, 15, 20, 7">经典 5 节点 [3, 9, 20, 15, 7]</button>
+        <button class="bt-chip" data-pre="1, 2, 3" data-in="2, 1, 3">满二叉树 3 节点 [1, 2, 3]</button>
+        <button class="bt-chip" data-pre="1, 2, 3" data-in="3, 2, 1">左单斜链 [1, 2, 3]</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="bt-card">
+      <div class="bt-card-header">
+        <div class="bt-card-title">
+          <span>🧭</span> 构造指标监视器 (Build Metrics Monitor)
+        </div>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-metrics-grid">
+          <div class="bt-metric-card">
+            <span class="bt-metric-label">当前根 rootVal</span>
+            <span class="bt-metric-val" id="metric-root-val" style="color: #fbbf24;">3</span>
+          </div>
+          <div class="bt-metric-card">
+            <span class="bt-metric-label">前序区间 [pL, pR]</span>
+            <span class="bt-metric-val" id="metric-pre-range" style="color: #2563eb;">[0, 4]</span>
+          </div>
+          <div class="bt-metric-card">
+            <span class="bt-metric-label">中序区间 [iL, iR]</span>
+            <span class="bt-metric-val" id="metric-in-range" style="color: #a855f7;">[0, 4]</span>
+          </div>
+          <div class="bt-metric-card">
+            <span class="bt-metric-label">中序根下标 inRoot</span>
+            <span class="bt-metric-val" id="metric-in-root" style="color: #10b981;">1 (leftLen=1)</span>
+          </div>
+        </div>
+        <div class="bt-formula-box" id="bt-formula-box">
+          <span>切分公式:</span> <strong id="formula-action" style="color: #2563eb;">leftLen = inRoot - iL</strong>
+        </div>
+        <div class="bt-live-alert" id="bt-live-alert">
+          <span>💡</span> <span id="bt-live-text">准备就绪，点击运行开始构造二叉树。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="bt-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="bt-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="bt-card-header">
+        <div class="bt-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="bt-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="bt-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="bt-playback-bar">
+    <div class="bt-playback-controls">
+      <button class="bt-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="bt-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="bt-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+    </div>
+    <div class="bt-progress-wrap">
+      <span class="bt-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>

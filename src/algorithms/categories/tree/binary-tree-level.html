@@ -1,392 +1,516 @@
-<!-- 二叉树层序遍历 LeetCode 102 -->
 <style>
+  /* === 二叉树层序遍历 · 100% 独立纯粹 Vanilla CSS 4-Card 现代标准架构 === */
   #algo-binary-tree-level-view {
-    padding: 1.5rem;
-    color: #cdd6f4;
-    max-width: 1400px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
-  }
-
-  @keyframes pop-in {
-    0% { opacity: 0; transform: scale(0.3) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  .btl-theme {
-    --accent-a: rgb(52, 211, 153);
-    --accent-b: rgb(45, 212, 191);
-    --bg-start: 20, 18, 38;
-    --bg-mid: 25, 23, 50;
-    --bg-end: 35, 32, 60;
-  }
-
-  .btl-container {
-    position: relative;
-    min-height: calc(100vh - 3rem);
-  }
-
-  .btl-root {
-    background: radial-gradient(ellipse at 8% 6%, rgba(var(--accent-a), 0.15), transparent 55%),
-                radial-gradient(ellipse at 92% 94%, rgba(var(--accent-b), 0.15), transparent 55%),
-                linear-gradient(135deg, rgb(var(--bg-start)), rgb(var(--bg-mid)), rgb(var(--bg-end)));
-    min-height: 100%;
-    padding: 1.5rem;
-    border-radius: 20px;
-  }
-
-  .btl-header {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  }
-
-  .btl-header-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .btl-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
-  }
-
-  .btl-title {
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-  }
-
-  .btl-desc {
-    color: #9399b2;
-    margin-bottom: 0.75rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  .btl-tip {
-    background: rgba(52, 211, 153, 0.1);
-    border: 1px solid rgba(52, 211, 153, 0.2);
-    border-radius: 10px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    color: var(--accent-a);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .btl-layout {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 1rem;
-  }
-
-  @media (max-width: 1100px) {
-    .btl-layout { grid-template-columns: 1fr; }
-  }
-
-  .btl-main {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .btl-controls {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-  }
-
-  .btl-btn {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    border: none;
-    border-radius: 10px;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
-  }
-
-  .btl-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
-  }
-
-  .btl-example {
-    background: rgba(255, 255, 255, 0.05);
-    color: #cdd6f4;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
-  }
-
-  .btl-example:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .btl-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.6rem;
-    margin-bottom: 1rem;
-  }
-
-  .btl-stat-wrapper {
-    position: relative;
-    background: rgba(15, 14, 26, 0.5);
-    border-radius: 10px;
-    padding: 0.6rem;
-    text-align: center;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .btl-stat-wrapper::before {
-    content: '';
-    position: absolute;
-    left: 2px;
-    top: 2px;
-    bottom: 2px;
-    width: 3px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-    border-radius: 3px;
+  #algo-binary-tree-level-view * {
+    box-sizing: border-box;
   }
 
-  .btl-stat-label {
-    font-size: 0.7rem;
-    color: #6c7086;
-    margin-bottom: 0.25rem;
+  /* 1. 顶栏 Header */
+  #algo-binary-tree-level-view .btl-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .btl-stat-val {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--accent-a);
-    font-variant-numeric: tabular-nums;
+  #algo-binary-tree-level-view .btl-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .btl-tree {
-    background: rgba(15, 14, 26, 0.5);
+  #algo-binary-tree-level-view .btl-icon-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
-    padding: 1rem;
-    min-height: 220px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .btl-message {
-    background: rgba(15, 14, 26, 0.5);
-    border-left: 3px solid var(--accent-a);
+  #algo-binary-tree-level-view .btl-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  #algo-binary-tree-level-view .btl-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-binary-tree-level-view .btl-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-binary-tree-level-view .btl-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-binary-tree-level-view .btl-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-binary-tree-level-view .btl-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-binary-tree-level-view .btl-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  .btl-log {
-    background: rgba(15, 14, 26, 0.5);
-    border-radius: 8px;
-    padding: 0.75rem;
-    max-height: 140px;
-    overflow-y: auto;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 0.78rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .btl-log div { padding: 2px 0; color: #9399b2; }
-
-  .btl-log div.active {
-    color: #cdd6f4;
-    font-weight: 600;
-    background: rgba(52, 211, 153, 0.15);
-    border-radius: 4px;
     padding: 2px 6px;
   }
 
-  .btl-right {
+  #algo-binary-tree-level-view .btl-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  #algo-binary-tree-level-view .btl-input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  #algo-binary-tree-level-view .btl-btn-primary {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-binary-tree-level-view .btl-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-binary-tree-level-view .btl-btn-secondary {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-binary-tree-level-view .btl-btn-secondary:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* 2. 主体 4-Card 栅格 */
+  #algo-binary-tree-level-view .btl-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  #algo-binary-tree-level-view .btl-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
   }
 
-  .btl-playback {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1rem;
-  }
-
-  .btl-pb-row {
+  #algo-binary-tree-level-view .btl-card-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
     display: flex;
-    gap: 0.5rem;
     align-items: center;
-    margin-bottom: 0.75rem;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
 
-  .btl-pb-btn {
+  #algo-binary-tree-level-view .btl-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-binary-tree-level-view .btl-card-body {
     flex: 1;
-    background: rgba(49, 50, 68, 0.6);
-    color: #cdd6f4;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.5rem;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Card 1: 树结构 SVG 画布 */
+  #algo-binary-tree-level-view .btl-tree-svg-wrap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Preset Chips */
+  #algo-binary-tree-level-view .btl-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  #algo-binary-tree-level-view .btl-chip {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
     cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
+    transition: all 0.15s;
+  }
+  #algo-binary-tree-level-view .btl-chip:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
   }
 
-  .btl-pb-btn:hover:not(:disabled) {
-    background: rgba(49, 50, 68, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
+  /* Card 2: 状态监视器 */
+  #algo-binary-tree-level-view .btl-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
-  .btl-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  #algo-binary-tree-level-view .btl-metric-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .btl-pb-btn.play {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #111;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+  #algo-binary-tree-level-view .btl-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
 
-  .btl-pb-btn.play:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(52, 211, 153, 0.4);
+  #algo-binary-tree-level-view .btl-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
   }
 
-  .btl-speed-row {
+  #algo-binary-tree-level-view .btl-queue-box {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: #6c7086;
-    margin-bottom: 0.5rem;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    overflow-x: auto;
   }
 
-  .btl-speed-row input[type="range"] {
+  #algo-binary-tree-level-view .btl-live-alert {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 底部播放进度条控制条 */
+  #algo-binary-tree-level-view .btl-playback-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-binary-tree-level-view .btl-playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-binary-tree-level-view .btl-ctrl-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-binary-tree-level-view .btl-ctrl-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  #algo-binary-tree-level-view .btl-progress-wrap {
     flex: 1;
-    accent-color: var(--accent-a);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  .btl-speed-row span {
-    font-variant-numeric: tabular-nums;
+  #algo-binary-tree-level-view .btl-progress-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #2563eb;
   }
 
-  .btl-counter {
-    color: #6c7086;
-    font-size: 0.8rem;
-    text-align: center;
-  }
-
-  /* Tree node animations */
-  svg circle.current-node {
-    animation: pulse 1.2s infinite;
-    stroke: var(--accent-a);
-    stroke-width: 3;
-  }
-
-  svg circle.new-visited {
-    animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  svg line {
-    transition: stroke 0.3s, stroke-width 0.3s;
+  #algo-binary-tree-level-view .btl-step-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #475569;
+    white-space: nowrap;
   }
 </style>
 
-<div class="btl-container">
-  <div class="btl-root">
-    <div class="btl-header">
-      <div class="btl-header-content">
-        <div class="btl-icon-badge">🌲</div>
-        <div>
-          <h1 class="btl-title">二叉树层序遍历（BFS）</h1>
-          <div class="btl-desc">LeetCode 102 · 使用队列逐层遍历，每层节点值收集到一个数组，最终返回二维列表。</div>
-        </div>
-      </div>
-      <div class="btl-tip">💡 核心动画：节点出队→新节点入队→当前节点高亮→层完成</div>
+<div id="algo-binary-tree-level-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="btl-header">
+    <div class="btl-header-left">
+      <div class="btl-icon-btn">🌊</div>
+      <div class="btl-main-title">二叉树层序遍历 · Level Order</div>
+      <button class="btl-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
+        <span>📖</span> 算法与解析
+      </button>
+      <div class="btl-badge-mode">BFS 队列与层大小固定迭代</div>
+      <div class="btl-badge-complexity">O(n) · O(n)</div>
     </div>
-
-    <div class="btl-layout">
-      <div class="btl-main">
-        <div class="btl-controls">
-          <button id="btl-start" class="btl-btn">开始层序</button>
-          <button class="btl-example" data-id="1">示例树1</button>
-          <button class="btl-example" data-id="2">示例树2</button>
-          <button class="btl-example" data-id="3">空树</button>
-        </div>
-
-        <div class="btl-stats">
-          <div class="btl-stat-wrapper"><div class="btl-stat-label">队列长度</div><div class="btl-stat-val" id="btl-qlen">0</div></div>
-          <div class="btl-stat-wrapper"><div class="btl-stat-label">当前层</div><div class="btl-stat-val" id="btl-level">-</div></div>
-          <div class="btl-stat-wrapper"><div class="btl-stat-label">已访问</div><div class="btl-stat-val" id="btl-visited">0</div></div>
-          <div class="btl-stat-wrapper"><div class="btl-stat-label">层数</div><div class="btl-stat-val" id="btl-depth">0</div></div>
-        </div>
-
-        <div class="btl-tree" id="btl-tree"></div>
-
-        <div class="btl-message" id="step-message">点击「开始层序」查看层序遍历的 BFS 过程。</div>
-
-        <div class="btl-log" id="btl-log"></div>
+    <div class="btl-header-right">
+      <div class="btl-input-group">
+        <label for="input-tree">树数组:</label>
+        <input type="text" id="input-tree" value="3, 9, 20, null, null, 15, 7" style="width: 170px;">
       </div>
-
-      <div class="btl-right">
-        <div data-code-panel></div>
-        <div class="btl-playback">
-          <div class="btl-pb-row">
-            <button id="step-reset" class="btl-pb-btn">⏮重置</button>
-            <button id="step-prev" class="btl-pb-btn">◀上一步</button>
-            <button id="step-play" class="btl-pb-btn play">▶播放</button>
-            <button id="step-next" class="btl-pb-btn">下一步▶</button>
-          </div>
-          <div class="btl-speed-row">
-            <span>速度</span>
-            <input id="step-speed" type="range" min="200" max="2000" step="100" value="800" />
-            <span id="step-speed-label">0.8s</span>
-          </div>
-          <div class="btl-counter" id="step-counter">步骤: 1 / 1</div>
-        </div>
-      </div>
+      <button class="btl-btn-primary" id="btn-generate">
+        <span>▶</span> 运行
+      </button>
+      <button class="btl-btn-secondary" id="btn-reset">
+        <span>↺</span> 重置
+      </button>
     </div>
-  </div>
+  </header>
+
+  <!-- 2. 主体 4-Card 栅格 -->
+  <main class="btl-workspace">
+    <!-- Card 1: 树结构 SVG 画布 -->
+    <section class="btl-card">
+      <div class="btl-card-header">
+        <div class="btl-card-title">
+          <span>📊</span> 二叉树拓扑结构与 BFS 逐层扫描沙盘 (Level Tree Canvas)
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">
+          <span style="color: #fbbf24;">● 当前出队节点</span> · <span style="color: #3b82f6;">● 队列中待处理</span> · <span style="color: #34d399;">● 已分层收集</span>
+        </div>
+      </div>
+      <div class="btl-card-body" style="justify-content: center; align-items: center;">
+        <div class="btl-tree-svg-wrap" id="btl-tree-svg-container"></div>
+      </div>
+      <div class="btl-preset-chips">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="btl-chip" data-tree="3, 9, 20, null, null, 15, 7">经典 3 层 [[3],[9,20],[15,7]]</button>
+        <button class="btl-chip" data-tree="1, 2, 3, 4, 5, 6, 7">满二叉树 7 节点</button>
+        <button class="btl-chip" data-tree="1">单节点二叉树</button>
+      </div>
+    </section>
+
+    <!-- Card 2: 状态监视器 -->
+    <section class="btl-card">
+      <div class="btl-card-header">
+        <div class="btl-card-title">
+          <span>🧭</span> 队列与层级指标监视器 (Queue & Level Metrics Monitor)
+        </div>
+      </div>
+      <div class="btl-card-body">
+        <div class="btl-metrics-grid">
+          <div class="btl-metric-card">
+            <span class="btl-metric-label">当前层级 level</span>
+            <span class="btl-metric-val" id="metric-level-idx" style="color: #2563eb;">0</span>
+          </div>
+          <div class="btl-metric-card">
+            <span class="btl-metric-label">当前出队节点</span>
+            <span class="btl-metric-val" id="metric-cur-node" style="color: #fbbf24;">3</span>
+          </div>
+          <div class="btl-metric-card">
+            <span class="btl-metric-label">本层总数 size</span>
+            <span class="btl-metric-val" id="metric-level-size" style="color: #a855f7;">1</span>
+          </div>
+          <div class="btl-metric-card">
+            <span class="btl-metric-label">已收集层数</span>
+            <span class="btl-metric-val" id="metric-collected-levels" style="color: #10b981;">0</span>
+          </div>
+        </div>
+        <div class="btl-queue-box" id="btl-queue-box">
+          <span style="color: #64748b; font-weight: 700;">BFS 队列:</span>
+          <span id="queue-elements" style="color: #3b82f6; font-weight: 800;">[ ]</span>
+        </div>
+        <div class="btl-live-alert" id="btl-live-alert">
+          <span>💡</span> <span id="btl-live-text">准备就绪，点击运行开始层序遍历。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: 暗色代码终端 (DarkCodeTerminalPresenter 自动挂载) -->
+    <section class="btl-card" id="code-terminal-card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+      <!-- Presenter 会将代码多语言 Tab + 代码视图自动注入此处 -->
+    </section>
+
+    <!-- Card 4: 执行日志流 -->
+    <section class="btl-card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+      <div class="btl-card-header">
+        <div class="btl-card-title">
+          <span>📜</span> 执行日志流 (Execution Trace Log)
+        </div>
+        <span class="btl-badge-mode" id="log-count" style="font-size: 10px;">0 条记录</span>
+      </div>
+      <div class="btl-card-body" id="log-container" style="gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <!-- 日志条目动态渲染 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 3. 底部进度与控制栏 -->
+  <footer class="btl-playback-bar">
+    <div class="btl-playback-controls">
+      <button class="btl-ctrl-btn" id="btn-step-prev" title="上一步">⏮</button>
+      <button class="btl-ctrl-btn" id="btn-play-pause" title="播放/暂停" style="width: 60px; font-weight: 700;">播放</button>
+      <button class="btl-ctrl-btn" id="btn-step-next" title="下一步">⏭</button>
+    </div>
+    <div class="btl-progress-wrap">
+      <span class="btl-step-badge" id="step-indicator">步骤 0 / 0</span>
+      <input type="range" id="slider-progress" min="0" max="0" value="0">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <label style="font-size: 11px; font-weight: 700; color: #64748b;">速度:</label>
+      <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+        <option value="1200">慢速</option>
+        <option value="600" selected>正常</option>
+        <option value="250">快速</option>
+      </select>
+    </div>
+  </footer>
 </div>
