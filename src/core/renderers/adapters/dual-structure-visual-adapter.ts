@@ -99,32 +99,55 @@ export class DualStructureVisualAdapter {
   /**
    * 渲染单队列循环旋转模拟栈沙盘（100% 扁平，零白底嵌套框）
    */
-  public static renderQueueStack(
+  public static renderQueueRotation(
     container: HTMLElement,
-    state: { queue: number[]; currentOp?: string; rotated?: boolean }
+    state: { queue: number[]; rotatingItem?: number | null; rotateStep?: number; totalRotate?: number; action?: string }
   ): void {
-    const { queue, rotated } = state;
+    const { queue, rotatingItem, rotateStep = 0, totalRotate = 0, action } = state;
 
     const queueItemsHtml =
       queue.length === 0
-        ? `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 11px; font-style: italic;">空队列 (Queue)</div>`
+        ? `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 11px; font-style: italic;">空队列 (Queue 为空)</div>`
         : queue
-            .map(
-              (val, idx) => `
-              <div style="display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 4px; background: #ffffff; border: 1.5px solid #3b82f6; color: #1d4ed8; font-weight: 800; font-family: 'JetBrains Mono', monospace; font-size: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-                ${val}${idx === 0 ? ' <span style="font-size: 9px; margin-left: 4px; color: #ef4444; font-weight: 700;">(队头/出栈点)</span>' : idx === queue.length - 1 ? ' <span style="font-size: 9px; margin-left: 4px; color: #10b981; font-weight: 700;">(队尾)</span>' : ''}
-              </div>
-            `
-            )
+            .map((val, idx) => {
+              const isTop = idx === 0;
+              const isTail = idx === queue.length - 1;
+              const isRotating = rotatingItem !== null && val === rotatingItem && action === 'rotate_step';
+
+              let bg = '#ffffff';
+              let border = '#3b82f6';
+              let color = '#1d4ed8';
+
+              if (isRotating) {
+                bg = '#fef3c7';
+                border = '#f59e0b';
+                color = '#b45309';
+              } else if (isTop) {
+                bg = '#f0fdf4';
+                border = '#10b981';
+                color = '#047857';
+              }
+
+              return `
+                <div style="display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 4px; background: ${bg}; border: 1.5px solid ${border}; color: ${color}; font-weight: 800; font-family: 'JetBrains Mono', monospace; font-size: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: all 0.2s;">
+                  ${val}${isTop ? ' <span style="font-size: 9px; margin-left: 4px; color: #10b981; font-weight: 700;">(栈顶/队头)</span>' : isTail ? ' <span style="font-size: 9px; margin-left: 4px; color: #64748b; font-weight: 700;">(队尾)</span>' : ''}
+                </div>
+              `;
+            })
             .join('<span style="color: #94a3b8; font-size: 11px; margin: 0 3px;">➔</span>');
 
-    const rotateIndicator = rotated
-      ? `
-      <div style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 10px; border-radius: 4px; background: #eff6ff; color: #1d4ed8; font-size: 10.5px; font-weight: 700;">
-        <span>🔄 队头出队并重新入队尾 (旋转 size-1 次) 🔄</span>
+    const rotateIndicator =
+      totalRotate > 0
+        ? `
+      <div style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: ${rotateStep > 0 ? '#fef3c7' : '#eff6ff'}; border: 1px dashed ${rotateStep > 0 ? '#f59e0b' : '#bfdbfe'}; color: ${rotateStep > 0 ? '#b45309' : '#1d4ed8'}; font-size: 11px; font-weight: 700;">
+        <span>🔄 循环旋转进度: ${rotateStep} / ${totalRotate} ${rotateStep > 0 ? `(队头 ${rotatingItem} 出队推至队尾)` : '(push 后保持队头为最新栈顶)'}</span>
       </div>
     `
-      : '';
+        : `
+      <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 10.5px; color: #94a3b8; padding: 2px 0;">
+        <span style="border-bottom: 1px dashed #cbd5e1; padding-bottom: 1px;">🔄 单队列自环旋转：每次 push 后将前面 size-1 个元素重新移到队尾</span>
+      </div>
+    `;
 
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: space-around; gap: 8px; box-sizing: border-box;">
@@ -132,9 +155,9 @@ export class DualStructureVisualAdapter {
         <div style="display: flex; flex-direction: column; gap: 4px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #1e40af;">
-              <span>🔁 循环队列主体 (队头 ➔ 队尾):</span>
+              <span>🔁 循环队列主体 (队头/栈顶 ➔ 队尾):</span>
             </div>
-            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #2563eb;">长度: ${queue.length}</span>
+            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #2563eb;">队列大小: ${queue.length}</span>
           </div>
           <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 36px; padding: 4px 8px; background: #eff6ff; border-radius: 6px; border: 1px solid #bfdbfe;">
             ${queueItemsHtml}
@@ -145,5 +168,12 @@ export class DualStructureVisualAdapter {
 
       </div>
     `;
+  }
+
+  public static renderQueueStack(
+    container: HTMLElement,
+    state: { queue: number[]; rotatingItem?: number | null; rotateStep?: number; totalRotate?: number; action?: string }
+  ): void {
+    DualStructureVisualAdapter.renderQueueRotation(container, state);
   }
 }
