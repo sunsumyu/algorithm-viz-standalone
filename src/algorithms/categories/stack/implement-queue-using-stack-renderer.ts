@@ -1,20 +1,17 @@
 /**
- * 用栈实现队列可视化器 — 4-Card 标准现代架构
+ * 用栈实现队列可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * LeetCode 232：输入栈 inStack 处理 push，输出栈 outStack 处理 pop/peek，outStack 为空时一次性倾倒转移
+ * 严格遵循 Zero-Subbox 规范，100% 扁平画板，杜绝多层白色卡片嵌套
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { DualStructureVisualAdapter } from '../../../core/renderers/adapters/dual-structure-visual-adapter';
 import {
   IMPLEMENT_QUEUE_USING_STACK_PROBLEM_HTML,
   IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
   IMPLEMENT_QUEUE_USING_STACK_CODE_LANGUAGES,
 } from './implement-queue-using-stack-problem-content';
-import template from './implement-queue-using-stack.html?raw';
 
 export interface MQStep {
   inStack: number[];
@@ -33,7 +30,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
   const outStack: number[] = [];
   const outputs: Array<{ op: string; value: number | boolean }> = [];
 
-  const rawOps = rawOpsInput
+  const rawOps = (rawOpsInput || 'push 1, push 2, peek, pop, empty')
     .split(/[,，;\n]+/)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -100,8 +97,8 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           currentOp: 'pop()',
           transferHappened: transfer,
           action: 'pop',
-          message: `📤 执行 pop()：从 outStack 弹出队头元素 ${popped}`,
-          codeLine: 12,
+          message: `📤 执行 pop()：从 outStack 弹出栈顶元素 ${popped}（即队列头部）并返回`,
+          codeLine: 14,
         });
       } else {
         steps.push({
@@ -111,11 +108,11 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           currentOp: 'pop()',
           transferHappened: false,
           action: 'pop',
-          message: '⚠️ 执行 pop()：队列为空，无法出队',
-          codeLine: 11,
+          message: '⚠️ 队列为空，pop() 无元素可弹出',
+          codeLine: 14,
         });
       }
-    } else if (op === 'peek') {
+    } else if (op === 'peek' || op === 'top') {
       let transfer = false;
       if (outStack.length === 0) {
         transfer = true;
@@ -130,14 +127,14 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           currentOp: 'dumpStackIn()',
           transferHappened: true,
           action: 'transfer',
-          message: '🔀 outStack 为空！触发倾倒转移以便查看队头元素',
+          message: '🔀 peek 操作检测到 outStack 为空，先执行倾倒转移',
           codeLine: 19,
         });
       }
 
       if (outStack.length > 0) {
-        const topVal = outStack[outStack.length - 1];
-        outputs.push({ op: 'peek', value: topVal });
+        const peekVal = outStack[outStack.length - 1];
+        outputs.push({ op: 'peek', value: peekVal });
 
         steps.push({
           inStack: [...inStack],
@@ -146,8 +143,19 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           currentOp: 'peek()',
           transferHappened: transfer,
           action: 'peek',
-          message: `👀 执行 peek()：查看队头元素（outStack 栈顶）为 ${topVal}`,
-          codeLine: 15,
+          message: `🔍 执行 peek()：查看到当前队头元素为 ${peekVal}（不弹出）`,
+          codeLine: 23,
+        });
+      } else {
+        steps.push({
+          inStack: [...inStack],
+          outStack: [...outStack],
+          outputs: [...outputs],
+          currentOp: 'peek()',
+          transferHappened: false,
+          action: 'peek',
+          message: '⚠️ 队列为空，peek() 无队头元素',
+          codeLine: 23,
         });
       }
     } else if (op === 'empty') {
@@ -161,8 +169,8 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
         currentOp: 'empty()',
         transferHappened: false,
         action: 'empty',
-        message: `❓ 执行 empty()：inStack.empty && outStack.empty &rarr; ${isEmpty}`,
-        codeLine: 17,
+        message: `⚖️ 执行 empty()：inStack 与 outStack 均${isEmpty ? '为空，返回 true' : '不全为空，返回 false'}`,
+        codeLine: 27,
       });
     }
   }
@@ -174,232 +182,106 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
     currentOp: 'done',
     transferHappened: false,
     action: 'done',
-    message: `🎉 全部操作序列执行完成！队列当前剩余 ${inStack.length + outStack.length} 个元素`,
-    codeLine: 18,
+    message: '🎉 操作序列执行完毕！',
+    codeLine: 30,
   });
 
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class ImplementQueueUsingStackVisualizer extends StepVisualizer<MQStep> {
-  protected codeLanguages = IMPLEMENT_QUEUE_USING_STACK_CODE_LANGUAGES;
-  protected codeLines = IMPLEMENT_QUEUE_USING_STACK_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '用栈实现队列 代码调试';
+const { template, Visualizer } = createDeclarativeVisualizer<MQStep>({
+  id: 'implement-queue-using-stack',
+  name: '用栈实现队列',
+  category: 'stack',
+  icon: '🔄',
+  badge: {
+    mode: '双栈架构·均摊 O(1)',
+    complexity: '均摊 O(1) · O(n)',
+  },
+  card1Title: '🔄 双栈交互与队列逻辑流沙盘',
+  card2Title: '📦 队列状态与指标监控',
+  card2Desc: '当前操作指令、双栈元素容量与出队输出记录',
+  legend: [
+    { label: '📥 输入栈 inStack', color: '#2563eb' },
+    { label: '📤 输出栈 outStack', color: '#10b981' },
+    { label: '🔀 倾倒倒置流', color: '#f59e0b' },
+  ],
+  inputs: [
+    {
+      id: 'input-ops',
+      label: '操作序列',
+      type: 'text',
+      defaultValue: 'push 1, push 2, peek, pop, empty',
+      width: '180px',
+      placeholder: 'push 1, push 2, peek...',
+    },
+  ],
+  presets: [
+    {
+      label: '经典示例',
+      values: { 'input-ops': 'push 1, push 2, peek, pop, empty' },
+    },
+    {
+      label: '交替出入队',
+      values: { 'input-ops': 'push 1, push 2, push 3, pop, push 4, pop, pop, pop' },
+    },
+    {
+      label: '连续窥探',
+      values: { 'input-ops': 'push 10, push 20, push 30, peek, pop, peek' },
+    },
+  ],
+  metrics: [
+    { id: 'queue-size', label: '队列总元素数', color: '#2563eb' },
+    { id: 'in-size', label: 'inStack 大小', color: '#3b82f6' },
+    { id: 'out-size', label: 'outStack 大小', color: '#10b981' },
+  ],
+  codeLanguages: IMPLEMENT_QUEUE_USING_STACK_CODE_LANGUAGES,
+  problemHtml: IMPLEMENT_QUEUE_USING_STACK_PROBLEM_HTML,
+  analysisHtml: IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
+  buildSteps: (inputs) => buildImplementQueueUsingStackSteps(inputs['input-ops']),
+  renderCanvas: (container, step) => {
+    // 渲染扁平双栈沙盘（绝无任何嵌套白色 card 边框）
+    DualStructureVisualAdapter.renderDualStack(container, step);
 
-  private sandboxContainer: HTMLElement | null = null;
-  private stacksStatusContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+    // 更新指标卡片
+    const root = container.closest('#algo-implement-queue-using-stack-view');
+    if (root) {
+      const qSizeEl = root.querySelector('#metric-queue-size');
+      const inSizeEl = root.querySelector('#metric-in-size');
+      const outSizeEl = root.querySelector('#metric-out-size');
+      const totalSize = step.inStack.length + step.outStack.length;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#mq-sandbox-container');
-    this.stacksStatusContainer = this.root.querySelector('#mq-stacks-status-container');
-    this.decisionMonitorContainer = this.root.querySelector('#mq-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#mq-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+      if (qSizeEl) qSizeEl.textContent = `${totalSize}`;
+      if (inSizeEl) inSizeEl.textContent = `${step.inStack.length}`;
+      if (outSizeEl) outSizeEl.textContent = `${step.outStack.length}`;
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
+      // 在 Card 2 中展示出队与窥探记录流
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const outputsHtml =
+          step.outputs.length === 0
+            ? '<span style="color: #94a3b8; font-size: 11px; font-style: italic;">暂无出队记录</span>'
+            : step.outputs
+                .map(
+                  (out, idx) => `
+                  <span style="display: inline-flex; align-items: center; gap: 3px; background: #ffffff; border: 1px solid #cbd5e1; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-family: monospace;">
+                    <span style="color: #64748b;">#${idx + 1}</span>
+                    <strong style="color: ${out.op === 'pop' ? '#dc2626' : '#2563eb'};">${out.op}</strong>: ${out.value}
+                  </span>
+                `
+                )
+                .join(' ');
 
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.mq-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const strEl = this.root?.querySelector('#input-ops') as HTMLInputElement | null;
-        if (strEl && btn.dataset.val) strEl.value = btn.dataset.val;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: IMPLEMENT_QUEUE_USING_STACK_PROBLEM_HTML,
-      analysisHtml: IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): MQStep[] {
-    const strEl = this.root?.querySelector('#input-ops') as HTMLInputElement | null;
-    const rawOpsInput = strEl?.value ?? 'push 1, push 2, peek, pop, empty';
-    return buildImplementQueueUsingStackSteps(rawOpsInput);
-  }
-
-  protected renderStep(step: MQStep): void {
-    const inStack = step.inStack;
-    const outStack = step.outStack;
-    const outputs = step.outputs;
-    const totalCount = inStack.length + outStack.length;
-
-    // 1. 渲染双栈交互沙盘 (Card 1)
-    if (this.sandboxContainer) {
-      // inStack HTML (栈顶在右)
-      const inStackHtml = inStack
-        .map((num) => {
-          return `
-            <div style="padding: 3px 10px; border-radius: 6px; background: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
-              ${num}
-            </div>
-          `;
-        })
-        .join('');
-
-      // outStack HTML (栈顶在左，即队头)
-      const outStackHtml = [...outStack]
-        .reverse()
-        .map((num, idx) => {
-          const isTop = idx === 0;
-          return `
-            <div style="padding: 3px 10px; border-radius: 6px; background: ${isTop ? '#ecfdf5' : '#f0fdf4'}; border: 1.5px solid ${isTop ? '#10b981' : '#bbf7d0'}; color: ${isTop ? '#047857' : '#15803d'}; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
-              ${num}${isTop ? ' (队头)' : ''}
-            </div>
-          `;
-        })
-        .join('');
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- inStack 容器 -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #2563eb;">
-              <span>📥 输入栈 inStack (栈底 &rarr; 栈顶):</span>
-              <span>容量: ${inStack.length}</span>
-            </div>
-            <div style="display: flex; gap: 5px; overflow-x: auto; min-height: 26px; align-items: center;">
-              ${inStack.length > 0 ? inStackHtml : '<span style="font-size: 10px; color: #94a3b8;">空栈</span>'}
-            </div>
-          </div>
-
-          <!-- 中间流向指示 -->
-          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: ${step.transferHappened ? '#f59e0b' : '#94a3b8'};">
-            <span>${step.transferHappened ? '⚡ 倾倒倒置流激活: inStack.pop() &rarr; outStack.push()' : '⬇️ outStack 为空时一次性转移全部元素 ⬇️'}</span>
-          </div>
-
-          <!-- outStack 容器 -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #059669;">
-              <span>📤 输出栈 outStack (栈顶队头 &larr; 栈底):</span>
-              <span>容量: ${outStack.length}</span>
-            </div>
-            <div style="display: flex; gap: 5px; overflow-x: auto; min-height: 26px; align-items: center;">
-              ${outStack.length > 0 ? outStackHtml : '<span style="font-size: 10px; color: #94a3b8;">空栈</span>'}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. 渲染栈状态 (Card 2 Left)
-    if (this.stacksStatusContainer) {
-      this.stacksStatusContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前执行指令:</span>
-            <span style="font-family: monospace; font-weight:800; color: #2563eb; font-size: 13px;">
-              ${step.currentOp}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>双栈总元素量:</span>
-            <span style="font-family: monospace; font-weight:700; color: #059669;">
-              ${totalCount} 个 (in: ${inStack.length}, out: ${outStack.length})
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染队列决策监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>操作类型:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${step.transferHappened ? '#fffbeb' : '#eff6ff'}; color: ${step.transferHappened ? '#d97706' : '#2563eb'}; border: 1px solid ${step.transferHappened ? '#fde68a' : '#bfdbfe'};">
-              ${step.transferHappened ? '🔀 倾倒转移' : `⚡ ${step.action}`}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 准则: <code style="color:#2563eb; font-family:monospace;">push 入 inStack; pop/peek 从 outStack 出（空则先倒栈）</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染出队记录看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      const outputsStr = outputs.map((o) => `${o.op}: ${o.value}`).join(' | ');
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>输出历史: <strong style="color: #2563eb; font-family: monospace; font-size: 12px;">${outputsStr || '(暂无输出)'}</strong></span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">已记录 ${outputs.length} 次</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeSize = this.root?.querySelector('#badge-queue-size');
-    if (badgeSize) {
-      badgeSize.textContent = `队列元素: ${totalCount} 个`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '指令';
-
-        if (st.action === 'push') {
-          badgeColor = '#2563eb';
-          badgeBg = '#eff6ff';
-          badgeText = '入栈';
-        } else if (st.action === 'transfer') {
-          badgeColor = '#d97706';
-          badgeBg = '#fffbeb';
-          badgeText = '倒栈';
-        } else if (st.action === 'pop') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '出队';
-        } else if (st.action === 'peek') {
-          badgeColor = '#7c3aed';
-          badgeBg = '#f5f3ff';
-          badgeText = '窥探';
-        } else if (st.action === 'done') {
-          badgeColor = '#10b981';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
-        }
-
-        return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">出队与窥探输出记录:</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">${outputsHtml}</div>
           </div>
         `;
-      });
-
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+      }
     }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'implement-queue-using-stack',
@@ -409,7 +291,7 @@ registerAlgorithm({
   description: '双栈架构：输入栈 inStack 处理 push，输出栈 outStack 为空时一次性倾倒反转实现 FIFO',
   icon: '🔄',
   template,
-  Visualizer: ImplementQueueUsingStackVisualizer,
+  Visualizer,
   difficulty: 1,
   levelOrder: 4,
   learningGoal: '掌握双栈组合出 FIFO 队列的精妙架构，理解均摊时间复杂度 O(1) 的倒栈触发准则',

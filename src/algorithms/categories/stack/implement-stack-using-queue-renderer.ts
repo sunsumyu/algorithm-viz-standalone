@@ -1,20 +1,17 @@
 /**
- * 用队列实现栈可视化器 — 4-Card 标准现代架构
+ * 用队列实现栈可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * LeetCode 225：单队列循环旋转法，push 后将前面 size - 1 个元素出队再入队重新排到队尾，保持队头始终为栈顶
+ * 严格遵循 Zero-Subbox 规范，100% 扁平画板，杜绝多层白色卡片嵌套
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { DualStructureVisualAdapter } from '../../../core/renderers/adapters/dual-structure-visual-adapter';
 import {
   IMPLEMENT_STACK_USING_QUEUE_PROBLEM_HTML,
   IMPLEMENT_STACK_USING_QUEUE_ANALYSIS_HTML,
   IMPLEMENT_STACK_USING_QUEUE_CODE_LANGUAGES,
 } from './implement-stack-using-queue-problem-content';
-import template from './implement-stack-using-queue.html?raw';
 
 export interface MSStep {
   queue: number[];
@@ -33,7 +30,7 @@ export function buildImplementStackUsingQueueSteps(rawOpsInput: string): MSStep[
   const queue: number[] = [];
   const outputs: Array<{ op: string; value: number | boolean }> = [];
 
-  const rawOps = rawOpsInput
+  const rawOps = (rawOpsInput || 'push 1, push 2, top, pop, empty')
     .split(/[,，;\n]+/)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -104,7 +101,7 @@ export function buildImplementStackUsingQueueSteps(rawOpsInput: string): MSStep[
           rotateStep: 0,
           totalRotate: 0,
           action: 'pop',
-          message: `📤 执行 pop()：队头即为栈顶，直接 O(1) 出队元素 ${popped}`,
+          message: `📤 执行 pop()：队头即当前栈顶元素 ${popped}，直接 O(1) 出队并返回`,
           codeLine: 14,
         });
       } else {
@@ -116,11 +113,11 @@ export function buildImplementStackUsingQueueSteps(rawOpsInput: string): MSStep[
           rotateStep: 0,
           totalRotate: 0,
           action: 'pop',
-          message: '⚠️ 执行 pop()：栈为空，无法出栈',
-          codeLine: 13,
+          message: '⚠️ 队列为空，pop() 无元素可出栈',
+          codeLine: 14,
         });
       }
-    } else if (op === 'top') {
+    } else if (op === 'top' || op === 'peek') {
       if (queue.length > 0) {
         const topVal = queue[0];
         outputs.push({ op: 'top', value: topVal });
@@ -133,8 +130,20 @@ export function buildImplementStackUsingQueueSteps(rawOpsInput: string): MSStep[
           rotateStep: 0,
           totalRotate: 0,
           action: 'top',
-          message: `👀 执行 top()：查看队头元素为 ${topVal}（即栈顶）`,
-          codeLine: 17,
+          message: `🔍 执行 top()：查看当前队头（即栈顶）元素为 ${topVal}（不弹出）`,
+          codeLine: 18,
+        });
+      } else {
+        steps.push({
+          queue: [...queue],
+          outputs: [...outputs],
+          currentOp: 'top()',
+          rotatingItem: null,
+          rotateStep: 0,
+          totalRotate: 0,
+          action: 'top',
+          message: '⚠️ 队列为空，top() 无栈顶元素',
+          codeLine: 18,
         });
       }
     } else if (op === 'empty') {
@@ -149,8 +158,8 @@ export function buildImplementStackUsingQueueSteps(rawOpsInput: string): MSStep[
         rotateStep: 0,
         totalRotate: 0,
         action: 'empty',
-        message: `❓ 执行 empty()：queue.isEmpty() &rarr; ${isEmpty}`,
-        codeLine: 20,
+        message: `⚖️ 执行 empty()：队列${isEmpty ? '为空，返回 true' : '非空，返回 false'}`,
+        codeLine: 22,
       });
     }
   }
@@ -163,226 +172,104 @@ export function buildImplementStackUsingQueueSteps(rawOpsInput: string): MSStep[
     rotateStep: 0,
     totalRotate: 0,
     action: 'done',
-    message: `🎉 全部操作序列执行完成！栈内当前剩余 ${queue.length} 个元素`,
-    codeLine: 21,
+    message: '🎉 操作序列执行完毕！',
+    codeLine: 25,
   });
 
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class ImplementStackUsingQueueVisualizer extends StepVisualizer<MSStep> {
-  protected codeLanguages = IMPLEMENT_STACK_USING_QUEUE_CODE_LANGUAGES;
-  protected codeLines = IMPLEMENT_STACK_USING_QUEUE_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '用队列实现栈 代码调试';
+const { template, Visualizer } = createDeclarativeVisualizer<MSStep>({
+  id: 'implement-stack-using-queue',
+  name: '用队列实现栈',
+  category: 'stack',
+  icon: '🥞',
+  badge: {
+    mode: '单队列自环旋转',
+    complexity: 'O(n) · O(n)',
+  },
+  card1Title: '🥞 队列内部循环旋转与栈顶对齐沙盘',
+  card2Title: '📦 栈状态与出栈输出监控',
+  card2Desc: '当前操作指令、单队列容量与出栈/栈顶记录序列',
+  legend: [
+    { label: '🥇 队头 (即栈顶 Top)', color: '#0d9488' },
+    { label: '🔄 旋转中元素', color: '#fbbf24' },
+    { label: '🚶 队内其它元素', color: '#94a3b8' },
+  ],
+  inputs: [
+    {
+      id: 'input-ops',
+      label: '操作序列',
+      type: 'text',
+      defaultValue: 'push 1, push 2, top, pop, empty',
+      width: '180px',
+      placeholder: 'push 1, push 2, top...',
+    },
+  ],
+  presets: [
+    {
+      label: '经典示例',
+      values: { 'input-ops': 'push 1, push 2, top, pop, empty' },
+    },
+    {
+      label: '三次压栈与连续出栈',
+      values: { 'input-ops': 'push 10, push 20, push 30, pop, top, pop' },
+    },
+  ],
+  metrics: [
+    { id: 'stack-size', label: '栈内元素总数', color: '#0d9488' },
+    { id: 'top-val', label: '当前栈顶 Top', color: '#0f766e' },
+    { id: 'rotate-progress', label: '旋转进度', color: '#b45309' },
+  ],
+  codeLanguages: IMPLEMENT_STACK_USING_QUEUE_CODE_LANGUAGES,
+  problemHtml: IMPLEMENT_STACK_USING_QUEUE_PROBLEM_HTML,
+  analysisHtml: IMPLEMENT_STACK_USING_QUEUE_ANALYSIS_HTML,
+  buildSteps: (inputs) => buildImplementStackUsingQueueSteps(inputs['input-ops']),
+  renderCanvas: (container, step) => {
+    // 渲染扁平单队列沙盘（绝无任何嵌套白色 card 边框）
+    DualStructureVisualAdapter.renderQueueRotation(container, step);
 
-  private sandboxContainer: HTMLElement | null = null;
-  private queueStatusContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+    // 更新指标卡片
+    const root = container.closest('#algo-implement-stack-using-queue-view');
+    if (root) {
+      const sSizeEl = root.querySelector('#metric-stack-size');
+      const topValEl = root.querySelector('#metric-top-val');
+      const rotProgressEl = root.querySelector('#metric-rotate-progress');
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#ms-sandbox-container');
-    this.queueStatusContainer = this.root.querySelector('#ms-queue-status-container');
-    this.decisionMonitorContainer = this.root.querySelector('#ms-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#ms-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+      if (sSizeEl) sSizeEl.textContent = `${step.queue.length}`;
+      if (topValEl) topValEl.textContent = step.queue.length > 0 ? `${step.queue[0]}` : '—';
+      if (rotProgressEl) {
+        rotProgressEl.textContent =
+          step.totalRotate > 0 ? `${step.rotateStep} / ${step.totalRotate}` : '无需旋转';
+      }
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
+      // 在 Card 2 中展示出栈与 top 记录流
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const outputsHtml =
+          step.outputs.length === 0
+            ? '<span style="color: #94a3b8; font-size: 11px; font-style: italic;">暂无出栈记录</span>'
+            : step.outputs
+                .map(
+                  (out, idx) => `
+                  <span style="display: inline-flex; align-items: center; gap: 3px; background: #ffffff; border: 1px solid #cbd5e1; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-family: monospace;">
+                    <span style="color: #64748b;">#${idx + 1}</span>
+                    <strong style="color: ${out.op === 'pop' ? '#dc2626' : '#0d9488'};">${out.op}</strong>: ${out.value}
+                  </span>
+                `
+                )
+                .join(' ');
 
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.ms-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const strEl = this.root?.querySelector('#input-ops') as HTMLInputElement | null;
-        if (strEl && btn.dataset.val) strEl.value = btn.dataset.val;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: IMPLEMENT_STACK_USING_QUEUE_PROBLEM_HTML,
-      analysisHtml: IMPLEMENT_STACK_USING_QUEUE_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): MSStep[] {
-    const strEl = this.root?.querySelector('#input-ops') as HTMLInputElement | null;
-    const rawOpsInput = strEl?.value ?? 'push 1, push 2, top, pop, empty';
-    return buildImplementStackUsingQueueSteps(rawOpsInput);
-  }
-
-  protected renderStep(step: MSStep): void {
-    const queue = step.queue;
-    const outputs = step.outputs;
-
-    // 1. 渲染队列旋转沙盘 (Card 1)
-    if (this.sandboxContainer) {
-      const queueHtml = queue
-        .map((num, idx) => {
-          const isTop = idx === 0;
-          const isRear = idx === queue.length - 1;
-          const isRotating = num === step.rotatingItem && isRear;
-
-          let bg = '#ffffff';
-          let border = '#e2e8f0';
-          let textColor = '#0f172a';
-
-          if (isTop) {
-            bg = '#f0fdfa';
-            border = '#0d9488';
-            textColor = '#0f766e';
-          } else if (isRotating) {
-            bg = '#fffbeb';
-            border = '#f59e0b';
-            textColor = '#d97706';
-          }
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-              <span style="font-size: 8.5px; color: ${isTop ? '#0d9488' : '#94a3b8'}; font-weight: 700;">
-                ${isTop ? '🥇栈顶' : isRear ? '队尾' : `[${idx}]`}
-              </span>
-              <div style="min-width: 38px; height: 38px; padding: 0 8px; border-radius: 8px; background: ${bg}; border: 2px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                ${num}
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- 队列容器 -->
-          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569;">
-            <span>🥞 单队列存储流 (队头栈顶 &rarr; 队尾):</span>
-            <span style="color: #0d9488;">容量: ${queue.length}</span>
-          </div>
-          <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0; min-height: 52px; align-items: center;">
-            ${queue.length > 0 ? queueHtml : '<span style="font-size: 10.5px; color: #94a3b8;">队列为空（空栈）</span>'}
-          </div>
-
-          <!-- 循环旋转提示 -->
-          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: ${step.rotatingItem !== null ? '#f59e0b' : '#64748b'}; padding-top: 4px; border-top: 1px dashed #e2e8f0;">
-            <span>${step.rotatingItem !== null ? `🔄 正在旋转元素 ${step.rotatingItem} (${step.rotateStep} / ${step.totalRotate})` : '✓ 队头元素始终等于栈顶元素 (O(1) Pop & Top)'}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. 渲染队列与栈顶状态 (Card 2 Left)
-    if (this.queueStatusContainer) {
-      this.queueStatusContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前指令:</span>
-            <span style="font-family: monospace; font-weight:800; color: #0d9488; font-size: 13px;">
-              ${step.currentOp}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前栈顶 (队头):</span>
-            <span style="font-family: monospace; font-weight:700; color: #0f766e;">
-              ${queue.length > 0 ? queue[0] : '（栈空）'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染出入栈决策监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>操作类型:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${step.rotatingItem !== null ? '#fffbeb' : '#f0fdfa'}; color: ${step.rotatingItem !== null ? '#d97706' : '#0d9488'}; border: 1px solid ${step.rotatingItem !== null ? '#fde68a' : '#99f6e4'};">
-              ${step.rotatingItem !== null ? '🔄 循环旋转前驱' : `⚡ ${step.action}`}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 准则: <code style="color:#0d9488; font-family:monospace;">push(x) 后循环出队再入队 size-1 次，使 x 到达队头</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染出栈记录看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      const outputsStr = outputs.map((o) => `${o.op}: ${o.value}`).join(' | ');
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>输出历史: <strong style="color: #0d9488; font-family: monospace; font-size: 12px;">${outputsStr || '(暂无输出)'}</strong></span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">已记录 ${outputs.length} 次</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeSize = this.root?.querySelector('#badge-stack-size');
-    if (badgeSize) {
-      badgeSize.textContent = `栈内元素: ${queue.length} 个`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '指令';
-
-        if (st.action === 'push_offer') {
-          badgeColor = '#0d9488';
-          badgeBg = '#f0fdfa';
-          badgeText = '入队';
-        } else if (st.action === 'rotate_step') {
-          badgeColor = '#d97706';
-          badgeBg = '#fffbeb';
-          badgeText = '旋转';
-        } else if (st.action === 'pop') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '出栈';
-        } else if (st.action === 'top') {
-          badgeColor = '#7c3aed';
-          badgeBg = '#f5f3ff';
-          badgeText = '栈顶';
-        } else if (st.action === 'done') {
-          badgeColor = '#10b981';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
-        }
-
-        return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">出栈与栈顶查看记录:</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">${outputsHtml}</div>
           </div>
         `;
-      });
-
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+      }
     }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'implement-stack-using-queue',
@@ -392,7 +279,7 @@ registerAlgorithm({
   description: '单队列循环旋转法：push 入队后将前面 size - 1 个元素出队再入队，保持队头为栈顶',
   icon: '🥞',
   template,
-  Visualizer: ImplementStackUsingQueueVisualizer,
+  Visualizer,
   difficulty: 1,
   levelOrder: 5,
   learningGoal: '掌握单队列通过自环旋转实现 LIFO 栈的精简思想，实现真正的 O(1) Pop 与 Top 查询',
