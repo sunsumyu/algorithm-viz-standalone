@@ -6,10 +6,6 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
   RADIX_SORT_PROBLEM_HTML,
   RADIX_SORT_ANALYSIS_HTML,
   RADIX_SORT_CODE_LANGUAGES,
@@ -240,7 +236,6 @@ export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
   protected codeLines = RADIX_SORT_CODE_LANGUAGES['java'];
   protected codePanelTitle = '基数排序 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private srcTrackEl: HTMLElement | null = null;
   private countTrackEl: HTMLElement | null = null;
   private outTrackEl: HTMLElement | null = null;
@@ -268,36 +263,8 @@ export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.rx-chip').forEach((btn) => {
@@ -309,7 +276,7 @@ export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: RADIX_SORT_PROBLEM_HTML,
       analysisHtml: RADIX_SORT_ANALYSIS_HTML,
@@ -417,43 +384,27 @@ export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
 
     // 5. 更新日志流
     if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'done' ? '#f0fdf4' : phase === 'build-out' ? '#faf5ff' : '#eff6ff';
-      logEntry.style.color =
-        phase === 'done' ? '#15803d' : phase === 'build-out' ? '#7e22ce' : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'done' ? '#bbf7d0' : phase === 'build-out' ? '#e9d5ff' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let bg =
+          st.phase === 'done' ? '#f0fdf4' : st.phase === 'build-out' ? '#faf5ff' : '#eff6ff';
+        let color =
+          st.phase === 'done' ? '#15803d' : st.phase === 'build-out' ? '#7e22ce' : '#1d4ed8';
+        let border =
+          st.phase === 'done' ? '#bbf7d0' : st.phase === 'build-out' ? '#e9d5ff' : '#bfdbfe';
+        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
+          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
+        </div>`;
+      });
+      this.logContainer.innerHTML = logs.join('');
       this.logContainer.scrollTop = this.logContainer.scrollHeight;
 
       if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
       }
     }
 
     // 6. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 7. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+    this.highlightCode(step.codeLine);
 
     const badgeExp = this.root?.querySelector('#badge-exp');
     if (badgeExp) {
