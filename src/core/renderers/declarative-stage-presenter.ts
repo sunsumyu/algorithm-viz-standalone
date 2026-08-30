@@ -316,29 +316,39 @@ export class DeclarativeStagePresenter {
     background: #f1f5f9;
   }
 
-  /* 4-Card 布局 */
+  /* 4-Card 布局 (彻底杜绝溢出，支持侧边抽屉展开时自适应弹性压缩) */
   #${viewId} .dsp-main-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
     padding: 8px;
     flex: 1;
     min-height: 0;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
+    overflow: hidden;
   }
   #${viewId} .dsp-left-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
     min-height: 0;
+    min-width: 0;
+    max-width: 100%;
     height: 100%;
+    overflow: hidden;
   }
   #${viewId} .dsp-right-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
     min-height: 0;
+    min-width: 0;
+    max-width: 100%;
     height: 100%;
+    overflow: hidden;
   }
 
   /* 通用卡片容器 (标准单层边框，内部绝不搞白底嵌套框) */
@@ -351,6 +361,8 @@ export class DeclarativeStagePresenter {
     overflow: hidden;
     flex: 1;
     min-height: 0;
+    min-width: 0;
+    max-width: 100%;
     padding: 8px;
     box-sizing: border-box;
   }

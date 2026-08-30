@@ -372,16 +372,16 @@ export class DarkCodeTerminalPresenter {
     // 注入标准暗色终端 DOM
     targetContainer.innerHTML = `
       <div class="dark-terminal-auto-frame" style="background: #0f172a; border-radius: 16px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%;">
-        <div class="terminal-auto-header" style="background: #1e293b; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #334155; flex-shrink: 0;">
+        <div class="terminal-auto-header" style="background: #1e293b; padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid #334155; flex-shrink: 0; min-width: 0; overflow-x: auto; width: 100%; box-sizing: border-box;">
           <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
-          <div class="tab-group" style="display: flex; align-items: center; gap: 4px;">
-            <button id="btn-tab-code" class="tab-item active" style="background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s;">💻 代码调试</button>
-            <button id="btn-tab-problem" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s;">📋 题目描述</button>
-            <button id="btn-tab-analysis" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s;">💡 算法精讲</button>
+          <div class="tab-group" style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+            <button id="btn-tab-code" class="tab-item active" style="background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">💻 代码调试</button>
+            <button id="btn-tab-problem" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">💡 算法精讲</button>
           </div>
 
           <!-- 2. 多语言切换器 -->
-          <div class="lang-group" id="code-lang-tabs" style="display: flex; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px;">
+          <div class="lang-group" id="code-lang-tabs" style="display: flex; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px; flex-shrink: 0;">
             <button class="lang-btn active" data-lang="java" style="background: #334155; border: none; color: #93c5fd; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">Java</button>
             <button class="lang-btn" data-lang="cpp" style="background: transparent; border: none; color: #64748b; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">C++</button>
             <button class="lang-btn" data-lang="python" style="background: transparent; border: none; color: #64748b; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">Python</button>
@@ -389,7 +389,7 @@ export class DarkCodeTerminalPresenter {
           </div>
 
           <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
-          <div class="font-tools" style="display: flex; align-items: center; gap: 8px;">
+          <div class="font-tools" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
             <div class="font-scaler" style="display: flex; align-items: center; gap: 2px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 1px 4px;">
               <button id="btn-code-font-dec" title="缩小代码字号" style="background: transparent; border: none; color: #94a3b8; font-size: 9px; font-weight: 700; cursor: pointer; padding: 1px 3px;">A-</button>
               <span id="code-font-indicator" class="font-indicator" style="font-size: 9.5px; font-family: monospace; color: #93c5fd; min-width: 14px; text-align: center;">12</span>
@@ -405,9 +405,9 @@ export class DarkCodeTerminalPresenter {
         </div>
 
         <!-- 容器 1: 源码高亮与单步追踪视图 -->
-        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
-          <div class="terminal-body" style="flex: 1; min-height: 0; padding: 10px; overflow-y: auto; font-family: 'JetBrains Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; color: #cbd5e1;">
-            <div id="code-lines-wrapper"></div>
+        <div id="code-view-container" style="flex: 1; min-height: 0; min-width: 0; width: 100%; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;">
+          <div class="terminal-body" style="flex: 1; min-height: 0; min-width: 0; width: 100%; padding: 10px; overflow-y: auto; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; color: #cbd5e1; box-sizing: border-box;">
+            <div id="code-lines-wrapper" style="min-width: 0; width: 100%;"></div>
           </div>
         </div>
 
