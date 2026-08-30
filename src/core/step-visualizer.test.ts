@@ -239,7 +239,7 @@ describe('StepVisualizer Deep Module Guard', () => {
     slider.dispatchEvent({ type: 'input' });
     expect(viz.getCurrentIndex()).toBe(2);
     expect(counter.textContent).toBe('3 / 3');
-    expect(btnPlay.textContent).toContain('完成');
+    expect(btnPlay.textContent).toContain('重播');
 
     // 模拟切换速度
     speedSelect.value = '300';
@@ -273,10 +273,10 @@ describe('StepVisualizer Deep Module Guard', () => {
     btnNext.click();
     btnNext.click();
     expect(viz.getCurrentIndex()).toBe(2);
-    // 完成状态：iconSpan 为完成符号，且没有任何冗余文字
-    expect(playIconSpan.textContent).toBe('✓');
+    // 完成状态：iconSpan 为重播符号，且没有任何冗余文字
+    expect(playIconSpan.textContent).toBe('↺');
     expect(btnPlayCircle.textContent).not.toContain('播放');
-    expect(btnPlayCircle.textContent).not.toContain('完成');
+    expect(btnPlayCircle.textContent).not.toContain('重播');
 
     viz.destroy();
   });

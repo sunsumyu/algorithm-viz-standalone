@@ -182,8 +182,10 @@ export class DeclarativeStagePresenter {
   #${viewId} .dsp-header-left {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
+    gap: 6px;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
   }
   #${viewId} .dsp-icon-btn {
     width: 28px;
@@ -194,13 +196,16 @@ export class DeclarativeStagePresenter {
     align-items: center;
     justify-content: center;
     font-size: 15px;
+    flex-shrink: 0;
   }
   #${viewId} .dsp-main-title {
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 700;
     color: #0f172a;
     margin: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   #${viewId} .dsp-btn-problem {
     padding: 2px 8px;
@@ -211,6 +216,8 @@ export class DeclarativeStagePresenter {
     color: #334155;
     cursor: pointer;
     font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   #${viewId} .dsp-btn-problem:hover {
     background: #f1f5f9;
@@ -224,6 +231,7 @@ export class DeclarativeStagePresenter {
     color: #2563eb;
     border: 1px solid #dbeafe;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   #${viewId} .dsp-badge-complexity {
     font-size: 10.5px;
@@ -235,12 +243,14 @@ export class DeclarativeStagePresenter {
     color: #64748b;
     border: 1px solid #e2e8f0;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   #${viewId} .dsp-header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 6px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
     justify-content: flex-end;
   }
   #${viewId} .dsp-input-group {
@@ -250,6 +260,9 @@ export class DeclarativeStagePresenter {
     font-size: 11px;
     color: #475569;
     font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
   }
   #${viewId} .dsp-input, #${viewId} .dsp-select {
     padding: 2.5px 6px;
@@ -262,6 +275,7 @@ export class DeclarativeStagePresenter {
     box-sizing: border-box;
     height: 24px;
     background: #ffffff;
+    max-width: 140px;
   }
   #${viewId} .dsp-input:focus, #${viewId} .dsp-select:focus {
     border-color: #2563eb;
@@ -273,12 +287,14 @@ export class DeclarativeStagePresenter {
     color: #ffffff;
     border: none;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 4px;
     height: 24px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   #${viewId} .dsp-btn-generate:hover {
     background: #1d4ed8;
@@ -293,6 +309,8 @@ export class DeclarativeStagePresenter {
     font-weight: 600;
     cursor: pointer;
     height: 24px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   #${viewId} .dsp-btn-reset:hover {
     background: #f1f5f9;

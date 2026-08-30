@@ -392,11 +392,19 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   }
 
   protected togglePlay(): void {
+    if (this.currentIndex >= this.steps.length - 1) {
+      this.goToStep(0);
+      this.play();
+      return;
+    }
     this.isPlaying ? this.pause() : this.play();
   }
 
   protected play(): void {
-    if (this.currentIndex >= this.steps.length - 1) return;
+    if (this.currentIndex >= this.steps.length - 1) {
+      this.currentIndex = 0;
+      this.render();
+    }
     this.isPlaying = true;
     this.tick();
     this.updateButtons();
@@ -468,9 +476,9 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     if (this.btnPrev) this.btnPrev.disabled = this.currentIndex === 0;
     if (this.btnNext) this.btnNext.disabled = finished;
     if (this.btnPlay) {
-      this.btnPlay.disabled = finished && !this.isPlaying;
-      const playText = this.isPlaying ? '暂停' : finished ? '完成' : '播放';
-      const playIcon = this.isPlaying ? '⏸' : finished ? '✓' : '▶';
+      this.btnPlay.disabled = false;
+      const playText = this.isPlaying ? '暂停' : finished ? '重播' : '播放';
+      const playIcon = this.isPlaying ? '⏸' : finished ? '↺' : '▶';
 
       let iconSpan: HTMLElement | null = null;
       try {
@@ -482,7 +490,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
       if (iconSpan) {
         const iconClasses = typeof iconSpan.className === 'string' ? iconSpan.className : '';
         if (iconSpan.tagName?.toLowerCase() === 'i' || iconClasses.includes('fa-solid') || iconClasses.includes('fas')) {
-          iconSpan.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : finished ? 'fa-solid fa-check text-[12px]' : 'fa-solid fa-play text-[12px]';
+          iconSpan.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : finished ? 'fa-solid fa-rotate-left text-[12px]' : 'fa-solid fa-play text-[12px]';
         } else {
           iconSpan.textContent = playIcon;
         }

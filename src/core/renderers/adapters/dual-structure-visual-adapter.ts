@@ -61,7 +61,7 @@ export class DualStructureVisualAdapter {
     `;
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: space-around; gap: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 14px; box-sizing: border-box; padding: 6px;">
         
         <!-- 1. 输入栈 inStack 插槽 (平铺于底色之上) -->
         <div style="display: flex; flex-direction: column; gap: 3px;">
@@ -150,7 +150,7 @@ export class DualStructureVisualAdapter {
     `;
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: space-around; gap: 8px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 14px; box-sizing: border-box; padding: 6px;">
         
         <div style="display: flex; flex-direction: column; gap: 4px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
