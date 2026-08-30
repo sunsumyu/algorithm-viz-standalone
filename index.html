@@ -768,19 +768,11 @@
       left: 0;
       z-index: 10;
       background: #f8fafc;
-      transition: left 0.22s cubic-bezier(0.16, 1, 0.3, 1), width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .view-container.active {
       display: flex;
       flex-direction: column;
-    }
-
-    /* 当目录展开时，视图容器自适应右移，保留全部可视区域不被遮挡 */
-    #app.has-catalog-drawer-open .view-container.active,
-    #app:has(#algo-catalog-drawer.is-open) .view-container.active {
-      left: 340px;
-      width: calc(100% - 340px);
     }
 
     /* ========== Top Integrated Navigation Bar ========== */
@@ -1037,8 +1029,23 @@
 
     /* ========== Catalog Drawer Backdrop ========== */
     .algo-catalog-backdrop {
-      display: none;
+      position: fixed;
+      top: 36px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.25);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 9990;
+      opacity: 0;
       pointer-events: none;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .algo-catalog-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     /* ========== Left Catalog Drawer ========== */
@@ -1049,11 +1056,9 @@
       left: 0;
       width: 340px;
       max-width: 85vw;
-      background: rgba(255, 255, 255, 0.98);
+      background: #ffffff;
       border-right: 1px solid #e2e8f0;
-      box-shadow: 6px 0 25px rgba(0, 0, 0, 0.08);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 8px 0 30px rgba(0, 0, 0, 0.15);
       z-index: 9998;
       display: flex;
       flex-direction: column;
