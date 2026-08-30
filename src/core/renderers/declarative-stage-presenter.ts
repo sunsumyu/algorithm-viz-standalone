@@ -321,7 +321,7 @@ export class DeclarativeStagePresenter {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
-    padding: 8px;
+    padding: 8px 8px 8px 14px;
     flex: 1;
     min-height: 0;
     min-width: 0;
@@ -426,7 +426,7 @@ export class DeclarativeStagePresenter {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    padding: 8px 12px;
     box-sizing: border-box;
   }
 

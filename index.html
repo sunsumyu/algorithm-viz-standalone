@@ -935,43 +935,56 @@
       }
     }
 
-    /* ========== Left Floating Tab (拉手) ========== */
+    /* ========== Left Floating Tab (智能收起折叠拉手：不遮挡内容) ========== */
     .algo-catalog-float-tab {
       position: fixed;
       top: 50%;
       left: 0;
-      transform: translateY(-50%) translateX(0);
+      transform: translateY(-50%) translateX(calc(-100% + 7px));
       z-index: 9990;
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 5px;
-      padding: 10px 6px 10px 4px;
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid #cbd5e1;
+      padding: 10px 7px 10px 5px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1.5px solid #38bdf8;
       border-left: none;
       border-radius: 0 10px 10px 0;
       color: #0284c7;
       font-size: 0.72rem;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 2px 4px 16px rgba(15, 23, 42, 0.1);
+      box-shadow: 2px 0 10px rgba(56, 189, 248, 0.25);
       backdrop-filter: blur(16px);
+      opacity: 0.85;
       transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       user-select: none;
     }
 
+    /* 悬浮拉手周围的隐形感应扩展区 (便于鼠标滑向边缘时灵敏唤出) */
+    .algo-catalog-float-tab::before {
+      content: '';
+      position: absolute;
+      top: -12px;
+      bottom: -12px;
+      left: 0;
+      right: -24px;
+      z-index: -1;
+    }
+
     .algo-catalog-float-tab:hover {
       background: #ffffff;
-      border-color: #38bdf8;
+      border-color: #0284c7;
       color: #0284c7;
-      box-shadow: 4px 8px 24px rgba(2, 132, 199, 0.18);
-      transform: translateY(-50%) translateX(4px);
+      box-shadow: 4px 8px 24px rgba(2, 132, 199, 0.22);
+      transform: translateY(-50%) translateX(0);
+      opacity: 1;
     }
 
     .algo-catalog-float-tab:active {
-      transform: translateY(-50%) translateX(2px) scale(0.98);
+      transform: translateY(-50%) translateX(-2px) scale(0.98);
     }
 
     .algo-catalog-float-tab .float-tab-icon {
