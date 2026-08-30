@@ -65,6 +65,7 @@ import './categories/graph/max-island-area-renderer';
 import './categories/graph/total-island-area-renderer';
 import './categories/graph/sink-islands-renderer';
 import './categories/graph/graph-theory-renderer';
+import './categories/graph/forward-star-renderer';
 import './categories/graph/dfs-theory-renderer';
 import './categories/graph/bfs-theory-renderer';
 import './categories/graph/reachable-paths-renderer';

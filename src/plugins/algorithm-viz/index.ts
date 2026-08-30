@@ -105,6 +105,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'next-greater-element-ii': '🔄',
   'largest-rectangle-histogram': '📊',
   'graph-theory': '📖',
+  'forward-star': '🕸️',
   'dfs-theory': '🔍',
   'bfs-theory': '🌊',
   'reachable-paths': '🛤️',

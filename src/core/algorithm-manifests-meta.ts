@@ -573,10 +573,21 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "viewId": "algo-graph-theory-view",
     "category": "graph",
     "description": "图的表示方法：邻接矩阵、邻接表、有向/无向、加权/无权",
-    "icon": "🕸️",
+    "icon": "📖",
     "difficulty": 1,
     "levelOrder": 1,
-    "learningGoal": "掌握图的两种基本表示方法及适用场景"
+    "learningGoal": "掌握图的基本表示方法及适用场景"
+  },
+  {
+    "id": "forward-star",
+    "name": "链式前向星",
+    "viewId": "algo-forward-star-view",
+    "category": "graph",
+    "description": "静态链表存图法，通过 head[] 与 edge[cnt].next 实现 O(1) 头插法建图与快速出边遍历",
+    "icon": "🕸️",
+    "difficulty": 2,
+    "levelOrder": 2,
+    "learningGoal": "彻底掌握图论中最经典的静态链表存图法，理解 head[] 表头与 next 前驱指针的头插法跃迁逻辑"
   },
   {
     "id": "dfs-theory",
