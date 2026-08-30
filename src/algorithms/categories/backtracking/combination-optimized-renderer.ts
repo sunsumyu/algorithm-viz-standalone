@@ -11,10 +11,6 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/code-panel';
 import { registerAlgorithm } from '../../../core/registry';
 import {
-  DarkCodeTerminalPresenter,
-  type DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
   BacktrackStateSpacePresenter,
   BacktrackLogItem,
 } from '../../../core/renderers/backtrack-state-space-presenter';
@@ -358,28 +354,8 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定标准播放控制条
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 绑定生成与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 绑定 Scrubber 进度条拖拽交互
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 绑定前进后退按钮
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
 
     // 阶段切换 Tab
     const stage1Tab = this.root.querySelector('#co-tab-stage1');
@@ -414,7 +390,7 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: COMBINATION_PROBLEM_HTML,
       analysisHtml: COMBINATION_ANALYSIS_HTML,
@@ -468,32 +444,44 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
     // 2. Render Path Stack in Card 2
     if (this.pathStackContainer) {
       BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path, {
-        highlightLast: true,
-        action: step.message.includes('add') ? 'push' : step.message.includes('remove') ? 'pop' : step.message.includes('找到') ? 'collect' : 'idle',
+        capacity: k,
+        label: '当前组合 path',
       });
     }
 
-    // 3. Render Pruning Monitor in Card 2
+    // 3. Render Pruning Monitor (Upper Bound Analysis) in Card 2 Center
     if (this.pruningMonitorContainer) {
-      const need = k - step.path.length;
-      const upper = n - need + 1;
-      const isPruningEnabled = this.currentStage === 'pruned';
-      const lastVal = Number(step.path[step.path.length - 1] ?? 0);
-      const isCurrentlyPruning = isPruningEnabled && (step.message.startsWith('剪枝：') || step.message.includes('截断循环'));
-      BacktrackStateSpacePresenter.renderPruningMonitor(this.pruningMonitorContainer, {
-        enabled: isPruningEnabled,
-        formula: isPruningEnabled ? `i <= ${n} - (${k} - ${step.path.length}) + 1 = ${upper}` : '无剪枝：i <= n (全空间搜索)',
-        neededElements: Math.max(0, need),
-        remainingCapacity: Math.max(0, n - lastVal),
-        conditionMet: isCurrentlyPruning,
-        message: isPruningEnabled
-          ? (isCurrentlyPruning ? `⚠️ 触发剪枝：剩余候选不足 ${need} 个` : `当前所需: ${need} 个，遍历上界: ${upper}`)
-          : '当前阶段搜索全解空间，不截断任何分支',
-      });
+      const curLen = step.path.length;
+      const needed = k - curLen;
+      const upperBound = n - needed + 1;
+      const isPruned = step.message.includes('剪枝');
+
+      this.pruningMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; text-align: center;">
+              <span style="font-size: 10px; color: #64748b;">还需元素数 (k - len)</span>
+              <div style="font-size: 13px; font-weight: 800; color: #2563eb; font-family: monospace;">${needed}</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; text-align: center;">
+              <span style="font-size: 10px; color: #64748b;">起始上界 (n - needed + 1)</span>
+              <div style="font-size: 13px; font-weight: 800; color: #059669; font-family: monospace;">i &le; ${upperBound}</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: ${isPruned ? '#fef2f2' : '#eff6ff'}; border: 1px solid ${isPruned ? '#fecaca' : '#bfdbfe'};">
+            <span style="font-weight: 700; color: ${isPruned ? '#dc2626' : '#1d4ed8'};">
+              ${isPruned ? '✂️ 触发剪枝' : '🔍 正常遍历'}
+            </span>
+            <span style="font-family: monospace; font-size: 10.5px; color: ${isPruned ? '#b91c1c' : '#1e40af'};">
+              ${this.currentStage === 'pruned' ? `for (int i = start; i <= ${upperBound}; i++)` : '未开启剪枝上界'}
+            </span>
+          </div>
+        </div>
+      `;
     }
 
-    // 4. Render Result Collection in Card 2 & Badge
-    const results: Array<number[]> = [];
+    // 4. Render Realtime Result Collection
+    const results: Array<Array<number | string>> = [];
     const foundIds = step.foundPathIds || [];
     const nodeMap = new Map<string, BacktrackTreeNode>();
     step.nodes.forEach(nd => nodeMap.set(nd.id, nd));
@@ -518,24 +506,6 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
       badgeResult.textContent = `解集: ${results.length}`;
     }
 
-    // 5. Update Scrubber Progress & Playback Counters
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
-    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
-    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
-
-    if (slider) {
-      slider.max = String(Math.max(0, this.steps.length - 1));
-      slider.value = String(this.currentIndex);
-    }
-    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
-    if (stepTotal) stepTotal.textContent = String(this.steps.length);
-    if (playIcon) {
-      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
-    }
-
-    // 6. Highlight Dark Terminal Code Line
-    this.terminalInstance?.highlightLine(step.codeLine);
 
     // 7. Render Execution Log Stream (Card 4)
     if (this.logContainer) {
