@@ -349,30 +349,59 @@
     font-weight: 700;
   }
 
-  /* 预设案例 Chips */
-  #algo-repeated-substring-view .rps-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-repeated-substring-view .rps-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-repeated-substring-view .rps-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-repeated-substring-view .rps-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-repeated-substring-view .rps-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-repeated-substring-view .rps-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -789,7 +818,7 @@
   <header class="rps-header">
     <div class="rps-header-left">
       <div class="rps-icon-btn">🔁</div>
-      <h1 class="rps-main-title">重复的子字符串 (Repeated Substring Pattern)</h1>
+      <h1 class="rps-main-title">重复的子字符串</h1>
       <button id="btn-open-problem-modal" class="rps-btn-problem">📋 题目</button>
       <span class="rps-badge-mode">KMP 周期性整除推导</span>
       <span class="rps-badge-complexity">O(n) · O(n)</span>
@@ -798,7 +827,7 @@
     <div class="rps-header-right">
       <div class="rps-input-group">
         <label for="input-s">s:</label>
-        <input type="text" id="input-s" value="abab" style="width: 100px;" placeholder="字符串" />
+        <input type="text" id="input-s" value="abab" style="width: 80px;" placeholder="字符串" />
       </div>
       <button id="btn-generate" class="rps-btn-generate">
         <span>▶ 运行</span>
@@ -819,7 +848,7 @@
       <div class="rps-card">
         <div class="rps-card-header">
           <div class="rps-card-title">
-            <span>📊 Next 前缀表与周期子串平铺沙盘 (Next Array & Periodic Tiles)</span>
+            <span>📊 Next 前缀表与周期子串平铺沙盘</span>
           </div>
           <div class="rps-legend-bar">
             <div><span class="rps-legend-dot" style="background:#2563eb;"></span> 最小周期子串</div>
@@ -837,13 +866,15 @@
           <div class="rps-tile-row" id="rps-tile-row"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="rps-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="rps-chip" data-s="abab">示例 1 ("abab" -> true)</button>
-          <button class="rps-chip" data-s="aba">示例 2 ("aba" -> false)</button>
-          <button class="rps-chip" data-s="abcabcabcabc">示例 3 ("abcabcabcabc" -> true)</button>
-          <button class="rps-chip" data-s="aaaa">纯单字符 ("aaaa" -> true)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="rps-preset-bar">
+          <span class="rps-preset-label">预设案例:</span>
+          <div class="rps-preset-list">
+            <button class="rps-chip" data-s="abab">示例 1: ("abab" -> true)</button>
+            <button class="rps-chip" data-s="aba">示例 2: ("aba" -> false)</button>
+            <button class="rps-chip" data-s="abcabcabcabc">示例 3: ("abcabcabcabc" -> true)</button>
+            <button class="rps-chip" data-s="aaaa">纯单字符: ("aaaa" -> true)</button>
+          </div>
         </div>
       </div>
 
@@ -873,7 +904,7 @@
       <div class="rps-card">
         <div class="rps-card-header">
           <div>
-            <div class="rps-card-title">🧭 周期性整除监视器 (Periodic Divisible Monitor)</div>
+            <div class="rps-card-title">🧭 周期性整除监视器</div>
             <div class="rps-card-desc">总长度 n、最长相等前后缀、周期元长度与判定结果</div>
           </div>
           <span id="badge-result" class="rps-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">分析中...</span>

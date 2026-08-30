@@ -133,7 +133,7 @@ export class IntersectionOfTwoArraysVisualizer extends StepVisualizer<Intersecti
     this.set1ChipsEl = this.root.querySelector('#ia-set1-chips');
     this.resultChipsEl = this.root.querySelector('#ia-result-chips');
     this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.metricCurValEl = this.root.querySelector('#metric-cur-val');
+    this.metricCurValEl = this.root.querySelector('#metric-val, #metric-cur-val');
     this.metricHitEl = this.root.querySelector('#metric-hit');
     this.metricResCountEl = this.root.querySelector('#metric-res-count');
     this.logContainer = this.root.querySelector('#log-container');
@@ -171,36 +171,52 @@ export class IntersectionOfTwoArraysVisualizer extends StepVisualizer<Intersecti
   }
 
   protected renderStep(step: IntersectionStep): void {
-    const { nums1, nums2, phase, idx1, idx2, currentVal, set1, resultSet, isHit, message } = step;
+    const { nums1, nums2, phase, idx1, idx2, currentVal, set1, resultSet, isHit } = step;
 
-    // 1. 渲染 nums1 和 nums2
-    const renderCells = (arr: number[], activeIdx: number) =>
+    // 1. 渲染 nums1 和 nums2 数组卡槽
+    const renderCells = (arr: number[], activeIdx: number, ptrLabel: string) =>
       arr
-        .map(
-          (num, idx) => `
-        <div class="ia-val-box ${idx === activeIdx ? 'is-active' : ''}">
-          <span>${num}</span>
-        </div>
-      `
-        )
+        .map((num, idx) => {
+          const isCur = idx === activeIdx;
+          const isHitCell = isCur && isHit;
+          return `
+            <div class="ia-cell-unit">
+              <div class="ia-cell-box ${isHitCell ? 'is-hit' : isCur ? 'is-current' : ''}">
+                <span class="val">${num}</span>
+                <span class="idx">[${idx}]</span>
+              </div>
+              <span class="ia-cell-ptr-tag">${isCur ? (isHitCell ? '🎯命中' : `▼${ptrLabel}`) : ''}</span>
+            </div>
+          `;
+        })
         .join('');
 
-    if (this.row1El) this.row1El.innerHTML = renderCells(nums1, idx1);
-    if (this.row2El) this.row2El.innerHTML = renderCells(nums2, idx2);
+    if (this.row1El) this.row1El.innerHTML = renderCells(nums1, idx1, 'i');
+    if (this.row2El) this.row2El.innerHTML = renderCells(nums2, idx2, 'j');
 
     // 2. 渲染 set1 与 resultSet
     if (this.set1ChipsEl) {
       this.set1ChipsEl.innerHTML =
         set1.length === 0
-          ? '<span style="color:#94a3b8; font-size:10.5px;">(空)</span>'
-          : set1.map((num) => `<div class="ia-set-chip">${num}</div>`).join('');
+          ? '<span style="color:#94a3b8; font-size:11px; padding: 4px 8px;">(空集合 ∅)</span>'
+          : set1
+              .map((num) => {
+                const isNew = phase === 'build-set1' && num === currentVal;
+                return `<div class="ia-set-chip ${isNew ? 'is-new' : ''}"><span style="color:#3b82f6;">#</span> ${num}</div>`;
+              })
+              .join('');
     }
 
     if (this.resultChipsEl) {
       this.resultChipsEl.innerHTML =
         resultSet.length === 0
-          ? '<span style="color:#94a3b8; font-size:10.5px;">(空)</span>'
-          : resultSet.map((num) => `<div class="ia-set-chip is-res">${num}</div>`).join('');
+          ? '<span style="color:#94a3b8; font-size:11px; padding: 4px 8px;">(暂无交集)</span>'
+          : resultSet
+              .map((num) => {
+                const isNew = phase === 'scan-nums2' && isHit && num === currentVal;
+                return `<div class="ia-set-chip is-res ${isNew ? 'is-new' : ''}"><span>✨</span> ${num}</div>`;
+              })
+              .join('');
     }
 
     // 3. 更新状态监视器
@@ -217,6 +233,7 @@ export class IntersectionOfTwoArraysVisualizer extends StepVisualizer<Intersecti
         this.metricHitEl.style.color = isHit ? '#10b981' : '#64748b';
       } else {
         this.metricHitEl.textContent = '—';
+        this.metricHitEl.style.color = '#64748b';
       }
     }
     if (this.metricResCountEl) {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { UniversalFidelityAuditor } from './fidelity-auditor';
 import { AlgorithmManager } from './algorithm-manager';
+import { ALL_ALGORITHM_METADATA } from './algorithm-manifests-meta';
 
 describe('Universal Algorithm Fidelity Auditor', () => {
   it('should audit all registered algorithms and report integrity', async () => {
@@ -22,6 +23,22 @@ describe('Universal Algorithm Fidelity Auditor', () => {
 
     expect(summary.failedCount).toBe(0);
   }, 30000);
+
+  it('should verify every entry in ALL_ALGORITHM_METADATA is loadable by AlgorithmManager', async () => {
+    const manager = AlgorithmManager.getInstance();
+    await manager.ensureAllLoaded();
+    const errors: string[] = [];
+    for (const meta of ALL_ALGORITHM_METADATA) {
+      const loaded = await manager.ensureAlgorithmLoaded(meta.id);
+      if (!loaded || !loaded.Visualizer || !loaded.templateContent) {
+        errors.push(`Missing loader or visualizer for metadata id: "${meta.id}" (name: "${meta.name}", viewId: "${meta.viewId}")`);
+      }
+    }
+    if (errors.length > 0) {
+      console.error('Unloadable algorithms in metadata:', errors);
+    }
+    expect(errors).toEqual([]);
+  });
 
   it('should verify fidelity and multi-language alignment for core DP algorithms', () => {
     const dpAlgorithms = [

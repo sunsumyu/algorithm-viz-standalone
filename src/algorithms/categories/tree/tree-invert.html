@@ -274,30 +274,59 @@
     justify-content: center;
   }
 
-  /* 预设案例 Chips */
-  #algo-tree-invert-view .ti-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-tree-invert-view .ti-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-tree-invert-view .ti-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-invert-view .ti-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-tree-invert-view .ti-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-tree-invert-view .ti-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -714,7 +743,7 @@
   <header class="ti-header">
     <div class="ti-header-left">
       <div class="ti-icon-btn">🔄</div>
-      <h1 class="ti-main-title">翻转二叉树 (Invert Binary Tree)</h1>
+      <h1 class="ti-main-title">翻转二叉树</h1>
       <button id="btn-open-problem-modal" class="ti-btn-problem">📋 题目</button>
       <span class="ti-badge-mode">前序/后序递归·左右子树交换</span>
       <span class="ti-badge-complexity">O(n) · O(h)</span>
@@ -744,7 +773,7 @@
       <div class="ti-card">
         <div class="ti-card-header">
           <div class="ti-card-title">
-            <span>📊 二叉树拓扑与镜像翻转沙盘 (Tree & Invert Sandbox)</span>
+            <span>📊 二叉树拓扑与镜像翻转沙盘</span>
           </div>
           <div class="ti-legend-bar">
             <div><span class="ti-legend-dot" style="background:#fbbf24;"></span> 当前交换节点</div>
@@ -755,15 +784,17 @@
 
         <!-- 树拓扑沙盘展示盒 -->
         <div class="ti-sandbox-wrap">
-          <div id="tree-svg-container" class="ti-tree-svg-container"></div>
+          <div id="ti-tree-svg-container" class="ti-tree-svg-container"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="ti-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="ti-chip" data-tree="4, 2, 7, 1, 3, 6, 9">LeetCode 示例 1 ([4,2,7,1,3,6,9])</button>
-          <button class="ti-chip" data-tree="2, 1, 3">三节点树 ([2,1,3])</button>
-          <button class="ti-chip" data-tree="1, 2, null, 3">单支斜树 ([1,2,null,3])</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="ti-preset-bar">
+          <span class="ti-preset-label">预设案例:</span>
+          <div class="ti-preset-list">
+            <button class="ti-chip" data-tree="4, 2, 7, 1, 3, 6, 9">示例 1: ([4,2,7,1,3,6,9])</button>
+            <button class="ti-chip" data-tree="2, 1, 3">三节点树: ([2,1,3])</button>
+            <button class="ti-chip" data-tree="1, 2, null, 3">单支斜树: ([1,2,null,3])</button>
+          </div>
         </div>
       </div>
 
@@ -793,7 +824,7 @@
       <div class="ti-card">
         <div class="ti-card-header">
           <div>
-            <div class="ti-card-title">🧭 子树交换与指标监视器 (Invert Monitor)</div>
+            <div class="ti-card-title">🧭 子树交换与指标监视器</div>
             <div class="ti-card-desc">当前节点、左孩子、右孩子与已翻转节点数</div>
           </div>
           <span id="badge-inverted-count" class="ti-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">已翻转: 0</span>

@@ -274,30 +274,59 @@
     justify-content: center;
   }
 
-  /* 预设案例 Chips */
-  #algo-tree-depth-view .td-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-tree-depth-view .td-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-tree-depth-view .td-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-depth-view .td-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-tree-depth-view .td-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-tree-depth-view .td-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -714,7 +743,7 @@
   <header class="td-header">
     <div class="td-header-left">
       <div class="td-icon-btn">📏</div>
-      <h1 class="td-main-title">二叉树最大深度 (Maximum Depth)</h1>
+      <h1 class="td-main-title">二叉树最大深度</h1>
       <button id="btn-open-problem-modal" class="td-btn-problem">📋 题目</button>
       <span class="td-badge-mode">后序遍历·自底向上归约</span>
       <span class="td-badge-complexity">O(n) · O(h)</span>
@@ -723,7 +752,7 @@
     <div class="td-header-right">
       <div class="td-input-group">
         <label for="input-tree">二叉树层序:</label>
-        <input type="text" id="input-tree" value="3, 9, 20, null, null, 15, 7" style="width: 160px;" placeholder="逗号分隔" />
+        <input type="text" id="input-tree" value="3, 9, 20, null, null, 15, 7" style="width: 140px;" placeholder="逗号分隔" />
       </div>
       <button id="btn-generate" class="td-btn-generate">
         <span>▶ 运行</span>
@@ -744,7 +773,7 @@
       <div class="td-card">
         <div class="td-card-header">
           <div class="td-card-title">
-            <span>📊 二叉树拓扑与深度归约沙盘 (Tree & Depth Sandbox)</span>
+            <span>📊 二叉树拓扑与深度归约沙盘</span>
           </div>
           <div class="td-legend-bar">
             <div><span class="td-legend-dot" style="background:#fbbf24;"></span> 当前访问节点</div>
@@ -755,15 +784,17 @@
 
         <!-- 树拓扑沙盘展示盒 -->
         <div class="td-sandbox-wrap">
-          <div id="tree-svg-container" class="td-tree-svg-container"></div>
+          <div id="td-tree-svg-container" class="td-tree-svg-container"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="td-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="td-chip" data-tree="3, 9, 20, null, null, 15, 7">LeetCode 示例 1 ([3,9,20,null,null,15,7])</button>
-          <button class="td-chip" data-tree="1, null, 2">单节点斜树 ([1,null,2])</button>
-          <button class="td-chip" data-tree="1, 2, 3, 4, 5, 6, 7">满二叉树 ([1,2,3,4,5,6,7])</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="td-preset-bar">
+          <span class="td-preset-label">预设案例:</span>
+          <div class="td-preset-list">
+            <button class="td-chip" data-tree="3, 9, 20, null, null, 15, 7">示例 1: ([3,9,20,null,null,15,7])</button>
+            <button class="td-chip" data-tree="1, null, 2">单节点斜树: ([1,null,2])</button>
+            <button class="td-chip" data-tree="1, 2, 3, 4, 5, 6, 7">满二叉树: ([1,2,3,4,5,6,7])</button>
+          </div>
         </div>
       </div>
 
@@ -793,7 +824,7 @@
       <div class="td-card">
         <div class="td-card-header">
           <div>
-            <div class="td-card-title">🧭 左右子树深度与归约监视器 (Depth Monitor)</div>
+            <div class="td-card-title">🧭 左右子树深度与归约监视器</div>
             <div class="td-card-desc">当前节点、左子树深度、右子树深度与最大深度</div>
           </div>
           <span id="badge-max-depth" class="td-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">最大深度: 0</span>

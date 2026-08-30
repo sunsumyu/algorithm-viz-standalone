@@ -415,29 +415,58 @@
     gap: 4px;
   }
 
-  /* Preset Chips */
-  #algo-four-sum-view .fs-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-four-sum-view .fs-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-top: 4px;
     flex-shrink: 0;
   }
 
+  #algo-four-sum-view .fs-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-four-sum-view .fs-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-four-sum-view .fs-chip {
-    padding: 2px 7px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     font-size: 10.5px;
     font-family: 'JetBrains Mono', monospace;
-    color: #475569;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-four-sum-view .fs-chip:hover {
     border-color: #3b82f6;
-    color: #2563eb;
+    color: #1d4ed8;
     background: #eff6ff;
   }
 
@@ -636,7 +665,7 @@
   <header class="fs-header">
     <div class="fs-header-left">
       <div class="fs-icon-btn">🎯</div>
-      <h1 class="fs-main-title">四数之和 (LeetCode 18)</h1>
+      <h1 class="fs-main-title">四数之和</h1>
       <button class="fs-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
         <span>📖</span> 题目与解析
       </button>
@@ -646,7 +675,7 @@
     <div class="fs-header-right">
       <div class="fs-input-group">
         <label for="input-nums">数组:</label>
-        <input type="text" id="input-nums" value="1, 0, -1, 0, -2, 2" style="width: 140px;" placeholder="逗号分隔">
+        <input type="text" id="input-nums" value="1, 0, -1, 0, -2, 2" style="width: 135px;" placeholder="逗号分隔">
       </div>
       <div class="fs-input-group">
         <label for="input-target">target:</label>
@@ -686,24 +715,27 @@
           <!-- 上轨：升序数组与四指针 -->
           <div class="fs-track-section">
             <div class="fs-track-label">
-              <span>排序后数组 (Sorted Array)</span>
+              <span>排序后数组</span>
             </div>
             <div class="fs-track-row" id="fs-track-row"></div>
           </div>
           <!-- 下轨：已捕获的四元组答案 -->
           <div class="fs-track-section">
             <div class="fs-track-label">
-              <span>已找到的不重复四元组解 (Quadruplets)</span>
+              <span>已找到的不重复四元组解</span>
             </div>
             <div class="fs-results-grid" id="fs-results-grid"></div>
           </div>
         </div>
 
-        <div class="fs-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="fs-chip" data-nums="1, 0, -1, 0, -2, 2" data-target="0">示例 1 (target=0)</button>
-          <button class="fs-chip" data-nums="2, 2, 2, 2, 2" data-target="8">全相同 (target=8)</button>
-          <button class="fs-chip" data-nums="-3, -2, -1, 0, 0, 1, 2, 3" data-target="0">对称分布 (target=0)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="fs-preset-bar">
+          <span class="fs-preset-label">预设案例:</span>
+          <div class="fs-preset-list">
+            <button class="fs-chip" data-nums="1, 0, -1, 0, -2, 2" data-target="0">示例 1: (target=0)</button>
+            <button class="fs-chip" data-nums="2, 2, 2, 2, 2" data-target="8">全相同: (target=8)</button>
+            <button class="fs-chip" data-nums="-3, -2, -1, 0, 0, 1, 2, 3" data-target="0">对称分布: (target=0)</button>
+          </div>
         </div>
       </div>
 

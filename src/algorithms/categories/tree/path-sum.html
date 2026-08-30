@@ -274,30 +274,59 @@
     justify-content: center;
   }
 
-  /* 预设案例 Chips */
-  #algo-path-sum-view .ps-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-path-sum-view .ps-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-path-sum-view .ps-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-path-sum-view .ps-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-path-sum-view .ps-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-path-sum-view .ps-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -714,7 +743,7 @@
   <header class="ps-header">
     <div class="ps-header-left">
       <div class="ps-icon-btn">🎯</div>
-      <h1 class="ps-main-title">路径总和 (Path Sum)</h1>
+      <h1 class="ps-main-title">路径总和</h1>
       <button id="btn-open-problem-modal" class="ps-btn-problem">📋 题目</button>
       <span class="ps-badge-mode">根到叶子路径回溯·目标值递减</span>
       <span class="ps-badge-complexity">O(n) · O(h)</span>
@@ -727,7 +756,7 @@
       </div>
       <div class="ps-input-group">
         <label for="input-target">targetSum:</label>
-        <input type="number" id="input-target" value="22" style="width: 50px;" />
+        <input type="number" id="input-target" value="22" style="width: 42px;" />
       </div>
       <button id="btn-generate" class="ps-btn-generate">
         <span>▶ 运行</span>
@@ -748,7 +777,7 @@
       <div class="ps-card">
         <div class="ps-card-header">
           <div class="ps-card-title">
-            <span>📊 二叉树拓扑与路径回溯沙盘 (Tree & Path Sandbox)</span>
+            <span>📊 二叉树拓扑与路径回溯沙盘</span>
           </div>
           <div class="ps-legend-bar">
             <div><span class="ps-legend-dot" style="background:#fbbf24;"></span> 当前回溯路径节点</div>
@@ -759,15 +788,17 @@
 
         <!-- 树拓扑沙盘展示盒 -->
         <div class="ps-sandbox-wrap">
-          <div id="tree-svg-container" class="ps-tree-svg-container"></div>
+          <div id="ps-tree-svg-container" class="ps-tree-svg-container"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="ps-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="ps-chip" data-tree="5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1" data-target="22">LeetCode 经典 ([5,4,8...], target=22)</button>
-          <button class="ps-chip" data-tree="1, 2, 3" data-target="5">无解案例 ([1,2,3], target=5)</button>
-          <button class="ps-chip" data-tree="1, 2" data-target="3">简单两节点 ([1,2], target=3)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="ps-preset-bar">
+          <span class="ps-preset-label">预设案例:</span>
+          <div class="ps-preset-list">
+            <button class="ps-chip" data-tree="5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1" data-target="22">示例 1: ([5,4,8...], 22)</button>
+            <button class="ps-chip" data-tree="1, 2, 3" data-target="5">无解: ([1,2,3], 5)</button>
+            <button class="ps-chip" data-tree="1, 2" data-target="3">两节点: ([1,2], 3)</button>
+          </div>
         </div>
       </div>
 
@@ -797,7 +828,7 @@
       <div class="ps-card">
         <div class="ps-card-header">
           <div>
-            <div class="ps-card-title">🧭 路径累加与叶子判定监视器 (Path Sum Monitor)</div>
+            <div class="ps-card-title">🧭 路径累加与叶子判定监视器</div>
             <div class="ps-card-desc">当前节点、当前累加和、剩余差额与判定结果</div>
           </div>
           <span id="badge-verdict" class="ps-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">待判定</span>

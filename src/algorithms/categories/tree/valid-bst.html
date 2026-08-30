@@ -274,30 +274,59 @@
     justify-content: center;
   }
 
-  /* 预设案例 Chips */
-  #algo-valid-bst-view .vb-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-valid-bst-view .vb-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-valid-bst-view .vb-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-valid-bst-view .vb-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-valid-bst-view .vb-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-valid-bst-view .vb-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -714,7 +743,7 @@
   <header class="vb-header">
     <div class="vb-header-left">
       <div class="vb-icon-btn">⚖️</div>
-      <h1 class="vb-main-title">验证二叉搜索树 (Validate BST)</h1>
+      <h1 class="vb-main-title">验证二叉搜索树</h1>
       <button id="btn-open-problem-modal" class="vb-btn-problem">📋 题目</button>
       <span class="vb-badge-mode">中序遍历严格单调递增校验</span>
       <span class="vb-badge-complexity">O(n) · O(h)</span>
@@ -723,7 +752,7 @@
     <div class="vb-header-right">
       <div class="vb-input-group">
         <label for="input-tree">二叉树层序:</label>
-        <input type="text" id="input-tree" value="2, 1, 3" style="width: 140px;" placeholder="逗号分隔" />
+        <input type="text" id="input-tree" value="2, 1, 3" style="width: 120px;" placeholder="逗号分隔" />
       </div>
       <button id="btn-generate" class="vb-btn-generate">
         <span>▶ 运行</span>
@@ -744,7 +773,7 @@
       <div class="vb-card">
         <div class="vb-card-header">
           <div class="vb-card-title">
-            <span>📊 二叉树拓扑与中序单调性沙盘 (BST Validation Sandbox)</span>
+            <span>📊 二叉树拓扑与中序单调性沙盘</span>
           </div>
           <div class="vb-legend-bar">
             <div><span class="vb-legend-dot" style="background:#fbbf24;"></span> 当前节点 curr</div>
@@ -755,15 +784,17 @@
 
         <!-- 树拓扑沙盘展示盒 -->
         <div class="vb-sandbox-wrap">
-          <div id="tree-svg-container" class="vb-tree-svg-container"></div>
+          <div id="vb-tree-svg-container" class="vb-tree-svg-container"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="vb-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="vb-chip" data-tree="2, 1, 3">有效 BST ([2,1,3])</button>
-          <button class="vb-chip" data-tree="5, 1, 4, null, null, 3, 6">无效 BST ([5,1,4,null,null,3,6])</button>
-          <button class="vb-chip" data-tree="10, 5, 15, null, null, 6, 20">深层违规 ([10,5,15,null,null,6,20])</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="vb-preset-bar">
+          <span class="vb-preset-label">预设案例:</span>
+          <div class="vb-preset-list">
+            <button class="vb-chip" data-tree="2, 1, 3">有效 BST: ([2,1,3])</button>
+            <button class="vb-chip" data-tree="5, 1, 4, null, null, 3, 6">无效 BST: ([5,1,4,null,null,3,6])</button>
+            <button class="vb-chip" data-tree="10, 5, 15, null, null, 6, 20">深层违规: ([10,5,15,null,null,6,20])</button>
+          </div>
         </div>
       </div>
 
@@ -793,7 +824,7 @@
       <div class="vb-card">
         <div class="vb-card-header">
           <div>
-            <div class="vb-card-title">🧭 中序单调递增与合法性监视器 (Validation Monitor)</div>
+            <div class="vb-card-title">🧭 中序单调递增与合法性监视器</div>
             <div class="vb-card-desc">当前节点、前驱节点、递增条件与最终判定</div>
           </div>
           <span id="badge-verdict" class="vb-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">校验中...</span>

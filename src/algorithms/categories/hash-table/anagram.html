@@ -250,7 +250,7 @@
     margin-right: 3px;
   }
 
-  /* 字符串与频次桶沙盘展示盒 */
+  /* 字符串与频次桶沙盘展示区 (彻底去框，开阔纯粹) */
   #algo-anagram-view .an-sandbox-wrap {
     background: #f8fafc;
     border-radius: 12px;
@@ -258,13 +258,12 @@
     flex: 1;
     min-height: 0;
     width: 100%;
-    overflow-y: auto;
+    overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
+    justify-content: space-around;
+    padding: 10px 14px;
     gap: 8px;
   }
 
@@ -272,81 +271,84 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 6px 10px;
+    gap: 6px;
   }
 
   #algo-anagram-view .an-string-track {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
   }
 
   #algo-anagram-view .an-string-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: #64748b;
-    min-width: 50px;
+    min-width: 30px;
     text-transform: uppercase;
   }
 
   #algo-anagram-view .an-char-cells {
     display: flex;
-    gap: 4px;
+    gap: 5px;
     flex-wrap: wrap;
   }
 
   #algo-anagram-view .an-cell {
-    width: 24px;
-    height: 26px;
-    border-radius: 5px;
-    background: #f1f5f9;
+    width: 26px;
+    height: 28px;
+    border-radius: 6px;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     color: #334155;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   }
   #algo-anagram-view .an-cell.is-current {
     border-color: #2563eb;
     background: #eff6ff;
     color: #1d4ed8;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+  }
+
+  #algo-anagram-view .an-buckets-header {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    margin-top: 2px;
   }
 
   #algo-anagram-view .an-buckets-grid {
     display: grid;
     grid-template-columns: repeat(13, 1fr);
-    gap: 4px;
+    gap: 5px;
     width: 100%;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 6px 8px;
   }
 
   #algo-anagram-view .an-bucket-box {
     display: flex;
     flex-direction: column;
     align-items: center;
-    border-radius: 4px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 2px 0;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 3px 0;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10.5px;
     transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   }
   #algo-anagram-view .an-bucket-box.is-target {
     border-color: #2563eb;
     background: #eff6ff;
+    transform: scale(1.08);
   }
   #algo-anagram-view .an-bucket-box.is-positive {
     background: #eff6ff;
@@ -363,34 +365,63 @@
     color: #475569;
   }
   #algo-anagram-view .an-bucket-count {
-    font-weight: 700;
-    font-size: 10px;
+    font-weight: 800;
+    font-size: 10.5px;
   }
 
-  /* 预设案例 Chips */
-  #algo-anagram-view .an-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-anagram-view .an-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-anagram-view .an-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-anagram-view .an-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-anagram-view .an-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-anagram-view .an-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -807,7 +838,7 @@
   <header class="an-header">
     <div class="an-header-left">
       <div class="an-icon-btn">🔤</div>
-      <h1 class="an-main-title">有效的字母异位词 (Valid Anagram)</h1>
+      <h1 class="an-main-title">有效的字母异位词</h1>
       <button id="btn-open-problem-modal" class="an-btn-problem">📋 题目</button>
       <span class="an-badge-mode">26 长度哈希数组·正负抵消</span>
       <span class="an-badge-complexity">O(n) · O(1)</span>
@@ -841,7 +872,7 @@
       <div class="an-card">
         <div class="an-card-header">
           <div class="an-card-title">
-            <span>📊 字符串双轨与 26 字符频次哈希桶 (String & Frequency Buckets)</span>
+            <span>📊 字符串双轨与 26 字符频次哈希桶</span>
           </div>
           <div class="an-legend-bar">
             <div><span class="an-legend-dot" style="background:#2563eb;"></span> s(+) 累加</div>
@@ -849,7 +880,7 @@
           </div>
         </div>
 
-        <!-- 展示盒 -->
+        <!-- 主沙盘展示区 (彻底去框，开阔纯粹) -->
         <div class="an-sandbox-wrap">
           <div class="an-strings-row">
             <div class="an-string-track">
@@ -861,19 +892,21 @@
               <div class="an-char-cells" id="an-track-t"></div>
             </div>
           </div>
-          <div style="font-size: 11px; font-weight: 700; color: #64748b; align-self: flex-start;">
+          <div class="an-buckets-header">
             26 字符计数哈希桶 record[0..25]
           </div>
           <div class="an-buckets-grid" id="an-buckets-grid"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="an-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="an-chip" data-s="anagram" data-t="nagaram">经典匹配 ("anagram", "nagaram")</button>
-          <button class="an-chip" data-s="rat" data-t="car">字符失配 ("rat", "car")</button>
-          <button class="an-chip" data-s="ab" data-t="a">长度不一致 ("ab", "a")</button>
-          <button class="an-chip" data-s="listen" data-t="silent">单词乱序 ("listen", "silent")</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="an-preset-bar">
+          <span class="an-preset-label">预设案例:</span>
+          <div class="an-preset-list">
+            <button class="an-chip" data-s="anagram" data-t="nagaram">经典匹配: ("anagram", "nagaram")</button>
+            <button class="an-chip" data-s="rat" data-t="car">字符失配: ("rat", "car")</button>
+            <button class="an-chip" data-s="ab" data-t="a">长度不一致: ("ab", "a")</button>
+            <button class="an-chip" data-s="listen" data-t="silent">单词乱序: ("listen", "silent")</button>
+          </div>
         </div>
       </div>
 
@@ -903,7 +936,7 @@
       <div class="an-card">
         <div class="an-card-header">
           <div>
-            <div class="an-card-title">🧭 频次统计与判定监视器 (Frequency & Verdict Monitor)</div>
+            <div class="an-card-title">🧭 频次统计与判定监视器</div>
             <div class="an-card-desc">当前阶段、当前字符、目标槽位与最终异位词判定</div>
           </div>
           <span id="badge-phase" class="an-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>

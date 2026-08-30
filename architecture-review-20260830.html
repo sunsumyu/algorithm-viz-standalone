@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>架构重构评审报告 — algorithm-viz-standalone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep-card { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .code-font { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+      
+      <!-- 顶栏与图例 -->
+      <header class="border-b border-slate-200 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="text-xs uppercase font-bold tracking-widest text-slate-500">Architecture Review</div>
+          <h1 class="text-2xl font-bold text-slate-900 mt-1">algorithm-viz-standalone 架构深模块深化与去冗重构方案</h1>
+          <p class="text-sm text-slate-600 mt-1">评估范围：151 个独立算法 HTML 模板、多层嵌套框摩擦、多处注册接缝不一致</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-slate-600 bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex-shrink-0">
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-800"></span> 深度模块</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 border-t-2 border-dashed border-blue-500"></span> 隔离接缝 (Seam)</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-red-500"></span> 泄漏/浅模块摩擦</div>
+        </div>
+      </header>
+
+      <!-- 核心候选方案列表 -->
+      <section id="candidates" class="space-y-12">
+
+        <!-- 候选方案 1: 151 个独立 HTML 模板折叠为配置式深度呈现引擎 -->
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Strong 强烈推荐</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">In-Process 核心架构</span>
+              </div>
+              <h2 class="text-lg font-bold text-slate-900">1. 将 151 个独立 HTML/CSS 模板折叠为配置式渲染深模块 (Declarative Stage Visualizer)</h2>
+            </div>
+          </div>
+
+          <div class="text-xs font-mono text-slate-500 bg-slate-50 p-2.5 rounded border border-slate-200">
+            涉及文件：src/algorithms/categories/**/*.html (151 个), src/core/step-visualizer.ts, src/core/renderers/stage-view-presenter.ts
+          </div>
+
+          <!-- 对比可视化 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="border border-red-200 bg-red-50/40 rounded-lg p-4 space-y-2">
+              <div class="text-xs font-bold uppercase tracking-wider text-red-700">Before: 151 个浅模板各搞一套 (Shallow Duplication)</div>
+              <pre class="mermaid">
+flowchart TB
+  subgraph HTMLs ["151 个独立 HTML/CSS 模板"]
+    H1["implement-queue.html (含冗余 CSS + 子框)"]
+    H2["tree-traversal.html (含模式框 + ID 绑定)"]
+    H3["binary-search.html (含独立轨道布局)"]
+    H4["... 其余 148 个算法 HTML"]
+  end
+  HTMLs -. DOM ID 易错绑定 .-> R["151 个渲染器 (Renderer)"]
+  classDef leak stroke:#dc2626,stroke-width:1.5px,fill:#fee2e2;
+  class H1,H2,H3,H4 leak;
+              </pre>
+              <div class="text-xs text-slate-600">现状：每个算法各自手写一套 4-Card HTML 和 CSS，嵌套了不同类名的子框（如 <code class="text-red-700 font-mono">.mq-subcard</code>, <code class="text-red-700 font-mono">.tt-subcard</code>），频繁产生 DOM ID 不匹配与嵌套多层边框。</div>
+            </div>
+
+            <div class="border border-emerald-200 bg-emerald-50/40 rounded-lg p-4 space-y-2">
+              <div class="text-xs font-bold uppercase tracking-wider text-emerald-700">After: 单一配置接缝 + 深度呈现引擎 (Deep Module)</div>
+              <pre class="mermaid">
+flowchart TB
+  subgraph Configs ["纯声明式算法元数据配置"]
+    C1["QueueConfig: { canvas: 'dual-stack', metrics: [...] }"]
+    C2["TreeConfig: { canvas: 'tree-svg', modes: [...] }"]
+    C3["BinarySearchConfig: { canvas: 'array-track' }"]
+  end
+  Configs --> S["UniversalStagePresenter (深度呈现引擎)"]
+  S --> O["标准 4-Card 顶层视图 (零多余子框·统一主题·无ID摩擦)"]
+  classDef deep stroke:#059669,stroke-width:2px,fill:#d1fae5;
+  class S deep;
+              </pre>
+              <div class="text-xs text-slate-600">重构后：算法仅声明输入参数、沙盘类型（树/网格/双轨/双栈）与状态指标，深度呈现引擎通过单一接缝统一挂载，彻底删除 151 个重复模板。</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 text-sm">
+            <div>
+              <div class="font-bold text-slate-800 mb-1">问题 (Problem)</div>
+              <p class="text-slate-600">151 个独立 HTML 模板导致代码库极其浅层，修改统一规范（如去重框、对齐预设栏、输入框紧凑化）需要逐一遍历 151 处文件，极易漏改或引发 ID 脱节。</p>
+            </div>
+            <div>
+              <div class="font-bold text-slate-800 mb-1">重构收益 (Wins)</div>
+              <ul class="list-disc list-inside text-slate-600 space-y-1 text-xs">
+                <li><strong class="text-slate-900">Locality:</strong> 布局与边框规则 100% 收敛到单一呈现引擎，改一处处处生效</li>
+                <li><strong class="text-slate-900">Leverage:</strong> 算法编写者只需专注数据推导算法（StepBuilder），零 HTML 样板</li>
+                <li><strong class="text-slate-900">Deletion Test:</strong> 删除 151 个重复 HTML 模板，复杂度集中并大幅缩减体积</li>
+                <li><strong class="text-slate-900">Testability:</strong> 统一接缝测试覆盖率由离散的 DOM 测试提升至单一组件级断言</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- 候选方案 2: 全局画板去框引擎 (Universal Flat Viewport & De-Boxing Rule) -->
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Strong 强烈推荐</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">UI/Layout Seam</span>
+              </div>
+              <h2 class="text-lg font-bold text-slate-900">2. 全局沙盘与状态空间去框架构 (Strict Zero-Subbox Seam)</h2>
+            </div>
+          </div>
+
+          <div class="text-xs font-mono text-slate-500 bg-slate-50 p-2.5 rounded border border-slate-200">
+            涉及文件：src/core/renderers/*-adapter.ts, src/core/step-visualizer.ts, src/algorithms/categories/**/*.html
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="border border-red-200 bg-red-50/40 rounded-lg p-4 space-y-2">
+              <div class="text-xs font-bold uppercase tracking-wider text-red-700">Before: 3~4 层嵌套框 (Nested Box Clutter)</div>
+              <div class="bg-white border-2 border-slate-300 p-3 rounded-lg space-y-2">
+                <div class="text-[11px] font-bold text-slate-700">Card 1 边框 (外层 1)</div>
+                <div class="bg-slate-100 border border-slate-300 p-2.5 rounded-md space-y-2">
+                  <div class="text-[10px] font-bold text-slate-500">Sandbox Wrap 边框 (外层 2)</div>
+                  <div class="bg-white border border-slate-200 p-2 rounded shadow-xs flex justify-between">
+                    <span class="text-[10px] text-blue-600 font-bold">inStack 子框 (内层 3)</span>
+                    <span class="text-[10px] text-slate-400">白底带边框</span>
+                  </div>
+                  <div class="bg-white border border-slate-200 p-2 rounded shadow-xs flex justify-between">
+                    <span class="text-[10px] text-emerald-600 font-bold">outStack 子框 (内层 3)</span>
+                    <span class="text-[10px] text-slate-400">白底带边框</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-xs text-slate-600">现状：大框套灰框，灰框套白框，白框套徽章，多层边框严重压缩可视空间并造成视觉碎片化。</div>
+            </div>
+
+            <div class="border border-emerald-200 bg-emerald-50/40 rounded-lg p-4 space-y-2">
+              <div class="text-xs font-bold uppercase tracking-wider text-emerald-700">After: 单一扁平画板视口 (Pure Flat Projection)</div>
+              <div class="bg-white border border-slate-200 p-3 rounded-lg space-y-3">
+                <div class="text-[11px] font-bold text-slate-800">Card 1: 单一统一视口</div>
+                <div class="bg-slate-50/80 rounded-md p-3 space-y-2.5">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-bold text-blue-600">📥 输入栈 inStack (栈底 → 栈顶)</span>
+                    <span class="font-mono text-slate-500">容量: 0</span>
+                  </div>
+                  <div class="h-6 flex items-center px-2 text-[11px] text-slate-400 font-mono">空栈</div>
+                  <div class="border-t border-slate-200/80 my-1"></div>
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-bold text-emerald-600">📤 输出栈 outStack (队头 ← 栈底)</span>
+                    <span class="font-mono text-slate-500">容量: 1</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 bg-white border border-emerald-300 rounded font-mono text-xs text-emerald-700 font-bold shadow-xs">2 (队头)</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-xs text-slate-600">重构后：画板直接在底层浅灰背景投影，所有轨道、栈条、网格直接利用行间距与轻量分割线排布，杜绝内部嵌套白色边框卡片。</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 text-sm">
+            <div>
+              <div class="font-bold text-slate-800 mb-1">问题 (Problem)</div>
+              <p class="text-slate-600">许多历史算法的渲染器直接在 innerHTML 里写 <code class="code-font text-xs text-red-600">background: #fff; border: 1px solid #e2e8f0;</code>，导致在去掉了 HTML 模板的多层框后，渲染脚本又动态生成了子框。</p>
+            </div>
+            <div>
+              <div class="font-bold text-slate-800 mb-1">重构收益 (Wins)</div>
+              <ul class="list-disc list-inside text-slate-600 space-y-1 text-xs">
+                <li><strong class="text-slate-900">Locality:</strong> 消除渲染脚本硬编码的子卡片样式，样式接缝统一化</li>
+                <li><strong class="text-slate-900">Zero Redundancy:</strong> 视口可用空间扩大 25% 以上，元素对齐更工整</li>
+                <li><strong class="text-slate-900">Visual Purity:</strong> 彻底根除「框套框」问题，达到现代化顶级设计水准</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- 候选方案 3: 算法注册与元数据单一接缝 (Single Registration Seam) -->
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Worth exploring 值得探索</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800">Registry Seam</span>
+              </div>
+              <h2 class="text-lg font-bold text-slate-900">3. 合并元数据清单与动态加载分发接缝 (Single-Seam Registry)</h2>
+            </div>
+          </div>
+
+          <div class="text-xs font-mono text-slate-500 bg-slate-50 p-2.5 rounded border border-slate-200">
+            涉及文件：src/core/algorithm-manifests-meta.ts, src/core/registry.ts, src/core/algorithm-loader.ts, src/core/algorithm-manager.ts
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="border border-red-200 bg-red-50/40 rounded-lg p-4 space-y-2">
+              <div class="text-xs font-bold uppercase tracking-wider text-red-700">Before: 3 处分离注册点 (Split Seams)</div>
+              <pre class="mermaid">
+flowchart TB
+  A["algorithm-manifests-meta.ts (静态 JSON 元数据)"]
+  B["algorithm-loader.ts (按分类动态 import)"]
+  C["registerAlgorithm() (渲染器内部注册)"]
+  A -. ID 不一致 .-> D["AlgorithmManager (找不到视图 -> 空白页)"]
+  C -. ViewId 不一致 .-> D
+  classDef leak stroke:#dc2626,stroke-width:1.5px,fill:#fee2e2;
+  class A,B,C leak;
+              </pre>
+            </div>
+
+            <div class="border border-emerald-200 bg-emerald-50/40 rounded-lg p-4 space-y-2">
+              <div class="text-xs font-bold uppercase tracking-wider text-emerald-700">After: 单一类型安全注册仓库 (Unified Manifest Seam)</div>
+              <pre class="mermaid">
+flowchart TB
+  M["UnifiedAlgorithmCatalog (单一事实源)"]
+  M --> G["编译期生成类型安全的 Meta + Loader"]
+  G --> V["ViewMountEngine (100% 匹配保障)"]
+  classDef deep stroke:#059669,stroke-width:2px,fill:#d1fae5;
+  class M,G deep;
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 text-sm">
+            <div>
+              <div class="font-bold text-slate-800 mb-1">问题 (Problem)</div>
+              <p class="text-slate-600">元数据、动态 loader、渲染器分散在 3 个地方通过字符串 ID 弱关联，出现拼写差异（如 `my-queue` vs `implement-queue-using-stack`）时没有类型约束，导致白屏。</p>
+            </div>
+            <div>
+              <div class="font-bold text-slate-800 mb-1">重构收益 (Wins)</div>
+              <ul class="list-disc list-inside text-slate-600 space-y-1 text-xs">
+                <li><strong class="text-slate-900">Leverage:</strong> 单一事实源自动生成元数据与按需导入路由</li>
+                <li><strong class="text-slate-900">Locality:</strong> 消除三处手工同步摩擦，杜绝白屏与未挂载 bug</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- 首选建议 -->
+      <section id="top-recommendation" class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-8 shadow-lg">
+        <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-2">
+          Top Recommendation · 核心推荐推进方案
+        </div>
+        <h3 class="text-xl font-bold mb-3">立即执行方案 2（去框深模块重构）与方案 1（配置式 StagePresenter 抽象）</h3>
+        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+          当前最紧迫的用户痛点是<strong>「动态渲染器内部仍在生成白色嵌套边框卡片」</strong>（如用户截图中的 <code class="text-amber-300 font-mono">inStack</code>/<code class="text-amber-300 font-mono">outStack</code> 子框）。我们首先需要将所有渲染器内部的 HTML 拼装统一重构为扁平投影规范；随后引入配置式深度引擎，将 151 个独立 HTML 模板全面收敛为纯声明式配置，彻底根除后续维护中的样板代码与样式偏差。
+        </p>
+        <div class="flex flex-wrap gap-4 text-xs">
+          <div class="bg-slate-800/80 border border-slate-700 px-4 py-2 rounded-lg">
+            <span class="text-slate-400">第一步：</span>
+            <span class="text-white font-semibold">清理当前渲染器中动态注入的子边框（如 Stack、Tree、Search 各沙盘）</span>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700 px-4 py-2 rounded-lg">
+            <span class="text-slate-400">第二步：</span>
+            <span class="text-white font-semibold">构建配置式 StageViewPresenter，逐步淘汰 151 个重复 HTML 模板</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </body>
+</html>

@@ -314,30 +314,59 @@
     color: #b45309;
   }
 
-  /* 预设案例 Chips */
-  #algo-hash-table-theory-view .htt-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-hash-table-theory-view .htt-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-hash-table-theory-view .htt-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-hash-table-theory-view .htt-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-hash-table-theory-view .htt-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-hash-table-theory-view .htt-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -754,7 +783,7 @@
   <header class="htt-header">
     <div class="htt-header-left">
       <div class="htt-icon-btn">📖</div>
-      <h1 class="htt-main-title">哈希表理论基础 (Hash Table Theory)</h1>
+      <h1 class="htt-main-title">哈希表理论基础</h1>
       <button id="btn-open-problem-modal" class="htt-btn-problem">📋 理论全景</button>
       <span class="htt-badge-mode">哈希映射·拉链法冲突处理</span>
       <span class="htt-badge-complexity">O(1) 平均访问</span>
@@ -780,7 +809,7 @@
       <div class="htt-card">
         <div class="htt-card-header">
           <div class="htt-card-title">
-            <span>📊 哈希桶阵列与拉链法链表沙盘 (Buckets & Chaining)</span>
+            <span>📊 哈希桶阵列与拉链法链表沙盘</span>
           </div>
           <div class="htt-legend-bar">
             <div><span class="htt-legend-dot" style="background:#2563eb;"></span> 目标槽位</div>
@@ -794,12 +823,14 @@
           <div class="htt-buckets-list" id="htt-buckets-list"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="htt-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="htt-chip" data-keys="12, 18, 24, 7, 13">连续碰撞案例 (12, 18, 24 -> 桶 0)</button>
-          <button class="htt-chip" data-keys="5, 11, 17, 23, 29">桶 5 重度碰撞</button>
-          <button class="htt-chip" data-keys="1, 2, 3, 4, 5">均匀分散分布</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="htt-preset-bar">
+          <span class="htt-preset-label">预设案例:</span>
+          <div class="htt-preset-list">
+            <button class="htt-chip" data-keys="12, 18, 24, 7, 13">连续碰撞案例: (12, 18, 24 ➔ 桶 0)</button>
+            <button class="htt-chip" data-keys="5, 11, 17, 23, 29">桶 5 重度碰撞</button>
+            <button class="htt-chip" data-keys="1, 2, 3, 4, 5">均匀分散分布</button>
+          </div>
         </div>
       </div>
 
@@ -829,7 +860,7 @@
       <div class="htt-card">
         <div class="htt-card-header">
           <div>
-            <div class="htt-card-title">🧭 哈希计算与碰撞监视器 (Collision Monitor)</div>
+            <div class="htt-card-title">🧭 哈希计算与碰撞监视器</div>
             <div class="htt-card-desc">当前键、哈希槽位、碰撞判定与装载因子</div>
           </div>
           <span id="badge-collision" class="htt-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>

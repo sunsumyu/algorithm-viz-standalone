@@ -274,30 +274,59 @@
     justify-content: center;
   }
 
-  /* 预设案例 Chips */
-  #algo-tree-symmetric-view .ts-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-tree-symmetric-view .ts-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-tree-symmetric-view .ts-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-tree-symmetric-view .ts-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-tree-symmetric-view .ts-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-tree-symmetric-view .ts-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -714,7 +743,7 @@
   <header class="ts-header">
     <div class="ts-header-left">
       <div class="ts-icon-btn">🪞</div>
-      <h1 class="ts-main-title">对称二叉树 (Symmetric Tree)</h1>
+      <h1 class="ts-main-title">对称二叉树</h1>
       <button id="btn-open-problem-modal" class="ts-btn-problem">📋 题目</button>
       <span class="ts-badge-mode">内外侧递归比对·轴对称校验</span>
       <span class="ts-badge-complexity">O(n) · O(h)</span>
@@ -723,7 +752,7 @@
     <div class="ts-header-right">
       <div class="ts-input-group">
         <label for="input-tree">二叉树层序:</label>
-        <input type="text" id="input-tree" value="1, 2, 2, 3, 4, 4, 3" style="width: 140px;" placeholder="逗号分隔" />
+        <input type="text" id="input-tree" value="1, 2, 2, 3, 4, 4, 3" style="width: 130px;" placeholder="逗号分隔" />
       </div>
       <button id="btn-generate" class="ts-btn-generate">
         <span>▶ 运行</span>
@@ -744,7 +773,7 @@
       <div class="ts-card">
         <div class="ts-card-header">
           <div class="ts-card-title">
-            <span>📊 二叉树拓扑与轴对称比对沙盘 (Tree & Symmetry Sandbox)</span>
+            <span>📊 二叉树拓扑与轴对称比对沙盘</span>
           </div>
           <div class="ts-legend-bar">
             <div><span class="ts-legend-dot" style="background:#3b82f6;"></span> 左侧节点 left</div>
@@ -755,15 +784,17 @@
 
         <!-- 树拓扑沙盘展示盒 -->
         <div class="ts-sandbox-wrap">
-          <div id="tree-svg-container" class="ts-tree-svg-container"></div>
+          <div id="ts-tree-svg-container" class="ts-tree-svg-container"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="ts-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="ts-chip" data-tree="1, 2, 2, 3, 4, 4, 3">对称树 ([1,2,2,3,4,4,3])</button>
-          <button class="ts-chip" data-tree="1, 2, 2, null, 3, null, 3">不对称 ([1,2,2,null,3,null,3])</button>
-          <button class="ts-chip" data-tree="1, 2, 3">三节点不对称 ([1,2,3])</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="ts-preset-bar">
+          <span class="ts-preset-label">预设案例:</span>
+          <div class="ts-preset-list">
+            <button class="ts-chip" data-tree="1, 2, 2, 3, 4, 4, 3">对称树: ([1,2,2,3,4,4,3])</button>
+            <button class="ts-chip" data-tree="1, 2, 2, null, 3, null, 3">不对称: ([1,2,2,null,3,null,3])</button>
+            <button class="ts-chip" data-tree="1, 2, 3">三节点不对称: ([1,2,3])</button>
+          </div>
         </div>
       </div>
 
@@ -793,7 +824,7 @@
       <div class="ts-card">
         <div class="ts-card-header">
           <div>
-            <div class="ts-card-title">🧭 镜像比对与判定监视器 (Symmetry Monitor)</div>
+            <div class="ts-card-title">🧭 镜像比对与判定监视器</div>
             <div class="ts-card-desc">左侧节点、右侧节点、数值匹配与最终判定</div>
           </div>
           <span id="badge-verdict" class="ts-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">校验中...</span>

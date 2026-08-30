@@ -325,30 +325,59 @@
     color: #b91c1c;
   }
 
-  /* 预设案例 Chips */
-  #algo-longest-common-prefix-view .lcp-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-longest-common-prefix-view .lcp-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-longest-common-prefix-view .lcp-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-longest-common-prefix-view .lcp-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-longest-common-prefix-view .lcp-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-longest-common-prefix-view .lcp-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -765,7 +794,7 @@
   <header class="lcp-header">
     <div class="lcp-header-left">
       <div class="lcp-icon-btn">📖</div>
-      <h1 class="lcp-main-title">最长公共前缀 (Longest Common Prefix)</h1>
+      <h1 class="lcp-main-title">最长公共前缀</h1>
       <button id="btn-open-problem-modal" class="lcp-btn-problem">📋 题目</button>
       <span class="lcp-badge-mode">纵向逐列扫描</span>
       <span class="lcp-badge-complexity">O(S) · O(1)</span>
@@ -774,7 +803,7 @@
     <div class="lcp-header-right">
       <div class="lcp-input-group">
         <label for="input-strs">字符串列表:</label>
-        <input type="text" id="input-strs" value="flower, flow, flight" style="width: 150px;" placeholder="逗号分隔" />
+        <input type="text" id="input-strs" value="flower, flow, flight" style="width: 140px;" placeholder="逗号分隔" />
       </div>
       <button id="btn-generate" class="lcp-btn-generate">
         <span>▶ 运行</span>
@@ -795,7 +824,7 @@
       <div class="lcp-card">
         <div class="lcp-card-header">
           <div class="lcp-card-title">
-            <span>📊 字符串矩阵纵向扫描沙盘 (Vertical Column Scan Matrix)</span>
+            <span>📊 字符串矩阵纵向扫描沙盘</span>
           </div>
           <div class="lcp-legend-bar">
             <div><span class="lcp-legend-dot" style="background:#2563eb;"></span> 当前列 col</div>
@@ -809,13 +838,15 @@
           <div class="lcp-matrix-wrap" id="lcp-matrix-wrap"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="lcp-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="lcp-chip" data-strs="flower, flow, flight">示例 1 (["flower","flow","flight"] -> "fl")</button>
-          <button class="lcp-chip" data-strs="dog, racecar, car">示例 2 (无前缀 -> "")</button>
-          <button class="lcp-chip" data-strs="interspecies, interstellar, interstate">长前缀 (-> "inters")</button>
-          <button class="lcp-chip" data-strs="prefix, prefix, prefix">全相同 (-> "prefix")</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="lcp-preset-bar">
+          <span class="lcp-preset-label">预设案例:</span>
+          <div class="lcp-preset-list">
+            <button class="lcp-chip" data-strs="flower, flow, flight">示例 1: (["flower","flow","flight"] -> "fl")</button>
+            <button class="lcp-chip" data-strs="dog, racecar, car">示例 2: (无前缀 -> "")</button>
+            <button class="lcp-chip" data-strs="interspecies, interstellar, interstate">长前缀: (-> "inters")</button>
+            <button class="lcp-chip" data-strs="prefix, prefix, prefix">全相同: (-> "prefix")</button>
+          </div>
         </div>
       </div>
 
@@ -845,7 +876,7 @@
       <div class="lcp-card">
         <div class="lcp-card-header">
           <div>
-            <div class="lcp-card-title">🧭 纵向扫描监视器 (Vertical Scan Monitor)</div>
+            <div class="lcp-card-title">🧭 纵向扫描监视器</div>
             <div class="lcp-card-desc">当前列 col、当前行 row、基准字符与当前前缀结果</div>
           </div>
           <span id="badge-prefix" class="lcp-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">LCP: ""</span>

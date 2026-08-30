@@ -369,30 +369,59 @@
     border-style: dashed;
   }
 
-  /* 预设案例 Chips */
-  #algo-remove-element-view .rm-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-remove-element-view .rm-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-remove-element-view .rm-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-remove-element-view .rm-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-remove-element-view .rm-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-remove-element-view .rm-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -796,7 +825,7 @@
   <header class="rm-header">
     <div class="rm-header-left">
       <div class="rm-icon-btn">🧹</div>
-      <h1 class="rm-main-title">移除元素 (Remove Element)</h1>
+      <h1 class="rm-main-title">移除元素</h1>
       <button id="btn-open-problem-modal" class="rm-btn-problem">📋 题目</button>
       <span class="rm-badge-mode">快慢双指针·原地覆盖</span>
       <span class="rm-badge-complexity">O(n) · O(1)</span>
@@ -805,11 +834,11 @@
     <div class="rm-header-right">
       <div class="rm-input-group">
         <label for="input-nums">数组:</label>
-        <input type="text" id="input-nums" value="3, 2, 2, 3, 4, 3, 5" style="width: 140px;" placeholder="逗号分隔" />
+        <input type="text" id="input-nums" value="3, 2, 2, 3, 4, 3, 5" style="width: 130px;" placeholder="逗号分隔" />
       </div>
       <div class="rm-input-group">
         <label for="input-val">val:</label>
-        <input type="number" id="input-val" value="3" style="width: 45px;" />
+        <input type="number" id="input-val" value="3" style="width: 42px;" />
       </div>
       <button id="btn-generate" class="rm-btn-generate">
         <span>▶ 运行</span>
@@ -830,7 +859,7 @@
       <div class="rm-card">
         <div class="rm-card-header">
           <div class="rm-card-title">
-            <span>📊 数组内存沙盘与快慢指针 (Array & Fast-Slow Pointers)</span>
+            <span>📊 数组内存沙盘与快慢指针</span>
           </div>
           <div class="rm-legend-bar">
             <div><span class="rm-legend-dot" style="background:#3b82f6;"></span> 快指针 fast (探路)</div>
@@ -844,13 +873,15 @@
           <div id="rm-track-row" class="rm-track-row"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="rm-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="rm-chip" data-nums="3, 2, 2, 3" data-val="3">LeetCode 示例 1 ([3,2,2,3], val=3)</button>
-          <button class="rm-chip" data-nums="0, 1, 2, 2, 3, 0, 4, 2" data-val="2">LeetCode 示例 2 ([0,1,2,2,3...], val=2)</button>
-          <button class="rm-chip" data-nums="1, 2, 3, 4, 5" data-val="6">无匹配 (val=6)</button>
-          <button class="rm-chip" data-nums="3, 3, 3, 3" data-val="3">全匹配 (val=3)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="rm-preset-bar">
+          <span class="rm-preset-label">预设案例:</span>
+          <div class="rm-preset-list">
+            <button class="rm-chip" data-nums="3, 2, 2, 3" data-val="3">示例 1: ([3,2,2,3], val=3)</button>
+            <button class="rm-chip" data-nums="0, 1, 2, 2, 3, 0, 4, 2" data-val="2">示例 2: ([0,1,2,2,3...], val=2)</button>
+            <button class="rm-chip" data-nums="1, 2, 3, 4, 5" data-val="6">无匹配: (val=6)</button>
+            <button class="rm-chip" data-nums="3, 3, 3, 3" data-val="3">全匹配: (val=3)</button>
+          </div>
         </div>
       </div>
 
@@ -880,7 +911,7 @@
       <div class="rm-card">
         <div class="rm-card-header">
           <div>
-            <div class="rm-card-title">🧭 执行状态与指标监视器 (Execution Monitor)</div>
+            <div class="rm-card-title">🧭 执行状态与指标监视器</div>
             <div class="rm-card-desc">慢指针 slow (新长度)、快指针 fast、当前检查项与有效元素数</div>
           </div>
           <span id="badge-slow" class="rm-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">新长度: slow = 0</span>

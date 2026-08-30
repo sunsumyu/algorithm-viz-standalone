@@ -351,30 +351,59 @@
     color: #059669;
   }
 
-  /* 预设案例 Chips */
-  #algo-min-subarray-len-view .sw-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-min-subarray-len-view .sw-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-min-subarray-len-view .sw-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-min-subarray-len-view .sw-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-min-subarray-len-view .sw-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-min-subarray-len-view .sw-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -813,7 +842,7 @@
   <header class="sw-header">
     <div class="sw-header-left">
       <div class="sw-icon-btn">🪟</div>
-      <h1 class="sw-main-title">长度最小的子数组 (Minimum Size Subarray Sum)</h1>
+      <h1 class="sw-main-title">长度最小的子数组</h1>
       <button id="btn-open-problem-modal" class="sw-btn-problem">📋 题目</button>
       <span class="sw-badge-mode">滑动窗口·右界扩张·左界收缩</span>
       <span class="sw-badge-complexity">O(n) · O(1)</span>
@@ -822,11 +851,11 @@
     <div class="sw-header-right">
       <div class="sw-input-group">
         <label for="input-nums">数组:</label>
-        <input type="text" id="input-nums" value="2, 3, 1, 2, 4, 3" style="width: 140px;" placeholder="正整数逗号分隔" />
+        <input type="text" id="input-nums" value="2, 3, 1, 2, 4, 3" style="width: 130px;" placeholder="正整数逗号分隔" />
       </div>
       <div class="sw-input-group">
         <label for="input-target">target:</label>
-        <input type="number" id="input-target" value="7" style="width: 45px;" />
+        <input type="number" id="input-target" value="7" style="width: 42px;" />
       </div>
       <button id="btn-generate" class="sw-btn-generate">
         <span>▶ 运行</span>
@@ -847,7 +876,7 @@
       <div class="sw-card">
         <div class="sw-card-header">
           <div class="sw-card-title">
-            <span>📊 滑动窗口动态沙盘 (Sliding Window Dynamic Sandbox)</span>
+            <span>📊 滑动窗口动态沙盘</span>
           </div>
           <div class="sw-legend-bar">
             <div><span class="sw-legend-dot" style="background:#3b82f6;"></span> right 扩张窗口</div>
@@ -861,13 +890,15 @@
           <div id="sw-track-row" class="sw-track-row"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="sw-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="sw-chip" data-nums="2, 3, 1, 2, 4, 3" data-target="7">LeetCode 示例 1 ([2,3,1,2,4,3], target=7)</button>
-          <button class="sw-chip" data-nums="1, 4, 4" data-target="4">LeetCode 示例 2 ([1,4,4], target=4)</button>
-          <button class="sw-chip" data-nums="1, 1, 1, 1, 1" data-target="11">无解 (target=11)</button>
-          <button class="sw-chip" data-nums="5, 1, 3, 5, 10, 7, 4, 9, 2, 8" data-target="15">长数组 (target=15)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="sw-preset-bar">
+          <span class="sw-preset-label">预设案例:</span>
+          <div class="sw-preset-list">
+            <button class="sw-chip" data-nums="2, 3, 1, 2, 4, 3" data-target="7">示例 1: ([2,3,1,2,4,3], target=7)</button>
+            <button class="sw-chip" data-nums="1, 4, 4" data-target="4">示例 2: ([1,4,4], target=4)</button>
+            <button class="sw-chip" data-nums="1, 1, 1, 1, 1" data-target="11">无解: (target=11)</button>
+            <button class="sw-chip" data-nums="5, 1, 3, 5, 10, 7, 4, 9, 2, 8" data-target="15">长数组: (target=15)</button>
+          </div>
         </div>
       </div>
 
@@ -897,7 +928,7 @@
       <div class="sw-card">
         <div class="sw-card-header">
           <div>
-            <div class="sw-card-title">🧭 窗口状态与指标监视器 (Window Monitor)</div>
+            <div class="sw-card-title">🧭 窗口状态与指标监视器</div>
             <div class="sw-card-desc">左边界 left、右边界 right、当前窗口和与最小长度 minLen</div>
           </div>
           <span id="badge-min-len" class="sw-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">最小长度: ∞</span>

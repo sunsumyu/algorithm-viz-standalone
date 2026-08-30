@@ -680,7 +680,7 @@
   <header class="mq-header">
     <div class="mq-header-left">
       <div class="mq-icon-btn">🔄</div>
-      <h1 class="mq-main-title">LeetCode 232. 用栈实现队列</h1>
+      <h1 class="mq-main-title">用栈实现队列</h1>
       <button id="btn-open-problem-modal" class="mq-btn-problem">📋 题目</button>
       <span class="mq-badge-mode">双栈架构 / inStack 负责入 / outStack 负责出</span>
       <span class="mq-badge-complexity">均摊 O(1) · O(n)</span>
@@ -696,7 +696,7 @@
 
       <div class="mq-input-group">
         <span>操作序列:</span>
-        <input type="text" id="input-ops" value="push 1, push 2, peek, pop, empty" class="mq-input-str" placeholder="push 1, push 2, peek, pop, empty" />
+        <input type="text" id="input-ops" value="push 1, push 2, peek, pop, empty" class="mq-input-str" style="width: 140px;" placeholder="push 1, push 2..." />
       </div>
 
       <button id="btn-generate" class="mq-btn-generate">
@@ -715,11 +715,11 @@
     <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
     <section class="mq-left-section">
 
-      <!-- 卡片 1: 双栈交互与队列逻辑流沙盘 (Dual-Stack Queue Sandbox) -->
+      <!-- 卡片 1: 双栈交互与队列逻辑流沙盘 -->
       <div class="mq-card">
         <div class="mq-card-header">
           <div class="mq-card-title">
-            <span>🔄 双栈交互与队列逻辑流沙盘 (Dual-Stack Queue Sandbox)</span>
+            <span>🔄 双栈交互与队列逻辑流沙盘</span>
           </div>
           <div class="mq-legend-bar">
             <div><span class="mq-legend-dot" style="background:#2563eb;"></span> 📥 输入栈 inStack</div>
@@ -762,18 +762,18 @@
           <div class="mq-state-columns">
             <!-- 栈状态 -->
             <div class="mq-subcard">
-              <div class="mq-subcard-title">🥞 双栈容量与状态 (Stacks Status)</div>
+              <div class="mq-subcard-title">🥞 双栈容量与状态</div>
               <div id="mq-stacks-status-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
             </div>
             <!-- 出入队决策监视器 -->
             <div class="mq-subcard">
-              <div class="mq-subcard-title">⚖️ 队列操作与倒栈监视器 (Queue Decision)</div>
+              <div class="mq-subcard-title">⚖️ 队列操作与倒栈监视器</div>
               <div id="mq-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
             </div>
           </div>
           <!-- 统计与进度 -->
           <div class="mq-subcard" style="flex-shrink: 0;">
-            <div class="mq-subcard-title">🏆 出队与窥探结果记录看板 (Pop & Peek Outputs)</div>
+            <div class="mq-subcard-title">🏆 出队与窥探结果记录看板</div>
             <div id="mq-metrics-container"></div>
           </div>
         </div>

@@ -29,37 +29,48 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "learningGoal": "理解栈和队列的原理、操作和应用场景"
   },
   {
-    "id": "my-queue",
-    "name": "用栈实现队列（双栈转移）",
-    "viewId": "algo-my-queue-view",
+    "id": "implement-queue-using-stack",
+    "name": "用栈实现队列",
+    "viewId": "algo-implement-queue-using-stack-view",
     "category": "stack",
-    "description": "用两个栈模拟队列的 FIFO 行为",
+    "description": "双栈架构：输入栈 inStack 处理 push，输出栈 outStack 为空时一次性倾倒反转实现 FIFO",
     "icon": "🔄",
     "difficulty": 1,
     "levelOrder": 1,
-    "learningGoal": "掌握用双栈实现队列的转移技巧"
+    "learningGoal": "掌握双栈组合出 FIFO 队列的精妙架构，理解均摊时间复杂度 O(1) 的倒栈触发准则"
   },
   {
-    "id": "my-stack",
-    "name": "用队列实现栈（队列翻转）",
-    "viewId": "algo-my-stack-view",
+    "id": "implement-stack-using-queue",
+    "name": "用队列实现栈",
+    "viewId": "algo-implement-stack-using-queue-view",
     "category": "stack",
-    "description": "用队列模拟栈的 LIFO 行为",
-    "icon": "🔃",
+    "description": "单队列循环旋转法：push 入队后将前面 size - 1 个元素出队再入队，保持队头为栈顶",
+    "icon": "🥞",
     "difficulty": 1,
     "levelOrder": 2,
-    "learningGoal": "掌握入队翻转保持栈序的思路"
+    "learningGoal": "掌握单队列通过自环旋转实现 LIFO 栈的精简思想，实现真正的 O(1) Pop 与 Top 查询"
+  },
+  {
+    "id": "bracket",
+    "name": "有效的括号",
+    "viewId": "algo-bracket-view",
+    "category": "stack",
+    "description": "遇左括号压入对应右括号，遇右括号只需 O(1) 比对并弹出栈顶元素",
+    "icon": "🎯",
+    "difficulty": 1,
+    "levelOrder": 3,
+    "learningGoal": "掌握经典栈匹配思想与“遇左压右”简化比对逻辑的巧妙设计技巧"
   },
   {
     "id": "remove-adjacent-duplicates",
-    "name": "删除字符串中的相邻重复项",
-    "viewId": "algo-remove-duplicates-view",
+    "name": "删除相邻重复项",
+    "viewId": "algo-remove-adjacent-duplicates-view",
     "category": "stack",
-    "description": "用栈消除字符串中的相邻重复字符",
-    "icon": "🧹",
+    "description": "栈消消乐模型：栈顶即当前前驱，遇到相同字符直接出栈对消，形成连锁反应",
+    "icon": "✨",
     "difficulty": 1,
     "levelOrder": 4,
-    "learningGoal": "掌握用栈处理相邻元素消除问题"
+    "learningGoal": "理解栈在消除相邻元素中的经典应用，掌握利用栈顶作为动态前驱消除递归连锁重复项的设计范式"
   },
   {
     "id": "eval-rpn",

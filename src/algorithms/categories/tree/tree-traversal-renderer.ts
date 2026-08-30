@@ -163,10 +163,10 @@ export class TreeTraversalVisualizer extends StepVisualizer<TTStep> {
     this.logCountEl = this.root.querySelector('#log-count');
 
     // 模式切换按钮
-    this.root.querySelectorAll<HTMLButtonElement>('.tt-mode-btn').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.tt-chip[data-mode]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.root?.querySelectorAll('.tt-mode-btn').forEach((b) => b.classList.remove('is-active'));
-        btn.classList.add('is-active');
+        this.root?.querySelectorAll('.tt-chip[data-mode]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
         this.currentMode = (btn.dataset.mode as Mode) || 'pre';
         this.start();
       });
@@ -176,7 +176,7 @@ export class TreeTraversalVisualizer extends StepVisualizer<TTStep> {
     this.bindPlaybackControls();
 
     // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.tt-chip').forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>('.tt-chip[data-tree]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
         if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;

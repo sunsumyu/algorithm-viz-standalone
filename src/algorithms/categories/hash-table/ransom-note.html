@@ -377,29 +377,58 @@
     75% { transform: translateX(3px); }
   }
 
-  /* Preset Chips */
-  #algo-ransom-note-view .rn-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-ransom-note-view .rn-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-top: 4px;
     flex-shrink: 0;
   }
 
+  #algo-ransom-note-view .rn-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-ransom-note-view .rn-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-ransom-note-view .rn-chip {
-    padding: 2px 7px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     font-size: 10.5px;
     font-family: 'JetBrains Mono', monospace;
-    color: #475569;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-ransom-note-view .rn-chip:hover {
     border-color: #3b82f6;
-    color: #2563eb;
+    color: #1d4ed8;
     background: #eff6ff;
   }
 
@@ -583,7 +612,7 @@
   <header class="rn-header">
     <div class="rn-header-left">
       <div class="rn-icon-btn">📰</div>
-      <h1 class="rn-main-title">赎金信 (LeetCode 383)</h1>
+      <h1 class="rn-main-title">赎金信</h1>
       <button class="rn-btn-problem" id="btn-problem-info" title="查看题目与详细分析">
         <span>📖</span> 题目与解析
       </button>
@@ -646,12 +675,15 @@
           <div class="rn-buckets-grid" id="rn-buckets-grid"></div>
         </div>
 
-        <div class="rn-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="rn-chip" data-r="a" data-m="b">示例 1 ("a" / "b" -> false)</button>
-          <button class="rn-chip" data-r="aa" data-m="ab">示例 2 ("aa" / "ab" -> false)</button>
-          <button class="rn-chip" data-r="aa" data-m="aab">示例 3 ("aa" / "aab" -> true)</button>
-          <button class="rn-chip" data-r="secret" data-m="recreates">多字符匹配 ("secret" / "recreates")</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="rn-preset-bar">
+          <span class="rn-preset-label">预设案例:</span>
+          <div class="rn-preset-list">
+            <button class="rn-chip" data-r="a" data-m="b">示例 1: ("a" / "b" ➔ false)</button>
+            <button class="rn-chip" data-r="aa" data-m="ab">示例 2: ("aa" / "ab" ➔ false)</button>
+            <button class="rn-chip" data-r="aa" data-m="aab">示例 3: ("aa" / "aab" ➔ true)</button>
+            <button class="rn-chip" data-r="secret" data-m="recreates">多字符匹配: ("secret" / "recreates")</button>
+          </div>
         </div>
       </div>
 

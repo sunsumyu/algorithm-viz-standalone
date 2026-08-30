@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { DarkCodeTerminalPresenter } from './dark-code-terminal-presenter';
 
 class MockElement {
-  public innerHTML = '';
+  public _innerHTML = '';
   public textContent = '';
   public className = '';
   public dataset: Record<string, string> = {};
@@ -14,8 +14,17 @@ class MockElement {
     contains: (c: string) => this.classList._classes.has(c),
   };
   private listeners: Record<string, Function[]> = {};
+  public children: MockElement[] = [];
 
   constructor(public id: string = '', public tagName: string = 'div') {}
+
+  public get innerHTML(): string {
+    return this._innerHTML;
+  }
+
+  public set innerHTML(val: string) {
+    this._innerHTML = val;
+  }
 
   public addEventListener(event: string, fn: Function) {
     if (!this.listeners[event]) this.listeners[event] = [];
@@ -48,6 +57,10 @@ class MockElement {
   public getAttribute(name: string) {
     return this.style[name] ?? null;
   }
+
+  public hasAttribute(name: string) {
+    return name in this.dataset;
+  }
 }
 
 class MockRoot {
@@ -77,20 +90,24 @@ class MockRoot {
     this.langBtns = [javaBtn, cppBtn];
   }
 
-  private register(id: string): MockElement {
+  public register(id: string): MockElement {
     const el = new MockElement(id);
     this.elements.set(id, el);
     return el;
   }
 
   public querySelector(sel: string): MockElement | null {
-    const cleanId = sel.replace('#', '');
+    const cleanId = sel.replace('#', '').split(/[\s,]/)[0];
     return this.elements.get(cleanId) || null;
   }
 
   public querySelectorAll(sel: string): MockElement[] {
-    if (sel.includes('.co-lang-btn') || sel.includes('.lang-btn')) {
+    if (sel.includes('.co-lang-btn') || sel.includes('.lang-btn') || sel.includes('[data-lang]')) {
       return this.langBtns;
+    }
+    if (sel.includes('#btn-open-problem-modal')) {
+      const el = this.elements.get('btn-open-problem-modal');
+      return el ? [el] : [];
     }
     return [];
   }
@@ -175,4 +192,21 @@ describe('DarkCodeTerminalPresenter (深模块测试 - 0 DOM依赖环境)', () =
     closeBtn?.click();
     expect(modal?.classList.contains('hidden')).toBe(true);
   });
+
+  it('支持在仅有占位容器时自动注入骨架 DOM', () => {
+    const emptyRoot = new MockRoot();
+    emptyRoot.elements.delete('code-lines-wrapper');
+    const placeholder = emptyRoot.register('code-terminal-card');
+
+    DarkCodeTerminalPresenter.mount(emptyRoot as unknown as HTMLElement, {
+      codeLanguages: {
+        java: ['public void moveZeroes() {}'],
+      },
+    });
+
+    expect(placeholder.innerHTML).toContain('code-lines-wrapper');
+    expect(placeholder.innerHTML).toContain('code-lang-tabs');
+  });
 });
+
+

@@ -30,7 +30,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 8px;
     flex-shrink: 0;
     width: 100%;
   }
@@ -38,15 +38,16 @@
   #algo-intersection-arrays-view .ia-header-left {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
+    gap: 6px;
+    flex: 1;
     min-width: 0;
+    overflow: hidden;
   }
 
   #algo-intersection-arrays-view .ia-icon-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #2563eb;
@@ -66,10 +67,12 @@
     letter-spacing: -0.01em;
     white-space: nowrap;
     margin: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   #algo-intersection-arrays-view .ia-btn-problem {
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 6px;
     background: #fffbeb;
     border: 1px solid #fde68a;
@@ -79,7 +82,7 @@
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     transition: all 0.15s;
     flex-shrink: 0;
   }
@@ -89,32 +92,34 @@
   }
 
   #algo-intersection-arrays-view .ia-badge-mode {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
     color: #334155;
-    padding: 2px 8px;
+    padding: 2px 6px;
     border-radius: 6px;
     background: #f1f5f9;
     border: 1px solid #e2e8f0;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   #algo-intersection-arrays-view .ia-badge-complexity {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
     color: #2563eb;
     background: #eff6ff;
-    padding: 2px 6px;
+    padding: 2px 5px;
     border-radius: 6px;
     border: 1px solid #bfdbfe;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   #algo-intersection-arrays-view .ia-header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
   }
 
@@ -138,8 +143,8 @@
   }
 
   #algo-intersection-arrays-view .ia-btn-generate {
-    padding: 4px 12px;
-    border-radius: 8px;
+    padding: 3px 10px;
+    border-radius: 6px;
     background: #2563eb;
     color: #ffffff;
     font-size: 11px;
@@ -151,14 +156,15 @@
     align-items: center;
     gap: 4px;
     transition: all 0.15s;
+    white-space: nowrap;
   }
   #algo-intersection-arrays-view .ia-btn-generate:hover {
     background: #1d4ed8;
   }
 
   #algo-intersection-arrays-view .ia-btn-reset {
-    padding: 4px 10px;
-    border-radius: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
     background: #ffffff;
     color: #475569;
     font-size: 11px;
@@ -166,6 +172,7 @@
     border: 1px solid #cbd5e1;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
   }
   #algo-intersection-arrays-view .ia-btn-reset:hover {
     background: #f1f5f9;
@@ -227,30 +234,24 @@
     gap: 6px;
   }
 
-  #algo-intersection-arrays-view .ia-card-desc {
-    font-size: 11px;
-    color: #64748b;
-    margin-top: 1px;
-  }
-
   #algo-intersection-arrays-view .ia-legend-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 11px;
+    gap: 8px;
+    font-size: 10.5px;
     color: #64748b;
     font-weight: 500;
     flex-wrap: wrap;
   }
   #algo-intersection-arrays-view .ia-legend-dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 999px;
     margin-right: 3px;
   }
 
-  /* 集合沙盘展示盒 */
+  /* 主沙盘展示区 (彻底去框，开阔纯粹) */
   #algo-intersection-arrays-view .ia-sandbox-wrap {
     background: #f8fafc;
     border-radius: 12px;
@@ -258,140 +259,200 @@
     flex: 1;
     min-height: 0;
     width: 100%;
-    overflow-y: auto;
+    overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
+    justify-content: space-around;
+    padding: 10px 14px;
     gap: 8px;
   }
 
-  #algo-intersection-arrays-view .ia-tracks-row {
+  #algo-intersection-arrays-view .ia-track-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     width: 100%;
+  }
+
+  #algo-intersection-arrays-view .ia-track-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+
+  #algo-intersection-arrays-view .ia-track-cells {
     display: flex;
     gap: 8px;
+    align-items: center;
+    flex: 1;
   }
 
-  #algo-intersection-arrays-view .ia-track-col {
-    flex: 1;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 6px 8px;
+  #algo-intersection-arrays-view .ia-cell-unit {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 2px;
   }
 
-  #algo-intersection-arrays-view .ia-track-title {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #64748b;
-  }
-
-  #algo-intersection-arrays-view .ia-cell-row {
+  #algo-intersection-arrays-view .ia-cell-box {
+    width: 36px;
+    height: 38px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
     display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-  }
-
-  #algo-intersection-arrays-view .ia-cell {
-    width: 26px;
-    height: 28px;
-    border-radius: 6px;
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    font-weight: 700;
-    color: #334155;
-    display: inline-flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   }
-  #algo-intersection-arrays-view .ia-cell.is-current {
+
+  #algo-intersection-arrays-view .ia-cell-box .val {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.1;
+  }
+
+  #algo-intersection-arrays-view .ia-cell-box .idx {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  #algo-intersection-arrays-view .ia-cell-box.is-current {
     border-color: #2563eb;
     background: #eff6ff;
-    color: #1d4ed8;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
   }
 
-  #algo-intersection-arrays-view .ia-sets-row {
+  #algo-intersection-arrays-view .ia-cell-box.is-hit {
+    border-color: #10b981;
+    background: #ecfdf5;
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  }
+
+  #algo-intersection-arrays-view .ia-cell-ptr-tag {
+    font-size: 8.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    color: #2563eb;
+    height: 12px;
+    line-height: 12px;
+  }
+
+  #algo-intersection-arrays-view .ia-sets-flow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
     width: 100%;
-    display: flex;
-    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px dashed #e2e8f0;
   }
 
-  #algo-intersection-arrays-view .ia-set-box {
-    flex: 1;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 6px 8px;
+  #algo-intersection-arrays-view .ia-set-group {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
   }
 
   #algo-intersection-arrays-view .ia-set-title {
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 700;
-    color: #64748b;
+    color: #475569;
+    white-space: nowrap;
   }
 
   #algo-intersection-arrays-view .ia-set-chips {
     display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    min-height: 26px;
+    gap: 6px;
     align-items: center;
+    flex-wrap: wrap;
+    min-height: 32px;
   }
 
-  #algo-intersection-arrays-view .ia-set-item {
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 700;
-  }
-  #algo-intersection-arrays-view .ia-set-item.set1 {
+  #algo-intersection-arrays-view .ia-set-chip {
+    padding: 3px 10px;
+    border-radius: 6px;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.2s;
   }
-  #algo-intersection-arrays-view .ia-set-item.res {
+
+  #algo-intersection-arrays-view .ia-set-chip.is-res {
     background: #ecfdf5;
-    border: 1px solid #a7f3d0;
+    border-color: #a7f3d0;
     color: #047857;
   }
 
-  /* 预设案例 Chips */
-  #algo-intersection-arrays-view .ia-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右子集按钮换行左对齐 */
+  #algo-intersection-arrays-view .ia-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-intersection-arrays-view .ia-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-intersection-arrays-view .ia-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-intersection-arrays-view .ia-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-intersection-arrays-view .ia-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -808,7 +869,7 @@
   <header class="ia-header">
     <div class="ia-header-left">
       <div class="ia-icon-btn">🔀</div>
-      <h1 class="ia-main-title">两个数组的交集 (Intersection of Two Arrays)</h1>
+      <h1 class="ia-main-title">两个数组的交集</h1>
       <button id="btn-open-problem-modal" class="ia-btn-problem">📋 题目</button>
       <span class="ia-badge-mode">哈希集合 HashSet 映射</span>
       <span class="ia-badge-complexity">O(m+n) · O(m)</span>
@@ -842,7 +903,7 @@
       <div class="ia-card">
         <div class="ia-card-header">
           <div class="ia-card-title">
-            <span>📊 数组与 HashSet 映射求交集沙盘 (Array & HashSet Intersection)</span>
+            <span>📊 数组与哈希集合映射沙盘</span>
           </div>
           <div class="ia-legend-bar">
             <div><span class="ia-legend-dot" style="background:#2563eb;"></span> set1 (nums1去重)</div>
@@ -850,37 +911,42 @@
           </div>
         </div>
 
-        <!-- 展示盒 -->
+        <!-- 主沙盘展示区 (彻底去框，开阔纯粹) -->
         <div class="ia-sandbox-wrap">
-          <div class="ia-tracks-row">
-            <div class="ia-track-col">
-              <span class="ia-track-title">nums1 数组</span>
-              <div class="ia-cell-row" id="ia-row-1"></div>
-            </div>
-            <div class="ia-track-col">
-              <span class="ia-track-title">nums2 数组 (遍历查询)</span>
-              <div class="ia-cell-row" id="ia-row-2"></div>
-            </div>
+          <!-- 数组 nums1 轨道 -->
+          <div class="ia-track-row">
+            <span class="ia-track-label">nums1 数组:</span>
+            <div class="ia-track-cells" id="ia-row-1"></div>
           </div>
-          <div class="ia-sets-row">
-            <div class="ia-set-box">
-              <span class="ia-set-title">set1 (已存入元素)</span>
+
+          <!-- 数组 nums2 轨道 -->
+          <div class="ia-track-row">
+            <span class="ia-track-label">nums2 遍历查询:</span>
+            <div class="ia-track-cells" id="ia-row-2"></div>
+          </div>
+
+          <!-- 集合流动与结果 -->
+          <div class="ia-sets-flow">
+            <div class="ia-set-group">
+              <span class="ia-set-title">set1 (已存入去重):</span>
               <div class="ia-set-chips" id="ia-set1-chips"></div>
             </div>
-            <div class="ia-set-box">
-              <span class="ia-set-title">resultSet (最终唯一交集)</span>
+            <div class="ia-set-group">
+              <span class="ia-set-title">resultSet (唯一交集):</span>
               <div class="ia-set-chips" id="ia-result-chips"></div>
             </div>
           </div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="ia-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="ia-chip" data-n1="1, 2, 2, 1" data-n2="2, 2">示例 1 ([1,2,2,1] & [2,2] -> [2])</button>
-          <button class="ia-chip" data-n1="4, 9, 5" data-n2="9, 4, 9, 8, 4">示例 2 ([4,9,5] & [9,4..] -> [9,4])</button>
-          <button class="ia-chip" data-n1="1, 2, 3" data-n2="4, 5, 6">无交集 ([1,2,3] & [4,5,6] -> [])</button>
-          <button class="ia-chip" data-n1="7, 7, 7" data-n2="7, 7">全重复 ([7,7,7] & [7,7] -> [7])</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="ia-preset-bar">
+          <span class="ia-preset-label">预设案例:</span>
+          <div class="ia-preset-list">
+            <button class="ia-chip" data-n1="1, 2, 2, 1" data-n2="2, 2">示例 1: [1,2,2,1] & [2,2] ➔ [2]</button>
+            <button class="ia-chip" data-n1="4, 9, 5" data-n2="9, 4, 9, 8, 4">示例 2: [4,9,5] & [9,4..] ➔ [9,4]</button>
+            <button class="ia-chip" data-n1="1, 2, 3" data-n2="4, 5, 6">无交集: [1,2,3] & [4,5,6] ➔ []</button>
+            <button class="ia-chip" data-n1="7, 7, 7" data-n2="7, 7">全重复: [7,7,7] & [7,7] ➔ [7]</button>
+          </div>
         </div>
       </div>
 
@@ -910,7 +976,7 @@
       <div class="ia-card">
         <div class="ia-card-header">
           <div>
-            <div class="ia-card-title">🧭 集合状态与匹配监视器 (Set & Match Monitor)</div>
+            <div class="ia-card-title">🧭 集合状态与匹配监视器</div>
             <div class="ia-card-desc">当前阶段、当前元素、是否命中与交集结果总数</div>
           </div>
           <span id="badge-phase" class="ia-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>

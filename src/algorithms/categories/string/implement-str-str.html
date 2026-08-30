@@ -341,29 +341,59 @@
   }
 
   /* 预设案例 Chips */
-  #algo-str-str-view .kmp-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-str-str-view .kmp-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-str-str-view .kmp-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-str-str-view .kmp-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-str-str-view .kmp-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-str-str-view .kmp-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -780,7 +810,7 @@
   <header class="kmp-header">
     <div class="kmp-header-left">
       <div class="kmp-icon-btn">🔍</div>
-      <h1 class="kmp-main-title">实现 strStr() · KMP 算法 (Implement strStr)</h1>
+      <h1 class="kmp-main-title">找出字符串中第一个匹配项的下标</h1>
       <button id="btn-open-problem-modal" class="kmp-btn-problem">📋 题目</button>
       <span class="kmp-badge-mode">KMP 前缀表模式匹配</span>
       <span class="kmp-badge-complexity">O(m+n) · O(m)</span>
@@ -814,7 +844,7 @@
       <div class="kmp-card">
         <div class="kmp-card-header">
           <div class="kmp-card-title">
-            <span>📊 主串与模式串对齐滑动沙盘 (Haystack & Needle Rail)</span>
+            <span>📊 主串与模式串对齐滑动沙盘</span>
           </div>
           <div class="kmp-legend-bar">
             <div><span class="kmp-legend-dot" style="background:#2563eb;"></span> 主串 i</div>
@@ -841,13 +871,15 @@
           <div class="kmp-next-table" id="kmp-next-table"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="kmp-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="kmp-chip" data-haystack="sadbutsad" data-needle="sad">示例 1 ("sadbutsad", "sad")</button>
-          <button class="kmp-chip" data-haystack="leetcode" data-needle="leeto">不匹配 ("leetcode", "leeto")</button>
-          <button class="kmp-chip" data-haystack="aabaabaafa" data-needle="aabaaf">经典回退 ("aabaabaafa", "aabaaf")</button>
-          <button class="kmp-chip" data-haystack="mississippi" data-needle="issip">多重复 ("mississippi", "issip")</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="kmp-preset-bar">
+          <span class="kmp-preset-label">预设案例:</span>
+          <div class="kmp-preset-list">
+            <button class="kmp-chip" data-haystack="sadbutsad" data-needle="sad">示例 1: ("sadbutsad", "sad")</button>
+            <button class="kmp-chip" data-haystack="leetcode" data-needle="leeto">不匹配: ("leetcode", "leeto")</button>
+            <button class="kmp-chip" data-haystack="aabaabaafa" data-needle="aabaaf">经典回退: ("aabaabaafa", "aabaaf")</button>
+            <button class="kmp-chip" data-haystack="mississippi" data-needle="issip">多重复: ("mississippi", "issip")</button>
+          </div>
         </div>
       </div>
 
@@ -877,7 +909,7 @@
       <div class="kmp-card">
         <div class="kmp-card-header">
           <div>
-            <div class="kmp-card-title">🧭 双指针状态与匹配监视器 (Pointer & Match Monitor)</div>
+            <div class="kmp-card-title">🧭 双指针状态与匹配监视器</div>
             <div class="kmp-card-desc">主串指针 i、模式串指针 j、匹配状态与最终匹配结果</div>
           </div>
           <span id="badge-match-state" class="kmp-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>

@@ -352,30 +352,59 @@
     box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
   }
 
-  /* 预设案例 Chips */
-  #algo-reverse-string-ii-view .rs2-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-reverse-string-ii-view .rs2-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-reverse-string-ii-view .rs2-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-reverse-string-ii-view .rs2-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-reverse-string-ii-view .rs2-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-reverse-string-ii-view .rs2-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -792,7 +821,7 @@
   <header class="rs2-header">
     <div class="rs2-header-left">
       <div class="rs2-icon-btn">🔁</div>
-      <h1 class="rs2-main-title">反转字符串 II (Reverse String II)</h1>
+      <h1 class="rs2-main-title">反转字符串 II</h1>
       <button id="btn-open-problem-modal" class="rs2-btn-problem">📋 题目</button>
       <span class="rs2-badge-mode">2k 步长分段反转</span>
       <span class="rs2-badge-complexity">O(n) · O(1)</span>
@@ -805,7 +834,7 @@
       </div>
       <div class="rs2-input-group">
         <label for="input-k">k:</label>
-        <input type="number" id="input-k" value="2" min="1" max="10" style="width: 45px;" />
+        <input type="number" id="input-k" value="2" min="1" max="10" style="width: 42px;" />
       </div>
       <button id="btn-generate" class="rs2-btn-generate">
         <span>▶ 运行</span>
@@ -826,7 +855,7 @@
       <div class="rs2-card">
         <div class="rs2-card-header">
           <div class="rs2-card-title">
-            <span>📊 2k 分段与前 k 个字符反转沙盘 (2k Stride & k-Window Reverse)</span>
+            <span>📊 2k 分段与前 k 个字符反转沙盘</span>
           </div>
           <div class="rs2-legend-bar">
             <div><span class="rs2-legend-dot" style="background:#9333ea;"></span> i 步长 (+2k)</div>
@@ -839,13 +868,15 @@
           <div class="rs2-track-row" id="rs2-track-row"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="rs2-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="rs2-chip" data-s="abcdefg" data-k="2">示例 1 ("abcdefg", k=2)</button>
-          <button class="rs2-chip" data-s="abcd" data-k="2">示例 2 ("abcd", k=2)</button>
-          <button class="rs2-chip" data-s="abcdefghijk" data-k="3">长字符串 ("abcdefghijk", k=3)</button>
-          <button class="rs2-chip" data-s="a" data-k="2">单字符 ("a", k=2)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="rs2-preset-bar">
+          <span class="rs2-preset-label">预设案例:</span>
+          <div class="rs2-preset-list">
+            <button class="rs2-chip" data-s="abcdefg" data-k="2">示例 1: ("abcdefg", k=2)</button>
+            <button class="rs2-chip" data-s="abcd" data-k="2">示例 2: ("abcd", k=2)</button>
+            <button class="rs2-chip" data-s="abcdefghijk" data-k="3">长字符串: ("abcdefghijk", k=3)</button>
+            <button class="rs2-chip" data-s="a" data-k="2">单字符: ("a", k=2)</button>
+          </div>
         </div>
       </div>
 
@@ -875,7 +906,7 @@
       <div class="rs2-card">
         <div class="rs2-card-header">
           <div>
-            <div class="rs2-card-title">🧭 分段步长与区间计算监视器 (Stride & Window Monitor)</div>
+            <div class="rs2-card-title">🧭 分段步长与区间计算监视器</div>
             <div class="rs2-card-desc">当前步长下标、当前反转区间、k / 2k 与阶段状态</div>
           </div>
           <span id="badge-phase" class="rs2-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>

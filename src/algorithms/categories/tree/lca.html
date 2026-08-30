@@ -274,30 +274,59 @@
     justify-content: center;
   }
 
-  /* 预设案例 Chips */
-  #algo-lca-view .lca-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-lca-view .lca-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-lca-view .lca-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-lca-view .lca-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-lca-view .lca-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-lca-view .lca-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -714,7 +743,7 @@
   <header class="lca-header">
     <div class="lca-header-left">
       <div class="lca-icon-btn">👥</div>
-      <h1 class="lca-main-title">二叉树最近公共祖先 (Lowest Common Ancestor)</h1>
+      <h1 class="lca-main-title">二叉树最近公共祖先</h1>
       <button id="btn-open-problem-modal" class="lca-btn-problem">📋 题目</button>
       <span class="lca-badge-mode">后序遍历·四象限状态合并</span>
       <span class="lca-badge-complexity">O(n) · O(h)</span>
@@ -752,7 +781,7 @@
       <div class="lca-card">
         <div class="lca-card-header">
           <div class="lca-card-title">
-            <span>📊 二叉树拓扑与 LCA 状态合并沙盘 (LCA Tree Sandbox)</span>
+            <span>📊 二叉树拓扑与 LCA 状态合并沙盘</span>
           </div>
           <div class="lca-legend-bar">
             <div><span class="lca-legend-dot" style="background:#fbbf24;"></span> 当前节点</div>
@@ -763,15 +792,17 @@
 
         <!-- 树拓扑沙盘展示盒 -->
         <div class="lca-sandbox-wrap">
-          <div id="tree-svg-container" class="lca-tree-svg-container"></div>
+          <div id="lca-tree-svg-container" class="lca-tree-svg-container"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="lca-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="lca-chip" data-tree="3, 5, 1, 6, 2, 0, 8, null, null, 7, 4" data-p="5" data-q="1">不同子树 p=5, q=1 (LCA=3)</button>
-          <button class="lca-chip" data-tree="3, 5, 1, 6, 2, 0, 8, null, null, 7, 4" data-p="5" data-q="4">父子祖先 p=5, q=4 (LCA=5)</button>
-          <button class="lca-chip" data-tree="1, 2, 3" data-p="2" data-q="3">三节点树 p=2, q=3 (LCA=1)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="lca-preset-bar">
+          <span class="lca-preset-label">预设案例:</span>
+          <div class="lca-preset-list">
+            <button class="lca-chip" data-tree="3, 5, 1, 6, 2, 0, 8, null, null, 7, 4" data-p="5" data-q="1">不同子树: p=5, q=1 (LCA=3)</button>
+            <button class="lca-chip" data-tree="3, 5, 1, 6, 2, 0, 8, null, null, 7, 4" data-p="5" data-q="4">父子祖先: p=5, q=4 (LCA=5)</button>
+            <button class="lca-chip" data-tree="1, 2, 3" data-p="2" data-q="3">三节点树: p=2, q=3 (LCA=1)</button>
+          </div>
         </div>
       </div>
 
@@ -801,7 +832,7 @@
       <div class="lca-card">
         <div class="lca-card-header">
           <div>
-            <div class="lca-card-title">🧭 递归返回值与 LCA 判定监视器 (LCA Monitor)</div>
+            <div class="lca-card-title">🧭 递归返回值与 LCA 判定监视器</div>
             <div class="lca-card-desc">当前节点、左子树返回、右子树返回与 LCA 最终判定</div>
           </div>
           <span id="badge-lca-result" class="lca-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">查找中...</span>

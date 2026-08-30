@@ -272,15 +272,14 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 6px 10px;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    padding: 0;
   }
 
   #algo-two-sum-view .ts-track-title {
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 700;
     color: #64748b;
   }
@@ -304,13 +303,14 @@
     height: 40px;
     border-radius: 8px;
     background: #ffffff;
-    border: 2px solid #cbd5e1;
+    border: 1.5px solid #cbd5e1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   }
   #algo-two-sum-view .ts-cell-box .val {
     font-size: 14px;
@@ -328,11 +328,13 @@
   #algo-two-sum-view .ts-cell-box.is-current {
     border-color: #2563eb;
     background: #eff6ff;
+    transform: scale(1.08);
   }
   #algo-two-sum-view .ts-cell-box.is-matched {
     border-color: #10b981;
     background: #ecfdf5;
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    transform: scale(1.08);
   }
 
   #algo-two-sum-view .ts-map-grid {
@@ -340,11 +342,10 @@
     gap: 6px;
     flex-wrap: wrap;
     width: 100%;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 6px 10px;
-    min-height: 36px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    min-height: 28px;
     align-items: center;
   }
 
@@ -364,30 +365,59 @@
     color: #047857;
   }
 
-  /* 预设案例 Chips */
-  #algo-two-sum-view .ts-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-two-sum-view .ts-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-two-sum-view .ts-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-two-sum-view .ts-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-two-sum-view .ts-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-two-sum-view .ts-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -804,7 +834,7 @@
   <header class="ts-header">
     <div class="ts-header-left">
       <div class="ts-icon-btn">🔗</div>
-      <h1 class="ts-main-title">两数之和 (Two Sum)</h1>
+      <h1 class="ts-main-title">两数之和</h1>
       <button id="btn-open-problem-modal" class="ts-btn-problem">📋 题目</button>
       <span class="ts-badge-mode">哈希表一次遍历·即插即查</span>
       <span class="ts-badge-complexity">O(n) · O(n)</span>
@@ -813,11 +843,11 @@
     <div class="ts-header-right">
       <div class="ts-input-group">
         <label for="input-nums">数组:</label>
-        <input type="text" id="input-nums" value="2, 7, 11, 15" style="width: 120px;" placeholder="逗号分隔" />
+        <input type="text" id="input-nums" value="2, 7, 11, 15" style="width: 105px;" placeholder="逗号分隔" />
       </div>
       <div class="ts-input-group">
         <label for="input-target">target:</label>
-        <input type="number" id="input-target" value="9" style="width: 50px;" />
+        <input type="number" id="input-target" value="9" style="width: 44px;" />
       </div>
       <button id="btn-generate" class="ts-btn-generate">
         <span>▶ 运行</span>
@@ -838,7 +868,7 @@
       <div class="ts-card">
         <div class="ts-card-header">
           <div class="ts-card-title">
-            <span>📊 数组遍历与哈希表映射沙盘 (Array & Hash Map)</span>
+            <span>📊 数组遍历与哈希表映射沙盘</span>
           </div>
           <div class="ts-legend-bar">
             <div><span class="ts-legend-dot" style="background:#2563eb;"></span> 当前元素 nums[i]</div>
@@ -858,13 +888,15 @@
           <div class="ts-map-grid" id="ts-map-grid"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="ts-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="ts-chip" data-nums="2, 7, 11, 15" data-target="9">示例 1 ([2,7,11,15], target=9)</button>
-          <button class="ts-chip" data-nums="3, 2, 4" data-target="6">示例 2 ([3,2,4], target=6)</button>
-          <button class="ts-chip" data-nums="3, 3" data-target="6">相同元素 ([3,3], target=6)</button>
-          <button class="ts-chip" data-nums="1, 5, 8, 3, 9" data-target="12">跨度匹配 (target=12)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="ts-preset-bar">
+          <span class="ts-preset-label">预设案例:</span>
+          <div class="ts-preset-list">
+            <button class="ts-chip" data-nums="2, 7, 11, 15" data-target="9">示例 1: ([2,7,11,15], target=9)</button>
+            <button class="ts-chip" data-nums="3, 2, 4" data-target="6">示例 2: ([3,2,4], target=6)</button>
+            <button class="ts-chip" data-nums="3, 3" data-target="6">相同元素: ([3,3], target=6)</button>
+            <button class="ts-chip" data-nums="1, 5, 8, 3, 9" data-target="12">跨度匹配: (target=12)</button>
+          </div>
         </div>
       </div>
 
@@ -894,7 +926,7 @@
       <div class="ts-card">
         <div class="ts-card-header">
           <div>
-            <div class="ts-card-title">🧭 差值补数与匹配监视器 (Complement & Match Monitor)</div>
+            <div class="ts-card-title">🧭 差值补数与匹配监视器</div>
             <div class="ts-card-desc">当前下标、当前数值、补数差值与匹配状态</div>
           </div>
           <span id="badge-status" class="ts-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>

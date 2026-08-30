@@ -680,7 +680,7 @@
   <header class="ms-header">
     <div class="ms-header-left">
       <div class="ms-icon-btn">🥞</div>
-      <h1 class="ms-main-title">LeetCode 225. 用队列实现栈</h1>
+      <h1 class="ms-main-title">用队列实现栈</h1>
       <button id="btn-open-problem-modal" class="ms-btn-problem">📋 题目</button>
       <span class="ms-badge-mode">单队列循环旋转 / push 后翻转保持队头为栈顶</span>
       <span class="ms-badge-complexity">O(n) · O(n)</span>
@@ -693,9 +693,9 @@
         <button class="ms-chip" data-val="push 10, push 20, push 30, pop, top, pop">三次压栈与连续出栈</button>
       </div>
 
-      <div class="ms-input-group">
+      <div class="mq-input-group">
         <span>操作序列:</span>
-        <input type="text" id="input-ops" value="push 1, push 2, top, pop, empty" class="ms-input-str" placeholder="push 1, push 2, top, pop, empty" />
+        <input type="text" id="input-ops" value="push 1, push 2, top, pop, empty" class="ms-input-str" style="width: 140px;" placeholder="push 1, push 2..." />
       </div>
 
       <button id="btn-generate" class="ms-btn-generate">
@@ -714,11 +714,11 @@
     <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
     <section class="ms-left-section">
 
-      <!-- 卡片 1: 队列内部循环旋转与栈顶对齐沙盘 (Queue Rotation Sandbox) -->
+      <!-- 卡片 1: 队列内部循环旋转与栈顶对齐沙盘 -->
       <div class="ms-card">
         <div class="ms-card-header">
           <div class="ms-card-title">
-            <span>🥞 队列内部循环旋转与栈顶对齐沙盘 (Queue Rotation Sandbox)</span>
+            <span>🥞 队列内部循环旋转与栈顶对齐沙盘</span>
           </div>
           <div class="ms-legend-bar">
             <div><span class="ms-legend-dot" style="background:#0d9488;"></span> 🥇 队头 (即栈顶 Top)</div>
@@ -761,18 +761,18 @@
           <div class="ms-state-columns">
             <!-- 队列状态 -->
             <div class="ms-subcard">
-              <div class="ms-subcard-title">🥞 队列与栈顶状态 (Queue & Top)</div>
+              <div class="ms-subcard-title">🥞 队列与栈顶状态</div>
               <div id="ms-queue-status-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
             </div>
             <!-- 出入栈决策监视器 -->
             <div class="ms-subcard">
-              <div class="ms-subcard-title">⚖️ 队列旋转决策监视器 (Rotation Decision)</div>
+              <div class="ms-subcard-title">⚖️ 队列旋转决策监视器</div>
               <div id="ms-decision-monitor-container" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
             </div>
           </div>
           <!-- 统计与进度 -->
           <div class="ms-subcard" style="flex-shrink: 0;">
-            <div class="ms-subcard-title">🏆 出栈与栈顶查看结果记录看板 (Pop & Top Outputs)</div>
+            <div class="ms-subcard-title">🏆 出栈与栈顶查看结果记录看板</div>
             <div id="ms-metrics-container"></div>
           </div>
         </div>

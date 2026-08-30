@@ -360,30 +360,59 @@
     box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
   }
 
-  /* 预设案例 Chips */
-  #algo-right-rotate-view .rr-preset-chips {
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-right-rotate-view .rr-preset-bar {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-top: 4px;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
 
+  #algo-right-rotate-view .rr-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-right-rotate-view .rr-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
   #algo-right-rotate-view .rr-chip {
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 6px;
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    font-size: 10px;
-    color: #475569;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
   }
   #algo-right-rotate-view .rr-chip:hover {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
 
   /* 贯穿式 Scrubber 播放控制条 */
@@ -800,7 +829,7 @@
   <header class="rr-header">
     <div class="rr-header-left">
       <div class="rr-icon-btn">🔄</div>
-      <h1 class="rr-main-title">右旋转字符串 (Right Rotate String)</h1>
+      <h1 class="rr-main-title">右旋转字符串</h1>
       <button id="btn-open-problem-modal" class="rr-btn-problem">📋 题目</button>
       <span class="rr-badge-mode">三次反转法·原地旋转</span>
       <span class="rr-badge-complexity">O(n) · O(1)</span>
@@ -813,7 +842,7 @@
       </div>
       <div class="rr-input-group">
         <label for="input-k">k:</label>
-        <input type="number" id="input-k" value="2" min="1" max="10" style="width: 45px;" />
+        <input type="number" id="input-k" value="2" min="1" max="10" style="width: 42px;" />
       </div>
       <button id="btn-generate" class="rr-btn-generate">
         <span>▶ 运行</span>
@@ -834,7 +863,7 @@
       <div class="rr-card">
         <div class="rr-card-header">
           <div class="rr-card-title">
-            <span>📊 三次反转沙盘 (Three In-Place Reversals)</span>
+            <span>📊 三次反转沙盘</span>
           </div>
           <div class="rr-stage-pills">
             <span class="rr-stage-pill is-active" id="pill-stage-1">1. 反转整体</span>
@@ -848,13 +877,15 @@
           <div class="rr-track-row" id="rr-track-row"></div>
         </div>
 
-        <!-- 预设案例 Chips -->
-        <div class="rr-preset-chips">
-          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
-          <button class="rr-chip" data-s="abcdefg" data-k="2">示例 1 ("abcdefg", k=2)</button>
-          <button class="rr-chip" data-s="lrloseumgh" data-k="6">示例 2 ("lrloseumgh", k=6)</button>
-          <button class="rr-chip" data-s="helloworld" data-k="5">对半旋转 ("helloworld", k=5)</button>
-          <button class="rr-chip" data-s="abc" data-k="1">短字符串 ("abc", k=1)</button>
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="rr-preset-bar">
+          <span class="rr-preset-label">预设案例:</span>
+          <div class="rr-preset-list">
+            <button class="rr-chip" data-s="abcdefg" data-k="2">示例 1: ("abcdefg", k=2)</button>
+            <button class="rr-chip" data-s="lrloseumgh" data-k="6">示例 2: ("lrloseumgh", k=6)</button>
+            <button class="rr-chip" data-s="helloworld" data-k="5">对半旋转: ("helloworld", k=5)</button>
+            <button class="rr-chip" data-s="abc" data-k="1">短字符串: ("abc", k=1)</button>
+          </div>
         </div>
       </div>
 
@@ -884,7 +915,7 @@
       <div class="rr-card">
         <div class="rr-card-header">
           <div>
-            <div class="rr-card-title">🧭 阶段指针与区间监视器 (Stage & Range Monitor)</div>
+            <div class="rr-card-title">🧭 阶段指针与区间监视器</div>
             <div class="rr-card-desc">当前阶段、当前反转区间、k 旋转量与阶段状态</div>
           </div>
           <span id="badge-phase" class="rr-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">反转整体</span>
