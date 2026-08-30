@@ -1,21 +1,17 @@
 /**
- * 二分查找可视化器 — 4-Card 标准现代架构
+ * 二分查找可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * 左闭右闭区间折半、中点动态定位、边界收缩与目标命中
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
 import {
   BINARY_SEARCH_PROBLEM_HTML,
   BINARY_SEARCH_ANALYSIS_HTML,
   BINARY_SEARCH_CODE_LANGUAGES,
 } from './binary-search-problem-content';
-import { parseArray } from '../sort/bubble-sort-renderer';
-import template from './binary-search.html?raw';
 
 export interface BSStep {
   array: number[];
@@ -30,6 +26,14 @@ export interface BSStep {
   message: string;
   log: string;
   codeLine: number | number[];
+}
+
+export function parseSearchArray(input: string): number[] {
+  const arr = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  return arr.length > 0 ? arr.sort((a, b) => a - b) : [-1, 0, 3, 5, 9, 12];
 }
 
 export function binarySearchSteps(raw: number[], target: number): BSStep[] {
@@ -104,32 +108,15 @@ export function binarySearchSteps(raw: number[], target: number): BSStep[] {
         status: 'found',
         comparisons,
         foundIndex: mid,
-        message: `🎯 命中目标！nums[${mid}] == ${target}，搜索成功，返回下标 ${mid}。`,
-        log: `✓ 命中 target: nums[${mid}] == ${target}`,
+        message: `🎯 命中目标！nums[${mid}] == ${target}，成功在下标 ${mid} 处找到目标值！`,
+        log: `✓ 命中目标: 下标 ${mid}`,
         codeLine: 7,
       });
       return steps;
-    } else if (midVal > target) {
-      right = mid - 1;
+    } else if (midVal < target) {
       steps.push({
         array: [...array],
-        left,
-        right,
-        mid,
-        target,
-        phase: 'narrow-right',
-        status: 'narrow-right',
-        comparisons,
-        foundIndex: -1,
-        message: `nums[${mid}] (${midVal}) > target (${target})，说明目标在左侧半区。收缩右界：right = mid - 1 = ${right}。`,
-        log: `nums[${mid}] > target -> right=${right}`,
-        codeLine: [8, 9],
-      });
-    } else {
-      left = mid + 1;
-      steps.push({
-        array: [...array],
-        left,
+        left: mid + 1,
         right,
         mid,
         target,
@@ -137,10 +124,27 @@ export function binarySearchSteps(raw: number[], target: number): BSStep[] {
         status: 'narrow-left',
         comparisons,
         foundIndex: -1,
-        message: `nums[${mid}] (${midVal}) < target (${target})，说明目标在右侧半区。收缩左界：left = mid + 1 = ${left}。`,
-        log: `nums[${mid}] < target -> left=${left}`,
+        message: `nums[mid=${mid}]=${midVal} < target(${target})，目标在右半区，调整左边界：left = mid + 1 = ${mid + 1}。`,
+        log: `${midVal} < ${target} -> 调整 left = ${mid + 1}`,
+        codeLine: [8, 9],
+      });
+      left = mid + 1;
+    } else {
+      steps.push({
+        array: [...array],
+        left,
+        right: mid - 1,
+        mid,
+        target,
+        phase: 'narrow-right',
+        status: 'narrow-right',
+        comparisons,
+        foundIndex: -1,
+        message: `nums[mid=${mid}]=${midVal} > target(${target})，目标在左半区，调整右边界：right = mid - 1 = ${mid - 1}。`,
+        log: `${midVal} > ${target} -> 调整 right = ${mid - 1}`,
         codeLine: [10, 11],
       });
+      right = mid - 1;
     }
   }
 
@@ -154,193 +158,141 @@ export function binarySearchSteps(raw: number[], target: number): BSStep[] {
     status: 'not-found',
     comparisons,
     foundIndex: -1,
-    message: `❌ 搜索结束：left (${left}) > right (${right})，区间为空，target (${target}) 不存在于数组中，返回 -1。`,
-    log: `未找到 target -> 返回 -1`,
-    codeLine: 14,
+    message: `❌ 查找结束：left (${left}) > right (${right})，区间为空，未找到目标值，返回 -1。`,
+    log: `✓ 结束：未找到 target (${target}) -> -1`,
+    codeLine: 13,
   });
 
   return steps;
 }
 
-export class BinarySearchVisualizer extends StepVisualizer<BSStep> {
-  protected codeLanguages = BINARY_SEARCH_CODE_LANGUAGES;
-  protected codeLines = BINARY_SEARCH_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '二分查找 代码调试';
+const { template, Visualizer } = createDeclarativeVisualizer<BSStep>({
+  id: 'binary-search',
+  name: '二分查找',
+  category: 'search',
+  icon: '🎯',
+  badge: {
+    mode: '左闭右闭区间折半',
+    complexity: 'O(log n) · O(1)',
+  },
+  card1Title: '📊 有序数组条带与折半区间沙盘',
+  card2Title: '🧭 中点比对与收缩决策监视器',
+  card2Desc: '当前区间 [left..right]、中点 mid 与比对比较结论',
+  legend: [
+    { label: '命中目标', color: '#16a34a' },
+    { label: '中点 mid', color: '#fbbf24' },
+    { label: '有效搜索区间', color: '#3b82f6' },
+  ],
+  inputs: [
+    {
+      id: 'input-array',
+      label: '有序数组',
+      type: 'text',
+      defaultValue: '-1, 0, 3, 5, 9, 12',
+      width: '150px',
+      placeholder: '-1, 0, 3, 5, 9, 12',
+    },
+    {
+      id: 'input-target',
+      label: '目标值 target',
+      type: 'number',
+      defaultValue: 9,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '命中示例 (target=9)', values: { 'input-array': '-1, 0, 3, 5, 9, 12', 'input-target': 9 } },
+    { label: '不存在值 (target=2)', values: { 'input-array': '-1, 0, 3, 5, 9, 12', 'input-target': 2 } },
+    { label: '首尾边界 (target=12)', values: { 'input-array': '-1, 0, 3, 5, 9, 12', 'input-target': 12 } },
+  ],
+  metrics: [
+    { id: 'mid-val', label: '中点 nums[mid]', color: '#f59e0b' },
+    { id: 'compare-count', label: '比较次数', color: '#2563eb' },
+    { id: 'search-result', label: '查找结论', color: '#16a34a' },
+  ],
+  codeLanguages: BINARY_SEARCH_CODE_LANGUAGES,
+  problemHtml: BINARY_SEARCH_PROBLEM_HTML,
+  analysisHtml: BINARY_SEARCH_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-array'] || '-1, 0, 3, 5, 9, 12';
+    const arr = parseSearchArray(raw);
+    const target = parseInt(inputs['input-target'] || '9', 10);
+    return binarySearchSteps(arr, target);
+  },
+  renderCanvas: (container, step) => {
+    const isFound = step.phase === 'found';
+    const hasMid = step.mid >= 0;
 
-  private trackRowEl: HTMLElement | null = null;
-  private metricRangeEl: HTMLElement | null = null;
-  private metricMidEl: HTMLElement | null = null;
-  private metricTargetEl: HTMLElement | null = null;
-  private metricResEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+    const highlights = new Map<number, { bg?: string; border?: string; color?: string }>();
+    if (isFound) {
+      highlights.set(step.mid, { bg: '#f0fdf4', border: '#86efac', color: '#166534' });
+    } else if (hasMid) {
+      highlights.set(step.mid, { bg: '#fffbeb', border: '#fde68a', color: '#b45309' });
+    }
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+    const pointers = [];
+    if (step.left <= step.right && step.left >= 0) {
+      pointers.push({ name: 'L', index: step.left, color: '#2563eb', position: 'top' as const });
+      pointers.push({ name: 'R', index: step.right, color: '#0d9488', position: 'top' as const });
+    }
+    if (hasMid) {
+      pointers.push({ name: 'mid', index: step.mid, color: '#f59e0b', position: 'bottom' as const });
+    }
 
-    this.trackRowEl = this.root.querySelector('#bns-track-row');
-    this.metricRangeEl = this.root.querySelector('#metric-range');
-    this.metricMidEl = this.root.querySelector('#metric-mid');
-    this.metricTargetEl = this.root.querySelector('#metric-target');
-    this.metricResEl = this.root.querySelector('#metric-res');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.bns-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-        const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        if (targetInput && btn.dataset.t) targetInput.value = btn.dataset.t;
-        this.start();
-      });
+    ArrayTrackAdapter.renderTrack(container, {
+      array: step.array,
+      pointers,
+      windowRange:
+        step.left <= step.right && step.left >= 0
+          ? { left: step.left, right: step.right, color: '#3b82f6' }
+          : undefined,
+      itemHighlights: highlights,
+      primaryTitle: '📊 升序排布数组条带 (nums):',
     });
 
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: BINARY_SEARCH_PROBLEM_HTML,
-      analysisHtml: BINARY_SEARCH_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
+    const root = container.closest('#algo-binary-search-view');
+    if (root) {
+      const midEl = root.querySelector('#metric-mid-val');
+      const countEl = root.querySelector('#metric-compare-count');
+      const resEl = root.querySelector('#metric-search-result');
 
-  protected buildSteps(): BSStep[] {
-    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-    const raw = arrInput?.value || '-1, 0, 3, 5, 9, 12';
-    const t = parseInt(targetInput?.value || '9', 10);
-    const arr = parseArray(raw);
-    return binarySearchSteps(arr, isNaN(t) ? 9 : t);
-  }
+      if (midEl) midEl.textContent = hasMid ? `nums[${step.mid}] = ${step.array[step.mid]}` : '—';
+      if (countEl) countEl.textContent = `${step.comparisons} 次`;
+      if (resEl) {
+        resEl.textContent = isFound ? `命中下标 [${step.foundIndex}]` : step.phase === 'not-found' ? '未找到 (-1)' : '折半查找中';
+        resEl.style.color = isFound ? '#16a34a' : step.phase === 'not-found' ? '#ef4444' : '#2563eb';
+      }
 
-  protected renderStep(step: BSStep): void {
-    const { array, left, right, mid, target, phase, foundIndex, message } = step;
-
-    // 1. 渲染二分数组与指针
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = array
-        .map((val, idx) => {
-          const isL = idx === left;
-          const isR = idx === right;
-          const isM = idx === mid;
-          const isFound = idx === foundIndex;
-          const inRange = idx >= left && idx <= right;
-
-          let tagText = '';
-          if (isL && isR) tagText = isM ? 'L,R,M' : 'L,R';
-          else if (isL) tagText = isM ? 'L,M' : 'L';
-          else if (isR) tagText = isM ? 'R,M' : 'R';
-          else if (isM) tagText = 'M';
-
-          let cellClass = 'bns-cell-box';
-          if (isFound) cellClass += ' is-found';
-          else if (isM) cellClass += ' is-mid';
-          else if (inRange) cellClass += ' in-range';
-          else cellClass += ' is-dimmed';
-
-          return `
-            <div class="bns-cell-wrapper">
-              <span class="bns-ptr-tag" style="color:${isFound ? '#10b981' : isM ? '#a855f7' : '#2563eb'};">${tagText}</span>
-              <div class="${cellClass}">
-                <span class="val">${val}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
+      // 在 Card 2 中展示折半区间关系
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #475569; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前有效搜索范围:</span>
+              <strong style="color: #2563eb;">[${step.left} .. ${step.right}]</strong>
             </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricRangeEl) {
-      this.metricRangeEl.textContent = left <= right ? `[${left}, ${right}]` : '区间为空';
-    }
-    if (this.metricMidEl) {
-      this.metricMidEl.textContent = mid >= 0 ? `${mid} (${array[mid]})` : '—';
-    }
-    if (this.metricTargetEl) this.metricTargetEl.textContent = `${target}`;
-    if (this.metricResEl) {
-      if (phase === 'found') {
-        this.metricResEl.textContent = `命中 [${foundIndex}]`;
-        this.metricResEl.style.color = '#10b981';
-      } else if (phase === 'not-found') {
-        this.metricResEl.textContent = '未找到 (-1)';
-        this.metricResEl.style.color = '#ef4444';
-      } else {
-        this.metricResEl.textContent = '搜索中...';
-        this.metricResEl.style.color = '#2563eb';
+            <div style="display: flex; justify-content: space-between;">
+              <span>中点折半公式:</span>
+              <strong style="font-family: monospace; color: #f59e0b;">mid = L + (R - L) / 2</strong>
+            </div>
+          </div>
+        `;
       }
     }
-
-    if (this.formulaActionEl) {
-      if (phase === 'check-mid') {
-        this.formulaActionEl.textContent = `mid = ${left} + (${right} - ${left}) / 2 = ${mid}`;
-      } else if (phase === 'narrow-right') {
-        this.formulaActionEl.textContent = `nums[${mid}] (${array[mid]}) > ${target} -> right = ${right}`;
-      } else if (phase === 'narrow-left') {
-        this.formulaActionEl.textContent = `nums[${mid}] (${array[mid]}) < ${target} -> left = ${left}`;
-      } else if (phase === 'found') {
-        this.formulaActionEl.textContent = `nums[${mid}] == ${target} 命中返回 ${mid}`;
-      } else if (phase === 'not-found') {
-        this.formulaActionEl.textContent = 'left > right -> 搜索结束返回 -1';
-      } else {
-        this.formulaActionEl.textContent = 'mid = left + (right - left) / 2';
-      }
-    }
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'found' ? '#f0fdf4' : phase === 'not-found' ? '#fff1f2' : '#eff6ff';
-      logEntry.style.color =
-        phase === 'found' ? '#15803d' : phase === 'not-found' ? '#e11d48' : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'found' ? '#bbf7d0' : phase === 'not-found' ? '#fecdd3' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeRange = this.root?.querySelector('#badge-range');
-    if (badgeRange) {
-      badgeRange.textContent = left <= right ? `区间: [${left}..${right}]` : '区间为空';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'binary-search',
   name: '二分查找',
   viewId: 'algo-binary-search-view',
   category: 'search',
-  description: '在有序数组中以 O(log n) 时间定位目标',
-  icon: '🔍',
+  description: '经典折半查找：每次与中点比较，对半剔除不可能区间，对数级 O(log n) 时间复杂度',
+  icon: '🎯',
   template,
-  Visualizer: BinarySearchVisualizer,
+  Visualizer,
   difficulty: 1,
   levelOrder: 1,
-  learningGoal: '掌握二分搜索的标准写法与边界处理',
+  learningGoal: '掌握左闭右闭区间折半查找的不变量设计与防溢出中点计算公式',
 });

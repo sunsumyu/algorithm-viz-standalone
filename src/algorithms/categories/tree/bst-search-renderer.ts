@@ -1,17 +1,18 @@
 /**
- * 二叉搜索树中的搜索可视化器 — 4-Card 标准现代架构
+ * 二叉搜索树中的搜索可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * 单向剪枝查找、路径与目标子树高亮、即时命中判定
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   BST_SEARCH_PROBLEM_HTML,
   BST_SEARCH_ANALYSIS_HTML,
   BST_SEARCH_CODE_LANGUAGES,
 } from './bst-search-problem-content';
-import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
-import template from './bst-search.html?raw';
 
 export interface BSTSStep {
   tree: TreeNode | null;
@@ -99,7 +100,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
         action: 'left',
         message: `目标值 ${targetVal} < 当前节点 ${curr.val}，根据 BST 有序性，目标只可能在左子树。`,
         log: `${targetVal} < ${curr.val} -> 搜左子树`,
-        codeLine: [4, 5],
+        codeLine: 4,
       });
       curr = curr.left;
     } else {
@@ -114,7 +115,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
         action: 'right',
         message: `目标值 ${targetVal} > 当前节点 ${curr.val}，根据 BST 有序性，目标只可能在右子树。`,
         log: `${targetVal} > ${curr.val} -> 搜右子树`,
-        codeLine: [6, 7],
+        codeLine: 5,
       });
       curr = curr.right;
     }
@@ -130,176 +131,145 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
       path: [...path],
       targetSubtree: null,
       action: 'not-found',
-      message: `❌ 到达空子树 (null)，目标值 ${targetVal} 不存在于该二叉搜索树中，返回 null。`,
-      log: `✓ 未找到目标 (null)`,
+      message: `❌ 遍历到达空指针 (null)，BST 中不存在值为 ${targetVal} 的节点，返回 null。`,
+      log: `✓ 未找到目标 ${targetVal} (null)`,
       codeLine: 3,
     });
   }
 
+  steps.push({
+    tree: root,
+    current: found ? targetSubtree!.val : null,
+    val: targetVal,
+    decision: found ? '搜索成功' : '搜索失败',
+    found,
+    path: [...path],
+    targetSubtree,
+    action: 'done',
+    message: found
+      ? `🎉 搜索完成！在路径 [${path.join(' -> ')}] 上成功定位到目标节点 ${targetVal}。`
+      : `❌ 搜索完成！未在树中检索到节点 ${targetVal}。`,
+    log: found ? `✓ 搜索完成: 命中 ${targetVal}` : `✓ 搜索完成: 未找到 ${targetVal}`,
+    codeLine: 6,
+  });
+
   return steps;
 }
 
-export class BstSearchVisualizer extends StepVisualizer<BSTSStep> {
-  protected codeLanguages = BST_SEARCH_CODE_LANGUAGES;
-  protected codeLines = BST_SEARCH_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '二叉搜索树搜索 代码调试';
-
-  private treeSvgContainer: HTMLElement | null = null;
-  private metricCurrEl: HTMLElement | null = null;
-  private metricValEl: HTMLElement | null = null;
-  private metricDecisionEl: HTMLElement | null = null;
-  private metricVerdictEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.treeSvgContainer = this.root.querySelector('#bsts-tree-svg-container');
-    this.metricCurrEl = this.root.querySelector('#metric-curr');
-    this.metricValEl = this.root.querySelector('#metric-val');
-    this.metricDecisionEl = this.root.querySelector('#metric-decision');
-    this.metricVerdictEl = this.root.querySelector('#metric-verdict');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#bsts-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.bsts-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-        const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
-        if (targetInput && btn.dataset.t) targetInput.value = btn.dataset.t;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: BST_SEARCH_PROBLEM_HTML,
-      analysisHtml: BST_SEARCH_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  private parseTreeInput(raw: string): (number | null)[] {
-    return raw
-      .split(/[,，\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
-      .filter((n) => n === null || !isNaN(n));
-  }
-
-  protected buildSteps(): BSTSStep[] {
-    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-    const raw = treeInput?.value || '4, 2, 7, 1, 3';
-    const t = parseInt(targetInput?.value || '2', 10);
-    const arr = this.parseTreeInput(raw);
-    const root = buildTree(arr);
-    return buildBSTSearchSteps(root, isNaN(t) ? 2 : t);
-  }
-
-  protected renderStep(step: BSTSStep): void {
-    const { tree, current, val, decision, found, path, action, message } = step;
-
-    // 1. 渲染 SVG 树拓扑
-    if (this.treeSvgContainer) {
-      const highlight = current != null ? new Set([current]) : new Set<number>();
-      const secondaryHighlight = new Set<number>(path);
-      const secondaryColor = found ? '#10b981' : '#3b82f6';
-
-      renderTreeSVG(
-        this.treeSvgContainer,
-        tree,
-        highlight,
-        found ? '#10b981' : '#fbbf24',
-        secondaryHighlight,
-        secondaryColor,
-      );
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurrEl) this.metricCurrEl.textContent = current != null ? `${current}` : '—';
-    if (this.metricValEl) this.metricValEl.textContent = `${val}`;
-    if (this.metricDecisionEl) this.metricDecisionEl.textContent = decision;
-    if (this.metricVerdictEl) {
-      if (found) {
-        this.metricVerdictEl.textContent = `命中节点 [${current}]`;
-        this.metricVerdictEl.style.color = '#10b981';
-      } else if (action === 'not-found') {
-        this.metricVerdictEl.textContent = '不存在 (null)';
-        this.metricVerdictEl.style.color = '#ef4444';
-      } else {
-        this.metricVerdictEl.textContent = '搜索中...';
-        this.metricVerdictEl.style.color = '#2563eb';
-      }
-    }
-
-    if (this.formulaActionEl) {
-      if (found) {
-        this.formulaActionEl.textContent = `命中: root.val == ${val} -> return root`;
-      } else if (action === 'left') {
-        this.formulaActionEl.textContent = `${val} < ${current} -> searchBST(root.left, ${val})`;
-      } else if (action === 'right') {
-        this.formulaActionEl.textContent = `${val} > ${current} -> searchBST(root.right, ${val})`;
-      } else if (action === 'not-found') {
-        this.formulaActionEl.textContent = 'root == null -> return null';
-      } else {
-        this.formulaActionEl.textContent = 'val < root.val ? search(left) : search(right)';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.found ? '#f0fdf4' : st.action === 'not-found' ? '#fff1f2' : '#eff6ff';
-        let color =
-          st.found ? '#15803d' : st.action === 'not-found' ? '#e11d48' : '#1d4ed8';
-        let border =
-          st.found ? '#bbf7d0' : st.action === 'not-found' ? '#fecdd3' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeVerdict = this.root?.querySelector('#badge-verdict');
-    if (badgeVerdict) {
-      badgeVerdict.textContent =
-        found ? `命中节点 [${current}]` : action === 'not-found' ? '未找到 (null)' : '搜索中...';
-    }
-  }
+function parseTreeInput(raw: string): (number | null)[] {
+  return (raw || '4, 2, 7, 1, 3')
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+    .filter((n) => n === null || !isNaN(n));
 }
+
+const { template, Visualizer } = createDeclarativeVisualizer<BSTSStep>({
+  id: 'bst-search',
+  name: '二叉搜索树中的搜索',
+  category: 'tree',
+  icon: '🔍',
+  badge: {
+    mode: 'BST二分剪枝查找',
+    complexity: 'O(log n) · O(1)',
+  },
+  card1Title: '📊 BST 拓扑结构与检索路径沙盘',
+  card2Title: '🧭 单向分支决策与查找状态监视器',
+  card2Desc: '当前检查节点、目标比对关系与已走过检索路径',
+  legend: [
+    { label: '命中目标节点', color: '#16a34a' },
+    { label: '搜索路径上的节点', color: '#fbbf24' },
+    { label: '当前比对节点', color: '#3b82f6' },
+  ],
+  inputs: [
+    {
+      id: 'input-tree',
+      label: 'BST 树层序',
+      type: 'text',
+      defaultValue: '4, 2, 7, 1, 3',
+      width: '140px',
+      placeholder: '4, 2, 7, 1, 3',
+    },
+    {
+      id: 'input-target',
+      label: '目标值 val',
+      type: 'number',
+      defaultValue: 2,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '命中示例 (val=2)', values: { 'input-tree': '4, 2, 7, 1, 3', 'input-target': 2 } },
+    { label: '不存在值 (val=5)', values: { 'input-tree': '4, 2, 7, 1, 3', 'input-target': 5 } },
+    { label: '更大多层树 (val=15)', values: { 'input-tree': '10, 5, 20, 3, 7, 15, 25', 'input-target': 15 } },
+  ],
+  metrics: [
+    { id: 'cur-node', label: '当前比对节点', color: '#3b82f6' },
+    { id: 'branch-decision', label: '分支转向决策', color: '#f59e0b' },
+    { id: 'found-status', label: '搜索命中状态', color: '#16a34a' },
+  ],
+  codeLanguages: BST_SEARCH_CODE_LANGUAGES,
+  problemHtml: BST_SEARCH_PROBLEM_HTML,
+  analysisHtml: BST_SEARCH_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-tree'] || '4, 2, 7, 1, 3';
+    const arr = parseTreeInput(raw);
+    const root = buildTree(arr);
+    const target = parseInt(inputs['input-target'] || '2', 10);
+    return buildBSTSearchSteps(root, target);
+  },
+  renderCanvas: (container, step) => {
+    TreeCanvasAdapter.renderTree(container, {
+      tree: step.tree,
+      current: step.found ? step.current : null,
+      secondaryHighlightedNodes: step.path,
+      primaryColor: '#16a34a',
+      secondaryColor: '#fbbf24',
+    });
+
+    const root = container.closest('#algo-bst-search-view');
+    if (root) {
+      const curEl = root.querySelector('#metric-cur-node');
+      const decEl = root.querySelector('#metric-branch-decision');
+      const foundEl = root.querySelector('#metric-found-status');
+
+      if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
+      if (decEl) decEl.textContent = step.decision;
+      if (foundEl) {
+        foundEl.textContent = step.found ? '已命中目标' : step.action === 'not-found' ? '未找到 (null)' : '检索中';
+        foundEl.style.color = step.found ? '#16a34a' : step.action === 'not-found' ? '#ef4444' : '#2563eb';
+      }
+
+      // 在 Card 2 中展示检索路径
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">已检索路径 (Path):</span>
+              <span style="font-size: 10px; color: #64748b; font-family: monospace;">目标: ${step.val}</span>
+            </div>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #2563eb;">
+              ${step.path.join(' -> ') || '未开始'}
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'bst-search',
-  name: 'BST 节点搜索',
+  name: '二叉搜索树中的搜索',
   viewId: 'algo-bst-search-view',
   category: 'tree',
-  description: '利用二叉搜索树的单调有序性进行快速节点搜索与子树返回',
+  description: 'BST 单向剪枝查找：val < root.val 走左子树，val > root.val 走右子树',
   icon: '🔍',
-  difficulty: 1,
-  levelOrder: 8,
-  learningGoal: '掌握基于 BST 性质的单向剪枝搜索模型',
   template,
-  Visualizer: BstSearchVisualizer,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 6,
+  learningGoal: '掌握二叉搜索树利用有序性实现单向分支高效剪枝查找的算法原理',
 });

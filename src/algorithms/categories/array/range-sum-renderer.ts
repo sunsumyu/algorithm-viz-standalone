@@ -1,16 +1,17 @@
 /**
- * 区间和（前缀和）可视化器 — 4-Card 标准现代架构
+ * 区间和（前缀和）可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * KamaCoder 58：一维前缀和预处理与 O(1) 差分查询
+ * 遵循 Zero-Subbox 规范，扁平双轨沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
 import {
   RANGE_SUM_PROBLEM_HTML,
   RANGE_SUM_ANALYSIS_HTML,
   RANGE_SUM_CODE_LANGUAGES,
 } from './range-sum-problem-content';
-import template from './range-sum.html?raw';
 
 export interface RSumStep {
   arr: number[];
@@ -98,9 +99,11 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
 
   // 3. 执行区间查询
   for (let q = 0; q < queries.length; q++) {
-    const [rawL, rawR] = queries[q];
-    const L = Math.max(0, Math.min(rawL, n - 1));
-    const R = Math.max(0, Math.min(rawR, n - 1));
+    const [L, R] = queries[q];
+    const validL = Math.max(0, Math.min(n - 1, L));
+    const validR = Math.max(validL, Math.min(n - 1, R));
+    const ans = prefix[validR + 1] - prefix[validL];
+    results.push(ans);
 
     steps.push({
       arr: [...arr],
@@ -109,43 +112,22 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
       qIndex: q,
       phase: 'query',
       i: -1,
-      L,
-      R,
-      sum: 0,
-      results: [...results],
-      status: 'query-start',
-      message: `开始第 ${q + 1} 次查询：区间 [${L}, ${R}]。`,
-      log: `查询 #${q + 1}: 范围 [${L}, ${R}]`,
-      codeLine: 8,
-    });
-
-    const sumVal = prefix[R + 1] - prefix[L];
-    results.push(sumVal);
-
-    steps.push({
-      arr: [...arr],
-      prefix: [...prefix],
-      queries,
-      qIndex: q,
-      phase: 'query',
-      i: -1,
-      L,
-      R,
-      sum: sumVal,
+      L: validL,
+      R: validR,
+      sum: ans,
       results: [...results],
       status: 'compute',
-      message: `公式计算: prefix[R+1=${R + 1}] (${prefix[R + 1]}) - prefix[L=${L}] (${prefix[L]}) = ${sumVal}。`,
-      log: `查询结果: prefix[${R + 1}] - prefix[${L}] = ${sumVal}`,
-      codeLine: 9,
+      message: `区间查询 [${validL}, ${validR}]：sum = prefix[${validR + 1}] (${prefix[validR + 1]}) - prefix[${validL}] (${prefix[validL]}) = ${ans}。`,
+      log: `查询 [${validL}, ${validR}]: prefix[${validR + 1}] - prefix[${validL}] = ${ans}`,
+      codeLine: [8, 9, 10],
     });
   }
 
-  // 4. 完成
   steps.push({
     arr: [...arr],
     prefix: [...prefix],
     queries,
-    qIndex: queries.length - 1,
+    qIndex: queries.length,
     phase: 'query',
     i: -1,
     L: -1,
@@ -153,204 +135,117 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
     sum: 0,
     results: [...results],
     status: 'done',
-    message: `🎉 所有 ${queries.length} 次区间和查询全部完成！输出结果集: [${results.join(', ')}]。`,
-    log: `算法完成: 所有查询结果 [${results.join(', ')}]`,
+    message: `🎉 所有区间查询计算完毕！最终查询结果序列: [${results.join(', ')}]。`,
+    log: `✓ 查询完成: [${results.join(', ')}]`,
     codeLine: 11,
   });
 
   return steps;
 }
 
-export class RangeSumVisualizer extends StepVisualizer<RSumStep> {
-  protected codeLanguages = RANGE_SUM_CODE_LANGUAGES;
-  protected codeLines = RANGE_SUM_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '前缀和 代码调试';
-
-  private arrTrackEl: HTMLElement | null = null;
-  private prefixTrackEl: HTMLElement | null = null;
-  private metricQueryEl: HTMLElement | null = null;
-  private metricLrEl: HTMLElement | null = null;
-  private metricDiffEl: HTMLElement | null = null;
-  private metricSumEl: HTMLElement | null = null;
-  private formulaPrEl: HTMLElement | null = null;
-  private formulaPlEl: HTMLElement | null = null;
-  private formulaResEl: HTMLElement | null = null;
-  private resultsBarEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.arrTrackEl = this.root.querySelector('#rs-arr-track');
-    this.prefixTrackEl = this.root.querySelector('#rs-prefix-track');
-    this.metricQueryEl = this.root.querySelector('#metric-query');
-    this.metricLrEl = this.root.querySelector('#metric-lr');
-    this.metricDiffEl = this.root.querySelector('#metric-diff');
-    this.metricSumEl = this.root.querySelector('#metric-sum');
-    this.formulaPrEl = this.root.querySelector('#formula-pr');
-    this.formulaPlEl = this.root.querySelector('#formula-pl');
-    this.formulaResEl = this.root.querySelector('#formula-res');
-    this.resultsBarEl = this.root.querySelector('#rs-results-bar');
-    this.liveTextEl = this.root.querySelector('#rs-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rs-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-arr') as HTMLInputElement | null;
-        const qInput = this.root?.querySelector('#input-queries') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        if (qInput && btn.dataset.q) qInput.value = btn.dataset.q;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: RANGE_SUM_PROBLEM_HTML,
-      analysisHtml: RANGE_SUM_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RSumStep[] {
-    const arrInput = this.root?.querySelector('#input-arr') as HTMLInputElement | null;
-    const qInput = this.root?.querySelector('#input-queries') as HTMLInputElement | null;
-    const arr = parseRangeArray(arrInput?.value || '1, 2, 3, 4, 5');
-    const queries = parseQueries(qInput?.value || '0,2|1,3|2,4');
+const { template, Visualizer } = createDeclarativeVisualizer<RSumStep>({
+  id: 'range-sum',
+  name: '区间和（前缀和）',
+  category: 'array',
+  icon: '➕',
+  badge: {
+    mode: '一维前缀和·O(1)查询',
+    complexity: 'O(n+m) · O(n)',
+  },
+  card1Title: '📊 原始数组与前缀和双轨沙盘',
+  card2Title: '🧭 前缀和公式与区间差分监视器',
+  card2Desc: '当前查询区间 [L..R]、prefix[R+1] - prefix[L] 与结果列表',
+  legend: [
+    { label: '查询区间覆盖', color: '#2563eb' },
+    { label: '前缀和数组', color: '#0d9488' },
+  ],
+  inputs: [
+    {
+      id: 'input-array',
+      label: '原始数组',
+      type: 'text',
+      defaultValue: '1, 2, 3, 4, 5',
+      width: '130px',
+      placeholder: '1, 2, 3, 4, 5',
+    },
+    {
+      id: 'input-queries',
+      label: '查询区间',
+      type: 'text',
+      defaultValue: '0, 2 | 1, 3 | 2, 4',
+      width: '140px',
+      placeholder: '0, 2 | 1, 3',
+    },
+  ],
+  presets: [
+    { label: '标准示例', values: { 'input-array': '1, 2, 3, 4, 5', 'input-queries': '0, 2 | 1, 3 | 2, 4' } },
+    { label: '全区间查询', values: { 'input-array': '10, 20, 30, 40', 'input-queries': '0, 3 | 1, 2' } },
+    { label: '单点查询', values: { 'input-array': '5, 8, 12, 15', 'input-queries': '0, 0 | 2, 2 | 3, 3' } },
+  ],
+  metrics: [
+    { id: 'query-range', label: '当前查询区间 [L, R]', color: '#2563eb' },
+    { id: 'diff-formula', label: '差分公式计算', color: '#f59e0b' },
+    { id: 'query-result', label: '当前区间和', color: '#16a34a' },
+  ],
+  codeLanguages: RANGE_SUM_CODE_LANGUAGES,
+  problemHtml: RANGE_SUM_PROBLEM_HTML,
+  analysisHtml: RANGE_SUM_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const rawArr = inputs['input-array'] || '1, 2, 3, 4, 5';
+    const rawQ = inputs['input-queries'] || '0, 2 | 1, 3 | 2, 4';
+    const arr = parseRangeArray(rawArr);
+    const queries = parseQueries(rawQ);
     return buildRangeSumSteps(arr, queries);
-  }
+  },
+  renderCanvas: (container, step) => {
+    const isQuery = step.phase === 'query' && step.L >= 0;
 
-  protected renderStep(step: RSumStep): void {
-    const { arr, prefix, qIndex, phase, L, R, sum, results, status, message } = step;
+    ArrayTrackAdapter.renderTrack(container, {
+      array: step.arr,
+      windowRange: isQuery ? { left: step.L, right: step.R, color: '#3b82f6' } : undefined,
+      primaryTitle: '📊 原始数组 (nums):',
+      secondaryArray: step.prefix,
+      secondaryTitle: '📦 前缀和数组 (prefix):',
+    });
 
-    // 1. 渲染原数组 arr (上轨)
-    if (this.arrTrackEl) {
-      this.arrTrackEl.innerHTML = arr
-        .map((num, idx) => {
-          const inRange = phase === 'query' && idx >= L && idx <= R && L >= 0;
-          let boxClasses = 'rs-cell-box';
-          if (inRange) boxClasses += ' is-query-range';
+    const root = container.closest('#algo-range-sum-view');
+    if (root) {
+      const qRangeEl = root.querySelector('#metric-query-range');
+      const formulaEl = root.querySelector('#metric-diff-formula');
+      const resEl = root.querySelector('#metric-query-result');
 
-          return `
-            <div class="rs-cell-wrapper">
-              <div class="${boxClasses}">
-                <span class="val">${num}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染前缀和数组 prefix (下轨)
-    if (this.prefixTrackEl) {
-      this.prefixTrackEl.innerHTML = Array.from({ length: arr.length + 1 })
-        .map((_, idx) => {
-          const val = idx < prefix.length ? prefix[idx] : null;
-          const isPL = phase === 'query' && L >= 0 && idx === L;
-          const isPR = phase === 'query' && R >= 0 && idx === R + 1;
-
-          let boxClasses = 'rs-cell-box';
-          if (isPL) boxClasses += ' is-prefix-l';
-          if (isPR) boxClasses += ' is-prefix-r';
-
-          const badges: string[] = [];
-          if (isPL) badges.push('<span class="rs-ptr-badge pl">prefix[L]</span>');
-          if (isPR) badges.push('<span class="rs-ptr-badge pr">prefix[R+1]</span>');
-
-          return `
-            <div class="rs-cell-wrapper">
-              ${badges.join('')}
-              <div class="${boxClasses}">
-                <span class="val">${val !== null ? val : '—'}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricQueryEl) this.metricQueryEl.textContent = qIndex >= 0 ? `#${qIndex + 1}` : '预处理';
-    if (this.metricLrEl) this.metricLrEl.textContent = L >= 0 && R >= 0 ? `[${L}, ${R}]` : '—';
-    if (this.metricDiffEl) {
-      this.metricDiffEl.textContent =
-        phase === 'query' && L >= 0 && R >= 0 && R + 1 < prefix.length
-          ? `${prefix[R + 1]} - ${prefix[L]}`
-          : '—';
-    }
-    if (this.metricSumEl) this.metricSumEl.textContent = phase === 'query' && status === 'compute' ? String(sum) : '—';
-
-    if (this.formulaPrEl) this.formulaPrEl.textContent = R >= 0 && R + 1 < prefix.length ? `prefix[${R + 1}] (${prefix[R + 1]})` : 'prefix[R+1]';
-    if (this.formulaPlEl) this.formulaPlEl.textContent = L >= 0 && L < prefix.length ? `prefix[${L}] (${prefix[L]})` : 'prefix[L]';
-    if (this.formulaResEl) this.formulaResEl.textContent = phase === 'query' && status === 'compute' ? String(sum) : '—';
-
-    // 历史结果徽标
-    if (this.resultsBarEl) {
-      let html = '<span style="font-size: 11px; font-weight: 700; color: #64748b;">历史查询结果:</span> ';
-      if (results.length === 0) {
-        html += '<span style="color: #94a3b8; font-size: 11px;">(暂无)</span>';
-      } else {
-        html += results
-          .map(
-            (res, idx) => `
-          <span style="padding: 2px 6px; border-radius: 4px; background: #eff6ff; color: #2563eb; font-weight: 700; border: 1px solid #bfdbfe; font-family: monospace; font-size: 11px;">
-            Q${idx + 1}: ${res}
-          </span>
-        `
-          )
-          .join('');
+      if (qRangeEl) qRangeEl.textContent = isQuery ? `[${step.L}, ${step.R}]` : step.phase === 'build' ? '构建前缀和中' : '完成';
+      if (formulaEl) {
+        formulaEl.textContent = isQuery ? `prefix[${step.R + 1}] - prefix[${step.L}]` : '—';
       }
-      this.resultsBarEl.innerHTML = html;
-    }
+      if (resEl) resEl.textContent = isQuery ? `${step.sum}` : step.status === 'done' ? `共 ${step.results.length} 次查询` : '—';
 
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
+      // 在 Card 2 中展示查询结果序列
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const resultsChips = step.results.map((ans, idx) => `<span style="padding: 1px 6px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 4px; font-size: 10.5px; font-family: monospace;">Q${idx + 1}: ${ans}</span>`).join(' ') || '<span style="color:#94a3b8; font-size:10.5px; font-style:italic;">等待执行查询...</span>';
 
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg = st.status === 'done' ? '#f0fdf4' : st.phase === 'query' ? '#eff6ff' : '#f8fafc';
-        let color = st.status === 'done' ? '#15803d' : st.phase === 'query' ? '#1d4ed8' : '#334155';
-        let border = st.status === 'done' ? '#bbf7d0' : st.phase === 'query' ? '#bfdbfe' : '#e2e8f0';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">已计算查询结果列表:</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">${resultsChips}</div>
+          </div>
+        `;
       }
     }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      badgePhase.textContent = status === 'done' ? '全部查询完成' : phase === 'build' ? '阶段: 构建前缀和' : '阶段: O(1) 差分查询';
-    }
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'range-sum',
   name: '区间和（前缀和）',
   viewId: 'algo-range-sum-view',
   category: 'array',
-  description: '预处理前缀和数组，O(1) 回答区间查询',
-  icon: 'Σ',
+  description: '一维前缀和预处理 O(n)，之后任意区间 [L, R] 求和只需 O(1) 差分计算 prefix[R+1] - prefix[L]',
+  icon: '➕',
+  template,
+  Visualizer,
   difficulty: 1,
   levelOrder: 6,
-  learningGoal: '掌握前缀和思想与区间查询技巧',
-  template,
-  Visualizer: RangeSumVisualizer,
+  learningGoal: '掌握前缀和数组空间换时间核心设计，实现海量静态区间和快速 O(1) 查询',
 });

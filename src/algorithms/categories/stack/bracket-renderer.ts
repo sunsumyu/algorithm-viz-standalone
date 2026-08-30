@@ -1,26 +1,22 @@
 /**
- * 括号匹配可视化器 — 4-Card 标准现代架构
+ * 括号匹配可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * LeetCode 20：遇左括号压入对应右括号，遇右括号只需 O(1) 比对并弹出栈顶
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   BRACKET_PROBLEM_HTML,
   BRACKET_ANALYSIS_HTML,
   BRACKET_CODE_LANGUAGES,
 } from './bracket-problem-content';
-import template from './bracket.html?raw';
 
 export interface BracketStep {
   rawString: string;
   currentIndex: number;
   currentChar: string | null;
-  stack: string[]; // 存入的是期望的右括号 ')' | ']' | '}'
+  stack: string[];
   matchedPairs: number;
   isValid: boolean;
   action: 'init' | 'push_expected' | 'match_pop' | 'mismatch' | 'done';
@@ -30,7 +26,7 @@ export interface BracketStep {
 
 export function buildBracketSteps(rawInput: string): BracketStep[] {
   const steps: BracketStep[] = [];
-  const s = rawInput.trim();
+  const s = (rawInput || '()[]{}').trim();
   const n = s.length;
 
   if (n === 0) {
@@ -121,7 +117,6 @@ export function buildBracketSteps(rawInput: string): BracketStep[] {
         codeLine: 8,
       });
     } else {
-      // 右括号
       if (stack.length === 0) {
         steps.push({
           rawString: s,
@@ -131,13 +126,13 @@ export function buildBracketSteps(rawInput: string): BracketStep[] {
           matchedPairs,
           isValid: false,
           action: 'mismatch',
-          message: `❌ 遇到右括号 '${c}'，但栈已空（右括号多余），匹配失败！`,
+          message: `❌ 扫描到右括号 '${c}' 但栈已为空！右括号多于左括号，判定无效 (False)`,
           codeLine: 9,
         });
         return steps;
       }
 
-      const expected = stack.pop()!;
+      const expected = stack[stack.length - 1];
       if (expected !== c) {
         steps.push({
           rawString: s,
@@ -147,12 +142,13 @@ export function buildBracketSteps(rawInput: string): BracketStep[] {
           matchedPairs,
           isValid: false,
           action: 'mismatch',
-          message: `❌ 遇到右括号 '${c}'，但栈顶期望的是 '${expected}'，类型不匹配！`,
-          codeLine: 9,
+          message: `❌ 括号类型不匹配：当前为 '${c}'，而栈顶期望闭合符为 '${expected}'，判定无效 (False)`,
+          codeLine: 10,
         });
         return steps;
       }
 
+      stack.pop();
       matchedPairs++;
       steps.push({
         rawString: s,
@@ -162,282 +158,186 @@ export function buildBracketSteps(rawInput: string): BracketStep[] {
         matchedPairs,
         isValid: true,
         action: 'match_pop',
-        message: `✓ 成功闭合！当前字符 '${c}' 与栈顶期望 '${expected}' 完全吻合，弹出栈顶！已匹配 ${matchedPairs} 对`,
-        codeLine: 9,
+        message: `✓ 成功闭合！'${c}' 与期望符吻合，弹出栈顶期望符，已闭合 ${matchedPairs} 对`,
+        codeLine: 11,
       });
     }
   }
 
-  const finalValid = stack.length === 0;
-
-  if (!finalValid) {
-    steps.push({
-      rawString: s,
-      currentIndex: n - 1,
-      currentChar: null,
-      stack: [...stack],
-      matchedPairs,
-      isValid: false,
-      action: 'mismatch',
-      message: `❌ 遍历完毕，但栈内仍剩余 ${stack.length} 个未闭合的左括号 (期望 [${stack.join(', ')}])，判定为无效！`,
-      codeLine: 11,
-    });
-  } else {
-    steps.push({
-      rawString: s,
-      currentIndex: n - 1,
-      currentChar: null,
-      stack: [],
-      matchedPairs,
-      isValid: true,
-      action: 'done',
-      message: `🎉 全部字符扫描完毕且栈已清空！所有括号均已完美成对闭合，判定为有效 (True)`,
-      codeLine: 11,
-    });
-  }
+  const allMatched = stack.length === 0;
+  steps.push({
+    rawString: s,
+    currentIndex: n,
+    currentChar: null,
+    stack: [...stack],
+    matchedPairs,
+    isValid: allMatched,
+    action: allMatched ? 'done' : 'mismatch',
+    message: allMatched
+      ? `🎉 遍历结束！栈为空，全部括号完美闭合，判定为有效 (True)！`
+      : `❌ 遍历结束但栈仍有剩余 [${stack.join(', ')}]，左括号多于右括号，判定无效 (False)`,
+    codeLine: 14,
+  });
 
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class BracketVisualizer extends StepVisualizer<BracketStep> {
-  protected codeLanguages = BRACKET_CODE_LANGUAGES;
-  protected codeLines = BRACKET_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '有效的括号 代码调试';
-
-  private sandboxContainer: HTMLElement | null = null;
-  private charContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#bracket-sandbox-container');
-    this.charContainer = this.root.querySelector('#bracket-char-container');
-    this.decisionMonitorContainer = this.root.querySelector('#bracket-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#bracket-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.bracket-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const strEl = this.root?.querySelector('#input-brackets') as HTMLInputElement | null;
-        if (strEl && btn.dataset.val) strEl.value = btn.dataset.val;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: BRACKET_PROBLEM_HTML,
-      analysisHtml: BRACKET_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BracketStep[] {
-    const strEl = this.root?.querySelector('#input-brackets') as HTMLInputElement | null;
-    const rawInput = strEl?.value ?? '()[]{}';
-    return buildBracketSteps(rawInput);
-  }
-
-  protected renderStep(step: BracketStep): void {
+const { template, Visualizer } = createDeclarativeVisualizer<BracketStep>({
+  id: 'bracket',
+  name: '有效的括号',
+  category: 'stack',
+  icon: '🎯',
+  badge: {
+    mode: '遇左压右·栈匹配',
+    complexity: 'O(n) · O(n)',
+  },
+  card1Title: '🔤 字符串扫描与期望括号栈沙盘',
+  card2Title: '🧭 括号匹配状态与决策监视器',
+  card2Desc: '当前扫描字符、栈顶期望闭合符与匹配有效性判定',
+  legend: [
+    { label: '正在比对', color: '#10b981' },
+    { label: '期望压栈', color: '#f59e0b' },
+    { label: '失配报警', color: '#ef4444' },
+  ],
+  inputs: [
+    {
+      id: 'input-brackets',
+      label: '括号序列',
+      type: 'text',
+      defaultValue: '()[]{}',
+      width: '130px',
+      placeholder: '如 ()[]{}',
+    },
+  ],
+  presets: [
+    { label: '简单成对', values: { 'input-brackets': '()[]{}' } },
+    { label: '嵌套闭合', values: { 'input-brackets': '{[()]}' } },
+    { label: '交叉失配', values: { 'input-brackets': '([)]' } },
+    { label: '左多右少', values: { 'input-brackets': '((()' } },
+  ],
+  metrics: [
+    { id: 'match-status', label: '有效性判定', color: '#10b981' },
+    { id: 'matched-pairs', label: '已匹配对数', color: '#2563eb' },
+    { id: 'stack-size', label: '栈内期望数', color: '#f59e0b' },
+  ],
+  codeLanguages: BRACKET_CODE_LANGUAGES,
+  problemHtml: BRACKET_PROBLEM_HTML,
+  analysisHtml: BRACKET_ANALYSIS_HTML,
+  buildSteps: (inputs) => buildBracketSteps(inputs['input-brackets']),
+  renderCanvas: (container, step) => {
     const s = step.rawString;
     const stack = step.stack;
     const curIdx = step.currentIndex;
     const isDone = step.action === 'done';
     const isMismatch = step.action === 'mismatch';
 
-    // 1. 渲染字符串流与期望括号栈沙盘 (Card 1)
-    if (this.sandboxContainer) {
-      const charsHtml = s
-        .split('')
-        .map((ch, idx) => {
-          const isCurrent = idx === curIdx && !isDone;
-          const isProcessed = idx < curIdx || (isDone && idx <= curIdx);
+    // 字符串序列展示
+    const charsHtml = s
+      .split('')
+      .map((ch, idx) => {
+        const isCurrent = idx === curIdx && !isDone;
+        const isProcessed = idx < curIdx || (isDone && idx <= curIdx);
+        let bg = '#ffffff';
+        let border = '#e2e8f0';
+        let textColor = '#0f172a';
 
-          let bg = '#ffffff';
-          let border = '#e2e8f0';
-          let textColor = '#0f172a';
-
-          if (isCurrent) {
-            if (isMismatch) {
-              bg = '#fef2f2';
-              border = '#ef4444';
-              textColor = '#ef4444';
-            } else {
-              bg = '#ecfdf5';
-              border = '#059669';
-              textColor = '#059669';
-            }
-          } else if (isProcessed) {
-            bg = '#f8fafc';
-            border = '#cbd5e1';
-            textColor = '#64748b';
-          }
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-              <span style="font-size: 8.5px; color: ${isCurrent ? '#059669' : '#94a3b8'}; font-weight: 700;">
-                [${idx}]
-              </span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: ${bg}; border: 2px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                ${ch}
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-
-      // 栈内展示 (从栈底到栈顶)
-      const stackItemsHtml = stack
-        .map((expCh) => {
-          return `
-            <div style="padding: 2px 10px; border-radius: 6px; background: #fffbeb; border: 1.5px solid #fde68a; color: #b45309; font-size: 13px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
-              ${expCh}
-            </div>
-          `;
-        })
-        .join('');
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- 字符串序列 -->
-          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569;">
-            <span>🔤 待匹配括号序列 (字符串流):</span>
-            <span style="color: #059669;">已匹配: ${step.matchedPairs} 对</span>
-          </div>
-          <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0;">
-            ${charsHtml}
-          </div>
-
-          <!-- 单调期望右括号栈 -->
-          <div style="display: flex; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px dashed #e2e8f0;">
-            <span style="font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap;">🥞 期望右括号栈 (栈底 &rarr; 栈顶):</span>
-            <div style="display: flex; gap: 4px; overflow-x: auto; flex: 1; align-items: center; min-height: 28px;">
-              ${stack.length > 0 ? stackItemsHtml : '<span style="font-size: 10.5px; color: #94a3b8;">栈空（全部已闭合）</span>'}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. 渲染当前字符与栈顶期望 (Card 2 Left)
-    if (this.charContainer) {
-      const topExpected = stack.length > 0 ? stack[stack.length - 1] : null;
-
-      this.charContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前扫描字符:</span>
-            <span style="font-family: monospace; font-weight:800; color: #059669; font-size: 13.5px;">
-              ${step.currentChar !== null ? `'${step.currentChar}'` : '（结束）'}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>栈顶期望闭合符:</span>
-            <span style="font-family: monospace; font-weight:700; color: #d97706; font-size: 13.5px;">
-              ${topExpected !== null ? `'${topExpected}'` : '（无）'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染匹配有效性决策监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      const isPush = step.action === 'push_expected';
-      const isPop = step.action === 'match_pop';
-
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>匹配动作:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isMismatch ? '#fef2f2' : isPop ? '#ecfdf5' : isPush ? '#fffbeb' : '#f8fafc'}; color: ${isMismatch ? '#ef4444' : isPop ? '#059669' : isPush ? '#d97706' : '#64748b'}; border: 1px solid ${isMismatch ? '#fecaca' : isPop ? '#a7f3d0' : isPush ? '#fde68a' : '#e2e8f0'};">
-              ${isMismatch ? '❌ 匹配失败 / 括号失配' : isPop ? '✓ 吻合出栈' : isPush ? '📥 压入对应右括号' : '🔍 准备就绪'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 策略: <code style="color:#059669; font-family:monospace;">遇到 '(' 压 ')', 遇到 '[' 压 ']', 遇到 '{' 压 '}'</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染最终结论看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>当前判定状态: <strong style="color: ${step.isValid ? '#059669' : '#ef4444'}; font-size: 13.5px;">${step.isValid ? '有效 (Valid)' : '无效 (Invalid)'}</strong></span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">成功闭合 ${step.matchedPairs} 对括号</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeStatus = this.root?.querySelector('#badge-valid-status') as HTMLElement | null;
-    if (badgeStatus) {
-      badgeStatus.textContent = step.isValid ? (isDone ? '判定有效 (True)' : '匹配正常') : '判定无效 (False)';
-      badgeStatus.style.color = step.isValid ? '#059669' : '#ef4444';
-      badgeStatus.style.background = step.isValid ? '#ecfdf5' : '#fef2f2';
-      badgeStatus.style.borderColor = step.isValid ? '#a7f3d0' : '#fecaca';
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '扫描';
-
-        if (st.action === 'push_expected') {
-          badgeColor = '#d97706';
-          badgeBg = '#fffbeb';
-          badgeText = '压栈';
-        } else if (st.action === 'match_pop') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '闭合';
-        } else if (st.action === 'mismatch') {
-          badgeColor = '#ef4444';
-          badgeBg = '#fef2f2';
-          badgeText = '失配';
-        } else if (st.action === 'done') {
-          badgeColor = '#10b981';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
+        if (isCurrent) {
+          bg = isMismatch ? '#fef2f2' : '#ecfdf5';
+          border = isMismatch ? '#ef4444' : '#10b981';
+          textColor = isMismatch ? '#ef4444' : '#047857';
+        } else if (isProcessed) {
+          bg = '#f8fafc';
+          border = '#cbd5e1';
+          textColor = '#64748b';
         }
 
         return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <span style="font-size: 8.5px; color: ${isCurrent ? '#059669' : '#94a3b8'}; font-weight: 700;">[${idx}]</span>
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              ${ch}
+            </div>
           </div>
         `;
-      });
+      })
+      .join('');
 
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
+    // 期望栈内展示
+    const stackItemsHtml =
+      stack.length === 0
+        ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">栈空（全部已闭合）</span>'
+        : stack
+            .map(
+              (expCh) => `
+              <div style="padding: 2px 8px; border-radius: 4px; background: #ffffff; border: 1.5px solid #f59e0b; color: #b45309; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
+                ${expCh}
+              </div>
+            `
+            )
+            .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
 
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
-}
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: space-around; gap: 8px; box-sizing: border-box;">
+        <!-- 待匹配字符串流 -->
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>🔤 待匹配括号序列 (字符串流):</span>
+            <span style="color: #059669;">已闭合: ${step.matchedPairs} 对</span>
+          </div>
+          <div style="display: flex; gap: 4px; overflow-x: auto; padding: 2px 0;">
+            ${charsHtml}
+          </div>
+        </div>
+
+        <div style="border-top: 1px dashed #e2e8f0; margin: 2px 0;"></div>
+
+        <!-- 期望右括号栈 (扁平直排) -->
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 期望右括号栈 (栈底 → 栈顶):</span>
+            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #d97706;">栈深: ${stack.length}</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center; min-height: 28px; flex-wrap: wrap;">
+            ${stackItemsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 更新指标卡片
+    const root = container.closest('#algo-bracket-view');
+    if (root) {
+      const statusEl = root.querySelector('#metric-match-status');
+      const pairsEl = root.querySelector('#metric-matched-pairs');
+      const stackSizeEl = root.querySelector('#metric-stack-size');
+
+      if (statusEl) {
+        statusEl.textContent = step.isValid ? (isDone ? '有效 (True)' : '匹配正常') : '无效 (False)';
+        statusEl.style.color = step.isValid ? '#059669' : '#ef4444';
+      }
+      if (pairsEl) pairsEl.textContent = `${step.matchedPairs} 对`;
+      if (stackSizeEl) stackSizeEl.textContent = `${step.stack.length}`;
+
+      // 在 Card 2 中展示当前扫描字符与期望
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const topExpected = stack.length > 0 ? stack[stack.length - 1] : null;
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前扫描字符:</span>
+              <strong style="font-family: monospace; color: #059669; font-size: 12px;">${step.currentChar !== null ? `'${step.currentChar}'` : '（无）'}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>栈顶期望闭合符:</span>
+              <strong style="font-family: monospace; color: #d97706; font-size: 12px;">${topExpected !== null ? `'${topExpected}'` : '（空）'}</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'bracket',
@@ -447,7 +347,7 @@ registerAlgorithm({
   description: '遇左括号压入对应右括号，遇右括号只需 O(1) 比对并弹出栈顶元素',
   icon: '🎯',
   template,
-  Visualizer: BracketVisualizer,
+  Visualizer,
   difficulty: 1,
   levelOrder: 1,
   learningGoal: '掌握经典栈匹配思想与“遇左压右”简化比对逻辑的巧妙设计技巧',

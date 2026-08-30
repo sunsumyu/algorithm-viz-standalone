@@ -16,7 +16,6 @@ import {
 
 // 算法的 SVG 图标 (内联)
 const ALGORITHM_ICONS: Record<string, string> = {
-  bracket: '📚',
   lca: '🌳',
   'tree-invert': '🔄',
   'insertion-sort': '📊',

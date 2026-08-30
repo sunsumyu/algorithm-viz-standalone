@@ -1,20 +1,17 @@
 /**
- * 移除元素可视化器 — 4-Card 标准现代架构
+ * 移除元素可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * LeetCode 27：快慢双指针原地覆盖
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
 import {
   REMOVE_ELEMENT_PROBLEM_HTML,
   REMOVE_ELEMENT_ANALYSIS_HTML,
   REMOVE_ELEMENT_CODE_LANGUAGES,
 } from './remove-element-problem-content';
-import template from './remove-element.html?raw';
 
 export interface RemoveStep {
   array: number[];
@@ -98,165 +95,142 @@ export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[
     val,
     status: 'done',
     message: `🎉 遍历完成！新数组有效长度为 slow = ${slow}，前 ${slow} 个元素为最终保留结果 [${work.slice(0, slow).join(', ')}]。`,
-    log: `算法结束：返回有效长度 slow = ${slow}`,
-    codeLine: 8,
+    log: `✓ 完成：有效长度 k = ${slow}`,
+    codeLine: 6,
   });
 
   return steps;
 }
 
-export class RemoveElementVisualizer extends StepVisualizer<RemoveStep> {
-  protected codeLanguages = REMOVE_ELEMENT_CODE_LANGUAGES;
-  protected codeLines = REMOVE_ELEMENT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '移除元素 代码调试';
+const { template, Visualizer } = createDeclarativeVisualizer<RemoveStep>({
+  id: 'remove-element',
+  name: '移除元素',
+  category: 'array',
+  icon: '✂️',
+  badge: {
+    mode: '快慢双指针原地覆写',
+    complexity: 'O(n) · O(1)',
+  },
+  card1Title: '📊 数组条带与快慢双指针沙盘',
+  card2Title: '🧭 指针状态与有效保留区间监视器',
+  card2Desc: '快慢指针索引、当前覆写动作与有效数组前缀',
+  legend: [
+    { label: '快指针 fast', color: '#2563eb' },
+    { label: '慢指针 slow', color: '#0d9488' },
+    { label: '待移除目标 val', color: '#ef4444' },
+  ],
+  inputs: [
+    {
+      id: 'input-array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '3, 2, 2, 3',
+      width: '140px',
+      placeholder: '3, 2, 2, 3',
+    },
+    {
+      id: 'input-val',
+      label: '移除值 val',
+      type: 'number',
+      defaultValue: 3,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '示例 1 (val=3)', values: { 'input-array': '3, 2, 2, 3', 'input-val': 3 } },
+    { label: '示例 2 (val=2)', values: { 'input-array': '0, 1, 2, 2, 3, 0, 4, 2', 'input-val': 2 } },
+    { label: '无匹配项 (val=5)', values: { 'input-array': '1, 2, 3, 4', 'input-val': 5 } },
+  ],
+  metrics: [
+    { id: 'fast-idx', label: '快指针 fast', color: '#2563eb' },
+    { id: 'slow-idx', label: '慢指针 slow (有效长)', color: '#0d9488' },
+    { id: 'action-state', label: '当前动作', color: '#16a34a' },
+  ],
+  codeLanguages: REMOVE_ELEMENT_CODE_LANGUAGES,
+  problemHtml: REMOVE_ELEMENT_PROBLEM_HTML,
+  analysisHtml: REMOVE_ELEMENT_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-array'] || '3, 2, 2, 3';
+    const arr = parseArray(raw);
+    const val = parseInt(inputs['input-val'] || '3', 10);
+    return buildRemoveElementSteps(arr, val);
+  },
+  renderCanvas: (container, step) => {
+    const isDone = step.status === 'done';
+    const highlights = new Map<number, { bg?: string; border?: string; color?: string }>();
 
-  private trackRowEl: HTMLElement | null = null;
-  private metricSlowEl: HTMLElement | null = null;
-  private metricFastEl: HTMLElement | null = null;
-  private metricCurrEl: HTMLElement | null = null;
-  private metricKeptEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#rm-track-row');
-    this.metricSlowEl = this.root.querySelector('#metric-slow');
-    this.metricFastEl = this.root.querySelector('#metric-fast');
-    this.metricCurrEl = this.root.querySelector('#metric-curr');
-    this.metricKeptEl = this.root.querySelector('#metric-kept');
-    this.liveTextEl = this.root.querySelector('#rm-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rm-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        const valInput = this.root?.querySelector('#input-val') as HTMLInputElement | null;
-        if (numsInput && btn.dataset.nums) numsInput.value = btn.dataset.nums;
-        if (valInput && btn.dataset.val) valInput.value = btn.dataset.val;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REMOVE_ELEMENT_PROBLEM_HTML,
-      analysisHtml: REMOVE_ELEMENT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RemoveStep[] {
-    const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const valInput = this.root?.querySelector('#input-val') as HTMLInputElement | null;
-    const arr = parseArray(numsInput?.value || '3, 2, 2, 3, 4, 3, 5');
-    const val = parseInt(valInput?.value || '3', 10);
-    return buildRemoveElementSteps(arr, isNaN(val) ? 3 : val);
-  }
-
-  protected renderStep(step: RemoveStep): void {
-    const { array, fast, slow, val, status, message } = step;
-
-    // 1. 渲染沙盘 Cell 数组
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = array
-        .map((num, idx) => {
-          const isFast = fast === idx;
-          const isSlow = slow === idx;
-          const isTargetVal = num === val;
-          const isKept = idx < slow && status !== 'done';
-          const isFinalKept = status === 'done' && idx < slow;
-
-          let boxClasses = 'rm-cell-box';
-          if (isFast) boxClasses += ' is-active-fast';
-          if (isSlow && !isFast) boxClasses += ' is-active-slow';
-          if (isFinalKept || isKept) boxClasses += ' is-kept';
-          else if (isTargetVal && isFast) boxClasses += ' is-target';
-
-          const badges: string[] = [];
-          if (isSlow && isFast) {
-            badges.push('<span class="rm-ptr-badge slow">slow</span>');
-            badges.push('<span class="rm-ptr-badge fast">fast</span>');
-          } else {
-            if (isSlow && idx < array.length) badges.push('<span class="rm-ptr-badge slow">slow</span>');
-            if (isFast && idx < array.length) badges.push('<span class="rm-ptr-badge fast">fast</span>');
-          }
-
-          return `
-            <div class="rm-cell-wrapper">
-              <div class="rm-pointer-tags">
-                ${badges.join('')}
-              </div>
-              <div class="${boxClasses}">
-                <span class="val">${num}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
+    // 为有效前缀 [0..slow-1] 标记绿色
+    for (let i = 0; i < step.slow; i++) {
+      highlights.set(i, { bg: '#f0fdf4', border: '#86efac', color: '#166534' });
     }
 
-    // 2. 更新状态监视器
-    if (this.metricSlowEl) this.metricSlowEl.textContent = String(slow);
-    if (this.metricFastEl) this.metricFastEl.textContent = fast < array.length ? String(fast) : '结束';
-    if (this.metricCurrEl) {
-      this.metricCurrEl.textContent = fast < array.length ? `nums[${fast}]=${array[fast]}` : '-';
-    }
-    if (this.metricKeptEl) this.metricKeptEl.textContent = String(slow);
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = status === 'done' ? '#f0fdf4' : status === 'copy' ? '#eff6ff' : '#f8fafc';
-      logEntry.style.color = status === 'done' ? '#15803d' : status === 'copy' ? '#1d4ed8' : '#334155';
-      logEntry.style.border = '1px solid ' + (status === 'done' ? '#bbf7d0' : status === 'copy' ? '#bfdbfe' : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+    if (step.fast < step.array.length && !isDone) {
+      if (step.status === 'skip') {
+        highlights.set(step.fast, { bg: '#fef2f2', border: '#fca5a5', color: '#991b1b' });
       }
     }
 
-    const badgeSlow = this.root?.querySelector('#badge-slow');
-    if (badgeSlow) {
-      badgeSlow.textContent = status === 'done' ? `最终新长度: ${slow}` : `新长度: slow = ${slow}`;
-    }
-  }
+    ArrayTrackAdapter.renderTrack(container, {
+      array: step.array,
+      pointers: isDone
+        ? [{ name: 'k', index: step.slow, color: '#16a34a', position: 'top' }]
+        : [
+            { name: 'fast', index: step.fast, color: '#2563eb', position: 'top' },
+            { name: 'slow', index: step.slow, color: '#0d9488', position: 'bottom' },
+          ],
+      itemHighlights: highlights,
+      primaryTitle: '📊 原地数组条带 (nums):',
+    });
 
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.codeTerminal) this.codeTerminal.highlightLine(0);
-  }
-}
+    const root = container.closest('#algo-remove-element-view');
+    if (root) {
+      const fastEl = root.querySelector('#metric-fast-idx');
+      const slowEl = root.querySelector('#metric-slow-idx');
+      const actEl = root.querySelector('#metric-action-state');
+
+      if (fastEl) fastEl.textContent = `${step.fast}`;
+      if (slowEl) slowEl.textContent = `${step.slow}`;
+      if (actEl) {
+        actEl.textContent =
+          step.status === 'copy'
+            ? `覆写 nums[${step.slow}] = ${step.array[step.slow]}`
+            : step.status === 'skip'
+            ? `跳过 val=${step.val}`
+            : step.status === 'done'
+            ? `完成 (有效长度 ${step.slow})`
+            : '检查中';
+      }
+
+      // 在 Card 2 中展示当前有效数组前缀
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const validItems = step.array.slice(0, step.slow);
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">有效前缀 [0..${Math.max(0, step.slow - 1)}]:</span>
+              <span style="font-size: 10px; color: #16a34a; font-family: monospace;">长度 k = ${step.slow}</span>
+            </div>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #16a34a;">
+              [ ${validItems.join(', ')} ]
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'remove-element',
-  name: '移除元素（双指针）',
+  name: '移除元素',
   viewId: 'algo-remove-element-view',
   category: 'array',
-  description: '快慢指针原地移除指定值的元素',
-  icon: '🧹',
-  difficulty: 1,
-  levelOrder: 1,
-  learningGoal: '掌握快慢双指针原地修改数组的思路',
+  description: '快慢双指针原地覆写：快指针寻找新元素，慢指针指向新数组位置，O(1) 额外空间',
+  icon: '✂️',
   template,
-  Visualizer: RemoveElementVisualizer,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 2,
+  learningGoal: '掌握利用快慢双指针在单数组中原地覆写元素以消除特定目标的经典范式',
 });

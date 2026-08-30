@@ -1,20 +1,17 @@
 /**
- * 有序数组的平方可视化器 — 4-Card 标准现代架构
+ * 有序数组的平方可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * LeetCode 977：首尾对撞双指针
+ * 遵循 Zero-Subbox 规范，扁平双轨沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
 import {
   SQUARES_OF_SORTED_ARRAY_PROBLEM_HTML,
   SQUARES_OF_SORTED_ARRAY_ANALYSIS_HTML,
   SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES,
 } from './squares-of-sorted-array-problem-content';
-import template from './squares-of-sorted-array.html?raw';
 
 export interface SSQStep {
   arr: number[];
@@ -109,208 +106,145 @@ export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
     right,
     writeIdx: -1,
     status: 'done',
-    message: `🎉 平方排序完成！最终有序平方数组为 [${result.join(', ')}]。`,
-    log: `算法完成：返回 result = [${result.join(', ')}]`,
-    codeLine: 15,
+    message: `🎉 计算完成！最终有序平方数组为 [${result.join(', ')}]。`,
+    log: `✓ 完成：[${result.join(', ')}]`,
+    codeLine: 14,
   });
 
   return steps;
 }
 
-export class SortedSquaresVisualizer extends StepVisualizer<SSQStep> {
-  protected codeLanguages = SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES;
-  protected codeLines = SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '有序数组的平方 代码调试';
-
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
-  private inputTrackEl: HTMLElement | null = null;
-  private outputTrackEl: HTMLElement | null = null;
-  private metricLeftEl: HTMLElement | null = null;
-  private metricRightEl: HTMLElement | null = null;
-  private metricWriteEl: HTMLElement | null = null;
-  private metricValEl: HTMLElement | null = null;
-  private cmpLeftSqEl: HTMLElement | null = null;
-  private cmpRightSqEl: HTMLElement | null = null;
-  private cmpOpEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.inputTrackEl = this.root.querySelector('#sq-input-track');
-    this.outputTrackEl = this.root.querySelector('#sq-output-track');
-    this.metricLeftEl = this.root.querySelector('#metric-left');
-    this.metricRightEl = this.root.querySelector('#metric-right');
-    this.metricWriteEl = this.root.querySelector('#metric-write');
-    this.metricValEl = this.root.querySelector('#metric-val');
-    this.cmpLeftSqEl = this.root.querySelector('#cmp-left-sq');
-    this.cmpRightSqEl = this.root.querySelector('#cmp-right-sq');
-    this.cmpOpEl = this.root.querySelector('#cmp-op');
-    this.liveTextEl = this.root.querySelector('#sq-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.sq-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        if (numsInput && btn.dataset.nums) {
-          numsInput.value = btn.dataset.nums;
-          this.start();
-        }
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: SQUARES_OF_SORTED_ARRAY_PROBLEM_HTML,
-      analysisHtml: SQUARES_OF_SORTED_ARRAY_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): SSQStep[] {
-    const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const arr = parseSortedArray(numsInput?.value || '-4, -1, 0, 3, 10');
+const { template, Visualizer } = createDeclarativeVisualizer<SSQStep>({
+  id: 'sorted-squares',
+  name: '有序数组的平方',
+  category: 'array',
+  icon: '📐',
+  badge: {
+    mode: '首尾对撞双指针',
+    complexity: 'O(n) · O(n)',
+  },
+  card1Title: '📊 原始数组与结果数组双轨沙盘',
+  card2Title: '🧭 对撞指针与平方比较监视器',
+  card2Desc: '左右指针位置、当前平方值对比与写入索引',
+  legend: [
+    { label: '左指针 left', color: '#2563eb' },
+    { label: '右指针 right', color: '#0d9488' },
+    { label: '写入位置 writeIdx', color: '#f59e0b' },
+  ],
+  inputs: [
+    {
+      id: 'input-array',
+      label: '有序数组',
+      type: 'text',
+      defaultValue: '-4, -1, 0, 3, 10',
+      width: '150px',
+      placeholder: '-4, -1, 0, 3, 10',
+    },
+  ],
+  presets: [
+    { label: '示例 1 (含负数)', values: { 'input-array': '-4, -1, 0, 3, 10' } },
+    { label: '示例 2 (全负数)', values: { 'input-array': '-7, -3, 2, 3, 11' } },
+    { label: '全正数', values: { 'input-array': '1, 2, 3, 4, 5' } },
+  ],
+  metrics: [
+    { id: 'left-sq', label: '左侧 nums[left]²', color: '#2563eb' },
+    { id: 'right-sq', label: '右侧 nums[right]²', color: '#0d9488' },
+    { id: 'write-idx', label: '当前写入索引', color: '#f59e0b' },
+  ],
+  codeLanguages: SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES,
+  problemHtml: SQUARES_OF_SORTED_ARRAY_PROBLEM_HTML,
+  analysisHtml: SQUARES_OF_SORTED_ARRAY_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-array'] || '-4, -1, 0, 3, 10';
+    const arr = parseSortedArray(raw);
     return buildSortedSquaresSteps(arr);
-  }
+  },
+  renderCanvas: (container, step) => {
+    const isDone = step.status === 'done';
+    const safeDisplayResult = step.result.map((v) => (v === null ? '—' : v));
 
-  protected renderStep(step: SSQStep): void {
-    const { arr, result, left, right, writeIdx, status, message } = step;
+    const primaryHighlights = new Map<number, { bg?: string; border?: string; color?: string }>();
+    if (!isDone) {
+      primaryHighlights.set(step.left, { bg: '#eff6ff', border: '#93c5fd', color: '#1d4ed8' });
+      primaryHighlights.set(step.right, { bg: '#f0fdf4', border: '#86efac', color: '#166534' });
+    }
 
-    // 1. 渲染输入数组 (上轨)
-    if (this.inputTrackEl) {
-      this.inputTrackEl.innerHTML = arr
-        .map((num, idx) => {
-          const isLeft = left === idx && status !== 'done';
-          const isRight = right === idx && status !== 'done';
-          const isSelected = isLeft || isRight;
+    const secondaryHighlights = new Map<number, { bg?: string; border?: string; color?: string }>();
+    if (step.writeIdx >= 0 && !isDone) {
+      secondaryHighlights.set(step.writeIdx, { bg: '#fffbeb', border: '#fde68a', color: '#b45309' });
+    }
 
-          let boxClass = 'sq-cell-box';
-          if (status === 'write-left' && isLeft) boxClass += ' selected-left';
-          else if (status === 'write-right' && isRight) boxClass += ' selected-right';
-          else if (isSelected) boxClass += ' comparing';
+    ArrayTrackAdapter.renderTrack(container, {
+      array: step.arr,
+      pointers: isDone
+        ? []
+        : [
+            { name: 'left', index: step.left, color: '#2563eb', position: 'top' },
+            { name: 'right', index: step.right, color: '#0d9488', position: 'bottom' },
+          ],
+      itemHighlights: primaryHighlights,
+      primaryTitle: '📊 原始数组 (原序列):',
+      secondaryArray: safeDisplayResult,
+      secondaryTitle: '📦 平方结果数组 (倒序填充):',
+    });
 
-          const badges: string[] = [];
-          if (isLeft && isRight) {
-            badges.push('<span class="sq-ptr-badge left">L</span>');
-            badges.push('<span class="sq-ptr-badge right">R</span>');
-          } else {
-            if (isLeft) badges.push('<span class="sq-ptr-badge left">left</span>');
-            if (isRight) badges.push('<span class="sq-ptr-badge right">right</span>');
-          }
+    const root = container.closest('#algo-sorted-squares-view') || container.closest('#algo-squares-of-sorted-array-view');
+    if (root) {
+      const lSqEl = root.querySelector('#metric-left-sq');
+      const rSqEl = root.querySelector('#metric-right-sq');
+      const wIdxEl = root.querySelector('#metric-write-idx');
 
-          return `
-            <div class="sq-cell-wrapper">
-              <div class="sq-pointer-tags">
-                ${badges.join('')}
-              </div>
-              <div class="${boxClass}">
-                <span class="val">${num}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
+      const lsq = step.left < step.arr.length ? step.arr[step.left] ** 2 : '—';
+      const rsq = step.right >= 0 ? step.arr[step.right] ** 2 : '—';
+
+      if (lSqEl) lSqEl.textContent = `${lsq}`;
+      if (rSqEl) rSqEl.textContent = `${rsq}`;
+      if (wIdxEl) wIdxEl.textContent = step.writeIdx >= 0 ? `result[${step.writeIdx}]` : '完成';
+
+      // 在 Card 2 中展示当前比较关系
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #475569; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>对撞指针状态:</span>
+              <strong style="color: #2563eb;">left = ${step.left}, right = ${step.right}</strong>
             </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染结果数组 (下轨)
-    if (this.outputTrackEl) {
-      this.outputTrackEl.innerHTML = result
-        .map((val, idx) => {
-          const isWriting = writeIdx === idx && status !== 'done';
-          const hasVal = val !== null;
-
-          let boxClass = 'sq-cell-box';
-          if (isWriting) boxClass += ' write-target';
-          else if (hasVal) boxClass += ' filled';
-
-          return `
-            <div class="sq-cell-wrapper">
-              <div class="sq-pointer-tags">
-                ${isWriting ? '<span class="sq-ptr-badge write">write</span>' : ''}
-              </div>
-              <div class="${boxClass}">
-                <span class="val">${val !== null ? val : '—'}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>比较结论:</span>
+              <strong style="color: #16a34a;">${typeof lsq === 'number' && typeof rsq === 'number' ? (lsq > rsq ? `左侧 ${lsq} > 右侧 ${rsq} (取左)` : `右侧 ${rsq} ≥ 左侧 ${lsq} (取右)`) : '完成'}</strong>
             </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricLeftEl) this.metricLeftEl.textContent = status === 'done' ? '结束' : `nums[${left}]=${arr[left]}`;
-    if (this.metricRightEl) this.metricRightEl.textContent = status === 'done' ? '结束' : `nums[${right}]=${arr[right]}`;
-    if (this.metricWriteEl) this.metricWriteEl.textContent = writeIdx >= 0 ? `result[${writeIdx}]` : '完成';
-
-    if (left < arr.length && right >= 0 && status !== 'done') {
-      const lsq = arr[left] * arr[left];
-      const rsq = arr[right] * arr[right];
-      if (this.cmpLeftSqEl) this.cmpLeftSqEl.textContent = `nums[${left}]² = ${lsq}`;
-      if (this.cmpRightSqEl) this.cmpRightSqEl.textContent = `nums[${right}]² = ${rsq}`;
-      if (this.cmpOpEl) this.cmpOpEl.textContent = lsq > rsq ? '>' : lsq < rsq ? '<' : '=';
-      if (this.metricValEl) this.metricValEl.textContent = `${Math.max(lsq, rsq)}`;
-    } else {
-      if (this.cmpLeftSqEl) this.cmpLeftSqEl.textContent = '-';
-      if (this.cmpRightSqEl) this.cmpRightSqEl.textContent = '-';
-      if (this.cmpOpEl) this.cmpOpEl.textContent = '—';
-      if (this.metricValEl) this.metricValEl.textContent = '完成';
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = status === 'done' ? '#f0fdf4' : status.startsWith('write') ? '#eff6ff' : '#f8fafc';
-      logEntry.style.color = status === 'done' ? '#15803d' : status.startsWith('write') ? '#1d4ed8' : '#334155';
-      logEntry.style.border = '1px solid ' + (status === 'done' ? '#bbf7d0' : status.startsWith('write') ? '#bfdbfe' : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+          </div>
+        `;
       }
     }
-
-    const badgeWrite = this.root?.querySelector('#badge-write');
-    if (badgeWrite) {
-      badgeWrite.textContent = writeIdx >= 0 ? `写入: result[${writeIdx}]` : '排序完成';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'sorted-squares',
-  name: '有序数组的平方（双指针）',
+  name: '有序数组的平方',
   viewId: 'algo-sorted-squares-view',
   category: 'array',
-  description: '首尾双指针从大到小填入结果数组',
-  icon: '²',
+  description: '首尾双指针向中间对撞：两端平方最大，每次选取较大者倒序写入新数组末尾',
+  icon: '📐',
+  template,
+  Visualizer,
   difficulty: 1,
   levelOrder: 3,
-  learningGoal: '掌握利用有序性用双指针避免排序',
+  learningGoal: '掌握首尾对撞双指针在非递减含负数数组平方排序中的线性 O(n) 解法',
+});
+
+registerAlgorithm({
+  id: 'squares-of-sorted-array',
+  name: '有序数组的平方',
+  viewId: 'algo-squares-of-sorted-array-view',
+  category: 'array',
+  description: '首尾双指针向中间对撞：两端平方最大，每次选取较大者倒序写入新数组末尾',
+  icon: '📐',
   template,
-  Visualizer: SortedSquaresVisualizer,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 3,
+  learningGoal: '掌握首尾对撞双指针在非递减含负数数组平方排序中的线性 O(n) 解法',
 });

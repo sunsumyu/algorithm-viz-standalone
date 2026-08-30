@@ -1,17 +1,18 @@
 /**
- * 二叉树层序遍历可视化器 — 4-Card 标准现代架构
+ * 二叉树层序遍历可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * BFS 广度优先搜索、队列动态进出、层边界确定与分层收集
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   BINARY_TREE_LEVEL_PROBLEM_HTML,
   BINARY_TREE_LEVEL_ANALYSIS_HTML,
   BINARY_TREE_LEVEL_CODE_LANGUAGES,
 } from './binary-tree-level-problem-content';
-import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
-import template from './binary-tree-level.html?raw';
 
 export interface BTLStep {
   tree: TreeNode | null;
@@ -101,10 +102,8 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
         currentLevel: [...currentLevel],
         result: result.map((l) => [...l]),
         action: 'poll-node',
-        message: `节点 ${node.val} 出队，加入本层结果。${node.left ? `左孩子 ${node.left.val} 入队。` : ''}${
-          node.right ? `右孩子 ${node.right.val} 入队。` : ''
-        }`,
-        log: `出队 ${node.val} -> 本层: [${currentLevel.join(', ')}]`,
+        message: `出队节点 ${node.val} 并加入当前层；将其左右孩子压入队列。当前队列: [${remainingQ.join(', ')}]。`,
+        log: `访问 ${node.val} -> 层列表 [${currentLevel.join(', ')}]`,
         codeLine: [10, 11, 12, 13, 14],
       });
     }
@@ -120,9 +119,9 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
       currentLevel: [...currentLevel],
       result: result.map((l) => [...l]),
       action: 'end-level',
-      message: `第 ${levelIdx} 层收集完成：[${currentLevel.join(', ')}]，追加至结果总集。`,
-      log: `第 ${levelIdx} 层完成 -> [${currentLevel.join(', ')}]`,
-      codeLine: 16,
+      message: `第 ${levelIdx} 层收集完成：[${currentLevel.join(', ')}]。加入最终结果列表。`,
+      log: `✓ 第 ${levelIdx} 层完成: [${currentLevel.join(', ')}]`,
+      codeLine: 15,
     });
 
     levelIdx++;
@@ -137,148 +136,121 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
     currentLevel: [],
     result: result.map((l) => [...l]),
     action: 'done',
-    message: `🎉 层序遍历全部完成！结果：[${result.map((l) => `[${l.join(', ')}]`).join(', ')}]。`,
-    log: `✓ 完成: [${result.map((l) => `[${l.join(',')}]`).join(',')}]`,
-    codeLine: 18,
+    message: `🎉 层序遍历全部完成！共 ${result.length} 层，最终二维结果: ${JSON.stringify(result)}。`,
+    log: `✓ 全部完成: ${JSON.stringify(result)}`,
+    codeLine: 16,
   });
 
   return steps;
 }
 
-export class BinaryTreeLevelVisualizer extends StepVisualizer<BTLStep> {
-  protected codeLanguages = BINARY_TREE_LEVEL_CODE_LANGUAGES;
-  protected codeLines = BINARY_TREE_LEVEL_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '二叉树层序遍历 代码调试';
+function parseTreeInput(raw: string): (number | null)[] {
+  return (raw || '3, 9, 20, null, null, 15, 7')
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+    .filter((n) => n === null || !isNaN(n));
+}
 
-  private treeSvgContainer: HTMLElement | null = null;
-  private metricLevelIdxEl: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private metricLevelSizeEl: HTMLElement | null = null;
-  private metricCollectedLevelsEl: HTMLElement | null = null;
-  private queueElementsEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.treeSvgContainer = this.root.querySelector('#btl-tree-svg-container');
-    this.metricLevelIdxEl = this.root.querySelector('#metric-level-idx');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricLevelSizeEl = this.root.querySelector('#metric-level-size');
-    this.metricCollectedLevelsEl = this.root.querySelector('#metric-collected-levels');
-    this.queueElementsEl = this.root.querySelector('#queue-elements');
-    this.liveTextEl = this.root.querySelector('#btl-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.btl-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: BINARY_TREE_LEVEL_PROBLEM_HTML,
-      analysisHtml: BINARY_TREE_LEVEL_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  private parseTreeInput(raw: string): (number | null)[] {
-    return raw
-      .split(/[,，\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
-      .filter((n) => n === null || !isNaN(n));
-  }
-
-  protected buildSteps(): BTLStep[] {
-    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-    const raw = treeInput?.value || '3, 9, 20, null, null, 15, 7';
-    const arr = this.parseTreeInput(raw);
+const { template, Visualizer } = createDeclarativeVisualizer<BTLStep>({
+  id: 'binary-tree-level',
+  name: '二叉树的层序遍历',
+  category: 'tree',
+  icon: '🥞',
+  badge: {
+    mode: 'BFS 队列逐层收集',
+    complexity: 'O(n) · O(w)',
+  },
+  card1Title: '📊 二叉树拓扑与 BFS 遍历沙盘',
+  card2Title: '🧭 队列状态与分层结果监视器',
+  card2Desc: '当前处理节点、BFS 队列序列与已收集二维层结果',
+  legend: [
+    { label: '当前出队节点', color: '#fbbf24' },
+    { label: '当前层已访问', color: '#34d399' },
+    { label: '队列待访问', color: '#60a5fa' },
+  ],
+  inputs: [
+    {
+      id: 'input-tree',
+      label: '二叉树层序',
+      type: 'text',
+      defaultValue: '3, 9, 20, null, null, 15, 7',
+      width: '160px',
+      placeholder: '3, 9, 20, null...',
+    },
+  ],
+  presets: [
+    { label: 'LeetCode 示例 1', values: { 'input-tree': '3, 9, 20, null, null, 15, 7' } },
+    { label: '单节点树', values: { 'input-tree': '1' } },
+    { label: '满二叉树', values: { 'input-tree': '1, 2, 3, 4, 5, 6, 7' } },
+  ],
+  metrics: [
+    { id: 'cur-level', label: '当前所在层', color: '#2563eb' },
+    { id: 'queue-size', label: 'BFS 队列大小', color: '#f59e0b' },
+    { id: 'total-collected', label: '已收集层数', color: '#16a34a' },
+  ],
+  codeLanguages: BINARY_TREE_LEVEL_CODE_LANGUAGES,
+  problemHtml: BINARY_TREE_LEVEL_PROBLEM_HTML,
+  analysisHtml: BINARY_TREE_LEVEL_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-tree'] || '3, 9, 20, null, null, 15, 7';
+    const arr = parseTreeInput(raw);
     const root = buildTree(arr);
     return buildBTLSteps(root);
-  }
+  },
+  renderCanvas: (container, step) => {
+    TreeCanvasAdapter.renderTree(container, {
+      tree: step.tree,
+      current: step.current,
+      secondaryHighlightedNodes: step.queue,
+      primaryColor: '#fbbf24',
+      secondaryColor: '#93c5fd',
+    });
 
-  protected renderStep(step: BTLStep): void {
-    const { tree, current, levelIndex, levelSize, queue, currentLevel, result, action, message } = step;
+    const root = container.closest('#algo-binary-tree-level-view');
+    if (root) {
+      const lvlEl = root.querySelector('#metric-cur-level');
+      const qEl = root.querySelector('#metric-queue-size');
+      const totEl = root.querySelector('#metric-total-collected');
 
-    // 1. 渲染 SVG 树拓扑
-    if (this.treeSvgContainer) {
-      const highlight = current != null ? new Set([current]) : new Set<number>();
-      const secondaryHighlight = new Set<number>([...queue, ...currentLevel]);
-      const secondaryColor = '#3b82f6';
+      if (lvlEl) lvlEl.textContent = `第 ${step.levelIndex} 层`;
+      if (qEl) qEl.textContent = `${step.queue.length}`;
+      if (totEl) totEl.textContent = `${step.result.length} 层`;
 
-      renderTreeSVG(
-        this.treeSvgContainer,
-        tree,
-        highlight,
-        '#fbbf24',
-        secondaryHighlight,
-        secondaryColor,
-      );
-    }
+      // 在 Card 2 中展示队列与收集的二维结果
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const queueChips = step.queue.map((v) => `<span style="padding: 1px 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 4px; font-size: 10.5px; font-family: monospace;">${v}</span>`).join(' ') || '<span style="color:#94a3b8; font-size:10.5px; font-style:italic;">队列为空</span>';
+        const layersHtml = step.result.map((layer, idx) => `<span style="padding: 2px 6px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 4px; font-size: 10.5px; font-family: monospace;">层${idx}: [${layer.join(', ')}]</span>`).join(' ') || '<span style="color:#94a3b8; font-size:10.5px; font-style:italic;">等待收集第一层...</span>';
 
-    // 2. 更新状态监视器
-    if (this.metricLevelIdxEl) this.metricLevelIdxEl.textContent = `${levelIndex}`;
-    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = current != null ? `${current}` : '—';
-    if (this.metricLevelSizeEl) this.metricLevelSizeEl.textContent = `${levelSize}`;
-    if (this.metricCollectedLevelsEl) this.metricCollectedLevelsEl.textContent = `${result.length}`;
-    if (this.queueElementsEl) {
-      this.queueElementsEl.textContent = queue.length > 0 ? `[ ${queue.join(', ')} ]` : '[ (空) ]';
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.action === 'done' ? '#f0fdf4' : st.action === 'poll-node' ? '#eff6ff' : '#f8fafc';
-        let color =
-          st.action === 'done' ? '#15803d' : st.action === 'poll-node' ? '#1d4ed8' : '#64748b';
-        let border =
-          st.action === 'done' ? '#bbf7d0' : st.action === 'poll-node' ? '#bfdbfe' : '#e2e8f0';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">🥞 BFS 队列状态 (队头 → 队尾):</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">${queueChips}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">已收集二维层序结果:</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">${layersHtml}</div>
+            </div>
+          </div>
+        `;
       }
     }
-
-    const badgeLevel = this.root?.querySelector('#badge-cur-level');
-    if (badgeLevel) {
-      badgeLevel.textContent = action === 'done' ? '层序遍历完成' : `第 ${step.levelIndex} 层`;
-    }
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'binary-tree-level',
-  name: '二叉树层序遍历',
+  name: '二叉树的层序遍历',
   viewId: 'algo-binary-tree-level-view',
   category: 'tree',
-  description: '使用队列进行二叉树的广度优先层序遍历',
-  icon: '🌊',
-  difficulty: 2,
-  levelOrder: 5,
-  learningGoal: '掌握利用队列按层大小循环实现 BFS 的标准模板',
+  description: 'BFS 队列广度优先逐层遍历二叉树，按层收集二维节点列表',
+  icon: '🥞',
   template,
-  Visualizer: BinaryTreeLevelVisualizer,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 8,
+  learningGoal: '掌握利用辅助队列进行层序遍历与通过当前层 size 准确控制层边界的经典套路',
 });

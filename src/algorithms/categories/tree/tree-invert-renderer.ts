@@ -1,17 +1,18 @@
 /**
- * 翻转二叉树可视化器 — 4-Card 标准现代架构
+ * 翻转二叉树可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * 递归遍历、左右孩子指针互换、动态树结构更新与日志追踪
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   TREE_INVERT_PROBLEM_HTML,
   TREE_INVERT_ANALYSIS_HTML,
   TREE_INVERT_CODE_LANGUAGES,
 } from './tree-invert-problem-content';
-import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
-import template from './tree-invert.html?raw';
 
 export interface InvertStep {
   tree: TreeNode | null;
@@ -102,9 +103,7 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
       invertedCount,
       isSwapping: true,
       action: 'swap',
-      message: `互换完成：节点 ${node.val} 的左孩子变为 ${node.left ? node.left.val : 'null'}，右孩子变为 ${
-        node.right ? node.right.val : 'null'
-      }。`,
+      message: `🔀 互换完成！节点 ${node.val}：原左孩子变为 ${node.left ? node.left.val : 'null'}，原右孩子变为 ${node.right ? node.right.val : 'null'}。`,
       log: `节点 ${node.val} 左右互换完成`,
       codeLine: [6, 7],
     });
@@ -120,9 +119,9 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
       invertedCount,
       isSwapping: false,
       action: 'leave',
-      message: `离开节点 ${node.val}（该子树左右翻转完毕）。`,
+      message: `离开节点 ${node.val}：该子树左右翻转全部完成。`,
       log: `离开 ${node.val}`,
-      codeLine: [9, 10],
+      codeLine: 8,
     });
   };
 
@@ -136,156 +135,117 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
     invertedCount,
     isSwapping: false,
     action: 'done',
-    message: `🎉 翻转二叉树全部完成！共翻转 ${invertedCount} 个子树节点。`,
-    log: `✓ 全部翻转完成`,
-    codeLine: 11,
+    message: `🎉 二叉树翻转全部完成！共执行 ${invertedCount} 次子树互换。`,
+    log: `✓ 全部完成 (共交换 ${invertedCount} 次)`,
+    codeLine: 8,
   });
 
   return steps;
 }
 
-export class TreeInvertVisualizer extends StepVisualizer<InvertStep> {
-  protected codeLanguages = TREE_INVERT_CODE_LANGUAGES;
-  protected codeLines = TREE_INVERT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '翻转二叉树 代码调试';
+function parseTreeInput(raw: string): (number | null)[] {
+  return (raw || '4, 2, 7, 1, 3, 6, 9')
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+    .filter((n) => n === null || !isNaN(n));
+}
 
-  private treeSvgContainer: HTMLElement | null = null;
-  private metricCurrEl: HTMLElement | null = null;
-  private metricLeftEl: HTMLElement | null = null;
-  private metricRightEl: HTMLElement | null = null;
-  private metricInvertedCountEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.treeSvgContainer = this.root.querySelector('#ti-tree-svg-container');
-    this.metricCurrEl = this.root.querySelector('#metric-curr');
-    this.metricLeftEl = this.root.querySelector('#metric-left');
-    this.metricRightEl = this.root.querySelector('#metric-right');
-    this.metricInvertedCountEl = this.root.querySelector('#metric-inverted-count');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#ti-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.ti-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: TREE_INVERT_PROBLEM_HTML,
-      analysisHtml: TREE_INVERT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  private parseTreeInput(raw: string): (number | null)[] {
-    return raw
-      .split(/[,，\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
-      .filter((n) => n === null || !isNaN(n));
-  }
-
-  protected buildSteps(): InvertStep[] {
-    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-    const raw = treeInput?.value || '4, 2, 7, 1, 3, 6, 9';
-    const arr = this.parseTreeInput(raw);
+const { template, Visualizer } = createDeclarativeVisualizer<InvertStep>({
+  id: 'tree-invert',
+  name: '翻转二叉树',
+  category: 'tree',
+  icon: '🪞',
+  badge: {
+    mode: '前序递归·左右指针互换',
+    complexity: 'O(n) · O(h)',
+  },
+  card1Title: '📊 二叉树动态镜像翻转沙盘',
+  card2Title: '🧭 左右孩子互换状态监视器',
+  card2Desc: '当前处理节点、原左/右孩子值与互换统计',
+  legend: [
+    { label: '正在互换节点', color: '#fbbf24' },
+    { label: '正常节点', color: '#3b82f6' },
+  ],
+  inputs: [
+    {
+      id: 'input-tree',
+      label: '二叉树层序',
+      type: 'text',
+      defaultValue: '4, 2, 7, 1, 3, 6, 9',
+      width: '160px',
+      placeholder: '4, 2, 7, 1, 3, 6, 9',
+    },
+  ],
+  presets: [
+    { label: '标准满二叉树', values: { 'input-tree': '4, 2, 7, 1, 3, 6, 9' } },
+    { label: '简单示例', values: { 'input-tree': '2, 1, 3' } },
+    { label: '单侧树', values: { 'input-tree': '1, 2, null, 3, null' } },
+  ],
+  metrics: [
+    { id: 'cur-node', label: '当前节点', color: '#f59e0b' },
+    { id: 'swap-count', label: '已互换次数', color: '#2563eb' },
+    { id: 'swap-state', label: '当前状态', color: '#16a34a' },
+  ],
+  codeLanguages: TREE_INVERT_CODE_LANGUAGES,
+  problemHtml: TREE_INVERT_PROBLEM_HTML,
+  analysisHtml: TREE_INVERT_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-tree'] || '4, 2, 7, 1, 3, 6, 9';
+    const arr = parseTreeInput(raw);
     const root = buildTree(arr);
     return buildTreeInvertSteps(root);
-  }
+  },
+  renderCanvas: (container, step) => {
+    TreeCanvasAdapter.renderTree(container, {
+      tree: step.tree,
+      current: step.current,
+      primaryColor: '#fbbf24',
+    });
 
-  protected renderStep(step: InvertStep): void {
-    const { tree, current, leftVal, rightVal, invertedCount, isSwapping, action, message } = step;
+    const root = container.closest('#algo-tree-invert-view');
+    if (root) {
+      const curEl = root.querySelector('#metric-cur-node');
+      const countEl = root.querySelector('#metric-swap-count');
+      const stateEl = root.querySelector('#metric-swap-state');
 
-    // 1. 渲染 SVG 树拓扑
-    if (this.treeSvgContainer) {
-      const highlight = current != null ? new Set([current]) : new Set<number>();
-      const secondaryHighlight = new Set<number>();
-      if (leftVal != null) secondaryHighlight.add(leftVal);
-      if (rightVal != null) secondaryHighlight.add(rightVal);
+      if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
+      if (countEl) countEl.textContent = `${step.invertedCount}`;
+      if (stateEl) {
+        stateEl.textContent = step.isSwapping ? '正在互换左右子树' : step.action === 'done' ? '翻转完成' : '递归遍历中';
+      }
 
-      renderTreeSVG(
-        this.treeSvgContainer,
-        tree,
-        highlight,
-        isSwapping ? '#f43f5e' : '#fbbf24',
-        secondaryHighlight,
-        '#3b82f6',
-      );
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurrEl) this.metricCurrEl.textContent = current != null ? `${current}` : '—';
-    if (this.metricLeftEl) this.metricLeftEl.textContent = leftVal != null ? `${leftVal}` : 'null';
-    if (this.metricRightEl) this.metricRightEl.textContent = rightVal != null ? `${rightVal}` : 'null';
-    if (this.metricInvertedCountEl) this.metricInvertedCountEl.textContent = `${invertedCount}`;
-
-    if (this.formulaActionEl) {
-      if (isSwapping) {
-        this.formulaActionEl.textContent = `swap(node.left, node.right) (${leftVal} ⇋ ${rightVal})`;
-      } else if (action === 'done') {
-        this.formulaActionEl.textContent = '翻转二叉树完成';
-      } else {
-        this.formulaActionEl.textContent = 'swap(root.left, root.right)';
+      // 在 Card 2 中展示左右孩子互换指针对比
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前左孩子:</span>
+              <strong style="font-family: monospace; color: #2563eb; font-size: 12px;">${step.leftVal !== null ? `${step.leftVal}` : 'null'}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前右孩子:</span>
+              <strong style="font-family: monospace; color: #0d9488; font-size: 12px;">${step.rightVal !== null ? `${step.rightVal}` : 'null'}</strong>
+            </div>
+          </div>
+        `;
       }
     }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.action === 'done' ? '#f0fdf4' : st.isSwapping ? '#fff1f2' : '#eff6ff';
-        let color =
-          st.action === 'done' ? '#15803d' : st.isSwapping ? '#e11d48' : '#1d4ed8';
-        let border =
-          st.action === 'done' ? '#bbf7d0' : st.isSwapping ? '#fecdd3' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeInvert = this.root?.querySelector('#badge-inverted-count');
-    if (badgeInvert) {
-      badgeInvert.textContent = action === 'done' ? '翻转完成' : `已翻转: ${invertedCount} 个`;
-    }
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'tree-invert',
   name: '翻转二叉树',
   viewId: 'algo-tree-invert-view',
   category: 'tree',
-  description: '递归遍历二叉树并互换每一个节点的左右子节点',
-  icon: '🔄',
-  difficulty: 1,
-  levelOrder: 7,
-  learningGoal: '掌握二叉树子节点指针交换与递归翻转的基本思路',
+  description: '经典递归翻转：前序遍历时直接 swap(node.left, node.right)',
+  icon: '🪞',
   template,
-  Visualizer: TreeInvertVisualizer,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 3,
+  learningGoal: '掌握利用递归或层序遍历互换每个节点左右子树指针的算法本质',
 });

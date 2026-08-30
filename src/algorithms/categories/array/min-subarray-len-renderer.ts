@@ -1,20 +1,17 @@
 /**
- * 长度最小的子数组可视化器 — 4-Card 标准现代架构
+ * 长度最小的子数组可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * LeetCode 209：滑动窗口双指针
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
 import {
   MIN_SUBARRAY_LEN_PROBLEM_HTML,
   MIN_SUBARRAY_LEN_ANALYSIS_HTML,
   MIN_SUBARRAY_LEN_CODE_LANGUAGES,
 } from './min-subarray-len-problem-content';
-import template from './min-subarray-len.html?raw';
 
 export interface SWStep {
   array: number[];
@@ -98,7 +95,7 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
         target,
         status: 'shrink',
         message: `收缩左边界：移出 nums[${left - 1}]=${nums[left - 1]}，left 右移至 ${left}，当前窗口和 sum=${sum}。`,
-        log: `收缩 left -> ${left}，移出 nums[${left - 1}]=${nums[left - 1]}，sum -> ${sum}`,
+        log: `收缩 left -> ${left}，移出 ${nums[left - 1]}，sum -> ${sum}`,
         codeLine: [8, 9],
       });
     }
@@ -107,189 +104,132 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
   steps.push({
     array: [...nums],
     left,
-    right: nums.length,
+    right: nums.length - 1,
     sum,
     minLen,
     target,
     status: 'done',
-    message:
-      minLen === Infinity
-        ? `🎉 遍历完成！未找到满足 sum ≥ ${target} 的子数组，返回 0。`
-        : `🎉 遍历完成！满足条件的最短连续子数组长度为 minLen = ${minLen}。`,
-    log: `算法结束：返回 ${minLen === Infinity ? 0 : minLen}`,
-    codeLine: 12,
+    message: minLen === Infinity
+      ? `🎉 遍历完成！未找到满足 sum >= ${target} 的连续子数组，返回 0。`
+      : `🎉 遍历完成！最小子数组长度为 minLen = ${minLen}。`,
+    log: minLen === Infinity ? '✓ 完成：未找到 (返回 0)' : `✓ 完成：minLen = ${minLen}`,
+    codeLine: 11,
   });
 
   return steps;
 }
 
-export class MinSubarrayLenVisualizer extends StepVisualizer<SWStep> {
-  protected codeLanguages = MIN_SUBARRAY_LEN_CODE_LANGUAGES;
-  protected codeLines = MIN_SUBARRAY_LEN_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '长度最小的子数组 代码调试';
+const { template, Visualizer } = createDeclarativeVisualizer<SWStep>({
+  id: 'min-subarray-len',
+  name: '长度最小的子数组',
+  category: 'array',
+  icon: '🪟',
+  badge: {
+    mode: '滑动窗口双指针',
+    complexity: 'O(n) · O(1)',
+  },
+  card1Title: '📊 数组条带与动态滑动窗口沙盘',
+  card2Title: '🧭 窗口和与最小长度监视器',
+  card2Desc: '当前窗口范围 [left..right]、累加和 sum 与历史最小长度',
+  legend: [
+    { label: '滑动窗口覆盖', color: '#3b82f6' },
+    { label: '左边界 left', color: '#0d9488' },
+    { label: '右边界 right', color: '#2563eb' },
+  ],
+  inputs: [
+    {
+      id: 'input-target',
+      label: '目标和 target',
+      type: 'number',
+      defaultValue: 7,
+      width: '45px',
+    },
+    {
+      id: 'input-array',
+      label: '正整数数组',
+      type: 'text',
+      defaultValue: '2, 3, 1, 2, 4, 3',
+      width: '140px',
+      placeholder: '2, 3, 1, 2, 4, 3',
+    },
+  ],
+  presets: [
+    { label: '示例 1 (target=7)', values: { 'input-target': 7, 'input-array': '2, 3, 1, 2, 4, 3' } },
+    { label: '单元素达标 (target=4)', values: { 'input-target': 4, 'input-array': '1, 4, 4' } },
+    { label: '无达标子数组 (target=11)', values: { 'input-target': 11, 'input-array': '1, 1, 1, 1, 1, 1, 1, 1' } },
+  ],
+  metrics: [
+    { id: 'cur-sum', label: '当前窗口和 sum', color: '#2563eb' },
+    { id: 'window-len', label: '当前窗口长度', color: '#0d9488' },
+    { id: 'min-len', label: '历史最小长度 minLen', color: '#16a34a' },
+  ],
+  codeLanguages: MIN_SUBARRAY_LEN_CODE_LANGUAGES,
+  problemHtml: MIN_SUBARRAY_LEN_PROBLEM_HTML,
+  analysisHtml: MIN_SUBARRAY_LEN_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-array'] || '2, 3, 1, 2, 4, 3';
+    const arr = parsePositiveArray(raw);
+    const target = parseInt(inputs['input-target'] || '7', 10);
+    return buildMinSubarrayLenSteps(arr, target);
+  },
+  renderCanvas: (container, step) => {
+    const isDone = step.status === 'done';
+    const isOverTarget = step.sum >= step.target;
 
-  private trackRowEl: HTMLElement | null = null;
-  private metricLeftEl: HTMLElement | null = null;
-  private metricRightEl: HTMLElement | null = null;
-  private metricSumEl: HTMLElement | null = null;
-  private metricMinLenEl: HTMLElement | null = null;
-  private gaugeLabelEl: HTMLElement | null = null;
-  private gaugeFillEl: HTMLElement | null = null;
-  private gaugeStatusEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#sw-track-row');
-    this.metricLeftEl = this.root.querySelector('#metric-left');
-    this.metricRightEl = this.root.querySelector('#metric-right');
-    this.metricSumEl = this.root.querySelector('#metric-sum');
-    this.metricMinLenEl = this.root.querySelector('#metric-min-len');
-    this.gaugeLabelEl = this.root.querySelector('#gauge-label');
-    this.gaugeFillEl = this.root.querySelector('#gauge-fill');
-    this.gaugeStatusEl = this.root.querySelector('#gauge-status');
-    this.liveTextEl = this.root.querySelector('#sw-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.sw-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-        if (numsInput && btn.dataset.nums) numsInput.value = btn.dataset.nums;
-        if (targetInput && btn.dataset.target) targetInput.value = btn.dataset.target;
-        this.start();
-      });
+    ArrayTrackAdapter.renderTrack(container, {
+      array: step.array,
+      pointers: isDone
+        ? []
+        : [
+            { name: 'R', index: step.right, color: '#2563eb', position: 'top' },
+            { name: 'L', index: step.left, color: '#0d9488', position: 'bottom' },
+          ],
+      windowRange: isDone ? undefined : { left: step.left, right: step.right, color: isOverTarget ? '#10b981' : '#3b82f6' },
+      primaryTitle: '📊 数组与动态窗口覆盖 (nums):',
     });
 
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: MIN_SUBARRAY_LEN_PROBLEM_HTML,
-      analysisHtml: MIN_SUBARRAY_LEN_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
+    const root = container.closest('#algo-min-subarray-len-view');
+    if (root) {
+      const sumEl = root.querySelector('#metric-cur-sum');
+      const lenEl = root.querySelector('#metric-window-len');
+      const minEl = root.querySelector('#metric-min-len');
 
-  protected buildSteps(): SWStep[] {
-    const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-    const arr = parsePositiveArray(numsInput?.value || '2, 3, 1, 2, 4, 3');
-    const target = parseInt(targetInput?.value || '7', 10);
-    return buildMinSubarrayLenSteps(arr, isNaN(target) ? 7 : target);
-  }
+      const curLen = step.right >= step.left ? step.right - step.left + 1 : 0;
 
-  protected renderStep(step: SWStep): void {
-    const { array, left, right, sum, minLen, target, status, message } = step;
+      if (sumEl) sumEl.textContent = `${step.sum} / ${step.target}`;
+      if (lenEl) lenEl.textContent = `${curLen}`;
+      if (minEl) minEl.textContent = step.minLen === Infinity ? '∞' : `${step.minLen}`;
 
-    // 1. 渲染沙盘 Cell 数组
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = array
-        .map((num, idx) => {
-          const isLeft = left === idx && status !== 'done';
-          const isRight = right === idx && status !== 'done';
-          const inWindow = idx >= left && idx <= right && status !== 'done';
-          const isMatch = inWindow && sum >= target;
-
-          let boxClasses = 'sw-cell-box';
-          if (inWindow) boxClasses += isMatch ? ' window-match' : ' in-window';
-
-          const badges: string[] = [];
-          if (isLeft && isRight) {
-            badges.push('<span class="sw-ptr-badge left">L</span>');
-            badges.push('<span class="sw-ptr-badge right">R</span>');
-          } else {
-            if (isLeft) badges.push('<span class="sw-ptr-badge left">left</span>');
-            if (isRight) badges.push('<span class="sw-ptr-badge right">right</span>');
-          }
-
-          return `
-            <div class="sw-cell-wrapper">
-              <div class="sw-pointer-tags">
-                ${badges.join('')}
-              </div>
-              <div class="${boxClasses}">
-                <span class="val">${num}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
+      // 在 Card 2 中展示当前窗口详情
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #475569; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>活动窗口范围:</span>
+              <strong style="color: #2563eb;">[${step.left} .. ${step.right}]</strong>
             </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 状态看板与度量更新
-    if (this.metricLeftEl) this.metricLeftEl.textContent = status === 'done' ? '结束' : String(left);
-    if (this.metricRightEl) this.metricRightEl.textContent = status === 'done' ? '结束' : String(right);
-    if (this.metricSumEl) this.metricSumEl.textContent = `${sum} / ${target}`;
-    if (this.metricMinLenEl) {
-      this.metricMinLenEl.textContent = minLen === Infinity ? '∞' : String(minLen);
-    }
-
-    // 仪表盘进度
-    const progressPct = Math.min(100, Math.round((sum / target) * 100));
-    if (this.gaugeLabelEl) this.gaugeLabelEl.textContent = `${sum} / ${target}`;
-    if (this.gaugeFillEl) {
-      this.gaugeFillEl.style.width = `${progressPct}%`;
-      this.gaugeFillEl.style.background = sum >= target ? '#10b981' : '#2563eb';
-    }
-    if (this.gaugeStatusEl) {
-      this.gaugeStatusEl.textContent = sum >= target ? '达标 (≥ target)' : '扩展中 (< target)';
-      this.gaugeStatusEl.style.color = sum >= target ? '#059669' : '#2563eb';
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = status === 'done' ? '#f0fdf4' : sum >= target ? '#eff6ff' : '#f8fafc';
-      logEntry.style.color = status === 'done' ? '#15803d' : sum >= target ? '#1d4ed8' : '#334155';
-      logEntry.style.border = '1px solid ' + (status === 'done' ? '#bbf7d0' : sum >= target ? '#bfdbfe' : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
+            <div style="display: flex; justify-content: space-between;">
+              <span>窗口状态:</span>
+              <strong style="color: ${isOverTarget ? '#16a34a' : '#64748b'};">${isOverTarget ? '✓ 满足 sum ≥ target (收缩左边界)' : '向右扩展右边界'}</strong>
+            </div>
+          </div>
+        `;
       }
     }
-
-    const badgeMinLen = this.root?.querySelector('#badge-min-len');
-    if (badgeMinLen) {
-      badgeMinLen.textContent = minLen !== Infinity ? `最小长度: ${minLen}` : '最小长度: ∞';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.codeTerminal) this.codeTerminal.highlightLine(0);
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'min-subarray-len',
-  name: '长度最小的子数组（滑动窗口）',
+  name: '长度最小的子数组',
   viewId: 'algo-min-subarray-len-view',
   category: 'array',
-  description: '滑动窗口求和≥target的最短子数组',
+  description: '滑动窗口双指针：right 扩展累加，sum ≥ target 时更新最小长度并收缩 left',
   icon: '🪟',
-  difficulty: 2,
-  levelOrder: 2,
-  learningGoal: '理解滑动窗口如何高效维护子数组和',
   template,
-  Visualizer: MinSubarrayLenVisualizer,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 4,
+  learningGoal: '掌握滑动窗口在连续子数组条件最值问题中的右扩左缩单调收敛机制',
 });

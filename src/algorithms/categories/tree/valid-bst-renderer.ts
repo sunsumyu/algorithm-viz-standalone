@@ -1,17 +1,18 @@
 /**
- * 验证二叉搜索树可视化器 — 4-Card 标准现代架构
+ * 验证二叉搜索树可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * 中序遍历严格单调递增校验、前驱节点追踪、违规节点高亮
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   VALID_BST_PROBLEM_HTML,
   VALID_BST_ANALYSIS_HTML,
   VALID_BST_CODE_LANGUAGES,
 } from './valid-bst-problem-content';
-import { TreeNode, buildTreeFromArr as buildTree, renderTreeSVG } from './tree-template';
-import template from './valid-bst.html?raw';
 
 export interface VBStep {
   tree: TreeNode | null;
@@ -86,7 +87,7 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       status: ok ? 'check' : 'invalid',
       message: ok
         ? `中序检查节点 ${val}：${prevVal === null ? '无前驱节点' : `${val} > 前驱 ${prevVal}`}，满足严格递增。`
-        : `❌ 违规！节点 ${val} &le; 前驱 ${prevVal}，破坏了中序严格递增特性！`,
+        : `❌ 违规！节点 ${val} <= 前驱 ${prevVal}，破坏了中序严格递增特性！`,
       log: ok
         ? `检查 ${val} (prev=${prevVal ?? 'null'}) -> OK`
         : `违规: ${val} <= prev(${prevVal}) -> 非法 BST`,
@@ -99,195 +100,140 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       return false;
     }
 
-    prevVal = val;
     sequence.push(val);
+    prevVal = val;
 
     // 3. 递归右子树
     return inorder(node.right);
   };
 
-  inorder(root);
+  const finalResult = inorder(root);
 
   steps.push({
     tree: root,
     current: null,
     prev: prevVal,
     sequence: [...sequence],
-    valid: isValid,
+    valid: finalResult,
     invalidNode,
-    phase: isValid ? 'valid' : 'invalid',
-    status: isValid ? 'valid' : 'invalid',
-    message: isValid
-      ? `🎉 验证通过！中序序列 [${sequence.join(', ')}] 严格递增，该树是有效的二叉搜索树。`
-      : `❌ 验证失败！由于节点 ${invalidNode} 违规，该树不是有效的二叉搜索树。`,
-    log: isValid ? `✓ 验证通过 (有效 BST)` : `✗ 验证失败 (非法 BST)`,
-    codeLine: isValid ? 13 : 9,
+    phase: finalResult ? 'valid' : 'invalid',
+    status: finalResult ? 'valid' : 'invalid',
+    message: finalResult
+      ? `🎉 校验完成！中序遍历序列为 [${sequence.join(', ')}]，完全满足严格单调递增，该树是合法的二叉搜索树 (True)。`
+      : `❌ 校验完成！该树不是合法的二叉搜索树 (False)。`,
+    log: finalResult ? '✓ 合法 BST (True)' : '✗ 非法 BST (False)',
+    codeLine: 11,
   });
 
   return steps;
 }
 
-export class ValidBstVisualizer extends StepVisualizer<VBStep> {
-  protected codeLanguages = VALID_BST_CODE_LANGUAGES;
-  protected codeLines = VALID_BST_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '验证二叉搜索树 代码调试';
+function parseTreeInput(raw: string): (number | null)[] {
+  return (raw || '5, 1, 4, null, null, 3, 6')
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+    .filter((n) => n === null || !isNaN(n));
+}
 
-  private treeSvgContainer: HTMLElement | null = null;
-  private metricCurrEl: HTMLElement | null = null;
-  private metricPrevEl: HTMLElement | null = null;
-  private metricConditionEl: HTMLElement | null = null;
-  private metricVerdictEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.treeSvgContainer = this.root.querySelector('#vb-tree-svg-container');
-    this.metricCurrEl = this.root.querySelector('#metric-curr');
-    this.metricPrevEl = this.root.querySelector('#metric-prev');
-    this.metricConditionEl = this.root.querySelector('#metric-condition');
-    this.metricVerdictEl = this.root.querySelector('#metric-verdict');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#vb-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.vb-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-        if (treeInput && btn.dataset.tree) treeInput.value = btn.dataset.tree;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: VALID_BST_PROBLEM_HTML,
-      analysisHtml: VALID_BST_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  private parseTreeInput(raw: string): (number | null)[] {
-    return raw
-      .split(/[,，\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-      .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
-      .filter((n) => n === null || !isNaN(n));
-  }
-
-  protected buildSteps(): VBStep[] {
-    const treeInput = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-    const raw = treeInput?.value || '2, 1, 3';
-    const arr = this.parseTreeInput(raw);
+const { template, Visualizer } = createDeclarativeVisualizer<VBStep>({
+  id: 'valid-bst',
+  name: '验证二叉搜索树',
+  category: 'tree',
+  icon: '🛡️',
+  badge: {
+    mode: '中序严格单调递增',
+    complexity: 'O(n) · O(h)',
+  },
+  card1Title: '📊 BST 拓扑结构与中序遍历沙盘',
+  card2Title: '🧭 中序递增与有效性监视器',
+  card2Desc: '当前检查节点、前驱节点与中序遍历输出序列',
+  legend: [
+    { label: '当前检查节点', color: '#fbbf24' },
+    { label: '已确认递增序列', color: '#34d399' },
+    { label: '违规节点', color: '#ef4444' },
+  ],
+  inputs: [
+    {
+      id: 'input-tree',
+      label: '二叉树层序',
+      type: 'text',
+      defaultValue: '5, 1, 4, null, null, 3, 6',
+      width: '160px',
+      placeholder: '5, 1, 4, null, null, 3, 6',
+    },
+  ],
+  presets: [
+    { label: '非法 BST (示例)', values: { 'input-tree': '5, 1, 4, null, null, 3, 6' } },
+    { label: '合法 BST', values: { 'input-tree': '2, 1, 3' } },
+    { label: '多层合法 BST', values: { 'input-tree': '10, 5, 15, 3, 7, 12, 18' } },
+  ],
+  metrics: [
+    { id: 'cur-node', label: '当前节点', color: '#f59e0b' },
+    { id: 'prev-node', label: '前驱节点 prev', color: '#2563eb' },
+    { id: 'bst-result', label: '合法性判定', color: '#16a34a' },
+  ],
+  codeLanguages: VALID_BST_CODE_LANGUAGES,
+  problemHtml: VALID_BST_PROBLEM_HTML,
+  analysisHtml: VALID_BST_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-tree'] || '5, 1, 4, null, null, 3, 6';
+    const arr = parseTreeInput(raw);
     const root = buildTree(arr);
     return buildVBSteps(root);
-  }
+  },
+  renderCanvas: (container, step) => {
+    TreeCanvasAdapter.renderTree(container, {
+      tree: step.tree,
+      current: step.invalidNode !== null ? step.invalidNode : step.current,
+      secondaryHighlightedNodes: step.sequence,
+      primaryColor: step.invalidNode !== null ? '#ef4444' : '#fbbf24',
+      secondaryColor: '#34d399',
+    });
 
-  protected renderStep(step: VBStep): void {
-    const { tree, current, prev, valid, invalidNode, phase, message } = step;
+    const root = container.closest('#algo-valid-bst-view');
+    if (root) {
+      const curEl = root.querySelector('#metric-cur-node');
+      const prevEl = root.querySelector('#metric-prev-node');
+      const resEl = root.querySelector('#metric-bst-result');
 
-    // 1. 渲染 SVG 树拓扑
-    if (this.treeSvgContainer) {
-      const highlight = current != null ? new Set([current]) : new Set<number>();
-      const secondaryHighlight = invalidNode != null ? new Set([invalidNode]) : prev != null ? new Set([prev]) : new Set<number>();
-      const secondaryColor = invalidNode != null ? '#ef4444' : '#3b82f6';
+      if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
+      if (prevEl) prevEl.textContent = step.prev != null ? `${step.prev}` : '无 (首节点)';
+      if (resEl) {
+        resEl.textContent = step.valid ? '单调递增正常' : '违规非法 (False)';
+        resEl.style.color = step.valid ? '#16a34a' : '#ef4444';
+      }
 
-      renderTreeSVG(
-        this.treeSvgContainer,
-        tree,
-        highlight,
-        invalidNode != null ? '#ef4444' : '#fbbf24',
-        secondaryHighlight,
-        secondaryColor,
-      );
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurrEl) this.metricCurrEl.textContent = current != null ? `${current}` : '—';
-    if (this.metricPrevEl) this.metricPrevEl.textContent = prev != null ? `${prev}` : 'null';
-    if (this.metricConditionEl) {
-      if (current != null && prev != null) {
-        this.metricConditionEl.textContent = current > prev ? `${current} > ${prev} (✓)` : `${current} <= ${prev} (✗)`;
-        this.metricConditionEl.style.color = current > prev ? '#10b981' : '#ef4444';
-      } else {
-        this.metricConditionEl.textContent = 'prev == null (首项)';
-        this.metricConditionEl.style.color = '#10b981';
+      // 在 Card 2 中展示中序输出序列
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">当前中序遍历序列:</span>
+              <span style="font-size: 10px; color: ${step.valid ? '#16a34a' : '#ef4444'}; font-family: monospace;">${step.valid ? '严格递增' : '递增破损'}</span>
+            </div>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: ${step.valid ? '#16a34a' : '#ef4444'};">
+              [ ${step.sequence.join(', ') || '空'} ]
+            </div>
+          </div>
+        `;
       }
     }
-    if (this.metricVerdictEl) {
-      if (phase === 'valid') {
-        this.metricVerdictEl.textContent = '合法 BST (True)';
-        this.metricVerdictEl.style.color = '#10b981';
-      } else if (phase === 'invalid') {
-        this.metricVerdictEl.textContent = '非法 BST (False)';
-        this.metricVerdictEl.style.color = '#ef4444';
-      } else {
-        this.metricVerdictEl.textContent = '校验中...';
-        this.metricVerdictEl.style.color = '#2563eb';
-      }
-    }
-
-    if (this.formulaActionEl) {
-      if (!valid) {
-        this.formulaActionEl.textContent = `违规: ${current} <= ${prev} -> return false`;
-      } else if (phase === 'valid') {
-        this.formulaActionEl.textContent = '中序严格递增 -> return true';
-      } else {
-        this.formulaActionEl.textContent = 'prev == null || curr.val > prev.val';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.phase === 'valid' ? '#f0fdf4' : st.phase === 'invalid' ? '#fff1f2' : '#eff6ff';
-        let color =
-          st.phase === 'valid' ? '#15803d' : st.phase === 'invalid' ? '#e11d48' : '#1d4ed8';
-        let border =
-          st.phase === 'valid' ? '#bbf7d0' : st.phase === 'invalid' ? '#fecdd3' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeVerdict = this.root?.querySelector('#badge-verdict');
-    if (badgeVerdict) {
-      badgeVerdict.textContent =
-        phase === 'valid' ? '合法 BST (True)' : phase === 'invalid' ? '非法 BST (False)' : '校验中...';
-    }
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'valid-bst',
   name: '验证二叉搜索树',
   viewId: 'algo-valid-bst-view',
   category: 'tree',
-  description: '判断给定二叉树是否为合法的二叉搜索树（中序严格递增）',
-  icon: '⚖️',
-  difficulty: 2,
-  levelOrder: 2,
-  learningGoal: '理解二叉搜索树的中序单调性与上下界校验方法',
+  description: '中序遍历严格单调递增性校验：当前节点值严格大于前驱节点 prev.val',
+  icon: '🛡️',
   template,
-  Visualizer: ValidBstVisualizer,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 5,
+  learningGoal: '掌握二叉搜索树中序遍历必然严格单调递增的本质特性及其在线校验算法',
 });

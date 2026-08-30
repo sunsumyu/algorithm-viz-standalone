@@ -1,20 +1,16 @@
 /**
- * 滑动窗口最大值可视化器 — 4-Card 标准现代架构
+ * 滑动窗口最大值可视化器 — 声明式配置化架构 (Declarative Visualizer)
  * LeetCode 239：单调队列（队头到队尾单调递减），队头恒为当前窗口最大值，O(1) 读取
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   SLIDING_WINDOW_MAX_PROBLEM_HTML,
   SLIDING_WINDOW_MAX_ANALYSIS_HTML,
   SLIDING_WINDOW_MAX_CODE_LANGUAGES,
 } from './sliding-window-max-problem-content';
-import template from './sliding-window-max.html?raw';
 
 export interface SWMStep {
   nums: number[];
@@ -22,7 +18,7 @@ export interface SWMStep {
   currentIndex: number;
   windowLeft: number;
   windowRight: number;
-  deque: number[]; // 存储数值
+  deque: number[];
   result: number[];
   outVal: number | null;
   inVal: number | null;
@@ -88,14 +84,14 @@ export function buildSlidingWindowMaxSteps(rawNums: number[], k: number): SWMSte
     inVal: null,
     poppedBackVals: [],
     action: 'init',
-    message: `初始化：数组包含 ${n} 个元素，滑动窗口大小 k=${k}，使用单调递减队列`,
-    codeLine: 19,
+    message: `初始化：数组长度 ${n}，窗口大小 k = ${k}。准备使用单调队列维护窗口最大值`,
+    codeLine: 2,
   });
 
-  // 1. 初始化前 k 个元素构成的首个窗口
+  // 1. 初始化前 k 个元素
   for (let i = 0; i < k; i++) {
-    const val = nums[i];
-    const popped = dequeAdd(val);
+    const num = nums[i];
+    const popped = dequeAdd(num);
 
     steps.push({
       nums: [...nums],
@@ -106,16 +102,18 @@ export function buildSlidingWindowMaxSteps(rawNums: number[], k: number): SWMSte
       deque: [...deque],
       result: [...result],
       outVal: null,
-      inVal: val,
+      inVal: num,
       poppedBackVals: popped,
       action: 'init_window',
-      message: `📥 填充初始窗口 [${i}] (值 ${val})：${popped.length > 0 ? `弹出队尾较小值 [${popped.join(', ')}]，` : ''}压入单调队列，当前队列: [${deque.join(', ')}]`,
-      codeLine: 21,
+      message:
+        popped.length > 0
+          ? `📥 压入元素 nums[${i}]=${num}，单调性维护：淘汰队尾较小元素 [${popped.join(', ')}]`
+          : `📥 压入元素 nums[${i}]=${num} 到单调队列`,
+      codeLine: 7,
     });
   }
 
   result.push(deque[0]);
-
   steps.push({
     nums: [...nums],
     k,
@@ -128,79 +126,79 @@ export function buildSlidingWindowMaxSteps(rawNums: number[], k: number): SWMSte
     inVal: null,
     poppedBackVals: [],
     action: 'record_max',
-    message: `🥇 首个窗口 [0..${k - 1}] 就绪！单调队列头为最大值 ${deque[0]}，记录结果: [${result.join(', ')}]`,
-    codeLine: 22,
+    message: `🥇 初始窗口 [0..${k - 1}] 构建完毕，队头元素 ${deque[0]} 即为窗口最大值，加入结果列表`,
+    codeLine: 10,
   });
 
-  // 2. 开始滑动窗口
+  // 2. 窗口向右滑动
   for (let i = k; i < n; i++) {
-    const outNum = nums[i - k];
-    const inNum = nums[i];
-    const left = i - k + 1;
-    const right = i;
+    const removeVal = nums[i - k];
+    const addVal = nums[i];
 
-    // 滑出旧值
-    const wasPolled = dequePoll(outNum);
-
+    // 移出窗口左侧
+    const polled = dequePoll(removeVal);
     steps.push({
       nums: [...nums],
       k,
       currentIndex: i,
-      windowLeft: left,
-      windowRight: right,
+      windowLeft: i - k + 1,
+      windowRight: i - 1,
       deque: [...deque],
       result: [...result],
-      outVal: outNum,
+      outVal: removeVal,
       inVal: null,
       poppedBackVals: [],
       action: 'slide_out',
-      message: `🚪 窗口右移：移出元素 [${i - k}] (值 ${outNum}) &rarr; ${wasPolled ? `与单调队列头一致，成功移出队头！` : '该元素此前已被单调淘汰，无需操作'}`,
-      codeLine: 24,
+      message: polled
+        ? `🚪 窗口右移：移出左边界元素 nums[${i - k}]=${removeVal}，恰为当前队头，从队列弹出`
+        : `🚪 窗口右移：移出左边界元素 nums[${i - k}]=${removeVal}，早已被淘汰不在队列中，无需操作`,
+      codeLine: 13,
     });
 
-    // 移入新值
-    const popped = dequeAdd(inNum);
-
+    // 移入窗口右侧
+    const popped = dequeAdd(addVal);
     steps.push({
       nums: [...nums],
       k,
       currentIndex: i,
-      windowLeft: left,
-      windowRight: right,
+      windowLeft: i - k + 1,
+      windowRight: i,
       deque: [...deque],
       result: [...result],
-      outVal: outNum,
-      inVal: inNum,
+      outVal: null,
+      inVal: addVal,
       poppedBackVals: popped,
       action: 'slide_in',
-      message: `📥 移入新元素 [${i}] (值 ${inNum})：${popped.length > 0 ? `弹出队尾较小值 [${popped.join(', ')}]，` : ''}维持单调递减，队列: [${deque.join(', ')}]`,
-      codeLine: 25,
+      message:
+        popped.length > 0
+          ? `📥 移入右边界元素 nums[${i}]=${addVal}，淘汰队尾较小元素 [${popped.join(', ')}]，维持递减`
+          : `📥 移入右边界元素 nums[${i}]=${addVal} 到单调队列`,
+      codeLine: 15,
     });
 
     // 记录最大值
     result.push(deque[0]);
-
     steps.push({
       nums: [...nums],
       k,
       currentIndex: i,
-      windowLeft: left,
-      windowRight: right,
+      windowLeft: i - k + 1,
+      windowRight: i,
       deque: [...deque],
       result: [...result],
       outVal: null,
       inVal: null,
       poppedBackVals: [],
       action: 'record_max',
-      message: `🥇 窗口 [${left}..${right}] 最大值为队头 ${deque[0]}，记录结果: [${result.join(', ')}]`,
-      codeLine: 26,
+      message: `🥇 窗口 [${i - k + 1}..${i}] 最大值为队头 ${deque[0]}，加入结果列表: [${result.join(', ')}]`,
+      codeLine: 17,
     });
   }
 
   steps.push({
     nums: [...nums],
     k,
-    currentIndex: n - 1,
+    currentIndex: n,
     windowLeft: n - k,
     windowRight: n - 1,
     deque: [...deque],
@@ -209,268 +207,185 @@ export function buildSlidingWindowMaxSteps(rawNums: number[], k: number): SWMSte
     inVal: null,
     poppedBackVals: [],
     action: 'done',
-    message: `🎉 滑动窗口最大值计算完成！所有窗口的最大值序列为：[${result.join(', ')}]`,
-    codeLine: 28,
+    message: `🎉 滑动窗口最大值计算完成！最终收集数组: [${result.join(', ')}]`,
+    codeLine: 18,
   });
 
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class SlidingWindowMaxVisualizer extends StepVisualizer<SWMStep> {
-  protected codeLanguages = SLIDING_WINDOW_MAX_CODE_LANGUAGES;
-  protected codeLines = SLIDING_WINDOW_MAX_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '滑动窗口最大值 代码调试';
-
-  private sandboxContainer: HTMLElement | null = null;
-  private windowStatusContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#swm-sandbox-container');
-    this.windowStatusContainer = this.root.querySelector('#swm-window-status-container');
-    this.decisionMonitorContainer = this.root.querySelector('#swm-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#swm-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.swm-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const nEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-        if (nEl && btn.dataset.nums) nEl.value = btn.dataset.nums;
-        if (kEl && btn.dataset.k) kEl.value = btn.dataset.k;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: SLIDING_WINDOW_MAX_PROBLEM_HTML,
-      analysisHtml: SLIDING_WINDOW_MAX_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): SWMStep[] {
-    const nEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-
-    const rawNums = (nEl?.value || '1,3,-1,-3,5,3,6,7')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const k = parseInt(kEl?.value || '3', 10);
-
-    return buildSlidingWindowMaxSteps(rawNums.length ? rawNums : [1, 3, -1, -3, 5, 3, 6, 7], isNaN(k) ? 3 : k);
-  }
-
-  protected renderStep(step: SWMStep): void {
+const { template, Visualizer } = createDeclarativeVisualizer<SWMStep>({
+  id: 'sliding-window-max',
+  name: '滑动窗口最大值',
+  category: 'stack',
+  icon: '🪟',
+  badge: {
+    mode: '单调队列·O(n)',
+    complexity: 'O(n) · O(k)',
+  },
+  card1Title: '🪟 数组窗口与单调队列沙盘',
+  card2Title: '🧭 窗口指标与最大值序列监视器',
+  card2Desc: '当前窗口范围、单调队列递减序列与输出列表',
+  legend: [
+    { label: '窗口最大值', color: '#10b981' },
+    { label: '窗口内元素', color: '#ef4444' },
+    { label: '单调队列元素', color: '#f59e0b' },
+  ],
+  inputs: [
+    {
+      id: 'input-nums',
+      label: '数组 nums',
+      type: 'text',
+      defaultValue: '1, 3, -1, -3, 5, 3, 6, 7',
+      width: '170px',
+      placeholder: '以逗号分隔',
+    },
+    {
+      id: 'input-k',
+      label: '窗口 k',
+      type: 'number',
+      defaultValue: 3,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '经典示例', values: { 'input-nums': '1, 3, -1, -3, 5, 3, 6, 7', 'input-k': 3 } },
+    { label: '单调递减', values: { 'input-nums': '9, 8, 7, 6, 5, 4, 3, 2, 1', 'input-k': 3 } },
+    { label: '单调递增', values: { 'input-nums': '1, 2, 3, 4, 5, 6, 7, 8', 'input-k': 4 } },
+  ],
+  metrics: [
+    { id: 'window-max', label: '当前窗口最大值', color: '#10b981' },
+    { id: 'window-range', label: '窗口范围 [L..R]', color: '#ef4444' },
+    { id: 'deque-size', label: '单调队列大小', color: '#f59e0b' },
+  ],
+  codeLanguages: SLIDING_WINDOW_MAX_CODE_LANGUAGES,
+  problemHtml: SLIDING_WINDOW_MAX_PROBLEM_HTML,
+  analysisHtml: SLIDING_WINDOW_MAX_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-nums'] || '1, 3, -1, -3, 5, 3, 6, 7';
+    const nums = raw.split(/[,，\s]+/).map((s: string) => parseInt(s.trim(), 10)).filter((n: number) => !isNaN(n));
+    const k = parseInt(inputs['input-k'] || '3', 10);
+    return buildSlidingWindowMaxSteps(nums, k);
+  },
+  renderCanvas: (container, step) => {
     const nums = step.nums;
     const deque = step.deque;
-    const result = step.result;
-    const n = nums.length;
     const isDone = step.action === 'done';
+    const wL = step.windowLeft;
+    const wR = step.windowRight;
 
-    // 1. 渲染滑动窗口与单调队列沙盘 (Card 1)
-    if (this.sandboxContainer && n > 0) {
-      const wL = step.windowLeft;
-      const wR = step.windowRight;
+    // 数组与窗口元素展示
+    const numsHtml = nums
+      .map((num, idx) => {
+        const inWindow = idx >= wL && idx <= wR && !isDone;
+        const isMax = inWindow && deque.length > 0 && num === deque[0];
+        let bg = '#ffffff';
+        let border = '#e2e8f0';
+        let textColor = '#0f172a';
 
-      const numsHtml = nums
-        .map((num, idx) => {
-          const inWindow = idx >= wL && idx <= wR && !isDone;
-          const isMax = inWindow && deque.length > 0 && num === deque[0];
-          const inDeque = deque.includes(num);
-
-          let bg = '#ffffff';
-          let border = '#e2e8f0';
-          let textColor = '#0f172a';
-
-          if (inWindow) {
-            if (isMax) {
-              bg = '#ecfdf5';
-              border = '#10b981';
-              textColor = '#047857';
-            } else {
-              bg = '#fef2f2';
-              border = '#f87171';
-              textColor = '#ef4444';
-            }
+        if (inWindow) {
+          if (isMax) {
+            bg = '#ecfdf5';
+            border = '#10b981';
+            textColor = '#047857';
+          } else {
+            bg = '#fef2f2';
+            border = '#f87171';
+            textColor = '#ef4444';
           }
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-              <span style="font-size: 8.5px; color: ${inWindow ? '#ef4444' : '#94a3b8'}; font-weight: 700;">
-                [${idx}]
-              </span>
-              <div style="min-width: 38px; height: 38px; padding: 0 6px; border-radius: 8px; background: ${bg}; border: 2px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                ${num}
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-
-      // 队列展示 (队头在左，即最大值)
-      const dequeHtml = deque
-        .map((val, idx) => {
-          const isFront = idx === 0;
-          return `
-            <div style="padding: 2px 10px; border-radius: 6px; background: ${isFront ? '#ecfdf5' : '#fffbeb'}; border: 1.5px solid ${isFront ? '#a7f3d0' : '#fde68a'}; color: ${isFront ? '#047857' : '#b45309'}; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
-              ${val}${isFront ? ' (窗内最大)' : ''}
-            </div>
-          `;
-        })
-        .join('');
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- 数组与窗口 -->
-          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569;">
-            <span>🪟 数组条带 (窗口范围 [${wL}..${wR}]):</span>
-            <span style="color: #ef4444;">k = ${step.k}</span>
-          </div>
-          <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0; min-height: 48px; align-items: center;">
-            ${numsHtml}
-          </div>
-
-          <!-- 单调队列容器 -->
-          <div style="display: flex; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px dashed #e2e8f0;">
-            <span style="font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap;">🥞 单调队列 (队头最大 &rarr; 队尾):</span>
-            <div style="display: flex; gap: 4px; overflow-x: auto; flex: 1; align-items: center; min-height: 28px;">
-              ${deque.length > 0 ? dequeHtml : '<span style="font-size: 10px; color: #94a3b8;">空队列</span>'}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. 渲染窗口状态 (Card 2 Left)
-    if (this.windowStatusContainer) {
-      this.windowStatusContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>活动窗口范围:</span>
-            <span style="font-family: monospace; font-weight:800; color: #ef4444; font-size: 13px;">
-              ${step.windowRight >= 0 ? `[${step.windowLeft} .. ${step.windowRight}]` : '未开始'}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前窗口最大值:</span>
-            <span style="font-family: monospace; font-weight:700; color: #059669; font-size: 13px;">
-              ${deque.length > 0 ? deque[0] : '无'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染单调队列决策监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      const isRecord = step.action === 'record_max';
-      const isSlideOut = step.action === 'slide_out';
-      const isSlideIn = step.action === 'slide_in';
-
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>队列决策:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isRecord ? '#ecfdf5' : isSlideOut ? '#fff7ed' : isSlideIn ? '#eff6ff' : '#f8fafc'}; color: ${isRecord ? '#059669' : isSlideOut ? '#ea580c' : isSlideIn ? '#2563eb' : '#64748b'}; border: 1px solid ${isRecord ? '#a7f3d0' : isSlideOut ? '#fed7aa' : isSlideIn ? '#bfdbfe' : '#e2e8f0'};">
-              ${isRecord ? `🥇 收集最大值 ${deque[0]}` : isSlideOut ? `🚪 移出旧元素` : isSlideIn ? `📥 压入新元素` : '🔍 初始窗口'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 准则: <code style="color:#ef4444; font-family:monospace;">push 时淘汰较小队尾; pop 时仅移出匹配队头</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染最大值收集看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>答案数组: <strong style="color: #ef4444; font-family: monospace; font-size: 13px;">[${result.join(', ')}]</strong></span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">已产生 ${result.length} / ${Math.max(0, n - step.k + 1)} 个</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeCount = this.root?.querySelector('#badge-collected-count');
-    if (badgeCount) {
-      badgeCount.textContent = `已收集: ${result.length} 个`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '扫描';
-
-        if (st.action === 'init_window' || st.action === 'slide_in') {
-          badgeColor = '#2563eb';
-          badgeBg = '#eff6ff';
-          badgeText = '入队';
-        } else if (st.action === 'slide_out') {
-          badgeColor = '#ea580c';
-          badgeBg = '#fff7ed';
-          badgeText = '移出';
-        } else if (st.action === 'record_max') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '结算';
-        } else if (st.action === 'done') {
-          badgeColor = '#10b981';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
         }
 
         return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <span style="font-size: 8.5px; color: ${inWindow ? '#ef4444' : '#94a3b8'}; font-weight: 700;">[${idx}]</span>
+            <div style="min-width: 34px; height: 34px; padding: 0 4px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              ${num}
+            </div>
           </div>
         `;
-      });
+      })
+      .join('');
 
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
+    // 单调队列元素展示 (扁平直排)
+    const dequeHtml =
+      deque.length === 0
+        ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">空队列</span>'
+        : deque
+            .map((val, idx) => {
+              const isFront = idx === 0;
+              return `
+              <div style="padding: 2px 8px; border-radius: 4px; background: ${isFront ? '#ecfdf5' : '#ffffff'}; border: 1.5px solid ${isFront ? '#10b981' : '#f59e0b'}; color: ${isFront ? '#047857' : '#b45309'}; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
+                ${val}${isFront ? ' (最大)' : ''}
+              </div>
+            `;
+            })
+            .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
 
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
-}
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: space-around; gap: 8px; box-sizing: border-box;">
+        <!-- 数组与滑动窗口条带 -->
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>🪟 数组条带 (当前活动窗口 [${wL}..${wR}]):</span>
+            <span style="color: #ef4444;">k = ${step.k}</span>
+          </div>
+          <div style="display: flex; gap: 4px; overflow-x: auto; padding: 2px 0;">
+            ${numsHtml}
+          </div>
+        </div>
+
+        <div style="border-top: 1px dashed #e2e8f0; margin: 2px 0;"></div>
+
+        <!-- 单调队列容器 (扁平直排) -->
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 单调队列 (队头最大 → 队尾):</span>
+            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #059669;">队列长度: ${deque.length}</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center; min-height: 28px; flex-wrap: wrap;">
+            ${dequeHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 更新指标卡片
+    const root = container.closest('#algo-sliding-window-max-view');
+    if (root) {
+      const maxEl = root.querySelector('#metric-window-max');
+      const rangeEl = root.querySelector('#metric-window-range');
+      const dequeSizeEl = root.querySelector('#metric-deque-size');
+
+      if (maxEl) maxEl.textContent = deque.length > 0 ? `${deque[0]}` : '—';
+      if (rangeEl) rangeEl.textContent = step.windowRight >= 0 ? `[${step.windowLeft}..${step.windowRight}]` : '—';
+      if (dequeSizeEl) dequeSizeEl.textContent = `${step.deque.length}`;
+
+      // 在 Card 2 中展示收集的最大值答案
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">收集的最大值答案数组:</span>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #059669;">
+              [ ${step.result.join(', ')} ]
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'sliding-window-max',
   name: '滑动窗口最大值',
   viewId: 'algo-sliding-window-max-view',
   category: 'stack',
-  description: '单调递减双端队列：队头恒为当前窗口最大值，O(1) 获取每个窗口的最值',
+  description: '单调队列经典应用：维护队头到队尾单调递减，O(1) 获取当前滑动窗口内的最大元素',
   icon: '🪟',
   template,
-  Visualizer: SlidingWindowMaxVisualizer,
+  Visualizer,
   difficulty: 3,
   levelOrder: 6,
-  learningGoal: '掌握单调队列（Monotonic Deque）的设计与维护，理解移出与移入时保持单调性的精妙算法',
+  learningGoal: '掌握单调队列在滑动窗口最值问题中的精妙设计，理解 push 淘汰较小元素与 pop 仅移出匹配队头的核心准则',
 });

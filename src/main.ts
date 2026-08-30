@@ -49,14 +49,8 @@ async function main(): Promise<void> {
     const titlebarSettingsBtn = document.getElementById('titlebar-settings-btn');
     titlebarSettingsBtn?.addEventListener('click', () => appSettingsModal.open());
 
-    const contentSettingsBtn = document.getElementById('content-settings-btn');
-    contentSettingsBtn?.addEventListener('click', () => appSettingsModal.open());
-
     const titlebarShortcutsBtn = document.getElementById('titlebar-shortcuts-btn');
     titlebarShortcutsBtn?.addEventListener('click', () => shortcutManagerModal.open());
-
-    const contentShortcutsBtn = document.getElementById('content-shortcuts-btn');
-    contentShortcutsBtn?.addEventListener('click', () => shortcutManagerModal.open());
 
     const totalTime = (performance.now() - startTime).toFixed(1);
     console.log(`[Main] Application ready in ${totalTime}ms (Total ${algorithmManager.getAllAlgorithms().length} algorithms active)`);
