@@ -311,12 +311,6 @@ class AlgoNavigationManager {
           <span class="nav-btn-icon">←</span>
           <span class="nav-btn-text">返回</span>
         </button>
-
-        <button id="algo-nav-catalog-btn" class="algo-nav-btn algo-nav-catalog ${this.isDrawerOpen ? 'is-active' : ''}" type="button" title="展开/收起算法大纲目录 (快捷键: M)">
-          <span class="nav-btn-icon">📑</span>
-          <span class="nav-btn-text">目录</span>
-          <span class="nav-progress-badge">${currentIndex >= 0 ? `${currentIndex + 1}/${total}` : `${total}`}</span>
-        </button>
       </div>
 
       <div class="algo-nav-divider"></div>
@@ -345,51 +339,32 @@ class AlgoNavigationManager {
       `
           : ''
       }
-
-      <div class="algo-nav-group">
-        <button id="algo-nav-shortcuts-btn" class="algo-nav-btn algo-nav-shortcuts" type="button" title="快捷键速查与自定义配置 (?)">
-          <span class="nav-btn-icon">⌨️</span>
-          <span class="nav-btn-text">快捷键</span>
-        </button>
-
-        <button id="algo-nav-settings-btn" class="algo-nav-btn algo-nav-settings" type="button" title="软件全局设置 (Ctrl + ,)">
-          <span class="nav-btn-icon">⚙️</span>
-          <span class="nav-btn-text">设置</span>
-        </button>
-      </div>
     `;
 
     // 绑定事件
     const backBtn = document.getElementById('algo-nav-back-btn');
     backBtn?.addEventListener('click', () => algorithmManager.showAlgorithmSelector());
 
-    const catalogBtn = document.getElementById('algo-nav-catalog-btn');
-    catalogBtn?.addEventListener('click', () => this.toggleDrawer());
-
     const prevBtn = document.getElementById('algo-nav-prev-btn');
     prevBtn?.addEventListener('click', () => this.navigateToPrevious());
 
     const nextBtn = document.getElementById('algo-nav-next-btn');
     nextBtn?.addEventListener('click', () => this.navigateToNext());
-
-    const shortcutsBtn = document.getElementById('algo-nav-shortcuts-btn');
-    shortcutsBtn?.addEventListener('click', async () => {
-      const { shortcutManagerModal } = await import('./shortcuts/shortcut-manager-modal');
-      shortcutManagerModal.open();
-    });
-
-    const settingsBtn = document.getElementById('algo-nav-settings-btn');
-    settingsBtn?.addEventListener('click', async () => {
-      const { appSettingsModal } = await import('./settings/app-settings-modal');
-      appSettingsModal.open();
-    });
   }
 
   /**
-   * 显示左侧悬浮拉手
+   * 显示并更新左侧悬浮拉手
    */
   private showFloatingTab(): void {
     if (!this.ensureDOM() || !this.floatTab) return;
+    const { currentIndex, total } = this.getPrevAndNext();
+    const progressText = currentIndex >= 0 ? `${currentIndex + 1}/${total}` : `${total}`;
+    this.floatTab.innerHTML = `
+      <span class="float-tab-icon">📑</span>
+      <span class="float-tab-text">目录</span>
+      <span class="float-tab-badge">${progressText}</span>
+      <span class="float-tab-key">M</span>
+    `;
     this.floatTab.style.display = 'flex';
   }
 
