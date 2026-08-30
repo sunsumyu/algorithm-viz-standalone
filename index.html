@@ -959,18 +959,15 @@
       flex-shrink: 0;
     }
 
-    /* 标题栏右移避让 */
-    #app:has(.view-container.active) .app-titlebar-drag-region {
-      padding-left: 450px;
-      transition: padding-left 0.2s ease;
+    /* 处于算法详情视图时隐藏标题栏静态标题与图标，防止与集成导航胶囊碰撞 */
+    #app.has-active-algo .app-titlebar-title,
+    #app.has-active-algo .app-titlebar-icon {
+      display: none;
     }
 
     @media (max-width: 900px) {
       .algo-nav-info-pill {
         display: none;
-      }
-      #app:has(.view-container.active) .app-titlebar-drag-region {
-        padding-left: 280px;
       }
     }
 

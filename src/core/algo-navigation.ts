@@ -197,6 +197,11 @@ class AlgoNavigationManager {
       this.expandedCategories.add(currentAlgo.category);
     }
 
+    if (typeof document !== 'undefined') {
+      const app = document.getElementById('app');
+      app?.classList.add('has-active-algo');
+    }
+
     this.renderTopNav();
     this.renderDrawer();
     this.showFloatingTab();
@@ -211,6 +216,7 @@ class AlgoNavigationManager {
     if (typeof document !== 'undefined') {
       const app = document.getElementById('app');
       app?.classList.remove('has-catalog-drawer-open');
+      app?.classList.remove('has-active-algo');
     }
     if (this.topNavContainer) {
       this.topNavContainer.style.display = 'none';
