@@ -26,6 +26,7 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   graph: { name: '图论', icon: '🕸️', color: '#15803d', colorRgb: '21, 128, 61', order: 12, theme: '#f0fdf4' },
   sort: { name: '排序', icon: '📊', color: '#a16207', colorRgb: '161, 98, 7', order: 13, theme: '#fefce8' },
   search: { name: '搜索', icon: '🔍', color: '#6d28d9', colorRgb: '109, 40, 217', order: 14, theme: '#f5f3ff' },
+  game: { name: '趣味游戏', icon: '🎮', color: '#ea580c', colorRgb: '234, 88, 12', order: 15, theme: '#fff7ed' },
 };
 
 export const DIFFICULTY_CONFIG: Record<number, { label: string; color: string; bg: string; dot: string }> = {

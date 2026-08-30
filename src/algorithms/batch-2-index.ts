@@ -92,4 +92,9 @@ import './categories/graph/limited-shortest-path-renderer';
 import './categories/graph/shortest-path-summary-renderer';
 import './categories/graph/graph-summary-renderer';
 
+/**
+ * 趣味算法游戏模块
+ */
+import './categories/game/clash-of-algorithms-renderer';
+
 export {};

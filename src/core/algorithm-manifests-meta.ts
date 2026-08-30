@@ -2355,5 +2355,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "icon": "🏁",
     "difficulty": 1,
     "levelOrder": 58
+  },
+  {
+    "id": "clash-of-algorithms",
+    "name": "部落冲突·战术攻防沙盘",
+    "viewId": "algo-clash-of-algorithms-view",
+    "category": "game",
+    "description": "还原《部落冲突》核心玩法：兵种 A* 寻路偏好、开孔引导阵破障权衡与防御塔索敌机制",
+    "icon": "⚔️",
+    "difficulty": 3,
+    "levelOrder": 1,
+    "learningGoal": "通过策略游戏直观理解工业级 A* 寻路权重配置、目标过滤剪枝与空间索敌算法"
   }
 ];

@@ -135,6 +135,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'limited-shortest-path': '🔢',
   'shortest-path-summary': '📝',
   'graph-summary': '🗺️',
+  'clash-of-algorithms': '⚔️',
 };
 
 import {
@@ -158,6 +159,7 @@ const CATEGORY_ICON_CLASS: Record<string, string> = {
   'two-pointers': 'two-pointers',
   'monotonic-stack': 'monotonic-stack',
   graph: 'graph',
+  game: 'game',
 };
 
 // ========== State ==========
