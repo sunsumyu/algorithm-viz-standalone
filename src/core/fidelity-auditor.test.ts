@@ -24,9 +24,8 @@ describe('Universal Algorithm Fidelity Auditor', () => {
     expect(summary.failedCount).toBe(0);
   }, 30000);
 
-  it('should verify every entry in ALL_ALGORITHM_METADATA is loadable by AlgorithmManager', async () => {
+  it('should verify every entry in ALL_ALGORITHM_METADATA is loadable by AlgorithmManager individually', async () => {
     const manager = AlgorithmManager.getInstance();
-    await manager.ensureAllLoaded();
     const errors: string[] = [];
     for (const meta of ALL_ALGORITHM_METADATA) {
       const loaded = await manager.ensureAlgorithmLoaded(meta.id);

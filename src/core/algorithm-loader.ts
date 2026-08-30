@@ -11,6 +11,7 @@ const BATCH_LOADERS: Record<string, () => Promise<unknown>> = {
   string: () => import('../algorithms/batch-2-index'),
   'monotonic-stack': () => import('../algorithms/batch-2-index'),
   graph: () => import('../algorithms/batch-2-index'),
+  game: () => import('../algorithms/batch-2-index'),
   tree: () => import('../algorithms/batch-3-index'),
   search: () => import('../algorithms/batch-4-index'),
   sort: () => import('../algorithms/batch-4-index'),
