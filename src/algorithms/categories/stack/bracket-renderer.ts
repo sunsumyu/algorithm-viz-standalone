@@ -323,12 +323,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<BracketStep>({
       if (customMetricsContainer) {
         const topExpected = stack.length > 0 ? stack[stack.length - 1] : null;
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155; padding: 4px 0;">
-            <div style="display: flex; justify-content: space-between;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: #334155; padding: 2px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 3px 8px;">
               <span>当前扫描字符:</span>
               <strong style="font-family: monospace; color: #059669; font-size: 12px;">${step.currentChar !== null ? `'${step.currentChar}'` : '（无）'}</strong>
             </div>
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 3px 8px;">
               <span>栈顶期望闭合符:</span>
               <strong style="font-family: monospace; color: #d97706; font-size: 12px;">${topExpected !== null ? `'${topExpected}'` : '（空）'}</strong>
             </div>
