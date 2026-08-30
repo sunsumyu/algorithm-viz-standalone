@@ -152,6 +152,17 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
     if (this.logCountEl) {
       this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
     }
+
+    // 4. 更新贯穿式 Scrubber 步数指示器与进度条
+    const stepCurEl = this.root?.querySelector('#step-cur');
+    const stepTotalEl = this.root?.querySelector('#step-total');
+    if (stepCurEl) stepCurEl.textContent = String(this.currentIndex + 1);
+    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
+
+    if (this.progressSlider) {
+      this.progressSlider.max = String(Math.max(0, this.steps.length - 1));
+      this.progressSlider.value = String(this.currentIndex);
+    }
   }
 
   public reset(): void {

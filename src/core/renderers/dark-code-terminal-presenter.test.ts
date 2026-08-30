@@ -97,8 +97,12 @@ class MockRoot {
   }
 
   public querySelector(sel: string): MockElement | null {
-    const cleanId = sel.replace('#', '').split(/[\s,]/)[0];
-    return this.elements.get(cleanId) || null;
+    const parts = sel.split(',').map((s) => s.trim().replace(/^#/, '').split(/\s+/)[0]);
+    for (const p of parts) {
+      const match = this.elements.get(p);
+      if (match) return match;
+    }
+    return null;
   }
 
   public querySelectorAll(sel: string): MockElement[] {

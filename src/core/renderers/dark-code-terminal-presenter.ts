@@ -336,10 +336,17 @@ export class DarkCodeTerminalPresenter {
     }
 
     // 查找目标挂载容器（按优先级匹配常见占位符）
-    let targetContainer = root.querySelector('#code-terminal-card, .dark-code-terminal-container, [data-code-terminal]') as HTMLElement | null;
+    let targetContainer = root.querySelector(
+      '#dsp-terminal-container, #code-terminal-card, .dark-code-terminal-container, [data-code-terminal]'
+    ) as HTMLElement | null;
 
     if (!targetContainer) {
-      if (root.id === 'code-terminal-card' || root.classList?.contains('dark-code-terminal-container') || root.hasAttribute?.('data-code-terminal')) {
+      if (
+        root.id === 'dsp-terminal-container' ||
+        root.id === 'code-terminal-card' ||
+        root.classList?.contains('dark-code-terminal-container') ||
+        root.hasAttribute?.('data-code-terminal')
+      ) {
         targetContainer = root;
       }
     }

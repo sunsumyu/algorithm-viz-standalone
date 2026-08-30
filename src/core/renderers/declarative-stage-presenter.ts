@@ -504,7 +504,7 @@ export class DeclarativeStagePresenter {
     background: #1d4ed8;
   }
 
-  /* Card 2 指标栅格与输出面板 */
+  /* Card 2 指标栅格与输出面板 (零白框平铺) */
   #${viewId} .dsp-metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -516,15 +516,15 @@ export class DeclarativeStagePresenter {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    padding: 4px 6px;
+    padding: 4px 8px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
   }
   #${viewId} .dsp-metric-label {
     font-size: 9.5px;
     color: #64748b;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
   }
   #${viewId} .dsp-metric-val {
@@ -545,11 +545,10 @@ export class DeclarativeStagePresenter {
     flex-shrink: 0;
   }
 
-  /* 右侧暗色代码终端容器 */
+  /* 右侧暗色代码终端挂载点 (无多余外框，单层自适应) */
   #${viewId} .dsp-terminal-card {
-    background: #0f172a;
-    border: 1px solid #1e293b;
-    border-radius: 8px;
+    background: transparent;
+    border: none;
     display: flex;
     flex-direction: column;
     overflow: hidden;
