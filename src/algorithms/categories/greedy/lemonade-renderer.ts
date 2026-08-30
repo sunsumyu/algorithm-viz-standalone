@@ -6,10 +6,6 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
   LEMONADE_PROBLEM_HTML,
   LEMONADE_ANALYSIS_HTML,
   LEMONADE_CODE_LANGUAGES,
@@ -182,7 +178,6 @@ export class LemonadeVisualizer extends StepVisualizer<LemonadeStep> {
   protected codeLines = LEMONADE_CODE_LANGUAGES['java'];
   protected codePanelTitle = '柠檬水找零 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private sandboxContainer: HTMLElement | null = null;
   private txContainer: HTMLElement | null = null;
   private decisionMonitorContainer: HTMLElement | null = null;
@@ -199,28 +194,8 @@ export class LemonadeVisualizer extends StepVisualizer<LemonadeStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 绑定运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 绑定 Scrubber 进度条
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 绑定前进后退按钮
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.lm-chip').forEach((btn) => {
@@ -232,7 +207,7 @@ export class LemonadeVisualizer extends StepVisualizer<LemonadeStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: LEMONADE_PROBLEM_HTML,
       analysisHtml: LEMONADE_ANALYSIS_HTML,
@@ -376,24 +351,6 @@ export class LemonadeVisualizer extends StepVisualizer<LemonadeStep> {
       badgeTotal.textContent = `钱箱储备: $${step.fiveCount * 5 + step.tenCount * 10}`;
     }
 
-    // 5. 更新 Scrubber 进度条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
-    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
-    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
-
-    if (slider) {
-      slider.max = String(Math.max(0, this.steps.length - 1));
-      slider.value = String(this.currentIndex);
-    }
-    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
-    if (stepTotal) stepTotal.textContent = String(this.steps.length);
-    if (playIcon) {
-      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
-    }
-
-    // 6. 暗色终端代码行高亮
-    this.terminalInstance?.highlightLine(step.codeLine);
 
     // 7. 渲染执行日志流 (Card 4)
     if (this.logContainer) {

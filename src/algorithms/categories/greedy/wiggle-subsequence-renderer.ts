@@ -6,10 +6,6 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
   WIGGLE_SUBSEQUENCE_PROBLEM_HTML,
   WIGGLE_SUBSEQUENCE_ANALYSIS_HTML,
   WIGGLE_SUBSEQUENCE_CODE_LANGUAGES,
@@ -25,115 +21,119 @@ export interface WiggleStep {
   prevDiff: number;
   wiggleIndices: number[];
   skippedIndices: number[];
-  action: 'init' | 'peak_or_valley' | 'flat_or_mono' | 'done';
   message: string;
+  action: 'init' | 'peak_or_valley' | 'flat_or_mono' | 'done';
   codeLine: number;
 }
 
-export function wiggleSubsequenceSteps(arr: number[]): WiggleStep[] {
+export function wiggleSubsequenceSteps(nums: number[]): WiggleStep[] {
   const steps: WiggleStep[] = [];
+  const n = nums.length;
 
-  if (arr.length === 0) return steps;
-  if (arr.length === 1) {
+  if (n <= 1) {
     steps.push({
-      array: [...arr],
+      array: [...nums],
       currentIndex: 0,
-      length: 1,
+      length: n,
       trend: '-',
       curDiff: 0,
       prevDiff: 0,
-      wiggleIndices: [0],
+      wiggleIndices: n === 1 ? [0] : [],
       skippedIndices: [],
-      action: 'init',
-      message: '只有一个元素，默认包含自身，摆动序列长度为 1',
+      message: n === 0 ? '空数组，摆动长度为 0' : `单元素数组 [${nums[0]}]，摆动长度为 1`,
+      action: 'done',
       codeLine: 2,
     });
     return steps;
   }
 
   let count = 1;
-  let preDiff = 0;
+  let prevDiff = 0;
   const wiggleIndices: number[] = [0];
   const skippedIndices: number[] = [];
 
   steps.push({
-    array: [...arr],
+    array: [...nums],
     currentIndex: 0,
-    length: 1,
+    length: count,
     trend: '-',
     curDiff: 0,
     prevDiff: 0,
-    wiggleIndices: [0],
-    skippedIndices: [],
+    wiggleIndices: [...wiggleIndices],
+    skippedIndices: [...skippedIndices],
+    message: `初始化：默认选中首元素 nums[0]=${nums[0]}，当前摆动序列长度 = 1`,
     action: 'init',
-    message: `初始状态：nums = [${arr.join(', ')}]，默认计入首个元素作为摆动起点`,
-    codeLine: 5,
+    codeLine: 4,
   });
 
-  for (let i = 1; i < arr.length; i++) {
-    const curDiff = arr[i] - arr[i - 1];
+  for (let i = 0; i < n - 1; i++) {
+    const curDiff = nums[i + 1] - nums[i];
+    let trend: '↑' | '↓' | '-' = '-';
+    if (curDiff > 0) trend = '↑';
+    else if (curDiff < 0) trend = '↓';
 
-    if ((curDiff > 0 && preDiff <= 0) || (curDiff < 0 && preDiff >= 0)) {
+    const isPeakOrValley = (prevDiff <= 0 && curDiff > 0) || (prevDiff >= 0 && curDiff < 0);
+
+    if (isPeakOrValley) {
       count++;
-      preDiff = curDiff;
-      wiggleIndices.push(i);
+      wiggleIndices.push(i + 1);
 
       steps.push({
-        array: [...arr],
-        currentIndex: i,
+        array: [...nums],
+        currentIndex: i + 1,
         length: count,
-        trend: curDiff > 0 ? '↑' : '↓',
+        trend,
         curDiff,
-        prevDiff: preDiff,
+        prevDiff,
         wiggleIndices: [...wiggleIndices],
         skippedIndices: [...skippedIndices],
+        message: `检查差值：prevDiff=${prevDiff}，curDiff=${curDiff} (${trend}) → 出现摆动转折峰谷！保留节点 nums[${i + 1}]=${nums[i + 1]}，长度更新为 ${count}`,
         action: 'peak_or_valley',
-        message: `⛰️ 捕获${curDiff > 0 ? '上升波峰' : '下降波谷'}：nums[${i}]=${arr[i]} (curDiff=${curDiff})，构成有效摆动，长度 count=${count}`,
-        codeLine: 10,
+        codeLine: 7,
       });
+
+      prevDiff = curDiff;
     } else {
-      skippedIndices.push(i);
+      skippedIndices.push(i + 1);
 
       steps.push({
-        array: [...arr],
-        currentIndex: i,
+        array: [...nums],
+        currentIndex: i + 1,
         length: count,
-        trend: curDiff > 0 ? '↑' : curDiff < 0 ? '↓' : '-',
+        trend,
         curDiff,
-        prevDiff: preDiff,
+        prevDiff,
         wiggleIndices: [...wiggleIndices],
         skippedIndices: [...skippedIndices],
+        message: `检查差值：prevDiff=${prevDiff}，curDiff=${curDiff} (${trend}) → 单调斜坡/平坡连续延伸，贪心过滤中间节点 nums[${i + 1}]=${nums[i + 1]}`,
         action: 'flat_or_mono',
-        message: `🚫 单调坡/平坡消除：nums[${i}]=${arr[i]} (curDiff=${curDiff}, preDiff=${preDiff})，未形成方向翻转，跳过该点`,
-        codeLine: 11,
+        codeLine: 6,
       });
     }
   }
 
   steps.push({
-    array: [...arr],
-    currentIndex: arr.length - 1,
+    array: [...nums],
+    currentIndex: n - 1,
     length: count,
-    trend: preDiff > 0 ? '↑' : preDiff < 0 ? '↓' : '-',
+    trend: '-',
     curDiff: 0,
-    prevDiff: preDiff,
+    prevDiff,
     wiggleIndices: [...wiggleIndices],
     skippedIndices: [...skippedIndices],
+    message: `遍历完成！最长摆动子序列长度为 ${count}，选中节点集合: [${wiggleIndices.map((idx) => nums[idx]).join(', ')}]`,
     action: 'done',
-    message: `🎉 贪心统计完成！最长摆动子序列长度为 ${count}`,
-    codeLine: 14,
+    codeLine: 12,
   });
 
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
 export class WiggleSubsequenceVisualizer extends StepVisualizer<WiggleStep> {
   protected codeLanguages = WIGGLE_SUBSEQUENCE_CODE_LANGUAGES;
   protected codeLines = WIGGLE_SUBSEQUENCE_CODE_LANGUAGES['java'];
   protected codePanelTitle = '摆动序列 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private waveformContainer: HTMLElement | null = null;
   private diffContainer: HTMLElement | null = null;
   private peakMonitorContainer: HTMLElement | null = null;
@@ -150,28 +150,8 @@ export class WiggleSubsequenceVisualizer extends StepVisualizer<WiggleStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
-
-    // 绑定运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 绑定 Scrubber 进度条
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 绑定前进后退按钮
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
 
     // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.ws-chip').forEach((btn) => {
@@ -183,7 +163,7 @@ export class WiggleSubsequenceVisualizer extends StepVisualizer<WiggleStep> {
     });
 
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: WIGGLE_SUBSEQUENCE_PROBLEM_HTML,
       analysisHtml: WIGGLE_SUBSEQUENCE_ANALYSIS_HTML,
@@ -335,25 +315,6 @@ export class WiggleSubsequenceVisualizer extends StepVisualizer<WiggleStep> {
     if (badgeCount) {
       badgeCount.textContent = `摆动长度: ${step.length}`;
     }
-
-    // 5. 更新 Scrubber 进度条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
-    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
-    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
-
-    if (slider) {
-      slider.max = String(Math.max(0, this.steps.length - 1));
-      slider.value = String(this.currentIndex);
-    }
-    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
-    if (stepTotal) stepTotal.textContent = String(this.steps.length);
-    if (playIcon) {
-      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
-    }
-
-    // 6. 暗色终端代码行高亮
-    this.terminalInstance?.highlightLine(step.codeLine);
 
     // 7. 渲染执行日志流 (Card 4)
     if (this.logContainer) {
