@@ -6,10 +6,6 @@
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
   MST_PRIM_PROBLEM_HTML,
   MST_PRIM_ANALYSIS_HTML,
   MST_PRIM_CODE_LANGUAGES,
@@ -174,7 +170,6 @@ export class PrimMSTVisualizer extends StepVisualizer<PrimStep> {
   protected codeLines = MST_PRIM_CODE_LANGUAGES['java'];
   protected codePanelTitle = 'Prim 最小生成树 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private svgCanvas: HTMLElement | null = null;
   private distPillsWrap: HTMLElement | null = null;
   private metricCurNodeEl: HTMLElement | null = null;
@@ -200,39 +195,11 @@ export class PrimMSTVisualizer extends StepVisualizer<PrimStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 600;
-      });
-    }
-
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: MST_PRIM_PROBLEM_HTML,
       analysisHtml: MST_PRIM_ANALYSIS_HTML,
@@ -378,23 +345,6 @@ export class PrimMSTVisualizer extends StepVisualizer<PrimStep> {
       }
     }
 
-    // 5. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 6. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
-
     const badgeMST = this.root?.querySelector('#badge-mst-weight');
     if (badgeMST) badgeMST.textContent = `MST 总权值: ${totalWeight}`;
   }
@@ -403,7 +353,6 @@ export class PrimMSTVisualizer extends StepVisualizer<PrimStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 

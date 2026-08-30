@@ -6,10 +6,6 @@
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
   MAKE_LARGEST_ISLAND_PROBLEM_HTML,
   MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
   MAKE_LARGEST_ISLAND_CODE_LANGUAGES,
@@ -192,7 +188,6 @@ export class MakeLargestIslandVisualizer extends StepVisualizer<MLIStep> {
   protected codeLines = MAKE_LARGEST_ISLAND_CODE_LANGUAGES['java'];
   protected codePanelTitle = '最大人工岛 (LC 827) 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private gridContainer: HTMLElement | null = null;
   private metricCurCellEl: HTMLElement | null = null;
   private metricTryAreaEl: HTMLElement | null = null;
@@ -216,39 +211,11 @@ export class MakeLargestIslandVisualizer extends StepVisualizer<MLIStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 进度条 Scrubber
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 步进控制
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
-    // 速度选择
-    const speedSelect = this.root.querySelector('#select-speed') as HTMLSelectElement | null;
-    if (speedSelect) {
-      speedSelect.addEventListener('change', () => {
-        this.playbackSpeed = parseInt(speedSelect.value, 10) || 500;
-      });
-    }
-
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: MAKE_LARGEST_ISLAND_PROBLEM_HTML,
       analysisHtml: MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
@@ -357,23 +324,6 @@ export class MakeLargestIslandVisualizer extends StepVisualizer<MLIStep> {
       }
     }
 
-    // 4. 同步代码高亮
-    if (this.terminalInstance) {
-      const line = Array.isArray(step.codeLine) ? step.codeLine[0] : step.codeLine;
-      this.terminalInstance.highlightLine(line);
-    }
-
-    // 5. 更新底部播放控制条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.max = String(this.steps.length - 1);
-      slider.value = String(this.currentStepIndex);
-    }
-    const stepCurEl = this.root?.querySelector('#step-cur');
-    const stepTotalEl = this.root?.querySelector('#step-total');
-    if (stepCurEl) stepCurEl.textContent = String(this.currentStepIndex + 1);
-    if (stepTotalEl) stepTotalEl.textContent = String(this.steps.length);
-
     const badgeMax = this.root?.querySelector('#badge-max-area');
     if (badgeMax) badgeMax.textContent = `最大面积: ${maxArea} 格`;
   }
@@ -382,7 +332,6 @@ export class MakeLargestIslandVisualizer extends StepVisualizer<MLIStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
   }
 }
 
