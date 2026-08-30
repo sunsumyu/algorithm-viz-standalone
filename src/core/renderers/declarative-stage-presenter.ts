@@ -366,6 +366,17 @@ export class DeclarativeStagePresenter {
     padding: 8px;
     box-sizing: border-box;
   }
+  #${viewId} .dsp-left-section .dsp-card:first-child {
+    min-height: 180px;
+  }
+  #${viewId} .dsp-left-section .dsp-card:last-child {
+    min-height: 160px;
+  }
+  #${viewId} #dsp-custom-metrics-container {
+    overflow-y: auto;
+    flex-shrink: 0;
+    min-height: 0;
+  }
   #${viewId} .dsp-card-header {
     display: flex;
     align-items: center;

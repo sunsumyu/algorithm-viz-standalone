@@ -211,9 +211,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
             .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: space-around; gap: 8px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 12px; box-sizing: border-box; padding: 4px;">
         <!-- 待处理字符串序列 -->
-        <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; flex-direction: column; gap: 3px;">
           <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
             <span>🔤 待处理字符串序列 (从左至右扫描):</span>
             <span style="color: #ef4444;">已对消: ${step.eliminatedPairs} 对</span>
@@ -223,10 +223,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
           </div>
         </div>
 
-        <div style="border-top: 1px dashed #e2e8f0; margin: 2px 0;"></div>
+        <div style="border-top: 1px dashed #e2e8f0; margin: 1px 0;"></div>
 
         <!-- 栈内保留字符 (扁平直排) -->
-        <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; flex-direction: column; gap: 3px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 栈内保留字符 (栈底 → 栈顶):</span>
             <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #9333ea;">当前长度: ${stack.length}</span>

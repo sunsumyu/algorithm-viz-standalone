@@ -232,9 +232,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<RPNStep>({
             .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: space-around; gap: 8px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 12px; box-sizing: border-box; padding: 4px;">
         <!-- Token 序列 -->
-        <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; flex-direction: column; gap: 3px;">
           <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
             <span>🔤 逆波兰表达式 Tokens 流 (自左至右):</span>
             <span style="color: #ea580c;">栈大小: ${stack.length}</span>
@@ -244,10 +244,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<RPNStep>({
           </div>
         </div>
 
-        <div style="border-top: 1px dashed #e2e8f0; margin: 2px 0;"></div>
+        <div style="border-top: 1px dashed #e2e8f0; margin: 1px 0;"></div>
 
         <!-- 数值操作数栈 (扁平直排) -->
-        <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; flex-direction: column; gap: 3px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 数值操作数栈 (栈底 → 栈顶):</span>
             <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ea580c;">栈深: ${stack.length}</span>
