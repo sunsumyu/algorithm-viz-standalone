@@ -122,65 +122,68 @@ describe('StepVisualizer Deep Module Guard', () => {
     expect(visualizer.getIsPlaying()).toBe(false);
   });
 
-  it('应该自动识别并绑定现代 4-Card 控制器（按钮、进度条、计数器与暗色终端）', async () => {
-    class MockDomNode {
-      public tagName: string;
-      public id: string;
-      public value: string = '0';
-      public max: string = '0';
-      public textContent: string = '';
-      public disabled: boolean = false;
-      public children: MockDomNode[] = [];
-      public parentNode: MockDomNode | null = null;
-      public attributes: Record<string, string> = {};
-      public oninput: ((e: any) => void) | null = null;
-      public onchange: ((e: any) => void) | null = null;
-      public onclick: ((e: any) => void) | null = null;
-      private listeners: Record<string, Function[]> = {};
+  class MockDomNode {
+    public tagName: string;
+    public id: string;
+    public className: string = '';
+    public value: string = '0';
+    public max: string = '0';
+    public textContent: string = '';
+    public disabled: boolean = false;
+    public children: MockDomNode[] = [];
+    public parentNode: MockDomNode | null = null;
+    public attributes: Record<string, string> = {};
+    public oninput: ((e: any) => void) | null = null;
+    public onchange: ((e: any) => void) | null = null;
+    public onclick: ((e: any) => void) | null = null;
+    private listeners: Record<string, Function[]> = {};
 
-      constructor(tagName: string, id: string = '', textContent: string = '') {
-        this.tagName = tagName.toUpperCase();
-        this.id = id;
-        this.textContent = textContent;
+    constructor(tagName: string, id: string = '', textContent: string = '', className: string = '') {
+      this.tagName = tagName.toUpperCase();
+      this.id = id;
+      this.textContent = textContent;
+      this.className = className;
+    }
+
+    public appendChild(child: MockDomNode) {
+      this.children.push(child);
+      child.parentNode = this;
+    }
+
+    public querySelector(selector: string): MockDomNode | null {
+      for (const child of this.children) {
+        if (selector === `#${child.id}`) return child;
+        if (selector.startsWith('#') && selector.includes(child.id)) return child;
+        const found = child.querySelector(selector);
+        if (found) return found;
       }
+      return null;
+    }
 
-      public appendChild(child: MockDomNode) {
-        this.children.push(child);
-        child.parentNode = this;
+    public querySelectorAll(selector: string): MockDomNode[] {
+      const res: MockDomNode[] = [];
+      for (const child of this.children) {
+        if (selector.includes(child.id)) res.push(child);
+        res.push(...child.querySelectorAll(selector));
       }
+      return res;
+    }
 
-      public querySelector(selector: string): MockDomNode | null {
-        for (const child of this.children) {
-          if (selector === `#${child.id}`) return child;
-          if (selector.startsWith('#') && selector.includes(child.id)) return child;
-          const found = child.querySelector(selector);
-          if (found) return found;
-        }
-        return null;
+    public click() {
+      if (this.onclick) this.onclick({ target: this });
+    }
+
+    public dispatchEvent(event: { type: string }) {
+      if (event.type === 'input' && this.oninput) {
+        this.oninput({ target: this });
       }
-
-      public querySelectorAll(selector: string): MockDomNode[] {
-        const res: MockDomNode[] = [];
-        for (const child of this.children) {
-          if (selector.includes(child.id)) res.push(child);
-          res.push(...child.querySelectorAll(selector));
-        }
-        return res;
-      }
-
-      public click() {
-        if (this.onclick) this.onclick({ target: this });
-      }
-
-      public dispatchEvent(event: { type: string }) {
-        if (event.type === 'input' && this.oninput) {
-          this.oninput({ target: this });
-        }
-        if (event.type === 'change' && this.onchange) {
-          this.onchange({ target: this });
-        }
+      if (event.type === 'change' && this.onchange) {
+        this.onchange({ target: this });
       }
     }
+  }
+
+  it('应该自动识别并绑定现代 4-Card 控制器（按钮、进度条、计数器与暗色终端）', async () => {
 
     const root = new MockDomNode('div', 'algo-view');
     const btnGen = new MockDomNode('button', 'btn-generate', '运行');
@@ -246,5 +249,35 @@ describe('StepVisualizer Deep Module Guard', () => {
     // 验证 destroy 释放
     viz.destroy();
     expect(mockTerminal.destroy).toHaveBeenCalled();
+  });
+
+  it('圆形或纯图标播放按钮在播放与完成时应保持纯图标符号而不被注入文字', async () => {
+    const root = new MockDomNode('div', 'algo-view-circle');
+    const btnPlayCircle = new MockDomNode('button', 'btn-play-pause', '', 'rs-play-circle-btn');
+    const playIconSpan = new MockDomNode('span', 'play-icon', '▶');
+    btnPlayCircle.appendChild(playIconSpan);
+    const btnPrev = new MockDomNode('button', 'btn-step-prev', '◀');
+    const btnNext = new MockDomNode('button', 'btn-step-next', '▶');
+
+    root.appendChild(btnPrev);
+    root.appendChild(btnPlayCircle);
+    root.appendChild(btnNext);
+
+    const viz = new TestStepVisualizer();
+    await viz.init({ root: root as unknown as HTMLElement, algorithmId: 'test-circle-algo', viewId: 'algo-circle-view' });
+
+    // 初始状态：iconSpan 保持纯图标
+    expect(playIconSpan.textContent).toBe('▶');
+
+    // 下一步至末尾
+    btnNext.click();
+    btnNext.click();
+    expect(viz.getCurrentIndex()).toBe(2);
+    // 完成状态：iconSpan 为完成符号，且没有任何冗余文字
+    expect(playIconSpan.textContent).toBe('✓');
+    expect(btnPlayCircle.textContent).not.toContain('播放');
+    expect(btnPlayCircle.textContent).not.toContain('完成');
+
+    viz.destroy();
   });
 });

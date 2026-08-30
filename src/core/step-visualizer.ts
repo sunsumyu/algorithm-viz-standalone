@@ -472,17 +472,38 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
       const playText = this.isPlaying ? '暂停' : finished ? '完成' : '播放';
       const playIcon = this.isPlaying ? '⏸' : finished ? '✓' : '▶';
 
-      const iconSpan = this.btnPlay.querySelector('.icon');
+      let iconSpan: HTMLElement | null = null;
+      try {
+        iconSpan = this.btnPlay.querySelector?.<HTMLElement>('#play-icon, .play-icon, .icon, i') || null;
+      } catch {
+        iconSpan = null;
+      }
+
       if (iconSpan) {
-        iconSpan.textContent = playIcon;
+        const iconClasses = typeof iconSpan.className === 'string' ? iconSpan.className : '';
+        if (iconSpan.tagName?.toLowerCase() === 'i' || iconClasses.includes('fa-solid') || iconClasses.includes('fas')) {
+          iconSpan.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : finished ? 'fa-solid fa-check text-[12px]' : 'fa-solid fa-play text-[12px]';
+        } else {
+          iconSpan.textContent = playIcon;
+        }
       } else {
-        const currentText = this.btnPlay.textContent || '';
-        if (currentText.includes('▶') || currentText.includes('⏸') || currentText.includes('✓')) {
+        const currentText = this.btnPlay.textContent?.trim() || '';
+        const className = typeof this.btnPlay.className === 'string' ? this.btnPlay.className : (this.btnPlay.getAttribute?.('class') || '');
+        const isCircle = className.includes('rounded-full') || className.includes('circle') || className.includes('icon');
+        const hasChineseText = /[\u4e00-\u9fa5]/.test(currentText);
+
+        if (isCircle || (!hasChineseText && (currentText === '▶' || currentText === '⏸' || currentText === '✓' || currentText === ''))) {
+          // 纯圆形或纯图标按钮，仅显示图标符号
+          this.btnPlay.textContent = playIcon;
+        } else if (currentText.includes('▶') || currentText.includes('⏸') || currentText.includes('✓')) {
+          // 图标 + 文字混合按钮 (如 "▶ 播放")
           this.btnPlay.textContent = `${playIcon} ${playText}`;
         } else {
+          // 纯文字按钮 (如 "播放")
           this.btnPlay.textContent = playText;
         }
       }
+      this.btnPlay.title = this.isPlaying ? '暂停' : finished ? '已完成' : '自动播放/暂停';
     }
   }
 

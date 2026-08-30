@@ -217,7 +217,6 @@ export class DesignLinkedListVisualizer extends StepVisualizer<DLLStep> {
   protected codeLines = DESIGN_LINKED_LIST_CODE_LANGUAGES['java'];
   protected codePanelTitle = '设计链表代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private sandboxContainer: HTMLElement | null = null;
   private pointersContainer: HTMLElement | null = null;
   private decisionMonitorContainer: HTMLElement | null = null;
@@ -236,7 +235,7 @@ export class DesignLinkedListVisualizer extends StepVisualizer<DLLStep> {
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
     // 绑定预设用例流
@@ -273,24 +272,8 @@ export class DesignLinkedListVisualizer extends StepVisualizer<DLLStep> {
       this.render();
     });
 
-    // 绑定 Scrubber 进度条
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 绑定前进后退按钮
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: DESIGN_LINKED_LIST_PROBLEM_HTML,
       analysisHtml: DESIGN_LINKED_LIST_ANALYSIS_HTML,
