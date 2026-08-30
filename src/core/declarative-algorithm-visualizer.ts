@@ -20,6 +20,7 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
   protected logCountEl: HTMLElement | null = null;
   protected metricElements: Map<string, HTMLElement> = new Map();
   protected mainSplitter: SplitterEngine | null = null;
+  protected leftSplitter: SplitterEngine | null = null;
   protected rightSplitter: SplitterEngine | null = null;
 
   constructor(spec: DeclarativeAlgorithmSpec<TStep>) {
@@ -116,6 +117,32 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
         });
       } catch (e) {
         console.warn('[DeclarativeVisualizer] Failed to setup main splitter:', e);
+      }
+    }
+
+    const leftSection = this.root.querySelector('.dsp-left-section') as HTMLElement | null;
+    const monitorCard = this.root.querySelector('.dsp-left-section .dsp-card:last-child') as HTMLElement | null;
+
+    if (leftSection && monitorCard) {
+      try {
+        this.leftSplitter?.destroy();
+        this.leftSplitter = new SplitterEngine({
+          id: 'dsp-monitor-card-height',
+          direction: 'vertical',
+          targetElement: monitorCard,
+          containerElement: leftSection,
+          defaultSize: 220,
+          minSize: 100,
+          maxRatio: 0.65,
+          scope: this.spec.id,
+          invert: true,
+          mode: 'flex',
+          attachPosition: 'before',
+          className: 'algo-splitter-vertical',
+          title: '上下拖拽调整沙盘与状态监控面板高度，双击恢复默认',
+        });
+      } catch (e) {
+        console.warn('[DeclarativeVisualizer] Failed to setup left splitter:', e);
       }
     }
 
@@ -227,6 +254,8 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
   public destroy(): void {
     this.mainSplitter?.destroy();
     this.mainSplitter = null;
+    this.leftSplitter?.destroy();
+    this.leftSplitter = null;
     this.rightSplitter?.destroy();
     this.rightSplitter = null;
     super.destroy();
