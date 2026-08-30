@@ -6,10 +6,6 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
   STACK_QUEUE_THEORY_PROBLEM_HTML,
   STACK_QUEUE_THEORY_ANALYSIS_HTML,
   STACK_QUEUE_THEORY_CODE_LANGUAGES,
@@ -212,7 +208,6 @@ export class StackQueueTheoryVisualizer extends StepVisualizer<SQStep> {
   protected codePanelTitle = '栈与队列理论 代码调试';
 
   private currentMode: 'stack' | 'queue' = 'stack';
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private sandboxContainer: HTMLElement | null = null;
   private endpointStatusContainer: HTMLElement | null = null;
   private decisionMonitorContainer: HTMLElement | null = null;
@@ -251,31 +246,11 @@ export class StackQueueTheoryVisualizer extends StepVisualizer<SQStep> {
       this.start();
     });
 
-    // 绑定播放控制
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 绑定运行与重置
-    this.root.querySelector('#btn-generate')?.addEventListener('click', () => this.start());
-    this.root.querySelector('#btn-reset')?.addEventListener('click', () => this.reset());
-
-    // 绑定 Scrubber 进度条
-    const slider = this.root.querySelector('#slider-progress') as HTMLInputElement | null;
-    if (slider) {
-      slider.addEventListener('input', (e) => {
-        const val = parseInt((e.target as HTMLInputElement).value, 10);
-        if (!isNaN(val) && val >= 0 && val < this.steps.length) {
-          this.goToStep(val);
-        }
-      });
-    }
-
-    // 绑定前进后退按钮
-    this.root.querySelector('#btn-step-prev')?.addEventListener('click', () => this.prevStep());
-    this.root.querySelector('#btn-step-next')?.addEventListener('click', () => this.nextStep());
-    this.root.querySelector('#btn-play-pause')?.addEventListener('click', () => this.togglePlay());
-
     // 挂载暗色代码终端深模块
-    this.terminalInstance = DarkCodeTerminalPresenter.mount(this.root, {
+    this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: STACK_QUEUE_THEORY_PROBLEM_HTML,
       analysisHtml: STACK_QUEUE_THEORY_ANALYSIS_HTML,
@@ -321,13 +296,9 @@ export class StackQueueTheoryVisualizer extends StepVisualizer<SQStep> {
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569;">
             <span>${isStack ? '🥞 栈容器 (栈底 &rarr; 栈顶Top)' : '🔄 队列容器 (队头Front &rarr; 队尾Rear)'}:</span>
-            <span style="color: #2563eb;">当前元素数: ${data.length}</span>
           </div>
           <div style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; min-height: 56px; align-items: center;">
             ${data.length > 0 ? itemsHtml : `<span style="font-size: 10.5px; color: #94a3b8;">${isStack ? '空栈 (Empty Stack)' : '空队列 (Empty Queue)'}</span>`}
-          </div>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: #64748b; padding-top: 4px; border-top: 1px dashed #e2e8f0;">
-            <span>${isStack ? '⚡ 规则：后进先出 (LIFO)，只允许在栈顶一端进出' : '⚡ 规则：先进先出 (FIFO)，队尾进、队头出'}</span>
           </div>
         </div>
       `;
@@ -358,51 +329,34 @@ export class StackQueueTheoryVisualizer extends StepVisualizer<SQStep> {
     // 3. 渲染操作决策监视器 (Card 2 Center)
     if (this.decisionMonitorContainer) {
       this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>当前动作:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;">
-              ${step.action.toUpperCase()} ${step.value !== null ? `(${step.value})` : ''}
+            <span style="color: #64748b;">当前操作动作:</span>
+            <span style="font-weight: 800; color: #2563eb; font-family: monospace; font-size: 12px; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">
+              ${step.action.toUpperCase()}
             </span>
           </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 受控特性: <strong>不提供任意位置随机访问与迭代器</strong></div>
+          <div style="color: #334155; line-height: 1.4; margin-top: 2px;">
+            ${step.message}
           </div>
         </div>
       `;
     }
 
-    // 4. 渲染核心结论 (Card 2 Bottom)
+    // 4. 渲染核心指标 (Card 2 Right)
     if (this.metricsContainer) {
       this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>语义特征: <strong style="color: #2563eb;">${isStack ? '后入先出 (LIFO)' : '先入先出 (FIFO)'}</strong></span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">时间复杂度: 核心操作均 O(1)</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; text-align: center;">
+            <div style="font-size: 9.5px; color: #64748b;">当前容量</div>
+            <div style="font-size: 13px; font-weight: 800; color: #0f172a; font-family: monospace;">${data.length}</div>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; text-align: center;">
+            <div style="font-size: 9.5px; color: #64748b;">时间复杂度</div>
+            <div style="font-size: 13px; font-weight: 800; color: #059669; font-family: monospace;">O(1)</div>
           </div>
         </div>
       `;
-    }
-
-    const badgeSize = this.root?.querySelector('#badge-sqt-size');
-    if (badgeSize) {
-      badgeSize.textContent = `元素: ${data.length} 个`;
-    }
-
-    // 5. 更新 Scrubber 进度条
-    const slider = this.root?.querySelector('#slider-progress') as HTMLInputElement | null;
-    const stepCur = this.root?.querySelector('#step-cur') as HTMLElement | null;
-    const stepTotal = this.root?.querySelector('#step-total') as HTMLElement | null;
-    const playIcon = this.root?.querySelector('#play-icon') as HTMLElement | null;
-
-    if (slider) {
-      slider.max = String(Math.max(0, this.steps.length - 1));
-      slider.value = String(this.currentIndex);
-    }
-    if (stepCur) stepCur.textContent = String(this.currentIndex + 1);
-    if (stepTotal) stepTotal.textContent = String(this.steps.length);
-    if (playIcon) {
-      playIcon.className = this.isPlaying ? 'fa-solid fa-pause text-[12px]' : 'fa-solid fa-play text-[12px]';
     }
 
     // 6. 暗色终端代码行高亮
