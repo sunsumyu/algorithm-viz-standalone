@@ -592,7 +592,7 @@ export class DeclarativeStagePresenter {
     <div class="dsp-header-right">
       ${inputsHtml}
       <button id="btn-generate" class="dsp-btn-generate">
-        <span>▶ 运行</span>
+        <span>⚡ 生成</span>
       </button>
       <button id="btn-reset" class="dsp-btn-reset">
         重置
