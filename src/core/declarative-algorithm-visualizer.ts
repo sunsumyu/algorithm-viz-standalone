@@ -8,6 +8,7 @@ import {
   DeclarativeAlgorithmSpec,
   DeclarativeStagePresenter,
 } from './renderers/declarative-stage-presenter';
+import { SplitterEngine } from './splitter-engine';
 
 export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<TStep> {
   protected spec: DeclarativeAlgorithmSpec<TStep>;
@@ -18,6 +19,8 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
   protected logContainer: HTMLElement | null = null;
   protected logCountEl: HTMLElement | null = null;
   protected metricElements: Map<string, HTMLElement> = new Map();
+  protected mainSplitter: SplitterEngine | null = null;
+  protected rightSplitter: SplitterEngine | null = null;
 
   constructor(spec: DeclarativeAlgorithmSpec<TStep>) {
     super();
@@ -87,6 +90,57 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
       analysisHtml: this.spec.analysisHtml,
       initialLang: 'java',
     });
+
+    // 挂载左右拖拽分栏与右侧上下高度分栏 (Splitter)
+    const mainLayout = this.root.querySelector('.dsp-main-layout') as HTMLElement | null;
+    const rightSection = this.root.querySelector('.dsp-right-section') as HTMLElement | null;
+    const logCard = this.root.querySelector('.dsp-log-card') as HTMLElement | null;
+
+    if (mainLayout && rightSection) {
+      try {
+        this.mainSplitter?.destroy();
+        this.mainSplitter = new SplitterEngine({
+          id: 'dsp-main-aside-width',
+          direction: 'horizontal',
+          targetElement: rightSection,
+          containerElement: mainLayout,
+          defaultSize: 450,
+          minSize: 280,
+          maxRatio: 0.72,
+          scope: 'global',
+          invert: true,
+          mode: 'grid',
+          attachPosition: 'before',
+          className: 'algo-splitter-horizontal',
+          title: '左右拖拽调整代码面板宽度，双击恢复默认',
+        });
+      } catch (e) {
+        console.warn('[DeclarativeVisualizer] Failed to setup main splitter:', e);
+      }
+    }
+
+    if (rightSection && logCard) {
+      try {
+        this.rightSplitter?.destroy();
+        this.rightSplitter = new SplitterEngine({
+          id: 'dsp-log-card-height',
+          direction: 'vertical',
+          targetElement: logCard,
+          containerElement: rightSection,
+          defaultSize: 180,
+          minSize: 80,
+          maxRatio: 0.65,
+          scope: this.spec.id,
+          invert: true,
+          mode: 'flex',
+          attachPosition: 'before',
+          className: 'algo-splitter-vertical',
+          title: '上下拖拽调整执行日志面板高度，双击恢复默认',
+        });
+      } catch (e) {
+        console.warn('[DeclarativeVisualizer] Failed to setup right splitter:', e);
+      }
+    }
   }
 
   /**
@@ -168,6 +222,14 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
   public reset(): void {
     super.reset();
     if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
+  }
+
+  public destroy(): void {
+    this.mainSplitter?.destroy();
+    this.mainSplitter = null;
+    this.rightSplitter?.destroy();
+    this.rightSplitter = null;
+    super.destroy();
   }
 }
 

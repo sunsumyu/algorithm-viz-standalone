@@ -580,6 +580,31 @@ input[type="number"]::-webkit-outer-spin-button {
   width: 4px;
 }
 
+.algo-splitter-vertical {
+  height: 8px;
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -2px 0;
+  width: 100%;
+}
+
+.algo-splitter-vertical .algo-splitter-bar {
+  height: 3px;
+  width: 36px;
+  border-radius: 9999px;
+  background-color: var(--viz-card-border, #cbd5e1);
+  transition: all 0.2s ease;
+}
+
+.algo-splitter-vertical:hover .algo-splitter-bar,
+.algo-splitter-vertical.is-dragging .algo-splitter-bar {
+  background-color: var(--viz-primary, #3b82f6);
+  width: 48px;
+  height: 4px;
+}
+
 /* ===== 行内局部表达式发光聚焦 (Inline Token Focus) ===== */
 .inline-token-focus {
   display: inline-block;
