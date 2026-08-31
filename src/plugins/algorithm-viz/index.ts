@@ -142,6 +142,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'lava-parkour': '🌋',
   'gas-station-rally': '🏎️',
   'lemonade-tycoon': '🍹',
+  'cookie-feeder': '🍪',
 };
 
 import {

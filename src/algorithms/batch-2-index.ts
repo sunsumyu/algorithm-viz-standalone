@@ -102,5 +102,6 @@ import './categories/game/nqueen-battle-renderer';
 import './categories/game/lava-parkour-renderer';
 import './categories/game/gas-station-renderer';
 import './categories/game/lemonade-tycoon-renderer';
+import './categories/game/cookie-feeder-renderer';
 
 export {};

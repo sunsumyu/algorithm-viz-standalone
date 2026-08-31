@@ -2432,5 +2432,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 7,
     "learningGoal": "掌握贪心选择性质（Greedy Choice Property）在硬币找零与资源通用性权衡中的关键作用"
+  },
+  {
+    "id": "cookie-feeder",
+    "name": "萌宠餐厅·饼干大派送",
+    "viewId": "algo-cookie-feeder-view",
+    "category": "game",
+    "description": "双指针贪心算法游戏：萌宠餐厅、香脆饼干托盘、抛物线咀嚼投喂动画与双序列最优匹配",
+    "icon": "🍪",
+    "difficulty": 2,
+    "levelOrder": 8,
+    "learningGoal": "掌握双排序 + 双指针贪心算法在双序列容量与需求匹配中的核心应用"
   }
 ];
