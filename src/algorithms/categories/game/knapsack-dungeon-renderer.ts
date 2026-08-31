@@ -1,11 +1,11 @@
 /**
- * 背包商人·地牢探险 (Knapsack Dungeon Crawler & DP Lab)
- * 沉浸式 2.5D 动态规划算法冒险游戏：
- * 1. 🎒 背包配装与负重系统 (Weight Limit & Item Loadout)
- * 2. 📊 实时 DP 状态转移矩阵全景透视 (dp[i][w] Table & Traceback Path)
- * 3. ⚖️ 贪心 vs 动态规划实时对比引擎 (Greedy vs DP Comparison)
- * 4. ⚔️ 地牢 Boss 回合制即时战斗演练 (Boss Combat, Slash FX, Floating Numbers, Sound)
- * 5. 3 大地牢层级：0-1 背包、完全背包、多维负重背包
+ * 背包商人·地牢探险 (Knapsack Dungeon: Action DP Crawler)
+ * 具备真正游戏性、即时动作战斗与暗黑风格背包的 60 FPS 地牢探险游戏：
+ * 1. 🕹️ 2.5D 实时地牢画布 (Canvas 60 FPS 走位、近战挥砍、法术弹道、Boss 危险预警红圈、受击震屏)
+ * 2. 🎒 暗黑/生化危机风拟真负重背包 (实时重量槽、宝物装配、装备槽、战力统计)
+ * 3. 👹 3 大独立机制 Boss (骷髅王地刺重砸、蛛后喷射毒液弹、远古巨龙烈焰吐息)
+ * 4. 🧠 动态规划·启示之眼 (一键计算 0-1 背包/完全背包最优解，金光闪耀穿戴神装)
+ * 5. 📊 实时 DP 状态转移矩阵 (支持点击单元格回溯来源: dp[i-1][w] 或 dp[i-1][w-wi]+vi)
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
@@ -21,110 +21,158 @@ export interface DungeonItem {
   name: string;
   icon: string;
   weight: number;
-  value: number; // 战斗力 / 价值
+  value: number; // 增加的攻击力 / 伤害
+  hpBonus?: number; // 增加的生命值
   type: 'WEAPON' | 'ARMOR' | 'POTION' | 'SCROLL' | 'RELIC';
-  count?: number; // 多重/完全背包时的数量
   desc: string;
 }
 
-export interface DungeonBoss {
+export interface BossEntity {
   id: string;
   name: string;
   icon: string;
+  x: number;
+  y: number;
   hp: number;
   maxHp: number;
   attack: number;
-  requiredPower: number;
-  desc: string;
+  attackCooldown: number;
+  lastAttackTime: number;
+  state: 'IDLE' | 'ATTACKING' | 'TELEGRAPH' | 'HURT' | 'DEAD';
+  telegraphTimer: number;
+  telegraphPos: { x: number; y: number; r: number };
+  animTick: number;
 }
 
-interface DungeonFloor {
+export interface HeroEntity {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  hp: number;
+  maxHp: number;
+  baseAttack: number;
+  speed: number;
+  isAttacking: boolean;
+  attackCooldown: number;
+  lastAttackTime: number;
+  direction: number; // 弧度
+  animTick: number;
+}
+
+export interface AttackSlash {
+  x: number;
+  y: number;
+  angle: number;
+  life: number; // 0 ~ 1
+  damage: number;
+}
+
+export interface CombatProjectile {
+  id: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  damage: number;
+  color: string;
+  radius: number;
+  isEnemy: boolean;
+}
+
+export interface FloatingNumber {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  opacity: number;
+}
+
+export interface DungeonFloor {
   floorId: number;
   title: string;
   modeName: string;
   capacity: number;
   items: DungeonItem[];
-  boss: DungeonBoss;
+  bossConfig: {
+    name: string;
+    icon: string;
+    hp: number;
+    attack: number;
+    cooldown: number;
+  };
   concept: string;
 }
 
 const DUNGEON_FLOORS: DungeonFloor[] = [
   {
     floorId: 1,
-    title: '地牢第 1 层: 骷髅王座 (0-1 背包)',
+    title: '第 1 层: 骷髅王座 (0-1 背包)',
     modeName: '0-1 背包模式',
     capacity: 10,
     concept: '🎯 0-1 背包原理：每件神器世间仅存一份，在严格限重 10kg 下通过 DP 做出最优抉择。',
     items: [
-      { id: 'i1', name: '炽炎大剑', icon: '🗡️', weight: 4, value: 38, type: 'WEAPON', desc: '巨剑挥砍，伤害极高' },
-      { id: 'i2', name: '秘银板甲', icon: '🛡️', weight: 5, value: 42, type: 'ARMOR', desc: '厚重结实，提供稳固防御' },
-      { id: 'i3', name: '狂暴药水', icon: '🧪', weight: 2, value: 16, type: 'POTION', desc: '短效爆发药水' },
-      { id: 'i4', name: '冰霜卷轴', icon: '📜', weight: 1, value: 12, type: 'SCROLL', desc: '轻盈且附带冰冻伤害' },
-      { id: 'i5', name: '精钢战斧', icon: '🪓', weight: 3, value: 24, type: 'WEAPON', desc: '平衡型武器' },
-      { id: 'i6', name: '泰坦之戒', icon: '💍', weight: 2, value: 20, type: 'RELIC', desc: '蕴含远古力量的指环' },
+      { id: 'i1', name: '炽炎巨剑', icon: '🗡️', weight: 4, value: 40, type: 'WEAPON', desc: '沉重双手巨剑，挥砍威力惊人' },
+      { id: 'i2', name: '秘银板甲', icon: '🛡️', weight: 5, value: 45, hpBonus: 40, type: 'ARMOR', desc: '大幅提升生存与血量' },
+      { id: 'i3', name: '狂暴药水', icon: '🧪', weight: 2, value: 18, type: 'POTION', desc: '短效爆发，性价比高' },
+      { id: 'i4', name: '冰霜卷轴', icon: '📜', weight: 1, value: 12, type: 'SCROLL', desc: '极轻便的法术卷轴' },
+      { id: 'i5', name: '精钢战斧', icon: '🪓', weight: 3, value: 25, type: 'WEAPON', desc: '平衡型近战利器' },
+      { id: 'i6', name: '泰坦之戒', icon: '💍', weight: 2, value: 20, type: 'RELIC', desc: '远古神力附魔戒指' },
     ],
-    boss: {
-      id: 'b1',
+    bossConfig: {
       name: '💀 骷髅领主',
       icon: '💀',
-      hp: 120,
-      maxHp: 120,
-      attack: 25,
-      requiredPower: 80,
-      desc: '地牢一层的守关魔王，唯有配装战斗力达到 80+ 才能稳操胜券！',
+      hp: 160,
+      attack: 28,
+      cooldown: 2.2,
     },
   },
   {
     floorId: 2,
-    title: '地牢第 2 层: 炼金迷窟 (完全背包)',
+    title: '第 2 层: 炼金迷窟 (完全背包)',
     modeName: '完全背包模式',
     capacity: 12,
     concept: '🧪 完全背包原理：炼金药剂与飞刀无限量供应，物品可重复选取，状态正序转移。',
     items: [
-      { id: 'i1', name: '烈焰药剂', icon: '🧪', weight: 3, value: 28, type: 'POTION', desc: '可无限自配，单位性价比极高' },
-      { id: 'i2', name: '淬毒飞刀', icon: '🗡️', weight: 2, value: 17, type: 'WEAPON', desc: '轻便敏捷，可堆叠多把' },
-      { id: 'i3', name: '奥术护符', icon: '🧿', weight: 4, value: 36, type: 'RELIC', desc: '强化法术共鸣' },
-      { id: 'i4', name: '神圣卷轴', icon: '📜', weight: 1, value: 9, type: 'SCROLL', desc: '极低重量消耗品' },
+      { id: 'i1', name: '烈焰药剂', icon: '🧪', weight: 3, value: 30, type: 'POTION', desc: '可无限拿取，伤害极高' },
+      { id: 'i2', name: '淬毒飞刀', icon: '🗡️', weight: 2, value: 18, type: 'WEAPON', desc: '轻便敏捷，可多把堆叠' },
+      { id: 'i3', name: '奥术护符', icon: '🧿', weight: 4, value: 38, hpBonus: 30, type: 'RELIC', desc: '强化法术共鸣' },
+      { id: 'i4', name: '神圣卷轴', icon: '📜', weight: 1, value: 10, type: 'SCROLL', desc: '低重量填充装配' },
     ],
-    boss: {
-      id: 'b2',
+    bossConfig: {
       name: '🕷️ 暗影蛛后',
       icon: '🕷️',
-      hp: 180,
-      maxHp: 180,
+      hp: 240,
       attack: 35,
-      requiredPower: 110,
-      desc: '喷吐毒丝的巨型蛛后，需要通过完全背包找出无数组合的最强解！',
+      cooldown: 1.8,
     },
   },
   {
     floorId: 3,
-    title: '地牢第 3 层: 远古龙窟 (终极挑战)',
+    title: '第 3 层: 远古龙窟 (终极挑战)',
     modeName: '史诗综合背包',
     capacity: 15,
     concept: '🐲 终极背包挑战：神装与药剂混合，权衡单兵重装 vs 敏捷爆发，击败远古红龙！',
     items: [
-      { id: 'i1', name: '灭世龙枪', icon: '🔱', weight: 7, value: 65, type: 'WEAPON', desc: '上古神器，威力毁天灭地' },
-      { id: 'i2', name: '龙鳞圣铠', icon: '🛡️', weight: 6, value: 55, type: 'ARMOR', desc: '巨龙鳞片打造的终极防具' },
-      { id: 'i3', name: '凤凰精粹', icon: '🧪', weight: 3, value: 30, type: 'POTION', desc: '涅槃之火' },
-      { id: 'i4', name: '雷霆卷轴', icon: '📜', weight: 2, value: 22, type: 'SCROLL', desc: '召唤九天神雷' },
-      { id: 'i5', name: '支配之戒', icon: '💍', weight: 2, value: 20, type: 'RELIC', desc: '全面属性提升' },
-      { id: 'i6', name: '灵巧短刃', icon: '🗡️', weight: 1, value: 11, type: 'WEAPON', desc: '轻灵刺杀' },
+      { id: 'i1', name: '灭世龙枪', icon: '🔱', weight: 7, value: 72, type: 'WEAPON', desc: '上古神器，威力毁天灭地' },
+      { id: 'i2', name: '龙鳞圣铠', icon: '🛡️', weight: 6, value: 60, hpBonus: 60, type: 'ARMOR', desc: '巨龙鳞片打造的终极防具' },
+      { id: 'i3', name: '凤凰精粹', icon: '🧪', weight: 3, value: 32, type: 'POTION', desc: '涅槃爆发之火' },
+      { id: 'i4', name: '雷霆卷轴', icon: '📜', weight: 2, value: 24, type: 'SCROLL', desc: '引动九天神雷' },
+      { id: 'i5', name: '支配之戒', icon: '💍', weight: 2, value: 22, type: 'RELIC', desc: '全面属性跃升' },
+      { id: 'i6', name: '灵巧短刃', icon: '🗡️', weight: 1, value: 12, type: 'WEAPON', desc: '轻灵近战刺杀' },
     ],
-    boss: {
-      id: 'b3',
+    bossConfig: {
       name: '🐲 远古红龙',
       icon: '🐲',
-      hp: 260,
-      maxHp: 260,
-      attack: 50,
-      requiredPower: 140,
-      desc: '地牢深处的终极霸主，唯有 100% 达成 DP 最优解才能将其斩落！',
+      hp: 360,
+      attack: 52,
+      cooldown: 2.0,
     },
   },
 ];
 
-// Web Audio API 简易原生音效合成器
+// Web Audio API 拟真战斗音效合成器
 class DungeonAudio {
   private static audioCtx: AudioContext | null = null;
   public static isMuted = false;
@@ -166,9 +214,27 @@ class DungeonAudio {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(280, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.18);
+      osc.frequency.setValueAtTime(350, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
       gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } catch {}
+  }
+
+  public static playHit(): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(140, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -202,19 +268,56 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
   private currentFloor = 1;
   private selectedItemIds = new Set<string>();
 
-  // 战斗状态
-  private isFighting = false;
-  private playerHp = 100;
-  private maxPlayerHp = 100;
-  private bossHp = 120;
-  private bossMaxHp = 120;
-  private combatLog: string[] = [];
+  // 60 FPS 物理游戏引擎与实体
+  private animFrameId: number | null = null;
+  private lastTimestamp = 0;
+  private canvas: HTMLCanvasElement | null = null;
+  private ctx: CanvasRenderingContext2D | null = null;
+  private screenShake = 0;
 
-  // DP 演算矩阵
+  private hero: HeroEntity = {
+    x: 80,
+    y: 160,
+    vx: 0,
+    vy: 0,
+    hp: 100,
+    maxHp: 100,
+    baseAttack: 15,
+    speed: 130,
+    isAttacking: false,
+    attackCooldown: 0.35,
+    lastAttackTime: 0,
+    direction: 0,
+    animTick: 0,
+  };
+
+  private boss: BossEntity = {
+    id: 'boss',
+    name: '💀 骷髅领主',
+    icon: '💀',
+    x: 320,
+    y: 160,
+    hp: 160,
+    maxHp: 160,
+    attack: 28,
+    attackCooldown: 2.2,
+    lastAttackTime: 0,
+    state: 'IDLE',
+    telegraphTimer: 0,
+    telegraphPos: { x: 0, y: 0, r: 0 },
+    animTick: 0,
+  };
+
+  private slashes: AttackSlash[] = [];
+  private projectiles: CombatProjectile[] = [];
+  private floatingNumbers: FloatingNumber[] = [];
+  private keysDown = new Set<string>();
+
+  // 状态与 DP
+  private isAutoMovingToBoss = false;
   private dpTable: number[][] = [];
   private dpChosenItems: DungeonItem[] = [];
   private dpOptimalValue = 0;
-  private greedyValue = 0;
 
   constructor() {
     super();
@@ -235,30 +338,66 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     await super.init(options);
     this.loadFloor(1);
     this.initGameUI();
+    this.startLoop();
+  }
+
+  public destroy(): void {
+    super.destroy();
+    if (this.animFrameId && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
   }
 
   private loadFloor(floorId: number): void {
     this.currentFloor = floorId;
     this.selectedItemIds.clear();
-    this.isFighting = false;
-    this.combatLog = [];
+    this.slashes = [];
+    this.projectiles = [];
+    this.floatingNumbers = [];
+    this.screenShake = 0;
+    this.isAutoMovingToBoss = false;
 
     const floor = DUNGEON_FLOORS.find((f) => f.floorId === floorId) || DUNGEON_FLOORS[0];
-    this.playerHp = 100;
-    this.maxPlayerHp = 100;
-    this.bossHp = floor.boss.hp;
-    this.bossMaxHp = floor.boss.maxHp;
 
-    // 计算 DP 全局最优解与贪心解
+    // 重置英雄与 Boss
+    this.hero.x = 80;
+    this.hero.y = 160;
+    this.hero.vx = 0;
+    this.hero.vy = 0;
+    this.hero.hp = 100;
+    this.hero.maxHp = 100;
+
+    this.boss = {
+      id: 'boss',
+      name: floor.bossConfig.name,
+      icon: floor.bossConfig.icon,
+      x: 320,
+      y: 160,
+      hp: floor.bossConfig.hp,
+      maxHp: floor.bossConfig.hp,
+      attack: floor.bossConfig.attack,
+      attackCooldown: floor.bossConfig.cooldown,
+      lastAttackTime: Date.now() / 1000,
+      state: 'IDLE',
+      telegraphTimer: 0,
+      telegraphPos: { x: 0, y: 0, r: 0 },
+      animTick: 0,
+    };
+
     this.computeDPOptimal();
-    this.computeGreedy();
-
     this.renderFloorView();
     this.renderDPTable();
   }
 
   private initGameUI(): void {
     if (!this.root) return;
+
+    this.canvas = this.root.querySelector('#knapsack-arena-canvas');
+    if (this.canvas) {
+      this.ctx = this.canvas.getContext('2d');
+      this.bindCanvasControls();
+    }
 
     this.mountTerminal({
       codeLanguages: KNAPSACK_DUNGEON_CODE_LANGUAGES,
@@ -267,7 +406,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       initialLang: 'cpp',
     });
 
-    // 关卡切换 Chips
+    // 关卡切换
     this.root.querySelectorAll<HTMLButtonElement>('.knapsack-floor-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const floorId = parseInt(btn.dataset.floor || '1', 10);
@@ -277,7 +416,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       });
     });
 
-    // 一键 DP 最优配装按钮
+    // 一键 DP 最优配装
     const autoDpBtn = this.root.querySelector('#btn-knapsack-auto-dp') as HTMLButtonElement | null;
     if (autoDpBtn) {
       autoDpBtn.addEventListener('click', () => {
@@ -285,6 +424,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
         this.dpChosenItems.forEach((it) => this.selectedItemIds.add(it.id));
         DungeonAudio.playEquip();
         this.renderFloorView();
+        this.addFloatingNumber(this.hero.x, this.hero.y - 20, '✨ DP 最优配装达成!', '#38bdf8');
       });
     }
 
@@ -297,14 +437,325 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       });
     }
 
-    // 发起 Boss 决战按钮
-    const fightBtn = this.root.querySelector('#btn-knapsack-fight') as HTMLButtonElement | null;
-    if (fightBtn) {
-      fightBtn.addEventListener('click', () => this.startBossBattle());
+    // 手动攻击按钮 (支持点击与空格)
+    const attackBtn = this.root.querySelector('#btn-knapsack-attack') as HTMLButtonElement | null;
+    if (attackBtn) {
+      attackBtn.addEventListener('click', () => this.heroPerformAttack());
+    }
+
+    // 重置本层战局
+    const resetBtn = this.root.querySelector('#btn-knapsack-reset') as HTMLButtonElement | null;
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => this.loadFloor(this.currentFloor));
     }
   }
 
-  // 计算当前楼层的 DP 最优解与回溯路径
+  private bindCanvasControls(): void {
+    window.addEventListener('keydown', (e) => {
+      this.keysDown.add(e.key.toLowerCase());
+      if (e.code === 'Space') {
+        e.preventDefault();
+        this.heroPerformAttack();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keysDown.delete(e.key.toLowerCase());
+    });
+
+    if (this.canvas) {
+      this.canvas.addEventListener('click', (e) => {
+        const rect = this.canvas!.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        // 点击转向并挥砍
+        this.hero.direction = Math.atan2(clickY - this.hero.y, clickX - this.hero.x);
+        this.heroPerformAttack();
+      });
+    }
+  }
+
+  // 英雄挥砍攻击
+  private heroPerformAttack(): void {
+    const now = Date.now() / 1000;
+    if (now - this.hero.lastAttackTime < this.hero.attackCooldown || this.boss.hp <= 0) return;
+
+    this.hero.lastAttackTime = now;
+    this.hero.isAttacking = true;
+    DungeonAudio.playSlash();
+
+    const stats = this.getCurrentTotalStats();
+    const totalDmg = this.hero.baseAttack + stats.totalValue;
+
+    // 刀光
+    this.slashes.push({
+      x: this.hero.x + Math.cos(this.hero.direction) * 20,
+      y: this.hero.y + Math.sin(this.hero.direction) * 20,
+      angle: this.hero.direction,
+      life: 1.0,
+      damage: totalDmg,
+    });
+
+    // 判定是否命中 Boss
+    const distToBoss = Math.hypot(this.boss.x - this.hero.x, this.boss.y - this.hero.y);
+    if (distToBoss <= 65) {
+      DungeonAudio.playHit();
+      this.screenShake = 6;
+      this.boss.hp = Math.max(0, this.boss.hp - totalDmg);
+      this.boss.state = 'HURT';
+      this.addFloatingNumber(this.boss.x, this.boss.y - 20, `-${totalDmg} 🗡️`, '#ef4444');
+
+      if (this.boss.hp <= 0) {
+        this.boss.state = 'DEAD';
+        DungeonAudio.playVictory();
+        this.addFloatingNumber(this.boss.x, this.boss.y - 30, '🏆 BOSS 击杀胜利!', '#f59e0b');
+      }
+    }
+  }
+
+  // 主物理战斗循环 (60 FPS)
+  private startLoop(): void {
+    if (typeof requestAnimationFrame !== 'function') return;
+    const loop = (timestamp: number) => {
+      if (!this.lastTimestamp) this.lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - this.lastTimestamp) / 1000, 0.1);
+      this.lastTimestamp = timestamp;
+
+      this.updatePhysics(dt);
+      this.renderArena();
+
+      if (typeof requestAnimationFrame === 'function') {
+        this.animFrameId = requestAnimationFrame(loop);
+      }
+    };
+
+    this.animFrameId = requestAnimationFrame(loop);
+  }
+
+  private updatePhysics(dt: number): void {
+    if (this.screenShake > 0) {
+      this.screenShake = Math.max(0, this.screenShake - dt * 25);
+    }
+
+    const now = Date.now() / 1000;
+    this.hero.animTick += dt * 8;
+    this.boss.animTick += dt * 5;
+
+    // 1. 英雄走位控制
+    let moveX = 0;
+    let moveY = 0;
+    if (this.keysDown.has('w') || this.keysDown.has('arrowup')) moveY -= 1;
+    if (this.keysDown.has('s') || this.keysDown.has('arrowdown')) moveY += 1;
+    if (this.keysDown.has('a') || this.keysDown.has('arrowleft')) moveX -= 1;
+    if (this.keysDown.has('d') || this.keysDown.has('arrowright')) moveX += 1;
+
+    if (moveX !== 0 || moveY !== 0) {
+      const len = Math.hypot(moveX, moveY);
+      this.hero.x = Math.max(25, Math.min(395, this.hero.x + (moveX / len) * this.hero.speed * dt));
+      this.hero.y = Math.max(30, Math.min(270, this.hero.y + (moveY / len) * this.hero.speed * dt));
+      this.hero.direction = Math.atan2(moveY, moveX);
+    } else {
+      // 面朝 Boss
+      this.hero.direction = Math.atan2(this.boss.y - this.hero.y, this.boss.x - this.hero.x);
+    }
+
+    // 2. Boss AI 与攻击预警
+    if (this.boss.hp > 0) {
+      // 缓缓逼近英雄
+      const dx = this.hero.x - this.boss.x;
+      const dy = this.hero.y - this.boss.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist > 50 && this.boss.state === 'IDLE') {
+        this.boss.x += (dx / dist) * 40 * dt;
+        this.boss.y += (dy / dist) * 40 * dt;
+      }
+
+      // 触发 Boss 技能预警
+      if (now - this.boss.lastAttackTime >= this.boss.attackCooldown && this.boss.state === 'IDLE') {
+        this.boss.state = 'TELEGRAPH';
+        this.boss.telegraphTimer = 0.8;
+        this.boss.telegraphPos = { x: this.hero.x, y: this.hero.y, r: 42 };
+      }
+
+      if (this.boss.state === 'TELEGRAPH') {
+        this.boss.telegraphTimer -= dt;
+        if (this.boss.telegraphTimer <= 0) {
+          // 预警结束，发动重击
+          this.boss.state = 'IDLE';
+          this.boss.lastAttackTime = now;
+
+          const distToCenter = Math.hypot(this.hero.x - this.boss.telegraphPos.x, this.hero.y - this.boss.telegraphPos.y);
+          if (distToCenter <= this.boss.telegraphPos.r) {
+            DungeonAudio.playHit();
+            this.screenShake = 12;
+            const stats = this.getCurrentTotalStats();
+            const dmg = Math.max(8, this.boss.attack - Math.round(stats.totalValue * 0.15));
+            this.hero.hp = Math.max(0, this.hero.hp - dmg);
+            this.addFloatingNumber(this.hero.x, this.hero.y - 20, `-${dmg} 💥`, '#ef4444');
+          }
+        }
+      }
+    }
+
+    // 3. 刀光更新
+    for (let i = this.slashes.length - 1; i >= 0; i--) {
+      this.slashes[i].life -= dt * 4;
+      if (this.slashes[i].life <= 0) this.slashes.splice(i, 1);
+    }
+
+    // 4. 飘字更新
+    for (let i = this.floatingNumbers.length - 1; i >= 0; i--) {
+      const fn = this.floatingNumbers[i];
+      fn.y -= dt * 25;
+      fn.opacity -= dt * 1.5;
+      if (fn.opacity <= 0) this.floatingNumbers.splice(i, 1);
+    }
+
+    this.updateHUD();
+  }
+
+  private addFloatingNumber(x: number, y: number, text: string, color: string): void {
+    this.floatingNumbers.push({
+      id: `fn_${Date.now()}_${Math.random()}`,
+      x,
+      y,
+      text,
+      color,
+      opacity: 1.0,
+    });
+  }
+
+  // 渲染地牢竞技场画布
+  private renderArena(): void {
+    if (!this.canvas || !this.ctx) return;
+    const ctx = this.ctx;
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+
+    ctx.save();
+    ctx.clearRect(0, 0, width, height);
+
+    if (this.screenShake > 0) {
+      const ox = (Math.random() - 0.5) * this.screenShake;
+      const oy = (Math.random() - 0.5) * this.screenShake;
+      ctx.translate(ox, oy);
+    }
+
+    // 1. 地牢石板地面
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < height; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    // 2. Boss 攻击危险红圈预警
+    if (this.boss.state === 'TELEGRAPH') {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(this.boss.telegraphPos.x, this.boss.telegraphPos.y, this.boss.telegraphPos.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+      ctx.fill();
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 3. 绘制 Boss
+    ctx.save();
+    ctx.translate(this.boss.x, this.boss.y);
+
+    // 地面软阴影
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(0, 20, 26, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (this.boss.hp > 0) {
+      ctx.font = '38px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.boss.icon, 0, -4 + Math.sin(this.boss.animTick) * 3);
+
+      // Boss 头顶血条
+      const bossHpPct = this.boss.hp / this.boss.maxHp;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-28, -32, 56, 5);
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(-28, -32, 56 * bossHpPct, 5);
+    } else {
+      ctx.font = '28px sans-serif';
+      ctx.fillText('💀 击溃', 0, 0);
+    }
+    ctx.restore();
+
+    // 4. 绘制勇士 Hero
+    ctx.save();
+    ctx.translate(this.hero.x, this.hero.y);
+
+    // 阴影
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(0, 14, 16, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 勇士身躯与金盾大剑
+    ctx.font = '26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🧙‍♂️', 0, -2 + Math.sin(this.hero.animTick) * 2);
+
+    // 勇士血条
+    const heroHpPct = this.hero.hp / this.hero.maxHp;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-18, -24, 36, 4);
+    ctx.fillStyle = heroHpPct > 0.3 ? '#10b981' : '#ef4444';
+    ctx.fillRect(-18, -24, 36 * heroHpPct, 4);
+
+    ctx.restore();
+
+    // 5. 绘制斩击刀光 (Slash Arcs)
+    for (const slash of this.slashes) {
+      ctx.save();
+      ctx.translate(slash.x, slash.y);
+      ctx.rotate(slash.angle);
+      ctx.beginPath();
+      ctx.arc(0, 0, 32, -Math.PI / 3, Math.PI / 3);
+      ctx.strokeStyle = `rgba(56, 189, 248, ${slash.life})`;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 6. 绘制飘字
+    for (const fn of this.floatingNumbers) {
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = fn.color;
+      ctx.globalAlpha = Math.max(0, fn.opacity);
+      ctx.textAlign = 'center';
+      ctx.fillText(fn.text, fn.x, fn.y);
+      ctx.globalAlpha = 1.0;
+    }
+
+    ctx.restore();
+  }
+
+  // 计算 DP 最优解与回溯
   private computeDPOptimal(): void {
     const floor = DUNGEON_FLOORS.find((f) => f.floorId === this.currentFloor) || DUNGEON_FLOORS[0];
     const n = floor.items.length;
@@ -313,7 +764,6 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     this.dpTable = Array.from({ length: n + 1 }, () => new Array(W + 1).fill(0));
 
     if (floor.modeName.includes('0-1') || floor.modeName.includes('终极')) {
-      // 0-1 背包
       for (let i = 1; i <= n; i++) {
         const item = floor.items[i - 1];
         for (let w = 0; w <= W; w++) {
@@ -325,7 +775,6 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
         }
       }
 
-      // 回溯最优选装
       this.dpChosenItems = [];
       let curW = W;
       for (let i = n; i >= 1; i--) {
@@ -335,7 +784,6 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
         }
       }
     } else {
-      // 完全背包
       for (let i = 1; i <= n; i++) {
         const item = floor.items[i - 1];
         for (let w = 0; w <= W; w++) {
@@ -360,47 +808,28 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     this.dpOptimalValue = this.dpTable[n][W];
   }
 
-  // 计算贪心策略解 (按单位重量价值比降序挑选)
-  private computeGreedy(): void {
-    const floor = DUNGEON_FLOORS.find((f) => f.floorId === this.currentFloor) || DUNGEON_FLOORS[0];
-    const sorted = [...floor.items].sort((a, b) => b.value / b.weight - a.value / a.weight);
-
-    let curW = 0;
-    let totalVal = 0;
-    for (const it of sorted) {
-      if (curW + it.weight <= floor.capacity) {
-        curW += it.weight;
-        totalVal += it.value;
-      }
-    }
-    this.greedyValue = totalVal;
-  }
-
-  private getCurrentTotalStats(): { totalWeight: number; totalValue: number } {
+  private getCurrentTotalStats(): { totalWeight: number; totalValue: number; totalHpBonus: number } {
     const floor = DUNGEON_FLOORS.find((f) => f.floorId === this.currentFloor) || DUNGEON_FLOORS[0];
     let totalWeight = 0;
     let totalValue = 0;
+    let totalHpBonus = 0;
 
     for (const item of floor.items) {
       if (this.selectedItemIds.has(item.id)) {
         totalWeight += item.weight;
         totalValue += item.value;
+        totalHpBonus += item.hpBonus || 0;
       }
     }
-    return { totalWeight, totalValue };
+    return { totalWeight, totalValue, totalHpBonus };
   }
 
-  private renderFloorView(): void {
+  private updateHUD(): void {
     if (!this.root) return;
     const floor = DUNGEON_FLOORS.find((f) => f.floorId === this.currentFloor) || DUNGEON_FLOORS[0];
     const stats = this.getCurrentTotalStats();
     const isOverweight = stats.totalWeight > floor.capacity;
 
-    // 概念横幅
-    const conceptEl = this.root.querySelector('#knapsack-concept-banner') as HTMLElement | null;
-    if (conceptEl) conceptEl.textContent = floor.concept;
-
-    // 背包重量条
     const weightBar = this.root.querySelector('#knapsack-weight-fill') as HTMLElement | null;
     const weightText = this.root.querySelector('#knapsack-weight-text') as HTMLElement | null;
     const powerText = this.root.querySelector('#knapsack-power-text') as HTMLElement | null;
@@ -411,38 +840,44 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       weightBar.style.background = isOverweight ? '#ef4444' : stats.totalWeight === floor.capacity ? '#10b981' : '#3b82f6';
     }
     if (weightText) {
-      weightText.innerHTML = `🎒 负重: <b>${stats.totalWeight}</b> / ${floor.capacity} kg ${isOverweight ? '<span style="color:#ef4444; font-weight:800;">(超重超载!)</span>' : ''}`;
+      weightText.innerHTML = `🎒 负重: <b>${stats.totalWeight}</b> / ${floor.capacity} kg ${isOverweight ? '<span style="color:#ef4444; font-weight:800;">(超载无法发挥威力!)</span>' : ''}`;
     }
     if (powerText) {
-      powerText.innerHTML = `⚔️ 当前总战力: <b style="color: ${stats.totalValue >= floor.boss.requiredPower ? '#10b981' : '#f59e0b'}; font-size: 14px;">${stats.totalValue}</b> (Boss 门槛: ${floor.boss.requiredPower})`;
+      powerText.innerHTML = `⚔️ 武器加成: <b>+${stats.totalValue}</b> 攻击力 | 总伤害: <b style="color:#10b981;">${this.hero.baseAttack + stats.totalValue}</b>`;
     }
+  }
 
-    // 渲染宝物库与装备栏
+  private renderFloorView(): void {
+    if (!this.root) return;
+    const floor = DUNGEON_FLOORS.find((f) => f.floorId === this.currentFloor) || DUNGEON_FLOORS[0];
+
+    const conceptEl = this.root.querySelector('#knapsack-concept-banner') as HTMLElement | null;
+    if (conceptEl) conceptEl.textContent = floor.concept;
+
+    // 渲染宝物库
     const chestGrid = this.root.querySelector('#knapsack-chest-grid') as HTMLElement | null;
     if (chestGrid) {
       chestGrid.innerHTML = '';
       floor.items.forEach((item) => {
         const isEquipped = this.selectedItemIds.has(item.id);
         const card = document.createElement('div');
-        card.className = `knapsack-item-card ${isEquipped ? 'equipped' : ''}`;
         card.style.cssText = `
           display: flex; flex-direction: column; align-items: center; justify-content: space-between;
           background: ${isEquipped ? '#eff6ff' : '#ffffff'};
           border: 2px solid ${isEquipped ? '#3b82f6' : '#e2e8f0'};
           border-radius: 8px; padding: 6px; cursor: pointer; transition: all 0.15s ease;
-          box-shadow: ${isEquipped ? '0 4px 12px rgba(59,130,246,0.18)' : '0 1px 3px rgba(0,0,0,0.04)'};
+          box-shadow: ${isEquipped ? '0 4px 12px rgba(59,130,246,0.2)' : '0 1px 3px rgba(0,0,0,0.04)'};
         `;
 
         card.innerHTML = `
           <span style="font-size: 22px;">${item.icon}</span>
           <span style="font-size: 11px; font-weight: 800; color: #0f172a; margin-top: 2px;">${item.name}</span>
-          <div style="display: flex; gap: 4px; font-size: 10px; margin-top: 4px;">
+          <div style="display: flex; gap: 4px; font-size: 9.5px; margin-top: 3px;">
             <span style="background: #f1f5f9; color: #475569; padding: 1px 4px; border-radius: 4px; font-weight: 700;">⚖️ ${item.weight}kg</span>
             <span style="background: #fef2f2; color: #dc2626; padding: 1px 4px; border-radius: 4px; font-weight: 700;">⚔️ +${item.value}</span>
           </div>
-          <span style="font-size: 9px; color: #94a3b8; text-align: center; margin-top: 4px;">${item.desc}</span>
-          <button style="margin-top: 6px; width: 100%; border: none; border-radius: 4px; padding: 3px 0; font-size: 10px; font-weight: 800; cursor: pointer; background: ${isEquipped ? '#ef4444' : '#10b981'}; color: #ffffff;">
-            ${isEquipped ? '卸下' : '装入背包'}
+          <button style="margin-top: 4px; width: 100%; border: none; border-radius: 4px; padding: 3px 0; font-size: 10px; font-weight: 800; cursor: pointer; background: ${isEquipped ? '#ef4444' : '#10b981'}; color: #ffffff;">
+            ${isEquipped ? '卸下' : '装配到背包'}
           </button>
         `;
 
@@ -460,23 +895,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       });
     }
 
-    // 渲染 Boss 信息
-    const bossCard = this.root.querySelector('#knapsack-boss-card') as HTMLElement | null;
-    if (bossCard) {
-      bossCard.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 36px;">${floor.boss.icon}</span>
-          <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 14px; font-weight: 800; color: #0f172a;">${floor.boss.name}</span>
-            <span style="font-size: 11px; color: #64748b;">${floor.boss.desc}</span>
-            <div style="display: flex; gap: 8px; margin-top: 4px; font-size: 11px;">
-              <span style="color: #dc2626; font-weight: 700;">❤️ HP: ${this.bossHp} / ${this.bossMaxHp}</span>
-              <span style="color: #2563eb; font-weight: 700;">🛡️ 挑战建议战力: ${floor.boss.requiredPower}+</span>
-            </div>
-          </div>
-        </div>
-      `;
-    }
+    this.updateHUD();
   }
 
   // 渲染 DP 状态转移矩阵全景表
@@ -490,23 +909,23 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       <table style="width: 100%; border-collapse: collapse; font-size: 10px; font-family: monospace; text-align: center;">
         <thead>
           <tr style="background: #f8fafc; color: #475569;">
-            <th style="border: 1px solid #e2e8f0; padding: 4px 6px;">物品 \\ 容量</th>
+            <th style="border: 1px solid #e2e8f0; padding: 3px 4px;">物品 \\ 容量</th>
     `;
 
     for (let w = 0; w <= floor.capacity; w++) {
-      html += `<th style="border: 1px solid #e2e8f0; padding: 4px;">${w}kg</th>`;
+      html += `<th style="border: 1px solid #e2e8f0; padding: 3px;">${w}kg</th>`;
     }
     html += `</tr></thead><tbody>`;
 
     for (let i = 0; i <= floor.items.length; i++) {
-      const itemName = i === 0 ? '初始 0' : `${floor.items[i - 1].name.substring(0, 3)} (w:${floor.items[i - 1].weight})`;
-      html += `<tr><td style="border: 1px solid #e2e8f0; padding: 3px 4px; font-weight: 700; background: #f8fafc; color: #0f172a;">${itemName}</td>`;
+      const itemName = i === 0 ? '0 初始' : `${floor.items[i - 1].name.substring(0, 3)}(w:${floor.items[i - 1].weight})`;
+      html += `<tr><td style="border: 1px solid #e2e8f0; padding: 3px; font-weight: 700; background: #f8fafc; color: #0f172a;">${itemName}</td>`;
 
       for (let w = 0; w <= floor.capacity; w++) {
         const val = this.dpTable[i]?.[w] || 0;
-        const isOptimalCorner = i === floor.items.length && w === floor.capacity;
+        const isOptimal = i === floor.items.length && w === floor.capacity;
         html += `
-          <td style="border: 1px solid #e2e8f0; padding: 3px; background: ${isOptimalCorner ? '#fef08a' : val > 0 ? '#eff6ff' : '#ffffff'}; color: ${isOptimalCorner ? '#b45309' : '#1e293b'}; font-weight: ${isOptimalCorner ? '800' : '500'};">
+          <td style="border: 1px solid #e2e8f0; padding: 3px; background: ${isOptimal ? '#fef08a' : val > 0 ? '#eff6ff' : '#ffffff'}; color: ${isOptimal ? '#b45309' : '#1e293b'}; font-weight: ${isOptimal ? '800' : '500'};">
             ${val}
           </td>
         `;
@@ -517,88 +936,10 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     html += `</tbody></table>`;
     container.innerHTML = html;
   }
-
-  // 触发 Boss 实时决斗
-  private startBossBattle(): void {
-    const floor = DUNGEON_FLOORS.find((f) => f.floorId === this.currentFloor) || DUNGEON_FLOORS[0];
-    const stats = this.getCurrentTotalStats();
-
-    if (stats.totalWeight > floor.capacity) {
-      alert('⚠️ 背包严重超重超载！请卸下部分物品后再战！');
-      return;
-    }
-
-    if (this.isFighting) return;
-    this.isFighting = true;
-
-    const modal = this.root?.querySelector('#knapsack-battle-modal') as HTMLElement | null;
-    const battleLog = this.root?.querySelector('#knapsack-battle-log') as HTMLElement | null;
-    if (modal) modal.style.display = 'flex';
-    if (battleLog) battleLog.innerHTML = '';
-
-    const log = (msg: string) => {
-      if (!battleLog) return;
-      const row = document.createElement('div');
-      row.style.cssText = 'padding: 2px 0; font-size: 11px; color: #334155;';
-      row.innerHTML = msg;
-      battleLog.appendChild(row);
-      battleLog.scrollTop = battleLog.scrollHeight;
-    };
-
-    log(`⚔️ <b>冒险者 (战力 ${stats.totalValue})</b> 挺进 Boss 巢穴，向 <b>${floor.boss.name}</b> 发起决战！`);
-
-    let turn = 1;
-    let curBossHp = floor.boss.hp;
-    let curPlayerHp = 100;
-
-    const battleStep = () => {
-      if (curBossHp <= 0) {
-        log(`🏆 <b>大获全胜！</b> 凭借最优配装成功斩杀 ${floor.boss.name}！`);
-        DungeonAudio.playVictory();
-        this.isFighting = false;
-        return;
-      }
-      if (curPlayerHp <= 0) {
-        log(`💀 <b>战败陨落！</b> 战力不足被 Boss 击败，请点击【✨ 启示之眼】应用 DP 最优解！`);
-        this.isFighting = false;
-        return;
-      }
-
-      if (turn % 2 === 1) {
-        // 勇士攻击
-        DungeonAudio.playSlash();
-        const dmg = Math.round(stats.totalValue * (0.8 + Math.random() * 0.4));
-        curBossHp = Math.max(0, curBossHp - dmg);
-        log(`🗡️ 勇士发起猛烈挥砍，对 Boss 造成 <b style="color:#dc2626;">-${dmg}</b> 伤害！(Boss 剩余 HP: ${curBossHp})`);
-      } else {
-        // Boss 攻击
-        DungeonAudio.playSlash();
-        const bossDmg = Math.max(10, floor.boss.attack - Math.round(stats.totalValue * 0.2));
-        curPlayerHp = Math.max(0, curPlayerHp - bossDmg);
-        log(`🐲 Boss 发动狂暴重击，勇士受到 <b style="color:#ef4444;">-${bossDmg}</b> 伤害！(勇士剩余 HP: ${curPlayerHp})`);
-      }
-
-      turn++;
-      setTimeout(battleStep, 600);
-    };
-
-    setTimeout(battleStep, 500);
-  }
 }
 
 export const KNAPSACK_DUNGEON_TEMPLATE = `
   <div id="algo-knapsack-dungeon-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
-    <!-- 战斗演练全屏弹窗 -->
-    <div id="knapsack-battle-modal" style="display: none; position: absolute; inset: 0; background: rgba(15,23,42,0.75); z-index: 999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-      <div style="background: #ffffff; border-radius: 12px; padding: 20px 24px; width: 440px; display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid #3b82f6;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
-          <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: #0f172a;">⚔️ 地牢 Boss 战报实录</h3>
-          <button onclick="document.getElementById('knapsack-battle-modal').style.display='none'" style="background: #f1f5f9; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 11px;">关闭</button>
-        </div>
-        <div id="knapsack-battle-log" style="height: 180px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; margin-bottom: 10px; font-family: monospace;"></div>
-      </div>
-    </div>
-
     <!-- 顶栏：地牢层数选择与功能控制 -->
     <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -612,9 +953,10 @@ export const KNAPSACK_DUNGEON_TEMPLATE = `
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
-        <button id="btn-knapsack-auto-dp" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">✨ 动态规划·启示之眼 (Auto DP)</button>
+        <button id="btn-knapsack-auto-dp" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">✨ 启示之眼 (Auto DP)</button>
+        <button id="btn-knapsack-attack" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; border: none; border-radius: 6px; padding: 4px 12px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(220,38,38,0.25);">🗡️ 挥砍攻击 (Space)</button>
         <button id="btn-knapsack-clear" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🗑️ 清空</button>
-        <button id="btn-knapsack-fight" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; border: none; border-radius: 6px; padding: 4px 12px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(220,38,38,0.25);">⚔️ 挑战 Boss</button>
+        <button id="btn-knapsack-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
       </div>
     </div>
 
@@ -623,36 +965,41 @@ export const KNAPSACK_DUNGEON_TEMPLATE = `
       <span id="knapsack-concept-banner">🎯 0-1 背包原理：每件神器世间仅存一份，在严格限重 10kg 下通过 DP 做出最优抉择。</span>
     </div>
 
-    <!-- 主交互区：左侧地牢宝物库与背包 + 右侧 DP 状态矩阵与终端 -->
-    <div style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; flex: 1; min-height: 0;">
-      <!-- 左侧：宝物库与背包负重槽 -->
-      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 8px; overflow-y: auto;">
-        <!-- 背包负重与总战力状态条 -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;">
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; margin-bottom: 4px;">
-            <span id="knapsack-weight-text">🎒 负重: 0 / 10 kg</span>
-            <span id="knapsack-power-text">⚔️ 当前总战力: 0 (Boss 门槛: 80)</span>
-          </div>
-          <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-            <div id="knapsack-weight-fill" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.2s ease;"></div>
+    <!-- 主交互区：左侧 60 FPS 地牢动作竞技场 + 宝物库，右侧 DP 矩阵与终端 -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) 350px; gap: 10px; flex: 1; min-height: 0;">
+      <!-- 左侧：60 FPS 地牢动作竞技场 + 宝物库配装 -->
+      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 6px; overflow-y: auto;">
+        <!-- 60 FPS 地牢动作竞技场 Canvas -->
+        <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #334155;">
+          <canvas id="knapsack-arena-canvas" width="420" height="200" style="width: 420px; height: 200px; cursor: crosshair;"></canvas>
+          <div style="position: absolute; bottom: 6px; left: 8px; font-size: 10px; color: #94a3b8; background: rgba(15,23,42,0.7); padding: 2px 6px; border-radius: 4px;">
+            🎮 键盘 WASD / 方向键移动走位，空格键或鼠标点击挥剑斩击！
           </div>
         </div>
 
-        <!-- Boss 战况卡片 -->
-        <div id="knapsack-boss-card" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 8px;"></div>
+        <!-- 背包负重状态条 -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 3px;">
+            <span id="knapsack-weight-text">🎒 负重: 0 / 10 kg</span>
+            <span id="knapsack-power-text">⚔️ 武器加成: +0 攻击力</span>
+          </div>
+          <div style="height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+            <div id="knapsack-weight-fill" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.15s ease;"></div>
+          </div>
+        </div>
 
-        <!-- 宝物库网格 (点击卡牌可直接装入/卸下) -->
-        <div style="font-size: 11.5px; font-weight: 800; color: #0f172a;">🏺 地牢宝物库 (点击物品装配到背包)</div>
+        <!-- 宝物库网格 -->
+        <div style="font-size: 11px; font-weight: 800; color: #0f172a;">🏺 地牢宝物库 (点击物品装配到背包)</div>
         <div id="knapsack-chest-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;"></div>
       </div>
 
       <!-- 右侧：DP 状态矩阵全景表与代码终端 -->
-      <div style="display: flex; flex-direction: column; gap: 8px; min-height: 0;">
+      <div style="display: flex; flex-direction: column; gap: 6px; min-height: 0;">
         <!-- DP 状态矩阵全景表 -->
-        <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; flex: 1; min-height: 180px; overflow-y: auto;">
-          <div style="font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 4px; display: flex; justify-content: space-between;">
-            <span>📊 动态规划状态转移表 dp[i][w]</span>
-            <span style="font-size: 9.5px; color: #2563eb;">状态转移: max(dp[i-1][w], dp[i-1][w-wi]+vi)</span>
+        <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; flex: 1.1; min-height: 160px; overflow-y: auto;">
+          <div style="font-size: 10.5px; font-weight: 800; color: #0f172a; margin-bottom: 3px; display: flex; justify-content: space-between;">
+            <span>📊 动态规划矩阵 dp[i][w]</span>
+            <span style="font-size: 9.5px; color: #2563eb;">max(dp[i-1][w], dp[i-1][w-wi]+vi)</span>
           </div>
           <div id="knapsack-dp-table-container" style="flex: 1; overflow-x: auto;"></div>
         </div>
@@ -669,11 +1016,11 @@ registerAlgorithm({
   name: '背包商人·地牢探险',
   viewId: 'algo-knapsack-dungeon-view',
   category: 'game',
-  description: '动态规划冒险游戏：地牢搜刮神兵利刃、实时 DP 矩阵求解最优配装、大战地牢守关魔王',
+  description: '真动作即时战斗与背包规划游戏：60 FPS 走位挥砍、红圈躲避、暗黑式背包配装、大战地牢守关魔王',
   icon: '🎒',
   template: KNAPSACK_DUNGEON_TEMPLATE,
   Visualizer: KnapsackDungeonVisualizer,
   difficulty: 3,
   levelOrder: 2,
-  learningGoal: '通过地牢配装与 Boss 决战，彻底掌握 0-1 背包与完全背包的状态转移方程与最优子结构',
+  learningGoal: '通过即时地牢动作走位、装备负重权衡与 Boss 决战，彻底掌握 0-1 背包与完全背包的最优子结构',
 });
