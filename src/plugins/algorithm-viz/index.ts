@@ -170,6 +170,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'eulerian-circuit': '🎨',
   'good-paths': '🛤️',
   'malware-spread-ii': '🦠',
+  'tarjan-scc-dag': '🔄',
 };
 
 import {

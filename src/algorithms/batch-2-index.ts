@@ -130,5 +130,6 @@ import './categories/graph/state-compression-bfs-renderer';
 import './categories/graph/eulerian-circuit-renderer';
 import './categories/graph/good-paths-renderer';
 import './categories/graph/malware-spread-ii-renderer';
+import './categories/graph/tarjan-scc-dag-renderer';
 
 export {};

@@ -2740,5 +2740,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 35,
     "learningGoal": "掌握剔除病毒先聚类健康分量的逆向思维、唯一点连接的救赎判定逻辑与并查集连通分量大小维护"
+  },
+  {
+    "id": "tarjan-scc-dag",
+    "name": "Tarjan 强连通分量与 DAG 缩点 (Tarjan SCC)",
+    "viewId": "algo-tarjan-scc-dag-view",
+    "category": "graph",
+    "description": "有向图强连通分量与缩点算法：左程云 class066 Tarjan SCC 算法、DFN/LOW 追溯、栈维护分量与 DAG 缩点转化 (洛谷 P3387)",
+    "icon": "🔄",
+    "difficulty": 3,
+    "levelOrder": 36,
+    "learningGoal": "掌握有向图 Tarjan SCC 算法的栈维护机制、inStack 判定法则以及缩点将任意有向图转化为纯净 DAG 的工程应用"
   }
 ];
