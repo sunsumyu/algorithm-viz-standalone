@@ -155,6 +155,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'stock-trader': '📈',
   'binary-sonar': '📡',
   'layered-dijkstra': '🛫',
+  'bfs-01': '🧱',
 };
 
 import {

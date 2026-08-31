@@ -2575,5 +2575,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 20,
     "learningGoal": "掌握分层图状态维度扩展技巧（将后效性资源纳入状态 dist[u][k]）、同层与跨层转移方程及多层空间最短路 Dijkstra 求解"
+  },
+  {
+    "id": "bfs-01",
+    "name": "0-1 BFS 双端队列最短路",
+    "viewId": "algo-bfs-01-view",
+    "category": "graph",
+    "description": "0-1 BFS 算法：左程云 class062 到达角落移除障碍物的最小数目 (LeetCode 2290)、双端队列代替堆优化实现 O(V+E) 极速最短路",
+    "icon": "🧱",
+    "difficulty": 2,
+    "levelOrder": 21,
+    "learningGoal": "掌握 0-1 BFS 核心思想（边权只有 0/1 时用 Deque 的 front/back 维持单调性）以及 O(V+E) 极速搜索机制"
   }
 ];

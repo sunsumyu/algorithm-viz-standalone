@@ -115,5 +115,6 @@ import './categories/game/heist-robber-renderer';
 import './categories/game/stock-trader-renderer';
 import './categories/game/binary-sonar-renderer';
 import './categories/graph/layered-dijkstra-renderer';
+import './categories/graph/bfs-01-renderer';
 
 export {};
