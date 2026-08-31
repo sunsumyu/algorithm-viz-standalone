@@ -120,5 +120,6 @@ import './categories/graph/bi-bfs-renderer';
 import './categories/graph/topo-dp-renderer';
 import './categories/graph/alien-dict-renderer';
 import './categories/graph/trapping-water-ii-renderer';
+import './categories/graph/a-star-journey-renderer';
 
 export {};

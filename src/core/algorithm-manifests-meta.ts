@@ -2630,5 +2630,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 25,
     "learningGoal": "掌握木桶短板理论在三维网格中的扩展、优先队列由外向内收缩与水线高度更新状态机"
+  },
+  {
+    "id": "a-star-journey",
+    "name": "A* 启发式搜索 (A* Pathfinding)",
+    "viewId": "algo-a-star-journey-view",
+    "category": "graph",
+    "description": "A* 启发式搜索算法：左程云 class065 估价函数 F(x) = G(x) + H(x)、曼哈顿距离可采纳性剪枝与 Dijkstra 盲搜效率对比",
+    "icon": "🧭",
+    "difficulty": 2,
+    "levelOrder": 26,
+    "learningGoal": "掌握 A* 启发式估价函数 F = G + H 的设计原则、曼哈顿距离的可采纳性证明以及相比 Dijkstra 的大幅剪枝机制"
   }
 ];

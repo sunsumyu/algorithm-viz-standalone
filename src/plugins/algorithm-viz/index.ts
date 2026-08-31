@@ -160,6 +160,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'topo-dp': '🎓',
   'alien-dict': '👽',
   'trapping-water-ii': '🌊',
+  'a-star-journey': '🧭',
 };
 
 import {
