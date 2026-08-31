@@ -128,5 +128,6 @@ import './categories/graph/tarjan-bridge-renderer';
 import './categories/graph/diff-constraints-renderer';
 import './categories/graph/state-compression-bfs-renderer';
 import './categories/graph/eulerian-circuit-renderer';
+import './categories/graph/good-paths-renderer';
 
 export {};

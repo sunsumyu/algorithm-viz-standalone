@@ -168,6 +168,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'diff-constraints': '⚖️',
   'state-compression-bfs': '🧭',
   'eulerian-circuit': '🎨',
+  'good-paths': '🛤️',
 };
 
 import {

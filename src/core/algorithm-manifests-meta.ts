@@ -2718,5 +2718,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 33,
     "learningGoal": "掌握欧拉图与半欧拉图充要条件、Hierholzer 算法为什么必须后序压栈以及当前弧优化的工程实践"
+  },
+  {
+    "id": "good-paths",
+    "name": "好路径数目 (Number of Good Paths)",
+    "viewId": "algo-good-paths-view",
+    "category": "graph",
+    "description": "点权升序并查集算法：左程云 class057 好路径数目 (LeetCode 2421)、边权排序、并查集同权分量合并与乘法原理计数",
+    "icon": "🛤️",
+    "difficulty": 3,
+    "levelOrder": 34,
+    "learningGoal": "掌握点权升序加边将“路径中间点不超过端点”转化为连通性保证的巧妙转换，以及并查集维护最大权节点频次"
   }
 ];
