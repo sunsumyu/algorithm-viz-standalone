@@ -2509,5 +2509,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 14,
     "learningGoal": "掌握多分支搜索树在组合枚举中的回溯机制，理解树的深度与宽度的物理对应关系"
+  },
+  {
+    "id": "interval-warp",
+    "name": "时间折跃·星际航道区间合并",
+    "viewId": "algo-interval-warp-view",
+    "category": "game",
+    "description": "区间贪心算法游戏：60 FPS 星舰折跃航道、时间轴刻度、等离子能量融合与最优航道生成",
+    "icon": "🛸",
+    "difficulty": 2,
+    "levelOrder": 15,
+    "learningGoal": "掌握经典区间重叠合并问题的排序与双端点贪心维护机制，理解相邻单调性对算法复杂度的降维威力"
   }
 ];

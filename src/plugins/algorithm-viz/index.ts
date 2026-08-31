@@ -149,6 +149,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'palindrome-ninja': '🗡️',
   'jump-quest': '🦘',
   'spy-dial': '📞',
+  'interval-warp': '🛸',
 };
 
 import {
