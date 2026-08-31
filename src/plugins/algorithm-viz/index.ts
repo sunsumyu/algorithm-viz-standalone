@@ -143,6 +143,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'gas-station-rally': '🏎️',
   'lemonade-tycoon': '🍹',
   'cookie-feeder': '🍪',
+  'sudoku-cipher': '🧩',
 };
 
 import {

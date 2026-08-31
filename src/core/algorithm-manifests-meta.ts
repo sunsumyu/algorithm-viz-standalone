@@ -2443,5 +2443,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 8,
     "learningGoal": "掌握双排序 + 双指针贪心算法在双序列容量与需求匹配中的核心应用"
+  },
+  {
+    "id": "sudoku-cipher",
+    "name": "数独神偷·密码解构者",
+    "viewId": "algo-sudoku-cipher-view",
+    "category": "game",
+    "description": "回溯算法数独游戏：9x9 赛博密码矩阵、实时十字线冲突扫描、动态量子回溯求解与世界难题挑战",
+    "icon": "🧩",
+    "difficulty": 3,
+    "levelOrder": 9,
+    "learningGoal": "透视经典回溯与约束满足问题（CSP）在二维空间中的试探、冲突检测与撤销回溯机制"
   }
 ];

@@ -103,5 +103,6 @@ import './categories/game/lava-parkour-renderer';
 import './categories/game/gas-station-renderer';
 import './categories/game/lemonade-tycoon-renderer';
 import './categories/game/cookie-feeder-renderer';
+import './categories/game/sudoku-cipher-renderer';
 
 export {};
