@@ -140,6 +140,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'maze-defense': '🏰',
   'nqueen-battle': '👑',
   'lava-parkour': '🌋',
+  'gas-station-rally': '🏎️',
 };
 
 import {

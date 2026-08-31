@@ -2410,5 +2410,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 5,
     "learningGoal": "通过熔岩逃逸飞跃实战，彻底掌握单调递减栈的入栈、出栈与下一个更大元素（NGE）计算规律"
+  },
+  {
+    "id": "gas-station-rally",
+    "name": "极速加油站·环岛拉力赛",
+    "viewId": "algo-gas-station-view",
+    "category": "game",
+    "description": "经典贪心算法游戏：环形霓虹赛道、实时剩余油量表盘、局部透支跳跃剪枝与 360° 胜利巡游",
+    "icon": "🏎️",
+    "difficulty": 3,
+    "levelOrder": 6,
+    "learningGoal": "通过环形赛车与油量补给实战，彻底掌握贪心算法中的局部透支排除法与全局可行性充要条件"
   }
 ];
