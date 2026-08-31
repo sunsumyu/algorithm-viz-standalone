@@ -161,6 +161,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'alien-dict': '👽',
   'trapping-water-ii': '🌊',
   'a-star-journey': '🧭',
+  'couples-holding-hands': '💑',
 };
 
 import {

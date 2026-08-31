@@ -2641,5 +2641,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 26,
     "learningGoal": "掌握 A* 启发式估价函数 F = G + H 的设计原则、曼哈顿距离的可采纳性证明以及相比 Dijkstra 的大幅剪枝机制"
+  },
+  {
+    "id": "couples-holding-hands",
+    "name": "情侣牵手 (Couples Holding Hands)",
+    "viewId": "algo-couples-holding-hands-view",
+    "category": "graph",
+    "description": "并查集置换环分解算法：左程云 class056 情侣牵手 (LeetCode 765)、错位建图、连通分量计数与最少交换次数 N - Sets 定理",
+    "icon": "💑",
+    "difficulty": 2,
+    "levelOrder": 27,
+    "learningGoal": "掌握置换环定理、并查集如何将错位排布分解为独立连通分量以及最少交换次数 N - Sets 的数学本质"
   }
 ];

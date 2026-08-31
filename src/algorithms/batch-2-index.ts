@@ -121,5 +121,6 @@ import './categories/graph/topo-dp-renderer';
 import './categories/graph/alien-dict-renderer';
 import './categories/graph/trapping-water-ii-renderer';
 import './categories/graph/a-star-journey-renderer';
+import './categories/graph/couples-holding-hands-renderer';
 
 export {};
