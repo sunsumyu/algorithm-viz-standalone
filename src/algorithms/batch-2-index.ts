@@ -107,5 +107,6 @@ import './categories/game/sudoku-cipher-renderer';
 import './categories/game/sliding-snake-renderer';
 import './categories/game/candy-kingdom-renderer';
 import './categories/game/palindrome-ninja-renderer';
+import './categories/game/jump-quest-renderer';
 
 export {};

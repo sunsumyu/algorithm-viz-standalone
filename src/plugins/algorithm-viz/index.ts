@@ -147,6 +147,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'sliding-snake': '🐍',
   'candy-kingdom': '🍬',
   'palindrome-ninja': '🗡️',
+  'jump-quest': '🦘',
 };
 
 import {
