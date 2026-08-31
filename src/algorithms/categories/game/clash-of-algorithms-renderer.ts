@@ -4,12 +4,14 @@
  * 1. 🔬 算法参数实验室 (Algorithm Knob Controls)：
  *    - 实时调节城墙惩罚权重 W_wall (1~50)，即刻观察 A* 寻路路径骤变
  *    - 实时切换启发式函数 h(n)：曼哈顿 (Manhattan) / 欧式 (Euclidean) / Dijkstra (h=0)
- * 2. 🔍 单兵 A* 算路实时监视器 (Troop Algorithm Inspector)：
+ * 2. 🔥 A* 搜索展开热力图 (Search Heatmap & Closed Set Inspector)：
+ *    - 勾选热力图透视，在网格上实时高亮 A* 探索过的每个地块及代价 g(n)
+ * 3. 🔍 单兵 A* 算路实时监视器 (Troop Algorithm Inspector)：
  *    - 点击任意小兵，即刻透视 f(n) = g(n) + h(n)、目标池过滤打分与 Open/Closed 节点统计
- * 3. ⏸️ 慢动作与单步调试引擎 (Time Control & Step Debugger)：
+ * 4. ⏸️ 慢动作与单步调试引擎 (Time Control & Step Debugger)：
  *    - 支持正常 / 0.3x 慢速 / 暂停 / 单步演算，逐帧剖析寻路与索敌
- * 4. 🏰 拟真 2.5D 矢量画风、飞行双翼飞龙、雷电法术、真实 Web Audio 物理打击感
- * 5. 6 大战役关卡 + 自由沙盒布阵
+ * 5. 🏰 拟真 2.5D 矢量画风、飞行双翼飞龙、雷电法术、真实 Web Audio 物理打击感 (支持一键静音)
+ * 6. 6 大战役关卡 + 自由沙盒布阵
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
@@ -64,6 +66,7 @@ export interface GameTroop {
     closedCount: number;
     heuristic: HeuristicType;
     wallWeight: number;
+    exploredNodes: [number, number, number][]; // [r, c, gCost]
   };
 }
 
@@ -226,12 +229,13 @@ const PRESET_LEVELS: LevelConfig[] = [
   },
 ];
 
-// Web Audio API 简易原生音效合成器
+// Web Audio API 原生音效合成器 (支持全局静音开关)
 class SoundFX {
   private static audioCtx: AudioContext | null = null;
+  public static isMuted = false;
 
   private static getCtx(): AudioContext | null {
-    if (typeof window === 'undefined') return null;
+    if (this.isMuted || typeof window === 'undefined') return null;
     if (!this.audioCtx) {
       const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioClass) this.audioCtx = new AudioClass();
@@ -324,13 +328,14 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
   private selectedBuildTool: BuildingType = 'WALL';
   private selectedTroopType: TroopType = 'BARBARIAN';
   private showAStarPath = true;
+  private showSearchHeatmap = false; // 🔥 A* 搜索展开热力图开关
 
   // 🔬 算法实验室实时调节参数
-  private wallPenaltyWeight = 16.0; // 城墙阻隔代价 W_wall (1~50)
-  private currentHeuristic: HeuristicType = 'MANHATTAN'; // 启发式函数
-  private timeScale = 1.0; // 播放速率 (1.0 = 正常, 0.3 = 慢速, 0.0 = 暂停)
+  private wallPenaltyWeight = 16.0;
+  private currentHeuristic: HeuristicType = 'MANHATTAN';
+  private timeScale = 1.0;
   private isPaused = false;
-  private selectedTroopId: string | null = null; // 当前被选中小兵
+  private selectedTroopId: string | null = null;
 
   // 游戏运行状态
   private isRunning = false;
@@ -411,7 +416,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     const modal = this.root?.querySelector('#clash-victory-modal') as HTMLElement | null;
     if (modal) modal.style.display = 'none';
 
-    // 更新关卡算法提示
     const conceptEl = this.root?.querySelector('#clash-level-concept') as HTMLElement | null;
     if (conceptEl) {
       conceptEl.textContent = config.algorithmConcept;
@@ -457,6 +461,16 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       });
     });
 
+    // 音效静音切换
+    const soundBtn = this.root.querySelector('#btn-clash-sound') as HTMLButtonElement | null;
+    if (soundBtn) {
+      soundBtn.addEventListener('click', () => {
+        SoundFX.isMuted = !SoundFX.isMuted;
+        soundBtn.textContent = SoundFX.isMuted ? '🔇 静音' : '🔊 音效';
+        soundBtn.style.color = SoundFX.isMuted ? '#94a3b8' : '#059669';
+      });
+    }
+
     // 🔬 算法参数控制：城墙代价滑块
     const wallSlider = this.root.querySelector('#slider-wall-penalty') as HTMLInputElement | null;
     const wallLabel = this.root.querySelector('#label-wall-penalty') as HTMLElement | null;
@@ -464,7 +478,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       wallSlider.addEventListener('input', () => {
         this.wallPenaltyWeight = parseFloat(wallSlider.value);
         if (wallLabel) wallLabel.textContent = `${this.wallPenaltyWeight.toFixed(0)} 步行走代价`;
-        // 立即触发全场小兵 A* 重算
         this.troops.forEach((t) => this.updateTroopAStar(t));
         this.logEvent(`🔬 调节城墙通行代价 W_wall = ${this.wallPenaltyWeight}！全场小兵实时重新寻路！`);
       });
@@ -552,10 +565,19 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       });
     }
 
+    // A* 寻路轨迹透视开关
     const pathToggle = this.root.querySelector('#chk-astar-path') as HTMLInputElement | null;
     if (pathToggle) {
       pathToggle.addEventListener('change', () => {
         this.showAStarPath = pathToggle.checked;
+      });
+    }
+
+    // A* 搜索热力图展开开关
+    const heatmapToggle = this.root.querySelector('#chk-astar-heatmap') as HTMLInputElement | null;
+    if (heatmapToggle) {
+      heatmapToggle.addEventListener('change', () => {
+        this.showSearchHeatmap = heatmapToggle.checked;
       });
     }
   }
@@ -574,7 +596,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
       if (r < 0 || r >= this.gridSize || c < 0 || c >= this.gridSize) return;
 
-      // 优先检测是否点击了现有小兵 (点击小兵打开 A* 诊断面板)
       const clickedTroop = this.troops.find((t) => !t.isDead && Math.hypot(t.x * cellSize - clickX, t.y * cellSize - clickY) <= cellSize * 0.45);
       if (clickedTroop) {
         this.selectedTroopId = clickedTroop.id;
@@ -804,6 +825,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     const closed = new Map<string, number>();
     closed.set(`${sr},${sc}`, 0);
 
+    const exploredNodes: [number, number, number][] = [[sr, sc, 0]];
     let finalPath: [number, number][] = [];
     let openCount = 0;
     let closedCount = 0;
@@ -835,13 +857,13 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
         const key = `${nr},${nc}`;
         const isWall = wallSet.has(key);
-        // 城墙权重惩罚使用实时滑块配置
         const stepCost = troop.isFlying ? 1.0 : isWall ? (troop.type === 'WALL_BREAKER' ? 1.0 : this.wallPenaltyWeight) : 1.0;
         const newG = cur.g + stepCost;
 
         if (!closed.has(key) || newG < closed.get(key)!) {
           closed.set(key, newG);
           closedCount++;
+          exploredNodes.push([nr, nc, newG]);
           const h = calcH(nr, nc, tr, tc);
           open.push({
             r: nr,
@@ -858,7 +880,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     troop.path = finalPath.length > 0 ? finalPath : [[sr, sc]];
     troop.pathIndex = 0;
 
-    // 记录算法诊断
     troop.lastAStarStats = {
       gCost: reachedNode ? parseFloat(reachedNode.g.toFixed(1)) : 0,
       hCost: reachedNode ? parseFloat(reachedNode.h.toFixed(1)) : 0,
@@ -867,6 +888,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       closedCount,
       heuristic: this.currentHeuristic,
       wallWeight: this.wallPenaltyWeight,
+      exploredNodes,
     };
   }
 
@@ -879,7 +901,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     if (!inspectEl) return;
 
     if (!troop) {
-      inspectEl.innerHTML = `<div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 12px 0;">👉 点击地图上的任意小兵，透视其实时 A* 计算公式与启发式打分</div>`;
+      inspectEl.innerHTML = `<div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 8px 0;">👉 点击地图上的任意小兵，透视其实时 A* 计算公式与搜索展开热力图</div>`;
       return;
     }
 
@@ -1348,7 +1370,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     ctx.save();
     ctx.translate(tx, ty + (t.isFlying ? -12 : bobOffset));
 
-    // 选中高亮光环
     if (isSelected) {
       ctx.beginPath();
       ctx.arc(0, 0, cellSize * 0.45, 0, Math.PI * 2);
@@ -1359,7 +1380,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.setLineDash([]);
     }
 
-    // 地面软阴影
     ctx.fillStyle = t.isFlying ? 'rgba(15, 23, 42, 0.18)' : 'rgba(15, 23, 42, 0.28)';
     ctx.beginPath();
     ctx.ellipse(0, t.isFlying ? 14 : cellSize * 0.2, cellSize * 0.26, cellSize * 0.14, 0, 0, Math.PI * 2);
@@ -1506,7 +1526,27 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       }
     }
 
-    // 2. 绘制小兵 A* 虚线轨迹
+    // 🔥 2. 绘制 A* 搜索展开热力图 (选中小兵时展现 Closed/Open 探索节点)
+    if (this.showSearchHeatmap && this.selectedTroopId) {
+      const selectedTroop = this.troops.find((t) => t.id === this.selectedTroopId);
+      if (selectedTroop?.lastAStarStats?.exploredNodes) {
+        for (const [nr, nc, gCost] of selectedTroop.lastAStarStats.exploredNodes) {
+          ctx.fillStyle = `rgba(56, 189, 248, ${Math.min(0.45, 0.15 + (gCost / 20) * 0.3)})`;
+          ctx.fillRect(nc * cellSize, nr * cellSize, cellSize, cellSize);
+          ctx.strokeStyle = 'rgba(14, 165, 233, 0.4)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(nc * cellSize, nr * cellSize, cellSize, cellSize);
+
+          // 标注 g 代价
+          ctx.font = '8px monospace';
+          ctx.fillStyle = '#0369a1';
+          ctx.textAlign = 'center';
+          ctx.fillText(`g:${gCost.toFixed(0)}`, (nc + 0.5) * cellSize, (nr + 0.8) * cellSize);
+        }
+      }
+    }
+
+    // 3. 绘制小兵 A* 虚线轨迹
     if (this.showAStarPath) {
       ctx.lineWidth = 2.5;
       ctx.setLineDash([4, 4]);
@@ -1525,19 +1565,19 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.setLineDash([]);
     }
 
-    // 3. 绘制 2.5D 拟真建筑
+    // 4. 绘制 2.5D 拟真建筑
     for (const b of this.buildings) {
       this.drawRealisticBuilding(ctx, b, cellSize);
     }
 
-    // 4. 绘制 2.5D 拟真小兵
+    // 5. 绘制 2.5D 拟真小兵
     for (const troop of this.troops) {
       if (!troop.isDead) {
         this.drawRealisticTroop(ctx, troop, cellSize);
       }
     }
 
-    // 5. 绘制飞行投掷物
+    // 6. 绘制飞行投掷物
     for (const p of this.projectiles) {
       const curX = (p.startX + (p.targetX - p.startX) * p.progress) * cellSize;
       const curY = (p.startY + (p.targetY - p.startY) * p.progress) * cellSize;
@@ -1570,7 +1610,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.restore();
     }
 
-    // 6. 绘制雷电分叉特效
+    // 7. 绘制雷电分叉特效
     for (const lt of this.lightningEffects) {
       ctx.save();
       ctx.strokeStyle = '#38bdf8';
@@ -1592,7 +1632,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.restore();
     }
 
-    // 7. 绘制粒子
+    // 8. 绘制粒子
     for (const pt of this.particles) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, pt.alpha);
@@ -1603,7 +1643,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.restore();
     }
 
-    // 8. 绘制飘字
+    // 9. 绘制飘字
     for (const ft of this.floatingTexts) {
       ctx.font = 'bold 11px sans-serif';
       ctx.fillStyle = ft.color;
@@ -1648,6 +1688,9 @@ export const CLASH_GAME_TEMPLATE = `
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
+        <!-- 音效开关 -->
+        <button id="btn-clash-sound" style="background: #f1f5f9; color: #059669; border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🔊 音效</button>
+
         <!-- 时间控制器 -->
         <button id="btn-clash-pause" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">⏸️ 暂停</button>
         <button id="btn-clash-slow" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🐢 慢放</button>
@@ -1689,13 +1732,18 @@ export const CLASH_GAME_TEMPLATE = `
           <canvas id="clash-game-canvas" width="380" height="380" style="width: 380px; height: 380px; cursor: crosshair; box-shadow: 0 4px 16px rgba(16,185,129,0.1); border-radius: 6px;"></canvas>
         </div>
 
-        <!-- 圣水槽 -->
+        <!-- 圣水槽与透视开关 -->
         <div style="display: flex; flex-direction: column; margin-top: 6px; gap: 2px;">
           <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700;">
             <span id="clash-elixir-text" style="color: #9333ea;">💧 圣水: 7.0 / 10.0</span>
-            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #475569; cursor: pointer;">
-              <input type="checkbox" id="chk-astar-path" checked /> 显示 A* 寻路轨迹
-            </label>
+            <div style="display: flex; gap: 10px;">
+              <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #475569; cursor: pointer;">
+                <input type="checkbox" id="chk-astar-path" checked /> 显示 A* 寻路轨迹
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #0284c7; cursor: pointer;">
+                <input type="checkbox" id="chk-astar-heatmap" /> 🔥 显示 A* 展开热力图
+              </label>
+            </div>
           </div>
           <div style="height: 7px; background: #f3e8ff; border-radius: 4px; overflow: hidden; border: 1px solid #e9d5ff;">
             <div id="clash-elixir-fill" style="width: 70%; height: 100%; background: linear-gradient(90deg, #c084fc, #9333ea); transition: width 0.1s linear;"></div>
@@ -1785,13 +1833,13 @@ registerAlgorithm({
   name: '部落冲突·战术攻防沙盘',
   viewId: 'algo-clash-of-algorithms-view',
   category: 'game',
-  description: '真交互即时策略游戏与算法实验室：调节城墙代价滑块、切换启发式函数、点击小兵透视 A* 算路打分',
+  description: '真交互即时策略游戏与算法实验室：调节城墙代价滑块、切换启发式函数、透视 A* 搜索热力图与算路打分',
   icon: '⚔️',
   template: CLASH_GAME_TEMPLATE,
   Visualizer: ClashOfAlgorithmsGameVisualizer,
   difficulty: 3,
   levelOrder: 1,
-  learningGoal: '通过调节 A* 惩罚权重与启发式函数，亲自观察小兵在绕路与破墙之间的动态决策边界',
+  learningGoal: '通过调节 A* 惩罚权重与启发式函数，亲自观察小兵在绕路与破墙之间的动态决策边界与搜索热力图展开',
 });
 
 export { ClashOfAlgorithmsGameVisualizer as ClashOfAlgorithmsVisualizer };
