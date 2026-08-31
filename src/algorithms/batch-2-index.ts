@@ -114,5 +114,6 @@ import './categories/game/arrow-balloon-renderer';
 import './categories/game/heist-robber-renderer';
 import './categories/game/stock-trader-renderer';
 import './categories/game/binary-sonar-renderer';
+import './categories/graph/layered-dijkstra-renderer';
 
 export {};
