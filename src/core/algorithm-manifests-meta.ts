@@ -2597,5 +2597,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 22,
     "learningGoal": "掌握双向广搜状态空间剪枝原理（从 O(B^d) 骤降至 2*O(B^(d/2))）以及小集合优先交换技术"
+  },
+  {
+    "id": "topo-dp",
+    "name": "拓扑排序与 DAG 关键路径",
+    "viewId": "algo-topo-dp-view",
+    "category": "graph",
+    "description": "DAG 拓扑动态规划算法：左程云 class060 食物链计数 (P4017) 与 并行课程 III (LeetCode 2050)、入度剥离、最长工期关键路径推演",
+    "icon": "🎓",
+    "difficulty": 2,
+    "levelOrder": 23,
+    "learningGoal": "掌握拓扑排序如何为 DAG 提供无后效性计算拓扑序，以及 Critical Path 关键路径与路径计数 DP 的状态转移"
   }
 ];

@@ -157,6 +157,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'layered-dijkstra': '🛫',
   'bfs-01': '🧱',
   'bi-bfs': '🔤',
+  'topo-dp': '🎓',
 };
 
 import {
