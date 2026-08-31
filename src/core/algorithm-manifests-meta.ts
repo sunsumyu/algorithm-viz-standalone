@@ -2377,5 +2377,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 2,
     "learningGoal": "通过地牢配装与 Boss 决战，彻底掌握 0-1 背包与完全背包的状态转移方程与最优子结构"
+  },
+  {
+    "id": "maze-defense",
+    "name": "迷宫塔防·寻路破坏者",
+    "viewId": "algo-maze-defense-view",
+    "category": "game",
+    "description": "图论塔防游戏：建造石墙改变网格拓扑、怪兽 Dijkstra 最短路逃逸、打造蛇形迷宫全歼敌军",
+    "icon": "🏰",
+    "difficulty": 3,
+    "levelOrder": 3,
+    "learningGoal": "掌握动态图最短路径算法（Dijkstra / BFS）、拓扑连通性与最小割阻断对抗原理"
   }
 ];

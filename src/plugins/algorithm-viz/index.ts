@@ -137,6 +137,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'graph-summary': '🗺️',
   'clash-of-algorithms': '⚔️',
   'knapsack-dungeon': '🎒',
+  'maze-defense': '🏰',
 };
 
 import {
