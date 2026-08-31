@@ -110,5 +110,6 @@ import './categories/game/palindrome-ninja-renderer';
 import './categories/game/jump-quest-renderer';
 import './categories/game/spy-dial-renderer';
 import './categories/game/interval-warp-renderer';
+import './categories/game/arrow-balloon-renderer';
 
 export {};

@@ -2520,5 +2520,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 15,
     "learningGoal": "掌握经典区间重叠合并问题的排序与双端点贪心维护机制，理解相邻单调性对算法复杂度的降维威力"
+  },
+  {
+    "id": "arrow-balloon",
+    "name": "穿云神箭·极光引爆重叠气球",
+    "viewId": "algo-arrow-balloon-view",
+    "category": "game",
+    "description": "极光穿透射击贪心算法游戏：60 FPS 悬浮霓虹气球、X轴激光重叠引爆、贪心右边界排序与一键神箭破敌",
+    "icon": "🎯",
+    "difficulty": 2,
+    "levelOrder": 16,
+    "learningGoal": "掌握贪心区间选点与无重叠区间核心思想：按右端点升序排序、射点贪心逼近局部重叠右界以覆盖最大区间群"
   }
 ];

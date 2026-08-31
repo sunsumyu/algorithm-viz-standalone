@@ -150,6 +150,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'jump-quest': '🦘',
   'spy-dial': '📞',
   'interval-warp': '🛸',
+  'arrow-balloon': '🎯',
 };
 
 import {
