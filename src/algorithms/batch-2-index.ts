@@ -111,5 +111,6 @@ import './categories/game/jump-quest-renderer';
 import './categories/game/spy-dial-renderer';
 import './categories/game/interval-warp-renderer';
 import './categories/game/arrow-balloon-renderer';
+import './categories/game/heist-robber-renderer';
 
 export {};

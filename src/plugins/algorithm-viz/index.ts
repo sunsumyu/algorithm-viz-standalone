@@ -151,6 +151,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'spy-dial': '📞',
   'interval-warp': '🛸',
   'arrow-balloon': '🎯',
+  'heist-robber': '🥷',
 };
 
 import {

@@ -2531,5 +2531,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 16,
     "learningGoal": "掌握贪心区间选点与无重叠区间核心思想：按右端点升序排序、射点贪心逼近局部重叠右界以覆盖最大区间群"
+  },
+  {
+    "id": "heist-robber",
+    "name": "暗夜神偷·街区金库潜行",
+    "viewId": "algo-heist-robber-view",
+    "category": "game",
+    "description": "动态规划潜行算法游戏：60 FPS 赛博街区夜景、金库别墅激光警报、实时 DP 状态机与最优潜行决策",
+    "icon": "🥷",
+    "difficulty": 2,
+    "levelOrder": 17,
+    "learningGoal": "掌握动态规划状态转移方程 dp[i] = max(dp[i-1], dp[i-2] + nums[i]) 的物理含义与二选一无后效性推导"
   }
 ];
