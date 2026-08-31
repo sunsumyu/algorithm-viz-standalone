@@ -2652,5 +2652,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 27,
     "learningGoal": "掌握置换环定理、并查集如何将错位排布分解为独立连通分量以及最少交换次数 N - Sets 的数学本质"
+  },
+  {
+    "id": "people-secret",
+    "name": "知晓秘密的专家 (People With Secret)",
+    "viewId": "algo-people-secret-view",
+    "category": "graph",
+    "description": "时序图论与并查集时间步回退算法：左程云 class057 找出知晓秘密的所有专家 (LeetCode 2092)、瞬时级联传递与未获知者状态撤销",
+    "icon": "🕵️",
+    "difficulty": 3,
+    "levelOrder": 28,
+    "learningGoal": "掌握时序图按时间批处理方法、同一时刻瞬时多跳级联传播机制以及并查集在时空跨越时的撤销重置技术"
   }
 ];
