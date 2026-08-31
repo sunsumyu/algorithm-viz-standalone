@@ -2729,5 +2729,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 34,
     "learningGoal": "掌握点权升序加边将“路径中间点不超过端点”转化为连通性保证的巧妙转换，以及并查集维护最大权节点频次"
+  },
+  {
+    "id": "malware-spread-ii",
+    "name": "减少恶意软件传播 II (Malware Spread II)",
+    "viewId": "algo-malware-spread-ii-view",
+    "category": "graph",
+    "description": "并查集健康分量聚类算法：左程云 class057 减少恶意软件传播 II (LeetCode 928)、唯一感染源救赎判定与并查集大小计数",
+    "icon": "🦠",
+    "difficulty": 3,
+    "levelOrder": 35,
+    "learningGoal": "掌握剔除病毒先聚类健康分量的逆向思维、唯一点连接的救赎判定逻辑与并查集连通分量大小维护"
   }
 ];

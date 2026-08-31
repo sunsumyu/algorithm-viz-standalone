@@ -169,6 +169,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'state-compression-bfs': '🧭',
   'eulerian-circuit': '🎨',
   'good-paths': '🛤️',
+  'malware-spread-ii': '🦠',
 };
 
 import {
