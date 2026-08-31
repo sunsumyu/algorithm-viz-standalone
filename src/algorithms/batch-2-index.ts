@@ -125,5 +125,6 @@ import './categories/graph/couples-holding-hands-renderer';
 import './categories/graph/people-secret-renderer';
 import './categories/graph/hungarian-matching-renderer';
 import './categories/graph/tarjan-bridge-renderer';
+import './categories/graph/diff-constraints-renderer';
 
 export {};

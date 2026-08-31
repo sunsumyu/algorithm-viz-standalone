@@ -165,6 +165,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'people-secret': '🕵️',
   'hungarian-matching': '💘',
   'tarjan-bridge': '✂️',
+  'diff-constraints': '⚖️',
 };
 
 import {

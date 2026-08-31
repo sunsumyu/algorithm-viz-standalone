@@ -2685,5 +2685,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 30,
     "learningGoal": "掌握 Tarjan 算法在无向图中的 DFS 遍历模型、DFN/LOW 状态转移及割点/桥判定的数学充分必要条件"
+  },
+  {
+    "id": "diff-constraints",
+    "name": "差分约束系统 (Difference Constraints)",
+    "viewId": "algo-diff-constraints-view",
+    "category": "graph",
+    "description": "差分约束系统：左程云 class070 线性不等式向最短路转化、超级源点建图与 SPFA 负权环无解检测 (洛谷 P5960)",
+    "icon": "⚖️",
+    "difficulty": 3,
+    "levelOrder": 31,
+    "learningGoal": "掌握差分约束系统与最短路三角不等式的数学同构转换、超级源点的引入意义以及负权环与代数矛盾的判定"
   }
 ];
