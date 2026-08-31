@@ -2399,5 +2399,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 4,
     "learningGoal": "透视约束满足问题（CSP）在对角线、行、列的剪枝原理与回溯算法状态空间搜索"
+  },
+  {
+    "id": "lava-parkour",
+    "name": "熔岩跑酷·单调栈跳跃者",
+    "viewId": "algo-lava-parkour-view",
+    "category": "game",
+    "description": "单调栈物理跑酷游戏：60 FPS 抛物线跳跃、动态熔岩上涨躲避、实时单调递减栈透视与下一个更大元素求解",
+    "icon": "🌋",
+    "difficulty": 3,
+    "levelOrder": 5,
+    "learningGoal": "通过熔岩逃逸飞跃实战，彻底掌握单调递减栈的入栈、出栈与下一个更大元素（NGE）计算规律"
   }
 ];

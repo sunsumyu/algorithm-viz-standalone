@@ -475,23 +475,25 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
   }
 
   private bindCanvasControls(): void {
-    window.addEventListener('keydown', (e) => {
-      this.keysDown.add(e.key.toLowerCase());
-      if (e.code === 'Space') {
-        e.preventDefault();
-        this.heroPerformAttack();
-      }
-      if (e.key === '1') {
-        this.usePotionSkill();
-      }
-      if (e.key === '2') {
-        this.useScrollSkill();
-      }
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', (e) => {
+        this.keysDown.add(e.key.toLowerCase());
+        if (e.code === 'Space') {
+          e.preventDefault();
+          this.heroPerformAttack();
+        }
+        if (e.key === '1') {
+          this.usePotionSkill();
+        }
+        if (e.key === '2') {
+          this.useScrollSkill();
+        }
+      });
 
-    window.addEventListener('keyup', (e) => {
-      this.keysDown.delete(e.key.toLowerCase());
-    });
+      window.addEventListener('keyup', (e) => {
+        this.keysDown.delete(e.key.toLowerCase());
+      });
+    }
 
     if (this.canvas) {
       this.canvas.addEventListener('click', (e) => {

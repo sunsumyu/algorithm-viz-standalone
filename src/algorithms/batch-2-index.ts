@@ -99,5 +99,6 @@ import './categories/game/clash-of-algorithms-renderer';
 import './categories/game/knapsack-dungeon-renderer';
 import './categories/game/maze-defense-renderer';
 import './categories/game/nqueen-battle-renderer';
+import './categories/game/lava-parkour-renderer';
 
 export {};
