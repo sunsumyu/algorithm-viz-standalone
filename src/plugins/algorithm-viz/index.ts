@@ -167,6 +167,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'tarjan-bridge': '✂️',
   'diff-constraints': '⚖️',
   'state-compression-bfs': '🧭',
+  'eulerian-circuit': '🎨',
 };
 
 import {

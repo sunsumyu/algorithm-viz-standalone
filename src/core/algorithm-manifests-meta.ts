@@ -2707,5 +2707,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 32,
     "learningGoal": "掌握状态空间扩维思想、位掩码 mask 刻画子集状态以及多源并发 BFS 求全局全节点遍历最短路"
+  },
+  {
+    "id": "eulerian-circuit",
+    "name": "欧拉回路与一笔画 (Eulerian Circuit)",
+    "viewId": "algo-eulerian-circuit-view",
+    "category": "graph",
+    "description": "欧拉路径与欧拉回路算法：左程云 class067 Hierholzer 算法、度数平衡判定、当前弧优化与后序压栈逆序 (洛谷 P7771 / LeetCode 332)",
+    "icon": "🎨",
+    "difficulty": 3,
+    "levelOrder": 33,
+    "learningGoal": "掌握欧拉图与半欧拉图充要条件、Hierholzer 算法为什么必须后序压栈以及当前弧优化的工程实践"
   }
 ];
