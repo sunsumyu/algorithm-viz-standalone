@@ -141,6 +141,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'nqueen-battle': '👑',
   'lava-parkour': '🌋',
   'gas-station-rally': '🏎️',
+  'lemonade-tycoon': '🍹',
 };
 
 import {

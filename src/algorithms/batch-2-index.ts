@@ -101,5 +101,6 @@ import './categories/game/maze-defense-renderer';
 import './categories/game/nqueen-battle-renderer';
 import './categories/game/lava-parkour-renderer';
 import './categories/game/gas-station-renderer';
+import './categories/game/lemonade-tycoon-renderer';
 
 export {};
