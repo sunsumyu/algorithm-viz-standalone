@@ -145,6 +145,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'cookie-feeder': '🍪',
   'sudoku-cipher': '🧩',
   'sliding-snake': '🐍',
+  'candy-kingdom': '🍬',
 };
 
 import {

@@ -105,5 +105,6 @@ import './categories/game/lemonade-tycoon-renderer';
 import './categories/game/cookie-feeder-renderer';
 import './categories/game/sudoku-cipher-renderer';
 import './categories/game/sliding-snake-renderer';
+import './categories/game/candy-kingdom-renderer';
 
 export {};
