@@ -2586,5 +2586,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 21,
     "learningGoal": "掌握 0-1 BFS 核心思想（边权只有 0/1 时用 Deque 的 front/back 维持单调性）以及 O(V+E) 极速搜索机制"
+  },
+  {
+    "id": "bi-bfs",
+    "name": "双向广搜相遇 (Bidirectional BFS)",
+    "viewId": "algo-bi-bfs-view",
+    "category": "graph",
+    "description": "双向广搜算法：左程云 class063 单词接龙 (LeetCode 127)、双向相向波前相遇碰撞、小集合优先贪心扩张与指数级剪枝",
+    "icon": "🔤",
+    "difficulty": 2,
+    "levelOrder": 22,
+    "learningGoal": "掌握双向广搜状态空间剪枝原理（从 O(B^d) 骤降至 2*O(B^(d/2))）以及小集合优先交换技术"
   }
 ];

@@ -156,6 +156,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'binary-sonar': '📡',
   'layered-dijkstra': '🛫',
   'bfs-01': '🧱',
+  'bi-bfs': '🔤',
 };
 
 import {
