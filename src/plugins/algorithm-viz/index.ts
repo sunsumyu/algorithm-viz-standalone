@@ -136,6 +136,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'shortest-path-summary': '📝',
   'graph-summary': '🗺️',
   'clash-of-algorithms': '⚔️',
+  'knapsack-dungeon': '🎒',
 };
 
 import {

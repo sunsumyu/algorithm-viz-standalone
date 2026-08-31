@@ -2366,5 +2366,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 1,
     "learningGoal": "通过策略游戏直观理解工业级 A* 寻路权重配置、目标过滤剪枝与空间索敌算法"
+  },
+  {
+    "id": "knapsack-dungeon",
+    "name": "背包商人·地牢探险",
+    "viewId": "algo-knapsack-dungeon-view",
+    "category": "game",
+    "description": "动态规划冒险游戏：地牢搜刮神兵利刃、实时 DP 矩阵求解最优配装、大战地牢守关魔王",
+    "icon": "🎒",
+    "difficulty": 3,
+    "levelOrder": 2,
+    "learningGoal": "通过地牢配装与 Boss 决战，彻底掌握 0-1 背包与完全背包的状态转移方程与最优子结构"
   }
 ];

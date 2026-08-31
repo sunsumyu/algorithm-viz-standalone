@@ -96,5 +96,6 @@ import './categories/graph/graph-summary-renderer';
  * 趣味算法游戏模块
  */
 import './categories/game/clash-of-algorithms-renderer';
+import './categories/game/knapsack-dungeon-renderer';
 
 export {};
