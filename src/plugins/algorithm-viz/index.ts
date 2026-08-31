@@ -148,6 +148,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'candy-kingdom': '🍬',
   'palindrome-ninja': '🗡️',
   'jump-quest': '🦘',
+  'spy-dial': '📞',
 };
 
 import {

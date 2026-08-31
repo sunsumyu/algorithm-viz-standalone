@@ -2498,5 +2498,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 13,
     "learningGoal": "通过弹簧鞋平台飞跃，彻底掌握贪心算法如何通过维护最大覆盖范围（Max Reach）来替代复杂的递归与动规"
+  },
+  {
+    "id": "spy-dial",
+    "name": "密码谍报·电话拨号树状解密",
+    "viewId": "algo-spy-dial-view",
+    "category": "game",
+    "description": "多分支回溯算法游戏：特工拨号盘、DTMF 双音频声效、全息搜索树与明文密码破解",
+    "icon": "📞",
+    "difficulty": 2,
+    "levelOrder": 14,
+    "learningGoal": "掌握多分支搜索树在组合枚举中的回溯机制，理解树的深度与宽度的物理对应关系"
   }
 ];

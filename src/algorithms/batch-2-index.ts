@@ -108,5 +108,6 @@ import './categories/game/sliding-snake-renderer';
 import './categories/game/candy-kingdom-renderer';
 import './categories/game/palindrome-ninja-renderer';
 import './categories/game/jump-quest-renderer';
+import './categories/game/spy-dial-renderer';
 
 export {};
