@@ -2608,5 +2608,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 23,
     "learningGoal": "掌握拓扑排序如何为 DAG 提供无后效性计算拓扑序，以及 Critical Path 关键路径与路径计数 DP 的状态转移"
+  },
+  {
+    "id": "alien-dict",
+    "name": "火星词典与拓扑排序判环",
+    "viewId": "algo-alien-dict-view",
+    "category": "graph",
+    "description": "火星词典算法：左程云 class059 字符偏序依赖建图、非法前缀陷阱拦截与拓扑排序判环 (LeetCode 269)",
+    "icon": "👽",
+    "difficulty": 2,
+    "levelOrder": 24,
+    "learningGoal": "掌握火星词典字符偏序建图逻辑、非法前缀反转异常判定与 Kahn 拓扑判环机制"
   }
 ];

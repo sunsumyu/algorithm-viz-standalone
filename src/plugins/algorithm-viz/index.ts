@@ -158,6 +158,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'bfs-01': '🧱',
   'bi-bfs': '🔤',
   'topo-dp': '🎓',
+  'alien-dict': '👽',
 };
 
 import {
