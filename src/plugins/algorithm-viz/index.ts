@@ -159,6 +159,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'bi-bfs': '🔤',
   'topo-dp': '🎓',
   'alien-dict': '👽',
+  'trapping-water-ii': '🌊',
 };
 
 import {

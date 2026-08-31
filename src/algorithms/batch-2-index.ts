@@ -119,5 +119,6 @@ import './categories/graph/bfs-01-renderer';
 import './categories/graph/bi-bfs-renderer';
 import './categories/graph/topo-dp-renderer';
 import './categories/graph/alien-dict-renderer';
+import './categories/graph/trapping-water-ii-renderer';
 
 export {};

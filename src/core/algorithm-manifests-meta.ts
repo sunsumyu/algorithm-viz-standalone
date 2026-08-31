@@ -2619,5 +2619,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 24,
     "learningGoal": "掌握火星词典字符偏序建图逻辑、非法前缀反转异常判定与 Kahn 拓扑判环机制"
+  },
+  {
+    "id": "trapping-water-ii",
+    "name": "接雨水 II (Trapping Rain Water II)",
+    "viewId": "algo-trapping-water-ii-view",
+    "category": "graph",
+    "description": "三维接雨水算法：左程云 class062 二维高度图 (LeetCode 407)、木桶短板理论、小根堆由外向内收缩与水线等角可视化",
+    "icon": "🌊",
+    "difficulty": 3,
+    "levelOrder": 25,
+    "learningGoal": "掌握木桶短板理论在三维网格中的扩展、优先队列由外向内收缩与水线高度更新状态机"
   }
 ];
