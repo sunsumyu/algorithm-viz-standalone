@@ -126,5 +126,6 @@ import './categories/graph/people-secret-renderer';
 import './categories/graph/hungarian-matching-renderer';
 import './categories/graph/tarjan-bridge-renderer';
 import './categories/graph/diff-constraints-renderer';
+import './categories/graph/state-compression-bfs-renderer';
 
 export {};

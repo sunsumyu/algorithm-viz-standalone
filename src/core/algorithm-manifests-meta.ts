@@ -2696,5 +2696,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 31,
     "learningGoal": "掌握差分约束系统与最短路三角不等式的数学同构转换、超级源点的引入意义以及负权环与代数矛盾的判定"
+  },
+  {
+    "id": "state-compression-bfs",
+    "name": "状压最短路 (State-Compressed BFS)",
+    "viewId": "algo-state-compression-bfs-view",
+    "category": "graph",
+    "description": "状压最短路算法：左程云 class064 访问所有节点的最短路径 (LeetCode 847)、状态空间扩维 (u, mask) 与多源并发广搜",
+    "icon": "🧭",
+    "difficulty": 3,
+    "levelOrder": 32,
+    "learningGoal": "掌握状态空间扩维思想、位掩码 mask 刻画子集状态以及多源并发 BFS 求全局全节点遍历最短路"
   }
 ];

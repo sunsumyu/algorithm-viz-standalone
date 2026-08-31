@@ -166,6 +166,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'hungarian-matching': '💘',
   'tarjan-bridge': '✂️',
   'diff-constraints': '⚖️',
+  'state-compression-bfs': '🧭',
 };
 
 import {
