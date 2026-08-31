@@ -163,6 +163,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'a-star-journey': '🧭',
   'couples-holding-hands': '💑',
   'people-secret': '🕵️',
+  'hungarian-matching': '💘',
 };
 
 import {

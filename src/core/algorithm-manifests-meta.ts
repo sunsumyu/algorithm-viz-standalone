@@ -2663,5 +2663,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 28,
     "learningGoal": "掌握时序图按时间批处理方法、同一时刻瞬时多跳级联传播机制以及并查集在时空跨越时的撤销重置技术"
+  },
+  {
+    "id": "hungarian-matching",
+    "name": "二分图最大匹配 (Hungarian Matching)",
+    "viewId": "algo-hungarian-matching-view",
+    "category": "graph",
+    "description": "匈牙利算法：左程云 class069 二分图最大匹配、增广路交替轨、DFS 递归让位协商与匹配边状态翻转",
+    "icon": "💘",
+    "difficulty": 3,
+    "levelOrder": 29,
+    "learningGoal": "掌握二分图最大匹配模型、增广路定理的数学证明与 DFS 递归让位协商机制"
   }
 ];
