@@ -153,6 +153,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'arrow-balloon': '🎯',
   'heist-robber': '🥷',
   'stock-trader': '📈',
+  'binary-sonar': '📡',
 };
 
 import {

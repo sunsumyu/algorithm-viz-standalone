@@ -2553,5 +2553,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 18,
     "learningGoal": "掌握贪心买卖股票（收集所有正向斜率收益）与动态规划状态机模型（买入/卖出/冷冻期状态转移）的核心原理"
+  },
+  {
+    "id": "binary-sonar",
+    "name": "深海声呐·二分探宝雷达",
+    "viewId": "algo-binary-sonar-view",
+    "category": "game",
+    "description": "二分查找探宝算法游戏：60 FPS 深海声呐扫描、左右区间折半缩减、中点探针雷达与对数复杂度探宝",
+    "icon": "📡",
+    "difficulty": 1,
+    "levelOrder": 19,
+    "learningGoal": "掌握二分查找经典双指针边界收缩（left <= right 与 left < right 循环不变量）、中点防溢出计算与 O(log N) 探宝机制"
   }
 ];
