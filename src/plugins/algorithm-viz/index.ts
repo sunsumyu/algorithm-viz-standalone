@@ -138,6 +138,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'clash-of-algorithms': '⚔️',
   'knapsack-dungeon': '🎒',
   'maze-defense': '🏰',
+  'nqueen-battle': '👑',
 };
 
 import {
