@@ -2674,5 +2674,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 29,
     "learningGoal": "掌握二分图最大匹配模型、增广路定理的数学证明与 DFS 递归让位协商机制"
+  },
+  {
+    "id": "tarjan-bridge",
+    "name": "割点与桥 (Cut Vertices & Bridges)",
+    "viewId": "algo-tarjan-bridge-view",
+    "category": "graph",
+    "description": "Tarjan 割点与割边算法：左程云 class068 DFN 时间戳、LOW 追溯值、DFS 树边与返祖回边判别 (洛谷 P3388 / LeetCode 1192)",
+    "icon": "✂️",
+    "difficulty": 3,
+    "levelOrder": 30,
+    "learningGoal": "掌握 Tarjan 算法在无向图中的 DFS 遍历模型、DFN/LOW 状态转移及割点/桥判定的数学充分必要条件"
   }
 ];

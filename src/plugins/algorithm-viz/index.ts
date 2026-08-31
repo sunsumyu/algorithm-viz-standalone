@@ -164,6 +164,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'couples-holding-hands': '💑',
   'people-secret': '🕵️',
   'hungarian-matching': '💘',
+  'tarjan-bridge': '✂️',
 };
 
 import {
