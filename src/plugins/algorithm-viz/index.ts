@@ -152,6 +152,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'interval-warp': '🛸',
   'arrow-balloon': '🎯',
   'heist-robber': '🥷',
+  'stock-trader': '📈',
 };
 
 import {

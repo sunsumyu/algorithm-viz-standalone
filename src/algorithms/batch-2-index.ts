@@ -112,5 +112,6 @@ import './categories/game/spy-dial-renderer';
 import './categories/game/interval-warp-renderer';
 import './categories/game/arrow-balloon-renderer';
 import './categories/game/heist-robber-renderer';
+import './categories/game/stock-trader-renderer';
 
 export {};

@@ -2542,5 +2542,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 17,
     "learningGoal": "掌握动态规划状态转移方程 dp[i] = max(dp[i-1], dp[i-2] + nums[i]) 的物理含义与二选一无后效性推导"
+  },
+  {
+    "id": "stock-trader",
+    "name": "星际华尔街·买卖股票的波段时机",
+    "viewId": "algo-stock-trader-view",
+    "category": "game",
+    "description": "股票交易贪心与动规算法游戏：60 FPS 霓虹K线走势、正上坡波段贪心捕捉、买卖交易决策与状态机推演",
+    "icon": "📈",
+    "difficulty": 2,
+    "levelOrder": 18,
+    "learningGoal": "掌握贪心买卖股票（收集所有正向斜率收益）与动态规划状态机模型（买入/卖出/冷冻期状态转移）的核心原理"
   }
 ];
