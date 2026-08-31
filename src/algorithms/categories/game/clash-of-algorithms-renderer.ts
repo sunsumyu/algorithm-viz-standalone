@@ -1,11 +1,10 @@
 /**
- * 部落冲突·战术攻防实战游戏 (Clash of Algorithms: Real-Time Tactical Game)
- * 具备完整可玩性的即时策略与算法沙盒游戏：
- * 1. 实时下兵与圣水循环系统 (Elixir + 6大兵种与法术卡组)
- * 2. 真实即时战斗引擎 (60 FPS 物理移动、飞行弹道、范围溅射、飘字伤害、屏幕震屏、Web Audio 合成音效)
- * 3. 实时 A* 寻路动态重规划 (破墙开辟新路、飞行单位无视城墙、兵种目标池动态剪枝)
- * 4. 6 大精巧关卡挑战 + 自由沙盒布阵建造器
- * 5. 豪华战局结算大弹窗、三星评级与算法实时透视
+ * 部落冲突·战术攻防实战游戏 (Clash of Algorithms: High-Fidelity 2.5D Tactical Game)
+ * 采用 2.5D 精细矢量物理渲染引擎：
+ * 1. 拟真建筑：城堡要塞、木构箭塔(带驻塔弓手)、铸铁迫击炮、金矿矿车、花岗岩城墙
+ * 2. 拟真角色：金发野蛮人(挥剑动画)、粉发弓箭手(引弓射箭)、皮甲巨人(重拳)、尖耳哥布林(金币口袋)、飞行双翼飞龙(扇翅悬停)
+ * 3. 动态物理与打击感：投掷物朝向旋转、抛物线阴影、雷电分叉、碎石粒子、震屏与 Web Audio 真实音效
+ * 4. 6 大战役关卡 + 自由沙盒布阵
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
@@ -34,7 +33,7 @@ export interface GameBuilding {
 export interface GameTroop {
   id: string;
   type: TroopType;
-  x: number; // 精确浮点坐标 (网格单位)
+  x: number; // 网格浮点坐标
   y: number;
   hp: number;
   maxHp: number;
@@ -48,6 +47,8 @@ export interface GameTroop {
   pathIndex: number;
   isDead: boolean;
   isFlying?: boolean;
+  animTick: number; // 动作动画周期
+  direction: number; // 朝向角 (弧度)
 }
 
 export interface Projectile {
@@ -60,6 +61,7 @@ export interface Projectile {
   damage: number;
   isAoE: boolean;
   targetTroopId: string;
+  type: 'ARROW' | 'BOMB';
 }
 
 export interface FloatingText {
@@ -82,7 +84,14 @@ export interface ParticleEffect {
   alpha: number;
 }
 
-// 关卡配置
+export interface LightningStrikeEffect {
+  id: string;
+  x: number;
+  y: number;
+  duration: number; // 持续时间 (秒)
+  points: [number, number][];
+}
+
 interface LevelConfig {
   id: number;
   name: string;
@@ -151,7 +160,6 @@ const PRESET_LEVELS: LevelConfig[] = [
       { id: 'at1', type: 'ARCHER_TOWER', r: 3, c: 4, hp: 260, maxHp: 260, range: 3.5, attackCooldown: 0.8 },
       { id: 'mor1', type: 'MORTAR', r: 5, c: 4, hp: 220, maxHp: 220, range: 4.5, attackCooldown: 2.0 },
       { id: 'gm1', type: 'GOLD_MINE', r: 4, c: 6, hp: 180, maxHp: 180 },
-      // 密集包围城墙
       { id: 'w1', type: 'WALL', r: 2, c: 2, hp: 200, maxHp: 200 },
       { id: 'w2', type: 'WALL', r: 2, c: 3, hp: 200, maxHp: 200 },
       { id: 'w3', type: 'WALL', r: 2, c: 4, hp: 200, maxHp: 200 },
@@ -196,7 +204,7 @@ const PRESET_LEVELS: LevelConfig[] = [
   },
 ];
 
-// Web Audio API 简易实时音效合成器 (零外链、纯原生极速)
+// Web Audio API 简易原生音效合成器
 class SoundFX {
   private static audioCtx: AudioContext | null = null;
 
@@ -220,13 +228,13 @@ class SoundFX {
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(440, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.08);
       gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.12);
+      osc.stop(ctx.currentTime + 0.1);
     } catch {}
   }
 
@@ -270,7 +278,7 @@ class SoundFX {
     const ctx = this.getCtx();
     if (!ctx) return;
     try {
-      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+      const notes = [523.25, 659.25, 783.99, 1046.5];
       notes.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -313,6 +321,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
   private projectiles: Projectile[] = [];
   private floatingTexts: FloatingText[] = [];
   private particles: ParticleEffect[] = [];
+  private lightningEffects: LightningStrikeEffect[] = [];
   private totalCoreBuildings = 0;
 
   // DOM
@@ -332,9 +341,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     return [{ message: '部落冲突战术攻防实战沙盘' }];
   }
 
-  protected renderStep(_step: any): void {
-    // 游戏引擎使用 requestAnimationFrame 60 FPS 实时更新与 Canvas 渲染
-  }
+  protected renderStep(_step: any): void {}
 
   public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
     await super.init(options);
@@ -365,12 +372,12 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     this.projectiles = [];
     this.floatingTexts = [];
     this.particles = [];
+    this.lightningEffects = [];
 
     const config = PRESET_LEVELS.find((l) => l.id === levelId) || PRESET_LEVELS[0];
     this.buildings = config.buildings.map((b) => ({ ...b }));
     this.totalCoreBuildings = this.buildings.filter((b) => b.type !== 'WALL').length;
 
-    // 隐藏胜利弹窗
     const modal = this.root?.querySelector('#clash-victory-modal') as HTMLElement | null;
     if (modal) modal.style.display = 'none';
 
@@ -387,7 +394,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       this.bindCanvasInteraction();
     }
 
-    // 挂载代码调试终端
     this.mountTerminal({
       codeLanguages: CLASH_ALGORITHMS_CODE_LANGUAGES,
       problemHtml: CLASH_ALGORITHMS_PROBLEM_HTML,
@@ -395,7 +401,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       initialLang: 'cpp',
     });
 
-    // 关卡切换 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.clash-lvl-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const lvl = parseInt(btn.dataset.level || '1', 10);
@@ -405,7 +410,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       });
     });
 
-    // 兵种卡牌选择
     this.root.querySelectorAll<HTMLDivElement>('.clash-troop-card').forEach((card) => {
       card.addEventListener('click', () => {
         this.root?.querySelectorAll('.clash-troop-card').forEach((c) => c.classList.remove('active'));
@@ -414,7 +418,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       });
     });
 
-    // 布阵与战斗模式切换
     const modeBtn = this.root.querySelector('#btn-toggle-build') as HTMLButtonElement | null;
     if (modeBtn) {
       modeBtn.addEventListener('click', () => {
@@ -427,7 +430,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       });
     }
 
-    // 建筑建造工具选择
     this.root.querySelectorAll<HTMLButtonElement>('.clash-build-tool').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.root?.querySelectorAll('.clash-build-tool').forEach((b) => b.classList.remove('active'));
@@ -436,13 +438,11 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       });
     });
 
-    // 重置战场
     const resetBtn = this.root.querySelector('#btn-clash-reset') as HTMLButtonElement | null;
     if (resetBtn) {
       resetBtn.addEventListener('click', () => this.loadLevel(this.currentLevel));
     }
 
-    // 弹窗下一关按钮
     const nextLvlBtn = this.root.querySelector('#btn-modal-next-level') as HTMLButtonElement | null;
     if (nextLvlBtn) {
       nextLvlBtn.addEventListener('click', () => {
@@ -454,7 +454,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       });
     }
 
-    // A* 寻路透视开关
     const pathToggle = this.root.querySelector('#chk-astar-path') as HTMLInputElement | null;
     if (pathToggle) {
       pathToggle.addEventListener('change', () => {
@@ -478,7 +477,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       if (r < 0 || r >= this.gridSize || c < 0 || c >= this.gridSize) return;
 
       if (this.isBuildMode) {
-        // 布阵模式：摆放或删除建筑
         const existingIdx = this.buildings.findIndex((b) => b.r === r && b.c === c);
         if (existingIdx >= 0) {
           const removed = this.buildings.splice(existingIdx, 1)[0];
@@ -499,7 +497,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
         }
         this.totalCoreBuildings = this.buildings.filter((b) => b.type !== 'WALL').length;
       } else {
-        // 实战模式：实时下兵或施放法术
         if (this.selectedTroopType === 'LIGHTNING_SPELL') {
           this.castLightningSpell(r, c);
         } else {
@@ -509,7 +506,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     });
   }
 
-  // 施放雷电法术
+  // 施放拟真雷电法术
   private castLightningSpell(r: number, c: number): void {
     if (this.elixir < 3) {
       this.addFloatingText(c, r, `💧 圣水不足 (雷电需 3)`, '#ef4444');
@@ -518,13 +515,28 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
     this.elixir -= 3;
     this.isRunning = true;
-    this.screenShake = 12;
+    this.screenShake = 14;
     SoundFX.playLightning();
 
     this.addFloatingText(c, r, `⚡ 雷霆万钧!`, '#38bdf8');
-    this.spawnParticles(c + 0.5, r + 0.5, '#38bdf8', 20);
+    this.spawnParticles(c + 0.5, r + 0.5, '#38bdf8', 25);
 
-    // 对 2x2 半径内所有建筑与城墙造成 260 巨额雷电伤害
+    // 生成闪电折线
+    const branchPoints: [number, number][] = [
+      [c + 0.5 + (Math.random() - 0.5) * 0.4, 0],
+      [c + 0.5 + (Math.random() - 0.5) * 0.8, r * 0.3],
+      [c + 0.5 + (Math.random() - 0.5) * 0.6, r * 0.6],
+      [c + 0.5 + (Math.random() - 0.5) * 0.4, r * 0.8],
+      [c + 0.5, r + 0.5],
+    ];
+    this.lightningEffects.push({
+      id: `lt_${Date.now()}`,
+      x: c + 0.5,
+      y: r + 0.5,
+      duration: 0.35,
+      points: branchPoints,
+    });
+
     let hitCount = 0;
     this.buildings.forEach((b) => {
       if (b.hp > 0 && Math.hypot(b.c - c, b.r - r) <= 1.8) {
@@ -538,11 +550,10 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     });
 
     this.logEvent(`⚡ 施放雷电法术！命中 (${r}, ${c}) 周围 ${hitCount} 座设施！`);
-    // 重新规划所有小兵寻路
     this.troops.forEach((t) => this.updateTroopAStar(t));
   }
 
-  // 部署小兵
+  // 部署拟真小兵
   private deployTroop(type: TroopType, r: number, c: number): void {
     const costMap: Record<TroopType, number> = {
       BARBARIAN: 1,
@@ -618,11 +629,13 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       pathIndex: 0,
       isDead: false,
       isFlying: type === 'DRAGON',
+      animTick: 0,
+      direction: 0,
     };
 
     this.troops.push(troop);
     this.addFloatingText(c, r, `+1 ${type}`, '#10b981');
-    this.spawnParticles(c + 0.5, r + 0.5, '#10b981', 8);
+    this.spawnParticles(c + 0.5, r + 0.5, '#10b981', 10);
     this.logEvent(`🪓 消耗 💧${cost} 在 (${r}, ${c}) 投放 ${type}，触发实时 A* 寻路！`);
     this.updateTroopAStar(troop);
   }
@@ -631,7 +644,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
   private updateTroopAStar(troop: GameTroop): void {
     if (troop.isDead) return;
 
-    // 1. 目标筛选器
     let validTargets = this.buildings.filter((b) => b.hp > 0 && b.type !== 'WALL');
     if (troop.type === 'GIANT') {
       const defs = validTargets.filter((b) => b.type === 'ARCHER_TOWER' || b.type === 'MORTAR');
@@ -650,12 +662,10 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       return;
     }
 
-    // 寻找最近目标
     validTargets.sort((a, b) => Math.hypot(troop.x - (a.c + 0.5), troop.y - (a.r + 0.5)) - Math.hypot(troop.x - (b.c + 0.5), troop.y - (b.r + 0.5)));
     const target = validTargets[0];
     troop.targetId = target.id;
 
-    // 2. A* 网格搜索 (飞行单位如飞龙无视城墙)
     const sr = Math.floor(troop.y);
     const sc = Math.floor(troop.x);
     const tr = target.r;
@@ -704,7 +714,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
         const key = `${nr},${nc}`;
         const isWall = wallSet.has(key);
-        // 飞龙无视城墙(1.0)，炸弹人破墙权重为 1.0，普通地面小兵破墙权重为 16.0
         const stepCost = troop.isFlying ? 1.0 : isWall ? (troop.type === 'WALL_BREAKER' ? 1.0 : 16.0) : 1.0;
         const newG = cur.g + stepCost;
 
@@ -748,13 +757,9 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
   }
 
   private updateGame(dt: number): void {
-    // 圣水自然恢复 (每秒 +0.8 滴)
     this.elixir = Math.min(this.maxElixir, this.elixir + 0.8 * dt);
-
-    // 战斗倒计时
     this.battleTimer = Math.max(0, this.battleTimer - dt);
 
-    // 屏幕震动衰减
     if (this.screenShake > 0) {
       this.screenShake = Math.max(0, this.screenShake - dt * 25);
     }
@@ -764,6 +769,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     // 1. 更新小兵移动与攻击
     for (const troop of this.troops) {
       if (troop.isDead) continue;
+      troop.animTick += dt * 6.0;
 
       const target = this.buildings.find((b) => b.id === troop.targetId && b.hp > 0);
       if (!target) {
@@ -772,8 +778,8 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       }
 
       const distToTarget = Math.hypot(troop.x - (target.c + 0.5), troop.y - (target.r + 0.5));
+      troop.direction = Math.atan2(target.r + 0.5 - troop.y, target.c + 0.5 - troop.x);
 
-      // 判断前方是否有未摧毁城墙阻隔 (飞龙无视城墙)
       const nextStep = troop.path[troop.pathIndex + 1];
       let blockingWall: GameBuilding | undefined;
 
@@ -782,7 +788,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       }
 
       if (blockingWall) {
-        // 攻击阻碍的城墙
         if (now - troop.lastAttackTime >= troop.attackCooldown) {
           troop.lastAttackTime = now;
           const dmg = troop.type === 'WALL_BREAKER' ? 300 : troop.damage;
@@ -801,7 +806,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
           }
         }
       } else if (distToTarget <= troop.range) {
-        // 攻击目标建筑
         if (now - troop.lastAttackTime >= troop.attackCooldown) {
           troop.lastAttackTime = now;
           let dmg = troop.damage;
@@ -818,7 +822,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
           }
         }
       } else {
-        // 沿 A* 路径平滑移动
         if (troop.path && troop.path.length > troop.pathIndex + 1) {
           const nextPt = troop.path[troop.pathIndex + 1];
           const targetX = nextPt[1] + 0.5;
@@ -868,6 +871,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
             damage: building.type === 'MORTAR' ? 45 : 30,
             isAoE: building.type === 'MORTAR',
             targetTroopId: targetTroop.id,
+            type: building.type === 'MORTAR' ? 'BOMB' : 'ARROW',
           });
         }
       }
@@ -876,7 +880,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     // 3. 飞行弹道推进
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
-      p.progress += dt * 3.5;
+      p.progress += dt * 3.8;
 
       if (p.progress >= 1) {
         if (p.isAoE) {
@@ -902,7 +906,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       }
     }
 
-    // 4. 更新飘字与粒子
+    // 4. 更新飘字、粒子与雷电特效
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       const ft = this.floatingTexts[i];
       ft.y -= dt * 0.8;
@@ -915,6 +919,11 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       pt.y += pt.vy * dt;
       pt.alpha -= dt * 1.5;
       if (pt.alpha <= 0) this.particles.splice(i, 1);
+    }
+    for (let i = this.lightningEffects.length - 1; i >= 0; i--) {
+      const lt = this.lightningEffects[i];
+      lt.duration -= dt;
+      if (lt.duration <= 0) this.lightningEffects.splice(i, 1);
     }
 
     // 5. 战局结算与胜利检测
@@ -951,7 +960,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
   private spawnParticles(x: number, y: number, color: string, count: number): void {
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 0.5 + Math.random() * 2.0;
+      const speed = 0.5 + Math.random() * 2.5;
       this.particles.push({
         id: `p_${Date.now()}_${Math.random()}`,
         x,
@@ -959,7 +968,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         color,
-        size: 2 + Math.random() * 3,
+        size: 2.5 + Math.random() * 3.5,
         alpha: 1.0,
       });
     }
@@ -1013,6 +1022,308 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     }
   }
 
+  // 绘制 2.5D 精致拟真建筑
+  private drawRealisticBuilding(ctx: CanvasRenderingContext2D, b: GameBuilding, cellSize: number): void {
+    const bx = b.c * cellSize;
+    const by = b.r * cellSize;
+    const cx = bx + cellSize / 2;
+    const cy = by + cellSize / 2;
+    const isDead = b.hp <= 0;
+
+    if (isDead) {
+      // 废墟残骸
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + cellSize * 0.2, cellSize * 0.35, cellSize * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(cx - cellSize * 0.2, cy, cellSize * 0.15, cellSize * 0.15);
+      ctx.fillRect(cx + cellSize * 0.05, cy - cellSize * 0.1, cellSize * 0.2, cellSize * 0.15);
+      return;
+    }
+
+    // 地面立体投影 (Cast Shadow)
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.16)';
+    ctx.beginPath();
+    ctx.ellipse(cx + 3, cy + cellSize * 0.32, cellSize * 0.42, cellSize * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (b.type === 'TOWNHALL') {
+      // 🏰 大本营：花岗岩城堡基座 + 红色瓦片坡顶 + 金色边框旗帜
+      // 1. 石墙基座
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(bx + 4, by + cellSize * 0.3, cellSize - 8, cellSize * 0.55);
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(bx + 6, by + cellSize * 0.32, cellSize - 12, cellSize * 0.5);
+
+      // 拱门
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(cx, by + cellSize * 0.8, cellSize * 0.14, Math.PI, 0);
+      ctx.fill();
+
+      // 2. 红色斜坡屋顶
+      ctx.fillStyle = '#991b1b';
+      ctx.beginPath();
+      ctx.moveTo(bx + 2, by + cellSize * 0.35);
+      ctx.lineTo(cx, by + 4);
+      ctx.lineTo(bx + cellSize - 2, by + cellSize * 0.35);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.moveTo(bx + 5, by + cellSize * 0.33);
+      ctx.lineTo(cx, by + 6);
+      ctx.lineTo(bx + cellSize - 5, by + cellSize * 0.33);
+      ctx.closePath();
+      ctx.fill();
+
+      // 金顶尖
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(cx - 2, by + 2, 4, 6);
+    } else if (b.type === 'ARCHER_TOWER') {
+      // 🏹 箭塔：4根木立柱支架 + 高层平台 + 驻塔弓箭手
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(bx + 6, by + cellSize * 0.3, 4, cellSize * 0.55);
+      ctx.fillRect(bx + cellSize - 10, by + cellSize * 0.3, 4, cellSize * 0.55);
+
+      // 木架横梁
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(bx + 8, by + cellSize * 0.45);
+      ctx.lineTo(bx + cellSize - 8, by + cellSize * 0.75);
+      ctx.moveTo(bx + cellSize - 8, by + cellSize * 0.45);
+      ctx.lineTo(bx + 8, by + cellSize * 0.75);
+      ctx.stroke();
+
+      // 上层木质平台
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(bx + 3, by + cellSize * 0.18, cellSize - 6, cellSize * 0.18);
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(bx + 5, by + cellSize * 0.16, cellSize - 10, 4);
+
+      // 驻塔小弓箭手 (粉色头发 + 绿色战袍)
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(cx - 3, by + cellSize * 0.1, 6, 6);
+      ctx.fillStyle = '#ec4899';
+      ctx.beginPath();
+      ctx.arc(cx, by + cellSize * 0.08, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (b.type === 'MORTAR') {
+      // 💣 迫击炮：青石转盘底座 + 仰角铸铁炮管
+      ctx.fillStyle = '#475569';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + cellSize * 0.15, cellSize * 0.35, cellSize * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 炮管
+      ctx.fillStyle = '#0f172a';
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillRect(-cellSize * 0.12, -cellSize * 0.35, cellSize * 0.24, cellSize * 0.45);
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(-cellSize * 0.1, -cellSize * 0.33, cellSize * 0.2, cellSize * 0.4);
+      ctx.restore();
+    } else if (b.type === 'GOLD_MINE') {
+      // 🪙 金矿：深邃矿洞木梁 + 满载闪耀金块的矿车
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(bx + 5, by + cellSize * 0.15, cellSize - 10, 5);
+      ctx.fillRect(bx + 5, by + cellSize * 0.15, 5, cellSize * 0.5);
+      ctx.fillRect(bx + cellSize - 10, by + cellSize * 0.15, 5, cellSize * 0.5);
+
+      // 矿洞黑洞
+      ctx.fillStyle = '#1e1b4b';
+      ctx.fillRect(bx + 10, by + cellSize * 0.25, cellSize - 20, cellSize * 0.45);
+
+      // 璀璨金块 (金黄色闪光棱面)
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, cy + 2);
+      ctx.lineTo(cx, cy - 6);
+      ctx.lineTo(cx + 6, cy + 2);
+      ctx.lineTo(cx, cy + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(cx - 2, cy - 2, 4, 4);
+    } else if (b.type === 'WALL') {
+      // 🧱 3D 坚固花岗岩城墙块
+      // 侧影
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(bx + 3, by + cellSize * 0.3, cellSize - 6, cellSize * 0.6);
+      // 顶面
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(bx + 3, by + cellSize * 0.15, cellSize - 6, cellSize * 0.35);
+      // 高光边
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(bx + 4, by + cellSize * 0.16, cellSize - 8, 3);
+      // 凹凸城垛齿
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(bx + 5, by + cellSize * 0.08, 6, cellSize * 0.1);
+      ctx.fillRect(bx + cellSize - 11, by + cellSize * 0.08, 6, cellSize * 0.1);
+    }
+
+    // 防御塔射程圆圈指示
+    if ((b.type === 'ARCHER_TOWER' || b.type === 'MORTAR') && b.range) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, b.range * cellSize, 0, Math.PI * 2);
+      ctx.strokeStyle = b.type === 'MORTAR' ? 'rgba(249,115,22,0.12)' : 'rgba(239,68,68,0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // 建筑精细血条
+    if (b.type !== 'WALL') {
+      const hpPct = b.hp / b.maxHp;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(bx + 4, by + cellSize - 6, cellSize - 8, 4);
+      ctx.fillStyle = hpPct > 0.4 ? '#10b981' : '#ef4444';
+      ctx.fillRect(bx + 4, by + cellSize - 6, (cellSize - 8) * hpPct, 4);
+    }
+  }
+
+  // 绘制 2.5D 精致拟真小兵
+  private drawRealisticTroop(ctx: CanvasRenderingContext2D, t: GameTroop, cellSize: number): void {
+    const tx = t.x * cellSize;
+    const ty = t.y * cellSize;
+    const isAttacking = t.range >= Math.hypot(tx, ty); // 正在攻击或走路
+    const bobOffset = Math.sin(t.animTick) * 2.5;
+
+    ctx.save();
+    ctx.translate(tx, ty + (t.isFlying ? -12 : bobOffset));
+
+    // 地面软阴影
+    ctx.fillStyle = t.isFlying ? 'rgba(15, 23, 42, 0.18)' : 'rgba(15, 23, 42, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(0, t.isFlying ? 14 : cellSize * 0.2, cellSize * 0.26, cellSize * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (t.type === 'BARBARIAN') {
+      // 🪓 野蛮人：金色冲天刺猬头 + 肌肉身躯 + 挥砍铁剑
+      // 身体
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(-6, -4, 12, 10);
+      // 金色爆炸头
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(0, -9, 7, 0, Math.PI * 2);
+      ctx.fill();
+      // 钢铁巨剑
+      ctx.save();
+      ctx.rotate(Math.sin(t.animTick * 1.5) * 0.6);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(4, -14, 4, 14);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(5, -13, 2, 12);
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(2, -2, 8, 3);
+      ctx.restore();
+    } else if (t.type === 'ARCHER') {
+      // 🏹 弓箭手：粉色长发 + 绿色战袍斗篷 + 木弓箭
+      ctx.fillStyle = '#15803d';
+      ctx.fillRect(-5, -3, 10, 9);
+      // 粉色头发
+      ctx.fillStyle = '#f472b6';
+      ctx.beginPath();
+      ctx.arc(0, -8, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+      // 木弓
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(6, -2, 7, -Math.PI / 2, Math.PI / 2);
+      ctx.stroke();
+    } else if (t.type === 'GIANT') {
+      // 🛡️ 巨人：魁梧庞大体格 + 棕色缝线皮甲 + 巨型重拳
+      ctx.fillStyle = '#78350f';
+      ctx.beginPath();
+      ctx.roundRect(-10, -8, 20, 16, 4);
+      ctx.fill();
+      // 光头及大下巴
+      ctx.fillStyle = '#fed7aa';
+      ctx.beginPath();
+      ctx.arc(0, -14, 8, 0, Math.PI * 2);
+      ctx.fill();
+      // 巨拳
+      ctx.fillStyle = '#ea580c';
+      ctx.fillRect(-12, -2, 6, 8);
+      ctx.fillRect(6, -2, 6, 8);
+    } else if (t.type === 'GOBLIN') {
+      // 💰 哥布林：翠绿皮肤 + 尖长耳朵 + 背着沉甸甸的金币布袋
+      ctx.fillStyle = '#16a34a';
+      ctx.beginPath();
+      ctx.arc(0, -7, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      // 尖耳朵
+      ctx.fillStyle = '#15803d';
+      ctx.beginPath();
+      ctx.moveTo(-6, -7);
+      ctx.lineTo(-11, -11);
+      ctx.lineTo(-5, -4);
+      ctx.closePath();
+      ctx.fill();
+      // 金币大布袋
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath();
+      ctx.arc(-5, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(-4, -1, 3, 3);
+    } else if (t.type === 'WALL_BREAKER') {
+      // 💣 炸弹人：骷髅白骨头颅 + 飞行员防风皮帽 + 巨型引信黑铁炸弹
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.arc(0, -8, 6, 0, Math.PI * 2);
+      ctx.fill();
+      // 飞行皮帽
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(-6, -13, 12, 5);
+      // 巨大圆形黑炸弹
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(4, 1, 8, 0, Math.PI * 2);
+      ctx.fill();
+      // 燃烧引线火花
+      ctx.fillStyle = '#f97316';
+      ctx.fillRect(8, -8, 3, 3);
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(9, -9, 2, 2);
+    } else if (t.type === 'DRAGON') {
+      // 🐉 飞龙宝宝：紫晶色鳞片 + 扇动青翠肉翼 + 悬停烈焰
+      const wingFlap = Math.sin(t.animTick * 3.0) * 8;
+      // 身体
+      ctx.fillStyle = '#9333ea';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 9, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // 龙首
+      ctx.fillStyle = '#a855f7';
+      ctx.beginPath();
+      ctx.arc(7, -4, 6, 0, Math.PI * 2);
+      ctx.fill();
+      // 扇动的龙翼
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.moveTo(-2, -2);
+      ctx.lineTo(-8, -14 - wingFlap);
+      ctx.lineTo(4, -4);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 顶部小兵血条
+    const hpPct = t.hp / t.maxHp;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-cellSize * 0.25, -cellSize * 0.45, cellSize * 0.5, 3);
+    ctx.fillStyle = '#10b981';
+    ctx.fillRect(-cellSize * 0.25, -cellSize * 0.45, cellSize * 0.5 * hpPct, 3);
+
+    ctx.restore();
+  }
+
   // 渲染 60 FPS Canvas 沙盘
   private renderCanvas(): void {
     if (!this.canvas || !this.ctx) return;
@@ -1024,19 +1335,19 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     ctx.save();
     ctx.clearRect(0, 0, width, height);
 
-    // 屏幕震动
     if (this.screenShake > 0) {
       const ox = (Math.random() - 0.5) * this.screenShake;
       const oy = (Math.random() - 0.5) * this.screenShake;
       ctx.translate(ox, oy);
     }
 
-    // 1. 绘制草地网格
+    // 1. 绘制草地网格与石板路
     for (let r = 0; r < this.gridSize; r++) {
       for (let c = 0; c < this.gridSize; c++) {
-        ctx.fillStyle = (r + c) % 2 === 0 ? '#ecfdf5' : '#f0fdf4';
+        const isGrass = (r + c) % 2 === 0;
+        ctx.fillStyle = isGrass ? '#dcfce7' : '#d1fae5';
         ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-        ctx.strokeStyle = '#d1fae5';
+        ctx.strokeStyle = '#bbf7d0';
         ctx.lineWidth = 0.5;
         ctx.strokeRect(c * cellSize, r * cellSize, cellSize, cellSize);
       }
@@ -1061,91 +1372,76 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.setLineDash([]);
     }
 
-    // 3. 绘制建筑
+    // 3. 绘制 2.5D 拟真建筑
     for (const b of this.buildings) {
-      const bx = b.c * cellSize;
-      const by = b.r * cellSize;
-      const isDead = b.hp <= 0;
-
-      ctx.fillStyle = isDead ? '#f1f5f9' : b.type === 'TOWNHALL' ? '#eff6ff' : b.type === 'ARCHER_TOWER' ? '#fef2f2' : b.type === 'MORTAR' ? '#fff7ed' : b.type === 'GOLD_MINE' ? '#fefce8' : '#e2e8f0';
-      ctx.strokeStyle = isDead ? '#cbd5e1' : b.type === 'TOWNHALL' ? '#3b82f6' : b.type === 'ARCHER_TOWER' ? '#ef4444' : b.type === 'MORTAR' ? '#f97316' : b.type === 'GOLD_MINE' ? '#eab308' : '#64748b';
-      ctx.lineWidth = 1.5;
-
-      ctx.beginPath();
-      ctx.roundRect(bx + 2, by + 2, cellSize - 4, cellSize - 4, 4);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.font = `${cellSize * 0.45}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const icon = isDead ? '💥' : b.type === 'TOWNHALL' ? '🏰' : b.type === 'ARCHER_TOWER' ? '🏹' : b.type === 'MORTAR' ? '💣' : b.type === 'GOLD_MINE' ? '🪙' : '🧱';
-      ctx.fillText(icon, bx + cellSize / 2, by + cellSize / 2);
-
-      if (!isDead && (b.type === 'ARCHER_TOWER' || b.type === 'MORTAR') && b.range) {
-        ctx.beginPath();
-        ctx.arc(bx + cellSize / 2, by + cellSize / 2, b.range * cellSize, 0, Math.PI * 2);
-        ctx.strokeStyle = b.type === 'MORTAR' ? 'rgba(249,115,22,0.12)' : 'rgba(239,68,68,0.12)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      if (!isDead && b.type !== 'WALL') {
-        const hpPct = b.hp / b.maxHp;
-        ctx.fillStyle = '#e2e8f0';
-        ctx.fillRect(bx + 4, by + cellSize - 6, cellSize - 8, 3);
-        ctx.fillStyle = hpPct > 0.4 ? '#10b981' : '#ef4444';
-        ctx.fillRect(bx + 4, by + cellSize - 6, (cellSize - 8) * hpPct, 3);
-      }
+      this.drawRealisticBuilding(ctx, b, cellSize);
     }
 
-    // 4. 绘制小兵
+    // 4. 绘制 2.5D 拟真小兵
     for (const troop of this.troops) {
-      if (troop.isDead) continue;
-      const tx = troop.x * cellSize;
-      const ty = troop.y * cellSize;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(tx, ty, cellSize * (troop.isFlying ? 0.42 : 0.35), 0, Math.PI * 2);
-      ctx.fillStyle = troop.isFlying ? '#faf5ff' : '#ffffff';
-      ctx.fill();
-      ctx.strokeStyle = troop.type === 'GIANT' ? '#2563eb' : troop.type === 'DRAGON' ? '#9333ea' : troop.type === 'GOBLIN' ? '#eab308' : troop.type === 'ARCHER' ? '#ec4899' : '#10b981';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.font = `${cellSize * 0.38}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const tIcon = troop.type === 'GIANT' ? '🛡️' : troop.type === 'DRAGON' ? '🐉' : troop.type === 'GOBLIN' ? '💰' : troop.type === 'ARCHER' ? '🏹' : troop.type === 'WALL_BREAKER' ? '💣' : '🪓';
-      ctx.fillText(tIcon, tx, ty);
-
-      const hpPct = troop.hp / troop.maxHp;
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fillRect(tx - cellSize * 0.3, ty - cellSize * 0.45, cellSize * 0.6, 2.5);
-      ctx.fillStyle = '#10b981';
-      ctx.fillRect(tx - cellSize * 0.3, ty - cellSize * 0.45, cellSize * 0.6 * hpPct, 2.5);
-      ctx.restore();
+      if (!troop.isDead) {
+        this.drawRealisticTroop(ctx, troop, cellSize);
+      }
     }
 
-    // 5. 绘制飞行弹道
+    // 5. 绘制飞行投掷物 (带旋转朝向的箭矢与抛物线炸弹)
     for (const p of this.projectiles) {
       const curX = (p.startX + (p.targetX - p.startX) * p.progress) * cellSize;
       const curY = (p.startY + (p.targetY - p.startY) * p.progress) * cellSize;
 
-      ctx.beginPath();
-      if (p.isAoE) {
-        ctx.arc(curX, curY, 6, 0, Math.PI * 2);
-        ctx.fillStyle = '#f97316';
+      ctx.save();
+      ctx.translate(curX, curY);
+
+      if (p.type === 'ARROW') {
+        // 旋转箭矢
+        const angle = Math.atan2(p.targetY - p.startY, p.targetX - p.startX);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(-8, -1, 16, 2);
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.moveTo(8, 0);
+        ctx.lineTo(3, -3);
+        ctx.lineTo(3, 3);
+        ctx.closePath();
         ctx.fill();
+        ctx.fillStyle = '#ec4899';
+        ctx.fillRect(-8, -3, 3, 6);
       } else {
-        ctx.arc(curX, curY, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ef4444';
+        // 迫击炮黑铁弹
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(-2, -2, 4, 4);
       }
+      ctx.restore();
     }
 
-    // 6. 绘制粒子
+    // 6. 绘制雷电分叉特效
+    for (const lt of this.lightningEffects) {
+      ctx.save();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = '#0ea5e9';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      lt.points.forEach((pt, idx) => {
+        const px = pt[0] * cellSize;
+        const py = pt[1] * cellSize;
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 7. 绘制粒子
     for (const pt of this.particles) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, pt.alpha);
@@ -1156,7 +1452,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.restore();
     }
 
-    // 7. 绘制飘字
+    // 8. 绘制飘字
     for (const ft of this.floatingTexts) {
       ctx.font = 'bold 11px sans-serif';
       ctx.fillStyle = ft.color;
@@ -1175,7 +1471,7 @@ export const CLASH_GAME_TEMPLATE = `
   <div id="algo-clash-of-algorithms-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
     <!-- 胜利结算全屏大弹窗 -->
     <div id="clash-victory-modal" style="display: none; position: absolute; inset: 0; background: rgba(15,23,42,0.75); z-index: 999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-      <div style="background: #ffffff; border-radius: 12px; padding: 24px 32px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid #f59e0b; text-align: center; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+      <div style="background: #ffffff; border-radius: 12px; padding: 24px 32px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid #f59e0b; text-align: center;">
         <span style="font-size: 40px; margin-bottom: 4px;">🏆</span>
         <h2 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 800; color: #0f172a;">战役大捷 · 基地全歼！</h2>
         <div id="modal-stars" style="font-size: 28px; color: #f59e0b; margin-bottom: 8px;">⭐⭐⭐</div>
@@ -1314,13 +1610,13 @@ registerAlgorithm({
   name: '部落冲突·战术攻防沙盘',
   viewId: 'algo-clash-of-algorithms-view',
   category: 'game',
-  description: '真交互即时策略游戏：实时下兵、飞龙跨墙、雷电法术、A* 寻路权重与防御塔索敌对决',
+  description: '真交互即时策略游戏：2.5D 拟真画风、实时下兵、飞龙跨墙、雷电法术与 A* 寻路索敌对决',
   icon: '⚔️',
   template: CLASH_GAME_TEMPLATE,
   Visualizer: ClashOfAlgorithmsGameVisualizer,
   difficulty: 3,
   levelOrder: 1,
-  learningGoal: '通过真实的策略对战操作，亲身体验 A* 寻路权衡、飞行跨障与空间索敌算法的魅力',
+  learningGoal: '通过极具真实感的策略对战操作，亲身体验 A* 寻路权衡、飞行跨障与空间索敌算法的魅力',
 });
 
 export { ClashOfAlgorithmsGameVisualizer as ClashOfAlgorithmsVisualizer };
