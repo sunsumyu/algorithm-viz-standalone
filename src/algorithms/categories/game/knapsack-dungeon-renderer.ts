@@ -2,10 +2,11 @@
  * 背包商人·地牢探险 (Knapsack Dungeon: Action DP Crawler)
  * 具备真正游戏性、即时动作战斗与暗黑风格背包的 60 FPS 地牢探险游戏：
  * 1. 🕹️ 2.5D 实时地牢画布 (Canvas 60 FPS 走位、近战挥砍、法术弹道、Boss 危险预警红圈、受击震屏)
- * 2. 🎒 暗黑/生化危机风拟真负重背包 (实时重量槽、宝物装配、装备槽、战力统计)
- * 3. 👹 3 大独立机制 Boss (骷髅王地刺重砸、蛛后喷射毒液弹、远古巨龙烈焰吐息)
- * 4. 🧠 动态规划·启示之眼 (一键计算 0-1 背包/完全背包最优解，金光闪耀穿戴神装)
- * 5. 📊 实时 DP 状态转移矩阵 (支持点击单元格回溯来源: dp[i-1][w] 或 dp[i-1][w-wi]+vi)
+ * 2. 🗡️ 实装武器与防具外观 (根据当前穿戴的神兵，动态渲染巨剑火光、战斧、神枪、巨盾与狂暴光环)
+ * 3. 🧪 快捷道具法术槽 (按 1 饮用狂暴药水获得 5 秒双倍暴击红光，按 2 施放冰霜卷轴冻结 Boss 2.5 秒)
+ * 4. 🌀 通关传送阵机制 (Boss 斩杀后原地生成金色传送阵，走入即刻晋升下一层地牢)
+ * 5. 🧠 动态规划·启示之眼 (一键计算 0-1 背包/完全背包最优解，金光闪耀穿戴神装)
+ * 6. 📊 实时 DP 状态转移矩阵全景表
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
@@ -38,9 +39,10 @@ export interface BossEntity {
   attack: number;
   attackCooldown: number;
   lastAttackTime: number;
-  state: 'IDLE' | 'ATTACKING' | 'TELEGRAPH' | 'HURT' | 'DEAD';
+  state: 'IDLE' | 'ATTACKING' | 'TELEGRAPH' | 'HURT' | 'FROZEN' | 'DEAD';
   telegraphTimer: number;
   telegraphPos: { x: number; y: number; r: number };
+  freezeTimer: number;
   animTick: number;
 }
 
@@ -58,6 +60,7 @@ export interface HeroEntity {
   lastAttackTime: number;
   direction: number; // 弧度
   animTick: number;
+  rageTimer: number; // 狂暴药水倒计时
 }
 
 export interface AttackSlash {
@@ -66,18 +69,6 @@ export interface AttackSlash {
   angle: number;
   life: number; // 0 ~ 1
   damage: number;
-}
-
-export interface CombatProjectile {
-  id: string;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  damage: number;
-  color: string;
-  radius: number;
-  isEnemy: boolean;
 }
 
 export interface FloatingNumber {
@@ -113,10 +104,10 @@ const DUNGEON_FLOORS: DungeonFloor[] = [
     capacity: 10,
     concept: '🎯 0-1 背包原理：每件神器世间仅存一份，在严格限重 10kg 下通过 DP 做出最优抉择。',
     items: [
-      { id: 'i1', name: '炽炎巨剑', icon: '🗡️', weight: 4, value: 40, type: 'WEAPON', desc: '沉重双手巨剑，挥砍威力惊人' },
-      { id: 'i2', name: '秘银板甲', icon: '🛡️', weight: 5, value: 45, hpBonus: 40, type: 'ARMOR', desc: '大幅提升生存与血量' },
-      { id: 'i3', name: '狂暴药水', icon: '🧪', weight: 2, value: 18, type: 'POTION', desc: '短效爆发，性价比高' },
-      { id: 'i4', name: '冰霜卷轴', icon: '📜', weight: 1, value: 12, type: 'SCROLL', desc: '极轻便的法术卷轴' },
+      { id: 'i1', name: '炽炎巨剑', icon: '🗡️', weight: 4, value: 40, type: 'WEAPON', desc: '沉重双手巨剑，挥砍附带烈火' },
+      { id: 'i2', name: '秘银板甲', icon: '🛡️', weight: 5, value: 45, hpBonus: 40, type: 'ARMOR', desc: '大幅提升生存与生命值' },
+      { id: 'i3', name: '狂暴药水', icon: '🧪', weight: 2, value: 18, type: 'POTION', desc: '短效爆发，按 1 激活 5 秒双倍暴击' },
+      { id: 'i4', name: '冰霜卷轴', icon: '📜', weight: 1, value: 12, type: 'SCROLL', desc: '极轻便法术，按 2 冰冻 Boss 2.5 秒' },
       { id: 'i5', name: '精钢战斧', icon: '🪓', weight: 3, value: 25, type: 'WEAPON', desc: '平衡型近战利器' },
       { id: 'i6', name: '泰坦之戒', icon: '💍', weight: 2, value: 20, type: 'RELIC', desc: '远古神力附魔戒指' },
     ],
@@ -135,8 +126,8 @@ const DUNGEON_FLOORS: DungeonFloor[] = [
     capacity: 12,
     concept: '🧪 完全背包原理：炼金药剂与飞刀无限量供应，物品可重复选取，状态正序转移。',
     items: [
-      { id: 'i1', name: '烈焰药剂', icon: '🧪', weight: 3, value: 30, type: 'POTION', desc: '可无限拿取，伤害极高' },
-      { id: 'i2', name: '淬毒飞刀', icon: '🗡️', weight: 2, value: 18, type: 'WEAPON', desc: '轻便敏捷，可多把堆叠' },
+      { id: 'i1', name: '烈焰药剂', icon: '🧪', weight: 3, value: 30, type: 'POTION', desc: '可重复选取，伤害极高' },
+      { id: 'i2', name: '淬毒飞刀', icon: '🗡️', weight: 2, value: 18, type: 'WEAPON', desc: '轻便敏捷，多把堆叠' },
       { id: 'i3', name: '奥术护符', icon: '🧿', weight: 4, value: 38, hpBonus: 30, type: 'RELIC', desc: '强化法术共鸣' },
       { id: 'i4', name: '神圣卷轴', icon: '📜', weight: 1, value: 10, type: 'SCROLL', desc: '低重量填充装配' },
     ],
@@ -243,6 +234,24 @@ class DungeonAudio {
     } catch {}
   }
 
+  public static playSpell(): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    } catch {}
+  }
+
   public static playVictory(): void {
     const ctx = this.getCtx();
     if (!ctx) return;
@@ -277,7 +286,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
 
   private hero: HeroEntity = {
     x: 80,
-    y: 160,
+    y: 100,
     vx: 0,
     vy: 0,
     hp: 100,
@@ -289,6 +298,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     lastAttackTime: 0,
     direction: 0,
     animTick: 0,
+    rageTimer: 0,
   };
 
   private boss: BossEntity = {
@@ -296,7 +306,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     name: '💀 骷髅领主',
     icon: '💀',
     x: 320,
-    y: 160,
+    y: 100,
     hp: 160,
     maxHp: 160,
     attack: 28,
@@ -305,16 +315,18 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     state: 'IDLE',
     telegraphTimer: 0,
     telegraphPos: { x: 0, y: 0, r: 0 },
+    freezeTimer: 0,
     animTick: 0,
   };
 
   private slashes: AttackSlash[] = [];
-  private projectiles: CombatProjectile[] = [];
   private floatingNumbers: FloatingNumber[] = [];
   private keysDown = new Set<string>();
 
-  // 状态与 DP
-  private isAutoMovingToBoss = false;
+  // 传送门
+  private portalPos = { x: 380, y: 100, active: false };
+
+  // DP 演算矩阵
   private dpTable: number[][] = [];
   private dpChosenItems: DungeonItem[] = [];
   private dpOptimalValue = 0;
@@ -353,27 +365,27 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     this.currentFloor = floorId;
     this.selectedItemIds.clear();
     this.slashes = [];
-    this.projectiles = [];
     this.floatingNumbers = [];
     this.screenShake = 0;
-    this.isAutoMovingToBoss = false;
+    this.portalPos.active = false;
 
     const floor = DUNGEON_FLOORS.find((f) => f.floorId === floorId) || DUNGEON_FLOORS[0];
 
     // 重置英雄与 Boss
     this.hero.x = 80;
-    this.hero.y = 160;
+    this.hero.y = 100;
     this.hero.vx = 0;
     this.hero.vy = 0;
     this.hero.hp = 100;
     this.hero.maxHp = 100;
+    this.hero.rageTimer = 0;
 
     this.boss = {
       id: 'boss',
       name: floor.bossConfig.name,
       icon: floor.bossConfig.icon,
       x: 320,
-      y: 160,
+      y: 100,
       hp: floor.bossConfig.hp,
       maxHp: floor.bossConfig.hp,
       attack: floor.bossConfig.attack,
@@ -382,6 +394,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       state: 'IDLE',
       telegraphTimer: 0,
       telegraphPos: { x: 0, y: 0, r: 0 },
+      freezeTimer: 0,
       animTick: 0,
     };
 
@@ -437,10 +450,21 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       });
     }
 
-    // 手动攻击按钮 (支持点击与空格)
+    // 手动攻击按钮
     const attackBtn = this.root.querySelector('#btn-knapsack-attack') as HTMLButtonElement | null;
     if (attackBtn) {
       attackBtn.addEventListener('click', () => this.heroPerformAttack());
+    }
+
+    // 快捷药水与卷轴按钮
+    const potionBtn = this.root.querySelector('#btn-knapsack-potion') as HTMLButtonElement | null;
+    if (potionBtn) {
+      potionBtn.addEventListener('click', () => this.usePotionSkill());
+    }
+
+    const scrollBtn = this.root.querySelector('#btn-knapsack-scroll') as HTMLButtonElement | null;
+    if (scrollBtn) {
+      scrollBtn.addEventListener('click', () => this.useScrollSkill());
     }
 
     // 重置本层战局
@@ -457,6 +481,12 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
         e.preventDefault();
         this.heroPerformAttack();
       }
+      if (e.key === '1') {
+        this.usePotionSkill();
+      }
+      if (e.key === '2') {
+        this.useScrollSkill();
+      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -469,11 +499,36 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
         const clickX = e.clientX - rect.left;
         const clickY = e.clientY - rect.top;
 
-        // 点击转向并挥砍
         this.hero.direction = Math.atan2(clickY - this.hero.y, clickX - this.hero.x);
         this.heroPerformAttack();
       });
     }
+  }
+
+  // 使用狂暴药水技能 (按 1)
+  private usePotionSkill(): void {
+    const hasPotion = Array.from(this.selectedItemIds).some((id) => id.includes('i3') || id.includes('potion'));
+    if (!hasPotion && this.selectedItemIds.size === 0) {
+      this.addFloatingNumber(this.hero.x, this.hero.y - 20, '⚠️ 未装备狂暴药水!', '#ef4444');
+      return;
+    }
+    this.hero.rageTimer = 5.0;
+    DungeonAudio.playSpell();
+    this.addFloatingNumber(this.hero.x, this.hero.y - 20, '🔥 狂暴激化! 5秒双倍暴击', '#f97316');
+  }
+
+  // 使用冰霜卷轴技能 (按 2)
+  private useScrollSkill(): void {
+    const hasScroll = Array.from(this.selectedItemIds).some((id) => id.includes('i4') || id.includes('scroll'));
+    if (!hasScroll && this.selectedItemIds.size === 0) {
+      this.addFloatingNumber(this.hero.x, this.hero.y - 20, '⚠️ 未装备冰霜卷轴!', '#ef4444');
+      return;
+    }
+    if (this.boss.hp <= 0) return;
+    this.boss.freezeTimer = 2.5;
+    this.boss.state = 'FROZEN';
+    DungeonAudio.playSpell();
+    this.addFloatingNumber(this.boss.x, this.boss.y - 20, '❄️ Boss 被深度冰冻 2.5 秒!', '#38bdf8');
   }
 
   // 英雄挥砍攻击
@@ -486,7 +541,8 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     DungeonAudio.playSlash();
 
     const stats = this.getCurrentTotalStats();
-    const totalDmg = this.hero.baseAttack + stats.totalValue;
+    let totalDmg = this.hero.baseAttack + stats.totalValue;
+    if (this.hero.rageTimer > 0) totalDmg *= 2; // 狂暴双倍伤害
 
     // 刀光
     this.slashes.push({
@@ -503,13 +559,15 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       DungeonAudio.playHit();
       this.screenShake = 6;
       this.boss.hp = Math.max(0, this.boss.hp - totalDmg);
-      this.boss.state = 'HURT';
-      this.addFloatingNumber(this.boss.x, this.boss.y - 20, `-${totalDmg} 🗡️`, '#ef4444');
+      if (this.boss.state !== 'FROZEN') this.boss.state = 'HURT';
+
+      this.addFloatingNumber(this.boss.x, this.boss.y - 20, `-${totalDmg} ${this.hero.rageTimer > 0 ? '🔥暴击' : '🗡️'}`, this.hero.rageTimer > 0 ? '#f97316' : '#ef4444');
 
       if (this.boss.hp <= 0) {
         this.boss.state = 'DEAD';
+        this.portalPos.active = true;
         DungeonAudio.playVictory();
-        this.addFloatingNumber(this.boss.x, this.boss.y - 30, '🏆 BOSS 击杀胜利!', '#f59e0b');
+        this.addFloatingNumber(this.boss.x, this.boss.y - 30, '🏆 BOSS 击杀! 传送阵开启', '#f59e0b');
       }
     }
   }
@@ -542,6 +600,17 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     this.hero.animTick += dt * 8;
     this.boss.animTick += dt * 5;
 
+    if (this.hero.rageTimer > 0) {
+      this.hero.rageTimer = Math.max(0, this.hero.rageTimer - dt);
+    }
+
+    if (this.boss.freezeTimer > 0) {
+      this.boss.freezeTimer = Math.max(0, this.boss.freezeTimer - dt);
+      if (this.boss.freezeTimer <= 0 && this.boss.hp > 0) {
+        this.boss.state = 'IDLE';
+      }
+    }
+
     // 1. 英雄走位控制
     let moveX = 0;
     let moveY = 0;
@@ -553,16 +622,26 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     if (moveX !== 0 || moveY !== 0) {
       const len = Math.hypot(moveX, moveY);
       this.hero.x = Math.max(25, Math.min(395, this.hero.x + (moveX / len) * this.hero.speed * dt));
-      this.hero.y = Math.max(30, Math.min(270, this.hero.y + (moveY / len) * this.hero.speed * dt));
+      this.hero.y = Math.max(25, Math.min(175, this.hero.y + (moveY / len) * this.hero.speed * dt));
       this.hero.direction = Math.atan2(moveY, moveX);
     } else {
-      // 面朝 Boss
       this.hero.direction = Math.atan2(this.boss.y - this.hero.y, this.boss.x - this.hero.x);
     }
 
-    // 2. Boss AI 与攻击预警
-    if (this.boss.hp > 0) {
-      // 缓缓逼近英雄
+    // 2. 传送门检测
+    if (this.portalPos.active) {
+      if (Math.hypot(this.hero.x - this.portalPos.x, this.hero.y - this.portalPos.y) <= 25) {
+        const nextFloor = this.currentFloor >= DUNGEON_FLOORS.length ? 1 : this.currentFloor + 1;
+        this.root?.querySelectorAll<HTMLButtonElement>('.knapsack-floor-btn').forEach((b) => {
+          b.classList.toggle('active', b.dataset.floor === `${nextFloor}`);
+        });
+        this.loadFloor(nextFloor);
+        return;
+      }
+    }
+
+    // 3. Boss AI 与攻击预警
+    if (this.boss.hp > 0 && this.boss.state !== 'FROZEN') {
       const dx = this.hero.x - this.boss.x;
       const dy = this.hero.y - this.boss.y;
       const dist = Math.hypot(dx, dy);
@@ -572,7 +651,6 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
         this.boss.y += (dy / dist) * 40 * dt;
       }
 
-      // 触发 Boss 技能预警
       if (now - this.boss.lastAttackTime >= this.boss.attackCooldown && this.boss.state === 'IDLE') {
         this.boss.state = 'TELEGRAPH';
         this.boss.telegraphTimer = 0.8;
@@ -582,7 +660,6 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       if (this.boss.state === 'TELEGRAPH') {
         this.boss.telegraphTimer -= dt;
         if (this.boss.telegraphTimer <= 0) {
-          // 预警结束，发动重击
           this.boss.state = 'IDLE';
           this.boss.lastAttackTime = now;
 
@@ -599,13 +676,13 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       }
     }
 
-    // 3. 刀光更新
+    // 4. 刀光更新
     for (let i = this.slashes.length - 1; i >= 0; i--) {
       this.slashes[i].life -= dt * 4;
       if (this.slashes[i].life <= 0) this.slashes.splice(i, 1);
     }
 
-    // 4. 飘字更新
+    // 5. 飘字更新
     for (let i = this.floatingNumbers.length - 1; i >= 0; i--) {
       const fn = this.floatingNumbers[i];
       fn.y -= dt * 25;
@@ -662,7 +739,26 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       ctx.stroke();
     }
 
-    // 2. Boss 攻击危险红圈预警
+    // 2. 通关金色传送门
+    if (this.portalPos.active) {
+      ctx.save();
+      ctx.translate(this.portalPos.x, this.portalPos.y);
+      ctx.rotate(Date.now() / 300);
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🌀', 0, 0);
+      ctx.restore();
+    }
+
+    // 3. Boss 攻击危险红圈预警
     if (this.boss.state === 'TELEGRAPH') {
       ctx.save();
       ctx.beginPath();
@@ -676,11 +772,10 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       ctx.restore();
     }
 
-    // 3. 绘制 Boss
+    // 4. 绘制 Boss
     ctx.save();
     ctx.translate(this.boss.x, this.boss.y);
 
-    // 地面软阴影
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.beginPath();
     ctx.ellipse(0, 20, 26, 12, 0, 0, Math.PI * 2);
@@ -692,7 +787,16 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       ctx.textBaseline = 'middle';
       ctx.fillText(this.boss.icon, 0, -4 + Math.sin(this.boss.animTick) * 3);
 
-      // Boss 头顶血条
+      if (this.boss.state === 'FROZEN') {
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.fillRect(-22, -26, 44, 52);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.strokeRect(-22, -26, 44, 52);
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('❄️ 冰冻', 0, 32);
+      }
+
       const bossHpPct = this.boss.hp / this.boss.maxHp;
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(-28, -32, 56, 5);
@@ -704,23 +808,44 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
     }
     ctx.restore();
 
-    // 4. 绘制勇士 Hero
+    // 5. 绘制勇士 Hero 与装备外观
     ctx.save();
     ctx.translate(this.hero.x, this.hero.y);
 
-    // 阴影
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
     ctx.beginPath();
     ctx.ellipse(0, 14, 16, 8, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 勇士身躯与金盾大剑
+    // 狂暴光环
+    if (this.hero.rageTimer > 0) {
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, 0, Math.PI * 2);
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+    }
+
     ctx.font = '26px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🧙‍♂️', 0, -2 + Math.sin(this.hero.animTick) * 2);
 
-    // 勇士血条
+    // 绘制手持武器 / 盾牌图标
+    const hasSword = Array.from(this.selectedItemIds).some((id) => id.includes('i1') || id.includes('i5'));
+    const hasShield = Array.from(this.selectedItemIds).some((id) => id.includes('i2'));
+
+    if (hasSword) {
+      ctx.font = '16px sans-serif';
+      ctx.fillText('🗡️', 14, 2);
+    }
+    if (hasShield) {
+      ctx.font = '16px sans-serif';
+      ctx.fillText('🛡️', -14, 2);
+    }
+
     const heroHpPct = this.hero.hp / this.hero.maxHp;
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(-18, -24, 36, 4);
@@ -729,7 +854,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
 
     ctx.restore();
 
-    // 5. 绘制斩击刀光 (Slash Arcs)
+    // 6. 绘制斩击刀光
     for (const slash of this.slashes) {
       ctx.save();
       ctx.translate(slash.x, slash.y);
@@ -742,7 +867,7 @@ export class KnapsackDungeonVisualizer extends StepVisualizer<any> {
       ctx.restore();
     }
 
-    // 6. 绘制飘字
+    // 7. 绘制飘字
     for (const fn of this.floatingNumbers) {
       ctx.font = 'bold 12px monospace';
       ctx.fillStyle = fn.color;
@@ -955,6 +1080,8 @@ export const KNAPSACK_DUNGEON_TEMPLATE = `
       <div style="display: flex; align-items: center; gap: 8px;">
         <button id="btn-knapsack-auto-dp" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">✨ 启示之眼 (Auto DP)</button>
         <button id="btn-knapsack-attack" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; border: none; border-radius: 6px; padding: 4px 12px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(220,38,38,0.25);">🗡️ 挥砍攻击 (Space)</button>
+        <button id="btn-knapsack-potion" style="background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🧪 狂暴(1)</button>
+        <button id="btn-knapsack-scroll" style="background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">📜 冰冻(2)</button>
         <button id="btn-knapsack-clear" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🗑️ 清空</button>
         <button id="btn-knapsack-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
       </div>
@@ -973,7 +1100,7 @@ export const KNAPSACK_DUNGEON_TEMPLATE = `
         <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #334155;">
           <canvas id="knapsack-arena-canvas" width="420" height="200" style="width: 420px; height: 200px; cursor: crosshair;"></canvas>
           <div style="position: absolute; bottom: 6px; left: 8px; font-size: 10px; color: #94a3b8; background: rgba(15,23,42,0.7); padding: 2px 6px; border-radius: 4px;">
-            🎮 键盘 WASD / 方向键移动走位，空格键或鼠标点击挥剑斩击！
+            🎮 WASD 走位，空格键挥砍，按 1 饮用狂暴药水，按 2 施放冰霜卷轴，击败 Boss 进入传送门！
           </div>
         </div>
 
