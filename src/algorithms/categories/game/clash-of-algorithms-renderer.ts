@@ -1,11 +1,11 @@
 /**
  * 部落冲突·战术攻防实战游戏 (Clash of Algorithms: Real-Time Tactical Game)
  * 具备完整可玩性的即时策略与算法沙盒游戏：
- * 1. 实时下兵与圣水循环系统 (Elixir + Troop Deck)
- * 2. 真实即时战斗引擎 (60 FPS 物理移动、飞行弹道、范围溅射、飘字伤害)
- * 3. 实时 A* 寻路动态重规划 (破墙开辟新路、兵种目标池动态剪枝)
- * 4. 4 大关卡挑战 + 自由沙盒布阵建造器
- * 5. 战局结算、三星评级与算法实时透视
+ * 1. 实时下兵与圣水循环系统 (Elixir + 6大兵种与法术卡组)
+ * 2. 真实即时战斗引擎 (60 FPS 物理移动、飞行弹道、范围溅射、飘字伤害、屏幕震屏、Web Audio 合成音效)
+ * 3. 实时 A* 寻路动态重规划 (破墙开辟新路、飞行单位无视城墙、兵种目标池动态剪枝)
+ * 4. 6 大精巧关卡挑战 + 自由沙盒布阵建造器
+ * 5. 豪华战局结算大弹窗、三星评级与算法实时透视
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
@@ -17,7 +17,7 @@ import {
 } from './clash-of-algorithms-problem-content';
 
 export type BuildingType = 'TOWNHALL' | 'ARCHER_TOWER' | 'MORTAR' | 'GOLD_MINE' | 'WALL';
-export type TroopType = 'BARBARIAN' | 'ARCHER' | 'GIANT' | 'GOBLIN' | 'WALL_BREAKER';
+export type TroopType = 'BARBARIAN' | 'ARCHER' | 'GIANT' | 'GOBLIN' | 'WALL_BREAKER' | 'DRAGON' | 'LIGHTNING_SPELL';
 
 export interface GameBuilding {
   id: string;
@@ -47,6 +47,7 @@ export interface GameTroop {
   path: [number, number][];
   pathIndex: number;
   isDead: boolean;
+  isFlying?: boolean;
 }
 
 export interface Projectile {
@@ -70,6 +71,17 @@ export interface FloatingText {
   opacity: number;
 }
 
+export interface ParticleEffect {
+  id: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  size: number;
+  alpha: number;
+}
+
 // 关卡配置
 interface LevelConfig {
   id: number;
@@ -82,7 +94,7 @@ interface LevelConfig {
 const PRESET_LEVELS: LevelConfig[] = [
   {
     id: 1,
-    name: '关卡 1: 哥布林劫掠金矿',
+    name: '第 1 关: 哥布林劫掠金矿',
     desc: '资源贪心教学：金矿散落各处，下哥布林极速洗劫！',
     tip: '💡 哥布林移动速度极快且对金矿造成双倍伤害，但血量脆弱，避开箭塔射程！',
     buildings: [
@@ -95,7 +107,7 @@ const PRESET_LEVELS: LevelConfig[] = [
   },
   {
     id: 2,
-    name: '关卡 2: 巨石攻坚双箭塔',
+    name: '第 2 关: 巨石攻坚双箭塔',
     desc: '防御过滤教学：用巨人前排扛伤，后排弓箭手隔墙输出！',
     tip: '💡 巨人只攻击防御塔，箭塔会锁定最近目标。先放巨人吸引仇恨，再在后方下弓箭手！',
     buildings: [
@@ -111,14 +123,13 @@ const PRESET_LEVELS: LevelConfig[] = [
   },
   {
     id: 3,
-    name: '关卡 3: 开孔引导阵与炸弹人',
-    desc: '破阵权衡教学：用炸弹人炸开封闭城墙，防止主力钻入陷阱！',
+    name: '第 3 关: 开孔引导阵与炸弹人',
+    desc: '破阵权衡教学：用炸弹人炸开封闭城墙，防止主力钻入右侧陷阱！',
     tip: '💡 阵型右侧有缺口，普通小兵会根据 A* 绕远路钻洞。先放炸弹人炸破左侧城墙，打通直达核心捷径！',
     buildings: [
       { id: 'th', type: 'TOWNHALL', r: 4, c: 4, hp: 600, maxHp: 600 },
       { id: 'at1', type: 'ARCHER_TOWER', r: 3, c: 4, hp: 250, maxHp: 250, range: 3.5, attackCooldown: 1.0 },
       { id: 'mor1', type: 'MORTAR', r: 5, c: 4, hp: 200, maxHp: 200, range: 4.5, attackCooldown: 2.2 },
-      // 封闭左、上、下，留出右侧缺口
       { id: 'w1', type: 'WALL', r: 2, c: 2, hp: 160, maxHp: 160 },
       { id: 'w2', type: 'WALL', r: 2, c: 3, hp: 160, maxHp: 160 },
       { id: 'w3', type: 'WALL', r: 2, c: 4, hp: 160, maxHp: 160 },
@@ -132,16 +143,39 @@ const PRESET_LEVELS: LevelConfig[] = [
   },
   {
     id: 4,
-    name: '关卡 4: 终极部落大要塞',
-    desc: '全兵种联合作战：大本营被箭塔、迫击炮与回字城墙严密保护！',
-    tip: '💡 综合运用：炸弹人破外墙 $\\to$ 巨人吸引迫击炮 $\\to$ 哥布林清边 $\\to$ 弓箭手与野蛮人直捣黄龙！',
+    name: '第 4 关: 飞龙跨墙与雷电奇袭',
+    desc: '高阶战术：使用飞龙宝宝跨越重重城墙，雷电法术秒杀核心箭塔！',
+    tip: '💡 飞龙宝宝作为飞行单位完全无视城墙阻挡！使用 ⚡ 雷电法术直接劈中箭塔削减大半血量！',
     buildings: [
-      { id: 'th', type: 'TOWNHALL', r: 4, c: 4, hp: 800, maxHp: 800 },
-      { id: 'at1', type: 'ARCHER_TOWER', r: 3, c: 3, hp: 280, maxHp: 280, range: 3.5, attackCooldown: 0.9 },
-      { id: 'at2', type: 'ARCHER_TOWER', r: 5, c: 5, hp: 280, maxHp: 280, range: 3.5, attackCooldown: 0.9 },
-      { id: 'mor1', type: 'MORTAR', r: 3, c: 5, hp: 220, maxHp: 220, range: 4.8, attackCooldown: 2.2 },
+      { id: 'th', type: 'TOWNHALL', r: 4, c: 4, hp: 700, maxHp: 700 },
+      { id: 'at1', type: 'ARCHER_TOWER', r: 3, c: 4, hp: 260, maxHp: 260, range: 3.5, attackCooldown: 0.8 },
+      { id: 'mor1', type: 'MORTAR', r: 5, c: 4, hp: 220, maxHp: 220, range: 4.5, attackCooldown: 2.0 },
+      { id: 'gm1', type: 'GOLD_MINE', r: 4, c: 6, hp: 180, maxHp: 180 },
+      // 密集包围城墙
+      { id: 'w1', type: 'WALL', r: 2, c: 2, hp: 200, maxHp: 200 },
+      { id: 'w2', type: 'WALL', r: 2, c: 3, hp: 200, maxHp: 200 },
+      { id: 'w3', type: 'WALL', r: 2, c: 4, hp: 200, maxHp: 200 },
+      { id: 'w4', type: 'WALL', r: 2, c: 5, hp: 200, maxHp: 200 },
+      { id: 'w5', type: 'WALL', r: 3, c: 2, hp: 200, maxHp: 200 },
+      { id: 'w6', type: 'WALL', r: 4, c: 2, hp: 200, maxHp: 200 },
+      { id: 'w7', type: 'WALL', r: 5, c: 2, hp: 200, maxHp: 200 },
+      { id: 'w8', type: 'WALL', r: 6, c: 2, hp: 200, maxHp: 200 },
+      { id: 'w9', type: 'WALL', r: 6, c: 3, hp: 200, maxHp: 200 },
+      { id: 'w10', type: 'WALL', r: 6, c: 4, hp: 200, maxHp: 200 },
+      { id: 'w11', type: 'WALL', r: 6, c: 5, hp: 200, maxHp: 200 },
+    ],
+  },
+  {
+    id: 5,
+    name: '第 5 关: 终极部落大要塞',
+    desc: '全军出击：大本营被箭塔、迫击炮与完整回字城墙重重保护！',
+    tip: '💡 综合运用：雷电先手劈塔 $\\to$ 炸弹人破外墙 $\\to$ 巨人吸收火力 $\\to$ 飞龙与哥布林收割全场！',
+    buildings: [
+      { id: 'th', type: 'TOWNHALL', r: 4, c: 4, hp: 900, maxHp: 900 },
+      { id: 'at1', type: 'ARCHER_TOWER', r: 3, c: 3, hp: 300, maxHp: 300, range: 3.5, attackCooldown: 0.9 },
+      { id: 'at2', type: 'ARCHER_TOWER', r: 5, c: 5, hp: 300, maxHp: 300, range: 3.5, attackCooldown: 0.9 },
+      { id: 'mor1', type: 'MORTAR', r: 3, c: 5, hp: 240, maxHp: 240, range: 4.8, attackCooldown: 2.2 },
       { id: 'gm1', type: 'GOLD_MINE', r: 5, c: 3, hp: 200, maxHp: 200 },
-      // 完整回字墙
       { id: 'w1', type: 'WALL', r: 2, c: 2, hp: 180, maxHp: 180 },
       { id: 'w2', type: 'WALL', r: 2, c: 3, hp: 180, maxHp: 180 },
       { id: 'w3', type: 'WALL', r: 2, c: 4, hp: 180, maxHp: 180 },
@@ -162,6 +196,97 @@ const PRESET_LEVELS: LevelConfig[] = [
   },
 ];
 
+// Web Audio API 简易实时音效合成器 (零外链、纯原生极速)
+class SoundFX {
+  private static audioCtx: AudioContext | null = null;
+
+  private static getCtx(): AudioContext | null {
+    if (typeof window === 'undefined') return null;
+    if (!this.audioCtx) {
+      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioClass) this.audioCtx = new AudioClass();
+    }
+    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume();
+    }
+    return this.audioCtx;
+  }
+
+  public static playSpawn(): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } catch {}
+  }
+
+  public static playExplosion(): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(160, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    } catch {}
+  }
+
+  public static playLightning(): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {}
+  }
+
+  public static playVictory(): void {
+    const ctx = this.getCtx();
+    if (!ctx) return;
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.1 + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + idx * 0.1);
+        osc.stop(ctx.currentTime + idx * 0.1 + 0.3);
+      });
+    } catch {}
+  }
+}
+
 export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
   private gridSize = 10;
   private currentLevel = 1;
@@ -172,19 +297,22 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
   // 游戏运行状态
   private isRunning = false;
+  private isGameOver = false;
   private animFrameId: number | null = null;
   private lastTimestamp = 0;
-  private elixir = 7.0; // 圣水
+  private elixir = 7.0;
   private maxElixir = 10.0;
-  private battleTimer = 120; // 秒
+  private battleTimer = 120;
   private destructionRate = 0;
   private stars = 0;
+  private screenShake = 0;
 
   // 实体
   private buildings: GameBuilding[] = [];
   private troops: GameTroop[] = [];
   private projectiles: Projectile[] = [];
   private floatingTexts: FloatingText[] = [];
+  private particles: ParticleEffect[] = [];
   private totalCoreBuildings = 0;
 
   // DOM
@@ -198,16 +326,14 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     this.codePanelTitle = '部落冲突 A* 寻路与索敌引擎';
   }
 
-  protected initDOMElements(): void {
-    // 游戏引擎直接通过 canvas 实时渲染与自包含 UI 驱动
-  }
+  protected initDOMElements(): void {}
 
   protected buildSteps(): any[] {
     return [{ message: '部落冲突战术攻防实战沙盘' }];
   }
 
-  protected renderStep(): void {
-    // 游戏使用 requestAnimationFrame 60 FPS 实时更新
+  protected renderStep(_step: any): void {
+    // 游戏引擎使用 requestAnimationFrame 60 FPS 实时更新与 Canvas 渲染
   }
 
   public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
@@ -229,17 +355,24 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     this.currentLevel = levelId;
     this.isBuildMode = false;
     this.isRunning = false;
+    this.isGameOver = false;
     this.elixir = 7.0;
     this.battleTimer = 120;
     this.destructionRate = 0;
     this.stars = 0;
+    this.screenShake = 0;
     this.troops = [];
     this.projectiles = [];
     this.floatingTexts = [];
+    this.particles = [];
 
     const config = PRESET_LEVELS.find((l) => l.id === levelId) || PRESET_LEVELS[0];
     this.buildings = config.buildings.map((b) => ({ ...b }));
     this.totalCoreBuildings = this.buildings.filter((b) => b.type !== 'WALL').length;
+
+    // 隐藏胜利弹窗
+    const modal = this.root?.querySelector('#clash-victory-modal') as HTMLElement | null;
+    if (modal) modal.style.display = 'none';
 
     this.updateHUD();
     this.logEvent(`🏰 进入【${config.name}】: ${config.desc}`);
@@ -309,6 +442,18 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       resetBtn.addEventListener('click', () => this.loadLevel(this.currentLevel));
     }
 
+    // 弹窗下一关按钮
+    const nextLvlBtn = this.root.querySelector('#btn-modal-next-level') as HTMLButtonElement | null;
+    if (nextLvlBtn) {
+      nextLvlBtn.addEventListener('click', () => {
+        const nextId = this.currentLevel >= PRESET_LEVELS.length ? 1 : this.currentLevel + 1;
+        this.root?.querySelectorAll<HTMLButtonElement>('.clash-lvl-btn').forEach((b) => {
+          b.classList.toggle('active', b.dataset.level === `${nextId}`);
+        });
+        this.loadLevel(nextId);
+      });
+    }
+
     // A* 寻路透视开关
     const pathToggle = this.root.querySelector('#chk-astar-path') as HTMLInputElement | null;
     if (pathToggle) {
@@ -354,10 +499,47 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
         }
         this.totalCoreBuildings = this.buildings.filter((b) => b.type !== 'WALL').length;
       } else {
-        // 实战模式：实时下兵
-        this.deployTroop(this.selectedTroopType, r, c);
+        // 实战模式：实时下兵或施放法术
+        if (this.selectedTroopType === 'LIGHTNING_SPELL') {
+          this.castLightningSpell(r, c);
+        } else {
+          this.deployTroop(this.selectedTroopType, r, c);
+        }
       }
     });
+  }
+
+  // 施放雷电法术
+  private castLightningSpell(r: number, c: number): void {
+    if (this.elixir < 3) {
+      this.addFloatingText(c, r, `💧 圣水不足 (雷电需 3)`, '#ef4444');
+      return;
+    }
+
+    this.elixir -= 3;
+    this.isRunning = true;
+    this.screenShake = 12;
+    SoundFX.playLightning();
+
+    this.addFloatingText(c, r, `⚡ 雷霆万钧!`, '#38bdf8');
+    this.spawnParticles(c + 0.5, r + 0.5, '#38bdf8', 20);
+
+    // 对 2x2 半径内所有建筑与城墙造成 260 巨额雷电伤害
+    let hitCount = 0;
+    this.buildings.forEach((b) => {
+      if (b.hp > 0 && Math.hypot(b.c - c, b.r - r) <= 1.8) {
+        b.hp = Math.max(0, b.hp - 260);
+        hitCount++;
+        this.addFloatingText(b.c, b.r, `-260 ⚡`, '#38bdf8');
+        if (b.hp <= 0) {
+          this.logEvent(`⚡ 雷电法术直接劈碎了 ${b.type} (${b.r}, ${b.c})！`);
+        }
+      }
+    });
+
+    this.logEvent(`⚡ 施放雷电法术！命中 (${r}, ${c}) 周围 ${hitCount} 座设施！`);
+    // 重新规划所有小兵寻路
+    this.troops.forEach((t) => this.updateTroopAStar(t));
   }
 
   // 部署小兵
@@ -368,6 +550,8 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       GIANT: 5,
       GOBLIN: 1,
       WALL_BREAKER: 2,
+      DRAGON: 4,
+      LIGHTNING_SPELL: 3,
     };
 
     const cost = costMap[type] || 1;
@@ -378,6 +562,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
     this.elixir -= cost;
     this.isRunning = true;
+    SoundFX.playSpawn();
 
     const hpMap: Record<TroopType, number> = {
       BARBARIAN: 200,
@@ -385,13 +570,17 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       GIANT: 600,
       GOBLIN: 110,
       WALL_BREAKER: 90,
+      DRAGON: 360,
+      LIGHTNING_SPELL: 0,
     };
     const dmgMap: Record<TroopType, number> = {
       BARBARIAN: 25,
       ARCHER: 22,
       GIANT: 45,
       GOBLIN: 40,
-      WALL_BREAKER: 250,
+      WALL_BREAKER: 300,
+      DRAGON: 45,
+      LIGHTNING_SPELL: 260,
     };
     const speedMap: Record<TroopType, number> = {
       BARBARIAN: 1.2,
@@ -399,6 +588,8 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       GIANT: 0.7,
       GOBLIN: 2.2,
       WALL_BREAKER: 1.8,
+      DRAGON: 1.5,
+      LIGHTNING_SPELL: 0,
     };
     const rangeMap: Record<TroopType, number> = {
       BARBARIAN: 0.8,
@@ -406,6 +597,8 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       GIANT: 0.8,
       GOBLIN: 0.8,
       WALL_BREAKER: 0.8,
+      DRAGON: 1.8,
+      LIGHTNING_SPELL: 0,
     };
 
     const troop: GameTroop = {
@@ -424,10 +617,12 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       path: [],
       pathIndex: 0,
       isDead: false,
+      isFlying: type === 'DRAGON',
     };
 
     this.troops.push(troop);
     this.addFloatingText(c, r, `+1 ${type}`, '#10b981');
+    this.spawnParticles(c + 0.5, r + 0.5, '#10b981', 8);
     this.logEvent(`🪓 消耗 💧${cost} 在 (${r}, ${c}) 投放 ${type}，触发实时 A* 寻路！`);
     this.updateTroopAStar(troop);
   }
@@ -460,7 +655,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     const target = validTargets[0];
     troop.targetId = target.id;
 
-    // 2. A* 网格搜索
+    // 2. A* 网格搜索 (飞行单位如飞龙无视城墙)
     const sr = Math.floor(troop.y);
     const sc = Math.floor(troop.x);
     const tr = target.r;
@@ -509,8 +704,8 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
         const key = `${nr},${nc}`;
         const isWall = wallSet.has(key);
-        // 炸弹人破墙权重为 1，普通小兵破墙权重为 16 (权衡钻洞 vs 砸墙)
-        const stepCost = isWall ? (troop.type === 'WALL_BREAKER' ? 1.0 : 16.0) : 1.0;
+        // 飞龙无视城墙(1.0)，炸弹人破墙权重为 1.0，普通地面小兵破墙权重为 16.0
+        const stepCost = troop.isFlying ? 1.0 : isWall ? (troop.type === 'WALL_BREAKER' ? 1.0 : 16.0) : 1.0;
         const newG = cur.g + stepCost;
 
         if (!closed.has(key) || newG < closed.get(key)!) {
@@ -539,7 +734,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       const dt = Math.min((timestamp - this.lastTimestamp) / 1000, 0.1);
       this.lastTimestamp = timestamp;
 
-      if (this.isRunning && !this.isBuildMode) {
+      if (this.isRunning && !this.isBuildMode && !this.isGameOver) {
         this.updateGame(dt);
       }
 
@@ -559,6 +754,11 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     // 战斗倒计时
     this.battleTimer = Math.max(0, this.battleTimer - dt);
 
+    // 屏幕震动衰减
+    if (this.screenShake > 0) {
+      this.screenShake = Math.max(0, this.screenShake - dt * 25);
+    }
+
     const now = Date.now() / 1000;
 
     // 1. 更新小兵移动与攻击
@@ -567,20 +767,17 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
       const target = this.buildings.find((b) => b.id === troop.targetId && b.hp > 0);
       if (!target) {
-        // 目标已死，重新 A* 寻路
         this.updateTroopAStar(troop);
         continue;
       }
 
       const distToTarget = Math.hypot(troop.x - (target.c + 0.5), troop.y - (target.r + 0.5));
 
-      // 判断前方是否有未摧毁城墙阻隔
-      const curR = Math.floor(troop.y);
-      const curC = Math.floor(troop.x);
+      // 判断前方是否有未摧毁城墙阻隔 (飞龙无视城墙)
       const nextStep = troop.path[troop.pathIndex + 1];
       let blockingWall: GameBuilding | undefined;
 
-      if (nextStep) {
+      if (nextStep && !troop.isFlying) {
         blockingWall = this.buildings.find((b) => b.type === 'WALL' && b.hp > 0 && b.r === nextStep[0] && b.c === nextStep[1]);
       }
 
@@ -592,8 +789,10 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
           blockingWall.hp = Math.max(0, blockingWall.hp - dmg);
           this.addFloatingText(blockingWall.c, blockingWall.r, `-${dmg}`, '#f59e0b');
           if (blockingWall.hp <= 0) {
+            this.screenShake = 6;
+            SoundFX.playExplosion();
+            this.spawnParticles(blockingWall.c + 0.5, blockingWall.r + 0.5, '#64748b', 16);
             this.logEvent(`💥 城墙 (${blockingWall.r}, ${blockingWall.c}) 被攻破！通道打开！`);
-            // 城墙破开，全员重算 A* 寻路！
             this.troops.forEach((t) => this.updateTroopAStar(t));
           }
           if (troop.type === 'WALL_BREAKER') {
@@ -606,13 +805,15 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
         if (now - troop.lastAttackTime >= troop.attackCooldown) {
           troop.lastAttackTime = now;
           let dmg = troop.damage;
-          if (troop.type === 'GOBLIN' && target.type === 'GOLD_MINE') dmg *= 2; // 哥布林双倍拆金矿
+          if (troop.type === 'GOBLIN' && target.type === 'GOLD_MINE') dmg *= 2;
           target.hp = Math.max(0, target.hp - dmg);
           this.addFloatingText(target.c, target.r, `-${dmg}`, '#ef4444');
 
           if (target.hp <= 0) {
+            this.screenShake = 10;
+            SoundFX.playExplosion();
+            this.spawnParticles(target.c + 0.5, target.r + 0.5, '#ef4444', 24);
             this.logEvent(`🏆 摧毁目标建筑 ${target.type} (${target.r}, ${target.c})！`);
-            // 重新寻找下一个目标
             this.troops.forEach((t) => this.updateTroopAStar(t));
           }
         }
@@ -650,7 +851,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       const cooldown = building.attackCooldown || 1.0;
 
       if (now - (building.lastAttackTime || 0) >= cooldown) {
-        // 寻找射程内最近存活小兵
         const inRangeTroops = this.troops.filter((t) => !t.isDead && Math.hypot(building.c + 0.5 - t.x, building.r + 0.5 - t.y) <= range);
 
         if (inRangeTroops.length > 0) {
@@ -658,7 +858,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
           const targetTroop = inRangeTroops[0];
           building.lastAttackTime = now;
 
-          // 生成飞行弹道
           this.projectiles.push({
             id: `p_${Date.now()}_${Math.random()}`,
             startX: building.c + 0.5,
@@ -677,12 +876,13 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     // 3. 飞行弹道推进
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
-      p.progress += dt * 3.5; // 弹道飞行速度
+      p.progress += dt * 3.5;
 
       if (p.progress >= 1) {
-        // 命中目标
         if (p.isAoE) {
-          // 迫击炮范围溅射 (1.8 格半径)
+          this.screenShake = 8;
+          SoundFX.playExplosion();
+          this.spawnParticles(p.targetX, p.targetY, '#f97316', 16);
           this.troops.forEach((t) => {
             if (!t.isDead && Math.hypot(t.x - p.targetX, t.y - p.targetY) <= 1.8) {
               t.hp = Math.max(0, t.hp - p.damage);
@@ -702,15 +902,22 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       }
     }
 
-    // 4. 更新飘字
+    // 4. 更新飘字与粒子
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       const ft = this.floatingTexts[i];
       ft.y -= dt * 0.8;
       ft.opacity -= dt * 1.2;
       if (ft.opacity <= 0) this.floatingTexts.splice(i, 1);
     }
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const pt = this.particles[i];
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.alpha -= dt * 1.5;
+      if (pt.alpha <= 0) this.particles.splice(i, 1);
+    }
 
-    // 5. 战局结算
+    // 5. 战局结算与胜利检测
     const destroyedCores = this.buildings.filter((b) => b.type !== 'WALL' && b.hp <= 0).length;
     this.destructionRate = this.totalCoreBuildings > 0 ? Math.round((destroyedCores / this.totalCoreBuildings) * 100) : 0;
 
@@ -721,7 +928,41 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     if (this.destructionRate >= 100) stars = 3;
     this.stars = stars;
 
+    if (this.destructionRate >= 100 && !this.isGameOver) {
+      this.isGameOver = true;
+      SoundFX.playVictory();
+      this.showVictoryModal();
+    }
+
     this.updateHUD();
+  }
+
+  private showVictoryModal(): void {
+    const modal = this.root?.querySelector('#clash-victory-modal') as HTMLElement | null;
+    if (modal) {
+      modal.style.display = 'flex';
+      const starText = modal.querySelector('#modal-stars');
+      const rateText = modal.querySelector('#modal-rate');
+      if (starText) starText.textContent = `${'⭐'.repeat(this.stars)}`;
+      if (rateText) rateText.textContent = `摧毁率: ${this.destructionRate}% | 耗时: ${120 - Math.round(this.battleTimer)} 秒`;
+    }
+  }
+
+  private spawnParticles(x: number, y: number, color: string, count: number): void {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.5 + Math.random() * 2.0;
+      this.particles.push({
+        id: `p_${Date.now()}_${Math.random()}`,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color,
+        size: 2 + Math.random() * 3,
+        alpha: 1.0,
+      });
+    }
   }
 
   private addFloatingText(x: number, y: number, text: string, color: string): void {
@@ -738,19 +979,16 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
   private updateHUD(): void {
     if (!this.root) return;
 
-    // 圣水水滴与进度条
     const elixirFill = this.root.querySelector('#clash-elixir-fill') as HTMLElement | null;
     const elixirText = this.root.querySelector('#clash-elixir-text') as HTMLElement | null;
     if (elixirFill) elixirFill.style.width = `${(this.elixir / this.maxElixir) * 100}%`;
     if (elixirText) elixirText.textContent = `💧 圣水: ${this.elixir.toFixed(1)} / ${this.maxElixir}`;
 
-    // 摧毁率与星级
     const rateEl = this.root.querySelector('#clash-destruction-rate') as HTMLElement | null;
     const starEl = this.root.querySelector('#clash-star-display') as HTMLElement | null;
     if (rateEl) rateEl.textContent = `${this.destructionRate}%`;
     if (starEl) starEl.textContent = `${'⭐'.repeat(this.stars)}${'☆'.repeat(3 - this.stars)}`;
 
-    // 倒计时
     const timerEl = this.root.querySelector('#clash-timer-display') as HTMLElement | null;
     if (timerEl) {
       const m = Math.floor(this.battleTimer / 60);
@@ -758,7 +996,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       timerEl.textContent = `⏱️ ${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // 存活兵力与建筑
     const aliveTroopsEl = this.root.querySelector('#clash-alive-troops') as HTMLElement | null;
     const aliveBuildingsEl = this.root.querySelector('#clash-alive-buildings') as HTMLElement | null;
     if (aliveTroopsEl) aliveTroopsEl.textContent = `${this.troops.filter((t) => !t.isDead).length} 队`;
@@ -784,7 +1021,15 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
     const height = this.canvas.height;
     const cellSize = width / this.gridSize;
 
+    ctx.save();
     ctx.clearRect(0, 0, width, height);
+
+    // 屏幕震动
+    if (this.screenShake > 0) {
+      const ox = (Math.random() - 0.5) * this.screenShake;
+      const oy = (Math.random() - 0.5) * this.screenShake;
+      ctx.translate(ox, oy);
+    }
 
     // 1. 绘制草地网格
     for (let r = 0; r < this.gridSize; r++) {
@@ -804,7 +1049,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       for (const troop of this.troops) {
         if (troop.isDead || !troop.path || troop.path.length < 2) continue;
 
-        ctx.strokeStyle = troop.type === 'GIANT' ? 'rgba(37,99,235,0.6)' : troop.type === 'GOBLIN' ? 'rgba(234,179,8,0.7)' : 'rgba(16,185,129,0.7)';
+        ctx.strokeStyle = troop.type === 'GIANT' ? 'rgba(37,99,235,0.6)' : troop.type === 'DRAGON' ? 'rgba(168,85,247,0.7)' : troop.type === 'GOBLIN' ? 'rgba(234,179,8,0.7)' : 'rgba(16,185,129,0.7)';
         ctx.beginPath();
         ctx.moveTo(troop.x * cellSize, troop.y * cellSize);
         for (let i = troop.pathIndex + 1; i < troop.path.length; i++) {
@@ -822,7 +1067,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       const by = b.r * cellSize;
       const isDead = b.hp <= 0;
 
-      // 建筑底座
       ctx.fillStyle = isDead ? '#f1f5f9' : b.type === 'TOWNHALL' ? '#eff6ff' : b.type === 'ARCHER_TOWER' ? '#fef2f2' : b.type === 'MORTAR' ? '#fff7ed' : b.type === 'GOLD_MINE' ? '#fefce8' : '#e2e8f0';
       ctx.strokeStyle = isDead ? '#cbd5e1' : b.type === 'TOWNHALL' ? '#3b82f6' : b.type === 'ARCHER_TOWER' ? '#ef4444' : b.type === 'MORTAR' ? '#f97316' : b.type === 'GOLD_MINE' ? '#eab308' : '#64748b';
       ctx.lineWidth = 1.5;
@@ -832,14 +1076,12 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.fill();
       ctx.stroke();
 
-      // 图标
       ctx.font = `${cellSize * 0.45}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const icon = isDead ? '💥' : b.type === 'TOWNHALL' ? '🏰' : b.type === 'ARCHER_TOWER' ? '🏹' : b.type === 'MORTAR' ? '💣' : b.type === 'GOLD_MINE' ? '🪙' : '🧱';
       ctx.fillText(icon, bx + cellSize / 2, by + cellSize / 2);
 
-      // 防御塔攻击范围指示圆
       if (!isDead && (b.type === 'ARCHER_TOWER' || b.type === 'MORTAR') && b.range) {
         ctx.beginPath();
         ctx.arc(bx + cellSize / 2, by + cellSize / 2, b.range * cellSize, 0, Math.PI * 2);
@@ -848,7 +1090,6 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
         ctx.stroke();
       }
 
-      // 血条
       if (!isDead && b.type !== 'WALL') {
         const hpPct = b.hp / b.maxHp;
         ctx.fillStyle = '#e2e8f0';
@@ -866,20 +1107,19 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
 
       ctx.save();
       ctx.beginPath();
-      ctx.arc(tx, ty, cellSize * 0.35, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
+      ctx.arc(tx, ty, cellSize * (troop.isFlying ? 0.42 : 0.35), 0, Math.PI * 2);
+      ctx.fillStyle = troop.isFlying ? '#faf5ff' : '#ffffff';
       ctx.fill();
-      ctx.strokeStyle = troop.type === 'GIANT' ? '#2563eb' : troop.type === 'GOBLIN' ? '#eab308' : troop.type === 'ARCHER' ? '#ec4899' : '#10b981';
+      ctx.strokeStyle = troop.type === 'GIANT' ? '#2563eb' : troop.type === 'DRAGON' ? '#9333ea' : troop.type === 'GOBLIN' ? '#eab308' : troop.type === 'ARCHER' ? '#ec4899' : '#10b981';
       ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.font = `${cellSize * 0.38}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const tIcon = troop.type === 'GIANT' ? '🛡️' : troop.type === 'GOBLIN' ? '💰' : troop.type === 'ARCHER' ? '🏹' : troop.type === 'WALL_BREAKER' ? '💣' : '🪓';
+      const tIcon = troop.type === 'GIANT' ? '🛡️' : troop.type === 'DRAGON' ? '🐉' : troop.type === 'GOBLIN' ? '💰' : troop.type === 'ARCHER' ? '🏹' : troop.type === 'WALL_BREAKER' ? '💣' : '🪓';
       ctx.fillText(tIcon, tx, ty);
 
-      // 小兵血条
       const hpPct = troop.hp / troop.maxHp;
       ctx.fillStyle = '#e2e8f0';
       ctx.fillRect(tx - cellSize * 0.3, ty - cellSize * 0.45, cellSize * 0.6, 2.5);
@@ -888,7 +1128,7 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.restore();
     }
 
-    // 5. 绘制飞行弹道 (箭矢与迫击炮弹)
+    // 5. 绘制飞行弹道
     for (const p of this.projectiles) {
       const curX = (p.startX + (p.targetX - p.startX) * p.progress) * cellSize;
       const curY = (p.startY + (p.targetY - p.startY) * p.progress) * cellSize;
@@ -905,7 +1145,18 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       }
     }
 
-    // 6. 绘制飘字
+    // 6. 绘制粒子
+    for (const pt of this.particles) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, pt.alpha);
+      ctx.fillStyle = pt.color;
+      ctx.beginPath();
+      ctx.arc(pt.x * cellSize, pt.y * cellSize, pt.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 7. 绘制飘字
     for (const ft of this.floatingTexts) {
       ctx.font = 'bold 11px sans-serif';
       ctx.fillStyle = ft.color;
@@ -914,12 +1165,27 @@ export class ClashOfAlgorithmsGameVisualizer extends StepVisualizer<any> {
       ctx.fillText(ft.text, (ft.x + 0.5) * cellSize, (ft.y + 0.2) * cellSize);
       ctx.globalAlpha = 1.0;
     }
+
+    ctx.restore();
   }
 }
 
-// 导出 HTML 模板
+// 导出完整游戏页面 HTML 模板
 export const CLASH_GAME_TEMPLATE = `
-  <div id="algo-clash-of-algorithms-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <div id="algo-clash-of-algorithms-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
+    <!-- 胜利结算全屏大弹窗 -->
+    <div id="clash-victory-modal" style="display: none; position: absolute; inset: 0; background: rgba(15,23,42,0.75); z-index: 999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+      <div style="background: #ffffff; border-radius: 12px; padding: 24px 32px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid #f59e0b; text-align: center; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <span style="font-size: 40px; margin-bottom: 4px;">🏆</span>
+        <h2 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 800; color: #0f172a;">战役大捷 · 基地全歼！</h2>
+        <div id="modal-stars" style="font-size: 28px; color: #f59e0b; margin-bottom: 8px;">⭐⭐⭐</div>
+        <p id="modal-rate" style="margin: 0 0 16px 0; font-size: 13px; color: #475569; font-weight: 700;">摧毁率: 100% | 耗时: 35 秒</p>
+        <div style="display: flex; gap: 10px;">
+          <button id="btn-modal-next-level" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">🌟 进入下一关</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 顶栏：关卡选择与游戏状态 HUD -->
     <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -930,6 +1196,7 @@ export const CLASH_GAME_TEMPLATE = `
           <button class="clash-lvl-btn" data-level="2" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">第 2 关</button>
           <button class="clash-lvl-btn" data-level="3" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">第 3 关</button>
           <button class="clash-lvl-btn" data-level="4" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">第 4 关</button>
+          <button class="clash-lvl-btn" data-level="5" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">第 5 关</button>
         </div>
       </div>
 
@@ -977,32 +1244,37 @@ export const CLASH_GAME_TEMPLATE = `
           </div>
         </div>
 
-        <!-- 底部兵种卡组 (点击卡牌选中，再点击地图任意处即时下兵) -->
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px;">
+        <!-- 底部兵种与法术卡组 (点击卡牌选中，再点击地图任意处即时下兵/施法) -->
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 6px;">
           <div class="clash-troop-card active" data-troop="BARBARIAN" style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 1.5px solid #2563eb; border-radius: 6px; padding: 4px 2px; cursor: pointer;">
-            <span style="font-size: 15px;">🪓</span>
-            <span style="font-size: 10px; font-weight: 700; color: #0f172a;">野蛮人</span>
-            <span style="font-size: 9px; font-weight: 800; color: #9333ea;">💧1 圣水</span>
+            <span style="font-size: 14px;">🪓</span>
+            <span style="font-size: 9.5px; font-weight: 700; color: #0f172a;">野蛮人</span>
+            <span style="font-size: 8.5px; font-weight: 800; color: #9333ea;">💧1</span>
           </div>
           <div class="clash-troop-card" data-troop="ARCHER" style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 4px 2px; cursor: pointer;">
-            <span style="font-size: 15px;">🏹</span>
-            <span style="font-size: 10px; font-weight: 700; color: #0f172a;">弓箭手</span>
-            <span style="font-size: 9px; font-weight: 800; color: #9333ea;">💧2 圣水</span>
+            <span style="font-size: 14px;">🏹</span>
+            <span style="font-size: 9.5px; font-weight: 700; color: #0f172a;">弓箭手</span>
+            <span style="font-size: 8.5px; font-weight: 800; color: #9333ea;">💧2</span>
           </div>
           <div class="clash-troop-card" data-troop="GIANT" style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 4px 2px; cursor: pointer;">
-            <span style="font-size: 15px;">🛡️</span>
-            <span style="font-size: 10px; font-weight: 700; color: #0f172a;">巨人 (抗伤)</span>
-            <span style="font-size: 9px; font-weight: 800; color: #9333ea;">💧5 圣水</span>
+            <span style="font-size: 14px;">🛡️</span>
+            <span style="font-size: 9.5px; font-weight: 700; color: #0f172a;">巨人</span>
+            <span style="font-size: 8.5px; font-weight: 800; color: #9333ea;">💧5</span>
+          </div>
+          <div class="clash-troop-card" data-troop="DRAGON" style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 4px 2px; cursor: pointer;">
+            <span style="font-size: 14px;">🐉</span>
+            <span style="font-size: 9.5px; font-weight: 700; color: #0f172a;">飞龙(跨墙)</span>
+            <span style="font-size: 8.5px; font-weight: 800; color: #9333ea;">💧4</span>
           </div>
           <div class="clash-troop-card" data-troop="GOBLIN" style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 4px 2px; cursor: pointer;">
-            <span style="font-size: 15px;">💰</span>
-            <span style="font-size: 10px; font-weight: 700; color: #0f172a;">哥布林</span>
-            <span style="font-size: 9px; font-weight: 800; color: #9333ea;">💧1 圣水</span>
+            <span style="font-size: 14px;">💰</span>
+            <span style="font-size: 9.5px; font-weight: 700; color: #0f172a;">哥布林</span>
+            <span style="font-size: 8.5px; font-weight: 800; color: #9333ea;">💧1</span>
           </div>
-          <div class="clash-troop-card" data-troop="WALL_BREAKER" style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 4px 2px; cursor: pointer;">
-            <span style="font-size: 15px;">💣</span>
-            <span style="font-size: 10px; font-weight: 700; color: #0f172a;">炸弹人</span>
-            <span style="font-size: 9px; font-weight: 800; color: #9333ea;">💧2 圣水</span>
+          <div class="clash-troop-card" data-troop="LIGHTNING_SPELL" style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 4px 2px; cursor: pointer;">
+            <span style="font-size: 14px;">⚡</span>
+            <span style="font-size: 9.5px; font-weight: 700; color: #0f172a;">雷电法术</span>
+            <span style="font-size: 8.5px; font-weight: 800; color: #9333ea;">💧3</span>
           </div>
         </div>
       </div>
@@ -1042,13 +1314,13 @@ registerAlgorithm({
   name: '部落冲突·战术攻防沙盘',
   viewId: 'algo-clash-of-algorithms-view',
   category: 'game',
-  description: '真交互即时策略游戏：实时下兵、圣水循环、A* 寻路权重与防御塔索敌对决',
+  description: '真交互即时策略游戏：实时下兵、飞龙跨墙、雷电法术、A* 寻路权重与防御塔索敌对决',
   icon: '⚔️',
   template: CLASH_GAME_TEMPLATE,
   Visualizer: ClashOfAlgorithmsGameVisualizer,
   difficulty: 3,
   levelOrder: 1,
-  learningGoal: '通过真实的策略对战操作，亲身体验 A* 寻路权衡、目标池剪枝与空间索敌算法的魅力',
+  learningGoal: '通过真实的策略对战操作，亲身体验 A* 寻路权衡、飞行跨障与空间索敌算法的魅力',
 });
 
 export { ClashOfAlgorithmsGameVisualizer as ClashOfAlgorithmsVisualizer };
