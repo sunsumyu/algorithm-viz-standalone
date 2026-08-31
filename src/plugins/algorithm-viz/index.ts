@@ -146,6 +146,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'sudoku-cipher': '🧩',
   'sliding-snake': '🐍',
   'candy-kingdom': '🍬',
+  'palindrome-ninja': '🗡️',
 };
 
 import {

@@ -2476,5 +2476,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 11,
     "learningGoal": "掌握经典双向贪心算法如何通过拆解左右依赖，在两次 O(N) 线性遍历中解决局部峰谷最值分配问题"
+  },
+  {
+    "id": "palindrome-ninja",
+    "name": "回文忍者·神速飞刀切割者",
+    "viewId": "algo-palindrome-ninja-view",
+    "category": "game",
+    "description": "回溯分割算法游戏：竹林修罗场、神速飞刀刀光粒子、回文有效性检测与全解画廊速览",
+    "icon": "🗡️",
+    "difficulty": 2,
+    "levelOrder": 12,
+    "learningGoal": "掌握经典回溯算法在字符串分割、组合生成与回文子串判定中的应用机制"
   }
 ];
