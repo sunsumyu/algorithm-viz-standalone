@@ -64,9 +64,9 @@ export function buildLayeredDijkstraSteps(): LayeredStep[] {
 
 const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
   id: 'layered-dijkstra',
-  name: '分层图最短路 (Layered Dijkstra)',
+  name: '飞行路线 (Flight Path / 分层图最短路)',
   category: 'graph',
-  icon: '🪜',
+  icon: '✈️',
   badge: {
     mode: '二维分层状态 (u, usedK)',
     complexity: 'O((V · K + E · K) log(V · K)) · O(V · K)',
@@ -182,11 +182,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
 
 registerAlgorithm({
   id: 'layered-dijkstra',
-  name: '分层图最短路 (Layered Dijkstra)',
+  name: '飞行路线 (Flight Path / 分层图最短路)',
   viewId: 'algo-layered-dijkstra-view',
   category: 'graph',
-  description: '经典分层图建模：二维状态 (node, usedK)、同层常规边与跨层 0 权免票边、Dijkstra 堆优化 O((V+E)K log(VK)) 求解 (洛谷 P4568 飞行路线)',
-  icon: '🪜',
+  description: '左程云算法通关课 Class 064 核心：洛谷 P4568 飞行路线、二维状态 (node, usedK)、同层常规边与跨层 0 权免票边、Dijkstra 堆优化求解',
+  icon: '✈️',
   template,
   Visualizer,
   difficulty: 3,

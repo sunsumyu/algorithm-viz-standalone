@@ -2567,11 +2567,11 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     "id": "layered-dijkstra",
-    "name": "分层图最短路 (Layered Dijkstra)",
+    "name": "飞行路线 (Flight Path / 分层图最短路)",
     "viewId": "algo-layered-dijkstra-view",
     "category": "graph",
     "description": "分层图最短路径算法：左程云 class064 飞行路线 (洛谷 P4568)、k 次免费乘车券、三维空间多层拓扑与跨层跃迁推演",
-    "icon": "🛫",
+    "icon": "✈️",
     "difficulty": 3,
     "levelOrder": 20,
     "learningGoal": "掌握分层图状态维度扩展技巧（将后效性资源纳入状态 dist[u][k]）、同层与跨层转移方程及多层空间最短路 Dijkstra 求解"
