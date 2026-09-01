@@ -166,5 +166,7 @@ import './categories/graph/tree-path-intersection-renderer';
 import './categories/graph/prefix-opt-graph-renderer';
 import './categories/graph/tree-dominant-color-renderer';
 import './categories/graph/mixed-eulerian-circuit-renderer';
+import './categories/graph/tree-centroid-path-count-renderer';
+import './categories/graph/min-mean-cycle-renderer';
 
 export {};

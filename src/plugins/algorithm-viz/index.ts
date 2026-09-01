@@ -206,6 +206,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'prefix-opt-graph': '🌐',
   'tree-dominant-color': '👑',
   'mixed-eulerian-circuit': '🔄',
+  'tree-centroid-path-count': '🌲',
+  'min-mean-cycle': '🔄',
 };
 
 import {

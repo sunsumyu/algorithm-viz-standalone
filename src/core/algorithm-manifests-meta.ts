@@ -3136,5 +3136,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 71,
     "learningGoal": "掌握混合图欧拉回路转化为网络流最大流的建模技巧、奇偶性判别及残量网络边反转重构回路"
+  },
+  {
+    "id": "tree-centroid-path-count",
+    "name": "点分治路径计数 (Centroid Path Count)",
+    "viewId": "algo-tree-centroid-path-count-view",
+    "category": "graph",
+    "description": "进阶树论经典点分治：重心查找、子树距离收集、双指针排序扫描与容斥去重、严格 O(N log^2 N) (POJ 1741 / 洛谷 P3806)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 72,
+    "learningGoal": "掌握树上点分治的核心四步流程、双指针统计与容斥原理去重技巧"
+  },
+  {
+    "id": "min-mean-cycle",
+    "name": "最小均值回路 (Min Mean Cycle)",
+    "viewId": "algo-min-mean-cycle-view",
+    "category": "graph",
+    "description": "进阶图论 0-1 分数规划：边权动态赋权 w'(e)=w(e)-λ、SPFA 负环判别与二分逼近最小平均回路 (洛谷 P2868)",
+    "icon": "🔄",
+    "difficulty": 3,
+    "levelOrder": 73,
+    "learningGoal": "掌握 0-1 分数规划转化为负环判定的数学原理、二分逼近与 Karp 最小均值回路算法"
   }
 ];
