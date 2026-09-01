@@ -3158,5 +3158,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 73,
     "learningGoal": "掌握 0-1 分数规划转化为负环判定的数学原理、二分逼近与 Karp 最小均值回路算法"
+  },
+  {
+    "id": "tree-knapsack-dp",
+    "name": "树上有依赖背包 (Tree Knapsack DP)",
+    "viewId": "algo-tree-knapsack-dp-view",
+    "category": "graph",
+    "description": "进阶树论与 DP 融合：泛化物品树形合并、子树大小上下界优化 O(N*V)、选修课依赖拓扑 (洛谷 P2014 选课)",
+    "icon": "🎒",
+    "difficulty": 3,
+    "levelOrder": 74,
+    "learningGoal": "掌握树上有依赖背包的树上泛化物品合并、超级源点技巧与子树大小上下界常数优化"
+  },
+  {
+    "id": "convex-hull-3d",
+    "name": "三维凸包增量法 (3D Convex Hull)",
+    "viewId": "algo-convex-hull-3d-view",
+    "category": "graph",
+    "description": "进阶计算几何与图论对偶：四面体基底、有向体积与面可见性、地平线提取与锥面缝合 (洛谷 P4724)",
+    "icon": "🌐",
+    "difficulty": 3,
+    "levelOrder": 75,
+    "learningGoal": "掌握三维凸包增量构造法的几何判据（外法向量与有向体积）、地平线提取与欧拉公式 V-E+F=2"
   }
 ];

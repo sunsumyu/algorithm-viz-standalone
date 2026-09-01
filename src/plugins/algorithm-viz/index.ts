@@ -208,6 +208,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'mixed-eulerian-circuit': '🔄',
   'tree-centroid-path-count': '🌲',
   'min-mean-cycle': '🔄',
+  'tree-knapsack-dp': '🎒',
+  'convex-hull-3d': '🌐',
 };
 
 import {
