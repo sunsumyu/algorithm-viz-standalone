@@ -170,5 +170,6 @@ import './categories/graph/tree-centroid-path-count-renderer';
 import './categories/graph/min-mean-cycle-renderer';
 import './categories/graph/tree-knapsack-dp-renderer';
 import './categories/graph/convex-hull-3d-renderer';
+import './categories/graph/swim-in-rising-water-renderer';
 
 export {};

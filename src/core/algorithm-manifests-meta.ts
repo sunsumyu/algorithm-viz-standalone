@@ -3180,5 +3180,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 75,
     "learningGoal": "掌握三维凸包增量构造法的几何判据（外法向量与有向体积）、地平线提取与欧拉公式 V-E+F=2"
+  },
+  {
+    "id": "swim-in-rising-water",
+    "name": "水位上升的泳池中游泳 (Swim in Rising Water)",
+    "viewId": "algo-swim-in-rising-water-view",
+    "category": "graph",
+    "description": "左程云算法通关课 Class 064 Code03：网格图瓶颈最短路、max(t, grid[nr][nc]) 松弛、Dijkstra 小根堆 (LeetCode 778)",
+    "icon": "🏊",
+    "difficulty": 3,
+    "levelOrder": 76,
+    "learningGoal": "掌握瓶颈最短路模型转化、网格图 Dijkstra 小根堆松弛技巧与二分+BFS/并查集等价判定"
   }
 ];

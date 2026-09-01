@@ -210,6 +210,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'min-mean-cycle': '🔄',
   'tree-knapsack-dp': '🎒',
   'convex-hull-3d': '🌐',
+  'swim-in-rising-water': '🏊',
 };
 
 import {
