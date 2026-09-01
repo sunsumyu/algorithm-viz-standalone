@@ -2806,5 +2806,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 41,
     "learningGoal": "掌握顶标与相等子图对偶定理、增广失败时顶标自适应差值调整机制以及 O(n^3) 极速匹配"
+  },
+  {
+    "id": "heavy-light-decomposition",
+    "name": "树链剖分 (Heavy-Light Decomposition)",
+    "viewId": "algo-heavy-light-decomposition-view",
+    "category": "graph",
+    "description": "树上高级数据结构算法：左程云进阶图论树链剖分、重儿子划分、重链顶端 top[]、DFS 序连续拍平与 O(log^2 n) 路径跳跃 (洛谷 P3384)",
+    "icon": "🎋",
+    "difficulty": 3,
+    "levelOrder": 42,
+    "learningGoal": "掌握重儿子与轻边判定、重链连续性保证、两次 DFS 实现以及树上路径跨链跳跃求 LCA 与线段树结合的工程实践"
   }
 ];

@@ -176,6 +176,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'kruskal-reconstruction-tree': '🌲',
   'min-cost-max-flow': '💰',
   'km-algorithm': '💘',
+  'heavy-light-decomposition': '🎋',
 };
 
 import {
