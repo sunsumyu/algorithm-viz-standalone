@@ -2905,5 +2905,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 50,
     "learningGoal": "掌握树上点差分与边差分数学公式、LCA 边界截断消除向上扩散效应与 O(n) 自底向上前缀和汇总原理"
+  },
+  {
+    "id": "second-mst",
+    "name": "严格次小生成树 (Strict Second MST)",
+    "viewId": "algo-second-mst-view",
+    "category": "graph",
+    "description": "进阶图论瓶颈替换算法：Kruskal 求主 MST、树上倍增维护路径最大边权与严格次大边权、非树边替换瓶颈边 (洛谷 P4180)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 51,
+    "learningGoal": "掌握严格次小生成树与非严格次小生成树的区别、倍增维护 (max1, max2) 的区间合并方程与非树边替换证明"
+  },
+  {
+    "id": "k-shortest-path",
+    "name": "K 短路问题 (K-th Shortest Path)",
+    "viewId": "algo-k-shortest-path-view",
+    "category": "graph",
+    "description": "进阶图论搜索算法：反向图 Dijkstra 计算真实最短路作为启发函数 h(u)、正向 A* 优先队列搜索与终点第 K 次弹出判定 (洛谷 P2483)",
+    "icon": "🚀",
+    "difficulty": 3,
+    "levelOrder": 52,
+    "learningGoal": "掌握 A* 启发函数单调一致性、反向 Dijkstra 构建完美估价函数与优先队列第 K 次到达终点正确性证明"
   }
 ];

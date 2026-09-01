@@ -145,5 +145,7 @@ import './categories/graph/two-sat-renderer';
 import './categories/graph/stable-marriage-renderer';
 import './categories/graph/block-cut-tree-renderer';
 import './categories/graph/tree-difference-renderer';
+import './categories/graph/second-mst-renderer';
+import './categories/graph/k-shortest-path-renderer';
 
 export {};

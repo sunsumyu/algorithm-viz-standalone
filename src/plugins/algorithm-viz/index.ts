@@ -185,6 +185,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'stable-marriage': '💍',
   'block-cut-tree': '🌵',
   'tree-difference': '🌲',
+  'second-mst': '🌲',
+  'k-shortest-path': '🚀',
 };
 
 import {
