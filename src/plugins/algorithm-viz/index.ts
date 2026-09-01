@@ -182,6 +182,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'lca-binary-lifting': '🌲',
   'pseudotree-dp': '🎡',
   'two-sat-problem': '⚖️',
+  'stable-marriage': '💍',
 };
 
 import {

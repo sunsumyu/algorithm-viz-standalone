@@ -2872,5 +2872,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 47,
     "learningGoal": "掌握析取子句到蕴涵有向图的等价变换、Tarjan 缩点自相矛盾判定以及逆拓扑序合法赋值构造的完整证明"
+  },
+  {
+    "id": "stable-marriage",
+    "name": "稳定婚姻问题 (Stable Marriage)",
+    "viewId": "algo-stable-marriage-view",
+    "category": "graph",
+    "description": "博弈图论与机制设计算法：诺贝尔奖 Gale-Shapley 延迟接受算法、男士求婚女士择优、Blocking Pair 消除与强稳定匹配",
+    "icon": "💍",
+    "difficulty": 3,
+    "levelOrder": 48,
+    "learningGoal": "掌握稳定婚姻问题定义、Gale-Shapley 算法单调性收敛证明、提议方最优定理与规培匹配现实应用"
   }
 ];
