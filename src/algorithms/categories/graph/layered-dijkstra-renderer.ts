@@ -12,139 +12,252 @@ import {
   LAYERED_DIJKSTRA_ANALYSIS_HTML,
 } from './layered-dijkstra-problem-content';
 
+export interface LayeredGraphPreset {
+  name: string;
+  n: number;
+  k: number;
+  s: number;
+  t: number;
+  edges: Array<{ u: number; v: number; w: number }>;
+  nodeCoords: Record<number, { x: number; y0: number; y1: number }>;
+}
+
+export const LAYERED_PRESETS: Record<string, LayeredGraphPreset> = {
+  p4568_standard: {
+    name: '洛谷 P4568 经典 5 城市 (1 次免票)',
+    n: 5,
+    k: 1,
+    s: 0,
+    t: 4,
+    edges: [
+      { u: 0, v: 1, w: 2 },
+      { u: 0, v: 2, w: 5 },
+      { u: 1, v: 2, w: 2 },
+      { u: 1, v: 3, w: 4 },
+      { u: 2, v: 3, w: 1 },
+      { u: 2, v: 4, w: 7 },
+      { u: 3, v: 4, w: 3 },
+    ],
+    nodeCoords: {
+      0: { x: 35, y0: 55, y1: 155 },
+      1: { x: 95, y0: 30, y1: 130 },
+      2: { x: 95, y0: 80, y1: 180 },
+      3: { x: 175, y0: 55, y1: 155 },
+      4: { x: 255, y0: 55, y1: 155 },
+    },
+  },
+  simple_3node: {
+    name: '3 城市入门双层图 (1 次免票)',
+    n: 3,
+    k: 1,
+    s: 0,
+    t: 2,
+    edges: [
+      { u: 0, v: 1, w: 5 },
+      { u: 1, v: 2, w: 2 },
+      { u: 0, v: 2, w: 9 },
+    ],
+    nodeCoords: {
+      0: { x: 50, y0: 55, y1: 155 },
+      1: { x: 150, y0: 55, y1: 155 },
+      2: { x: 250, y0: 55, y1: 155 },
+    },
+  },
+};
+
 export interface LayeredStep {
   curNode: number;
   curK: number;
   curDist: number;
   distGrid: Record<string, number>;
-  pqList: Array<{ u: number; k: number; cost: number }>;
+  pqList: Array<{ u: number; used: number; cost: number }>;
   visitedSet: string[];
   highlightEdge?: { u: number; v: number; fromK: number; toK: number; isFree: boolean } | null;
   pathEdgeKeys?: string[];
-  status: 'init' | 'relax_edge' | 'pop' | 'reach' | 'done';
+  status: 'init' | 'pop' | 'relax_edge' | 'reach' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-export function buildLayeredDijkstraSteps(): LayeredStep[] {
+export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'): LayeredStep[] {
+  const config = LAYERED_PRESETS[presetKey] || LAYERED_PRESETS.p4568_standard;
+  const { n, k, s, t, edges } = config;
   const steps: LayeredStep[] = [];
 
-  // Step 1: 初始化与起点入堆
+  // Build adjacency list (bidirectional graph like P4568)
+  const adj: Array<Array<{ to: number; w: number }>> = Array.from({ length: n }, () => []);
+  for (const e of edges) {
+    adj[e.u].push({ to: e.v, w: e.w });
+    adj[e.v].push({ to: e.u, w: e.w });
+  }
+
+  // dist[u][used]
+  const dist: number[][] = Array.from({ length: n }, () => Array(k + 1).fill(Infinity));
+  const visited: boolean[][] = Array.from({ length: n }, () => Array(k + 1).fill(false));
+  const parent: Record<string, { u: number; used: number; fromEdgeW: number; isFree: boolean } | null> = {};
+
+  // Priority Queue: array of { u, used, cost }
+  const pq: Array<{ u: number; used: number; cost: number }> = [];
+
+  dist[s][0] = 0;
+  pq.push({ u: s, used: 0, cost: 0 });
+
+  const getDistGrid = () => {
+    const res: Record<string, number> = {};
+    for (let u = 0; u < n; u++) {
+      for (let j = 0; j <= k; j++) {
+        if (dist[u][j] !== Infinity) {
+          res[`${u},${j}`] = dist[u][j];
+        }
+      }
+    }
+    return res;
+  };
+
+  const getVisitedList = () => {
+    const list: string[] = [];
+    for (let u = 0; u < n; u++) {
+      for (let j = 0; j <= k; j++) {
+        if (visited[u][j]) list.push(`${u},${j}`);
+      }
+    }
+    return list;
+  };
+
+  // Step 1: Initial state
   steps.push({
-    curNode: 1,
+    curNode: s,
     curK: 0,
     curDist: 0,
-    distGrid: { '1,0': 0 },
-    pqList: [{ u: 1, k: 0, cost: 0 }],
+    distGrid: getDistGrid(),
+    pqList: pq.map((p) => ({ ...p })),
     visitedSet: [],
-    highlightEdge: null,
     pathEdgeKeys: [],
     status: 'init',
-    message: '1. [初始化] 起点城市 1 在第 0 层 (未用免费券)，dist[1][0] = 0，初始状态 (Node:1, k:0, cost:0) 压入小根堆！',
-    log: '初始化：dist[1][0]=0, 初始状态 (Node:1, k:0, cost:0) 入小根堆',
+    message: `1. [初始化] 起点城市 ${s} 在第 0 层 (未使用免费券)，dist[${s}][0] = 0，初始状态 (${s}, k:0, cost:0) 入小根堆！`,
+    log: `初始化：dist[${s}][0]=0, 初始状态 (${s}, k:0, cost:0) 入堆`,
     codeLine: [93, 95],
   });
 
-  // Step 2: 弹出起点并松弛 1->2 (同层与跨层)
-  steps.push({
-    curNode: 1,
-    curK: 0,
-    curDist: 0,
-    distGrid: { '1,0': 0, '2,0': 5, '2,1': 0 },
-    pqList: [
-      { u: 2, k: 1, cost: 0 },
-      { u: 2, k: 0, cost: 5 },
-    ],
-    visitedSet: ['1,0'],
-    highlightEdge: { u: 1, v: 2, fromK: 0, toK: 1, isFree: true },
-    pathEdgeKeys: ['1,0->2,1'],
-    status: 'relax_edge',
-    message: '2. [弹出 (1, k:0) 并松弛航线 (1➔2, w:5)] 分支① 正常购票：dist[2][0] = 0 + 5 = 5 入堆；分支② 使用免费券(used<1)：dist[2][1] = 0 + 0 = 0 跨层入堆！',
-    log: '松弛 (1➔2)：同层更新 dist[2][0]=5，跨层免票更新 dist[2][1]=0 (入小根堆)',
-    codeLine: [105, 116],
-  });
+  let targetState: { u: number; used: number; cost: number } | null = null;
 
-  // Step 3: 小根堆弹出最优状态 (2, k:1, cost:0)
-  steps.push({
-    curNode: 2,
-    curK: 1,
-    curDist: 0,
-    distGrid: { '1,0': 0, '2,0': 5, '2,1': 0 },
-    pqList: [{ u: 2, k: 0, cost: 5 }],
-    visitedSet: ['1,0', '2,1'],
-    highlightEdge: null,
-    pathEdgeKeys: ['1,0->2,1'],
-    status: 'pop',
-    message: '3. [堆顶弹出最小状态] 弹出 cost=0 的最优状态 (Node:2, usedK:1)，标记 visited[2][1]=true，准备扩展邻接航线！',
-    log: '堆顶出队：(Node:2, k:1, cost:0)，已消耗 1 张免费票',
-    codeLine: [98, 102],
-  });
+  while (pq.length > 0) {
+    // Sort PQ to act as min-heap
+    pq.sort((a, b) => a.cost - b.cost);
+    const cur = pq.shift()!;
+    const { u, used, cost } = cur;
 
-  // Step 4: 松弛 2->3 (同层购票，免费票已耗尽)
-  steps.push({
-    curNode: 2,
-    curK: 1,
-    curDist: 0,
-    distGrid: { '1,0': 0, '2,0': 5, '2,1': 0, '3,1': 2 },
-    pqList: [
-      { u: 3, k: 1, cost: 2 },
-      { u: 2, k: 0, cost: 5 },
-    ],
-    visitedSet: ['1,0', '2,1'],
-    highlightEdge: { u: 2, v: 3, fromK: 1, toK: 1, isFree: false },
-    pathEdgeKeys: ['1,0->2,1', '2,1->3,1'],
-    status: 'relax_edge',
-    message: '4. [松弛航线 (2➔3, w:2)] 分支① 正常购票：dist[3][1] = 0 + 2 = 2 入堆；分支② 免费票已耗尽(used=1 == k)，不可再跨层！',
-    log: '松弛 (2➔3)：同层更新 dist[3][1]=2 入堆；免费券已用尽不可跨层',
-    codeLine: [107, 111],
-  });
+    if (visited[u][used]) continue;
+    visited[u][used] = true;
 
-  // Step 5: 小根堆弹出最优状态 (3, k:1, cost:2)
-  steps.push({
-    curNode: 3,
-    curK: 1,
-    curDist: 2,
-    distGrid: { '1,0': 0, '2,0': 5, '2,1': 0, '3,1': 2 },
-    pqList: [{ u: 2, k: 0, cost: 5 }],
-    visitedSet: ['1,0', '2,1', '3,1'],
-    highlightEdge: null,
-    pathEdgeKeys: ['1,0->2,1', '2,1->3,1'],
-    status: 'pop',
-    message: '5. [堆顶弹出终点状态] 弹出 cost=2 的状态 (Node:3, usedK:1)，检测到已到达目标终点城市 3！',
-    log: '堆顶出队：(Node:3, k:1, cost:2)，命中终点 T=3',
-    codeLine: [98, 103],
-  });
+    // Record pop step
+    steps.push({
+      curNode: u,
+      curK: used,
+      curDist: cost,
+      distGrid: getDistGrid(),
+      pqList: pq.map((p) => ({ ...p })),
+      visitedSet: getVisitedList(),
+      pathEdgeKeys: [],
+      status: 'pop',
+      message: `[堆顶弹出状态] 弹出当前全局最小状态 (城市 ${u}, usedK: ${used}, 累计花费: ${cost})，标记 visited[${u}][${used}]=true。`,
+      log: `堆顶出队：(Node:${u}, k:${used}, cost:${cost})`,
+      codeLine: [98, 102],
+    });
 
-  // Step 6: 终点命中提前返回
+    if (u === t) {
+      targetState = { u, used, cost };
+      steps.push({
+        curNode: u,
+        curK: used,
+        curDist: cost,
+        distGrid: getDistGrid(),
+        pqList: pq.map((p) => ({ ...p })),
+        visitedSet: getVisitedList(),
+        pathEdgeKeys: [],
+        status: 'reach',
+        message: `🎯 [命中目标终点] 状态 (城市 ${t}, usedK: ${used}) 首次从堆顶出队！根据 Dijkstra 贪心定理，当前花费 ${cost} 必为全局最优解！`,
+        log: `✓ 命中终点：城市 ${t} (usedK: ${used})，最小花费 = ${cost}`,
+        codeLine: [103, 103],
+      });
+      break;
+    }
+
+    // Relax outgoing edges
+    for (const edge of adj[u]) {
+      const v = edge.to;
+      const w = edge.w;
+
+      // Branch 1: Normal ticket (same layer)
+      if (dist[v][used] > cost + w) {
+        dist[v][used] = cost + w;
+        pq.push({ u: v, used: used, cost: dist[v][used] });
+        parent[`${v},${used}`] = { u, used, fromEdgeW: w, isFree: false };
+
+        steps.push({
+          curNode: u,
+          curK: used,
+          curDist: cost,
+          distGrid: getDistGrid(),
+          pqList: pq.map((p) => ({ ...p })),
+          visitedSet: getVisitedList(),
+          highlightEdge: { u, v, fromK: used, toK: used, isFree: false },
+          pathEdgeKeys: [],
+          status: 'relax_edge',
+          message: `[同层常规买票] 航线 (${u}➔${v}, 票价:${w})：更新 dist[${v}][${used}] = ${cost} + ${w} = ${dist[v][used]}，状态 (${v}, k:${used}, cost:${dist[v][used]}) 入堆。`,
+          log: `松弛航线 (${u}➔${v})：同层买票更新 dist[${v}][${used}]=${dist[v][used]}`,
+          codeLine: [107, 111],
+        });
+      }
+
+      // Branch 2: Free ticket (cross layer, if used < k)
+      if (used < k && dist[v][used + 1] > cost) {
+        dist[v][used + 1] = cost;
+        pq.push({ u: v, used: used + 1, cost: cost });
+        parent[`${v},${used + 1}`] = { u, used, fromEdgeW: 0, isFree: true };
+
+        steps.push({
+          curNode: u,
+          curK: used,
+          curDist: cost,
+          distGrid: getDistGrid(),
+          pqList: pq.map((p) => ({ ...p })),
+          visitedSet: getVisitedList(),
+          highlightEdge: { u, v, fromK: used, toK: used + 1, isFree: true },
+          pathEdgeKeys: [],
+          status: 'relax_edge',
+          message: `✨ [使用免费通票跨层] 航线 (${u}➔${v}) 使用 1 张免费券：更新 dist[${v}][${used + 1}] = ${cost} + 0 = ${cost}，跨层状态 (${v}, k:${used + 1}, cost:${cost}) 入堆！`,
+          log: `跨层免票 (${u}➔${v})：更新 dist[${v}][${used + 1}]=${cost} (0 权跨层边)`,
+          codeLine: [112, 116],
+        });
+      }
+    }
+  }
+
+  // Backtrack optimal path
+  const bestPathKeys: string[] = [];
+  if (targetState) {
+    let currKey = `${targetState.u},${targetState.used}`;
+    while (parent[currKey]) {
+      const p = parent[currKey]!;
+      bestPathKeys.unshift(`${p.u},${p.used}->${currKey}`);
+      currKey = `${p.u},${p.used}`;
+    }
+  }
+
+  // Final settlement step
   steps.push({
-    curNode: 3,
-    curK: 1,
-    curDist: 2,
-    distGrid: { '1,0': 0, '2,0': 5, '2,1': 0, '3,1': 2 },
+    curNode: t,
+    curK: targetState ? targetState.used : 0,
+    curDist: targetState ? targetState.cost : -1,
+    distGrid: getDistGrid(),
     pqList: [],
-    visitedSet: ['1,0', '2,1', '3,1'],
-    highlightEdge: null,
-    pathEdgeKeys: ['1,0->2,1', '2,1->3,1'],
-    status: 'reach',
-    message: '6. [最优解锁定] if (u == t) return cost 触发提前返回！根据 Dijkstra 贪心性质，首次出堆的目标点必为全局最小花费 2！',
-    log: '✓ 判定命中终点：当前花费 2 即为全局最优解，提前退出循环',
-    codeLine: [103, 103],
-  });
-
-  // Step 7: 结算与复原
-  steps.push({
-    curNode: 3,
-    curK: 1,
-    curDist: 2,
-    distGrid: { '1,0': 0, '2,0': 5, '2,1': 0, '3,1': 2 },
-    pqList: [],
-    visitedSet: ['1,0', '2,1', '3,1'],
-    highlightEdge: null,
-    pathEdgeKeys: ['1,0->2,1', '2,1->3,1'],
+    visitedSet: getVisitedList(),
+    pathEdgeKeys: bestPathKeys,
     status: 'done',
-    message: '🎉 [飞行路线最少花费求解完成] 最优路径：(1, k:0) ➔[免费票 0]➔ (2, k:1) ➔[航费 2]➔ (3, k:1)，总航费仅需 2！比全程原价买票(5+2=7)节省了 5！',
-    log: '✓ 飞行路线求解完成：最小总花费 = 2, 使用 1 次免费通票',
+    message: `🎉 [飞行路线全局最少花费求解完成] 从起点 ${s} 到终点 ${t}，使用 ${targetState?.used || 0} 张免费通票，最优最少总花费 = ${targetState?.cost ?? -1}！`,
+    log: `✓ 求解完毕：全局最少花费 = ${targetState?.cost ?? -1}，路径重构完成`,
     codeLine: [120, 122],
   });
 
@@ -171,7 +284,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
   ],
   inputs: [],
   presets: [
-    { label: '3 节点 1 次免票图 (P4568)', values: {} },
+    { label: '洛谷 P4568 经典 5 城市 (1 次免票)', values: {} },
   ],
   metrics: [
     { id: 'metric-layer-state', label: '当前出队状态', color: '#2563eb' },
@@ -180,76 +293,117 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
   codeLanguages: LAYERED_DIJKSTRA_CODE_LANGUAGES,
   problemHtml: LAYERED_DIJKSTRA_PROBLEM_HTML,
   analysisHtml: LAYERED_DIJKSTRA_ANALYSIS_HTML,
-  buildSteps: () => buildLayeredDijkstraSteps(),
+  buildSteps: () => buildLayeredDijkstraSteps('p4568_standard'),
   renderCanvas: (container, step) => {
-    const nodeCoords: Record<string, { x: number; y: number; layer: number }> = {
-      '1,0': { x: 60, y: 70, layer: 0 },
-      '2,0': { x: 160, y: 70, layer: 0 },
-      '3,0': { x: 260, y: 70, layer: 0 },
-      '1,1': { x: 60, y: 155, layer: 1 },
-      '2,1': { x: 160, y: 155, layer: 1 },
-      '3,1': { x: 260, y: 155, layer: 1 },
+    const preset = LAYERED_PRESETS.p4568_standard;
+    const { n, edges, nodeCoords } = preset;
+
+    const isPathEdge = (fromKey: string, toKey: string) => {
+      const k1 = `${fromKey}->${toKey}`;
+      const k2 = `${toKey}->${fromKey}`;
+      return step.pathEdgeKeys?.includes(k1) || step.pathEdgeKeys?.includes(k2);
     };
 
-    const edges = [
-      { key: '1,0->2,0', u: '1,0', v: '2,0', w: 5, isFree: false },
-      { key: '2,0->3,0', u: '2,0', v: '3,0', w: 2, isFree: false },
-      { key: '1,1->2,1', u: '1,1', v: '2,1', w: 5, isFree: false },
-      { key: '2,1->3,1', u: '2,1', v: '3,1', w: 2, isFree: false },
-      { key: '1,0->2,1', u: '1,0', v: '2,1', w: 0, isFree: true },
-      { key: '2,0->3,1', u: '2,0', v: '3,1', w: 0, isFree: true },
-    ];
+    // Render same-layer edges and cross-layer free edges
+    const svgEdgesList: string[] = [];
 
-    const isPathEdge = (key: string) => step.pathEdgeKeys?.includes(key);
+    for (const e of edges) {
+      const p1 = nodeCoords[e.u];
+      const p2 = nodeCoords[e.v];
+      if (!p1 || !p2) continue;
 
-    const svgEdges = edges
-      .map((e) => {
-        const p1 = nodeCoords[e.u];
-        const p2 = nodeCoords[e.v];
-        if (!p1 || !p2) return '';
-        const onPath = isPathEdge(e.key);
-        const color = onPath ? '#10b981' : e.isFree ? '#059669' : '#475569';
-        const width = onPath ? 3.5 : e.isFree ? 2 : 1.5;
-        const dash = e.isFree && !onPath ? 'stroke-dasharray="4,4"' : '';
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 - 6;
+      // Layer 0 edge
+      const onPathL0 = isPathEdge(`${e.u},0`, `${e.v},0`);
+      const isCurL0 =
+        step.highlightEdge &&
+        !step.highlightEdge.isFree &&
+        step.highlightEdge.fromK === 0 &&
+        ((step.highlightEdge.u === e.u && step.highlightEdge.v === e.v) ||
+          (step.highlightEdge.u === e.v && step.highlightEdge.v === e.u));
 
-        return `
-          <g>
-            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" ${dash} />
-            <text x="${midX}" y="${midY}" fill="${color}" font-size="8.5" font-weight="700" font-family="monospace" text-anchor="middle">${e.isFree ? '免票(0)' : `w:${e.w}`}</text>
-          </g>
-        `;
-      })
-      .join('');
+      svgEdgesList.push(`
+        <g>
+          <line x1="${p1.x}" y1="${p1.y0}" x2="${p2.x}" y2="${p2.y0}" stroke="${onPathL0 ? '#10b981' : isCurL0 ? '#f59e0b' : '#334155'}" stroke-width="${onPathL0 ? 3.5 : isCurL0 ? 2.5 : 1.5}" />
+          <text x="${(p1.x + p2.x) / 2}" y="${(p1.y0 + p2.y0) / 2 - 5}" fill="${onPathL0 ? '#34d399' : '#64748b'}" font-size="8" font-family="monospace" text-anchor="middle">w:${e.w}</text>
+        </g>
+      `);
 
-    const svgNodes = Object.entries(nodeCoords)
-      .map(([id, p]) => {
-        const isL0 = p.layer === 0;
-        const isCur = step.curNode === Number(id.split(',')[0]) && step.curK === p.layer;
-        const isVis = step.visitedSet.includes(id);
-        const bg = isCur ? '#b45309' : isVis ? (isL0 ? '#0369a1' : '#db2777') : '#1e293b';
-        const border = isCur ? '#facc15' : isVis ? (isL0 ? '#38bdf8' : '#f472b6') : '#475569';
-        const dist = step.distGrid[id];
+      // Layer 1 edge
+      const onPathL1 = isPathEdge(`${e.u},1`, `${e.v},1`);
+      const isCurL1 =
+        step.highlightEdge &&
+        !step.highlightEdge.isFree &&
+        step.highlightEdge.fromK === 1 &&
+        ((step.highlightEdge.u === e.u && step.highlightEdge.v === e.v) ||
+          (step.highlightEdge.u === e.v && step.highlightEdge.v === e.u));
 
-        return `
-          <g>
-            <circle cx="${p.x}" cy="${p.y}" r="16" fill="${bg}" stroke="${border}" stroke-width="${isCur ? 2.5 : 1.5}" />
-            <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="10.5" font-weight="800" font-family="monospace" text-anchor="middle">${id}</text>
-            <text x="${p.x}" y="${p.y + 26}" fill="${dist !== undefined ? '#34d399' : '#64748b'}" font-size="8.5" font-weight="700" text-anchor="middle">d:${dist !== undefined ? dist : '∞'}</text>
-          </g>
-        `;
-      })
-      .join('');
+      svgEdgesList.push(`
+        <g>
+          <line x1="${p1.x}" y1="${p1.y1}" x2="${p2.x}" y2="${p2.y1}" stroke="${onPathL1 ? '#10b981' : isCurL1 ? '#f59e0b' : '#334155'}" stroke-width="${onPathL1 ? 3.5 : isCurL1 ? 2.5 : 1.5}" />
+          <text x="${(p1.x + p2.x) / 2}" y="${(p1.y1 + p2.y1) / 2 - 5}" fill="${onPathL1 ? '#34d399' : '#64748b'}" font-size="8" font-family="monospace" text-anchor="middle">w:${e.w}</text>
+        </g>
+      `);
+
+      // Cross layer free edges (0->1 from u to v, and from v to u)
+      const onPathCrossUV = isPathEdge(`${e.u},0`, `${e.v},1`);
+      const onPathCrossVU = isPathEdge(`${e.v},0`, `${e.u},1`);
+      const isCurCrossUV =
+        step.highlightEdge &&
+        step.highlightEdge.isFree &&
+        step.highlightEdge.u === e.u &&
+        step.highlightEdge.v === e.v;
+
+      svgEdgesList.push(`
+        <g>
+          <line x1="${p1.x}" y1="${p1.y0}" x2="${p2.x}" y2="${p2.y1}" stroke="${onPathCrossUV ? '#10b981' : isCurCrossUV ? '#f59e0b' : '#059669'}" stroke-width="${onPathCrossUV ? 3.5 : 1.5}" stroke-dasharray="${onPathCrossUV ? 'none' : '3,3'}" />
+          <text x="${(p1.x + p2.x) / 2 + 10}" y="${(p1.y0 + p2.y1) / 2}" fill="#10b981" font-size="7.5" font-family="monospace" text-anchor="middle">免(0)</text>
+        </g>
+      `);
+    }
+
+    // Render nodes across layers
+    const svgNodesList: string[] = [];
+    for (let u = 0; u < n; u++) {
+      const p = nodeCoords[u];
+      if (!p) continue;
+
+      // Layer 0 node
+      const id0 = `${u},0`;
+      const isCur0 = step.curNode === u && step.curK === 0;
+      const isVis0 = step.visitedSet.includes(id0);
+      const d0 = step.distGrid[id0];
+
+      svgNodesList.push(`
+        <g>
+          <circle cx="${p.x}" cy="${p.y0}" r="14" fill="${isCur0 ? '#b45309' : isVis0 ? '#0369a1' : '#1e293b'}" stroke="${isCur0 ? '#facc15' : isVis0 ? '#38bdf8' : '#475569'}" stroke-width="${isCur0 ? 2.5 : 1.5}" />
+          <text x="${p.x}" y="${p.y0 + 4}" fill="#ffffff" font-size="9.5" font-weight="800" font-family="monospace" text-anchor="middle">${u},0</text>
+          <text x="${p.x}" y="${p.y0 + 24}" fill="${d0 !== undefined ? '#34d399' : '#64748b'}" font-size="8" font-weight="700" text-anchor="middle">d:${d0 !== undefined ? d0 : '∞'}</text>
+        </g>
+      `);
+
+      // Layer 1 node
+      const id1 = `${u},1`;
+      const isCur1 = step.curNode === u && step.curK === 1;
+      const isVis1 = step.visitedSet.includes(id1);
+      const d1 = step.distGrid[id1];
+
+      svgNodesList.push(`
+        <g>
+          <circle cx="${p.x}" cy="${p.y1}" r="14" fill="${isCur1 ? '#b45309' : isVis1 ? '#db2777' : '#1e293b'}" stroke="${isCur1 ? '#facc15' : isVis1 ? '#f472b6' : '#475569'}" stroke-width="${isCur1 ? 2.5 : 1.5}" />
+          <text x="${p.x}" y="${p.y1 + 4}" fill="#ffffff" font-size="9.5" font-weight="800" font-family="monospace" text-anchor="middle">${u},1</text>
+          <text x="${p.x}" y="${p.y1 + 24}" fill="${d1 !== undefined ? '#34d399' : '#64748b'}" font-size="8" font-weight="700" text-anchor="middle">d:${d1 !== undefined ? d1 : '∞'}</text>
+        </g>
+      `);
+    }
 
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
-        <svg style="width: 100%; height: 210px;" viewBox="0 0 320 210">
-          ${svgEdges}
-          ${svgNodes}
+        <svg style="width: 100%; height: 215px;" viewBox="0 0 310 215">
+          ${svgEdgesList.join('')}
+          ${svgNodesList.join('')}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
-          🔵 上层为第 0 层 (原价图) | 🌸 下层为第 1 层 (使用 1 次免费券) | 🟢 绿色粗线为最优分层最短路径
+        <div style="font-size: 10px; color: #94a3b8; text-align: center; margin-top: 2px;">
+          🔵 上层为第 0 层 (原价图) | 🌸 下层为第 1 层 (使用 1 次免费券) | 🟢 绿色粗线为最优分层最短路
         </div>
       </div>
     `;
@@ -264,9 +418,15 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
 
       const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
       if (customMetricsContainer) {
-        const pqBadges = step.pqList.length > 0
-          ? step.pqList.map(item => `<span style="background: #1e293b; border: 1px solid #38bdf8; border-radius: 4px; padding: 2px 6px; color: #38bdf8; font-family: monospace; font-size: 10.5px;">(${item.u}, k:${item.k}, cost:${item.cost})</span>`).join(' ')
-          : '<span style="color: #94a3b8; font-size: 10.5px;">(空)</span>';
+        const pqBadges =
+          step.pqList.length > 0
+            ? step.pqList
+                .map(
+                  (item) =>
+                    `<span style="background: #1e293b; border: 1px solid #38bdf8; border-radius: 4px; padding: 2px 6px; color: #38bdf8; font-family: monospace; font-size: 10px;">(${item.u}, k:${item.used}, cost:${item.cost})</span>`
+                )
+                .join(' ')
+            : '<span style="color: #94a3b8; font-size: 10px;">(空)</span>';
 
         customMetricsContainer.innerHTML = `
           <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
