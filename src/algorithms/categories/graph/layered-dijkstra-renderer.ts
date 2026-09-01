@@ -137,7 +137,7 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
     status: 'init',
     message: `1. [初始化] 起点城市 ${s} 在第 0 层 (未使用免费券)，dist[${s}][0] = 0，初始状态 (${s}, k:0, cost:0) 入小根堆！`,
     log: `初始化：dist[${s}][0]=0, 初始状态 (${s}, k:0, cost:0) 入堆`,
-    codeLine: [93, 95],
+    codeLine: { from: 22, to: 24 },
   });
 
   let targetState: { u: number; used: number; cost: number } | null = null;
@@ -163,7 +163,7 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
       status: 'pop',
       message: `[堆顶弹出状态] 弹出当前全局最小状态 (城市 ${u}, usedK: ${used}, 累计花费: ${cost})，标记 visited[${u}][${used}]=true。`,
       log: `堆顶出队：(Node:${u}, k:${used}, cost:${cost})`,
-      codeLine: [98, 102],
+      codeLine: { from: 26, to: 28 },
     });
 
     if (u === t) {
@@ -179,7 +179,7 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
         status: 'reach',
         message: `🎯 [命中目标终点] 状态 (城市 ${t}, usedK: ${used}) 首次从堆顶出队！根据 Dijkstra 贪心定理，当前花费 ${cost} 必为全局最优解！`,
         log: `✓ 命中终点：城市 ${t} (usedK: ${used})，最小花费 = ${cost}`,
-        codeLine: [103, 103],
+        codeLine: 32,
       });
       break;
     }
@@ -207,7 +207,7 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
           status: 'relax_edge',
           message: `[同层常规买票] 航线 (${u}➔${v}, 票价:${w})：更新 dist[${v}][${used}] = ${cost} + ${w} = ${dist[v][used]}，状态 (${v}, k:${used}, cost:${dist[v][used]}) 入堆。`,
           log: `松弛航线 (${u}➔${v})：同层买票更新 dist[${v}][${used}]=${dist[v][used]}`,
-          codeLine: [107, 111],
+          codeLine: { from: 37, to: 40 },
         });
       }
 
@@ -229,7 +229,7 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
           status: 'relax_edge',
           message: `✨ [使用免费通票跨层] 航线 (${u}➔${v}) 使用 1 张免费券：更新 dist[${v}][${used + 1}] = ${cost} + 0 = ${cost}，跨层状态 (${v}, k:${used + 1}, cost:${cost}) 入堆！`,
           log: `跨层免票 (${u}➔${v})：更新 dist[${v}][${used + 1}]=${cost} (0 权跨层边)`,
-          codeLine: [112, 116],
+          codeLine: { from: 42, to: 45 },
         });
       }
     }
@@ -258,7 +258,7 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
     status: 'done',
     message: `🎉 [飞行路线全局最少花费求解完成] 从起点 ${s} 到终点 ${t}，使用 ${targetState?.used || 0} 张免费通票，最优最少总花费 = ${targetState?.cost ?? -1}！`,
     log: `✓ 求解完毕：全局最少花费 = ${targetState?.cost ?? -1}，路径重构完成`,
-    codeLine: [120, 122],
+    codeLine: { from: 49, to: 51 },
   });
 
   return steps;
