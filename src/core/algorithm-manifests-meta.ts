@@ -2817,5 +2817,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 42,
     "learningGoal": "掌握重儿子与轻边判定、重链连续性保证、两次 DFS 实现以及树上路径跨链跳跃求 LCA 与线段树结合的工程实践"
+  },
+  {
+    "id": "tree-centroid-decomposition",
+    "name": "树上点分治 (Centroid Decomposition)",
+    "viewId": "algo-tree-centroid-decomposition-view",
+    "category": "graph",
+    "description": "树上高效路径统计算法：左程云进阶图论树上重心寻找、O(log n) 分治层数、跨重心路径双指针合并与容斥去重 (洛谷 P3806)",
+    "icon": "👑",
+    "difficulty": 3,
+    "levelOrder": 43,
+    "learningGoal": "掌握树的重心性质与定位算法、跨重心路径与子树内部路径分类、双指针容斥去重以及严格 O(n log n) 复杂度证明"
   }
 ];

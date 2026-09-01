@@ -177,6 +177,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'min-cost-max-flow': '💰',
   'km-algorithm': '💘',
   'heavy-light-decomposition': '🎋',
+  'tree-centroid-decomposition': '👑',
 };
 
 import {
