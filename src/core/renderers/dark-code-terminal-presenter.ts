@@ -341,13 +341,14 @@ export class DarkCodeTerminalPresenter {
     ) as HTMLElement | null;
 
     if (!targetContainer) {
+      const rootId = root.id || '';
       if (
-        root.id === 'dsp-terminal-container' ||
-        root.id === 'code-terminal-card' ||
-        root.id.includes('terminal-mount') ||
-        root.id.includes('terminal-container') ||
-        root.classList?.contains('dark-code-terminal-container') ||
-        root.hasAttribute?.('data-code-terminal')
+        rootId === 'dsp-terminal-container' ||
+        rootId === 'code-terminal-card' ||
+        rootId.includes('terminal-mount') ||
+        rootId.includes('terminal-container') ||
+        root.classList?.contains?.('dark-code-terminal-container') ||
+        (typeof root.hasAttribute === 'function' && root.hasAttribute('data-code-terminal'))
       ) {
         targetContainer = root;
       }
