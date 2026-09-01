@@ -1,10 +1,11 @@
 /**
- * 平面图最小割转对偶图最短路 (Planar Graph Min-Cut to Dual Graph Shortest Path) 可视化引擎
+ * 平面图最小割转对偶图最短路 (Planar Graph Min-Cut to Dual Graph Shortest Path) 声明式可视化器
  * 进阶图论: 狼抓兔子、平面图每个面抽象为点、最小割等价于对偶图最短路、Dijkstra 极速求解 (洛谷 P4001)
+ * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   PLANAR_DUAL_CODE_LANGUAGES,
   PLANAR_DUAL_PROBLEM_HTML,
@@ -12,602 +13,224 @@ import {
 } from './planar-graph-dual-problem-content';
 
 export interface PlanarStep {
-  type: 'POP_DUAL' | 'RELAX_DUAL' | 'REACH_T_STAR' | 'ALL_DONE';
   curDualNode: string;
   distMap: Record<string, number>;
   visitedDual: string[];
   dualPq: Array<{ node: string; dist: number }>;
   bestDualPath?: string[];
   cutPlanarEdges?: Array<{ u: string; v: string }>;
+  minCutVal: number;
+  status: 'init' | 'dijkstra' | 'reach' | 'done';
   message: string;
+  log: string;
+  codeLine: number | number[];
 }
 
-class PlanarAudio {
-  private static audioCtx: AudioContext | null = null;
-  public static isMuted = false;
+export function buildPlanarDualSteps(): PlanarStep[] {
+  const steps: PlanarStep[] = [];
 
-  private static getCtx(): AudioContext | null {
-    if (this.isMuted || typeof window === 'undefined') return null;
-    if (!this.audioCtx) {
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioClass) this.audioCtx = new AudioClass();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-    return this.audioCtx;
-  }
+  steps.push({
+    curDualNode: 'S*',
+    distMap: { 'S*': 0, F1: Infinity, F2: Infinity, F3: Infinity, F4: Infinity, 'T*': Infinity },
+    visitedDual: ['S*'],
+    dualPq: [{ node: 'S*', dist: 0 }],
+    minCutVal: 0,
+    status: 'init',
+    message: '🌐 [构建对偶图] 原图面 F1~F4 与外部无界面抽象为对偶点，左下面定义为源点 S*，右上面为汇点 T*。',
+    log: '对偶图初始化：S* 到各面对偶点建图',
+    codeLine: [15, 22],
+  });
 
-  public static playLaser(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.08);
-    } catch {}
-  }
+  steps.push({
+    curDualNode: 'F1',
+    distMap: { 'S*': 0, F1: 3, F2: 4, F3: Infinity, F4: Infinity, 'T*': Infinity },
+    visitedDual: ['S*', 'F1'],
+    dualPq: [
+      { node: 'F1', dist: 3 },
+      { node: 'F2', dist: 4 },
+    ],
+    minCutVal: 3,
+    status: 'dijkstra',
+    message: '⚡ [Dijkstra 松弛对偶面 F1] 跨越原图边 (S, 1) 对应对偶边权 3，更新 dist[F1] = 3！',
+    log: 'Dijkstra 松弛：S* -> F1 (dist=3)',
+    codeLine: [28, 35],
+  });
 
-  public static playCut(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(329.63, ctx.currentTime);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.12);
-    } catch {}
-  }
+  steps.push({
+    curDualNode: 'F3',
+    distMap: { 'S*': 0, F1: 3, F2: 4, F3: 5, F4: 7, 'T*': Infinity },
+    visitedDual: ['S*', 'F1', 'F3'],
+    dualPq: [
+      { node: 'F3', dist: 5 },
+      { node: 'F2', dist: 4 },
+      { node: 'F4', dist: 7 },
+    ],
+    minCutVal: 5,
+    status: 'dijkstra',
+    message: '⚡ [松弛对偶面 F3] 跨越原图内部边 (1, 2) 对应对偶边权 2，dist[F3] = 3 + 2 = 5！',
+    log: 'Dijkstra 松弛：F1 -> F3 (dist=5)',
+    codeLine: [28, 35],
+  });
 
-  public static playVictory(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const chord = [523.25, 659.25, 783.99, 1046.5];
-      chord.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.06);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.06 + 0.22);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.06);
-        osc.stop(ctx.currentTime + idx * 0.06 + 0.22);
-      });
-    } catch {}
-  }
+  steps.push({
+    curDualNode: 'T*',
+    distMap: { 'S*': 0, F1: 3, F2: 4, F3: 5, F4: 7, 'T*': 8 },
+    visitedDual: ['S*', 'F1', 'F3', 'T*'],
+    dualPq: [{ node: 'T*', dist: 8 }],
+    bestDualPath: ['S*', 'F1', 'F3', 'T*'],
+    cutPlanarEdges: [
+      { u: 'S', v: '1' },
+      { u: '1', v: '2' },
+      { u: '2', v: 'T' },
+    ],
+    minCutVal: 8,
+    status: 'reach',
+    message: '🎯 [到达对偶汇点 T*] 对偶图最短路径 S* ➔ F1 ➔ F3 ➔ T* 长度为 8，对应原图割边集合！',
+    log: 'Dijkstra 到达 T*：最短路 = 8 (即原图最小割容量)',
+    codeLine: [40, 45],
+  });
+
+  steps.push({
+    curDualNode: 'T*',
+    distMap: { 'S*': 0, F1: 3, F2: 4, F3: 5, F4: 7, 'T*': 8 },
+    visitedDual: ['S*', 'F1', 'F3', 'T*'],
+    dualPq: [],
+    bestDualPath: ['S*', 'F1', 'F3', 'T*'],
+    cutPlanarEdges: [
+      { u: 'S', v: '1' },
+      { u: '1', v: '2' },
+      { u: '2', v: 'T' },
+    ],
+    minCutVal: 8,
+    status: 'done',
+    message: '🎉 [平面图最小割定理验证完成] 原图最小割容量 = 对偶图 S*-T* 最短路 = 8！用 Dijkstra O(E log V) 完美替代 O(V²E) 最大流！',
+    log: '✓ 判定成功：原图 Min-Cut = 对偶图 Shortest-Path = 8',
+    codeLine: 48,
+  });
+
+  return steps;
 }
 
-export class PlanarGraphDualVisualizer extends StepVisualizer<any> {
-  // 原图节点与边
-  private planarNodes: Record<string, { x: number; y: number }> = {
-    'S(0,0)': { x: 50, y: 40 },
-    '(0,1)': { x: 130, y: 40 },
-    '(0,2)': { x: 210, y: 40 },
-    '(1,0)': { x: 50, y: 110 },
-    '(1,1)': { x: 130, y: 110 },
-    '(1,2)': { x: 210, y: 110 },
-    '(2,0)': { x: 50, y: 180 },
-    '(2,1)': { x: 130, y: 180 },
-    'T(2,2)': { x: 210, y: 180 },
-  };
+const { template, Visualizer } = createDeclarativeVisualizer<PlanarStep>({
+  id: 'planar-graph-dual',
+  name: '平面图最小割转对偶最短路 (Planar Dual)',
+  viewId: 'algo-planar-graph-dual-view',
+  category: 'graph',
+  icon: '🌐',
+  badge: {
+    mode: '对偶图 Dijkstra 最短路',
+    complexity: 'O(E log V) · O(V + E)',
+  },
+  card1Title: '🌐 平面网格图与对偶图穿透沙盘',
+  card2Title: '🧭 对偶面距离 dist[F_i] 监视器',
+  card2Desc: '各面抽象对偶节点、跨边权值映射与最小割对应关系',
+  legend: [
+    { label: '原图网格节点 (S, 1..4, T)', color: '#0284c7' },
+    { label: '⭐ 对偶点 (S*, T*, F1..F4)', color: '#f59e0b' },
+    { label: '🔴 最小割被切原边', color: '#ef4444' },
+    { label: '🟢 对偶图最优最短路径', color: '#10b981' },
+  ],
+  inputs: [],
+  presets: [
+    { label: '2x2 网格经典狼抓兔子 (P4001)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-cur-face', label: '当前对偶面', color: '#f59e0b' },
+    { id: 'metric-min-cut', label: '对偶最短路 (最小割)', color: '#10b981' },
+  ],
+  codeLanguages: PLANAR_DUAL_CODE_LANGUAGES,
+  problemHtml: PLANAR_DUAL_PROBLEM_HTML,
+  analysisHtml: PLANAR_DUAL_ANALYSIS_HTML,
+  buildSteps: () => buildPlanarDualSteps(),
+  renderCanvas: (container, step) => {
+    const isDone = step.status === 'reach' || step.status === 'done';
 
-  // 对偶图面节点
-  private dualNodes: Record<string, { x: number; y: number; label: string }> = {
-    'S*': { x: 180, y: 15, label: 'S*' },
-    'T*': { x: 80, y: 205, label: 'T*' },
-    'F1': { x: 80, y: 65, label: 'F1' },
-    'F2': { x: 105, y: 85, label: 'F2' },
-    'F3': { x: 160, y: 65, label: 'F3' },
-    'F4': { x: 185, y: 85, label: 'F4' },
-    'F5': { x: 80, y: 135, label: 'F5' },
-    'F6': { x: 105, y: 155, label: 'F6' },
-    'F7': { x: 160, y: 135, label: 'F7' },
-    'F8': { x: 185, y: 155, label: 'F8' },
-  };
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+        <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
+          <!-- 原图网格边 (灰底/红割) -->
+          <line x1="60" y1="150" x2="155" y2="150" stroke="${isDone ? '#ef4444' : '#475569'}" stroke-width="${isDone ? 3 : 1.5}" />
+          <line x1="155" y1="150" x2="250" y2="150" stroke="#475569" stroke-width="1.5" />
+          <line x1="60" y1="50" x2="155" y2="50" stroke="#475569" stroke-width="1.5" />
+          <line x1="155" y1="50" x2="250" y2="50" stroke="${isDone ? '#ef4444' : '#475569'}" stroke-width="${isDone ? 3 : 1.5}" />
+          <line x1="60" y1="50" x2="60" y2="150" stroke="#475569" stroke-width="1.5" />
+          <line x1="155" y1="50" x2="155" y2="150" stroke="${isDone ? '#ef4444' : '#475569'}" stroke-width="${isDone ? 3 : 1.5}" />
+          <line x1="250" y1="50" x2="250" y2="150" stroke="#475569" stroke-width="1.5" />
 
-  // 推演步骤
-  private traceSteps: PlanarStep[] = [];
-  private currentStepPtr = 0;
-  private isAutoPlaying = false;
-  private autoPlayTimer: any = null;
-  private playSpeed = 1;
-
-  // 画布与动画
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private animFrameId: number | null = null;
-  private lastTimestamp = 0;
-  private pulseAnim = 0;
-
-  constructor() {
-    super();
-    this.codeLanguages = PLANAR_DUAL_CODE_LANGUAGES;
-    this.codeLines = PLANAR_DUAL_CODE_LANGUAGES['cpp'] || [];
-    this.codePanelTitle = '平面图对偶转换与 Dijkstra 引擎 (Planar Dual Min-Cut)';
-  }
-
-  protected initDOMElements(): void {}
-
-  protected buildSteps(): any[] {
-    return [{ message: '平面图最小割转对偶图' }];
-  }
-
-  protected renderStep(_step: any): void {}
-
-  public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
-    await super.init(options);
-    this.loadPreset('CLASSIC_3X3_TRIANGULATION');
-    this.initGameUI();
-    this.startLoop();
-  }
-
-  public destroy(): void {
-    super.destroy();
-    this.stopAutoPlay();
-    if (this.animFrameId && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
-    }
-  }
-
-  private loadPreset(_presetKey: string): void {
-    this.stopAutoPlay();
-    this.computeTraceSteps();
-    this.currentStepPtr = 0;
-    this.updateHUD();
-  }
-
-  private computeTraceSteps(): void {
-    const dist: Record<string, number> = {
-      'S*': 0,
-      'F1': 999,
-      'F2': 999,
-      'F3': 999,
-      'F4': 999,
-      'F5': 999,
-      'F6': 999,
-      'F7': 999,
-      'F8': 999,
-      'T*': 999,
-    };
-    const visited: string[] = [];
-    const steps: PlanarStep[] = [];
-
-    // 对偶图 Dijkstra 状态序列
-    // S* -> F3 (w=2)
-    dist['F3'] = 2;
-    steps.push({
-      type: 'RELAX_DUAL',
-      curDualNode: 'F3',
-      distMap: { ...dist },
-      visitedDual: [...visited],
-      dualPq: [
-        { node: 'F3', dist: 2 },
-        { node: 'F4', dist: 4 },
-      ],
-      message: '⚡ [松弛对偶边] 从 S* 跨越原图顶边进入三角面 F3 (容量 2)！',
-    });
-
-    visited.push('F3');
-    dist['F4'] = 3;
-    steps.push({
-      type: 'POP_DUAL',
-      curDualNode: 'F3',
-      distMap: { ...dist },
-      visitedDual: [...visited],
-      dualPq: [
-        { node: 'F4', dist: 3 },
-        { node: 'F7', dist: 5 },
-      ],
-      message: '🌟 [出堆对偶面 F3] 访问面 F3，松弛内部斜对角边进入 F4 (dist=3)！',
-    });
-
-    visited.push('F4');
-    dist['F7'] = 4;
-    steps.push({
-      type: 'RELAX_DUAL',
-      curDualNode: 'F7',
-      distMap: { ...dist },
-      visitedDual: [...visited],
-      dualPq: [
-        { node: 'F7', dist: 4 },
-        { node: 'F8', dist: 6 },
-      ],
-      message: '⚡ [松弛对偶边] 沿网格中间通道穿越至三角面 F7 (dist=4)！',
-    });
-
-    visited.push('F7');
-    dist['F6'] = 5;
-    steps.push({
-      type: 'POP_DUAL',
-      curDualNode: 'F7',
-      distMap: { ...dist },
-      visitedDual: [...visited],
-      dualPq: [
-        { node: 'F6', dist: 5 },
-        { node: 'T*', dist: 7 },
-      ],
-      message: '🌟 [出堆对偶面 F7] 面 F7 跨越斜向边进入面 F6 (dist=5)！',
-    });
-
-    visited.push('F6');
-    dist['T*'] = 6;
-    steps.push({
-      type: 'REACH_T_STAR',
-      curDualNode: 'T*',
-      distMap: { ...dist },
-      visitedDual: [...visited],
-      dualPq: [],
-      bestDualPath: ['S*', 'F3', 'F4', 'F7', 'F6', 'T*'],
-      cutPlanarEdges: [
-        { u: 'S(0,0)', v: '(0,1)' },
-        { u: '(0,1)', v: '(1,1)' },
-        { u: '(1,1)', v: '(2,1)' },
-        { u: '(2,1)', v: '(2,0)' },
-      ],
-      message: '🎯 [抵达超级汇面 T*] 对偶图最短路计算完毕！最短距离为 6，完美对应原图最小割容量！',
-    });
-
-    steps.push({
-      type: 'ALL_DONE',
-      curDualNode: 'T*',
-      distMap: { ...dist },
-      visitedDual: [...visited],
-      dualPq: [],
-      bestDualPath: ['S*', 'F3', 'F4', 'F7', 'F6', 'T*'],
-      cutPlanarEdges: [
-        { u: 'S(0,0)', v: '(0,1)' },
-        { u: '(0,1)', v: '(1,1)' },
-        { u: '(1,1)', v: '(2,1)' },
-        { u: '(2,1)', v: '(2,0)' },
-      ],
-      message: '🎉 [最小割割线生成] ✂️ 红色割线斩断 S 与 T 的所有连通路径，Dijkstra 极速替代 Dinic 成功！',
-    });
-
-    this.traceSteps = steps;
-  }
-
-  private initGameUI(): void {
-    if (!this.root) return;
-
-    this.canvas = this.root.querySelector('#planar-dual-canvas');
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
-    }
-
-    this.mountTerminal({
-      codeLanguages: PLANAR_DUAL_CODE_LANGUAGES,
-      problemHtml: PLANAR_DUAL_PROBLEM_HTML,
-      analysisHtml: PLANAR_DUAL_ANALYSIS_HTML,
-      initialLang: 'cpp',
-    });
-
-    // 单步
-    const stepBtn = this.root.querySelector('#btn-planar-step') as HTMLButtonElement | null;
-    if (stepBtn) stepBtn.addEventListener('click', () => this.stepForward());
-
-    // 自动播放
-    const autoBtn = this.root.querySelector('#btn-planar-autoplay') as HTMLButtonElement | null;
-    if (autoBtn) {
-      autoBtn.addEventListener('click', () => {
-        if (this.isAutoPlaying) this.stopAutoPlay();
-        else this.startAutoPlay();
-      });
-    }
-
-    // 重置
-    const resetBtn = this.root.querySelector('#btn-planar-reset') as HTMLButtonElement | null;
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        this.stopAutoPlay();
-        this.currentStepPtr = 0;
-        this.updateHUD();
-      });
-    }
-
-    // 音效
-    const soundBtn = this.root.querySelector('#btn-planar-sound') as HTMLButtonElement | null;
-    if (soundBtn) {
-      soundBtn.addEventListener('click', () => {
-        PlanarAudio.isMuted = !PlanarAudio.isMuted;
-        soundBtn.textContent = PlanarAudio.isMuted ? '🔇 静音' : '🔊 音效';
-      });
-    }
-  }
-
-  private stepForward(): void {
-    if (this.currentStepPtr < this.traceSteps.length - 1) {
-      this.currentStepPtr++;
-      const cur = this.traceSteps[this.currentStepPtr];
-      if (cur.type === 'RELAX_DUAL') PlanarAudio.playLaser();
-      else if (cur.type === 'REACH_T_STAR') PlanarAudio.playCut();
-      else if (cur.type === 'ALL_DONE') PlanarAudio.playVictory();
-
-      this.updateHUD();
-    } else {
-      this.stopAutoPlay();
-    }
-  }
-
-  private startAutoPlay(): void {
-    if (this.isAutoPlaying) return;
-    this.isAutoPlaying = true;
-    const playBtn = this.root?.querySelector('#btn-planar-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '⏸️ 暂停搜索';
-
-    const step = () => {
-      if (!this.isAutoPlaying) return;
-      if (this.currentStepPtr < this.traceSteps.length - 1) {
-        this.stepForward();
-        this.autoPlayTimer = setTimeout(step, 900 / this.playSpeed);
-      } else {
-        this.stopAutoPlay();
-      }
-    };
-    step();
-  }
-
-  private stopAutoPlay(): void {
-    this.isAutoPlaying = false;
-    if (this.autoPlayTimer) {
-      clearTimeout(this.autoPlayTimer);
-      this.autoPlayTimer = null;
-    }
-    const playBtn = this.root?.querySelector('#btn-planar-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '▶️ 自动搜索';
-  }
-
-  private updateHUD(): void {
-    if (!this.root || this.traceSteps.length === 0) return;
-
-    const cur = this.traceSteps[this.currentStepPtr];
-    const narrationBox = this.root.querySelector('#planar-narration-box') as HTMLElement | null;
-    const statusBadge = this.root.querySelector('#planar-status-badge') as HTMLElement | null;
-    const mincutBadge = this.root.querySelector('#planar-mincut-badge') as HTMLElement | null;
-
-    if (narrationBox) narrationBox.innerHTML = `💡 ${cur.message}`;
-
-    if (statusBadge) {
-      if (cur.type === 'ALL_DONE') {
-        statusBadge.textContent = '🏁 转换求解完成';
-        statusBadge.style.background = '#f0fdf4';
-        statusBadge.style.color = '#16a34a';
-      } else {
-        statusBadge.textContent = `步骤 ${this.currentStepPtr + 1}/${this.traceSteps.length}`;
-        statusBadge.style.background = '#eff6ff';
-        statusBadge.style.color = '#2563eb';
-      }
-    }
-
-    if (mincutBadge) {
-      mincutBadge.textContent = `当前对偶最短路 / 最小割容量: ${cur.distMap['T*'] === 999 ? '计算中...' : cur.distMap['T*']}`;
-    }
-  }
-
-  private startLoop(): void {
-    if (typeof requestAnimationFrame !== 'function') return;
-    const loop = (timestamp: number) => {
-      if (!this.lastTimestamp) this.lastTimestamp = timestamp;
-      const dt = Math.min(32, timestamp - this.lastTimestamp);
-      this.lastTimestamp = timestamp;
-
-      this.pulseAnim += dt * 0.006;
-      this.renderCanvas();
-
-      if (typeof requestAnimationFrame === 'function') {
-        this.animFrameId = requestAnimationFrame(loop);
-      }
-    };
-    this.animFrameId = requestAnimationFrame(loop);
-  }
-
-  private renderCanvas(): void {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx;
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const cur = this.traceSteps[this.currentStepPtr];
-
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    if (cur) {
-      // 1. 绘制平面图原网格 (蓝色线)
-      const planarGridEdges = [
-        ['S(0,0)', '(0,1)'], ['(0,1)', '(0,2)'],
-        ['(1,0)', '(1,1)'], ['(1,1)', '(1,2)'],
-        ['(2,0)', '(2,1)'], ['(2,1)', 'T(2,2)'],
-        ['S(0,0)', '(1,0)'], ['(1,0)', '(2,0)'],
-        ['(0,1)', '(1,1)'], ['(1,1)', '(2,1)'],
-        ['(0,2)', '(1,2)'], ['(1,2)', 'T(2,2)'],
-        ['S(0,0)', '(1,1)'], ['(0,1)', '(1,2)'],
-        ['(1,0)', '(2,1)'], ['(1,1)', 'T(2,2)'],
-      ];
-
-      planarGridEdges.forEach(([u, v]) => {
-        const p1 = this.planarNodes[u];
-        const p2 = this.planarNodes[v];
-        if (!p1 || !p2) return;
-
-        const isCut = cur.cutPlanarEdges && cur.cutPlanarEdges.some((ce) => (ce.u === u && ce.v === v) || (ce.u === v && ce.v === u));
-
-        ctx.save();
-        ctx.strokeStyle = isCut ? '#ef4444' : 'rgba(56, 189, 248, 0.35)';
-        ctx.lineWidth = isCut ? 3.5 : 1.5;
-        if (isCut) {
-          ctx.setLineDash([4, 4]);
-          ctx.shadowColor = '#ef4444';
-          ctx.shadowBlur = 8;
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-        ctx.restore();
-      });
-
-      // 2. 绘制对偶图边与路径 (黄色线)
-      if (cur.bestDualPath && cur.bestDualPath.length > 1) {
-        ctx.save();
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 3;
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 10;
-
-        ctx.beginPath();
-        for (let i = 0; i < cur.bestDualPath.length - 1; i++) {
-          const d1 = this.dualNodes[cur.bestDualPath[i]];
-          const d2 = this.dualNodes[cur.bestDualPath[i + 1]];
-          if (d1 && d2) {
-            ctx.moveTo(d1.x, d1.y);
-            ctx.lineTo(d2.x, d2.y);
+          <!-- 对偶图最短路 (绿线穿透) -->
+          ${
+            isDone
+              ? `
+            <line x1="40" y1="180" x2="105" y2="100" stroke="#10b981" stroke-width="2.5" stroke-dasharray="4,4" />
+            <line x1="105" y1="100" x2="205" y2="100" stroke="#10b981" stroke-width="2.5" stroke-dasharray="4,4" />
+            <line x1="205" y1="100" x2="270" y2="20" stroke="#10b981" stroke-width="2.5" stroke-dasharray="4,4" />
+          `
+              : ''
           }
-        }
-        ctx.stroke();
-        ctx.restore();
+
+          <!-- 原图节点 -->
+          <g><circle cx="60" cy="150" r="11" fill="#0284c7" /><text x="60" y="154" fill="#ffffff" font-size="9" font-weight="800" text-anchor="middle">S</text></g>
+          <g><circle cx="155" cy="150" r="11" fill="#0284c7" /><text x="155" y="154" fill="#ffffff" font-size="9" font-weight="800" text-anchor="middle">1</text></g>
+          <g><circle cx="250" cy="150" r="11" fill="#0284c7" /><text x="250" y="154" fill="#ffffff" font-size="9" font-weight="800" text-anchor="middle">2</text></g>
+          <g><circle cx="60" cy="50" r="11" fill="#0284c7" /><text x="60" y="54" fill="#ffffff" font-size="9" font-weight="800" text-anchor="middle">3</text></g>
+          <g><circle cx="155" cy="50" r="11" fill="#0284c7" /><text x="155" y="54" fill="#ffffff" font-size="9" font-weight="800" text-anchor="middle">4</text></g>
+          <g><circle cx="250" cy="50" r="11" fill="#0284c7" /><text x="250" y="54" fill="#ffffff" font-size="9" font-weight="800" text-anchor="middle">T</text></g>
+
+          <!-- 对偶点 -->
+          <g><circle cx="40" cy="180" r="12" fill="#f59e0b" /><text x="40" y="184" fill="#ffffff" font-size="9.5" font-weight="800" text-anchor="middle">S*</text></g>
+          <g><circle cx="105" cy="100" r="10" fill="#f59e0b" /><text x="105" y="104" fill="#ffffff" font-size="8.5" font-weight="800" text-anchor="middle">F1</text></g>
+          <g><circle cx="205" cy="100" r="10" fill="#f59e0b" /><text x="205" y="104" fill="#ffffff" font-size="8.5" font-weight="800" text-anchor="middle">F3</text></g>
+          <g><circle cx="270" cy="20" r="12" fill="#f59e0b" /><text x="270" y="24" fill="#ffffff" font-size="9.5" font-weight="800" text-anchor="middle">T*</text></g>
+        </svg>
+        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+          🟢 绿色虚线为对偶图从 S* 到 T* 的最短路径 | 🔴 红色为对应的原图最小割割边
+        </div>
+      </div>
+    `;
+
+    const root = container.closest('#algo-planar-graph-dual-view');
+    if (root) {
+      const faceEl = root.querySelector('#metric-cur-face');
+      const cutEl = root.querySelector('#metric-min-cut');
+
+      if (faceEl) faceEl.textContent = step.curDualNode;
+      if (cutEl) cutEl.textContent = `${step.minCutVal}`;
+
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const distItems = Object.entries(step.distMap)
+          .map(([f, d]) => `<span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px;">${f}: <strong style="color: #2563eb;">${d === Infinity ? '∞' : d}</strong></span>`)
+          .join(' ');
+
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>对偶面距离表 dist[F]:</span>
+              <div style="display: flex; gap: 4px;">${distItems}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #1e40af; font-weight: 700;">👑 平面图最小割对偶定理:</span>
+              <strong style="font-family: monospace; color: #2563eb;">MinCut(s, t) = ShortestPath(S*, T*)</strong>
+            </div>
+          </div>
+        `;
       }
-
-      // 3. 绘制对偶图面节点 (橙色圆点)
-      for (const key in this.dualNodes) {
-        const d = this.dualNodes[key];
-        const isCur = cur.curDualNode === key;
-        const isPath = cur.bestDualPath && cur.bestDualPath.includes(key);
-
-        ctx.save();
-        let radius = 9;
-        if (isCur) radius = 11 + Math.sin(this.pulseAnim) * 1.5;
-
-        ctx.fillStyle = key.includes('*') ? '#ec4899' : '#f97316';
-        ctx.strokeStyle = isCur ? '#facc15' : isPath ? '#10b981' : '#ffffff';
-        ctx.lineWidth = 2;
-
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.font = 'bold 9px monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(d.label, d.x, d.y);
-        ctx.restore();
-      }
-
-      // 4. 右侧对偶图优先队列与对偶理论 HUD
-      ctx.save();
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText('📥 对偶图 Dijkstra 优先队列:', 255, 30);
-
-      const pqList = cur.dualPq.slice(0, 4);
-      pqList.forEach((item, idx) => {
-        const itemY = 48 + idx * 24;
-        ctx.font = '10px monospace';
-        ctx.fillStyle = '#facc15';
-        ctx.fillText(`[#${idx + 1}] 面 ${item.node} => 距离: ${item.dist}`, 255, itemY);
-      });
-
-      if (pqList.length === 0) {
-        ctx.font = '10px sans-serif';
-        ctx.fillStyle = '#64748b';
-        ctx.fillText('(优先队列已清空)', 255, 52);
-      }
-
-      // 理论解释
-      ctx.font = '10px sans-serif';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(`🌐 蓝色网格 = 原平面网络流图`, 245, 160);
-      ctx.fillText(`🟠 橙色节点 = 对偶图面节点 (Face)`, 245, 178);
-      ctx.fillText(`✂️ 红色虚线 = 最小割割断边集`, 245, 196);
-      ctx.fillText(`⚡ 黄色光芒 = 对偶图 S* 到 T* 最短路`, 245, 214);
-
-      ctx.restore();
     }
-
-    ctx.restore();
-  }
-}
-
-export const PLANAR_DUAL_TEMPLATE = `
-  <div id="algo-planar-graph-dual-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
-    <!-- 顶栏控制 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">🌐</span>
-        <span style="font-size: 14px; font-weight: 800; color: #0f172a;">平面图最小割转对偶图最短路 (Planar Graph Dual)</span>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="planar-status-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: #2563eb;">准备就绪</span>
-        <button id="btn-planar-step" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">单步推演</button>
-        <button id="btn-planar-autoplay" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">▶️ 自动搜索</button>
-        <button id="btn-planar-sound" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🔊 音效</button>
-        <button id="btn-planar-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
-      </div>
-    </div>
-
-    <!-- 状态指示条 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 4px 10px; margin-bottom: 6px; font-size: 11px; color: #0369a1;">
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <span>🌐 割容量对偶映射: <b id="planar-mincut-badge" style="color: #0284c7; font-size: 12px;">当前对偶最短路: 准备中</b></span>
-      </div>
-      <div id="planar-narration-box" style="font-weight: 700; color: #075985;">
-        💡 准备就绪：平面图面转点、原图割转对偶路径，Dijkstra 极速取代 Dinic！
-      </div>
-    </div>
-
-    <!-- 主展示区 -->
-    <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 350px; gap: 10px; flex: 1; min-height: 0;">
-      <!-- 左侧：平面图与对偶图叠加 Canvas -->
-      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 6px; overflow-y: auto;">
-        <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
-          <canvas id="planar-dual-canvas" width="460" height="230" style="width: 460px; height: 230px;"></canvas>
-        </div>
-
-        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
-          左侧为平面三角剖分网格与对偶图叠加 | 🟡 黄色光芒为对偶最短路径 | ✂️ 红色虚线为原图等价最小割
-        </div>
-      </div>
-
-      <!-- 右侧：代码终端 -->
-      <div style="display: flex; flex-direction: column; gap: 6px; min-height: 0;">
-        <div id="planar-dual-terminal-mount" style="flex: 1; min-height: 280px; overflow: hidden; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
-      </div>
-    </div>
-  </div>
-`;
+  },
+});
 
 registerAlgorithm({
   id: 'planar-graph-dual',
-  name: '平面图最小割转对偶图最短路 (Planar Graph Dual)',
+  name: '平面图最小割转对偶最短路 (Planar Dual)',
   viewId: 'algo-planar-graph-dual-view',
   category: 'graph',
-  description: '进阶图论对偶建模：平面图面转点、最小割等价于对偶图最短路、Dijkstra 取代 Dinic 极速求解 (洛谷 P4001 狼抓兔子)',
+  description: '进阶图论经典对偶转化：平面图每个面抽象为点、最小割等价于对偶图最短路、Dijkstra 极速求解 (洛谷 P4001 狼抓兔子)',
   icon: '🌐',
-  template: PLANAR_DUAL_TEMPLATE,
-  Visualizer: PlanarGraphDualVisualizer,
+  template,
+  Visualizer,
   difficulty: 3,
-  levelOrder: 64,
-  learningGoal: '掌握平面图与对偶图转换几何原理、最小割与对偶路径等价性定理及大规模网格最大流加速技巧',
+  levelOrder: 66,
+  learningGoal: '掌握平面图面与对偶点的构造对应关系、最小割转对偶最短路的严格数学证明与 Dijkstra 加速',
 });
+
+export { Visualizer as PlanarGraphDualVisualizer };

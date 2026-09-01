@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { DSUOnTreeVisualizer, DSU_ON_TREE_TEMPLATE } from './dsu-on-tree-renderer';
+import { DSUOnTreeVisualizer } from './dsu-on-tree-renderer';
 
-describe('DSUOnTree (Heavy-Light Merge on Trees)', () => {
+describe('DSUOnTree (CF600E)', () => {
   it('should instantiate DSUOnTreeVisualizer properly', () => {
     const viz = new DSUOnTreeVisualizer();
     expect(viz).toBeDefined();
-    expect(DSU_ON_TREE_TEMPLATE).toContain('algo-dsu-on-tree-view');
-    expect(DSU_ON_TREE_TEMPLATE).toContain('dsu-tree-canvas');
-    expect(DSU_ON_TREE_TEMPLATE).toContain('dsu-distinct-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

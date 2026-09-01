@@ -1,670 +1,200 @@
 /**
- * 树上启发式合并 (DSU on Tree - Heavy-Light Merge on Trees) 可视化引擎
- * 进阶树论: 重儿子保留计数桶 (keep=true)、轻儿子统计后清空 (keep=false)、严格 O(N log N)
+ * 树上启发式合并 (DSU on Tree) 声明式可视化器
+ * 进阶树论: 树链剖分重儿子保留、轻儿子子树清除、O(N log N) 极速统计 (CF600E / 洛谷 P4149)
+ * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   DSU_ON_TREE_CODE_LANGUAGES,
   DSU_ON_TREE_PROBLEM_HTML,
   DSU_ON_TREE_ANALYSIS_HTML,
 } from './dsu-on-tree-problem-content';
 
-export interface DSUStep {
-  type: 'VISIT_LIGHT' | 'VISIT_HEAVY' | 'ADD_NODE' | 'CLEAR_BUCKET' | 'RECORD_ANS' | 'ALL_DONE';
+export interface DSUTreeStep {
   curNode: number;
-  isKeep: boolean;
-  colorBucket: Record<string, number>;
-  distinctCount: number;
-  ansList: number[];
-  activeSubtreeNodes: number[];
+  isHeavy: boolean;
+  preservedData: Record<number, number>;
+  activeSubtree: number[];
+  status: 'light' | 'heavy' | 'merge' | 'done';
   message: string;
+  log: string;
+  codeLine: number | number[];
 }
 
-class DSUAudio {
-  private static audioCtx: AudioContext | null = null;
-  public static isMuted = false;
+export function buildDSUOnTreeSteps(): DSUTreeStep[] {
+  const steps: DSUTreeStep[] = [];
 
-  private static getCtx(): AudioContext | null {
-    if (this.isMuted || typeof window === 'undefined') return null;
-    if (!this.audioCtx) {
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioClass) this.audioCtx = new AudioClass();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-    return this.audioCtx;
-  }
+  steps.push({
+    curNode: 2,
+    isHeavy: false,
+    preservedData: { 2: 1 },
+    activeSubtree: [2],
+    status: 'light',
+    message: '1. [轻儿子遍历与清空] 节点 2 为轻儿子，统计完子树信息后清除全局频次数组，避免对兄弟子树造成污染。',
+    log: '轻儿子 2 遍历后清除数据',
+    codeLine: [18, 24],
+  });
 
-  public static playAdd(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.08);
-    } catch {}
-  }
+  steps.push({
+    curNode: 3,
+    isHeavy: true,
+    preservedData: { 3: 1, 4: 1 },
+    activeSubtree: [3, 4],
+    status: 'heavy',
+    message: '2. [重儿子遍历与保留] 节点 3 为重儿子，统计完后【不清除】全局数据，直接保留给父节点 1 复用！',
+    log: '重儿子 3 遍历并保留数据 (keep=true)',
+    codeLine: [26, 32],
+  });
 
-  public static playClear(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(261.63, ctx.currentTime);
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch {}
-  }
+  steps.push({
+    curNode: 1,
+    isHeavy: false,
+    preservedData: { 1: 1, 2: 1, 3: 1, 4: 1 },
+    activeSubtree: [1, 2, 3, 4],
+    status: 'done',
+    message: '🎉 [根节点合并完成] 仅需重新暴力扫描轻子树 2，与已保留的重儿子数据合并！每个节点仅被扫描 $O(\\log N)$ 次！',
+    log: '✓ 根节点 1 合并完成：严格 O(N log N) 复杂度',
+    codeLine: [34, 40],
+  });
 
-  public static playRecord(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const chord = [523.25, 659.25, 783.99, 1046.5];
-      chord.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.05 + 0.18);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.05);
-        osc.stop(ctx.currentTime + idx * 0.05 + 0.18);
-      });
-    } catch {}
-  }
+  return steps;
 }
 
-export class DSUOnTreeVisualizer extends StepVisualizer<any> {
-  private n = 7;
-  private nodeColors: Record<number, string> = {
-    1: 'Red',
-    2: 'Blue',
-    3: 'Red',
-    4: 'Green',
-    5: 'Blue',
-    6: 'Yellow',
-    7: 'Green',
-  };
-  private colorHex: Record<string, string> = {
-    Red: '#ef4444',
-    Blue: '#3b82f6',
-    Green: '#10b981',
-    Yellow: '#eab308',
-  };
-  private treeEdges: Array<{ u: number; v: number; isHeavy: boolean }> = [
-    { u: 1, v: 2, isHeavy: true },
-    { u: 1, v: 3, isHeavy: false },
-    { u: 2, v: 4, isHeavy: true },
-    { u: 2, v: 5, isHeavy: false },
-    { u: 4, v: 6, isHeavy: true },
-    { u: 3, v: 7, isHeavy: true },
-  ];
-  private nodePositions: Record<number, { x: number; y: number }> = {
-    1: { x: 120, y: 35 },
-    2: { x: 75, y: 90 },
-    3: { x: 175, y: 90 },
-    4: { x: 45, y: 150 },
-    5: { x: 105, y: 150 },
-    6: { x: 45, y: 200 },
-    7: { x: 175, y: 150 },
-  };
-
-  // 推演步骤
-  private traceSteps: DSUStep[] = [];
-  private currentStepPtr = 0;
-  private isAutoPlaying = false;
-  private autoPlayTimer: any = null;
-  private playSpeed = 1;
-
-  // 画布与动画
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private animFrameId: number | null = null;
-  private lastTimestamp = 0;
-  private pulseAnim = 0;
-
-  constructor() {
-    super();
-    this.codeLanguages = DSU_ON_TREE_CODE_LANGUAGES;
-    this.codeLines = DSU_ON_TREE_CODE_LANGUAGES['cpp'] || [];
-    this.codePanelTitle = '树上启发式合并 DSU on Tree 引擎';
-  }
-
-  protected initDOMElements(): void {}
-
-  protected buildSteps(): any[] {
-    return [{ message: '树上启发式合并' }];
-  }
-
-  protected renderStep(_step: any): void {}
-
-  public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
-    await super.init(options);
-    this.loadPreset('CLASSIC_7_NODE_TREE');
-    this.initGameUI();
-    this.startLoop();
-  }
-
-  public destroy(): void {
-    super.destroy();
-    this.stopAutoPlay();
-    if (this.animFrameId && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
-    }
-  }
-
-  private loadPreset(presetKey: string): void {
-    this.stopAutoPlay();
-
-    if (presetKey === 'CLASSIC_7_NODE_TREE') {
-      this.n = 7;
-      this.nodeColors = {
-        1: 'Red',
-        2: 'Blue',
-        3: 'Red',
-        4: 'Green',
-        5: 'Blue',
-        6: 'Yellow',
-        7: 'Green',
-      };
-      this.treeEdges = [
-        { u: 1, v: 2, isHeavy: true },
-        { u: 1, v: 3, isHeavy: false },
-        { u: 2, v: 4, isHeavy: true },
-        { u: 2, v: 5, isHeavy: false },
-        { u: 4, v: 6, isHeavy: true },
-        { u: 3, v: 7, isHeavy: true },
-      ];
-      this.nodePositions = {
-        1: { x: 120, y: 35 },
-        2: { x: 75, y: 90 },
-        3: { x: 175, y: 90 },
-        4: { x: 45, y: 145 },
-        5: { x: 105, y: 145 },
-        6: { x: 45, y: 195 },
-        7: { x: 175, y: 145 },
-      };
-    }
-
-    this.computeTraceSteps();
-    this.currentStepPtr = 0;
-    this.updateHUD();
-  }
-
-  private computeTraceSteps(): void {
-    const bucket: Record<string, number> = { Red: 0, Blue: 0, Green: 0, Yellow: 0 };
-    let distinct = 0;
-    const ans = Array(this.n + 1).fill(0);
-    const steps: DSUStep[] = [];
-
-    const addCol = (col: string) => {
-      if (bucket[col] === 0) distinct++;
-      bucket[col]++;
+const { template, Visualizer } = createDeclarativeVisualizer<DSUTreeStep>({
+  id: 'dsu-on-tree',
+  name: '树上启发式合并 (DSU on Tree)',
+  viewId: 'algo-dsu-on-tree-view',
+  category: 'graph',
+  icon: '🌳',
+  badge: {
+    mode: '重链剖分 + 数据保留',
+    complexity: 'O(N log N) · O(N)',
+  },
+  card1Title: '🌳 树形拓扑与轻重子树划分沙盘',
+  card2Title: '🧭 频次数组保留状态监视器',
+  card2Desc: '轻儿子递归后清除、重儿子递归后保留与全局复杂度 O(N log N)',
+  legend: [
+    { label: '轻儿子 / 轻边', color: '#64748b' },
+    { label: '👑 重儿子 (Heavy Son)', color: '#f59e0b' },
+    { label: '🟢 当前活跃子树', color: '#10b981' },
+  ],
+  inputs: [],
+  presets: [
+    { label: '经典 4 节点重链划分', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-cur-node', label: '当前处理子树', color: '#2563eb' },
+    { id: 'metric-keep-status', label: '数据保留模式', color: '#10b981' },
+  ],
+  codeLanguages: DSU_ON_TREE_CODE_LANGUAGES,
+  problemHtml: DSU_ON_TREE_PROBLEM_HTML,
+  analysisHtml: DSU_ON_TREE_ANALYSIS_HTML,
+  buildSteps: () => buildDSUOnTreeSteps(),
+  renderCanvas: (container, step) => {
+    const nodeCoords: Record<number, { x: number; y: number }> = {
+      1: { x: 155, y: 35 },
+      2: { x: 80, y: 110 },
+      3: { x: 230, y: 110 },
+      4: { x: 230, y: 175 },
     };
 
-    const clearBucket = () => {
-      for (const k in bucket) bucket[k] = 0;
-      distinct = 0;
-    };
+    const treeEdges = [
+      { u: 1, v: 2, isHeavy: false },
+      { u: 1, v: 3, isHeavy: true },
+      { u: 3, v: 4, isHeavy: true },
+    ];
 
-    // 1. 递归处理轻儿子 3 的子树 (keep=false)
-    // 3 的重儿子 7
-    addCol('Green');
-    steps.push({
-      type: 'ADD_NODE',
-      curNode: 7,
-      isKeep: true,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [7],
-      message: '🌲 [统计重儿子 7] 加入节点 7(Green)，当前桶内颜色数 = 1。',
-    });
-    addCol('Red');
-    ans[3] = distinct;
-    steps.push({
-      type: 'RECORD_ANS',
-      curNode: 3,
-      isKeep: false,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [3, 7],
-      message: '📝 [记录答案 ans[3]] 节点 3 子树包含 {Green, Red}，不同颜色数 = 2！',
-    });
+    const svgEdges = treeEdges
+      .map((e) => {
+        const p1 = nodeCoords[e.u];
+        const p2 = nodeCoords[e.v];
+        if (!p1 || !p2) return '';
+        const color = e.isHeavy ? '#f59e0b' : '#475569';
+        const width = e.isHeavy ? 3 : 1.5;
 
-    // 清空轻儿子 3
-    clearBucket();
-    steps.push({
-      type: 'CLEAR_BUCKET',
-      curNode: 3,
-      isKeep: false,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [],
-      message: '🧹 [清空计数桶] 节点 3 为轻儿子 (keep=false)，清空全局桶释放空间！',
-    });
+        return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" />`;
+      })
+      .join('');
 
-    // 2. 递归处理重儿子 2 (keep=true)
-    // 2 的轻儿子 5 (keep=false)
-    addCol('Blue');
-    ans[5] = distinct;
-    steps.push({
-      type: 'RECORD_ANS',
-      curNode: 5,
-      isKeep: false,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [5],
-      message: '📝 [记录答案 ans[5]] 节点 5 为叶子，颜色为 Blue，ans[5] = 1。',
-    });
-    clearBucket();
-    steps.push({
-      type: 'CLEAR_BUCKET',
-      curNode: 5,
-      isKeep: false,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [],
-      message: '🧹 [清空计数桶] 节点 5 为轻儿子 (keep=false)，清空桶。',
-    });
+    const nodes = [1, 2, 3, 4];
+    const svgNodes = nodes
+      .map((u) => {
+        const p = nodeCoords[u];
+        if (!p) return '';
+        const isActive = step.activeSubtree.includes(u);
+        const isCur = step.curNode === u;
+        const bg = isCur ? '#f59e0b' : isActive ? '#065f46' : '#1e293b';
+        const border = isCur ? '#facc15' : isActive ? '#10b981' : '#38bdf8';
 
-    // 2 的重儿子 4 (keep=true)
-    addCol('Yellow'); // 6
-    addCol('Green');  // 4
-    ans[4] = distinct;
-    steps.push({
-      type: 'RECORD_ANS',
-      curNode: 4,
-      isKeep: true,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [4, 6],
-      message: '👑 [重儿子 4 保留数据] 节点 4 子树包含 {Yellow, Green}，ans[4] = 2，保留数据！',
-    });
+        return `
+          <g>
+            <circle cx="${p.x}" cy="${p.y}" r="15" fill="${bg}" stroke="${border}" stroke-width="${isCur || isActive ? 2.5 : 1.5}" />
+            <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="11" font-weight="800" font-family="monospace" text-anchor="middle">${u}</text>
+          </g>
+        `;
+      })
+      .join('');
 
-    // 合并轻儿子 5 与自身 2
-    addCol('Blue'); // 5
-    addCol('Blue'); // 2
-    ans[2] = distinct;
-    steps.push({
-      type: 'RECORD_ANS',
-      curNode: 2,
-      isKeep: true,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [2, 4, 5, 6],
-      message: '👑 [重儿子 2 合并轻儿子] 暴力合并节点 5(Blue) 与自身 2(Blue)，ans[2] = 3，保留数据！',
-    });
-
-    // 3. 根节点 1：暴力合并轻儿子 3 的子树 {3, 7} 与自身 1
-    addCol('Red');   // 3
-    addCol('Green'); // 7
-    addCol('Red');   // 1
-    ans[1] = distinct;
-    steps.push({
-      type: 'RECORD_ANS',
-      curNode: 1,
-      isKeep: true,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [1, 2, 3, 4, 5, 6, 7],
-      message: '🎉 [根节点 1 汇聚全树] 暴力加入轻儿子 3 子树及自身，整棵树包含 4 种不同颜色，ans[1] = 4！',
-    });
-
-    steps.push({
-      type: 'ALL_DONE',
-      curNode: 1,
-      isKeep: true,
-      colorBucket: { ...bucket },
-      distinctCount: distinct,
-      ansList: [...ans],
-      activeSubtreeNodes: [1, 2, 3, 4, 5, 6, 7],
-      message: '✨ [DSU on Tree 完成] 树上启发式合并全部完成，所有节点子树颜色数精确求出，严格 O(N log N)！',
-    });
-
-    this.traceSteps = steps;
-  }
-
-  private initGameUI(): void {
-    if (!this.root) return;
-
-    this.canvas = this.root.querySelector('#dsu-tree-canvas');
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
-    }
-
-    this.mountTerminal({
-      codeLanguages: DSU_ON_TREE_CODE_LANGUAGES,
-      problemHtml: DSU_ON_TREE_PROBLEM_HTML,
-      analysisHtml: DSU_ON_TREE_ANALYSIS_HTML,
-      initialLang: 'cpp',
-    });
-
-    // 单步
-    const stepBtn = this.root.querySelector('#btn-dsu-step') as HTMLButtonElement | null;
-    if (stepBtn) stepBtn.addEventListener('click', () => this.stepForward());
-
-    // 自动播放
-    const autoBtn = this.root.querySelector('#btn-dsu-autoplay') as HTMLButtonElement | null;
-    if (autoBtn) {
-      autoBtn.addEventListener('click', () => {
-        if (this.isAutoPlaying) this.stopAutoPlay();
-        else this.startAutoPlay();
-      });
-    }
-
-    // 重置
-    const resetBtn = this.root.querySelector('#btn-dsu-reset') as HTMLButtonElement | null;
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        this.stopAutoPlay();
-        this.currentStepPtr = 0;
-        this.updateHUD();
-      });
-    }
-
-    // 音效
-    const soundBtn = this.root.querySelector('#btn-dsu-sound') as HTMLButtonElement | null;
-    if (soundBtn) {
-      soundBtn.addEventListener('click', () => {
-        DSUAudio.isMuted = !DSUAudio.isMuted;
-        soundBtn.textContent = DSUAudio.isMuted ? '🔇 静音' : '🔊 音效';
-      });
-    }
-  }
-
-  private stepForward(): void {
-    if (this.currentStepPtr < this.traceSteps.length - 1) {
-      this.currentStepPtr++;
-      const cur = this.traceSteps[this.currentStepPtr];
-      if (cur.type === 'ADD_NODE') DSUAudio.playAdd();
-      else if (cur.type === 'CLEAR_BUCKET') DSUAudio.playClear();
-      else if (cur.type === 'RECORD_ANS' || cur.type === 'ALL_DONE') DSUAudio.playRecord();
-
-      this.updateHUD();
-    } else {
-      this.stopAutoPlay();
-    }
-  }
-
-  private startAutoPlay(): void {
-    if (this.isAutoPlaying) return;
-    this.isAutoPlaying = true;
-    const playBtn = this.root?.querySelector('#btn-dsu-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '⏸️ 暂停合并';
-
-    const step = () => {
-      if (!this.isAutoPlaying) return;
-      if (this.currentStepPtr < this.traceSteps.length - 1) {
-        this.stepForward();
-        this.autoPlayTimer = setTimeout(step, 900 / this.playSpeed);
-      } else {
-        this.stopAutoPlay();
-      }
-    };
-    step();
-  }
-
-  private stopAutoPlay(): void {
-    this.isAutoPlaying = false;
-    if (this.autoPlayTimer) {
-      clearTimeout(this.autoPlayTimer);
-      this.autoPlayTimer = null;
-    }
-    const playBtn = this.root?.querySelector('#btn-dsu-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '▶️ 自动合并';
-  }
-
-  private updateHUD(): void {
-    if (!this.root || this.traceSteps.length === 0) return;
-
-    const cur = this.traceSteps[this.currentStepPtr];
-    const narrationBox = this.root.querySelector('#dsu-narration-box') as HTMLElement | null;
-    const statusBadge = this.root.querySelector('#dsu-status-badge') as HTMLElement | null;
-    const distinctBadge = this.root.querySelector('#dsu-distinct-badge') as HTMLElement | null;
-
-    if (narrationBox) narrationBox.innerHTML = `💡 ${cur.message}`;
-
-    if (statusBadge) {
-      if (cur.type === 'ALL_DONE') {
-        statusBadge.textContent = '🏁 合并完成';
-        statusBadge.style.background = '#f0fdf4';
-        statusBadge.style.color = '#16a34a';
-      } else {
-        statusBadge.textContent = `步骤 ${this.currentStepPtr + 1}/${this.traceSteps.length}`;
-        statusBadge.style.background = '#eff6ff';
-        statusBadge.style.color = '#2563eb';
-      }
-    }
-
-    if (distinctBadge) {
-      distinctBadge.textContent = `当前桶内不同颜色数: ${cur.distinctCount}`;
-    }
-  }
-
-  private startLoop(): void {
-    if (typeof requestAnimationFrame !== 'function') return;
-    const loop = (timestamp: number) => {
-      if (!this.lastTimestamp) this.lastTimestamp = timestamp;
-      const dt = Math.min(32, timestamp - this.lastTimestamp);
-      this.lastTimestamp = timestamp;
-
-      this.pulseAnim += dt * 0.006;
-      this.renderCanvas();
-
-      if (typeof requestAnimationFrame === 'function') {
-        this.animFrameId = requestAnimationFrame(loop);
-      }
-    };
-    this.animFrameId = requestAnimationFrame(loop);
-  }
-
-  private renderCanvas(): void {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx;
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const cur = this.traceSteps[this.currentStepPtr];
-
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    if (cur) {
-      // 1. 绘制树边 (重边粗绿，轻边细虚)
-      this.treeEdges.forEach((e) => {
-        const p1 = this.nodePositions[e.u];
-        const p2 = this.nodePositions[e.v];
-        if (!p1 || !p2) return;
-
-        ctx.save();
-        ctx.strokeStyle = e.isHeavy ? '#10b981' : 'rgba(56, 189, 248, 0.4)';
-        ctx.lineWidth = e.isHeavy ? 3 : 1.5;
-        if (!e.isHeavy) ctx.setLineDash([4, 4]);
-
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-        ctx.restore();
-      });
-
-      // 2. 绘制树节点
-      for (let u = 1; u <= this.n; u++) {
-        const pos = this.nodePositions[u];
-        if (!pos) continue;
-
-        const colName = this.nodeColors[u];
-        const colHex = this.colorHex[colName] || '#ffffff';
-        const isCur = cur.curNode === u;
-        const inActive = cur.activeSubtreeNodes.includes(u);
-
-        ctx.save();
-        let radius = 13;
-        if (isCur) {
-          radius = 15 + Math.sin(this.pulseAnim) * 1.5;
-          ctx.shadowColor = '#facc15';
-          ctx.shadowBlur = 10;
-        }
-
-        ctx.fillStyle = colHex;
-        ctx.strokeStyle = isCur ? '#facc15' : inActive ? '#38bdf8' : '#334155';
-        ctx.lineWidth = isCur ? 3 : inActive ? 2 : 1;
-
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        ctx.font = 'bold 10px monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`${u}`, pos.x, pos.y);
-
-        // 答案标注
-        if (cur.ansList[u] > 0) {
-          ctx.font = '9px sans-serif';
-          ctx.fillStyle = '#10b981';
-          ctx.fillText(`ans:${cur.ansList[u]}`, pos.x, pos.y + 18);
-        }
-
-        ctx.restore();
-      }
-
-      // 3. 右侧全局颜色计数桶 HUD
-      ctx.save();
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText('📊 全局颜色计数桶 cnt[]:', 250, 30);
-
-      const colorKeys = ['Red', 'Blue', 'Green', 'Yellow'];
-      colorKeys.forEach((key, idx) => {
-        const itemY = 46 + idx * 26;
-        const count = cur.colorBucket[key] || 0;
-
-        // 色块
-        ctx.fillStyle = this.colorHex[key];
-        ctx.beginPath();
-        ctx.roundRect(250, itemY, 14, 14, 3);
-        ctx.fill();
-
-        ctx.font = 'bold 10.5px monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'left';
-        ctx.fillText(`${key}: ${count} 个`, 272, itemY + 11);
-
-        // 条形图
-        if (count > 0) {
-          ctx.fillStyle = this.colorHex[key];
-          ctx.beginPath();
-          ctx.roundRect(350, itemY + 2, count * 20, 10, 2);
-          ctx.fill();
-        }
-      });
-
-      // 统计提示
-      ctx.font = '10px sans-serif';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(`🟢 粗绿实线 = 重边 | 🔵 细蓝虚线 = 轻边`, 240, 175);
-      ctx.fillText(`💡 重儿子子树直接继承，轻儿子按需加入`, 240, 195);
-
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }
-}
-
-export const DSU_ON_TREE_TEMPLATE = `
-  <div id="algo-dsu-on-tree-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
-    <!-- 顶栏控制 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">🌲</span>
-        <span style="font-size: 14px; font-weight: 800; color: #0f172a;">树上启发式合并 (DSU on Tree)</span>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="dsu-status-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: #2563eb;">准备就绪</span>
-        <button id="btn-dsu-step" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">单步推演</button>
-        <button id="btn-dsu-autoplay" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">▶️ 自动合并</button>
-        <button id="btn-dsu-sound" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🔊 音效</button>
-        <button id="btn-dsu-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
-      </div>
-    </div>
-
-    <!-- 状态指示条 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 4px 10px; margin-bottom: 6px; font-size: 11px; color: #0369a1;">
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <span>📊 桶特征: <b id="dsu-distinct-badge" style="color: #0284c7; font-size: 12px;">当前桶内不同颜色数: 0</b></span>
-      </div>
-      <div id="dsu-narration-box" style="font-weight: 700; color: #075985;">
-        💡 准备就绪：重儿子保留计数桶 (keep=true)，轻儿子统计后清空 (keep=false)，严格 O(N log N)！
-      </div>
-    </div>
-
-    <!-- 主展示区 -->
-    <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 350px; gap: 10px; flex: 1; min-height: 0;">
-      <!-- 左侧：树形结构与颜色桶 Canvas -->
-      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 6px; overflow-y: auto;">
-        <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
-          <canvas id="dsu-tree-canvas" width="460" height="220" style="width: 460px; height: 220px;"></canvas>
-        </div>
-
-        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
-          左侧为 7 节点树形彩色拓扑 | 右侧为动态颜色计数桶与出现频次 | 节点下方标有已计算出的 ans
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+        <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
+          ${svgEdges}
+          ${svgNodes}
+        </svg>
+        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+          🟡 金色粗边为重儿子链 | 重儿子递归参数 keep=true，状态不被清空直接继承
         </div>
       </div>
+    `;
 
-      <!-- 右侧：代码终端 -->
-      <div style="display: flex; flex-direction: column; gap: 6px; min-height: 0;">
-        <div id="dsu-tree-terminal-mount" style="flex: 1; min-height: 280px; overflow: hidden; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
-      </div>
-    </div>
-  </div>
-`;
+    const root = container.closest('#algo-dsu-on-tree-view');
+    if (root) {
+      const nodeEl = root.querySelector('#metric-cur-node');
+      const keepEl = root.querySelector('#metric-keep-status');
+
+      if (nodeEl) nodeEl.textContent = `Node ${step.curNode}`;
+      if (keepEl) {
+        keepEl.textContent = step.isHeavy ? 'keep=true (保留数据)' : 'keep=false (清空数据)';
+        keepEl.style.color = step.isHeavy ? '#10b981' : '#f59e0b';
+      }
+
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const preservedItems = Object.entries(step.preservedData)
+          .map(([u, cnt]) => `<span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10px;">N${u}: ${cnt}</span>`)
+          .join(' ');
+
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>全局计数器 cnt:</span>
+              <div style="display: flex; gap: 4px;">${preservedItems}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #1e40af; font-weight: 700;">👑 DSU on Tree 核心定理:</span>
+              <strong style="font-family: monospace; color: #2563eb;">每个点只在其到根的轻边上被重新扫描，总复杂度 O(N log N)</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'dsu-on-tree',
   name: '树上启发式合并 (DSU on Tree)',
   viewId: 'algo-dsu-on-tree-view',
   category: 'graph',
-  description: '进阶树论高效算法：重儿子保留计数桶、轻儿子统计后清空、轻边跳跃不超过 log N 次 (CF600E / 洛谷 U41492)',
-  icon: '🌲',
-  template: DSU_ON_TREE_TEMPLATE,
-  Visualizer: DSUOnTreeVisualizer,
+  description: '进阶树论经典启发式合并：树链剖分重儿子保留、轻儿子子树清除、严格 O(N log N) (CF600E / 洛谷 P4149)',
+  icon: '🌳',
+  template,
+  Visualizer,
   difficulty: 3,
   levelOrder: 63,
-  learningGoal: '掌握重链剖分与启发式合并在树上子树统计的应用、严格 O(N log N) 复杂度证明与桶空间复用',
+  learningGoal: '掌握 DSU on Tree 消除轻重子树数据冲突的递归保留策略及 O(N log N) 复杂度证明',
 });
+
+export { Visualizer as DSUOnTreeVisualizer };

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { MinPathCoverVisualizer, MIN_PATH_COVER_TEMPLATE } from './min-path-cover-renderer';
+import { MinPathCoverVisualizer } from './min-path-cover-renderer';
 
-describe('MinPathCover (Minimum Path Cover on DAG)', () => {
+describe('MinPathCover (P2764)', () => {
   it('should instantiate MinPathCoverVisualizer properly', () => {
     const viz = new MinPathCoverVisualizer();
     expect(viz).toBeDefined();
-    expect(MIN_PATH_COVER_TEMPLATE).toContain('algo-min-path-cover-view');
-    expect(MIN_PATH_COVER_TEMPLATE).toContain('path-cover-canvas');
-    expect(MIN_PATH_COVER_TEMPLATE).toContain('pathcover-match-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

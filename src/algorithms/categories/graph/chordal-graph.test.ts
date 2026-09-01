@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { ChordalGraphVisualizer, CHORDAL_GRAPH_TEMPLATE } from './chordal-graph-renderer';
+import { ChordalGraphVisualizer } from './chordal-graph-renderer';
 
-describe('ChordalGraph (Chordal Graph & MCS Algorithm)', () => {
+describe('ChordalGraph (P3199)', () => {
   it('should instantiate ChordalGraphVisualizer properly', () => {
     const viz = new ChordalGraphVisualizer();
     expect(viz).toBeDefined();
-    expect(CHORDAL_GRAPH_TEMPLATE).toContain('algo-chordal-graph-view');
-    expect(CHORDAL_GRAPH_TEMPLATE).toContain('chordal-canvas');
-    expect(CHORDAL_GRAPH_TEMPLATE).toContain('chordal-peo-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
