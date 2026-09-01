@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { HeavyLightDecompositionVisualizer, HLD_TEMPLATE } from './heavy-light-decomposition-renderer';
+import { HeavyLightDecompositionVisualizer } from './heavy-light-decomposition-renderer';
 
-describe('HeavyLightDecomposition (HLD Tree & Path Query)', () => {
+describe('HeavyLightDecomposition (P3384)', () => {
   it('should instantiate HeavyLightDecompositionVisualizer properly', () => {
     const viz = new HeavyLightDecompositionVisualizer();
     expect(viz).toBeDefined();
-    expect(HLD_TEMPLATE).toContain('algo-heavy-light-decomposition-view');
-    expect(HLD_TEMPLATE).toContain('hld-canvas');
-    expect(HLD_TEMPLATE).toContain('hld-dfn-array');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

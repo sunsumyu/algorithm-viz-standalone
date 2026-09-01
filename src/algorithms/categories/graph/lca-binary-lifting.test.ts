@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { LCABinaryLiftingVisualizer, LCA_TEMPLATE } from './lca-binary-lifting-renderer';
+import { LCABinaryLiftingVisualizer } from './lca-binary-lifting-renderer';
 
-describe('LCABinaryLifting', () => {
+describe('LCABinaryLifting (P3379)', () => {
   it('should instantiate LCABinaryLiftingVisualizer properly', () => {
     const viz = new LCABinaryLiftingVisualizer();
     expect(viz).toBeDefined();
-    expect(LCA_TEMPLATE).toContain('algo-lca-binary-lifting-view');
-    expect(LCA_TEMPLATE).toContain('lca-canvas');
-    expect(LCA_TEMPLATE).toContain('lca-res-val');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

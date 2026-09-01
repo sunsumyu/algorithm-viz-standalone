@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { TreeCentroidVisualizer, TREE_CENTROID_TEMPLATE } from './tree-centroid-decomposition-renderer';
+import { TreeCentroidDecompositionVisualizer } from './tree-centroid-decomposition-renderer';
 
-describe('TreeCentroidDecomposition', () => {
-  it('should instantiate TreeCentroidVisualizer properly', () => {
-    const viz = new TreeCentroidVisualizer();
+describe('TreeCentroidDecomposition (POJ 1741)', () => {
+  it('should instantiate TreeCentroidDecompositionVisualizer properly', () => {
+    const viz = new TreeCentroidDecompositionVisualizer();
     expect(viz).toBeDefined();
-    expect(TREE_CENTROID_TEMPLATE).toContain('algo-tree-centroid-decomposition-view');
-    expect(TREE_CENTROID_TEMPLATE).toContain('centroid-canvas');
-    expect(TREE_CENTROID_TEMPLATE).toContain('centroid-dist-panel');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
@@ -18,7 +15,7 @@ describe('TreeCentroidDecomposition', () => {
       isConnected: true,
     } as unknown as HTMLElement;
 
-    const viz = new TreeCentroidVisualizer();
+    const viz = new TreeCentroidDecompositionVisualizer();
     await viz.init({
       root: mockRoot,
       algorithmId: 'tree-centroid-decomposition',

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { TarjanBridgeVisualizer, TARJAN_BRIDGE_TEMPLATE } from './tarjan-bridge-renderer';
+import { TarjanBridgeVisualizer } from './tarjan-bridge-renderer';
 
-describe('TarjanBridge (Cut Vertices & Bridges)', () => {
+describe('TarjanBridge (P3388)', () => {
   it('should instantiate TarjanBridgeVisualizer properly', () => {
     const viz = new TarjanBridgeVisualizer();
     expect(viz).toBeDefined();
-    expect(TARJAN_BRIDGE_TEMPLATE).toContain('algo-tarjan-bridge-view');
-    expect(TARJAN_BRIDGE_TEMPLATE).toContain('tarjan-canvas');
-    expect(TARJAN_BRIDGE_TEMPLATE).toContain('tarjan-cut-list');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

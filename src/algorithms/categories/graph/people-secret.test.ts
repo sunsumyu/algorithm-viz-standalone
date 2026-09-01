@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { PeopleSecretVisualizer, PEOPLE_SECRET_TEMPLATE } from './people-secret-renderer';
+import { PeopleSecretVisualizer } from './people-secret-renderer';
 
-describe('PeopleSecret (Find All People With Secret)', () => {
+describe('PeopleSecret (LeetCode 2327)', () => {
   it('should instantiate PeopleSecretVisualizer properly', () => {
     const viz = new PeopleSecretVisualizer();
     expect(viz).toBeDefined();
-    expect(PEOPLE_SECRET_TEMPLATE).toContain('algo-people-secret-view');
-    expect(PEOPLE_SECRET_TEMPLATE).toContain('secret-canvas');
-    expect(PEOPLE_SECRET_TEMPLATE).toContain('secret-meetings-container');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

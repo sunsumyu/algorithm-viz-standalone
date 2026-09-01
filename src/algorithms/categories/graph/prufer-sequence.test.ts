@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { PruferSequenceVisualizer, PRUFER_TEMPLATE } from './prufer-sequence-renderer';
+import { PruferSequenceVisualizer } from './prufer-sequence-renderer';
 
-describe('PruferSequence (Prufer Sequence & Cayley Formula)', () => {
+describe('PruferSequence (P6086 / Cayley)', () => {
   it('should instantiate PruferSequenceVisualizer properly', () => {
     const viz = new PruferSequenceVisualizer();
     expect(viz).toBeDefined();
-    expect(PRUFER_TEMPLATE).toContain('algo-prufer-sequence-view');
-    expect(PRUFER_TEMPLATE).toContain('prufer-canvas');
-    expect(PRUFER_TEMPLATE).toContain('prufer-tape-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

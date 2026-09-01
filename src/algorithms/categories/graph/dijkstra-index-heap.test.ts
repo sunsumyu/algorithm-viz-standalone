@@ -1,14 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { DijkstraIndexHeapVisualizer, DIJKSTRA_INDEX_HEAP_TEMPLATE } from './dijkstra-index-heap-renderer';
+import { DijkstraIndexHeapVisualizer } from './dijkstra-index-heap-renderer';
 
-describe('DijkstraIndexHeap (Dijkstra with Index Min-Heap)', () => {
+describe('DijkstraIndexHeap', () => {
   it('should instantiate DijkstraIndexHeapVisualizer properly', () => {
     const viz = new DijkstraIndexHeapVisualizer();
     expect(viz).toBeDefined();
-    expect(DIJKSTRA_INDEX_HEAP_TEMPLATE).toContain('algo-dijkstra-index-heap-view');
-    expect(DIJKSTRA_INDEX_HEAP_TEMPLATE).toContain('dijkstra-heap-canvas');
-    expect(DIJKSTRA_INDEX_HEAP_TEMPLATE).toContain('dijkstra-heap-array');
-    expect(DIJKSTRA_INDEX_HEAP_TEMPLATE).toContain('dijkstra-where-map');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

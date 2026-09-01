@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { DiffConstraintsVisualizer, DIFF_CONSTRAINTS_TEMPLATE } from './diff-constraints-renderer';
+import { DiffConstraintsVisualizer } from './diff-constraints-renderer';
 
-describe('DiffConstraints (Difference Constraints System)', () => {
+describe('DiffConstraints (P5960)', () => {
   it('should instantiate DiffConstraintsVisualizer properly', () => {
     const viz = new DiffConstraintsVisualizer();
     expect(viz).toBeDefined();
-    expect(DIFF_CONSTRAINTS_TEMPLATE).toContain('algo-diff-constraints-view');
-    expect(DIFF_CONSTRAINTS_TEMPLATE).toContain('diff-canvas');
-    expect(DIFF_CONSTRAINTS_TEMPLATE).toContain('diff-queue-list');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { PseudotreeVisualizer, PSEUDOTREE_TEMPLATE } from './pseudotree-dp-renderer';
+import { PseudotreeVisualizer } from './pseudotree-dp-renderer';
 
-describe('PseudotreeDP', () => {
+describe('PseudotreeDP (P1453 / P2607)', () => {
   it('should instantiate PseudotreeVisualizer properly', () => {
     const viz = new PseudotreeVisualizer();
     expect(viz).toBeDefined();
-    expect(PSEUDOTREE_TEMPLATE).toContain('algo-pseudotree-dp-view');
-    expect(PSEUDOTREE_TEMPLATE).toContain('pseudo-canvas');
-    expect(PSEUDOTREE_TEMPLATE).toContain('pseudo-best-val');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

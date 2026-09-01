@@ -1,14 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { BiBFSVisualizer, BI_BFS_TEMPLATE } from './bi-bfs-renderer';
+import { BiBFSVisualizer } from './bi-bfs-renderer';
 
-describe('BiBFS (Bidirectional BFS Word Ladder)', () => {
+describe('BiBFS (LeetCode 127)', () => {
   it('should instantiate BiBFSVisualizer properly', () => {
     const viz = new BiBFSVisualizer();
     expect(viz).toBeDefined();
-    expect(BI_BFS_TEMPLATE).toContain('algo-bi-bfs-view');
-    expect(BI_BFS_TEMPLATE).toContain('bibfs-canvas');
-    expect(BI_BFS_TEMPLATE).toContain('bibfs-small-set');
-    expect(BI_BFS_TEMPLATE).toContain('bibfs-big-set');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

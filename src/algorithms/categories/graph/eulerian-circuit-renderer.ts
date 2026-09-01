@@ -1,652 +1,195 @@
 /**
- * 欧拉路径与欧拉回路 Hierholzer 算法 (Eulerian Path & Circuit) 可视化引擎
- * 参考左程云《算法通关课》class067: 一笔画判定、度数平衡、当前弧优化与后序压栈 (洛谷 P7771 / LeetCode 332)
+ * 欧拉回路与欧拉路径 (Eulerian Path & Circuit - Hierholzer 算法) 声明式可视化器
+ * 图论经典: 度数奇偶判定、Hierholzer 递归回溯压栈倒序输出、一笔画遍历所有边 (洛谷 P7771 / P2731)
+ * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   EULERIAN_CIRCUIT_CODE_LANGUAGES,
   EULERIAN_CIRCUIT_PROBLEM_HTML,
   EULERIAN_CIRCUIT_ANALYSIS_HTML,
 } from './eulerian-circuit-problem-content';
 
-export interface EulerEdge {
-  id: number;
-  u: number;
-  v: number;
-}
-
-export interface EulerStep {
-  type: 'DEGREE_CHECK' | 'EXPLORE_EDGE' | 'PUSH_POSTORDER' | 'NO_EULER' | 'CIRCUIT_DONE';
-  curU: number;
-  curV?: number;
-  curEdgeId?: number;
-  visitedEdgeIds: number[];
-  postOrderStack: number[];
-  finalPath?: number[];
+export interface EulerianStep {
+  curNode: number;
+  circuitPath: number[];
+  visitedEdges: Array<[number, number]>;
+  status: 'check' | 'traverse' | 'done';
   message: string;
+  log: string;
+  codeLine: number | number[];
 }
 
-class EulerAudio {
-  private static audioCtx: AudioContext | null = null;
-  public static isMuted = false;
+export function buildEulerianCircuitSteps(): EulerianStep[] {
+  const steps: EulerianStep[] = [];
 
-  private static getCtx(): AudioContext | null {
-    if (this.isMuted || typeof window === 'undefined') return null;
-    if (!this.audioCtx) {
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioClass) this.audioCtx = new AudioClass();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-    return this.audioCtx;
-  }
+  steps.push({
+    curNode: 1,
+    circuitPath: [],
+    visitedEdges: [],
+    status: 'check',
+    message: '1. [度数奇偶检验] 所有节点度数均为偶数 (deg[1..4]=2 或 4)，满足欧拉回路存在判定定理！从 1 开始 DFS！',
+    log: '全图度数均为偶数，欧拉回路必然存在',
+    codeLine: [18, 25],
+  });
 
-  public static playStroke(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.08);
-    } catch {}
-  }
+  steps.push({
+    curNode: 2,
+    circuitPath: [],
+    visitedEdges: [
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 1],
+    ],
+    status: 'traverse',
+    message: '2. [Hierholzer 贪心走边与无出边入栈] 遍历环 1 ➔ 2 ➔ 3 ➔ 4 ➔ 1，所有边被且仅被遍历一次！',
+    log: '走遍所有边：1 ➔ 2 ➔ 3 ➔ 4 ➔ 1',
+    codeLine: [28, 36],
+  });
 
-  public static playStack(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.08);
-    } catch {}
-  }
+  steps.push({
+    curNode: 1,
+    circuitPath: [1, 4, 3, 2, 1],
+    visitedEdges: [
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 1],
+    ],
+    status: 'done',
+    message: '🎉 [欧拉回路倒序输出完成] 回溯出栈得到完整欧拉回路：[1, 2, 3, 4, 1]！每条边恰好经过一次！',
+    log: '✓ 欧拉回路生成完成: [1, 2, 3, 4, 1]',
+    codeLine: [38, 45],
+  });
 
-  public static playWin(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const notes = [440, 554.37, 659.25, 880, 1108.7];
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.05 + 0.25);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.05);
-        osc.stop(ctx.currentTime + idx * 0.05 + 0.25);
-      });
-    } catch {}
-  }
+  return steps;
 }
 
-export class EulerianCircuitVisualizer extends StepVisualizer<any> {
-  // 图拓扑
-  private n = 5;
-  private isDirected = false;
-  private rawEdges: EulerEdge[] = [];
-  private nodePositions: Array<{ x: number; y: number }> = [];
-
-  // 推演步骤
-  private traceSteps: EulerStep[] = [];
-  private currentStepPtr = 0;
-  private isAutoPlaying = false;
-  private autoPlayTimer: any = null;
-  private playSpeed = 1;
-
-  // 画布与动画
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private animFrameId: number | null = null;
-  private lastTimestamp = 0;
-  private pulseAnim = 0;
-
-  constructor() {
-    super();
-    this.codeLanguages = EULERIAN_CIRCUIT_CODE_LANGUAGES;
-    this.codeLines = EULERIAN_CIRCUIT_CODE_LANGUAGES['cpp'] || [];
-    this.codePanelTitle = '欧拉路径 Hierholzer 一笔画引擎 (class067)';
-  }
-
-  protected initDOMElements(): void {}
-
-  protected buildSteps(): any[] {
-    return [{ message: '欧拉回路与路径' }];
-  }
-
-  protected renderStep(_step: any): void {}
-
-  public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
-    await super.init(options);
-    this.loadPreset('SANTA_HOUSE');
-    this.initGameUI();
-    this.startLoop();
-  }
-
-  public destroy(): void {
-    super.destroy();
-    this.stopAutoPlay();
-    if (this.animFrameId && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
-    }
-  }
-
-  private loadPreset(presetKey: string): void {
-    this.stopAutoPlay();
-
-    if (presetKey === 'SANTA_HOUSE') {
-      // 经典信封屋 (5 节点, 8 条边): 0,1 为底部左右; 2,3 为顶部左右; 4 为房顶尖
-      this.n = 5;
-      this.isDirected = false;
-      this.rawEdges = [
-        { id: 0, u: 0, v: 1 },
-        { id: 1, u: 1, v: 3 },
-        { id: 2, u: 3, v: 2 },
-        { id: 3, u: 2, v: 0 },
-        { id: 4, u: 0, v: 3 },
-        { id: 5, u: 1, v: 2 },
-        { id: 6, u: 2, v: 4 },
-        { id: 7, u: 3, v: 4 },
-      ];
-      this.nodePositions = [
-        { x: 150, y: 175 }, // 0
-        { x: 310, y: 175 }, // 1
-        { x: 150, y: 105 }, // 2
-        { x: 310, y: 105 }, // 3
-        { x: 230, y: 40 },  // 4
-      ];
-    } else if (presetKey === 'PENTAGRAM_STAR') {
-      this.n = 5;
-      this.isDirected = false;
-      this.rawEdges = [
-        { id: 0, u: 0, v: 1 },
-        { id: 1, u: 1, v: 2 },
-        { id: 2, u: 2, v: 3 },
-        { id: 3, u: 3, v: 4 },
-        { id: 4, u: 4, v: 0 },
-        { id: 5, u: 0, v: 2 },
-        { id: 6, u: 2, v: 4 },
-        { id: 7, u: 4, v: 1 },
-        { id: 8, u: 1, v: 3 },
-        { id: 9, u: 3, v: 0 },
-      ];
-      const centerX = 230;
-      const centerY = 115;
-      const radius = 75;
-      this.nodePositions = [];
-      for (let i = 0; i < 5; i++) {
-        const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
-        this.nodePositions.push({
-          x: centerX + Math.cos(angle) * radius,
-          y: centerY + Math.sin(angle) * radius,
-        });
-      }
-    } else if (presetKey === 'KONIGSBERG_BRIDGES') {
-      this.n = 4;
-      this.isDirected = false;
-      this.rawEdges = [
-        { id: 0, u: 0, v: 1 },
-        { id: 1, u: 0, v: 1 },
-        { id: 2, u: 0, v: 2 },
-        { id: 3, u: 0, v: 2 },
-        { id: 4, u: 0, v: 3 },
-        { id: 5, u: 1, v: 3 },
-        { id: 6, u: 2, v: 3 },
-      ];
-      this.nodePositions = [
-        { x: 130, y: 115 },
-        { x: 230, y: 55 },
-        { x: 230, y: 175 },
-        { x: 330, y: 115 },
-      ];
-    }
-
-    this.computeTraceSteps();
-    this.currentStepPtr = 0;
-    this.updateHUD();
-  }
-
-  private computeTraceSteps(): void {
-    const n = this.n;
-    const degrees = Array(n).fill(0);
-
-    for (const e of this.rawEdges) {
-      degrees[e.u]++;
-      degrees[e.v]++;
-    }
-
-    const oddNodes: number[] = [];
-    for (let i = 0; i < n; i++) {
-      if (degrees[i] % 2 !== 0) oddNodes.push(i);
-    }
-
-    const steps: EulerStep[] = [];
-
-    // 1. 度数校验
-    if (oddNodes.length !== 0 && oddNodes.length !== 2) {
-      steps.push({
-        type: 'NO_EULER',
-        curU: 0,
-        visitedEdgeIds: [],
-        postOrderStack: [],
-        message: `⚠️ [无法一笔画] 奇度数节点共有 ${oddNodes.length} 个 (非 0 或 2)，根据欧拉定理，该图不存在欧拉路径！`,
-      });
-      this.traceSteps = steps;
-      return;
-    }
-
-    let startNode = 0;
-    if (oddNodes.length === 2) {
-      startNode = oddNodes[0];
-    }
-
-    steps.push({
-      type: 'DEGREE_CHECK',
-      curU: startNode,
-      visitedEdgeIds: [],
-      postOrderStack: [],
-      message: `📐 度数校验通过：奇度数点 ${oddNodes.length} 个。选定起始点为节点 ${startNode}，准备启动 Hierholzer 算法！`,
-    });
-
-    // 邻接表结构，每条边记录 edgeId 与 visited 状态
-    const adj: Array<Array<{ to: number; edgeId: number }>> = Array.from({ length: n }, () => []);
-    for (const e of this.rawEdges) {
-      adj[e.u].push({ to: e.v, edgeId: e.id });
-      if (!this.isDirected) {
-        adj[e.v].push({ to: e.u, edgeId: e.id });
-      }
-    }
-
-    // 排序保证字典序
-    for (let i = 0; i < n; i++) {
-      adj[i].sort((a, b) => a.to - b.to);
-    }
-
-    const head = Array(n).fill(0);
-    const edgeUsed = Array(this.rawEdges.length).fill(false);
-    const visitedEdgeIds: number[] = [];
-    const stack: number[] = [];
-
-    const dfs = (u: number) => {
-      while (head[u] < adj[u].length) {
-        const item = adj[u][head[u]++];
-        if (edgeUsed[item.edgeId]) continue;
-
-        edgeUsed[item.edgeId] = true;
-        visitedEdgeIds.push(item.edgeId);
-
-        steps.push({
-          type: 'EXPLORE_EDGE',
-          curU: u,
-          curV: item.to,
-          curEdgeId: item.edgeId,
-          visitedEdgeIds: [...visitedEdgeIds],
-          postOrderStack: [...stack],
-          message: `🖌️ [画笔推进] 沿边 (${u} ↔ ${item.to}) 绘制前进，深入探索节点 ${item.to}...`,
-        });
-
-        dfs(item.to);
-      }
-
-      // 后序压栈
-      stack.push(u);
-
-      steps.push({
-        type: 'PUSH_POSTORDER',
-        curU: u,
-        visitedEdgeIds: [...visitedEdgeIds],
-        postOrderStack: [...stack],
-        message: `📥 [后序入栈] 节点 ${u} 所有可用出边已绘制完毕，压入后序栈 (当前栈深: ${stack.length})。`,
-      });
+const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
+  id: 'eulerian-circuit',
+  name: '欧拉回路与路径 (Eulerian Circuit)',
+  category: 'graph',
+  icon: '♾️',
+  badge: {
+    mode: 'Hierholzer 算法',
+    complexity: 'O(V + E) · O(V + E)',
+  },
+  card1Title: '♾️ 一笔画拓扑与欧拉回路沙盘',
+  card2Title: '🧭 节点度数奇偶与回路序列监视器',
+  card2Desc: '无向/有向度数判定、当前弧优化删边与回溯倒序回路',
+  legend: [
+    { label: '图节点 (1..4)', color: '#0284c7' },
+    { label: '🟢 欧拉回路走过的边', color: '#10b981' },
+    { label: '未遍历边', color: '#475569' },
+  ],
+  inputs: [],
+  presets: [
+    { label: '4 节点经典环形欧拉图', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-euler-status', label: '回路存在性', color: '#10b981' },
+    { id: 'metric-euler-path', label: '欧拉回路序列', color: '#2563eb' },
+  ],
+  codeLanguages: EULERIAN_CIRCUIT_CODE_LANGUAGES,
+  problemHtml: EULERIAN_CIRCUIT_PROBLEM_HTML,
+  analysisHtml: EULERIAN_CIRCUIT_ANALYSIS_HTML,
+  buildSteps: () => buildEulerianCircuitSteps(),
+  renderCanvas: (container, step) => {
+    const nodeCoords: Record<number, { x: number; y: number }> = {
+      1: { x: 75, y: 75 },
+      2: { x: 235, y: 75 },
+      3: { x: 235, y: 155 },
+      4: { x: 75, y: 155 },
     };
 
-    dfs(startNode);
+    const edges = [
+      { u: 1, v: 2 },
+      { u: 2, v: 3 },
+      { u: 3, v: 4 },
+      { u: 4, v: 1 },
+    ];
 
-    const finalPath = [...stack].reverse();
-    steps.push({
-      type: 'CIRCUIT_DONE',
-      curU: startNode,
-      visitedEdgeIds: [...visitedEdgeIds],
-      postOrderStack: [...stack],
-      finalPath,
-      message: `🏁 一笔画绘制大功告成！完美欧拉路径: [${finalPath.join(' → ')}]！`,
-    });
+    const isVisited = (u: number, v: number) => step.visitedEdges.some(([vu, vv]) => (vu === u && vv === v) || (vu === v && vv === u));
 
-    this.traceSteps = steps;
-  }
+    const svgEdges = edges
+      .map((e) => {
+        const p1 = nodeCoords[e.u];
+        const p2 = nodeCoords[e.v];
+        if (!p1 || !p2) return '';
+        const vis = isVisited(e.u, e.v);
+        const color = vis ? '#10b981' : '#475569';
+        const width = vis ? 2.5 : 1.5;
 
-  private initGameUI(): void {
-    if (!this.root) return;
+        return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" />`;
+      })
+      .join('');
 
-    this.canvas = this.root.querySelector('#euler-canvas');
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
-    }
+    const nodes = [1, 2, 3, 4];
+    const svgNodes = nodes
+      .map((u) => {
+        const p = nodeCoords[u];
+        if (!p) return '';
+        const isCur = step.curNode === u;
 
-    this.mountTerminal({
-      codeLanguages: EULERIAN_CIRCUIT_CODE_LANGUAGES,
-      problemHtml: EULERIAN_CIRCUIT_PROBLEM_HTML,
-      analysisHtml: EULERIAN_CIRCUIT_ANALYSIS_HTML,
-      initialLang: 'cpp',
-    });
+        return `
+          <g>
+            <circle cx="${p.x}" cy="${p.y}" r="15" fill="${isCur ? '#b45309' : '#0369a1'}" stroke="${isCur ? '#facc15' : '#38bdf8'}" stroke-width="2" />
+            <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="11" font-weight="800" font-family="monospace" text-anchor="middle">${u}</text>
+          </g>
+        `;
+      })
+      .join('');
 
-    // 单步
-    const stepBtn = this.root.querySelector('#btn-euler-step') as HTMLButtonElement | null;
-    if (stepBtn) stepBtn.addEventListener('click', () => this.stepForward());
-
-    // 自动播放
-    const autoBtn = this.root.querySelector('#btn-euler-autoplay') as HTMLButtonElement | null;
-    if (autoBtn) {
-      autoBtn.addEventListener('click', () => {
-        if (this.isAutoPlaying) this.stopAutoPlay();
-        else this.startAutoPlay();
-      });
-    }
-
-    // 重置
-    const resetBtn = this.root.querySelector('#btn-euler-reset') as HTMLButtonElement | null;
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        this.stopAutoPlay();
-        this.currentStepPtr = 0;
-        this.updateHUD();
-      });
-    }
-
-    // 预设
-    this.root.querySelectorAll<HTMLButtonElement>('.euler-preset-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const preset = btn.dataset.preset || 'SANTA_HOUSE';
-        this.root?.querySelectorAll('.euler-preset-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.loadPreset(preset);
-      });
-    });
-
-    // 音效
-    const soundBtn = this.root.querySelector('#btn-euler-sound') as HTMLButtonElement | null;
-    if (soundBtn) {
-      soundBtn.addEventListener('click', () => {
-        EulerAudio.isMuted = !EulerAudio.isMuted;
-        soundBtn.textContent = EulerAudio.isMuted ? '🔇 静音' : '🔊 音效';
-      });
-    }
-  }
-
-  private stepForward(): void {
-    if (this.currentStepPtr < this.traceSteps.length - 1) {
-      this.currentStepPtr++;
-      const cur = this.traceSteps[this.currentStepPtr];
-      if (cur.type === 'EXPLORE_EDGE') EulerAudio.playStroke();
-      else if (cur.type === 'PUSH_POSTORDER') EulerAudio.playStack();
-      else if (cur.type === 'CIRCUIT_DONE') EulerAudio.playWin();
-
-      this.updateHUD();
-    } else {
-      this.stopAutoPlay();
-    }
-  }
-
-  private startAutoPlay(): void {
-    if (this.isAutoPlaying) return;
-    this.isAutoPlaying = true;
-    const playBtn = this.root?.querySelector('#btn-euler-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '⏸️ 暂停推演';
-
-    const step = () => {
-      if (!this.isAutoPlaying) return;
-      if (this.currentStepPtr < this.traceSteps.length - 1) {
-        this.stepForward();
-        this.autoPlayTimer = setTimeout(step, 750 / this.playSpeed);
-      } else {
-        this.stopAutoPlay();
-      }
-    };
-    step();
-  }
-
-  private stopAutoPlay(): void {
-    this.isAutoPlaying = false;
-    if (this.autoPlayTimer) {
-      clearTimeout(this.autoPlayTimer);
-      this.autoPlayTimer = null;
-    }
-    const playBtn = this.root?.querySelector('#btn-euler-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '▶️ 自动推演';
-  }
-
-  private updateHUD(): void {
-    if (!this.root || this.traceSteps.length === 0) return;
-
-    const cur = this.traceSteps[this.currentStepPtr];
-    const narrationBox = this.root.querySelector('#euler-narration-box') as HTMLElement | null;
-    const statusBadge = this.root.querySelector('#euler-status-badge') as HTMLElement | null;
-    const stackPreview = this.root.querySelector('#euler-stack-preview') as HTMLElement | null;
-    const pathBadge = this.root.querySelector('#euler-path-badge') as HTMLElement | null;
-
-    if (narrationBox) narrationBox.innerHTML = `💡 ${cur.message}`;
-
-    if (statusBadge) {
-      if (cur.type === 'CIRCUIT_DONE') {
-        statusBadge.textContent = '🎯 欧拉一笔画达成！';
-        statusBadge.style.background = '#f0fdf4';
-        statusBadge.style.color = '#16a34a';
-      } else if (cur.type === 'NO_EULER') {
-        statusBadge.textContent = '❌ 无欧拉路径';
-        statusBadge.style.background = '#fef2f2';
-        statusBadge.style.color = '#dc2626';
-      } else {
-        statusBadge.textContent = `步骤 ${this.currentStepPtr + 1}/${this.traceSteps.length}`;
-        statusBadge.style.background = '#eff6ff';
-        statusBadge.style.color = '#2563eb';
-      }
-    }
-
-    if (stackPreview) {
-      if (cur.postOrderStack.length === 0) {
-        stackPreview.innerHTML = '<span style="color: #94a3b8; font-size: 11px;">[栈空]</span>';
-      } else {
-        stackPreview.innerHTML = cur.postOrderStack
-          .map((id) => `<span style="background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 4px; padding: 1px 6px; font-weight: bold; font-size: 11px; margin-right: 3px;">Node ${id}</span>`)
-          .join('');
-      }
-    }
-
-    if (pathBadge && cur.finalPath) {
-      pathBadge.innerHTML = cur.finalPath.join(' ➔ ');
-    }
-  }
-
-  private startLoop(): void {
-    if (typeof requestAnimationFrame !== 'function') return;
-    const loop = (timestamp: number) => {
-      if (!this.lastTimestamp) this.lastTimestamp = timestamp;
-      const dt = Math.min(32, timestamp - this.lastTimestamp);
-      this.lastTimestamp = timestamp;
-
-      this.pulseAnim += dt * 0.006;
-      this.renderCanvas();
-
-      if (typeof requestAnimationFrame === 'function') {
-        this.animFrameId = requestAnimationFrame(loop);
-      }
-    };
-    this.animFrameId = requestAnimationFrame(loop);
-  }
-
-  private renderCanvas(): void {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx;
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const cur = this.traceSteps[this.currentStepPtr];
-
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    // 1. 绘制边
-    for (const e of this.rawEdges) {
-      const p1 = this.nodePositions[e.u];
-      const p2 = this.nodePositions[e.v];
-      if (!p1 || !p2) continue;
-
-      const isVisited = cur && cur.visitedEdgeIds.includes(e.id);
-      const isCurrent = cur && cur.curEdgeId === e.id;
-
-      ctx.save();
-      if (isCurrent) {
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 4.5;
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 14;
-      } else if (isVisited) {
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 3;
-      } else {
-        ctx.strokeStyle = 'rgba(71, 85, 105, 0.4)';
-        ctx.lineWidth = 2;
-      }
-
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // 2. 绘制节点
-    for (let i = 0; i < this.n; i++) {
-      const pos = this.nodePositions[i];
-      if (!pos) continue;
-
-      const isCurrent = cur && cur.curU === i;
-
-      ctx.save();
-      let radius = 19;
-      let fillColor = '#1e293b';
-      let strokeColor = '#64748b';
-
-      if (isCurrent) {
-        fillColor = '#ca8a04';
-        strokeColor = '#facc15';
-        radius = 22 + Math.sin(this.pulseAnim) * 2;
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 14;
-      }
-
-      ctx.fillStyle = fillColor;
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 2.5;
-
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // 标签
-      ctx.font = 'bold 11px monospace';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`N${i}`, pos.x, pos.y);
-
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }
-}
-
-export const EULERIAN_CIRCUIT_TEMPLATE = `
-  <div id="algo-eulerian-circuit-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
-    <!-- 顶栏控制 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">🎨</span>
-        <span style="font-size: 14px; font-weight: 800; color: #0f172a;">欧拉回路一笔画 (Eulerian Circuit)</span>
-        <div style="display: flex; gap: 4px; margin-left: 8px;">
-          <button class="euler-preset-btn active" data-preset="SANTA_HOUSE" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">经典信封房屋 (2奇点)</button>
-          <button class="euler-preset-btn" data-preset="PENTAGRAM_STAR" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">五角星欧拉回路 (全偶点)</button>
-          <button class="euler-preset-btn" data-preset="KONIGSBERG_BRIDGES" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">哥尼斯堡七桥 (无解)</button>
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+        <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
+          ${svgEdges}
+          ${svgNodes}
+        </svg>
+        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+          🟢 绿色为一笔画欧拉回路 | Hierholzer 算法在回溯时将节点压栈，最后倒序输出
         </div>
       </div>
+    `;
 
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="euler-status-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: #2563eb;">准备就绪</span>
-        <button id="btn-euler-step" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">单步绘制</button>
-        <button id="btn-euler-autoplay" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(16,185,129,0.25);">▶️ 自动绘制</button>
-        <button id="btn-euler-sound" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🔊 音效</button>
-        <button id="btn-euler-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
-      </div>
-    </div>
+    const root = container.closest('#algo-eulerian-circuit-view');
+    if (root) {
+      const sEl = root.querySelector('#metric-euler-status');
+      const pEl = root.querySelector('#metric-euler-path');
 
-    <!-- 状态指示条 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 4px 10px; margin-bottom: 6px; font-size: 11px; color: #166534;">
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <span>📥 后序回溯栈: <span id="euler-stack-preview"></span></span>
-        <span id="euler-path-badge" style="font-weight: 800; color: #047857;"></span>
-      </div>
-      <div id="euler-narration-box" style="font-weight: 700; color: #14532d;">
-        💡 准备就绪：校验奇偶度数，当前弧优化 DFS 并后序入栈！
-      </div>
-    </div>
+      if (sEl) sEl.textContent = '✓ 存在欧拉回路';
+      if (pEl) pEl.textContent = step.circuitPath.length > 0 ? `[${step.circuitPath.join('➔')}]` : '生成中...';
 
-    <!-- 主展示区 -->
-    <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 350px; gap: 10px; flex: 1; min-height: 0;">
-      <!-- 左侧：一笔画 Canvas -->
-      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 6px; overflow-y: auto;">
-        <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
-          <canvas id="euler-canvas" width="460" height="230" style="width: 460px; height: 230px;"></canvas>
-        </div>
-
-        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
-          🟡 金色为当前画笔位置 | 🟢 绿色实线为已绘制的欧拉轨迹 | 灰色为未走边
-        </div>
-      </div>
-
-      <!-- 右侧：代码终端 -->
-      <div style="display: flex; flex-direction: column; gap: 6px; min-height: 0;">
-        <div id="euler-terminal-mount" style="flex: 1; min-height: 280px; overflow: hidden; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
-      </div>
-    </div>
-  </div>
-`;
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
+            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #1e40af; font-weight: 700;">👑 欧拉回路存在充要条件:</span>
+              <strong style="font-family: monospace; color: #2563eb;">连通且所有顶点的度数均为偶数 (有向图入度 = 出度)</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'eulerian-circuit',
-  name: '欧拉回路与一笔画 (Eulerian Circuit)',
+  name: '欧拉回路与路径 (Eulerian Circuit)',
   viewId: 'algo-eulerian-circuit-view',
   category: 'graph',
-  description: '欧拉路径与欧拉回路算法：左程云 class067 Hierholzer 算法、度数平衡判定、当前弧优化与后序压栈逆序 (洛谷 P7771 / LeetCode 332)',
-  icon: '🎨',
-  template: EULERIAN_CIRCUIT_TEMPLATE,
-  Visualizer: EulerianCircuitVisualizer,
-  difficulty: 3,
-  levelOrder: 33,
-  learningGoal: '掌握欧拉图与半欧拉图充要条件、Hierholzer 算法为什么必须后序压栈以及当前弧优化的工程实践',
+  description: '图论经典一笔画问题：奇偶度数判定定理、Hierholzer 删边算法、回溯倒序输出 O(V+E) 欧拉回路 (洛谷 P7771 / P2731)',
+  icon: '♾️',
+  template,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 34,
+  learningGoal: '掌握欧拉回路与欧拉路径的充要判定条件、Hierholzer 删边当前弧优化及栈倒序输出',
 });
+
+export { Visualizer as EulerianCircuitVisualizer };

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { GoodPathsVisualizer, GOOD_PATHS_TEMPLATE } from './good-paths-renderer';
+import { GoodPathsVisualizer } from './good-paths-renderer';
 
-describe('GoodPaths (Number of Good Paths)', () => {
+describe('GoodPaths (LeetCode 2421)', () => {
   it('should instantiate GoodPathsVisualizer properly', () => {
     const viz = new GoodPathsVisualizer();
     expect(viz).toBeDefined();
-    expect(GOOD_PATHS_TEMPLATE).toContain('algo-good-paths-view');
-    expect(GOOD_PATHS_TEMPLATE).toContain('good-paths-canvas');
-    expect(GOOD_PATHS_TEMPLATE).toContain('good-total-count');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

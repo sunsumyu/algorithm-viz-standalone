@@ -1,14 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { MinCostMaxFlowVisualizer, MCMF_TEMPLATE } from './min-cost-max-flow-renderer';
+import { MinCostMaxFlowVisualizer } from './min-cost-max-flow-renderer';
 
-describe('MinCostMaxFlow (Minimum Cost Maximum Flow - MCMF)', () => {
+describe('MinCostMaxFlow (P3381)', () => {
   it('should instantiate MinCostMaxFlowVisualizer properly', () => {
     const viz = new MinCostMaxFlowVisualizer();
     expect(viz).toBeDefined();
-    expect(MCMF_TEMPLATE).toContain('algo-min-cost-max-flow-view');
-    expect(MCMF_TEMPLATE).toContain('mcmf-canvas');
-    expect(MCMF_TEMPLATE).toContain('mcmf-flow-val');
-    expect(MCMF_TEMPLATE).toContain('mcmf-cost-val');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { KMAlgorithmVisualizer, KM_ALGORITHM_TEMPLATE } from './km-algorithm-renderer';
+import { KMAlgorithmVisualizer } from './km-algorithm-renderer';
 
-describe('KMAlgorithm (Kuhn-Munkres Bipartite Matching)', () => {
+describe('KMAlgorithm (P6577)', () => {
   it('should instantiate KMAlgorithmVisualizer properly', () => {
     const viz = new KMAlgorithmVisualizer();
     expect(viz).toBeDefined();
-    expect(KM_ALGORITHM_TEMPLATE).toContain('algo-km-algorithm-view');
-    expect(KM_ALGORITHM_TEMPLATE).toContain('km-canvas');
-    expect(KM_ALGORITHM_TEMPLATE).toContain('km-weight-val');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

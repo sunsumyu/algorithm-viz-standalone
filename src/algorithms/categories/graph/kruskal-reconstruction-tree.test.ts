@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { KruskalReconstructionTreeVisualizer, KRUSKAL_TREE_TEMPLATE } from './kruskal-reconstruction-tree-renderer';
+import { KruskalReconstructionTreeVisualizer } from './kruskal-reconstruction-tree-renderer';
 
-describe('KruskalReconstructionTree (Kruskal Tree & LCA Bottleneck)', () => {
+describe('KruskalReconstructionTree (P4768)', () => {
   it('should instantiate KruskalReconstructionTreeVisualizer properly', () => {
     const viz = new KruskalReconstructionTreeVisualizer();
     expect(viz).toBeDefined();
-    expect(KRUSKAL_TREE_TEMPLATE).toContain('algo-kruskal-reconstruction-tree-view');
-    expect(KRUSKAL_TREE_TEMPLATE).toContain('kruskal-tree-canvas');
-    expect(KRUSKAL_TREE_TEMPLATE).toContain('ktree-status-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

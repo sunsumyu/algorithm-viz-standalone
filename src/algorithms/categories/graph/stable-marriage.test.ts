@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { StableMarriageVisualizer, STABLE_MARRIAGE_TEMPLATE } from './stable-marriage-renderer';
+import { StableMarriageVisualizer } from './stable-marriage-renderer';
 
-describe('StableMarriage (Gale-Shapley Deferred Acceptance)', () => {
+describe('StableMarriage (Gale-Shapley)', () => {
   it('should instantiate StableMarriageVisualizer properly', () => {
     const viz = new StableMarriageVisualizer();
     expect(viz).toBeDefined();
-    expect(STABLE_MARRIAGE_TEMPLATE).toContain('algo-stable-marriage-view');
-    expect(STABLE_MARRIAGE_TEMPLATE).toContain('marriage-canvas');
-    expect(STABLE_MARRIAGE_TEMPLATE).toContain('marriage-couples-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

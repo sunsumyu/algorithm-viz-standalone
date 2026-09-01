@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { SecondMSTVisualizer, SECOND_MST_TEMPLATE } from './second-mst-renderer';
+import { SecondMstVisualizer } from './second-mst-renderer';
 
-describe('SecondMST (Strict Second Minimum Spanning Tree)', () => {
-  it('should instantiate SecondMSTVisualizer properly', () => {
-    const viz = new SecondMSTVisualizer();
+describe('SecondMst (P4180)', () => {
+  it('should instantiate SecondMstVisualizer properly', () => {
+    const viz = new SecondMstVisualizer();
     expect(viz).toBeDefined();
-    expect(SECOND_MST_TEMPLATE).toContain('algo-second-mst-view');
-    expect(SECOND_MST_TEMPLATE).toContain('secondmst-canvas');
-    expect(SECOND_MST_TEMPLATE).toContain('secondmst-ans-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
@@ -18,7 +15,7 @@ describe('SecondMST (Strict Second Minimum Spanning Tree)', () => {
       isConnected: true,
     } as unknown as HTMLElement;
 
-    const viz = new SecondMSTVisualizer();
+    const viz = new SecondMstVisualizer();
     await viz.init({
       root: mockRoot,
       algorithmId: 'second-mst',

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { StateCompressionBfsVisualizer, STATE_COMPRESSION_BFS_TEMPLATE } from './state-compression-bfs-renderer';
+import { StateCompressionBfsVisualizer } from './state-compression-bfs-renderer';
 
-describe('StateCompressionBfs (Shortest Path Visiting All Nodes)', () => {
+describe('StateCompressionBFS (LeetCode 864)', () => {
   it('should instantiate StateCompressionBfsVisualizer properly', () => {
     const viz = new StateCompressionBfsVisualizer();
     expect(viz).toBeDefined();
-    expect(STATE_COMPRESSION_BFS_TEMPLATE).toContain('algo-state-compression-bfs-view');
-    expect(STATE_COMPRESSION_BFS_TEMPLATE).toContain('state-bfs-canvas');
-    expect(STATE_COMPRESSION_BFS_TEMPLATE).toContain('state-bitmask-container');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { TreeDifferenceVisualizer, TREE_DIFF_TEMPLATE } from './tree-difference-renderer';
+import { TreeDifferenceVisualizer } from './tree-difference-renderer';
 
-describe('TreeDifference (Node & Edge Tree Difference)', () => {
+describe('TreeDifference (P3128)', () => {
   it('should instantiate TreeDifferenceVisualizer properly', () => {
     const viz = new TreeDifferenceVisualizer();
     expect(viz).toBeDefined();
-    expect(TREE_DIFF_TEMPLATE).toContain('algo-tree-difference-view');
-    expect(TREE_DIFF_TEMPLATE).toContain('treediff-canvas');
-    expect(TREE_DIFF_TEMPLATE).toContain('treediff-max-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

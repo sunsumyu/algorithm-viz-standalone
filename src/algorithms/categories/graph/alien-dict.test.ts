@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { AlienDictVisualizer, ALIEN_DICT_TEMPLATE } from './alien-dict-renderer';
+import { AlienDictVisualizer } from './alien-dict-renderer';
 
-describe('AlienDict (Alien Dictionary Topo Sort)', () => {
+describe('AlienDict (LeetCode 269)', () => {
   it('should instantiate AlienDictVisualizer properly', () => {
     const viz = new AlienDictVisualizer();
     expect(viz).toBeDefined();
-    expect(ALIEN_DICT_TEMPLATE).toContain('algo-alien-dict-view');
-    expect(ALIEN_DICT_TEMPLATE).toContain('alien-canvas');
-    expect(ALIEN_DICT_TEMPLATE).toContain('alien-words-list');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

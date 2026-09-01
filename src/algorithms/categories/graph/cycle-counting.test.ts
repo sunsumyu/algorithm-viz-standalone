@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { CycleCountingVisualizer, CYCLE_COUNTING_TEMPLATE } from './cycle-counting-renderer';
+import { CycleCountingVisualizer } from './cycle-counting-renderer';
 
-describe('CycleCounting (3-Cycle and 4-Cycle Counting in Graph)', () => {
+describe('CycleCounting (P1989)', () => {
   it('should instantiate CycleCountingVisualizer properly', () => {
     const viz = new CycleCountingVisualizer();
     expect(viz).toBeDefined();
-    expect(CYCLE_COUNTING_TEMPLATE).toContain('algo-cycle-counting-view');
-    expect(CYCLE_COUNTING_TEMPLATE).toContain('cycle-canvas');
-    expect(CYCLE_COUNTING_TEMPLATE).toContain('cycle-count-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

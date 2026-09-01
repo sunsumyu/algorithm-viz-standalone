@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { CentroidTreeVisualizer, CENTROID_TREE_TEMPLATE } from './centroid-tree-renderer';
+import { CentroidTreeVisualizer } from './centroid-tree-renderer';
 
-describe('CentroidTree (Dynamic Centroid Decomposition & Centroid Tree)', () => {
+describe('CentroidTree (Dynamic Centroid Decomposition)', () => {
   it('should instantiate CentroidTreeVisualizer properly', () => {
     const viz = new CentroidTreeVisualizer();
     expect(viz).toBeDefined();
-    expect(CENTROID_TREE_TEMPLATE).toContain('algo-centroid-tree-view');
-    expect(CENTROID_TREE_TEMPLATE).toContain('ctree-canvas');
-    expect(CENTROID_TREE_TEMPLATE).toContain('ctree-height-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

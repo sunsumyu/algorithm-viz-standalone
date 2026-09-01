@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { DinicMaxFlowVisualizer, DINIC_MAX_FLOW_TEMPLATE } from './dinic-max-flow-renderer';
+import { DinicMaxFlowVisualizer } from './dinic-max-flow-renderer';
 
-describe('DinicMaxFlow (Dinic Max Flow & Residual Graph)', () => {
+describe('DinicMaxFlow (P3376)', () => {
   it('should instantiate DinicMaxFlowVisualizer properly', () => {
     const viz = new DinicMaxFlowVisualizer();
     expect(viz).toBeDefined();
-    expect(DINIC_MAX_FLOW_TEMPLATE).toContain('algo-dinic-max-flow-view');
-    expect(DINIC_MAX_FLOW_TEMPLATE).toContain('dinic-canvas');
-    expect(DINIC_MAX_FLOW_TEMPLATE).toContain('dinic-max-flow-val');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

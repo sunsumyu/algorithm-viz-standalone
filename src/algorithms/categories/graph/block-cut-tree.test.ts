@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { BlockCutTreeVisualizer, BLOCK_CUT_TREE_TEMPLATE } from './block-cut-tree-renderer';
+import { BlockCutTreeVisualizer } from './block-cut-tree-renderer';
 
-describe('BlockCutTree (Cactus & v-BCC Block-Cut Tree)', () => {
+describe('BlockCutTree (P4320)', () => {
   it('should instantiate BlockCutTreeVisualizer properly', () => {
     const viz = new BlockCutTreeVisualizer();
     expect(viz).toBeDefined();
-    expect(BLOCK_CUT_TREE_TEMPLATE).toContain('algo-block-cut-tree-view');
-    expect(BLOCK_CUT_TREE_TEMPLATE).toContain('bct-canvas');
-    expect(BLOCK_CUT_TREE_TEMPLATE).toContain('bct-square-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

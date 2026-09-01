@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { EVChargeDijkstraVisualizer, EV_CHARGE_TEMPLATE } from './ev-charge-dijkstra-renderer';
+import { EVChargeDijkstraVisualizer } from './ev-charge-dijkstra-renderer';
 
-describe('EVChargeDijkstra (EV Charge Layered Dijkstra)', () => {
+describe('EVChargeDijkstra (LCP 35)', () => {
   it('should instantiate EVChargeDijkstraVisualizer properly', () => {
     const viz = new EVChargeDijkstraVisualizer();
     expect(viz).toBeDefined();
-    expect(EV_CHARGE_TEMPLATE).toContain('algo-ev-charge-dijkstra-view');
-    expect(EV_CHARGE_TEMPLATE).toContain('evcharge-canvas');
-    expect(EV_CHARGE_TEMPLATE).toContain('evcharge-battery-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { EulerianCircuitVisualizer, EULERIAN_CIRCUIT_TEMPLATE } from './eulerian-circuit-renderer';
+import { EulerianCircuitVisualizer } from './eulerian-circuit-renderer';
 
-describe('EulerianCircuit (Eulerian Path and Circuit)', () => {
+describe('EulerianCircuit (Hierholzer)', () => {
   it('should instantiate EulerianCircuitVisualizer properly', () => {
     const viz = new EulerianCircuitVisualizer();
     expect(viz).toBeDefined();
-    expect(EULERIAN_CIRCUIT_TEMPLATE).toContain('algo-eulerian-circuit-view');
-    expect(EULERIAN_CIRCUIT_TEMPLATE).toContain('euler-canvas');
-    expect(EULERIAN_CIRCUIT_TEMPLATE).toContain('euler-stack-preview');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

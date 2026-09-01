@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { VirtualTreeVisualizer, VIRTUAL_TREE_TEMPLATE } from './virtual-tree-renderer';
+import { VirtualTreeVisualizer } from './virtual-tree-renderer';
 
-describe('VirtualTree (Virtual Tree / Auxiliary Tree)', () => {
+describe('VirtualTree (P2495)', () => {
   it('should instantiate VirtualTreeVisualizer properly', () => {
     const viz = new VirtualTreeVisualizer();
     expect(viz).toBeDefined();
-    expect(VIRTUAL_TREE_TEMPLATE).toContain('algo-virtual-tree-view');
-    expect(VIRTUAL_TREE_TEMPLATE).toContain('vtree-canvas');
-    expect(VIRTUAL_TREE_TEMPLATE).toContain('vtree-scale-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { TarjanSCCDAGVisualizer, TARJAN_SCC_DAG_TEMPLATE } from './tarjan-scc-dag-renderer';
+import { TarjanSCCDAGVisualizer } from './tarjan-scc-dag-renderer';
 
-describe('TarjanSCCDAG (Tarjan SCC & DAG Condensation)', () => {
+describe('TarjanSCCDAG (P3387)', () => {
   it('should instantiate TarjanSCCDAGVisualizer properly', () => {
     const viz = new TarjanSCCDAGVisualizer();
     expect(viz).toBeDefined();
-    expect(TARJAN_SCC_DAG_TEMPLATE).toContain('algo-tarjan-scc-dag-view');
-    expect(TARJAN_SCC_DAG_TEMPLATE).toContain('tarjan-scc-canvas');
-    expect(TARJAN_SCC_DAG_TEMPLATE).toContain('scc-stack-box');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

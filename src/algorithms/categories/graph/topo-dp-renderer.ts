@@ -1,718 +1,199 @@
 /**
- * DAG 拓扑排序与动态规划 / 关键路径 (DAG Topo DP & Critical Path) 可视化引擎
- * 参考左程云《算法通关课》【必备篇】class060: 食物链计数 (P4017) 与 并行课程 III (LeetCode 2050)
+ * 拓扑排序与 DAG 动态规划 (Topological DP - 最长路与关键路径) 声明式可视化器
+ * 核心：DAG 无后效性、拓扑序线性递推 dp[v] = max(dp[v], dp[u] + w)、工程关键路径 CPM
+ * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   TOPO_DP_CODE_LANGUAGES,
   TOPO_DP_PROBLEM_HTML,
   TOPO_DP_ANALYSIS_HTML,
 } from './topo-dp-problem-content';
 
-export interface DAGNode {
-  id: number;
-  time: number;
-  x: number;
-  y: number;
-}
-
-export interface DAGEdge {
-  u: number;
-  v: number;
-}
-
 export interface TopoDPStep {
-  type: 'POP_QUEUE' | 'UPDATE_DP' | 'UNLOCK_NODE' | 'DONE';
-  u: number;
-  v?: number;
-  curCost: number;
-  inDegreeSnapshot: number[];
-  costSnapshot: number[];
-  queueSnapshot: number[];
-  criticalPath: number[];
+  curNode: number;
+  dpDist: Record<number, number>;
+  inDegrees: Record<number, number>;
+  status: 'init' | 'relax' | 'done';
   message: string;
+  log: string;
+  codeLine: number | number[];
 }
 
-class TopoDPAudio {
-  private static audioCtx: AudioContext | null = null;
-  public static isMuted = false;
+export function buildTopoDPSteps(): TopoDPStep[] {
+  const steps: TopoDPStep[] = [];
 
-  private static getCtx(): AudioContext | null {
-    if (this.isMuted || typeof window === 'undefined') return null;
-    if (!this.audioCtx) {
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioClass) this.audioCtx = new AudioClass();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-    return this.audioCtx;
-  }
+  steps.push({
+    curNode: 1,
+    dpDist: { 1: 0, 2: 0, 3: 0, 4: 0 },
+    inDegrees: { 1: 0, 2: 1, 3: 1, 4: 2 },
+    status: 'init',
+    message: '1. [拓扑 DP 初始化] 起点 1 入度为 0，dp[1] = 0 压入拓扑队列！',
+    log: '初始化：起点 1 入度为 0, dp[1] = 0',
+    codeLine: [15, 22],
+  });
 
-  public static playPop(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch {}
-  }
+  steps.push({
+    curNode: 2,
+    dpDist: { 1: 0, 2: 3, 3: 2, 4: 0 },
+    inDegrees: { 1: 0, 2: 0, 3: 0, 4: 2 },
+    status: 'relax',
+    message: '2. [弹出 1 并松弛出边] 1 ➔ 2 (w:3) 得到 dp[2]=3；1 ➔ 3 (w:2) 得到 dp[3]=2！2 与 3 入度清零入队！',
+    log: '拓扑递推：dp[2] = max(0, 0+3)=3, dp[3] = 2',
+    codeLine: [24, 32],
+  });
 
-  public static playUpdate(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
-      gain.gain.setValueAtTime(0.14, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.12);
-    } catch {}
-  }
+  steps.push({
+    curNode: 4,
+    dpDist: { 1: 0, 2: 3, 3: 2, 4: 7 },
+    inDegrees: { 1: 0, 2: 0, 3: 0, 4: 0 },
+    status: 'done',
+    message: '🎉 [终点 4 汇聚最长路径] 2 ➔ 4 (w:4) 产生 3+4=7；3 ➔ 4 (w:1) 产生 2+1=3！DAG 最长路径 dp[4] = 7！',
+    log: '✓ 拓扑 DP 求解完成：DAG 关键路径 / 最长路 = 7',
+    codeLine: [34, 40],
+  });
 
-  public static playUnlock(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const notes = [440, 880];
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.05 + 0.15);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.05);
-        osc.stop(ctx.currentTime + idx * 0.05 + 0.15);
-      });
-    } catch {}
-  }
-
-  public static playWin(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const chord = [523.25, 659.25, 783.99, 1046.5, 1318.5];
-      chord.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
-        gain.gain.setValueAtTime(0.18, ctx.currentTime + idx * 0.06);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.06 + 0.35);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.06);
-        osc.stop(ctx.currentTime + idx * 0.06 + 0.35);
-      });
-    } catch {}
-  }
+  return steps;
 }
 
-export class TopoDPVisualizer extends StepVisualizer<any> {
-  // DAG 数据结构
-  private n = 5;
-  private nodes: DAGNode[] = [];
-  private edges: DAGEdge[] = [];
-  private times: number[] = [1, 2, 3, 4, 5];
-
-  // 步骤追踪
-  private traceSteps: TopoDPStep[] = [];
-  private currentStepPtr = 0;
-  private isAutoPlaying = false;
-  private autoPlayTimer: any = null;
-  private playSpeed = 1;
-
-  // 画布与渲染
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private animFrameId: number | null = null;
-  private lastTimestamp = 0;
-  private pulseAnim = 0;
-
-  constructor() {
-    super();
-    this.codeLanguages = TOPO_DP_CODE_LANGUAGES;
-    this.codeLines = TOPO_DP_CODE_LANGUAGES['cpp'] || [];
-    this.codePanelTitle = 'DAG 拓扑 DP 算法引擎 (LeetCode 2050)';
-  }
-
-  protected initDOMElements(): void {}
-
-  protected buildSteps(): any[] {
-    return [{ message: 'DAG 拓扑排序与动态规划' }];
-  }
-
-  protected renderStep(_step: any): void {}
-
-  public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
-    await super.init(options);
-    this.loadPreset('CLASSIC_COURSES');
-    this.initGameUI();
-    this.startLoop();
-  }
-
-  public destroy(): void {
-    super.destroy();
-    this.stopAutoPlay();
-    if (this.animFrameId && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
-    }
-  }
-
-  private loadPreset(presetKey: string): void {
-    this.stopAutoPlay();
-
-    if (presetKey === 'CLASSIC_COURSES') {
-      // N=5, Relations: [[1,5],[2,5],[3,5],[3,4],[4,5]], Times: [1,2,3,4,5]
-      this.n = 5;
-      this.times = [1, 2, 3, 4, 5];
-      this.nodes = [
-        { id: 1, time: 1, x: 70, y: 50 },
-        { id: 2, time: 2, x: 70, y: 115 },
-        { id: 3, time: 3, x: 70, y: 180 },
-        { id: 4, time: 4, x: 230, y: 180 },
-        { id: 5, time: 5, x: 390, y: 115 },
-      ];
-      this.edges = [
-        { u: 1, v: 5 },
-        { u: 2, v: 5 },
-        { u: 3, v: 5 },
-        { u: 3, v: 4 },
-        { u: 4, v: 5 },
-      ];
-    } else if (presetKey === 'DIAMOND_DAG') {
-      this.n = 6;
-      this.times = [2, 3, 5, 4, 2, 6];
-      this.nodes = [
-        { id: 1, time: 2, x: 60, y: 115 },
-        { id: 2, time: 3, x: 170, y: 55 },
-        { id: 3, time: 5, x: 170, y: 175 },
-        { id: 4, time: 4, x: 290, y: 55 },
-        { id: 5, time: 2, x: 290, y: 175 },
-        { id: 6, time: 6, x: 400, y: 115 },
-      ];
-      this.edges = [
-        { u: 1, v: 2 },
-        { u: 1, v: 3 },
-        { u: 2, v: 4 },
-        { u: 3, v: 5 },
-        { u: 4, v: 6 },
-        { u: 5, v: 6 },
-        { u: 3, v: 4 },
-      ];
-    } else if (presetKey === 'INDUSTRIAL_PIPELINE') {
-      this.n = 6;
-      this.times = [4, 1, 6, 2, 5, 3];
-      this.nodes = [
-        { id: 1, time: 4, x: 60, y: 70 },
-        { id: 2, time: 1, x: 60, y: 160 },
-        { id: 3, time: 6, x: 190, y: 70 },
-        { id: 4, time: 2, x: 190, y: 160 },
-        { id: 5, time: 5, x: 320, y: 115 },
-        { id: 6, time: 3, x: 410, y: 115 },
-      ];
-      this.edges = [
-        { u: 1, v: 3 },
-        { u: 2, v: 4 },
-        { u: 3, v: 5 },
-        { u: 4, v: 5 },
-        { u: 5, v: 6 },
-      ];
-    }
-
-    this.computeTraceSteps();
-    this.currentStepPtr = 0;
-    this.updateHUD();
-  }
-
-  private computeTraceSteps(): void {
-    const n = this.n;
-    const graph: number[][] = Array.from({ length: n + 1 }, () => []);
-    const inDegree: number[] = Array(n + 1).fill(0);
-    const cost: number[] = Array(n + 1).fill(0);
-    const parent: number[] = Array(n + 1).fill(0);
-
-    this.edges.forEach((e) => {
-      graph[e.u].push(e.v);
-      inDegree[e.v]++;
-    });
-
-    const queue: number[] = [];
-    for (let i = 1; i <= n; i++) {
-      if (inDegree[i] === 0) {
-        cost[i] = this.times[i - 1];
-        queue.push(i);
-      }
-    }
-
-    const steps: TopoDPStep[] = [];
-    const cloneInDegree = () => [...inDegree];
-    const cloneCost = () => [...cost];
-    const cloneQueue = () => [...queue];
-
-    const getCriticalPath = (): number[] => {
-      let maxEnd = 1;
-      for (let i = 1; i <= n; i++) {
-        if (cost[i] > cost[maxEnd]) maxEnd = i;
-      }
-      const path: number[] = [];
-      let curr = maxEnd;
-      while (curr !== 0) {
-        path.unshift(curr);
-        curr = parent[curr];
-      }
-      return path;
+const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
+  id: 'topo-dp',
+  name: '拓扑排序与 DAG 动态规划 (Topo DP)',
+  category: 'graph',
+  icon: '📊',
+  badge: {
+    mode: 'DAG 拓扑递推 dp[v] = max',
+    complexity: 'O(V + E) · O(V + E)',
+  },
+  card1Title: '📊 有向无环图与拓扑 DP 最长路沙盘',
+  card2Title: '🧭 节点最长路 dp[u] 与入度监视器',
+  card2Desc: '入度表 inDegree、拓扑序线性转移与最长关键路径',
+  legend: [
+    { label: '图节点 (1..4)', color: '#0284c7' },
+    { label: '🟢 关键路径连边', color: '#10b981' },
+    { label: '普通转移边', color: '#475569' },
+  ],
+  inputs: [],
+  presets: [
+    { label: '4 节点经典 DAG 最长路', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-topodp-cur', label: '当前出队节点', color: '#2563eb' },
+    { id: 'metric-topodp-max', label: 'DAG 最长路 dp[4]', color: '#10b981' },
+  ],
+  codeLanguages: TOPO_DP_CODE_LANGUAGES,
+  problemHtml: TOPO_DP_PROBLEM_HTML,
+  analysisHtml: TOPO_DP_ANALYSIS_HTML,
+  buildSteps: () => buildTopoDPSteps(),
+  renderCanvas: (container, step) => {
+    const nodeCoords: Record<number, { x: number; y: number }> = {
+      1: { x: 75, y: 110 },
+      2: { x: 155, y: 55 },
+      3: { x: 155, y: 165 },
+      4: { x: 235, y: 110 },
     };
 
-    steps.push({
-      type: 'POP_QUEUE',
-      u: queue[0] || 1,
-      curCost: cost[queue[0] || 1],
-      inDegreeSnapshot: cloneInDegree(),
-      costSnapshot: cloneCost(),
-      queueSnapshot: cloneQueue(),
-      criticalPath: getCriticalPath(),
-      message: `🚀 初始化：入度为 0 的前置节点 [${queue.join(', ')}] 入队，初始工期设为自身开销。`,
-    });
+    const edges = [
+      { u: 1, v: 2, w: 3 },
+      { u: 1, v: 3, w: 2 },
+      { u: 2, v: 4, w: 4 },
+      { u: 3, v: 4, w: 1 },
+    ];
 
-    while (queue.length > 0) {
-      const u = queue.shift()!;
-      const uCost = cost[u];
+    const isCritical = (u: number, v: number) => (u === 1 && v === 2) || (u === 2 && v === 4);
 
-      steps.push({
-        type: 'POP_QUEUE',
-        u,
-        curCost: uCost,
-        inDegreeSnapshot: cloneInDegree(),
-        costSnapshot: cloneCost(),
-        queueSnapshot: cloneQueue(),
-        criticalPath: getCriticalPath(),
-        message: `📥 节点 [${u}] 拓扑就绪，最早完成时间为 ${uCost} 个月。`,
-      });
+    const svgEdges = edges
+      .map((e) => {
+        const p1 = nodeCoords[e.u];
+        const p2 = nodeCoords[e.v];
+        if (!p1 || !p2) return '';
+        const crit = isCritical(e.u, e.v);
+        const color = crit ? '#10b981' : '#475569';
+        const width = crit ? 2.5 : 1.5;
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2 - 6;
 
-      for (const v of graph[u]) {
-        const nextTime = this.times[v - 1];
-        const newVcost = uCost + nextTime;
+        return `
+          <g>
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" marker-end="url(#arrow-topodp)" />
+            <text x="${midX}" y="${midY}" fill="${color}" font-size="8.5" font-weight="700" font-family="monospace" text-anchor="middle">w:${e.w}</text>
+          </g>
+        `;
+      })
+      .join('');
 
-        if (newVcost > cost[v]) {
-          cost[v] = newVcost;
-          parent[v] = u;
-        }
+    const nodes = [1, 2, 3, 4];
+    const svgNodes = nodes
+      .map((u) => {
+        const p = nodeCoords[u];
+        if (!p) return '';
+        const dp = step.dpDist[u];
+        const isCur = step.curNode === u;
 
-        inDegree[v]--;
+        return `
+          <g>
+            <circle cx="${p.x}" cy="${p.y}" r="15" fill="${isCur ? '#b45309' : '#0369a1'}" stroke="${isCur ? '#facc15' : '#38bdf8'}" stroke-width="2" />
+            <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="11" font-weight="800" font-family="monospace" text-anchor="middle">${u}</text>
+            <text x="${p.x}" y="${p.y + 26}" fill="#34d399" font-size="8.5" font-weight="700" text-anchor="middle">dp:${dp}</text>
+          </g>
+        `;
+      })
+      .join('');
 
-        steps.push({
-          type: 'UPDATE_DP',
-          u,
-          v,
-          curCost: cost[v],
-          inDegreeSnapshot: cloneInDegree(),
-          costSnapshot: cloneCost(),
-          queueSnapshot: cloneQueue(),
-          criticalPath: getCriticalPath(),
-          message: `⚡ [状态转移] 课程 ${u} → ${v}：更新 cost[${v}] = max(cost[${v}], cost[${u}] + time[${v}]) = ${cost[v]}，入度减为 ${inDegree[v]}。`,
-        });
-
-        if (inDegree[v] === 0) {
-          queue.push(v);
-          steps.push({
-            type: 'UNLOCK_NODE',
-            u,
-            v,
-            curCost: cost[v],
-            inDegreeSnapshot: cloneInDegree(),
-            costSnapshot: cloneCost(),
-            queueSnapshot: cloneQueue(),
-            criticalPath: getCriticalPath(),
-            message: `🔓 节点 [${v}] 所有前驱先修课均已完结 (入度为 0)，解锁并加入就绪队列！`,
-          });
-        }
-      }
-    }
-
-    steps.push({
-      type: 'DONE',
-      u: 0,
-      curCost: Math.max(...cost),
-      inDegreeSnapshot: cloneInDegree(),
-      costSnapshot: cloneCost(),
-      queueSnapshot: [],
-      criticalPath: getCriticalPath(),
-      message: `🏁 DAG 拓扑 DP 推演完成！项目关键路径为 [${getCriticalPath().join(' → ')}]，最少总月份: ${Math.max(...cost)}！`,
-    });
-
-    this.traceSteps = steps;
-  }
-
-  private initGameUI(): void {
-    if (!this.root) return;
-
-    this.canvas = this.root.querySelector('#topodp-canvas');
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
-    }
-
-    this.mountTerminal({
-      codeLanguages: TOPO_DP_CODE_LANGUAGES,
-      problemHtml: TOPO_DP_PROBLEM_HTML,
-      analysisHtml: TOPO_DP_ANALYSIS_HTML,
-      initialLang: 'cpp',
-    });
-
-    // 单步
-    const stepBtn = this.root.querySelector('#btn-topodp-step') as HTMLButtonElement | null;
-    if (stepBtn) stepBtn.addEventListener('click', () => this.stepForward());
-
-    // 自动播放
-    const autoBtn = this.root.querySelector('#btn-topodp-autoplay') as HTMLButtonElement | null;
-    if (autoBtn) {
-      autoBtn.addEventListener('click', () => {
-        if (this.isAutoPlaying) this.stopAutoPlay();
-        else this.startAutoPlay();
-      });
-    }
-
-    // 重置
-    const resetBtn = this.root.querySelector('#btn-topodp-reset') as HTMLButtonElement | null;
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        this.stopAutoPlay();
-        this.currentStepPtr = 0;
-        this.updateHUD();
-      });
-    }
-
-    // 预设
-    this.root.querySelectorAll<HTMLButtonElement>('.topodp-preset-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const preset = btn.dataset.preset || 'CLASSIC_COURSES';
-        this.root?.querySelectorAll('.topodp-preset-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.loadPreset(preset);
-      });
-    });
-
-    // 音效
-    const soundBtn = this.root.querySelector('#btn-topodp-sound') as HTMLButtonElement | null;
-    if (soundBtn) {
-      soundBtn.addEventListener('click', () => {
-        TopoDPAudio.isMuted = !TopoDPAudio.isMuted;
-        soundBtn.textContent = TopoDPAudio.isMuted ? '🔇 静音' : '🔊 音效';
-      });
-    }
-  }
-
-  private stepForward(): void {
-    if (this.currentStepPtr < this.traceSteps.length - 1) {
-      this.currentStepPtr++;
-      const cur = this.traceSteps[this.currentStepPtr];
-      if (cur.type === 'POP_QUEUE') TopoDPAudio.playPop();
-      else if (cur.type === 'UPDATE_DP') TopoDPAudio.playUpdate();
-      else if (cur.type === 'UNLOCK_NODE') TopoDPAudio.playUnlock();
-      else if (cur.type === 'DONE') TopoDPAudio.playWin();
-
-      this.updateHUD();
-    } else {
-      this.stopAutoPlay();
-    }
-  }
-
-  private startAutoPlay(): void {
-    if (this.isAutoPlaying) return;
-    this.isAutoPlaying = true;
-    const playBtn = this.root?.querySelector('#btn-topodp-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '⏸️ 暂停推演';
-
-    const step = () => {
-      if (!this.isAutoPlaying) return;
-      if (this.currentStepPtr < this.traceSteps.length - 1) {
-        this.stepForward();
-        this.autoPlayTimer = setTimeout(step, 750 / this.playSpeed);
-      } else {
-        this.stopAutoPlay();
-      }
-    };
-    step();
-  }
-
-  private stopAutoPlay(): void {
-    this.isAutoPlaying = false;
-    if (this.autoPlayTimer) {
-      clearTimeout(this.autoPlayTimer);
-      this.autoPlayTimer = null;
-    }
-    const playBtn = this.root?.querySelector('#btn-topodp-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '▶️ 自动推演';
-  }
-
-  private updateHUD(): void {
-    if (!this.root || this.traceSteps.length === 0) return;
-
-    const cur = this.traceSteps[this.currentStepPtr];
-    const narrationBox = this.root.querySelector('#topodp-narration-box') as HTMLElement | null;
-    const statusBadge = this.root.querySelector('#topodp-status-badge') as HTMLElement | null;
-    const queueList = this.root.querySelector('#topodp-queue-list') as HTMLElement | null;
-    const maxCostStat = this.root.querySelector('#topodp-maxcost-stat') as HTMLElement | null;
-    const criticalPathEl = this.root.querySelector('#topodp-critical-path') as HTMLElement | null;
-
-    if (narrationBox) narrationBox.innerHTML = `💡 ${cur.message}`;
-
-    if (statusBadge) {
-      statusBadge.textContent = `步骤 ${this.currentStepPtr + 1}/${this.traceSteps.length}`;
-      statusBadge.style.background = '#eff6ff';
-      statusBadge.style.color = '#2563eb';
-    }
-
-    if (maxCostStat) {
-      maxCostStat.textContent = `${Math.max(...cur.costSnapshot)} 个月`;
-    }
-
-    if (criticalPathEl) {
-      criticalPathEl.textContent = cur.criticalPath.join(' → ');
-    }
-
-    if (queueList) {
-      if (cur.queueSnapshot.length === 0) {
-        queueList.innerHTML = '<span style="font-size: 10.5px; color: #94a3b8;">就绪队列为空</span>';
-      } else {
-        queueList.innerHTML = cur.queueSnapshot
-          .map((u) => `<span style="background: #3b82f6; color: #ffffff; font-weight: bold; padding: 2px 7px; border-radius: 4px; font-size: 11px; margin-right: 4px;">课程 ${u}</span>`)
-          .join('');
-      }
-    }
-  }
-
-  private startLoop(): void {
-    if (typeof requestAnimationFrame !== 'function') return;
-    const loop = (timestamp: number) => {
-      if (!this.lastTimestamp) this.lastTimestamp = timestamp;
-      const dt = Math.min(32, timestamp - this.lastTimestamp);
-      this.lastTimestamp = timestamp;
-
-      this.pulseAnim += dt * 0.005;
-      this.renderCanvas();
-
-      if (typeof requestAnimationFrame === 'function') {
-        this.animFrameId = requestAnimationFrame(loop);
-      }
-    };
-    this.animFrameId = requestAnimationFrame(loop);
-  }
-
-  private renderCanvas(): void {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx;
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const cur = this.traceSteps[this.currentStepPtr];
-
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
-
-    // 1. 深色背景
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    // 2. 绘制 DAG 依赖有向箭头
-    this.edges.forEach((e) => {
-      const n1 = this.nodes.find((n) => n.id === e.u);
-      const n2 = this.nodes.find((n) => n.id === e.v);
-      if (!n1 || !n2) return;
-
-      const isCriticalEdge = cur && cur.criticalPath.includes(e.u) && cur.criticalPath.includes(e.v);
-      const isRelaxingEdge = cur && cur.u === e.u && cur.v === e.v;
-
-      ctx.save();
-      if (isRelaxingEdge) {
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 3;
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 10;
-      } else if (isCriticalEdge) {
-        ctx.strokeStyle = '#f97316'; // 关键路径橙红
-        ctx.lineWidth = 2.5;
-      } else {
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
-        ctx.lineWidth = 1.5;
-      }
-
-      ctx.beginPath();
-      ctx.moveTo(n1.x, n1.y);
-      ctx.lineTo(n2.x, n2.y);
-      ctx.stroke();
-
-      // 绘制箭头
-      const angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
-      const arrowLen = 9;
-      const targetX = n2.x - 20 * Math.cos(angle);
-      const targetY = n2.y - 20 * Math.sin(angle);
-
-      ctx.fillStyle = ctx.strokeStyle;
-      ctx.beginPath();
-      ctx.moveTo(targetX, targetY);
-      ctx.lineTo(targetX - arrowLen * Math.cos(angle - Math.PI / 6), targetY - arrowLen * Math.sin(angle - Math.PI / 6));
-      ctx.lineTo(targetX - arrowLen * Math.cos(angle + Math.PI / 6), targetY - arrowLen * Math.sin(angle + Math.PI / 6));
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.restore();
-    });
-
-    // 3. 绘制节点
-    this.nodes.forEach((node) => {
-      const inDeg = cur ? cur.inDegreeSnapshot[node.id] : 0;
-      const costVal = cur ? cur.costSnapshot[node.id] : 0;
-      const isCur = cur && cur.u === node.id;
-      const isTargetRelax = cur && cur.v === node.id;
-      const inQueue = cur && cur.queueSnapshot.includes(node.id);
-      const isZeroInDeg = inDeg === 0;
-
-      ctx.save();
-
-      let fillColor = '#1e293b';
-      let strokeColor = '#64748b';
-      let radius = 19;
-
-      if (isCur) {
-        fillColor = '#ca8a04';
-        strokeColor = '#facc15';
-        radius = 22 + Math.sin(this.pulseAnim) * 2;
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 12;
-      } else if (isTargetRelax) {
-        fillColor = '#1e3a8a';
-        strokeColor = '#38bdf8';
-      } else if (isZeroInDeg) {
-        fillColor = '#065f46';
-        strokeColor = '#34d399';
-      }
-
-      ctx.fillStyle = fillColor;
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // 课程编号与自身耗时
-      ctx.font = 'bold 11px monospace';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`${node.id} (${node.time}m)`, node.x, node.y - 2);
-
-      // 入度小徽章 (右上角)
-      ctx.fillStyle = inDeg === 0 ? '#10b981' : '#ef4444';
-      ctx.beginPath();
-      ctx.arc(node.x + 14, node.y - 14, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.font = 'bold 8.5px monospace';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(`${inDeg}`, node.x + 14, node.y - 14);
-
-      // DP 最早完成时间标注 (下方)
-      ctx.font = '9.5px monospace';
-      ctx.fillStyle = '#fde047';
-      ctx.fillText(`cost=${costVal}`, node.x, node.y + radius + 10);
-
-      ctx.restore();
-    });
-
-    ctx.restore();
-  }
-}
-
-export const TOPO_DP_TEMPLATE = `
-  <div id="algo-topo-dp-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
-    <!-- 顶栏控制 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">🎓</span>
-        <span style="font-size: 14px; font-weight: 800; color: #0f172a;">拓扑排序与 DAG 关键路径 (Topo DP)</span>
-        <div style="display: flex; gap: 4px; margin-left: 8px;">
-          <button class="topodp-preset-btn active" data-preset="CLASSIC_COURSES" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">经典课程 (N=5)</button>
-          <button class="topodp-preset-btn" data-preset="DIAMOND_DAG" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">钻石依赖 (N=6)</button>
-          <button class="topodp-preset-btn" data-preset="INDUSTRIAL_PIPELINE" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">流水线工程 (N=6)</button>
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+        <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
+          <defs>
+            <marker id="arrow-topodp" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+            </marker>
+          </defs>
+          ${svgEdges}
+          ${svgNodes}
+        </svg>
+        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+          🟢 绿色连线为关键路径 (1 ➔ 2 ➔ 4) | DAG 拓扑无后效性保证线性递推最长路
         </div>
       </div>
+    `;
 
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="topodp-status-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: #2563eb;">准备就绪</span>
-        <button id="btn-topodp-step" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">单步推演</button>
-        <button id="btn-topodp-autoplay" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(59,130,246,0.25);">▶️ 自动推演</button>
-        <button id="btn-topodp-sound" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🔊 音效</button>
-        <button id="btn-topodp-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
-      </div>
-    </div>
+    const root = container.closest('#algo-topo-dp-view');
+    if (root) {
+      const cEl = root.querySelector('#metric-topodp-cur');
+      const mEl = root.querySelector('#metric-topodp-max');
 
-    <!-- 状态指示条 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 4px 10px; margin-bottom: 6px; font-size: 11px; color: #1e40af;">
-      <div style="display: flex; gap: 14px; align-items: center;">
-        <span>⏳ 最少总耗时: <b id="topodp-maxcost-stat" style="color: #2563eb; font-size: 12px;">0 个月</b></span>
-        <span>🌟 关键路径: <b id="topodp-critical-path" style="color: #ea580c; font-size: 12px;">-</b></span>
-      </div>
-      <div id="topodp-narration-box" style="font-weight: 700; color: #1e3a8a;">
-        💡 准备就绪：观察入度剥离与无后效性 DP 状态转移！
-      </div>
-    </div>
+      if (cEl) cEl.textContent = `Node ${step.curNode}`;
+      if (mEl) mEl.textContent = `${step.dpDist[4]}`;
 
-    <!-- 主展示区 -->
-    <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 350px; gap: 10px; flex: 1; min-height: 0;">
-      <!-- 左侧：DAG Canvas -->
-      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 6px; overflow-y: auto;">
-        <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
-          <canvas id="topodp-canvas" width="460" height="230" style="width: 460px; height: 230px;"></canvas>
-        </div>
-
-        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
-          🔴 右上角红标为当前入度 | 🟡 下方黄字为最早完工时间 cost[u]
-        </div>
-      </div>
-
-      <!-- 右侧：队列与代码终端 -->
-      <div style="display: flex; flex-direction: column; gap: 6px; min-height: 0;">
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; max-height: 90px; display: flex; flex-direction: column; gap: 4px;">
-          <div style="font-size: 10.5px; font-weight: 700; color: #0f172a;">⚡ 拓扑就绪队列 (In-Degree = 0 节点):</div>
-          <div id="topodp-queue-list" style="display: flex; flex-wrap: wrap; gap: 3px;"></div>
-        </div>
-
-        <div id="topodp-terminal-mount" style="flex: 1; min-height: 190px; overflow: hidden; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
-      </div>
-    </div>
-  </div>
-`;
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
+            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #1e40af; font-weight: 700;">👑 拓扑 DP 转移状态机:</span>
+              <strong style="font-family: monospace; color: #2563eb;">dp[v] = max(dp[v], dp[u] + w(u, v)) 按拓扑出队顺序线性递推</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'topo-dp',
-  name: '拓扑排序与 DAG 关键路径',
+  name: '拓扑排序与 DAG 动态规划 (Topo DP)',
   viewId: 'algo-topo-dp-view',
   category: 'graph',
-  description: 'DAG 拓扑动态规划算法：左程云 class060 食物链计数 (P4017) 与 并行课程 III (LeetCode 2050)、入度剥离、最长工期关键路径推演',
-  icon: '🎓',
-  template: TOPO_DP_TEMPLATE,
-  Visualizer: TopoDPVisualizer,
+  description: '经典图论 DP 基础：有向无环图拓扑排序、无后效性线性状态递推、工程关键路径 CPM 与 DAG 最长路求解',
+  icon: '📊',
+  template,
+  Visualizer,
   difficulty: 2,
-  levelOrder: 23,
-  learningGoal: '掌握拓扑排序如何为 DAG 提供无后效性计算拓扑序，以及 Critical Path 关键路径与路径计数 DP 的状态转移',
+  levelOrder: 25,
+  learningGoal: '掌握拓扑排序在 DAG 上的 DP 状态递推原则、关键路径判定及最短/最长路求解',
 });
+
+export { Visualizer as TopoDPVisualizer };

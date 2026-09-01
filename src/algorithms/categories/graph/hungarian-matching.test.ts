@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { HungarianMatchingVisualizer, HUNGARIAN_TEMPLATE } from './hungarian-matching-renderer';
+import { HungarianMatchingVisualizer } from './hungarian-matching-renderer';
 
-describe('HungarianMatching (Hungarian Maximum Bipartite Matching)', () => {
+describe('HungarianMatching (P3386)', () => {
   it('should instantiate HungarianMatchingVisualizer properly', () => {
     const viz = new HungarianMatchingVisualizer();
     expect(viz).toBeDefined();
-    expect(HUNGARIAN_TEMPLATE).toContain('algo-hungarian-matching-view');
-    expect(HUNGARIAN_TEMPLATE).toContain('hungarian-canvas');
-    expect(HUNGARIAN_TEMPLATE).toContain('hungarian-match-count');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
