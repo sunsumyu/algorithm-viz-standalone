@@ -189,6 +189,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'k-shortest-path': '🚀',
   'cycle-counting': '🔺',
   'bipartite-game': '♟️',
+  'prufer-sequence': '📼',
+  'dominator-tree': '🏛️',
 };
 
 import {

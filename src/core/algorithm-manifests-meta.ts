@@ -2949,5 +2949,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 54,
     "learningGoal": "掌握二分图博弈先手必胜充要条件证明、残量图交错轨 DFS 判定非必须匹配点的算法逻辑与工程实现"
+  },
+  {
+    "id": "prufer-sequence",
+    "name": "Prufer 序列 (Prufer Sequence)",
+    "viewId": "algo-prufer-sequence-view",
+    "category": "graph",
+    "description": "组合图论树编码算法：树转 Prufer 序列 (度数-1 频次)、Prufer 逆向重构树、双射与 n^(n-2) Cayley 公式验证 (洛谷 P6086)",
+    "icon": "📼",
+    "difficulty": 3,
+    "levelOrder": 55,
+    "learningGoal": "掌握树与 Prufer 序列的双向一一映射、度数性质 count(i)=deg(i)-1、O(n) 线性双指针编解码与 Cayley 生成树公式证明"
+  },
+  {
+    "id": "dominator-tree",
+    "name": "支配树 (Dominator Tree)",
+    "viewId": "algo-dominator-tree-view",
+    "category": "graph",
+    "description": "编译原理与进阶图论算法：控制流图支配关系 (idom)、DAG 前驱节点支配树 LCA 定理、增量倍增支配树构建 (洛谷 P5180)",
+    "icon": "🏛️",
+    "difficulty": 3,
+    "levelOrder": 56,
+    "learningGoal": "掌握支配关系数学定义、DAG 上 idom[u] = LCA_tree(preds) 定理证明与编译器 SSA 形式支配边界应用"
   }
 ];

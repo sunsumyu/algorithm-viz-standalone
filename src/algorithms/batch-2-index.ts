@@ -149,5 +149,7 @@ import './categories/graph/second-mst-renderer';
 import './categories/graph/k-shortest-path-renderer';
 import './categories/graph/cycle-counting-renderer';
 import './categories/graph/bipartite-game-renderer';
+import './categories/graph/prufer-sequence-renderer';
+import './categories/graph/dominator-tree-renderer';
 
 export {};
