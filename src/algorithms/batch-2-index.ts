@@ -161,5 +161,6 @@ import './categories/graph/dsu-on-tree-renderer';
 import './categories/graph/planar-graph-dual-renderer';
 import './categories/graph/min-path-cover-renderer';
 import './categories/graph/chordal-graph-renderer';
+import './categories/graph/network-delay-time-renderer';
 
 export {};

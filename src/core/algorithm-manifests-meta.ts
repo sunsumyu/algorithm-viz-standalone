@@ -3081,5 +3081,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 66,
     "learningGoal": "掌握弦图无弦环定义、MCS 最大势算法线性时间构造 PEO 原理及极大团数量不超过 V 个的严密证明"
+  },
+  {
+    "id": "network-delay-time",
+    "name": "网络延迟时间 (Network Delay Time)",
+    "viewId": "algo-network-delay-time-view",
+    "category": "graph",
+    "description": "Dijkstra 堆优化经典应用：信号广播单源最短路径、全网延迟时间 max(dist[1..n]) 与连通性判定 (LeetCode 743 / 左程云 Class064 Code01)",
+    "icon": "📡",
+    "difficulty": 2,
+    "levelOrder": 67,
+    "learningGoal": "掌握 Dijkstra 堆优化在网络路由与信号扩散中的精确建模、全网最大延迟计算与不可达节点判定"
   }
 ];

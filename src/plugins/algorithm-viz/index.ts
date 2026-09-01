@@ -201,6 +201,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'planar-graph-dual': '🌐',
   'min-path-cover': '🚀',
   'chordal-graph': '🎻',
+  'network-delay-time': '📡',
 };
 
 import {
