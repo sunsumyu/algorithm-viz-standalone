@@ -157,5 +157,7 @@ import './categories/graph/max-weight-closure-renderer';
 import './categories/graph/virtual-tree-renderer';
 import './categories/graph/path-min-effort-renderer';
 import './categories/graph/ev-charge-dijkstra-renderer';
+import './categories/graph/dsu-on-tree-renderer';
+import './categories/graph/planar-graph-dual-renderer';
 
 export {};

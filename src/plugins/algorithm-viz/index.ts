@@ -197,6 +197,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'virtual-tree': '🌲',
   'path-min-effort': '⛰️',
   'ev-charge-dijkstra': '⚡',
+  'dsu-on-tree': '🌲',
+  'planar-graph-dual': '🌐',
 };
 
 import {

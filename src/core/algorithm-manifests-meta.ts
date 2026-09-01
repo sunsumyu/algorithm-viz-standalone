@@ -3037,5 +3037,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 62,
     "learningGoal": "掌握二维状态分层图建模、原地充电转移与道路放电转移松弛方程及优先队列 Dijkstra 最优性证明"
+  },
+  {
+    "id": "dsu-on-tree",
+    "name": "树上启发式合并 (DSU on Tree)",
+    "viewId": "algo-dsu-on-tree-view",
+    "category": "graph",
+    "description": "进阶树论高效算法：重儿子保留计数桶、轻儿子统计后清空、轻边跳跃不超过 log N 次 (CF600E / 洛谷 U41492)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 63,
+    "learningGoal": "掌握重链剖分与启发式合并在树上子树统计的应用、严格 O(N log N) 复杂度证明与桶空间复用"
+  },
+  {
+    "id": "planar-graph-dual",
+    "name": "平面图最小割转对偶图最短路 (Planar Graph Dual)",
+    "viewId": "algo-planar-graph-dual-view",
+    "category": "graph",
+    "description": "进阶图论对偶建模：平面图面转点、最小割等价于对偶图最短路、Dijkstra 取代 Dinic 极速求解 (洛谷 P4001 狼抓兔子)",
+    "icon": "🌐",
+    "difficulty": 3,
+    "levelOrder": 64,
+    "learningGoal": "掌握平面图与对偶图转换几何原理、最小割与对偶路径等价性定理及大规模网格最大流加速技巧"
   }
 ];
