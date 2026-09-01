@@ -131,5 +131,6 @@ import './categories/graph/eulerian-circuit-renderer';
 import './categories/graph/good-paths-renderer';
 import './categories/graph/malware-spread-ii-renderer';
 import './categories/graph/tarjan-scc-dag-renderer';
+import './categories/graph/dijkstra-index-heap-renderer';
 
 export {};

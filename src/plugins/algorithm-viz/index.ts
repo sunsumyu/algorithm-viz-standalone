@@ -171,6 +171,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'good-paths': '🛤️',
   'malware-spread-ii': '🦠',
   'tarjan-scc-dag': '🔄',
+  'dijkstra-index-heap': '⚡',
 };
 
 import {

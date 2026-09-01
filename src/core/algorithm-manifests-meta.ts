@@ -2751,5 +2751,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 36,
     "learningGoal": "掌握有向图 Tarjan SCC 算法的栈维护机制、inStack 判定法则以及缩点将任意有向图转化为纯净 DAG 的工程应用"
+  },
+  {
+    "id": "dijkstra-index-heap",
+    "name": "反向索引堆优化 Dijkstra (Index Min-Heap)",
+    "viewId": "algo-dijkstra-index-heap-view",
+    "category": "graph",
+    "description": "单源最短路径极限常数优化算法：左程云 class061 反向索引堆、where[] 下标映射、原地 decreaseKey 与 O(V) 空间常数优化 (洛谷 P4779)",
+    "icon": "⚡",
+    "difficulty": 3,
+    "levelOrder": 37,
+    "learningGoal": "掌握反向索引堆的双向映射维护、原地 decreaseKey 上浮优化以及彻底消除堆内冗余节点的工程威力"
   }
 ];
