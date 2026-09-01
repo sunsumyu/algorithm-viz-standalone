@@ -2861,5 +2861,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 46,
     "learningGoal": "掌握基环树结构特性、DFS 找环判定、断边化树与两次树形 DP 分类消除后效性的工程精髓"
+  },
+  {
+    "id": "two-sat-problem",
+    "name": "2-SAT 命题逻辑 (2-SAT)",
+    "viewId": "algo-two-sat-problem-view",
+    "category": "graph",
+    "description": "命题逻辑与图论结合算法：左程云 Class 078 蕴涵图建模、Tarjan 强连通分量 SCC 判环与拓扑序逆序赋值 (洛谷 P4782)",
+    "icon": "⚖️",
+    "difficulty": 3,
+    "levelOrder": 47,
+    "learningGoal": "掌握析取子句到蕴涵有向图的等价变换、Tarjan 缩点自相矛盾判定以及逆拓扑序合法赋值构造的完整证明"
   }
 ];

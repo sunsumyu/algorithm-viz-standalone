@@ -181,6 +181,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'konig-min-vertex-cover': '🛡️',
   'lca-binary-lifting': '🌲',
   'pseudotree-dp': '🎡',
+  'two-sat-problem': '⚖️',
 };
 
 import {

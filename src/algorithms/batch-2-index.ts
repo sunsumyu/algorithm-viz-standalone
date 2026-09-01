@@ -141,5 +141,6 @@ import './categories/graph/tree-centroid-decomposition-renderer';
 import './categories/graph/konig-min-vertex-cover-renderer';
 import './categories/graph/lca-binary-lifting-renderer';
 import './categories/graph/pseudotree-dp-renderer';
+import './categories/graph/two-sat-renderer';
 
 export {};
