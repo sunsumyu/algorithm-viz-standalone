@@ -162,5 +162,7 @@ import './categories/graph/planar-graph-dual-renderer';
 import './categories/graph/min-path-cover-renderer';
 import './categories/graph/chordal-graph-renderer';
 import './categories/graph/network-delay-time-renderer';
+import './categories/graph/tree-path-intersection-renderer';
+import './categories/graph/prefix-opt-graph-renderer';
 
 export {};

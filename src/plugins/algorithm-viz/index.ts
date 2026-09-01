@@ -202,6 +202,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'min-path-cover': '🚀',
   'chordal-graph': '🎻',
   'network-delay-time': '📡',
+  'tree-path-intersection': '🌲',
+  'prefix-opt-graph': '🌐',
 };
 
 import {

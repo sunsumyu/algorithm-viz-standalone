@@ -3092,5 +3092,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 67,
     "learningGoal": "掌握 Dijkstra 堆优化在网络路由与信号扩散中的精确建模、全网最大延迟计算与不可达节点判定"
+  },
+  {
+    "id": "tree-path-intersection",
+    "name": "树上路径相交判定 (Tree Path Intersection)",
+    "viewId": "algo-tree-path-intersection-view",
+    "category": "graph",
+    "description": "进阶树论几何判定：两路径相交充要条件 (LCA 包含定理)、树上距离公式判定、倍增 LCA 极速 O(log N) 求解 (洛谷 P3398)",
+    "icon": "🌲",
+    "difficulty": 2,
+    "levelOrder": 68,
+    "learningGoal": "掌握树上单峰路径性质、LCA 判定两路径相交的充要定理及树上距离 dis(u, v) 快速计算"
+  },
+  {
+    "id": "prefix-opt-graph",
+    "name": "前缀优化建图 (Prefix Opt Graph)",
+    "viewId": "algo-prefix-opt-graph-view",
+    "category": "graph",
+    "description": "进阶图论建图优化：至多选一限制、前缀链辅助点将 O(k^2) 边数压缩至严格 O(k) 线性边数 (洛谷 P6378 [PA2010] Riddle)",
+    "icon": "🌐",
+    "difficulty": 3,
+    "levelOrder": 69,
+    "learningGoal": "掌握至多选一约束的前缀辅助链建图技巧、线性边数压缩原理及树状数组/线段树优化建图扩展"
   }
 ];
