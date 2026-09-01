@@ -3,7 +3,7 @@
  * 进阶树论: 两路径相交充要条件、LCA 包含判定定理、树上距离 dis(u, v) = depth[u] + depth[v] - 2*depth[lca] (洛谷 P3398)
  */
 
-export const TREE_INTERSECT_CODE_LANGUAGES: Record<string, string[]> = {
+export const TREE_PATH_INTERSECT_CODE_LANGUAGES: Record<string, string[]> = {
   cpp: [
     '#include <iostream>',
     '#include <vector>',
@@ -94,7 +94,7 @@ export const TREE_INTERSECT_CODE_LANGUAGES: Record<string, string[]> = {
   ],
 };
 
-export const TREE_INTERSECT_PROBLEM_HTML = `
+export const TREE_PATH_INTERSECT_PROBLEM_HTML = `
   <div style="font-size: 13px; line-height: 1.6; color: #334155;">
     <h3 style="margin-top: 0; color: #0f172a; font-size: 15px; font-weight: 800;">🌲 树上路径相交判定 (Tree Path Intersection)</h3>
     <p>
@@ -111,7 +111,7 @@ export const TREE_INTERSECT_PROBLEM_HTML = `
   </div>
 `;
 
-export const TREE_INTERSECT_ANALYSIS_HTML = `
+export const TREE_PATH_INTERSECT_ANALYSIS_HTML = `
   <div style="font-size: 13px; line-height: 1.6; color: #334155;">
     <h3 style="margin-top: 0; color: #0f172a; font-size: 15px; font-weight: 800;">💡 为什么只需要检查两个 LCA？</h3>
 
@@ -130,3 +130,7 @@ export const TREE_INTERSECT_ANALYSIS_HTML = `
     </div>
   </div>
 `;
+
+export const TREE_INTERSECT_CODE_LANGUAGES = TREE_PATH_INTERSECT_CODE_LANGUAGES;
+export const TREE_INTERSECT_PROBLEM_HTML = TREE_PATH_INTERSECT_PROBLEM_HTML;
+export const TREE_INTERSECT_ANALYSIS_HTML = TREE_PATH_INTERSECT_ANALYSIS_HTML;
