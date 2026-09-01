@@ -2993,5 +2993,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 58,
     "learningGoal": "掌握点分树深度严格不超过 O(log n) 的严密证明、祖先路径全覆盖定理与动态点分治单次 O(log^2 n) 维护技巧"
+  },
+  {
+    "id": "max-weight-closure",
+    "name": "最大权闭合子图 (Max-Weight Closure)",
+    "viewId": "algo-max-weight-closure-view",
+    "category": "graph",
+    "description": "进阶网络流割模型算法：正权点连源点 S、负权点连汇点 T、依赖边容量无穷大、最大收益 = 总正权和 - 最小割 (洛谷 P2762 太空飞行计划)",
+    "icon": "💰",
+    "difficulty": 3,
+    "levelOrder": 59,
+    "learningGoal": "掌握闭合子图数学定义、最小割建图模型映射逻辑与残量网络 DFS 提取全局最优闭合子图方案"
+  },
+  {
+    "id": "virtual-tree",
+    "name": "虚树 (Virtual Tree)",
+    "viewId": "algo-virtual-tree-view",
+    "category": "graph",
+    "description": "进阶树论高效数据结构：关键点按 DFN 序排序、单调栈维护 LCA 关键链、O(K log N) 虚树构建与极速树形 DP (洛谷 P2495 [SDOI2011] 消耗战)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 60,
+    "learningGoal": "掌握虚树大小不超过 2K 的严密证明、单调栈单遍构建算法与海量关键点询问由 O(N) 降为 O(K) 的优化本质"
   }
 ];

@@ -153,5 +153,7 @@ import './categories/graph/prufer-sequence-renderer';
 import './categories/graph/dominator-tree-renderer';
 import './categories/graph/bounded-flow-renderer';
 import './categories/graph/centroid-tree-renderer';
+import './categories/graph/max-weight-closure-renderer';
+import './categories/graph/virtual-tree-renderer';
 
 export {};

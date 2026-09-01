@@ -193,6 +193,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'dominator-tree': '🏛️',
   'bounded-flow': '🌊',
   'centroid-tree': '🌲',
+  'max-weight-closure': '💰',
+  'virtual-tree': '🌲',
 };
 
 import {
