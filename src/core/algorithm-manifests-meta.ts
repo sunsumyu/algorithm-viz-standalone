@@ -2784,5 +2784,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 39,
     "learningGoal": "掌握 Kruskal 重构树的虚点构造方法、点权堆性质以及 LCA 节点点权等价于原图路径最大边权最小值的数学证明"
+  },
+  {
+    "id": "min-cost-max-flow",
+    "name": "最小费用最大流 (Min-Cost Max-Flow)",
+    "viewId": "algo-min-cost-max-flow-view",
+    "category": "graph",
+    "description": "运筹学网络流核心算法：左程云 class072 连续最短路算法 (SPFA / EK)、成对反向弧负费用退费与费用累加 (洛谷 P3381)",
+    "icon": "💰",
+    "difficulty": 3,
+    "levelOrder": 40,
+    "learningGoal": "掌握费用流的残量网络负费用定义、SPFA 连续最短路增广机制与贪心推流达成全局最小总费用的证明"
   }
 ];

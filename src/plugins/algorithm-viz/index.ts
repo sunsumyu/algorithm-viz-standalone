@@ -174,6 +174,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'dijkstra-index-heap': '⚡',
   'dinic-max-flow': '🌊',
   'kruskal-reconstruction-tree': '🌲',
+  'min-cost-max-flow': '💰',
 };
 
 import {
