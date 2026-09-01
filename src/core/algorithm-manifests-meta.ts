@@ -3114,5 +3114,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 69,
     "learningGoal": "掌握至多选一约束的前缀辅助链建图技巧、线性边数压缩原理及树状数组/线段树优化建图扩展"
+  },
+  {
+    "id": "tree-dominant-color",
+    "name": "树上众数求和 (Tree Dominant Color)",
+    "viewId": "algo-tree-dominant-color-view",
+    "category": "graph",
+    "description": "进阶树论启发式合并：DSU on Tree 动态最值维护、子树众数频次单调更新与众数编号求和 (CF600E Lomsat gelral)",
+    "icon": "👑",
+    "difficulty": 3,
+    "levelOrder": 70,
+    "learningGoal": "掌握 DSU on Tree 动态维护最值与属性和的 O(1) 转移技巧及树上启发式合并模板"
+  },
+  {
+    "id": "mixed-eulerian-circuit",
+    "name": "混合图欧拉回路 (Mixed Eulerian Circuit)",
+    "viewId": "algo-mixed-eulerian-circuit-view",
+    "category": "graph",
+    "description": "进阶网络流经典建模：任意初始定向、出入度差额 D[u]、Dinic 最大流调整方向与满流回路判定 (POJ 1637)",
+    "icon": "🔄",
+    "difficulty": 3,
+    "levelOrder": 71,
+    "learningGoal": "掌握混合图欧拉回路转化为网络流最大流的建模技巧、奇偶性判别及残量网络边反转重构回路"
   }
 ];

@@ -164,5 +164,7 @@ import './categories/graph/chordal-graph-renderer';
 import './categories/graph/network-delay-time-renderer';
 import './categories/graph/tree-path-intersection-renderer';
 import './categories/graph/prefix-opt-graph-renderer';
+import './categories/graph/tree-dominant-color-renderer';
+import './categories/graph/mixed-eulerian-circuit-renderer';
 
 export {};

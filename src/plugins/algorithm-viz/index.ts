@@ -204,6 +204,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'network-delay-time': '📡',
   'tree-path-intersection': '🌲',
   'prefix-opt-graph': '🌐',
+  'tree-dominant-color': '👑',
+  'mixed-eulerian-circuit': '🔄',
 };
 
 import {
