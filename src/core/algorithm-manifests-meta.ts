@@ -3059,5 +3059,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 64,
     "learningGoal": "掌握平面图与对偶图转换几何原理、最小割与对偶路径等价性定理及大规模网格最大流加速技巧"
+  },
+  {
+    "id": "min-path-cover",
+    "name": "DAG 最小路径覆盖 (Min Path Cover)",
+    "viewId": "algo-min-path-cover-view",
+    "category": "graph",
+    "description": "经典网络流/二分图建模：DAG 拆点二分图匹配定理 (路径数 = n - 最大匹配)、不相交与可相交路径覆盖 (洛谷 P2764)",
+    "icon": "🚀",
+    "difficulty": 3,
+    "levelOrder": 65,
+    "learningGoal": "掌握 DAG 拆点二分图匹配原理、Dilworth 反链对偶定理与传递闭包处理可相交路径覆盖"
+  },
+  {
+    "id": "chordal-graph",
+    "name": "弦图判定与极大团 (Chordal Graph - MCS)",
+    "viewId": "algo-chordal-graph-view",
+    "category": "graph",
+    "description": "进阶图论高效判定：完美消除序列 (PEO)、最大势算法 (MCS) 严格 O(V+E) 构造与极大团计数 (Maximal Clique)",
+    "icon": "🎻",
+    "difficulty": 3,
+    "levelOrder": 66,
+    "learningGoal": "掌握弦图无弦环定义、MCS 最大势算法线性时间构造 PEO 原理及极大团数量不超过 V 个的严密证明"
   }
 ];

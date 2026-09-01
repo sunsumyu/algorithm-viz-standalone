@@ -159,5 +159,7 @@ import './categories/graph/path-min-effort-renderer';
 import './categories/graph/ev-charge-dijkstra-renderer';
 import './categories/graph/dsu-on-tree-renderer';
 import './categories/graph/planar-graph-dual-renderer';
+import './categories/graph/min-path-cover-renderer';
+import './categories/graph/chordal-graph-renderer';
 
 export {};

@@ -199,6 +199,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'ev-charge-dijkstra': '⚡',
   'dsu-on-tree': '🌲',
   'planar-graph-dual': '🌐',
+  'min-path-cover': '🚀',
+  'chordal-graph': '🎻',
 };
 
 import {
