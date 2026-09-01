@@ -179,6 +179,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'heavy-light-decomposition': '🎋',
   'tree-centroid-decomposition': '👑',
   'konig-min-vertex-cover': '🛡️',
+  'lca-binary-lifting': '🌲',
 };
 
 import {

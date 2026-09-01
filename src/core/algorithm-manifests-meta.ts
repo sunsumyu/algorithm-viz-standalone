@@ -2839,5 +2839,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 44,
     "learningGoal": "掌握柯尼希定理证明思路、未匹配点交错轨标记构造最小点覆盖与最大独立集的工程实现与经典建模转换"
+  },
+  {
+    "id": "lca-binary-lifting",
+    "name": "最近公共祖先 (LCA 倍增法)",
+    "viewId": "algo-lca-binary-lifting-view",
+    "category": "graph",
+    "description": "树上对数级查询算法：左程云 Class 076 树上倍增表 up[u][i]、二进制深度对齐与 O(log n) 祖先定位 (洛谷 P3379)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 45,
+    "learningGoal": "掌握树上倍增转移方程 up[u][i] = up[up[u][i-1]][i-1]、两阶段二进制对齐与同步跃升的工程实现"
   }
 ];
