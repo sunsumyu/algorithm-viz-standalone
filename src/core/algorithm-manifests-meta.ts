@@ -2927,5 +2927,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 52,
     "learningGoal": "掌握 A* 启发函数单调一致性、反向 Dijkstra 构建完美估价函数与优先队列第 K 次到达终点正确性证明"
+  },
+  {
+    "id": "cycle-counting",
+    "name": "三元环计数 (Cycle Counting)",
+    "viewId": "algo-cycle-counting-view",
+    "category": "graph",
+    "description": "进阶图论高效环计数算法：度数偏序定向为 DAG (出度 <= sqrt(m))、两步打标枚举、严格 O(m*sqrt(m)) 极速三元环统计 (洛谷 P1989)",
+    "icon": "🔺",
+    "difficulty": 3,
+    "levelOrder": 53,
+    "learningGoal": "掌握度数偏序有向化定理、DAG 最大出度上界 O(√m) 的严密证明与无冗余三元环枚举实现"
+  },
+  {
+    "id": "bipartite-game",
+    "name": "二分图博弈 (Bipartite Game)",
+    "viewId": "algo-bipartite-game-view",
+    "category": "graph",
+    "description": "进阶博弈图论算法：轮流移动棋子判定、先手必胜当且仅当起点属于所有最大匹配、交错轨 DFS 标记非必须匹配点 (洛谷 P4055 [JSOI2009] 游戏)",
+    "icon": "♟️",
+    "difficulty": 3,
+    "levelOrder": 54,
+    "learningGoal": "掌握二分图博弈先手必胜充要条件证明、残量图交错轨 DFS 判定非必须匹配点的算法逻辑与工程实现"
   }
 ];

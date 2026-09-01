@@ -187,6 +187,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'tree-difference': '🌲',
   'second-mst': '🌲',
   'k-shortest-path': '🚀',
+  'cycle-counting': '🔺',
+  'bipartite-game': '♟️',
 };
 
 import {

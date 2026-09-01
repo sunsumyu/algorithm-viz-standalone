@@ -147,5 +147,7 @@ import './categories/graph/block-cut-tree-renderer';
 import './categories/graph/tree-difference-renderer';
 import './categories/graph/second-mst-renderer';
 import './categories/graph/k-shortest-path-renderer';
+import './categories/graph/cycle-counting-renderer';
+import './categories/graph/bipartite-game-renderer';
 
 export {};
