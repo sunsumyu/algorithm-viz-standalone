@@ -140,5 +140,6 @@ import './categories/graph/heavy-light-decomposition-renderer';
 import './categories/graph/tree-centroid-decomposition-renderer';
 import './categories/graph/konig-min-vertex-cover-renderer';
 import './categories/graph/lca-binary-lifting-renderer';
+import './categories/graph/pseudotree-dp-renderer';
 
 export {};

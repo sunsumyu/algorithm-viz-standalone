@@ -180,6 +180,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'tree-centroid-decomposition': '👑',
   'konig-min-vertex-cover': '🛡️',
   'lca-binary-lifting': '🌲',
+  'pseudotree-dp': '🎡',
 };
 
 import {

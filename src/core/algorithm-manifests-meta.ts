@@ -2850,5 +2850,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 45,
     "learningGoal": "掌握树上倍增转移方程 up[u][i] = up[up[u][i-1]][i-1]、两阶段二进制对齐与同步跃升的工程实现"
+  },
+  {
+    "id": "pseudotree-dp",
+    "name": "基环树 DP (Pseudotree DP)",
+    "viewId": "algo-pseudotree-dp-view",
+    "category": "graph",
+    "description": "环上树形动态规划算法：左程云 Class 077 基环树找环、断环为链、两次树形 DP 与最优化独立集 (洛谷 P2607 骑士 / P1453 城市环路)",
+    "icon": "🎡",
+    "difficulty": 3,
+    "levelOrder": 46,
+    "learningGoal": "掌握基环树结构特性、DFS 找环判定、断边化树与两次树形 DP 分类消除后效性的工程精髓"
   }
 ];
