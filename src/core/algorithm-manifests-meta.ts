@@ -2762,5 +2762,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 37,
     "learningGoal": "掌握反向索引堆的双向映射维护、原地 decreaseKey 上浮优化以及彻底消除堆内冗余节点的工程威力"
+  },
+  {
+    "id": "dinic-max-flow",
+    "name": "Dinic 网络最大流 (Dinic Max Flow)",
+    "viewId": "algo-dinic-max-flow-view",
+    "category": "graph",
+    "description": "网络最大流核心算法：左程云 class071 Dinic 算法、成对反向弧退流、BFS 层次图、当前弧优化与多路增广 (洛谷 P3376)",
+    "icon": "🌊",
+    "difficulty": 3,
+    "levelOrder": 38,
+    "learningGoal": "掌握 Dinic 算法的成对反向弧退流机制、BFS 层次图构建与 DFS 当前弧多路增广的工程实现"
   }
 ];

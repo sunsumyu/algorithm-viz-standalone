@@ -172,6 +172,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'malware-spread-ii': '🦠',
   'tarjan-scc-dag': '🔄',
   'dijkstra-index-heap': '⚡',
+  'dinic-max-flow': '🌊',
 };
 
 import {
