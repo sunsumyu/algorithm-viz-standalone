@@ -183,6 +183,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'pseudotree-dp': '🎡',
   'two-sat-problem': '⚖️',
   'stable-marriage': '💍',
+  'block-cut-tree': '🌵',
+  'tree-difference': '🌲',
 };
 
 import {

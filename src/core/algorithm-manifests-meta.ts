@@ -2883,5 +2883,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 48,
     "learningGoal": "掌握稳定婚姻问题定义、Gale-Shapley 算法单调性收敛证明、提议方最优定理与规培匹配现实应用"
+  },
+  {
+    "id": "block-cut-tree",
+    "name": "圆方树 (Block-Cut Tree)",
+    "viewId": "algo-block-cut-tree-view",
+    "category": "graph",
+    "description": "进阶图论仙人掌与一般图转化算法：Tarjan 点双连通分量 (v-BCC)、方点创建、圆方二分树构建与两点简单路径并集查询 (洛谷 P4320 / P5236)",
+    "icon": "🌵",
+    "difficulty": 3,
+    "levelOrder": 49,
+    "learningGoal": "掌握点双连通分量概念、Tarjan low[v] >= dfn[u] 缩点判定、圆方树几何路径等价性质与静态仙人掌 DP 转换思路"
+  },
+  {
+    "id": "tree-difference",
+    "name": "树上差分 (Tree Difference)",
+    "viewId": "algo-tree-difference-view",
+    "category": "graph",
+    "description": "进阶树论高效区间更新算法：点差分 (diff[u]++, diff[v]++, diff[lca]--, diff[fa[lca]]--)、边差分与自底向上 DFS 子树前缀和汇总 (洛谷 P3128 / P3258)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 50,
+    "learningGoal": "掌握树上点差分与边差分数学公式、LCA 边界截断消除向上扩散效应与 O(n) 自底向上前缀和汇总原理"
   }
 ];

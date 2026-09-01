@@ -143,5 +143,7 @@ import './categories/graph/lca-binary-lifting-renderer';
 import './categories/graph/pseudotree-dp-renderer';
 import './categories/graph/two-sat-renderer';
 import './categories/graph/stable-marriage-renderer';
+import './categories/graph/block-cut-tree-renderer';
+import './categories/graph/tree-difference-renderer';
 
 export {};
