@@ -178,6 +178,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'km-algorithm': '💘',
   'heavy-light-decomposition': '🎋',
   'tree-centroid-decomposition': '👑',
+  'konig-min-vertex-cover': '🛡️',
 };
 
 import {

@@ -138,5 +138,6 @@ import './categories/graph/min-cost-max-flow-renderer';
 import './categories/graph/km-algorithm-renderer';
 import './categories/graph/heavy-light-decomposition-renderer';
 import './categories/graph/tree-centroid-decomposition-renderer';
+import './categories/graph/konig-min-vertex-cover-renderer';
 
 export {};

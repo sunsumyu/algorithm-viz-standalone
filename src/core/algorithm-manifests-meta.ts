@@ -2828,5 +2828,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 43,
     "learningGoal": "掌握树的重心性质与定位算法、跨重心路径与子树内部路径分类、双指针容斥去重以及严格 O(n log n) 复杂度证明"
+  },
+  {
+    "id": "konig-min-vertex-cover",
+    "name": "柯尼希定理 (Konig Theorem)",
+    "viewId": "algo-konig-min-vertex-cover-view",
+    "category": "graph",
+    "description": "二分图对偶核心定理：左程云 Class 069 柯尼希定理、最大匹配数 = 最小点覆盖数、最大独立集与交错轨构造法 (洛谷 P2740)",
+    "icon": "🛡️",
+    "difficulty": 3,
+    "levelOrder": 44,
+    "learningGoal": "掌握柯尼希定理证明思路、未匹配点交错轨标记构造最小点覆盖与最大独立集的工程实现与经典建模转换"
   }
 ];
