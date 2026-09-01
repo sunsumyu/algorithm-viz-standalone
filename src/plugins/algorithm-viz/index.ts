@@ -175,6 +175,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'dinic-max-flow': '🌊',
   'kruskal-reconstruction-tree': '🌲',
   'min-cost-max-flow': '💰',
+  'km-algorithm': '💘',
 };
 
 import {

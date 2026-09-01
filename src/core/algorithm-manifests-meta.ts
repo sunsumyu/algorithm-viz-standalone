@@ -2795,5 +2795,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 40,
     "learningGoal": "掌握费用流的残量网络负费用定义、SPFA 连续最短路增广机制与贪心推流达成全局最小总费用的证明"
+  },
+  {
+    "id": "km-algorithm",
+    "name": "KM 算法 (Kuhn-Munkres)",
+    "viewId": "algo-km-algorithm-view",
+    "category": "graph",
+    "description": "二分图最佳完美匹配算法：左程云进阶图论 KM 算法、顶标理论、相等子图、slack[] 松弛优化与最大权分配 (洛谷 P6577)",
+    "icon": "💘",
+    "difficulty": 3,
+    "levelOrder": 41,
+    "learningGoal": "掌握顶标与相等子图对偶定理、增广失败时顶标自适应差值调整机制以及 O(n^3) 极速匹配"
   }
 ];
