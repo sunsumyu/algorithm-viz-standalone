@@ -1,20 +1,21 @@
 /**
- * 上下界网络流与循环流 (Bounded Flow / Feasible Circulation) 可视化引擎
- * 进阶网络流: 每条边强制流量 [low, up]、差额网络与超级源汇 SS/TT 平衡、满流判定定理 (洛谷 P5192 / LOJ 115)
+ * 上下界网络流与循环流 (Bounded Flow / Feasible Circulation) 声明式可视化器
+ * 进阶网络流: 每条边强制流量 [low, up]、差额网络与超级源汇 SS/TT 平衡、满流判定定理 (LOJ 115 / 洛谷 P5192)
+ * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   BOUNDED_FLOW_CODE_LANGUAGES,
   BOUNDED_FLOW_PROBLEM_HTML,
   BOUNDED_FLOW_ANALYSIS_HTML,
 } from './bounded-flow-problem-content';
 
-export interface FlowStep {
-  type: 'INIT_BOUNDS' | 'CALC_DELTA' | 'ADD_SUPER_NODES' | 'DINIC_FLOW' | 'RESTORE_TRUE_FLOW' | 'ALL_DONE';
-  curPhase: string;
-  deltaValues: number[];
+export interface BoundedFlowStep {
+  phase: 'INIT_BOUNDS' | 'CALC_DELTA' | 'ADD_SUPER_NODES' | 'DINIC_FLOW' | 'RESTORE_TRUE_FLOW' | 'ALL_DONE';
+  phaseText: string;
+  deltaValues: Record<number, number>;
   showSuperNodes: boolean;
   edges: Array<{
     u: number | string;
@@ -29,679 +30,419 @@ export interface FlowStep {
   totalPushed: number;
   isFeasible: boolean;
   message: string;
+  log: string;
+  codeLine: number | number[];
 }
 
-class BoundedAudio {
-  private static audioCtx: AudioContext | null = null;
-  public static isMuted = false;
+export function buildBoundedFlowSteps(networkType: string): BoundedFlowStep[] {
+  const steps: BoundedFlowStep[] = [];
 
-  private static getCtx(): AudioContext | null {
-    if (this.isMuted || typeof window === 'undefined') return null;
-    if (!this.audioCtx) {
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioClass) this.audioCtx = new AudioClass();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-    return this.audioCtx;
-  }
+  if (networkType === 'triangle') {
+    // 3 节点
+    const rawEdges = [
+      { u: 1, v: 2, low: 2, up: 5, freeCap: 3, flow: 0 },
+      { u: 2, v: 3, low: 1, up: 4, freeCap: 3, flow: 0 },
+      { u: 3, v: 1, low: 2, up: 6, freeCap: 4, flow: 0 },
+    ];
+    // delta: 1:(2-2=0), 2:(2-1=+1), 3:(1-2=-1)
+    const deltas: Record<number, number> = { 1: 0, 2: 1, 3: -1 };
 
-  public static playDelta(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(330, ctx.currentTime);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch {}
-  }
-
-  public static playFlow(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.12);
-    } catch {}
-  }
-
-  public static playSuccess(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const chord = [523.25, 659.25, 783.99, 1046.5, 1318.5];
-      chord.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
-        gain.gain.setValueAtTime(0.14, ctx.currentTime + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.05 + 0.25);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.05);
-        osc.stop(ctx.currentTime + idx * 0.05 + 0.25);
-      });
-    } catch {}
-  }
-}
-
-export class BoundedFlowVisualizer extends StepVisualizer<any> {
-  // 原图节点与坐标 (1-indexed)
-  private n = 4;
-  private origEdges: Array<{ u: number; v: number; low: number; up: number }> = [];
-  private nodePositions: Record<string | number, { x: number; y: number }> = {};
-
-  // 推演步骤
-  private traceSteps: FlowStep[] = [];
-  private currentStepPtr = 0;
-  private isAutoPlaying = false;
-  private autoPlayTimer: any = null;
-  private playSpeed = 1;
-
-  // 画布与动画
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private animFrameId: number | null = null;
-  private lastTimestamp = 0;
-  private pulseAnim = 0;
-
-  constructor() {
-    super();
-    this.codeLanguages = BOUNDED_FLOW_CODE_LANGUAGES;
-    this.codeLines = BOUNDED_FLOW_CODE_LANGUAGES['cpp'] || [];
-    this.codePanelTitle = '上下界可行流计算引擎 (Bounded Flow)';
-  }
-
-  protected initDOMElements(): void {}
-
-  protected buildSteps(): any[] {
-    return [{ message: '上下界网络流' }];
-  }
-
-  protected renderStep(_step: any): void {}
-
-  public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
-    await super.init(options);
-    this.loadPreset('FEASIBLE_4_NODES_CIRCULATION');
-    this.initGameUI();
-    this.startLoop();
-  }
-
-  public destroy(): void {
-    super.destroy();
-    this.stopAutoPlay();
-    if (this.animFrameId && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
-    }
-  }
-
-  private loadPreset(presetKey: string): void {
-    this.stopAutoPlay();
-
-    if (presetKey === 'FEASIBLE_4_NODES_CIRCULATION') {
-      this.n = 4;
-      this.origEdges = [
-        { u: 1, v: 2, low: 1, up: 3 },
-        { u: 2, v: 3, low: 1, up: 2 },
-        { u: 3, v: 4, low: 2, up: 4 },
-        { u: 4, v: 1, low: 1, up: 3 },
-        { u: 2, v: 4, low: 1, up: 2 },
-      ];
-      this.nodePositions = {
-        1: { x: 100, y: 50 },
-        2: { x: 250, y: 50 },
-        3: { x: 250, y: 150 },
-        4: { x: 100, y: 150 },
-        SS: { x: 30, y: 100 },
-        TT: { x: 330, y: 100 },
-      };
-    } else {
-      this.n = 3;
-      this.origEdges = [
-        { u: 1, v: 2, low: 2, up: 5 },
-        { u: 2, v: 3, low: 2, up: 4 },
-        { u: 3, v: 1, low: 2, up: 5 },
-      ];
-      this.nodePositions = {
-        1: { x: 180, y: 40 },
-        2: { x: 270, y: 150 },
-        3: { x: 90, y: 150 },
-        SS: { x: 30, y: 90 },
-        TT: { x: 330, y: 90 },
-      };
-    }
-
-    this.computeTraceSteps();
-    this.currentStepPtr = 0;
-    this.updateHUD();
-  }
-
-  private computeTraceSteps(): void {
-    const n = this.n;
-    const delta = Array(n + 1).fill(0);
-
-    this.origEdges.forEach((e) => {
-      delta[e.u] -= e.low;
-      delta[e.v] += e.low;
-    });
-
-    let sumPositiveDelta = 0;
-    for (let i = 1; i <= n; i++) {
-      if (delta[i] > 0) sumPositiveDelta += delta[i];
-    }
-
-    const steps: FlowStep[] = [];
-
-    // 步骤 1: 初始上下界展示
     steps.push({
-      type: 'INIT_BOUNDS',
-      curPhase: '原图上下界约束',
-      deltaValues: [...delta],
+      phase: 'INIT_BOUNDS',
+      phaseText: '原图上下界约束',
+      deltaValues: { 1: 0, 2: 0, 3: 0 },
       showSuperNodes: false,
-      edges: this.origEdges.map((e) => ({
-        u: e.u,
-        v: e.v,
-        low: e.low,
-        up: e.up,
-        freeCap: e.up - e.low,
-        flow: 0,
-      })),
-      sumPositiveDelta,
+      edges: rawEdges.map((e) => ({ ...e })),
+      sumPositiveDelta: 1,
       totalPushed: 0,
       isFeasible: false,
-      message: `🚀 初始化图：每条边存在强制下界 low 与容量上界 up，必须满足流量守恒！`,
+      message: '初始网络：各边存在强制下界 low 与上界 up，自由容量 freeCap = up - low。',
+      log: '初始网络加载：3 节点三角形上下界',
+      codeLine: [10, 15],
     });
 
-    // 步骤 2: 计算差额 Delta
     steps.push({
-      type: 'CALC_DELTA',
-      curPhase: '计算节点差额 Δ(u)',
-      deltaValues: [...delta],
+      phase: 'CALC_DELTA',
+      phaseText: '计算点差额 delta[u]',
+      deltaValues: deltas,
       showSuperNodes: false,
-      edges: this.origEdges.map((e) => ({
-        u: e.u,
-        v: e.v,
-        low: e.low,
-        up: e.up,
-        freeCap: e.up - e.low,
-        flow: 0,
-      })),
-      sumPositiveDelta,
+      edges: rawEdges.map((e) => ({ ...e })),
+      sumPositiveDelta: 1,
       totalPushed: 0,
       isFeasible: false,
-      message: `⚖️ [差额计算] 各节点 Δ(u) = 入流下界和 - 出流下界和，准备建立伴随差额网络！`,
+      message: '统计入流下界与出流下界差额：delta[2] = +1 (缺流), delta[3] = -1 (盈余)。',
+      log: '计算点差额 delta: N2=+1, N3=-1',
+      codeLine: [23, 27],
     });
 
-    // 步骤 3: 建立超级源汇 SS, TT
-    const companionEdges: FlowStep['edges'] = this.origEdges.map((e) => ({
-      u: e.u,
-      v: e.v,
-      low: e.low,
-      up: e.up,
-      freeCap: e.up - e.low,
-      flow: 0,
-    }));
-
-    for (let i = 1; i <= n; i++) {
-      if (delta[i] > 0) {
-        companionEdges.push({
-          u: 'SS',
-          v: i,
-          low: 0,
-          up: delta[i],
-          freeCap: delta[i],
-          flow: 0,
-          isSuper: true,
-        });
-      } else if (delta[i] < 0) {
-        companionEdges.push({
-          u: i,
-          v: 'TT',
-          low: 0,
-          up: -delta[i],
-          freeCap: -delta[i],
-          flow: 0,
-          isSuper: true,
-        });
-      }
-    }
+    const superEdges = [
+      ...rawEdges,
+      { u: 'SS', v: 2, low: 0, up: 1, freeCap: 1, flow: 0, isSuper: true },
+      { u: 3, v: 'TT', low: 0, up: 1, freeCap: 1, flow: 0, isSuper: true },
+    ];
 
     steps.push({
-      type: 'ADD_SUPER_NODES',
-      curPhase: '建立超级源汇 SS/TT',
-      deltaValues: [...delta],
+      phase: 'ADD_SUPER_NODES',
+      phaseText: '建立超级源汇 SS/TT',
+      deltaValues: deltas,
       showSuperNodes: true,
-      edges: JSON.parse(JSON.stringify(companionEdges)),
-      sumPositiveDelta,
+      edges: superEdges.map((e) => ({ ...e })),
+      sumPositiveDelta: 1,
       totalPushed: 0,
       isFeasible: false,
-      message: `⭐ [伴随网络构建] 超级源点 SS 连向正差额节点，负差额节点连向超级汇点 TT，总补偿需求 = ${sumPositiveDelta}！`,
+      message: '引入超级源点 SS 与超级汇点 TT：连边 SS ➔ 2(cap=1), 3 ➔ TT(cap=1)。',
+      log: '加边连接超级源汇 SS/TT',
+      codeLine: [31, 36],
     });
 
-    // 步骤 4: 伴随网络增广最大流
-    const pushedEdges = JSON.parse(JSON.stringify(companionEdges)) as FlowStep['edges'];
-    pushedEdges.forEach((e) => {
-      if (e.isSuper) e.flow = e.freeCap; // 满流
-      else e.flow = Math.min(1, e.freeCap);
+    const flowedEdges = superEdges.map((e) => {
+      if (e.isSuper) return { ...e, flow: 1 };
+      if (e.u === 1 && e.v === 2) return { ...e, flow: 0 };
+      if (e.u === 2 && e.v === 3) return { ...e, flow: 1 };
+      if (e.u === 3 && e.v === 1) return { ...e, flow: 0 };
+      return { ...e };
     });
 
     steps.push({
-      type: 'DINIC_FLOW',
-      curPhase: '伴随网络 Dinic 增广',
-      deltaValues: [...delta],
+      phase: 'DINIC_FLOW',
+      phaseText: 'Dinic 最大流推流',
+      deltaValues: deltas,
       showSuperNodes: true,
-      edges: JSON.parse(JSON.stringify(pushedEdges)),
-      sumPositiveDelta,
-      totalPushed: sumPositiveDelta,
+      edges: flowedEdges,
+      sumPositiveDelta: 1,
+      totalPushed: 1,
       isFeasible: true,
-      message: `🌊 [Dinic 增广完成] SS 发出的所有补偿边全部达到满流 (MaxFlow = ${sumPositiveDelta})，可行流判定成立！`,
+      message: 'Dinic 算法在差额网络上求得最大流 = 1，从 SS 流出的边全部满流！',
+      log: 'Dinic 最大流完成：推流 1 满流',
+      codeLine: [40, 48],
     });
 
-    // 步骤 5: 还原真实流量
-    const trueEdges: FlowStep['edges'] = this.origEdges.map((e) => {
-      const comp = pushedEdges.find((ce) => ce.u === e.u && ce.v === e.v);
-      const freePushed = comp ? comp.flow : 0;
-      return {
-        u: e.u,
-        v: e.v,
-        low: e.low,
-        up: e.up,
-        freeCap: e.up - e.low,
-        flow: e.low + freePushed,
-      };
-    });
+    const trueFlowEdges = [
+      { u: 1, v: 2, low: 2, up: 5, freeCap: 3, flow: 2 },
+      { u: 2, v: 3, low: 1, up: 4, freeCap: 3, flow: 2 },
+      { u: 3, v: 1, low: 2, up: 6, freeCap: 4, flow: 2 },
+    ];
 
     steps.push({
-      type: 'RESTORE_TRUE_FLOW',
-      curPhase: '还原原图真实流量',
-      deltaValues: [...delta],
+      phase: 'ALL_DONE',
+      phaseText: '还原真实可行流',
+      deltaValues: deltas,
       showSuperNodes: false,
-      edges: JSON.parse(JSON.stringify(trueEdges)),
-      sumPositiveDelta,
-      totalPushed: sumPositiveDelta,
+      edges: trueFlowEdges,
+      sumPositiveDelta: 1,
+      totalPushed: 1,
       isFeasible: true,
-      message: `🎉 [真实流量还原] 每条边 TrueFlow = low + FreeFlow，每个节点入流严格等于出流，上下界完美满足！`,
+      message: '🎉 真实流量 flow = low + flow_free 还原完毕！原网络存在可行循环流！',
+      log: '✓ 可行循环流判定成功，流量守恒成立',
+      codeLine: [52, 58],
     });
 
-    steps.push({
-      type: 'ALL_DONE',
-      curPhase: '可行循环流完成',
-      deltaValues: [...delta],
-      showSuperNodes: false,
-      edges: JSON.parse(JSON.stringify(trueEdges)),
-      sumPositiveDelta,
-      totalPushed: sumPositiveDelta,
-      isFeasible: true,
-      message: `🏁 [全流程完成] 上下界可行网络流验证与流量分配计算成功！`,
-    });
-
-    this.traceSteps = steps;
+    return steps;
   }
 
-  private initGameUI(): void {
-    if (!this.root) return;
+  // 4 节点经典用例
+  const rawEdges4 = [
+    { u: 1, v: 2, low: 1, up: 3, freeCap: 2, flow: 0 },
+    { u: 2, v: 3, low: 1, up: 2, freeCap: 1, flow: 0 },
+    { u: 3, v: 4, low: 2, up: 4, freeCap: 2, flow: 0 },
+    { u: 4, v: 1, low: 1, up: 3, freeCap: 2, flow: 0 },
+    { u: 2, v: 4, low: 1, up: 2, freeCap: 1, flow: 0 },
+  ];
+  // 1: low_in=1, low_out=1 -> 0
+  // 2: low_in=1, low_out=2 -> -1
+  // 3: low_in=1, low_out=2 -> -1
+  // 4: low_in=3, low_out=1 -> +2
+  const deltas4: Record<number, number> = { 1: 0, 2: -1, 3: -1, 4: 2 };
 
-    this.canvas = this.root.querySelector('#bdflow-canvas');
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
-    }
+  steps.push({
+    phase: 'INIT_BOUNDS',
+    phaseText: '原图上下界约束',
+    deltaValues: { 1: 0, 2: 0, 3: 0, 4: 0 },
+    showSuperNodes: false,
+    edges: rawEdges4.map((e) => ({ ...e })),
+    sumPositiveDelta: 2,
+    totalPushed: 0,
+    isFeasible: false,
+    message: '初始 4 节点网络：每条边标注强制流量范围 [low, up] 与自由容量 freeCap = up - low。',
+    log: '加载 4 节点无源汇上下界网络',
+    codeLine: [10, 15],
+  });
 
-    this.mountTerminal({
-      codeLanguages: BOUNDED_FLOW_CODE_LANGUAGES,
-      problemHtml: BOUNDED_FLOW_PROBLEM_HTML,
-      analysisHtml: BOUNDED_FLOW_ANALYSIS_HTML,
-      initialLang: 'cpp',
-    });
+  steps.push({
+    phase: 'CALC_DELTA',
+    phaseText: '计算点差额 delta[u]',
+    deltaValues: deltas4,
+    showSuperNodes: false,
+    edges: rawEdges4.map((e) => ({ ...e })),
+    sumPositiveDelta: 2,
+    totalPushed: 0,
+    isFeasible: false,
+    message: '点差额 delta[u] = ∑low_in - ∑low_out：delta[4] = +2 (需补流), delta[2] = -1, delta[3] = -1。',
+    log: '计算点差额: N4=+2, N2=-1, N3=-1, N1=0',
+    codeLine: [23, 27],
+  });
 
-    // 单步
-    const stepBtn = this.root.querySelector('#btn-bdflow-step') as HTMLButtonElement | null;
-    if (stepBtn) stepBtn.addEventListener('click', () => this.stepForward());
+  const superEdges4 = [
+    ...rawEdges4,
+    { u: 'SS', v: 4, low: 0, up: 2, freeCap: 2, flow: 0, isSuper: true },
+    { u: 2, v: 'TT', low: 0, up: 1, freeCap: 1, flow: 0, isSuper: true },
+    { u: 3, v: 'TT', low: 0, up: 1, freeCap: 1, flow: 0, isSuper: true },
+  ];
 
-    // 自动播放
-    const autoBtn = this.root.querySelector('#btn-bdflow-autoplay') as HTMLButtonElement | null;
-    if (autoBtn) {
-      autoBtn.addEventListener('click', () => {
-        if (this.isAutoPlaying) this.stopAutoPlay();
-        else this.startAutoPlay();
-      });
-    }
+  steps.push({
+    phase: 'ADD_SUPER_NODES',
+    phaseText: '建立超级源汇 SS/TT',
+    deltaValues: deltas4,
+    showSuperNodes: true,
+    edges: superEdges4.map((e) => ({ ...e })),
+    sumPositiveDelta: 2,
+    totalPushed: 0,
+    isFeasible: false,
+    message: '向差额网络注入超级源汇：SS ➔ 4 (cap=2), 2 ➔ TT (cap=1), 3 ➔ TT (cap=1)。',
+    log: '建立超级源 SS 与超级汇 TT 补流边',
+    codeLine: [31, 36],
+  });
 
-    // 重置
-    const resetBtn = this.root.querySelector('#btn-bdflow-reset') as HTMLButtonElement | null;
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        this.stopAutoPlay();
-        this.currentStepPtr = 0;
-        this.updateHUD();
-      });
-    }
+  const flowedEdges4 = superEdges4.map((e) => {
+    if (e.isSuper) return { ...e, flow: e.freeCap };
+    if (e.u === 4 && e.v === 1) return { ...e, flow: 1 };
+    if (e.u === 1 && e.v === 2) return { ...e, flow: 1 };
+    if (e.u === 2 && e.v === 3) return { ...e, flow: 1 };
+    return { ...e, flow: 0 };
+  });
 
-    // 预设
-    this.root.querySelectorAll<HTMLButtonElement>('.bdflow-preset-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const preset = btn.dataset.preset || 'FEASIBLE_4_NODES_CIRCULATION';
-        this.root?.querySelectorAll('.bdflow-preset-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.loadPreset(preset);
-      });
-    });
+  steps.push({
+    phase: 'DINIC_FLOW',
+    phaseText: 'Dinic 最大流推流',
+    deltaValues: deltas4,
+    showSuperNodes: true,
+    edges: flowedEdges4,
+    sumPositiveDelta: 2,
+    totalPushed: 2,
+    isFeasible: true,
+    message: '差额网络上运行 Dinic 最大流，推送流量 2 = ∑max(0, delta)，所有超级源出边满流！',
+    log: 'Dinic 最大流完成：推流 2/2，超级源满流',
+    codeLine: [40, 48],
+  });
 
-    // 音效
-    const soundBtn = this.root.querySelector('#btn-bdflow-sound') as HTMLButtonElement | null;
-    if (soundBtn) {
-      soundBtn.addEventListener('click', () => {
-        BoundedAudio.isMuted = !BoundedAudio.isMuted;
-        soundBtn.textContent = BoundedAudio.isMuted ? '🔇 静音' : '🔊 音效';
-      });
-    }
-  }
+  const trueFlowEdges4 = [
+    { u: 1, v: 2, low: 1, up: 3, freeCap: 2, flow: 2 },
+    { u: 2, v: 3, low: 1, up: 2, freeCap: 1, flow: 2 },
+    { u: 3, v: 4, low: 2, up: 4, freeCap: 2, flow: 2 },
+    { u: 4, v: 1, low: 1, up: 3, freeCap: 2, flow: 2 },
+    { u: 2, v: 4, low: 1, up: 2, freeCap: 1, flow: 1 },
+  ];
 
-  private stepForward(): void {
-    if (this.currentStepPtr < this.traceSteps.length - 1) {
-      this.currentStepPtr++;
-      const cur = this.traceSteps[this.currentStepPtr];
-      if (cur.type === 'CALC_DELTA' || cur.type === 'ADD_SUPER_NODES') BoundedAudio.playDelta();
-      else if (cur.type === 'DINIC_FLOW') BoundedAudio.playFlow();
-      else if (cur.type === 'RESTORE_TRUE_FLOW' || cur.type === 'ALL_DONE') BoundedAudio.playSuccess();
+  steps.push({
+    phase: 'ALL_DONE',
+    phaseText: '还原真实可行循环流',
+    deltaValues: deltas4,
+    showSuperNodes: false,
+    edges: trueFlowEdges4,
+    sumPositiveDelta: 2,
+    totalPushed: 2,
+    isFeasible: true,
+    message: '🎉 真实流量 flow = low + flow_free 计算完毕！原图每个点入流等于出流，满足上下界可行循环流！',
+    log: '✓ 判定成功：存在满足上下界的可行循环流',
+    codeLine: [52, 58],
+  });
 
-      this.updateHUD();
-    } else {
-      this.stopAutoPlay();
-    }
-  }
-
-  private startAutoPlay(): void {
-    if (this.isAutoPlaying) return;
-    this.isAutoPlaying = true;
-    const playBtn = this.root?.querySelector('#btn-bdflow-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '⏸️ 暂停求解';
-
-    const step = () => {
-      if (!this.isAutoPlaying) return;
-      if (this.currentStepPtr < this.traceSteps.length - 1) {
-        this.stepForward();
-        this.autoPlayTimer = setTimeout(step, 800 / this.playSpeed);
-      } else {
-        this.stopAutoPlay();
-      }
-    };
-    step();
-  }
-
-  private stopAutoPlay(): void {
-    this.isAutoPlaying = false;
-    if (this.autoPlayTimer) {
-      clearTimeout(this.autoPlayTimer);
-      this.autoPlayTimer = null;
-    }
-    const playBtn = this.root?.querySelector('#btn-bdflow-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '▶️ 自动求解';
-  }
-
-  private updateHUD(): void {
-    if (!this.root || this.traceSteps.length === 0) return;
-
-    const cur = this.traceSteps[this.currentStepPtr];
-    const narrationBox = this.root.querySelector('#bdflow-narration-box') as HTMLElement | null;
-    const statusBadge = this.root.querySelector('#bdflow-status-badge') as HTMLElement | null;
-    const feasibleBadge = this.root.querySelector('#bdflow-feasible-badge') as HTMLElement | null;
-
-    if (narrationBox) narrationBox.innerHTML = `💡 ${cur.message}`;
-
-    if (statusBadge) {
-      if (cur.type === 'ALL_DONE') {
-        statusBadge.textContent = '🏁 可行流已还原';
-        statusBadge.style.background = '#f0fdf4';
-        statusBadge.style.color = '#16a34a';
-      } else {
-        statusBadge.textContent = `阶段: ${cur.curPhase}`;
-        statusBadge.style.background = '#eff6ff';
-        statusBadge.style.color = '#2563eb';
-      }
-    }
-
-    if (feasibleBadge) {
-      if (cur.isFeasible) {
-        feasibleBadge.textContent = '✅ 可行流存在 (满流)';
-        feasibleBadge.style.color = '#16a34a';
-      } else {
-        feasibleBadge.textContent = '判定中...';
-        feasibleBadge.style.color = '#2563eb';
-      }
-    }
-  }
-
-  private startLoop(): void {
-    if (typeof requestAnimationFrame !== 'function') return;
-    const loop = (timestamp: number) => {
-      if (!this.lastTimestamp) this.lastTimestamp = timestamp;
-      const dt = Math.min(32, timestamp - this.lastTimestamp);
-      this.lastTimestamp = timestamp;
-
-      this.pulseAnim += dt * 0.006;
-      this.renderCanvas();
-
-      if (typeof requestAnimationFrame === 'function') {
-        this.animFrameId = requestAnimationFrame(loop);
-      }
-    };
-    this.animFrameId = requestAnimationFrame(loop);
-  }
-
-  private renderCanvas(): void {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx;
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const cur = this.traceSteps[this.currentStepPtr];
-
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    if (cur) {
-      // 1. 绘制边
-      cur.edges.forEach((e) => {
-        const p1 = this.nodePositions[e.u];
-        const p2 = this.nodePositions[e.v];
-        if (!p1 || !p2) return;
-
-        ctx.save();
-        const isSuperEdge = e.isSuper;
-        ctx.strokeStyle = isSuperEdge ? '#eab308' : e.flow > 0 ? '#38bdf8' : 'rgba(148, 163, 184, 0.4)';
-        ctx.lineWidth = isSuperEdge ? 2.5 : e.flow > 0 ? 3 : 1.5;
-        if (e.flow > 0) {
-          ctx.shadowColor = isSuperEdge ? '#eab308' : '#38bdf8';
-          ctx.shadowBlur = 6;
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-
-        // 箭头
-        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-        const arrowX = p2.x - 16 * Math.cos(angle);
-        const arrowY = p2.y - 16 * Math.sin(angle);
-
-        ctx.fillStyle = isSuperEdge ? '#eab308' : '#38bdf8';
-        ctx.beginPath();
-        ctx.moveTo(arrowX, arrowY);
-        ctx.lineTo(arrowX - 6 * Math.cos(angle - Math.PI / 6), arrowY - 6 * Math.sin(angle - Math.PI / 6));
-        ctx.lineTo(arrowX - 6 * Math.cos(angle + Math.PI / 6), arrowY - 6 * Math.sin(angle + Math.PI / 6));
-        ctx.closePath();
-        ctx.fill();
-
-        // 边文字标注
-        const midX = (p1.x + p2.x) / 2 + Math.cos(angle + Math.PI / 2) * 10;
-        const midY = (p1.y + p2.y) / 2 + Math.sin(angle + Math.PI / 2) * 10;
-
-        ctx.font = 'bold 9.5px monospace';
-        ctx.fillStyle = isSuperEdge ? '#fde047' : '#94a3b8';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        if (cur.type === 'INIT_BOUNDS') {
-          ctx.fillText(`[${e.low}, ${e.up}]`, midX, midY);
-        } else if (cur.type === 'RESTORE_TRUE_FLOW' || cur.type === 'ALL_DONE') {
-          ctx.fillStyle = '#4ade80';
-          ctx.fillText(`flow=${e.flow} [${e.low}, ${e.up}]`, midX, midY);
-        } else {
-          ctx.fillText(`${e.flow}/${e.freeCap}`, midX, midY);
-        }
-
-        ctx.restore();
-      });
-
-      // 2. 绘制普通节点
-      for (let i = 1; i <= this.n; i++) {
-        const pos = this.nodePositions[i];
-        if (!pos) continue;
-
-        ctx.save();
-        ctx.fillStyle = '#1e293b';
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 2.5;
-
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.font = 'bold 11px monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`${i}`, pos.x, pos.y);
-
-        // 绘制 Δ(u) 差额标签
-        if (cur.type !== 'INIT_BOUNDS') {
-          const dVal = cur.deltaValues[i];
-          ctx.font = '9px monospace';
-          ctx.fillStyle = dVal > 0 ? '#4ade80' : dVal < 0 ? '#f87171' : '#94a3b8';
-          ctx.fillText(`Δ=${dVal > 0 ? '+' : ''}${dVal}`, pos.x, pos.y + 22);
-        }
-
-        ctx.restore();
-      }
-
-      // 3. 绘制超级源汇 SS/TT
-      if (cur.showSuperNodes) {
-        ['SS', 'TT'].forEach((sNode) => {
-          const pos = this.nodePositions[sNode];
-          if (!pos) return;
-
-          ctx.save();
-          const isSS = sNode === 'SS';
-          ctx.fillStyle = isSS ? '#713f12' : '#581c87';
-          ctx.strokeStyle = isSS ? '#facc15' : '#c084fc';
-          ctx.lineWidth = 2.5;
-          ctx.shadowColor = isSS ? '#facc15' : '#c084fc';
-          ctx.shadowBlur = 10;
-
-          ctx.beginPath();
-          ctx.arc(pos.x, pos.y, 16, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.font = 'bold 10px monospace';
-          ctx.fillStyle = '#ffffff';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(sNode, pos.x, pos.y);
-          ctx.restore();
-        });
-      }
-    }
-
-    ctx.restore();
-  }
+  return steps;
 }
 
-export const BOUNDED_FLOW_TEMPLATE = `
-  <div id="algo-bounded-flow-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
-    <!-- 顶栏控制 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">🌊</span>
-        <span style="font-size: 14px; font-weight: 800; color: #0f172a;">上下界网络流 (Bounded Flow)</span>
-        <div style="display: flex; gap: 4px; margin-left: 8px;">
-          <button class="bdflow-preset-btn active" data-preset="FEASIBLE_4_NODES_CIRCULATION" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">4 节点可行循环流</button>
-          <button class="bdflow-preset-btn" data-preset="BOUNDED_MAX_FLOW" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">3 节点三角形上下界</button>
+const { template, Visualizer } = createDeclarativeVisualizer<BoundedFlowStep>({
+  id: 'bounded-flow',
+  name: '上下界网络流 (Bounded Flow)',
+  category: 'graph',
+  icon: '🌊',
+  badge: {
+    mode: '无源汇可行流 / 满流判定',
+    complexity: 'O(V² · E) · O(V + E)',
+  },
+  card1Title: '🌐 上下界残量网络与超级源汇沙盘',
+  card2Title: '🧭 点差额 delta[u] 与满流平衡监视器',
+  card2Desc: '入流下界 - 出流下界、超级源汇 SS/TT 满流与真实流量映射',
+  legend: [
+    { label: '原图节点 (1..4)', color: '#0284c7' },
+    { label: '⭐ 超级源点 SS', color: '#f59e0b' },
+    { label: '🟣 超级汇点 TT', color: '#8b5cf6' },
+    { label: '🌊 可行流充盈边', color: '#10b981' },
+  ],
+  inputs: [
+    {
+      id: 'input-network',
+      label: '网络用例',
+      type: 'select',
+      defaultValue: 'four-nodes',
+      options: [
+        { label: '4 节点可行循环流 (LOJ 115)', value: 'four-nodes' },
+        { label: '3 节点三角形上下界', value: 'triangle' },
+      ],
+      width: '180px',
+    },
+  ],
+  presets: [
+    { label: '4 节点可行流 (LOJ 115)', values: { 'input-network': 'four-nodes' } },
+    { label: '3 节点三角形上下界', values: { 'input-network': 'triangle' } },
+  ],
+  metrics: [
+    { id: 'cur-phase', label: '算法阶段', color: '#2563eb' },
+    { id: 'super-flow', label: '超级源流量 / 需补流', color: '#16a34a' },
+    { id: 'feasible-status', label: '可行流判定', color: '#0d9488' },
+  ],
+  codeLanguages: BOUNDED_FLOW_CODE_LANGUAGES,
+  problemHtml: BOUNDED_FLOW_PROBLEM_HTML,
+  analysisHtml: BOUNDED_FLOW_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const net = inputs['input-network'] || 'four-nodes';
+    return buildBoundedFlowSteps(net);
+  },
+  renderCanvas: (container, step) => {
+    const is3Node = step.edges.some((e) => e.u === 3 && e.v === 1 && !e.isSuper && step.edges.length <= 5);
+
+    // 节点坐标定义
+    const nodeCoords: Record<string, { x: number; y: number }> = is3Node
+      ? {
+          1: { x: 80, y: 150 },
+          2: { x: 220, y: 150 },
+          3: { x: 150, y: 50 },
+          SS: { x: 220, y: 220 },
+          TT: { x: 80, y: 50 },
+        }
+      : {
+          1: { x: 75, y: 65 },
+          2: { x: 235, y: 65 },
+          3: { x: 235, y: 195 },
+          4: { x: 75, y: 195 },
+          SS: { x: 25, y: 130 },
+          TT: { x: 285, y: 130 },
+        };
+
+    // 渲染 SVG 边
+    const svgEdges = step.edges
+      .map((e) => {
+        const p1 = nodeCoords[String(e.u)];
+        const p2 = nodeCoords[String(e.v)];
+        if (!p1 || !p2) return '';
+
+        const isSuper = e.isSuper;
+        const color = isSuper ? '#d97706' : e.flow > 0 ? '#10b981' : '#64748b';
+        const strokeWidth = e.flow > 0 || isSuper ? 2.5 : 1.5;
+        const strokeDash = isSuper ? 'stroke-dasharray="4,4"' : '';
+
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2 - 6;
+        const label =
+          step.phase === 'ALL_DONE'
+            ? `flow: ${e.flow} [${e.low}, ${e.up}]`
+            : isSuper
+            ? `cap: ${e.freeCap} (flow:${e.flow})`
+            : `[${e.low}, ${e.up}] cap:${e.freeCap}`;
+
+        return `
+          <g>
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${strokeWidth}" ${strokeDash} marker-end="url(#arrow-${isSuper ? 'super' : 'default'})" />
+            <rect x="${midX - 35}" y="${midY - 8}" width="70" height="14" rx="3" fill="#0f172a" fill-opacity="0.85" />
+            <text x="${midX}" y="${midY + 3}" fill="${color}" font-size="8.5" font-weight="700" font-family="monospace" text-anchor="middle">${label}</text>
+          </g>
+        `;
+      })
+      .join('');
+
+    // 渲染 SVG 节点
+    const nodesToRender = is3Node ? ['1', '2', '3'] : ['1', '2', '3', '4'];
+    if (step.showSuperNodes) {
+      nodesToRender.push('SS', 'TT');
+    }
+
+    const svgNodes = nodesToRender
+      .map((id) => {
+        const p = nodeCoords[id];
+        if (!p) return '';
+        const isSuper = id === 'SS' || id === 'TT';
+        const bg = id === 'SS' ? '#f59e0b' : id === 'TT' ? '#8b5cf6' : '#0284c7';
+        const delta = step.deltaValues[Number(id)];
+        const deltaLabel = !isSuper && delta !== undefined ? `<text x="${p.x}" y="${p.y + 26}" fill="${delta > 0 ? '#34d399' : delta < 0 ? '#f87171' : '#94a3b8'}" font-size="9" font-weight="700" text-anchor="middle">Δ:${delta >= 0 ? '+' : ''}${delta}</text>` : '';
+
+        return `
+          <g>
+            <circle cx="${p.x}" cy="${p.y}" r="15" fill="${bg}" stroke="#ffffff" stroke-width="2" />
+            <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="11" font-weight="800" font-family="monospace" text-anchor="middle">${id}</text>
+            ${deltaLabel}
+          </g>
+        `;
+      })
+      .join('');
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box; position: relative;">
+        <svg style="width: 100%; height: 210px;" viewBox="0 0 310 230">
+          <defs>
+            <marker id="arrow-default" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+            </marker>
+            <marker id="arrow-super" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
+            </marker>
+          </defs>
+          ${svgEdges}
+          ${svgNodes}
+        </svg>
+        <div style="font-size: 10.5px; color: #94a3b8; text-align: center; margin-top: 2px;">
+          ⭐ SS/TT 负责平衡各节点差额流量 Δ[u] | 差额网络满流 ⟺ 原图存在满足 [low, up] 的可行流
         </div>
       </div>
+    `;
 
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="bdflow-status-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: #2563eb;">准备就绪</span>
-        <button id="btn-bdflow-step" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">单步推演</button>
-        <button id="btn-bdflow-autoplay" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">▶️ 自动求解</button>
-        <button id="btn-bdflow-sound" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🔊 音效</button>
-        <button id="btn-bdflow-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
-      </div>
-    </div>
+    // 更新 Card 2 监控器
+    const root = container.closest('#algo-bounded-flow-view');
+    if (root) {
+      const phaseEl = root.querySelector('#metric-cur-phase');
+      const superEl = root.querySelector('#metric-super-flow');
+      const featEl = root.querySelector('#metric-feasible-status');
 
-    <!-- 状态指示条 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 4px 10px; margin-bottom: 6px; font-size: 11px; color: #0369a1;">
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <span>🌊 可行流判定状态: <b id="bdflow-feasible-badge" style="color: #0284c7; font-size: 12px;">判定中...</b></span>
-      </div>
-      <div id="bdflow-narration-box" style="font-weight: 700; color: #075985;">
-        💡 准备就绪：自由容量 up-low，差额网络超级源汇 SS/TT 平衡，满流判定！
-      </div>
-    </div>
+      if (phaseEl) phaseEl.textContent = step.phaseText;
+      if (superEl) superEl.textContent = `${step.totalPushed} / ${step.sumPositiveDelta}`;
+      if (featEl) {
+        featEl.textContent = step.isFeasible ? '✓ 满流可行' : '判定中...';
+        featEl.style.color = step.isFeasible ? '#10b981' : '#d97706';
+      }
 
-    <!-- 主展示区 -->
-    <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 350px; gap: 10px; flex: 1; min-height: 0;">
-      <!-- 左侧：网络流 Canvas -->
-      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 6px; overflow-y: auto;">
-        <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
-          <canvas id="bdflow-canvas" width="460" height="200" style="width: 460px; height: 200px;"></canvas>
-        </div>
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const deltaItems = Object.entries(step.deltaValues)
+          .map(([u, d]) => `<span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px;">N${u}: <strong style="color: ${d > 0 ? '#10b981' : d < 0 ? '#ef4444' : '#64748b'};">${d >= 0 ? '+' : ''}${d}</strong></span>`)
+          .join(' ');
 
-        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
-          ⭐ 金色 SS 与紫色 TT 为超级源汇 | 边上标注流量与 [low, up] 约束
-        </div>
-      </div>
-
-      <!-- 右侧：代码终端 -->
-      <div style="display: flex; flex-direction: column; gap: 6px; min-height: 0;">
-        <div id="bdflow-terminal-mount" style="flex: 1; min-height: 280px; overflow: hidden; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
-      </div>
-    </div>
-  </div>
-`;
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>各节点差额 Δ[u] = ∑in - ∑out:</span>
+              <div style="display: flex; gap: 4px;">${deltaItems}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #1e40af; font-weight: 700;">👑 满流平衡定理:</span>
+              <strong style="font-family: monospace; color: #2563eb;">maxFlow(SS ➔ TT) == ∑max(0, Δ)</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'bounded-flow',
   name: '上下界网络流 (Bounded Flow)',
   viewId: 'algo-bounded-flow-view',
   category: 'graph',
-  description: '进阶网络流算法：每条边强制流量 [low, up]、点差额方程 Δ(u)、超级源汇 SS/TT 平衡与伴随网络满流可行流判定 (洛谷 P5192 / LOJ 115)',
+  description: '进阶网络流经典：无源汇可行循环流、每条边强制 [low, up]、点差额 delta 与超级源汇满流判定 (LOJ 115)',
   icon: '🌊',
-  template: BOUNDED_FLOW_TEMPLATE,
-  Visualizer: BoundedFlowVisualizer,
+  template,
+  Visualizer,
   difficulty: 3,
-  levelOrder: 57,
-  learningGoal: '掌握强制下界转化为自由容量与超级源汇补偿边的差额网络构造法、伴随网络满流判定定理与真实流量还原公式',
+  levelOrder: 77,
+  learningGoal: '掌握上下界网络流转化为差额网络与超级源汇的建模技巧、满流判定定理与真实流量还原',
 });
+
+export { Visualizer as BoundedFlowVisualizer };

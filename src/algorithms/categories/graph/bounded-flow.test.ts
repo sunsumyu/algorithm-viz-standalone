@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { BoundedFlowVisualizer, BOUNDED_FLOW_TEMPLATE } from './bounded-flow-renderer';
+import { BoundedFlowVisualizer } from './bounded-flow-renderer';
 
-describe('BoundedFlow (Bounded Flow & Feasible Circulation)', () => {
+describe('BoundedFlow (Feasible Circulation - LOJ 115)', () => {
   it('should instantiate BoundedFlowVisualizer properly', () => {
     const viz = new BoundedFlowVisualizer();
     expect(viz).toBeDefined();
-    expect(BOUNDED_FLOW_TEMPLATE).toContain('algo-bounded-flow-view');
-    expect(BOUNDED_FLOW_TEMPLATE).toContain('bdflow-canvas');
-    expect(BOUNDED_FLOW_TEMPLATE).toContain('bdflow-feasible-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

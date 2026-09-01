@@ -1,10 +1,11 @@
 /**
- * 网络延迟时间 (Network Delay Time - LeetCode 743 / 左程云 Class 064 Code01) 可视化引擎
+ * 网络延迟时间 (Network Delay Time - LeetCode 743 / 左程云 Class 064 Code01) 声明式可视化器
  * 核心：单源最短路径 Dijkstra 堆优化、信号广播向外扩散、全网收齐时间 max(dist[1..n])、不可达节点判定 (-1)
+ * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   NETWORK_DELAY_CODE_LANGUAGES,
   NETWORK_DELAY_PROBLEM_HTML,
@@ -12,644 +13,281 @@ import {
 } from './network-delay-time-problem-content';
 
 export interface DelayStep {
-  type: 'EMIT_SIGNAL' | 'POP_MIN_NODE' | 'RELAX_LINK' | 'ALL_RECEIVED' | 'UNREACHABLE';
   curNode: number;
   distList: number[];
   visitedList: boolean[];
   pqSnapshot: Array<{ u: number; d: number }>;
   maxDelaySoFar: number;
+  isAllReached: boolean;
+  status: 'emit' | 'relax' | 'pop' | 'done';
   message: string;
+  log: string;
+  codeLine: number | number[];
 }
 
-class NetAudio {
-  private static audioCtx: AudioContext | null = null;
-  public static isMuted = false;
+export function buildNetworkDelaySteps(isReachableCase: boolean): DelayStep[] {
+  const steps: DelayStep[] = [];
 
-  private static getCtx(): AudioContext | null {
-    if (this.isMuted || typeof window === 'undefined') return null;
-    if (!this.audioCtx) {
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioClass) this.audioCtx = new AudioClass();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-    return this.audioCtx;
-  }
-
-  public static playBeep(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.08);
-    } catch {}
-  }
-
-  public static playLink(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-      gain.gain.setValueAtTime(0.09, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch {}
-  }
-
-  public static playVictory(): void {
-    const ctx = this.getCtx();
-    if (!ctx) return;
-    try {
-      const chord = [523.25, 659.25, 783.99, 1046.5];
-      chord.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.06);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.06 + 0.22);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.06);
-        osc.stop(ctx.currentTime + idx * 0.06 + 0.22);
-      });
-    } catch {}
-  }
-}
-
-export class NetworkDelayTimeVisualizer extends StepVisualizer<any> {
-  private n = 4;
-  private startK = 2;
-  private times: Array<{ u: number; v: number; w: number }> = [
-    { u: 2, v: 1, w: 1 },
-    { u: 2, v: 3, w: 1 },
-    { u: 3, v: 4, w: 1 },
-  ];
-  private nodePositions: Record<number, { x: number; y: number }> = {
-    1: { x: 60, y: 70 },
-    2: { x: 130, y: 35 },
-    3: { x: 130, y: 130 },
-    4: { x: 200, y: 130 },
-  };
-
-  // 推演步骤
-  private traceSteps: DelayStep[] = [];
-  private currentStepPtr = 0;
-  private isAutoPlaying = false;
-  private autoPlayTimer: any = null;
-  private playSpeed = 1;
-
-  // 画布与动画
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private animFrameId: number | null = null;
-  private lastTimestamp = 0;
-  private pulseAnim = 0;
-
-  constructor() {
-    super();
-    this.codeLanguages = NETWORK_DELAY_CODE_LANGUAGES;
-    this.codeLines = NETWORK_DELAY_CODE_LANGUAGES['cpp'] || [];
-    this.codePanelTitle = '网络延迟时间 Dijkstra 引擎 (Network Delay Time)';
-  }
-
-  protected initDOMElements(): void {}
-
-  protected buildSteps(): any[] {
-    return [{ message: '网络延迟时间' }];
-  }
-
-  protected renderStep(_step: any): void {}
-
-  public async init(options: { root: HTMLElement; algorithmId: string; viewId: string }): Promise<void> {
-    await super.init(options);
-    this.loadPreset('LEETCODE_EXAMPLE_1');
-    this.initGameUI();
-    this.startLoop();
-  }
-
-  public destroy(): void {
-    super.destroy();
-    this.stopAutoPlay();
-    if (this.animFrameId && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
-    }
-  }
-
-  private loadPreset(presetKey: string): void {
-    this.stopAutoPlay();
-
-    if (presetKey === 'LEETCODE_EXAMPLE_1') {
-      this.n = 4;
-      this.startK = 2;
-      this.times = [
-        { u: 2, v: 1, w: 1 },
-        { u: 2, v: 3, w: 1 },
-        { u: 3, v: 4, w: 1 },
-      ];
-      this.nodePositions = {
-        1: { x: 60, y: 70 },
-        2: { x: 130, y: 35 },
-        3: { x: 130, y: 130 },
-        4: { x: 200, y: 130 },
-      };
-    } else if (presetKey === 'DISCONNECTED_CASE_2') {
-      this.n = 2;
-      this.startK = 2;
-      this.times = [{ u: 1, v: 2, w: 1 }];
-      this.nodePositions = {
-        1: { x: 70, y: 90 },
-        2: { x: 190, y: 90 },
-      };
-    } else {
-      this.n = 5;
-      this.startK = 1;
-      this.times = [
-        { u: 1, v: 2, w: 2 },
-        { u: 1, v: 3, w: 4 },
-        { u: 2, v: 4, w: 3 },
-        { u: 3, v: 4, w: 1 },
-        { u: 4, v: 5, w: 2 },
-      ];
-      this.nodePositions = {
-        1: { x: 40, y: 90 },
-        2: { x: 95, y: 40 },
-        3: { x: 95, y: 140 },
-        4: { x: 155, y: 90 },
-        5: { x: 215, y: 90 },
-      };
-    }
-
-    this.computeTraceSteps();
-    this.currentStepPtr = 0;
-    this.updateHUD();
-  }
-
-  private computeTraceSteps(): void {
-    const N = this.n;
-    const K = this.startK;
-    const dist: number[] = Array(N + 1).fill(999);
-    const vis: boolean[] = Array(N + 1).fill(false);
-
-    const adj: Array<Array<{ to: number; w: number }>> = Array.from({ length: N + 1 }, () => []);
-    this.times.forEach((t) => {
-      adj[t.u].push({ to: t.v, w: t.w });
+  if (isReachableCase) {
+    // 经典用例：4 节点，源点 K=2
+    // times = [[2,1,1],[2,3,1],[3,4,1]], n=4, k=2
+    steps.push({
+      curNode: 2,
+      distList: [Infinity, Infinity, 0, Infinity, Infinity],
+      visitedList: [false, false, false, false, false],
+      pqSnapshot: [{ u: 2, d: 0 }],
+      maxDelaySoFar: 0,
+      isAllReached: false,
+      status: 'emit',
+      message: '📡 [发射初始广播信号] 从源节点 2 发出信号，dist[2] = 0，压入小根堆！',
+      log: '发射信号：源点 K=2, dist[2]=0',
+      codeLine: [18, 22],
     });
-
-    const pq: Array<{ u: number; d: number }> = [];
-
-    dist[K] = 0;
-    pq.push({ u: K, d: 0 });
-
-    const steps: DelayStep[] = [];
 
     steps.push({
-      type: 'EMIT_SIGNAL',
-      curNode: K,
-      distList: [...dist],
-      visitedList: [...vis],
-      pqSnapshot: JSON.parse(JSON.stringify(pq)),
-      maxDelaySoFar: 0,
-      message: `📡 [信号源发射] 从源点节点 ${K} 发出无线广播信号，初始时刻 t = 0！`,
+      curNode: 2,
+      distList: [Infinity, 1, 0, 1, Infinity],
+      visitedList: [false, false, true, false, false],
+      pqSnapshot: [
+        { u: 1, d: 1 },
+        { u: 3, d: 1 },
+      ],
+      maxDelaySoFar: 1,
+      isAllReached: false,
+      status: 'relax',
+      message: '⚡ [松弛邻接节点] 节点 2 松弛节点 1(耗时 1) 与节点 3(耗时 1)，压入堆中。',
+      log: '松弛边: 2->1(d=1), 2->3(d=1)',
+      codeLine: [31, 38],
     });
 
-    while (pq.length > 0) {
-      pq.sort((a, b) => a.d - b.d);
-      const cur = pq.shift()!;
-      const u = cur.u;
-      const d = cur.d;
-
-      if (vis[u]) continue;
-      vis[u] = true;
-
-      // 计算当前最大延迟
-      let currentMax = 0;
-      for (let i = 1; i <= N; i++) {
-        if (dist[i] !== 999) currentMax = Math.max(currentMax, dist[i]);
-      }
-
-      steps.push({
-        type: 'POP_MIN_NODE',
-        curNode: u,
-        distList: [...dist],
-        visitedList: [...vis],
-        pqSnapshot: JSON.parse(JSON.stringify(pq)),
-        maxDelaySoFar: currentMax,
-        message: `🔔 [节点收齐信号] 节点 ${u} 在时刻 t = ${d} 最早收到信号并锁定！`,
-      });
-
-      for (const edge of adj[u]) {
-        const v = edge.to;
-        const w = edge.w;
-        if (dist[u] + w < dist[v]) {
-          dist[v] = dist[u] + w;
-          pq.push({ u: v, d: dist[v] });
-
-          steps.push({
-            type: 'RELAX_LINK',
-            curNode: v,
-            distList: [...dist],
-            visitedList: [...vis],
-            pqSnapshot: JSON.parse(JSON.stringify(pq)),
-            maxDelaySoFar: currentMax,
-            message: `⚡ [链路松弛] 信号从节点 ${u} 沿有向边 (${u} ➔ ${v}, 延迟 ${w}) 传输，预计到达节点 ${v} 时刻 t = ${dist[v]}！`,
-          });
-        }
-      }
-    }
-
-    let finalMax = 0;
-    let hasUnreachable = false;
-    for (let i = 1; i <= N; i++) {
-      if (dist[i] === 999) {
-        hasUnreachable = true;
-        break;
-      }
-      finalMax = Math.max(finalMax, dist[i]);
-    }
-
-    if (hasUnreachable) {
-      steps.push({
-        type: 'UNREACHABLE',
-        curNode: 0,
-        distList: [...dist],
-        visitedList: [...vis],
-        pqSnapshot: [],
-        maxDelaySoFar: -1,
-        message: `❌ [全网无法收齐] 存在孤立或无入度节点无法收到信号，全局返回 -1！`,
-      });
-    } else {
-      steps.push({
-        type: 'ALL_RECEIVED',
-        curNode: 0,
-        distList: [...dist],
-        visitedList: [...vis],
-        pqSnapshot: [],
-        maxDelaySoFar: finalMax,
-        message: `🎉 [全网广播完毕] 所有 ${N} 个节点均已收到信号！全网最大延迟时间为 ${finalMax}！`,
-      });
-    }
-
-    this.traceSteps = steps;
-  }
-
-  private initGameUI(): void {
-    if (!this.root) return;
-
-    this.canvas = this.root.querySelector('#netdelay-canvas');
-    if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
-    }
-
-    this.mountTerminal({
-      codeLanguages: NETWORK_DELAY_CODE_LANGUAGES,
-      problemHtml: NETWORK_DELAY_PROBLEM_HTML,
-      analysisHtml: NETWORK_DELAY_ANALYSIS_HTML,
-      initialLang: 'cpp',
+    steps.push({
+      curNode: 1,
+      distList: [Infinity, 1, 0, 1, Infinity],
+      visitedList: [false, true, true, false, false],
+      pqSnapshot: [{ u: 3, d: 1 }],
+      maxDelaySoFar: 1,
+      isAllReached: false,
+      status: 'pop',
+      message: '🎯 [堆弹出最小节点 1] 节点 1 确认最短耗时 = 1，无出边。',
+      log: '弹出节点 1: dist[1]=1 确定',
+      codeLine: [25, 30],
     });
 
-    // 单步
-    const stepBtn = this.root.querySelector('#btn-netdelay-step') as HTMLButtonElement | null;
-    if (stepBtn) stepBtn.addEventListener('click', () => this.stepForward());
-
-    // 自动播放
-    const autoBtn = this.root.querySelector('#btn-netdelay-autoplay') as HTMLButtonElement | null;
-    if (autoBtn) {
-      autoBtn.addEventListener('click', () => {
-        if (this.isAutoPlaying) this.stopAutoPlay();
-        else this.startAutoPlay();
-      });
-    }
-
-    // 重置
-    const resetBtn = this.root.querySelector('#btn-netdelay-reset') as HTMLButtonElement | null;
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        this.stopAutoPlay();
-        this.currentStepPtr = 0;
-        this.updateHUD();
-      });
-    }
-
-    // 预设
-    this.root.querySelectorAll<HTMLButtonElement>('.netdelay-preset-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const preset = btn.dataset.preset || 'LEETCODE_EXAMPLE_1';
-        this.root?.querySelectorAll('.netdelay-preset-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.loadPreset(preset);
-      });
+    steps.push({
+      curNode: 3,
+      distList: [Infinity, 1, 0, 1, 2],
+      visitedList: [false, true, true, true, false],
+      pqSnapshot: [{ u: 4, d: 2 }],
+      maxDelaySoFar: 2,
+      isAllReached: false,
+      status: 'relax',
+      message: '⚡ [堆弹出节点 3 并松弛节点 4] 节点 3 确认最短耗时 1，松弛边 3➔4(耗时 1)，dist[4] = 1 + 1 = 2！',
+      log: '弹出节点 3: 松弛 3->4 (dist[4]=2)',
+      codeLine: [31, 38],
     });
 
-    // 音效
-    const soundBtn = this.root.querySelector('#btn-netdelay-sound') as HTMLButtonElement | null;
-    if (soundBtn) {
-      soundBtn.addEventListener('click', () => {
-        NetAudio.isMuted = !NetAudio.isMuted;
-        soundBtn.textContent = NetAudio.isMuted ? '🔇 静音' : '🔊 音效';
-      });
-    }
+    steps.push({
+      curNode: 4,
+      distList: [Infinity, 1, 0, 1, 2],
+      visitedList: [false, true, true, true, true],
+      pqSnapshot: [],
+      maxDelaySoFar: 2,
+      isAllReached: true,
+      status: 'done',
+      message: '🎉 [全网所有节点均收到信号] 全网收齐信号的最小时间为 max(dist[1..4]) = max(1, 0, 1, 2) = 2！',
+      log: '✓ 全网收齐：最大延迟时间 = 2',
+      codeLine: [42, 48],
+    });
+  } else {
+    // 存在孤立点用例 (返回 -1)
+    steps.push({
+      curNode: 1,
+      distList: [Infinity, 0, 1, Infinity],
+      visitedList: [false, true, true, false],
+      pqSnapshot: [],
+      maxDelaySoFar: -1,
+      isAllReached: false,
+      status: 'done',
+      message: '❌ [存在不可达节点] 节点 3 无法从源点收到信号 (dist[3] = ∞)，返回 -1！',
+      log: '❌ 存在不可达孤立点，返回 -1',
+      codeLine: 45,
+    });
   }
 
-  private stepForward(): void {
-    if (this.currentStepPtr < this.traceSteps.length - 1) {
-      this.currentStepPtr++;
-      const cur = this.traceSteps[this.currentStepPtr];
-      if (cur.type === 'EMIT_SIGNAL' || cur.type === 'POP_MIN_NODE') NetAudio.playBeep();
-      else if (cur.type === 'RELAX_LINK') NetAudio.playLink();
-      else if (cur.type === 'ALL_RECEIVED') NetAudio.playVictory();
-
-      this.updateHUD();
-    } else {
-      this.stopAutoPlay();
-    }
-  }
-
-  private startAutoPlay(): void {
-    if (this.isAutoPlaying) return;
-    this.isAutoPlaying = true;
-    const playBtn = this.root?.querySelector('#btn-netdelay-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '⏸️ 暂停广播';
-
-    const step = () => {
-      if (!this.isAutoPlaying) return;
-      if (this.currentStepPtr < this.traceSteps.length - 1) {
-        this.stepForward();
-        this.autoPlayTimer = setTimeout(step, 800 / this.playSpeed);
-      } else {
-        this.stopAutoPlay();
-      }
-    };
-    step();
-  }
-
-  private stopAutoPlay(): void {
-    this.isAutoPlaying = false;
-    if (this.autoPlayTimer) {
-      clearTimeout(this.autoPlayTimer);
-      this.autoPlayTimer = null;
-    }
-    const playBtn = this.root?.querySelector('#btn-netdelay-autoplay') as HTMLButtonElement | null;
-    if (playBtn) playBtn.innerHTML = '▶️ 自动广播';
-  }
-
-  private updateHUD(): void {
-    if (!this.root || this.traceSteps.length === 0) return;
-
-    const cur = this.traceSteps[this.currentStepPtr];
-    const narrationBox = this.root.querySelector('#netdelay-narration-box') as HTMLElement | null;
-    const statusBadge = this.root.querySelector('#netdelay-status-badge') as HTMLElement | null;
-    const delayBadge = this.root.querySelector('#netdelay-time-badge') as HTMLElement | null;
-
-    if (narrationBox) narrationBox.innerHTML = `💡 ${cur.message}`;
-
-    if (statusBadge) {
-      if (cur.type === 'ALL_RECEIVED') {
-        statusBadge.textContent = '🏁 全网收齐';
-        statusBadge.style.background = '#f0fdf4';
-        statusBadge.style.color = '#16a34a';
-      } else if (cur.type === 'UNREACHABLE') {
-        statusBadge.textContent = '❌ 不可达 (-1)';
-        statusBadge.style.background = '#fef2f2';
-        statusBadge.style.color = '#ef4444';
-      } else {
-        statusBadge.textContent = `步骤 ${this.currentStepPtr + 1}/${this.traceSteps.length}`;
-        statusBadge.style.background = '#eff6ff';
-        statusBadge.style.color = '#2563eb';
-      }
-    }
-
-    if (delayBadge) {
-      delayBadge.textContent = `全网最大延迟: ${cur.maxDelaySoFar === -1 ? '-1 (不可达)' : cur.maxDelaySoFar}`;
-    }
-  }
-
-  private startLoop(): void {
-    if (typeof requestAnimationFrame !== 'function') return;
-    const loop = (timestamp: number) => {
-      if (!this.lastTimestamp) this.lastTimestamp = timestamp;
-      const dt = Math.min(32, timestamp - this.lastTimestamp);
-      this.lastTimestamp = timestamp;
-
-      this.pulseAnim += dt * 0.006;
-      this.renderCanvas();
-
-      if (typeof requestAnimationFrame === 'function') {
-        this.animFrameId = requestAnimationFrame(loop);
-      }
-    };
-    this.animFrameId = requestAnimationFrame(loop);
-  }
-
-  private renderCanvas(): void {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx;
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const cur = this.traceSteps[this.currentStepPtr];
-
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    if (cur) {
-      // 1. 绘制有向边
-      this.times.forEach((t) => {
-        const p1 = this.nodePositions[t.u];
-        const p2 = this.nodePositions[t.v];
-        if (!p1 || !p2) return;
-
-        ctx.save();
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-        ctx.lineWidth = 2;
-
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-
-        // 箭头与权重
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 - 5;
-        ctx.font = 'bold 10px monospace';
-        ctx.fillStyle = '#facc15';
-        ctx.textAlign = 'center';
-        ctx.fillText(`t:${t.w}`, midX, midY);
-
-        ctx.restore();
-      });
-
-      // 2. 绘制节点与广播波纹
-      for (let u = 1; u <= this.n; u++) {
-        const pos = this.nodePositions[u];
-        if (!pos) continue;
-
-        const isSource = u === this.startK;
-        const isCur = cur.curNode === u;
-        const isLocked = cur.visitedList[u];
-        const d = cur.distList[u];
-
-        ctx.save();
-        let fillColor = '#1e293b';
-        let strokeColor = isSource ? '#ec4899' : isLocked ? '#10b981' : d !== 999 ? '#38bdf8' : '#475569';
-        let radius = 14;
-
-        if (isCur) {
-          radius = 16 + Math.sin(this.pulseAnim) * 1.5;
-          ctx.shadowColor = '#facc15';
-          ctx.shadowBlur = 12;
-        }
-
-        ctx.fillStyle = fillColor;
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = isCur || isLocked ? 2.5 : 1.5;
-
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // 节点编号
-        ctx.font = 'bold 10.5px monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`${u}`, pos.x, pos.y);
-
-        // 时间标签
-        ctx.font = '9.5px sans-serif';
-        ctx.fillStyle = d === 999 ? '#64748b' : '#10b981';
-        ctx.fillText(d === 999 ? '⏳等待' : `t=${d}`, pos.x, pos.y + 20);
-
-        ctx.restore();
-      }
-
-      // 3. 右侧 Dijkstra 优先队列 HUD
-      ctx.save();
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText('📥 优先队列 (小根堆):', 255, 30);
-
-      const pqList = cur.pqSnapshot.slice(0, 4);
-      pqList.forEach((item, idx) => {
-        const itemY = 48 + idx * 24;
-        ctx.fillStyle = '#1e293b';
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 1.5;
-
-        ctx.beginPath();
-        ctx.roundRect(255, itemY, 180, 20, 4);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.font = '10px monospace';
-        ctx.fillStyle = '#facc15';
-        ctx.textAlign = 'left';
-        ctx.fillText(`[#${idx + 1}] 节点 ${item.u} (时刻: ${item.d})`, 265, itemY + 14);
-      });
-
-      if (pqList.length === 0) {
-        ctx.font = '10px sans-serif';
-        ctx.fillStyle = '#64748b';
-        ctx.fillText('(堆已为空)', 255, 52);
-      }
-
-      // 延迟时间公式
-      ctx.font = '10px sans-serif';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(`📡 源点节点: K = ${this.startK}`, 250, 165);
-      ctx.fillText(`⏱️ 全网延迟 = max(dist[1..${this.n}])`, 250, 183);
-      ctx.fillText(`💡 存在 ∞ 节点则返回 -1`, 250, 201);
-
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }
+  return steps;
 }
 
-export const NETWORK_DELAY_TEMPLATE = `
-  <div id="algo-network-delay-time-view" style="display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 6px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: relative;">
-    <!-- 顶栏控制 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">📡</span>
-        <span style="font-size: 14px; font-weight: 800; color: #0f172a;">网络延迟时间 (Network Delay Time - LC 743)</span>
-        <div style="display: flex; gap: 4px; margin-left: 8px;">
-          <button class="netdelay-preset-btn active" data-preset="LEETCODE_EXAMPLE_1" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">4 节点标准用例</button>
-          <button class="netdelay-preset-btn" data-preset="DISCONNECTED_CASE_2" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">不可达用例 (-1)</button>
+const { template, Visualizer } = createDeclarativeVisualizer<DelayStep>({
+  id: 'network-delay-time',
+  name: '网络延迟时间 (Network Delay Time)',
+  category: 'graph',
+  icon: '📡',
+  badge: {
+    mode: 'Dijkstra 堆优化最短路',
+    complexity: 'O((V + E) log V) · O(V + E)',
+  },
+  card1Title: '🌐 网络拓扑与广播信号传播沙盘',
+  card2Title: '🧭 最短延迟 dist[u] 与优先队列监视器',
+  card2Desc: '各节点到达延迟、Dijkstra 小根堆待扩展节点与全网广播耗时',
+  legend: [
+    { label: '未接收信号', color: '#334155' },
+    { label: '📡 广播发射源', color: '#f59e0b' },
+    { label: '🟢 已接收确认', color: '#10b981' },
+    { label: '⚡ 当前探索节点', color: '#38bdf8' },
+  ],
+  inputs: [
+    {
+      id: 'input-network-case',
+      label: '网络拓扑',
+      type: 'select',
+      defaultValue: 'reachable',
+      options: [
+        { label: '经典 4 节点全覆盖 (LeetCode 743)', value: 'reachable' },
+        { label: '含孤立不可达节点 (-1)', value: 'unreachable' },
+      ],
+      width: '210px',
+    },
+  ],
+  presets: [
+    { label: '4 节点全连通 (ans=2)', values: { 'input-network-case': 'reachable' } },
+    { label: '含孤立点 (ans=-1)', values: { 'input-network-case': 'unreachable' } },
+  ],
+  metrics: [
+    { id: 'metric-cur-explore', label: '当前信号前沿', color: '#38bdf8' },
+    { id: 'metric-max-delay', label: '当前全网最大延迟', color: '#10b981' },
+    { id: 'metric-all-done', label: '全网收齐判定', color: '#f59e0b' },
+  ],
+  codeLanguages: NETWORK_DELAY_CODE_LANGUAGES,
+  problemHtml: NETWORK_DELAY_PROBLEM_HTML,
+  analysisHtml: NETWORK_DELAY_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const isReachable = (inputs['input-network-case'] || 'reachable') === 'reachable';
+    return buildNetworkDelaySteps(isReachable);
+  },
+  renderCanvas: (container, step) => {
+    const nodeCoords: Record<number, { x: number; y: number }> = {
+      2: { x: 75, y: 110 },
+      1: { x: 165, y: 55 },
+      3: { x: 165, y: 165 },
+      4: { x: 255, y: 110 },
+    };
+
+    const edges = [
+      { u: 2, v: 1, w: 1 },
+      { u: 2, v: 3, w: 1 },
+      { u: 3, v: 4, w: 1 },
+    ];
+
+    const svgEdges = edges
+      .map((e) => {
+        const p1 = nodeCoords[e.u];
+        const p2 = nodeCoords[e.v];
+        if (!p1 || !p2) return '';
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+        const isReached = step.visitedList[e.v];
+
+        return `
+          <g>
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${isReached ? '#10b981' : '#475569'}" stroke-width="${isReached ? 2.5 : 1.5}" marker-end="url(#arrow-${isReached ? 'green' : 'gray'})" />
+            <rect x="${midX - 12}" y="${midY - 8}" width="24" height="14" rx="3" fill="#0f172a" fill-opacity="0.85" />
+            <text x="${midX}" y="${midY + 3}" fill="${isReached ? '#34d399' : '#94a3b8'}" font-size="9" font-weight="700" font-family="monospace" text-anchor="middle">w:${e.w}</text>
+          </g>
+        `;
+      })
+      .join('');
+
+    const nodes = [2, 1, 3, 4];
+    const svgNodes = nodes
+      .map((u) => {
+        const p = nodeCoords[u];
+        if (!p) return '';
+        const isSource = u === 2;
+        const isVisited = step.visitedList[u];
+        const isCur = step.curNode === u;
+        const dist = step.distList[u];
+        const distStr = dist === Infinity ? '∞' : String(dist);
+        const bg = isCur ? '#0284c7' : isVisited ? '#065f46' : isSource ? '#f59e0b' : '#1e293b';
+        const border = isCur ? '#38bdf8' : isVisited ? '#10b981' : '#64748b';
+
+        return `
+          <g>
+            <circle cx="${p.x}" cy="${p.y}" r="15" fill="${bg}" stroke="${border}" stroke-width="${isCur || isVisited ? 2.5 : 1.5}" />
+            <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="11" font-weight="800" font-family="monospace" text-anchor="middle">${u}</text>
+            <text x="${p.x}" y="${p.y + 26}" fill="${isVisited ? '#34d399' : '#94a3b8'}" font-size="9.5" font-weight="700" text-anchor="middle">d:${distStr}</text>
+          </g>
+        `;
+      })
+      .join('');
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+        <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
+          <defs>
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
+            </marker>
+            <marker id="arrow-gray" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+            </marker>
+          </defs>
+          ${svgEdges}
+          ${svgNodes}
+        </svg>
+        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+          🟢 绿色节点已确认接收信号 | 节点下方标注源点出发最短到达耗时 $d[u]$
         </div>
       </div>
+    `;
 
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="netdelay-status-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: #2563eb;">准备就绪</span>
-        <button id="btn-netdelay-step" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">单步推演</button>
-        <button id="btn-netdelay-autoplay" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11.5px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">▶️ 自动广播</button>
-        <button id="btn-netdelay-sound" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🔊 音效</button>
-        <button id="btn-netdelay-reset" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">🔄 重置</button>
-      </div>
-    </div>
+    const root = container.closest('#algo-network-delay-time-view');
+    if (root) {
+      const curEl = root.querySelector('#metric-cur-explore');
+      const maxEl = root.querySelector('#metric-max-delay');
+      const doneEl = root.querySelector('#metric-all-done');
 
-    <!-- 状态指示条 -->
-    <div style="display: flex; align-items: center; justify-content: space-between; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 4px 10px; margin-bottom: 6px; font-size: 11px; color: #0369a1;">
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <span>⏱️ 广播指标: <b id="netdelay-time-badge" style="color: #0284c7; font-size: 12px;">全网最大延迟: 0</b></span>
-      </div>
-      <div id="netdelay-narration-box" style="font-weight: 700; color: #075985;">
-        💡 准备就绪：Dijkstra 堆优化求解单源最短路，全网延迟 = max(dist[1..n])！
-      </div>
-    </div>
+      if (curEl) curEl.textContent = `Node ${step.curNode}`;
+      if (maxEl) maxEl.textContent = step.maxDelaySoFar === -1 ? '-1 (不可达)' : `${step.maxDelaySoFar} ms`;
+      if (doneEl) {
+        doneEl.textContent = step.isAllReached ? '✓ 全网收齐' : '信号传播中...';
+        doneEl.style.color = step.isAllReached ? '#10b981' : '#d97706';
+      }
 
-    <!-- 主展示区 -->
-    <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 350px; gap: 10px; flex: 1; min-height: 0;">
-      <!-- 左侧：网络拓扑与信号 Canvas -->
-      <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; gap: 6px; overflow-y: auto;">
-        <div style="position: relative; display: flex; justify-content: center; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
-          <canvas id="netdelay-canvas" width="460" height="220" style="width: 460px; height: 220px;"></canvas>
-        </div>
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const pqItems = step.pqSnapshot.length > 0
+          ? step.pqSnapshot.map((item) => `<span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10px;">(N${item.u}, d:${item.d})</span>`).join(' ')
+          : '<span style="color: #94a3b8; font-size: 10.5px;">(空)</span>';
 
-        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
-          左侧为有向网络拓扑 | 🟣 粉色为信号源点 K | 🟢 绿色为已收到信号节点 | 右侧为堆状态
-        </div>
-      </div>
-
-      <!-- 右侧：代码终端 -->
-      <div style="display: flex; flex-direction: column; gap: 6px; min-height: 0;">
-        <div id="netdelay-terminal-mount" style="flex: 1; min-height: 280px; overflow: hidden; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
-      </div>
-    </div>
-  </div>
-`;
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>优先队列小根堆:</span>
+              <div style="display: flex; gap: 4px;">${pqItems}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #1e40af; font-weight: 700;">👑 全网信号收齐公式:</span>
+              <strong style="font-family: monospace; color: #2563eb;">ans = max(dist[1..n])</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'network-delay-time',
   name: '网络延迟时间 (Network Delay Time)',
   viewId: 'algo-network-delay-time-view',
   category: 'graph',
-  description: 'Dijkstra 堆优化经典应用：信号广播单源最短路径、全网延迟时间 max(dist[1..n]) 与连通性判定 (LeetCode 743 / 左程云 Class064 Code01)',
+  description: '单源最短路径 Dijkstra 堆优化经典应用：信号广播向外扩散、全网收齐时间 max(dist[1..n])、不可达节点判定 (LeetCode 743)',
   icon: '📡',
-  template: NETWORK_DELAY_TEMPLATE,
-  Visualizer: NetworkDelayTimeVisualizer,
+  template,
+  Visualizer,
   difficulty: 2,
   levelOrder: 67,
-  learningGoal: '掌握 Dijkstra 堆优化在网络路由与信号扩散中的精确建模、全网最大延迟计算与不可达节点判定',
+  learningGoal: '掌握 Dijkstra 堆优化算法在广播时延模型中的应用、全网收齐时间计算及不可达判定',
 });
+
+export { Visualizer as NetworkDelayTimeVisualizer };

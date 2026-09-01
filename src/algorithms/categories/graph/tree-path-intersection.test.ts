@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { TreePathIntersectionVisualizer, TREE_INTERSECT_TEMPLATE } from './tree-path-intersection-renderer';
+import { TreePathIntersectionVisualizer } from './tree-path-intersection-renderer';
 
-describe('TreePathIntersection (Tree Path Intersection & LCA)', () => {
+describe('TreePathIntersection', () => {
   it('should instantiate TreePathIntersectionVisualizer properly', () => {
     const viz = new TreePathIntersectionVisualizer();
     expect(viz).toBeDefined();
-    expect(TREE_INTERSECT_TEMPLATE).toContain('algo-tree-path-intersection-view');
-    expect(TREE_INTERSECT_TEMPLATE).toContain('tree-intersect-canvas');
-    expect(TREE_INTERSECT_TEMPLATE).toContain('intersect-result-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

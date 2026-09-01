@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { PrefixOptGraphVisualizer, PREFIX_OPT_TEMPLATE } from './prefix-opt-graph-renderer';
+import { PrefixOptGraphVisualizer } from './prefix-opt-graph-renderer';
 
-describe('PrefixOptGraph (Prefix Optimization Graph Building)', () => {
+describe('PrefixOptGraph', () => {
   it('should instantiate PrefixOptGraphVisualizer properly', () => {
     const viz = new PrefixOptGraphVisualizer();
     expect(viz).toBeDefined();
-    expect(PREFIX_OPT_TEMPLATE).toContain('algo-prefix-opt-graph-view');
-    expect(PREFIX_OPT_TEMPLATE).toContain('prefix-opt-canvas');
-    expect(PREFIX_OPT_TEMPLATE).toContain('prefix-edge-badge');
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
