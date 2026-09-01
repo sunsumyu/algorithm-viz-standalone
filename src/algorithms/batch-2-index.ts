@@ -133,5 +133,6 @@ import './categories/graph/malware-spread-ii-renderer';
 import './categories/graph/tarjan-scc-dag-renderer';
 import './categories/graph/dijkstra-index-heap-renderer';
 import './categories/graph/dinic-max-flow-renderer';
+import './categories/graph/kruskal-reconstruction-tree-renderer';
 
 export {};

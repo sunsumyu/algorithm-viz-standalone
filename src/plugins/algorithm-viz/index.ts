@@ -173,6 +173,7 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'tarjan-scc-dag': '🔄',
   'dijkstra-index-heap': '⚡',
   'dinic-max-flow': '🌊',
+  'kruskal-reconstruction-tree': '🌲',
 };
 
 import {

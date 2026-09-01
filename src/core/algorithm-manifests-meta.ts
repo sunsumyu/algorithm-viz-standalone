@@ -2773,5 +2773,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 38,
     "learningGoal": "掌握 Dinic 算法的成对反向弧退流机制、BFS 层次图构建与 DFS 当前弧多路增广的工程实现"
+  },
+  {
+    "id": "kruskal-reconstruction-tree",
+    "name": "Kruskal 重构树 (Kruskal Tree)",
+    "viewId": "algo-kruskal-reconstruction-tree-view",
+    "category": "graph",
+    "description": "进阶图论与树上倍增算法：左程云 Kruskal 重构树、边权升序新建虚点、2n-1 二叉树性质与 LCA 快速求路径瓶颈距离",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 39,
+    "learningGoal": "掌握 Kruskal 重构树的虚点构造方法、点权堆性质以及 LCA 节点点权等价于原图路径最大边权最小值的数学证明"
   }
 ];
