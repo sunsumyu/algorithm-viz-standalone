@@ -155,5 +155,7 @@ import './categories/graph/bounded-flow-renderer';
 import './categories/graph/centroid-tree-renderer';
 import './categories/graph/max-weight-closure-renderer';
 import './categories/graph/virtual-tree-renderer';
+import './categories/graph/path-min-effort-renderer';
+import './categories/graph/ev-charge-dijkstra-renderer';
 
 export {};

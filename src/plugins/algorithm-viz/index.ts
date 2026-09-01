@@ -195,6 +195,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'centroid-tree': '🌲',
   'max-weight-closure': '💰',
   'virtual-tree': '🌲',
+  'path-min-effort': '⛰️',
+  'ev-charge-dijkstra': '⚡',
 };
 
 import {

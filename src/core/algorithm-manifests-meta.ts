@@ -3015,5 +3015,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 60,
     "learningGoal": "掌握虚树大小不超过 2K 的严密证明、单调栈单遍构建算法与海量关键点询问由 O(N) 降为 O(K) 的优化本质"
+  },
+  {
+    "id": "path-min-effort",
+    "name": "最小体力消耗路径 (Path With Min Effort)",
+    "viewId": "algo-path-min-effort-view",
+    "category": "graph",
+    "description": "网格图瓶颈最短路算法：max(|h1 - h2|) 状态松弛、Dijkstra 优先队列贪心扩展 (左程云 Class064 Code02 / LeetCode 1631)",
+    "icon": "⛰️",
+    "difficulty": 2,
+    "levelOrder": 61,
+    "learningGoal": "掌握网格图 Dijkstra 瓶颈最短路模型、max 松弛方程最优子结构证明与优先队列首次出堆即最优原理"
+  },
+  {
+    "id": "ev-charge-dijkstra",
+    "name": "电动车分层图最短路 (EV Charge Plan)",
+    "viewId": "algo-ev-charge-dijkstra-view",
+    "category": "graph",
+    "description": "带电量约束的分层图 Dijkstra：(u, power) 状态空间、原地充电与道路行驶双转移决策 (左程云 Class064 Code05 / LeetCode LCP 35)",
+    "icon": "⚡",
+    "difficulty": 3,
+    "levelOrder": 62,
+    "learningGoal": "掌握二维状态分层图建模、原地充电转移与道路放电转移松弛方程及优先队列 Dijkstra 最优性证明"
   }
 ];
