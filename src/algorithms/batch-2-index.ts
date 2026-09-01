@@ -151,5 +151,7 @@ import './categories/graph/cycle-counting-renderer';
 import './categories/graph/bipartite-game-renderer';
 import './categories/graph/prufer-sequence-renderer';
 import './categories/graph/dominator-tree-renderer';
+import './categories/graph/bounded-flow-renderer';
+import './categories/graph/centroid-tree-renderer';
 
 export {};

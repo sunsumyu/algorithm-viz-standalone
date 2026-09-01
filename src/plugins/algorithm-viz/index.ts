@@ -191,6 +191,8 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'bipartite-game': '♟️',
   'prufer-sequence': '📼',
   'dominator-tree': '🏛️',
+  'bounded-flow': '🌊',
+  'centroid-tree': '🌲',
 };
 
 import {

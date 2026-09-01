@@ -2971,5 +2971,27 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 56,
     "learningGoal": "掌握支配关系数学定义、DAG 上 idom[u] = LCA_tree(preds) 定理证明与编译器 SSA 形式支配边界应用"
+  },
+  {
+    "id": "bounded-flow",
+    "name": "上下界网络流 (Bounded Flow)",
+    "viewId": "algo-bounded-flow-view",
+    "category": "graph",
+    "description": "进阶网络流算法：每条边强制流量 [low, up]、点差额方程 Δ(u)、超级源汇 SS/TT 平衡与伴随网络满流可行流判定 (洛谷 P5192 / LOJ 115)",
+    "icon": "🌊",
+    "difficulty": 3,
+    "levelOrder": 57,
+    "learningGoal": "掌握强制下界转化为自由容量与超级源汇补偿边的差额网络构造法、伴随网络满流判定定理与真实流量还原公式"
+  },
+  {
+    "id": "centroid-tree",
+    "name": "点分树 (Centroid Tree)",
+    "viewId": "algo-centroid-tree-view",
+    "category": "graph",
+    "description": "进阶树论高效数据结构：重心递归分治建树、树高严格 O(log n)、点分树向上跳跃维护动态带修距离 (洛谷 P6329 / SPOJ QTREE5)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 58,
+    "learningGoal": "掌握点分树深度严格不超过 O(log n) 的严密证明、祖先路径全覆盖定理与动态点分治单次 O(log^2 n) 维护技巧"
   }
 ];
