@@ -1126,26 +1126,26 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
   private compileHeightRemovalQueries(
     _model: IYamlAlgorithmModel,
     _stage: number,
-    anchorMap?: Record<string, number>
+    _anchorMap?: Record<string, number>
   ): UniversalStep[] {
     const steps: UniversalStep[] = [];
-    const treeRootNode: UniversalTreeNode = {
+    const treeState: UniversalTreeNode = {
       id: 'node-1',
       r: 0,
       c: 0,
       val: '点#1(深0)',
-      status: 'visited',
-      tag: 'DFN:1|深:0',
+      status: 'normal',
+      tag: '待访问',
       children: [
         {
           id: 'node-3',
           r: 1,
           c: 0,
           val: '点#3(深1)',
-          status: 'visited',
-          tag: 'DFN:2|深:1',
+          status: 'normal',
+          tag: '待访问',
           children: [
-            { id: 'node-2', r: 2, c: 0, val: '点#2(深2)', status: 'visited', tag: 'DFN:3|深:2', children: [] },
+            { id: 'node-2', r: 2, c: 0, val: '点#2(深2)', status: 'normal', tag: '待访问', children: [] },
           ],
         },
         {
@@ -1153,299 +1153,407 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
           r: 1,
           c: 1,
           val: '点#4(深1)',
-          status: 'visited',
-          tag: 'DFN:4|深:1',
+          status: 'normal',
+          tag: '待访问',
           children: [
-            { id: 'node-6', r: 2, c: 1, val: '点#6(深2)', status: 'visited', tag: 'DFN:5|深:2', children: [] },
-            { id: 'node-5', r: 2, c: 2, val: '点#5(深2)', status: 'visited', tag: 'DFN:6|深:2', children: [] },
+            { id: 'node-6', r: 2, c: 1, val: '点#6(深2)', status: 'normal', tag: '待访问', children: [] },
+            { id: 'node-5', r: 2, c: 2, val: '点#5(深2)', status: 'normal', tag: '待访问', children: [] },
           ],
         },
       ],
     };
 
-    const queryTree = cloneTree(treeRootNode);
-    const markDisabled = (node: UniversalTreeNode) => {
-      if (node.id === 'node-4' || node.id === 'node-6' || node.id === 'node-5') {
-        node.status = 'pruned';
-        node.tag = '已剔除';
-      }
-      node.children?.forEach(markDisabled);
-    };
-    markDisabled(queryTree);
+    let dfnCnt = 0;
+    const dfn: Record<number, number> = {};
+    const deep: number[] = new Array(7).fill(0);
+    const size: number[] = new Array(7).fill(0);
+    const maxLeft: number[] = new Array(7).fill(0);
+    const maxRight: number[] = new Array(7).fill(0);
+    const dp1dDisplay: number[] = [0, 0, 0, 0, 0, 0];
 
-    // 1. 入口: treeQueries
+    interface SimpleNode {
+      id: string;
+      val: number;
+      left?: SimpleNode;
+      right?: SimpleNode;
+    }
+
+    const n2: SimpleNode = { id: 'node-2', val: 2 };
+    const n6: SimpleNode = { id: 'node-6', val: 6 };
+    const n5: SimpleNode = { id: 'node-5', val: 5 };
+    const n3: SimpleNode = { id: 'node-3', val: 3, left: n2 };
+    const n4: SimpleNode = { id: 'node-4', val: 4, left: n6, right: n5 };
+    const n1: SimpleNode = { id: 'node-1', val: 1, left: n3, right: n4 };
+
+    function setNodeStatus(id: string, status: any, tag?: string) {
+      function traverse(n: UniversalTreeNode) {
+        if (n.id === id) {
+          n.status = status;
+          if (tag !== undefined) n.tag = tag;
+        }
+        n.children.forEach(traverse);
+      }
+      traverse(treeState);
+    }
+
+    // Line 8: public int[] treeQueries(TreeNode root, int[] queries) {
     steps.push({
       type: 'entry',
-      line: anchorMap?.entry || 8,
+      line: 8,
       i: 0,
       j: 0,
-      dp1d: [0, 0, 0, 0, 0, 0],
-      memo: [0, 0, 0, 0, 0, 0],
+      dp1d: [...dp1dDisplay],
+      memo: [...dp1dDisplay],
       activeSlot: 0,
-      tag: '入口: treeQueries',
-      log: '🚀 进入 treeQueries(root, queries=[4])，准备执行先序遍历与 DFN 序打平',
-      msg: '算法启动：接收二叉树与查询数组 <code>queries = [4]</code>，准备建立 DFN 序号映射与深度数组。',
+      tag: 'treeQueries 入口',
+      log: '🚀 public int[] treeQueries(TreeNode root, int[] queries) 函数入口，queries=[4]',
+      msg: '启动 <code>treeQueries</code>：传入二叉树与查询数组 <code>queries = [4]</code>。',
       activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
+      treeRoot: cloneTree(treeState),
     });
 
-    // 2. 调用 dfs(root, 0)
+    // Line 9: dfs(root, 0);
     steps.push({
       type: 'call',
-      line: anchorMap?.init || 9,
+      line: 9,
       i: 0,
       j: 0,
-      dp1d: [0, 0, 0, 0, 0, 0],
-      memo: [0, 0, 0, 0, 0, 0],
+      dp1d: [...dp1dDisplay],
+      memo: [...dp1dDisplay],
       activeSlot: 0,
-      tag: '调用: dfs(root, 0)',
-      log: '🌲 执行 dfs(root, 0)：先序遍历整树建立 DFN 序号与深度映射',
-      msg: '调用 <code>dfs(root, 0)</code>，开始为每个二叉树节点分配先序访问时间戳（DFN 序）。',
+      tag: '调用 dfs(root, 0)',
+      log: '🌲 dfs(root, 0); 调用先序深度优先遍历整树',
+      msg: '准备从树根 <strong>#1</strong> 开始先序深度优先遍历。',
       activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
+      treeRoot: cloneTree(treeState),
     });
 
-    // 3. DFS 根节点 #1 记录
-    steps.push({
-      type: 'update',
-      line: 24,
-      i: 1,
-      j: 0,
-      dp1d: [0, 0, 0, 0, 0, 0],
-      memo: [0, 0, 0, 0, 0, 0],
-      activeSlot: 0,
-      tag: '点#1: DFN=1, 深=0',
-      log: '| 📍 访问根节点 #1: 分配 dfn[1]=1, deep[1]=0, size[1]=1',
-      msg: '到达根节点 <strong>#1</strong>：时间戳 <code>dfnCnt=1</code>，记录深度 <code>deep[1]=0</code>。',
-      activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
-    });
+    function simulateDfs(node: SimpleNode | undefined, d: number) {
+      // Line 21: private void dfs(TreeNode node, int d) {
+      steps.push({
+        type: 'entry',
+        line: 21,
+        i: node ? node.val : 0,
+        j: d,
+        dp1d: [...dp1dDisplay],
+        memo: [...dp1dDisplay],
+        activeSlot: Math.max(0, dfnCnt - 1),
+        tag: node ? `dfs(node=#${node.val}, d=${d})` : 'dfs(null)',
+        log: node ? `进入 dfs(node=#${node.val}, d=${d})` : `进入 dfs(node=null, d=${d})`,
+        msg: node ? `进入 <code>dfs(node=#${node.val}, d=${d})</code> 递归函数。` : '进入 <code>dfs(null)</code>。',
+        activeNodeId: node?.id,
+        treeRoot: cloneTree(treeState),
+      });
 
-    // 4. DFS 深入左孩子 #3
-    steps.push({
-      type: 'call',
-      line: 25,
-      i: 3,
-      j: 1,
-      dp1d: [0, 1, 0, 0, 0, 0],
-      memo: [0, 1, 0, 0, 0, 0],
-      activeSlot: 1,
-      tag: '深入左子树: 点#3',
-      log: '| 🌲 节点 #1.left != null: 递归调用 dfs(node=3, d=1)',
-      msg: '节点 1 存在左孩子，递归进入 <code>dfs(node=3, d=1)</code>。',
-      activeNodeId: 'node-3',
-      treeRoot: cloneTree(treeRootNode),
-    });
+      // Line 22: if (node == null) return;
+      if (!node) {
+        steps.push({
+          type: 'boundary',
+          line: 22,
+          i: 0,
+          j: d,
+          dp1d: [...dp1dDisplay],
+          memo: [...dp1dDisplay],
+          activeSlot: Math.max(0, dfnCnt - 1),
+          tag: 'node == null (return)',
+          log: '| if (node == null) 为真，直接 return',
+          msg: '节点为空，触发边界返回。',
+          treeRoot: cloneTree(treeState),
+        });
+        return;
+      }
 
-    // 5. DFS 记录点 #3 状态
-    steps.push({
-      type: 'update',
-      line: 24,
-      i: 3,
-      j: 1,
-      dp1d: [0, 1, 0, 0, 0, 0],
-      memo: [0, 1, 0, 0, 0, 0],
-      activeSlot: 1,
-      tag: '点#3: DFN=2, 深=1',
-      log: '| 📍 访问节点 #3: 分配 dfn[3]=2, deep[2]=1, size[2]=1',
-      msg: '到达节点 <strong>#3</strong>：时间戳 <code>dfnCnt=2</code>，记录深度 <code>deep[2]=1</code>。',
-      activeNodeId: 'node-3',
-      treeRoot: cloneTree(treeRootNode),
-    });
+      steps.push({
+        type: 'update',
+        line: 22,
+        i: node.val,
+        j: d,
+        dp1d: [...dp1dDisplay],
+        memo: [...dp1dDisplay],
+        activeSlot: Math.max(0, dfnCnt - 1),
+        tag: `node=#${node.val} != null`,
+        log: `| 检查: node=#${node.val} != null，继续执行`,
+        msg: `检查边界：节点 <strong>#${node.val}</strong> 非空，继续向下执行。`,
+        activeNodeId: node.id,
+        treeRoot: cloneTree(treeState),
+      });
 
-    // 6. DFS 深入左孩子 #2
-    steps.push({
-      type: 'call',
-      line: 25,
-      i: 2,
-      j: 2,
-      dp1d: [0, 1, 2, 0, 0, 0],
-      memo: [0, 1, 2, 0, 0, 0],
-      activeSlot: 2,
-      tag: '深入左子树: 点#2',
-      log: '| 🌲 节点 #3.left != null: 递归调用 dfs(node=2, d=2)',
-      msg: '节点 3 存在左孩子，递归进入叶子节点 <code>dfs(node=2, d=2)</code>。',
-      activeNodeId: 'node-2',
-      treeRoot: cloneTree(treeRootNode),
-    });
+      // Line 23: int i = ++dfnCnt;
+      dfnCnt++;
+      const curI = dfnCnt;
+      setNodeStatus(node.id, 'visited', `DFN:${curI}|深:${d}`);
+      steps.push({
+        type: 'update',
+        line: 23,
+        i: node.val,
+        j: d,
+        dp1d: [...dp1dDisplay],
+        memo: [...dp1dDisplay],
+        activeSlot: curI - 1,
+        tag: `int i = ++dfnCnt (${curI})`,
+        log: `| int i = ++dfnCnt; (分配时间戳 i = ${curI})`,
+        msg: `先序计数器自增：为节点 <strong>#${node.val}</strong> 分配 DFN 序号 <code>i = ++dfnCnt = ${curI}</code>。`,
+        activeNodeId: node.id,
+        treeRoot: cloneTree(treeState),
+      });
 
-    // 7. DFS 记录点 #2 状态
-    steps.push({
-      type: 'update',
-      line: 24,
-      i: 2,
-      j: 2,
-      dp1d: [0, 1, 2, 0, 0, 0],
-      memo: [0, 1, 2, 0, 0, 0],
-      activeSlot: 2,
-      tag: '点#2: DFN=3, 深=2',
-      log: '| 📍 访问叶子节点 #2: 分配 dfn[2]=3, deep[3]=2, size[3]=1',
-      msg: '到达叶子节点 <strong>#2</strong>：时间戳 <code>dfnCnt=3</code>，记录深度 <code>deep[3]=2</code>。',
-      activeNodeId: 'node-2',
-      treeRoot: cloneTree(treeRootNode),
-    });
+      // Line 24: dfn[node.val] = i; deep[i] = d; size[i] = 1;
+      dfn[node.val] = curI;
+      deep[curI] = d;
+      size[curI] = 1;
+      dp1dDisplay[curI - 1] = d;
+      steps.push({
+        type: 'update',
+        line: 24,
+        i: node.val,
+        j: d,
+        dp1d: [...dp1dDisplay],
+        memo: [...dp1dDisplay],
+        activeSlot: curI - 1,
+        tag: `dfn[${node.val}]=${curI}, deep[${curI}]=${d}`,
+        log: `| dfn[${node.val}]=${curI}; deep[${curI}]=${d}; size[${curI}]=1; (记录节点深度与初始大小)`,
+        msg: `记录状态：<code>dfn[${node.val}]=${curI}, deep[${curI}]=${d}, size[${curI}]=1</code>。`,
+        activeNodeId: node.id,
+        treeRoot: cloneTree(treeState),
+      });
 
-    // 8. DFS 回溯至 #3 累加子树大小
-    steps.push({
-      type: 'update',
-      line: 25,
-      i: 3,
-      j: 1,
-      dp1d: [0, 1, 2, 0, 0, 0],
-      memo: [0, 1, 2, 0, 0, 0],
-      activeSlot: 1,
-      tag: '点#3回溯: size[2]=2',
-      log: '| ↩ 回溯至节点 #3: 累加左子树大小，size[2] = 1 + size[3] = 2',
-      msg: '叶子节点 2 遍历完成返回，节点 3 累加左子树大小：<code>size[dfn[3]] = 2</code>。',
-      activeNodeId: 'node-3',
-      treeRoot: cloneTree(treeRootNode),
-    });
+      // Line 25: if (node.left != null) { dfs(node.left, d + 1); size[i] += size[dfn[node.left.val]]; }
+      if (node.left) {
+        steps.push({
+          type: 'call',
+          line: 25,
+          i: node.val,
+          j: d,
+          dp1d: [...dp1dDisplay],
+          memo: [...dp1dDisplay],
+          activeSlot: curI - 1,
+          tag: `node.left != null (进入 #${node.left.val})`,
+          log: `| if (node.left != null): 发现左孩子 #${node.left.val}，调用 dfs(node.left, ${d + 1})`,
+          msg: `检查左孩子：存在节点 <strong>#${node.left.val}</strong>，递归进入左子树。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
 
-    // 9. DFS 深入右孩子 #4
-    steps.push({
-      type: 'call',
-      line: 26,
-      i: 4,
-      j: 1,
-      dp1d: [0, 1, 2, 1, 0, 0],
-      memo: [0, 1, 2, 1, 0, 0],
-      activeSlot: 3,
-      tag: '深入右子树: 点#4',
-      log: '| 🌲 节点 #1.right != null: 递归调用 dfs(node=4, d=1)',
-      msg: '回溯至根节点 1，转向右子树：递归进入 <code>dfs(node=4, d=1)</code>。',
-      activeNodeId: 'node-4',
-      treeRoot: cloneTree(treeRootNode),
-    });
+        simulateDfs(node.left, d + 1);
 
-    // 10. DFS 记录点 #4 状态
-    steps.push({
-      type: 'update',
-      line: 24,
-      i: 4,
-      j: 1,
-      dp1d: [0, 1, 2, 1, 0, 0],
-      memo: [0, 1, 2, 1, 0, 0],
-      activeSlot: 3,
-      tag: '点#4: DFN=4, 深=1',
-      log: '| 📍 访问节点 #4: 分配 dfn[4]=4, deep[4]=1, size[4]=1',
-      msg: '到达节点 <strong>#4</strong>：时间戳 <code>dfnCnt=4</code>，记录深度 <code>deep[4]=1</code>。',
-      activeNodeId: 'node-4',
-      treeRoot: cloneTree(treeRootNode),
-    });
+        // 回溯后累加 size
+        size[curI] += size[dfn[node.left.val]];
+        steps.push({
+          type: 'update',
+          line: 25,
+          i: node.val,
+          j: d,
+          dp1d: [...dp1dDisplay],
+          memo: [...dp1dDisplay],
+          activeSlot: curI - 1,
+          tag: `size[${curI}] += ${size[dfn[node.left.val]]}`,
+          log: `| size[${curI}] += size[dfn[${node.left.val}]] = ${size[dfn[node.left.val]]} -> size[${curI}] = ${size[curI]}`,
+          msg: `左孩子回溯：累加左子树大小，<code>size[${curI}] = ${size[curI]}</code>。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+      } else {
+        steps.push({
+          type: 'update',
+          line: 25,
+          i: node.val,
+          j: d,
+          dp1d: [...dp1dDisplay],
+          memo: [...dp1dDisplay],
+          activeSlot: curI - 1,
+          tag: 'node.left == null',
+          log: `| if (node.left != null) 为假 (左孩子为空)`,
+          msg: `检查左孩子：节点 <strong>#${node.val}</strong> 左孩子为空，跳过递归。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+      }
 
-    // 11. DFS 记录点 #6 (4的左孩子)
-    steps.push({
-      type: 'update',
-      line: 24,
-      i: 6,
-      j: 2,
-      dp1d: [0, 1, 2, 1, 2, 0],
-      memo: [0, 1, 2, 1, 2, 0],
-      activeSlot: 4,
-      tag: '点#6: DFN=5, 深=2',
-      log: '| 📍 访问节点 #6: 分配 dfn[6]=5, deep[5]=2, size[5]=1',
-      msg: '到达叶子节点 <strong>#6</strong>：时间戳 <code>dfnCnt=5</code>，记录深度 <code>deep[5]=2</code>。',
-      activeNodeId: 'node-6',
-      treeRoot: cloneTree(treeRootNode),
-    });
+      // Line 26: if (node.right != null) { dfs(node.right, d + 1); size[i] += size[dfn[node.right.val]]; }
+      if (node.right) {
+        steps.push({
+          type: 'call',
+          line: 26,
+          i: node.val,
+          j: d,
+          dp1d: [...dp1dDisplay],
+          memo: [...dp1dDisplay],
+          activeSlot: curI - 1,
+          tag: `node.right != null (进入 #${node.right.val})`,
+          log: `| if (node.right != null): 发现右孩子 #${node.right.val}，调用 dfs(node.right, ${d + 1})`,
+          msg: `检查右孩子：存在节点 <strong>#${node.right.val}</strong>，递归进入右子树。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
 
-    // 12. DFS 记录点 #5 (4的右孩子)
-    steps.push({
-      type: 'update',
-      line: 24,
-      i: 5,
-      j: 2,
-      dp1d: [0, 1, 2, 1, 2, 2],
-      memo: [0, 1, 2, 1, 2, 2],
-      activeSlot: 5,
-      tag: '点#5: DFN=6, 深=2',
-      log: '| 📍 访问节点 #5: 分配 dfn[5]=6, deep[6]=2, size[6]=1',
-      msg: '到达叶子节点 <strong>#5</strong>：时间戳 <code>dfnCnt=6</code>，记录深度 <code>deep[6]=2</code>。',
-      activeNodeId: 'node-5',
-      treeRoot: cloneTree(treeRootNode),
-    });
+        simulateDfs(node.right, d + 1);
 
-    // 13. DFS 回溯至 #4 累加子树大小
-    steps.push({
-      type: 'update',
-      line: 26,
-      i: 4,
-      j: 1,
-      dp1d: [0, 1, 2, 1, 2, 2],
-      memo: [0, 1, 2, 1, 2, 2],
-      activeSlot: 3,
-      tag: '点#4回溯: size[4]=3',
-      log: '| ↩ 回溯至节点 #4: 累加左右子树，size[4] = 1 + 1 + 1 = 3（子树区间 DFN[4..6]）',
-      msg: '节点 4 左右子树全部遍历完毕，子树大小 <code>size=3</code>，子树在 DFN 序中为闭区间 <code>[4..6]</code>！',
-      activeNodeId: 'node-4',
-      treeRoot: cloneTree(treeRootNode),
-    });
+        // 回溯后累加 size
+        size[curI] += size[dfn[node.right.val]];
+        steps.push({
+          type: 'update',
+          line: 26,
+          i: node.val,
+          j: d,
+          dp1d: [...dp1dDisplay],
+          memo: [...dp1dDisplay],
+          activeSlot: curI - 1,
+          tag: `size[${curI}] += ${size[dfn[node.right.val]]}`,
+          log: `| size[${curI}] += size[dfn[${node.right.val}]] = ${size[dfn[node.right.val]]} -> size[${curI}] = ${size[curI]}`,
+          msg: `右孩子回溯：累加右子树大小，<code>size[${curI}] = ${size[curI]}</code>。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+      } else {
+        steps.push({
+          type: 'update',
+          line: 26,
+          i: node.val,
+          j: d,
+          dp1d: [...dp1dDisplay],
+          memo: [...dp1dDisplay],
+          activeSlot: curI - 1,
+          tag: 'node.right == null',
+          log: `| if (node.right != null) 为假 (右孩子为空)`,
+          msg: `检查右孩子：节点 <strong>#${node.val}</strong> 右孩子为空，跳过递归。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+      }
 
-    // 14. 初始化前缀数组 maxLeft[1]
+      // Line 27: method exit
+      steps.push({
+        type: 'return',
+        line: 27,
+        i: node.val,
+        j: d,
+        dp1d: [...dp1dDisplay],
+        memo: [...dp1dDisplay],
+        activeSlot: curI - 1,
+        tag: `dfs(#${node.val}) 结束返回`,
+        log: `| dfs(node=#${node.val}) 执行完毕返回上一层 (子树总规模 size=${size[curI]})`,
+        msg: `节点 <strong>#${node.val}</strong> 遍历完毕，返回上一层调用栈。`,
+        activeNodeId: node.id,
+        treeRoot: cloneTree(treeState),
+      });
+    }
+
+    // 执行真实 dfs
+    simulateDfs(n1, 0);
+
+    // Line 10: maxLeft[1] = deep[1];
+    maxLeft[1] = deep[1];
+    const prefixDisplay: number[] = new Array(6).fill(0);
+    prefixDisplay[0] = maxLeft[1];
     steps.push({
       type: 'update',
       line: 10,
       i: 1,
       j: 0,
-      dp1d: [0, 0, 0, 0, 0, 0],
-      memo: [0, 0, 0, 0, 0, 0],
+      dp1d: [...prefixDisplay],
+      memo: [...prefixDisplay],
       activeSlot: 0,
-      tag: '前缀初始化 maxLeft[1]=0',
-      log: '📊 初始化前缀最大深度: maxLeft[1] = deep[1] = 0',
-      msg: 'DFS 遍历全部完成。开始顺序构建前缀极值数组：<code>maxLeft[1] = deep[1] = 0</code>。',
+      tag: 'maxLeft[1] = deep[1]',
+      log: `📊 maxLeft[1] = deep[1] = ${deep[1]}; (初始化前缀最大深度)`,
+      msg: `初始化前缀最大值数组：<code>maxLeft[1] = deep[1] = ${deep[1]}</code>。`,
       activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
+      treeRoot: cloneTree(treeState),
     });
 
-    // 15. 循环递推 maxLeft[2..6]
-    steps.push({
-      type: 'update',
-      line: 11,
-      i: 2,
-      j: 0,
-      dp1d: [0, 1, 2, 2, 2, 2],
-      memo: [0, 1, 2, 2, 2, 2],
-      activeSlot: 5,
-      tag: '前缀递推: maxLeft[1..6]',
-      log: '| 📈 递推 maxLeft: [0, 1, 2, 2, 2, 2]',
-      msg: '顺序递推前缀最大深度：<code>maxLeft[i] = max(maxLeft[i - 1], deep[i])</code>，得到 <code>[0, 1, 2, 2, 2, 2]</code>。',
-      activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
-    });
+    // Line 11: for (int i = 2; i <= dfnCnt; i++) maxLeft[i] = Math.max(maxLeft[i - 1], deep[i]);
+    for (let i = 2; i <= dfnCnt; i++) {
+      steps.push({
+        type: 'loop',
+        line: 11,
+        i,
+        j: 0,
+        dp1d: [...prefixDisplay],
+        memo: [...prefixDisplay],
+        activeSlot: i - 1,
+        tag: `循环 i=${i}<=dfnCnt`,
+        log: `| for (int i = ${i}; i <= ${dfnCnt}; i++): 循环条件满足`,
+        msg: `检查前缀循环条件：<code>i = ${i} <= ${dfnCnt}</code> 为真，准备递推计算。`,
+        activeNodeId: 'node-1',
+        treeRoot: cloneTree(treeState),
+      });
 
-    // 16. 初始化后缀数组 maxRight[6]
+      maxLeft[i] = Math.max(maxLeft[i - 1], deep[i]);
+      prefixDisplay[i - 1] = maxLeft[i];
+
+      steps.push({
+        type: 'update',
+        line: 11,
+        i,
+        j: 0,
+        dp1d: [...prefixDisplay],
+        memo: [...prefixDisplay],
+        activeSlot: i - 1,
+        tag: `maxLeft[${i}]=${maxLeft[i]}`,
+        log: `| maxLeft[${i}] = Math.max(maxLeft[${i - 1}]=${maxLeft[i - 1]}, deep[${i}]=${deep[i]}) = ${maxLeft[i]};`,
+        msg: `递推前缀极值：<code>maxLeft[${i}] = max(${maxLeft[i - 1]}, ${deep[i]}) = ${maxLeft[i]}</code>。`,
+        activeNodeId: 'node-1',
+        treeRoot: cloneTree(treeState),
+      });
+    }
+
+    // Line 12: maxRight[dfnCnt] = deep[dfnCnt];
+    maxRight[dfnCnt] = deep[dfnCnt];
+    const suffixDisplay: number[] = new Array(6).fill(0);
+    suffixDisplay[dfnCnt - 1] = maxRight[dfnCnt];
     steps.push({
       type: 'update',
       line: 12,
-      i: 6,
+      i: dfnCnt,
       j: 0,
-      dp1d: [0, 1, 2, 2, 2, 2],
-      memo: [0, 1, 2, 2, 2, 2],
-      activeSlot: 5,
-      tag: '后缀初始化 maxRight[6]=2',
-      log: '📊 初始化后缀最大深度: maxRight[6] = deep[6] = 2',
-      msg: '自右向左构建后缀极值数组：<code>maxRight[6] = deep[6] = 2</code>。',
+      dp1d: [...suffixDisplay],
+      memo: [...suffixDisplay],
+      activeSlot: dfnCnt - 1,
+      tag: `maxRight[${dfnCnt}]=${maxRight[dfnCnt]}`,
+      log: `📊 maxRight[${dfnCnt}] = deep[${dfnCnt}] = ${deep[dfnCnt]}; (初始化后缀最大深度)`,
+      msg: `初始化后缀最大值数组：<code>maxRight[${dfnCnt}] = deep[${dfnCnt}] = ${deep[dfnCnt]}</code>。`,
       activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
+      treeRoot: cloneTree(treeState),
     });
 
-    // 17. 逆序递推 maxRight[5..1]
-    steps.push({
-      type: 'update',
-      line: 13,
-      i: 5,
-      j: 0,
-      dp1d: [2, 2, 2, 2, 2, 2],
-      memo: [2, 2, 2, 2, 2, 2],
-      activeSlot: 0,
-      tag: '后缀递推: maxRight[6..1]',
-      log: '| 📉 递推 maxRight: [2, 2, 2, 2, 2, 2]',
-      msg: '逆序递推后缀最大深度：<code>maxRight[i] = max(maxRight[i + 1], deep[i])</code>，得到 <code>[2, 2, 2, 2, 2, 2]</code>。',
-      activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
-    });
+    // Line 13: for (int i = dfnCnt - 1; i >= 1; i--) maxRight[i] = Math.max(maxRight[i + 1], deep[i]);
+    for (let i = dfnCnt - 1; i >= 1; i--) {
+      steps.push({
+        type: 'loop',
+        line: 13,
+        i,
+        j: 0,
+        dp1d: [...suffixDisplay],
+        memo: [...suffixDisplay],
+        activeSlot: i - 1,
+        tag: `循环 i=${i}>=1`,
+        log: `| for (int i = ${i}; i >= 1; i--): 循环条件满足`,
+        msg: `检查后缀循环条件：<code>i = ${i} >= 1</code> 为真，准备逆序递推。`,
+        activeNodeId: 'node-1',
+        treeRoot: cloneTree(treeState),
+      });
 
-    // 18. 分配查询结果数组 ans
+      maxRight[i] = Math.max(maxRight[i + 1], deep[i]);
+      suffixDisplay[i - 1] = maxRight[i];
+
+      steps.push({
+        type: 'update',
+        line: 13,
+        i,
+        j: 0,
+        dp1d: [...suffixDisplay],
+        memo: [...suffixDisplay],
+        activeSlot: i - 1,
+        tag: `maxRight[${i}]=${maxRight[i]}`,
+        log: `| maxRight[${i}] = Math.max(maxRight[${i + 1}]=${maxRight[i + 1]}, deep[${i}]=${deep[i]}) = ${maxRight[i]};`,
+        msg: `递推后缀极值：<code>maxRight[${i}] = max(${maxRight[i + 1]}, ${deep[i]}) = ${maxRight[i]}</code>。`,
+        activeNodeId: 'node-1',
+        treeRoot: cloneTree(treeState),
+      });
+    }
+
+    // Line 14: int[] ans = new int[queries.length];
+    const queries = [4];
+    const ans: number[] = new Array(queries.length).fill(0);
     steps.push({
       type: 'update',
       line: 14,
@@ -1454,75 +1562,112 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       dp1d: [0],
       memo: [0],
       activeSlot: 0,
-      tag: '分配结果数组 ans',
-      log: '📦 分配查询结果数组: int[] ans = new int[queries.length]',
-      msg: '为查询收集结果分配数组：<code>ans = new int[1]</code>。',
+      tag: 'int[] ans 分配',
+      log: '📦 int[] ans = new int[queries.length = 1]; (分配查询答案数组)',
+      msg: '为答案分配数组：<code>int[] ans = new int[1]</code>。',
       activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
+      treeRoot: cloneTree(treeState),
     });
 
-    // 19. 进入查询遍历循环
+    // Line 15: for (int k = 0; k < queries.length; k++) {
+    for (let k = 0; k < queries.length; k++) {
+      steps.push({
+        type: 'loop',
+        line: 15,
+        i: k,
+        j: 0,
+        dp1d: [...ans],
+        memo: [...ans],
+        activeSlot: k,
+        tag: `for k=${k}<queries.length`,
+        log: `🔍 for (int k = ${k}; k < ${queries.length}; k++): 处理第 ${k + 1} 个查询 queries[${k}] = ${queries[k]}`,
+        msg: `进入查询循环：当前处理 <code>queries[${k}] = ${queries[k]}</code>。`,
+        activeNodeId: `node-${queries[k]}`,
+        treeRoot: cloneTree(treeState),
+      });
+
+      // Line 16: int i = dfn[queries[k]];
+      const targetVal = queries[k];
+      const targetI = dfn[targetVal];
+      const targetSize = size[targetI];
+
+      const queryTree = cloneTree(treeState);
+      const markSubtreePruned = (n: UniversalTreeNode) => {
+        if (n.id === `node-${targetVal}` || n.id === 'node-6' || n.id === 'node-5') {
+          n.status = 'pruned';
+          n.tag = '已剔除';
+        }
+        n.children.forEach(markSubtreePruned);
+      };
+      markSubtreePruned(queryTree);
+
+      steps.push({
+        type: 'update',
+        line: 16,
+        i: targetI,
+        j: 0,
+        dp1d: [...ans],
+        memo: [...ans],
+        activeSlot: k,
+        tag: `int i = dfn[${targetVal}] = ${targetI}`,
+        log: `| int i = dfn[queries[${k}] = ${targetVal}] = ${targetI}; (子树区间 DFN[${targetI} .. ${targetI + targetSize - 1}])`,
+        msg: `定位子树 DFN 区间：节点 <strong>#${targetVal}</strong> 的时间戳为 <code>${targetI}</code>，子树大小为 <code>${targetSize}</code>，剔除闭区间 <code>[${targetI} .. ${targetI + targetSize - 1}]</code>。`,
+        activeNodeId: `node-${targetVal}`,
+        treeRoot: queryTree,
+      });
+
+      // Line 17: ans[k] = Math.max(maxLeft[i - 1], maxRight[i + size[i]]);
+      const leftMax = targetI - 1 >= 1 ? maxLeft[targetI - 1] : 0;
+      const rightIdx = targetI + targetSize;
+      const rightMax = rightIdx <= dfnCnt ? maxRight[rightIdx] : 0;
+      ans[k] = Math.max(leftMax, rightMax);
+
+      steps.push({
+        type: 'update',
+        line: 17,
+        i: targetI,
+        j: 0,
+        dp1d: [...ans],
+        memo: [...ans],
+        activeSlot: k,
+        tag: `ans[${k}] = max(${leftMax}, ${rightMax}) = ${ans[k]}`,
+        log: `| ans[${k}] = Math.max(maxLeft[${targetI - 1}]=${leftMax}, maxRight[${rightIdx}]=${rightMax}) = ${ans[k]};`,
+        msg: `<strong>核心极值合并</strong>：左侧前缀最大深度 <code>maxLeft[${targetI - 1}]=${leftMax}</code>，右侧后缀最大深度 <code>maxRight[${rightIdx}]=${rightMax}</code>，合并得到整树最大高度 <strong>${ans[k]}</strong>！`,
+        activeNodeId: `node-${targetVal}`,
+        treeRoot: queryTree,
+      });
+    }
+
+    // Line 15: loop exit
     steps.push({
       type: 'loop',
       line: 15,
-      i: 0,
+      i: queries.length,
       j: 0,
-      dp1d: [0],
-      memo: [0],
+      dp1d: [...ans],
+      memo: [...ans],
       activeSlot: 0,
-      tag: '处理查询: k=0, query=4',
-      log: '🔍 遍历查询: queries[0] = 4',
-      msg: '进入查询遍历循环：当前处理 <code>queries[0] = 4</code>，要求剔除以节点 4 为根的子树。',
-      activeNodeId: 'node-4',
-      treeRoot: cloneTree(treeRootNode),
+      tag: '查询循环结束',
+      log: `| for (int k = ${queries.length}; k < ${queries.length}; k++): 条件为假，退出循环`,
+      msg: '所有查询处理完毕，跳出循环。',
+      activeNodeId: 'node-1',
+      treeRoot: cloneTree(treeState),
     });
 
-    // 20. 定位子树 DFN 区间并执行剔除
-    steps.push({
-      type: 'update',
-      line: 16,
-      i: 4,
-      j: 1,
-      dp1d: [2],
-      memo: [2],
-      activeSlot: 0,
-      tag: '定位子树 DFN 区间',
-      log: '| 🎯 定位节点 4: i = dfn[4] = 4, size[4] = 3 → 剔除闭区间 [4..6]',
-      msg: '获取节点 4 时间戳 <code>i = dfn[4] = 4</code>，该子树占据连续区间 <code>[4, 6]</code>（包含节点 4, 6, 5）。',
-      activeNodeId: 'node-4',
-      treeRoot: queryTree,
-    });
-
-    // 21. 核心推导：O(1) 前后缀合并
-    steps.push({
-      type: 'update',
-      line: anchorMap?.transfer || 17,
-      i: 4,
-      j: 2,
-      dp1d: [2],
-      memo: [2],
-      activeSlot: 0,
-      tag: 'O(1)极值合并: 答案=2',
-      log: '| ⚡ ans[0] = max(maxLeft[3], maxRight[7]) = max(2, 0) = 2',
-      msg: '<strong>核心推导</strong>：剔除区间 <code>[4..6]</code>，左侧前缀取 <code>maxLeft[3]=2</code>，右侧越界取 <code>0</code>，合并极值 <code>ans[0] = max(2, 0) = 2</code>！',
-      activeNodeId: 'node-4',
-      treeRoot: queryTree,
-    });
-
-    // 22. 返回结果
+    // Line 19: return ans;
     steps.push({
       type: 'return',
-      line: anchorMap?.return || 19,
+      line: 19,
       i: 0,
       j: 0,
-      dp1d: [2],
-      memo: [2],
+      dp1d: [...ans],
+      memo: [...ans],
       activeSlot: 0,
-      tag: '返回结果 ans=[2]',
-      log: '🏆 全部查询计算完成，返回最终答案 ans = [2]',
-      msg: '🏆 演化推导完成！每个独立查询均以 $O(1)$ 时间极值合并完成，返回 <strong>[2]</strong>。',
+      tag: 'return ans',
+      log: `🏆 return ans; (返回查询答案数组 [${ans.join(', ')}])`,
+      msg: `🏆 演化推导全部完成！返回答案数组 <strong>[${ans.join(', ')}]</strong>。`,
       activeNodeId: 'node-1',
-      treeRoot: cloneTree(treeRootNode),
+      treeRoot: cloneTree(treeState),
     });
 
     return steps;

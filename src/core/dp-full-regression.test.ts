@@ -3,6 +3,7 @@ import { DpStepEngine } from '../algorithms/categories/dynamic-programming/engin
 // 触发全量 DP Spec 集中注册
 import '../algorithms/categories/dynamic-programming/specs';
 import { AlgorithmModelRepository } from './model-repository';
+import { TreeDpStrategy } from './strategies/tree-dp-strategy';
 import type { LanguageKey } from '../algorithms/categories/dynamic-programming/engine/types';
 
 describe('DP Full Regression Suite (全量动态规划规格、多语言行号与高亮联动扫描)', () => {
@@ -148,6 +149,19 @@ describe('DP Full Regression Suite (全量动态规划规格、多语言行号�
         // 如果题目需要特定参数结构，验证它至少能在 spec 内部用例上运行
         expect(err).toBeUndefined();
       }
+    }
+  });
+
+  it('5. 树型 DP (height-removal-queries) 逐行完整度验证', () => {
+    const model = AlgorithmModelRepository.getModel('height-removal-queries');
+    const strategy = new TreeDpStrategy('height-removal-queries');
+    const steps = strategy.generateSteps(model, { stage: 3, m: 1, n: 6 });
+    expect(steps.length, 'height-removal-queries 步骤数应充分展开 (真实逐行模拟)').toBeGreaterThanOrEqual(70);
+    for (let idx = 0; idx < steps.length; idx++) {
+      const s = steps[idx];
+      expect(s.line, `步骤 #${idx + 1} 未定义行号`).toBeDefined();
+      expect(s.line!).toBeGreaterThan(0);
+      expect(s.line!).toBeLessThanOrEqual(28);
     }
   });
 });
