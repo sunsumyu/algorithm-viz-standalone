@@ -302,4 +302,15 @@ describe('VisualizerAppController Deep Module', () => {
 
     controller.destroy();
   });
+
+  it('应该正常初始化 height-removal-queries 在 stage-2 下的步骤和视图', () => {
+    const controller = new VisualizerAppController({ mode: 'lite', defaultModelId: 'height-removal-queries' });
+    controller.init();
+    const stageTabs = elementsMap.get('stage-tabs-container');
+    const stage2Btn = stageTabs?.children.find(c => c.dataset.stage === 'stage-2');
+    stage2Btn?.dispatch('click');
+    expect((controller as any).steps.length).toBeGreaterThan(0);
+    expect((controller as any).timeline?.getCurrentStep()).toBe(0);
+    controller.destroy();
+  });
 });

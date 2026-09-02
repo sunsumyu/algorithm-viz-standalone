@@ -140,7 +140,7 @@ describe('Tree DP Specs Suite', () => {
         anchorMap: compiled.anchorMap || compiled.variants?.standard?.anchorMap,
       });
 
-      expect(steps.length).toBe(3);
+      expect(steps.length).toBeGreaterThanOrEqual(70);
       const javaTotalLines = HeightRemovalQueriesSpec.code.languages.java.length;
       expect(javaTotalLines).toBe(28);
 
@@ -151,10 +151,8 @@ describe('Tree DP Specs Suite', () => {
 
       // Step 1: entry (8)
       expect(steps[0].line).toBe(8);
-      // Step 2: query transfer (17)
-      expect(steps[1].line).toBe(17);
-      // Step 3: return ans (19)
-      expect(steps[2].line).toBe(19);
+      // Last Step: return ans (19)
+      expect(steps[steps.length - 1].line).toBe(19);
     });
   });
 

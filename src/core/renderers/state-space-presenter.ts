@@ -6,7 +6,7 @@
  */
 
 import type { UniversalStep } from '../universal-stage-engine';
-import { GridVisualAdapter, RecursionTreeAdapter } from './grid-visual-adapter';
+import { GridVisualAdapter, RecursionTreeAdapter, MemoSlotVisualAdapter } from './grid-visual-adapter';
 import { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 
