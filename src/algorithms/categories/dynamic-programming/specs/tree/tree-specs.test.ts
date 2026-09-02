@@ -11,6 +11,8 @@ import { PartyWithoutBossSpec } from './party-without-boss.spec';
 import { HeightRemovalQueriesSpec } from './height-removal-queries.spec';
 import { MinimumScoreAfterRemovalsSpec } from './minimum-score-after-removals.spec';
 import type { AlgorithmSpec } from '../../engine/types';
+import { TreeDpStrategy } from '../../../../../core/strategies/tree-dp-strategy';
+import { AlgorithmModelRepository } from '../../../../../core/model-repository';
 
 describe('Tree DP Specs Suite', () => {
   const specs: AlgorithmSpec[] = [
@@ -126,6 +128,34 @@ describe('Tree DP Specs Suite', () => {
       const queryStep = steps.find((s) => s.metrics?.currentQuery === 4);
       expect(queryStep?.metrics?.treeHeight).toBe(2);
     });
+
+    it('TreeDpStrategy 生成的步骤行号必须严格在 Java 代码合法行内，且第 3 步对应 return ans', () => {
+      const model = AlgorithmModelRepository.getModel('height-removal-queries');
+      const compiled = AlgorithmModelRepository.getCompiledStage('height-removal-queries', 'stage-3', 'forward');
+      const strategy = new TreeDpStrategy('height-removal-queries');
+      const steps = strategy.generateSteps(model, {
+        stage: 3,
+        m: 6,
+        n: 6,
+        anchorMap: compiled.anchorMap || compiled.variants?.standard?.anchorMap,
+      });
+
+      expect(steps.length).toBe(3);
+      const javaTotalLines = HeightRemovalQueriesSpec.code.languages.java.length;
+      expect(javaTotalLines).toBe(28);
+
+      for (const s of steps) {
+        expect(s.line).toBeGreaterThan(0);
+        expect(s.line).toBeLessThanOrEqual(javaTotalLines);
+      }
+
+      // Step 1: entry (8)
+      expect(steps[0].line).toBe(8);
+      // Step 2: query transfer (17)
+      expect(steps[1].line).toBe(17);
+      // Step 3: return ans (19)
+      expect(steps[2].line).toBe(19);
+    });
   });
 
   describe('MinimumScoreAfterRemovalsSpec', () => {
@@ -143,6 +173,31 @@ describe('Tree DP Specs Suite', () => {
       expect(steps.length).toBeGreaterThan(0);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.metrics?.minScore).toBe(9);
+    });
+
+    it('TreeDpStrategy 生成的步骤行号必须严格在 Java 代码合法行内 (LC 2322)', () => {
+      const model = AlgorithmModelRepository.getModel('minimum-score-after-removals');
+      const compiled = AlgorithmModelRepository.getCompiledStage('minimum-score-after-removals', 'stage-3', 'forward');
+      const strategy = new TreeDpStrategy('minimum-score-after-removals');
+      const steps = strategy.generateSteps(model, {
+        stage: 3,
+        m: 5,
+        n: 5,
+        anchorMap: compiled.anchorMap || compiled.variants?.standard?.anchorMap,
+      });
+
+      expect(steps.length).toBe(3);
+      const javaTotalLines = MinimumScoreAfterRemovalsSpec.code.languages.java.length;
+      expect(javaTotalLines).toBe(45);
+
+      for (const s of steps) {
+        expect(s.line).toBeGreaterThan(0);
+        expect(s.line).toBeLessThanOrEqual(javaTotalLines);
+      }
+
+      expect(steps[0].line).toBe(3);
+      expect(steps[1].line).toBe(31);
+      expect(steps[2].line).toBe(34);
     });
   });
 });

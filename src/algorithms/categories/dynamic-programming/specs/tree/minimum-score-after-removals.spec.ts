@@ -56,15 +56,15 @@ export const MinimumScoreAfterRemovalsSpec: AlgorithmSpec = {
   },
   semanticLines: {
     entry: { java: 3, cpp: 4, python: 2, javascript: 1 },
-    guard: { java: 40, cpp: 16, python: 18, javascript: 17 },
+    guard: { java: 37, cpp: 16, python: 18, javascript: 17 },
     init: { java: 11, cpp: 11, python: 8, javascript: 8 },
     stateTransfer: {
-      java: [23, 24, 25, 26, 27, 28, 29, 30],
+      java: [23, 24, 25, 26, 27, 28, 29, 31],
       cpp: [27, 28, 29, 30, 31, 32, 33, 34],
       python: [27, 28, 29, 30, 31, 32, 33, 34],
       javascript: [27, 28, 29, 30, 31, 32, 33, 34],
     },
-    returnResult: { java: 35, cpp: 39, python: 39, javascript: 40 },
+    returnResult: { java: 34, cpp: 39, python: 39, javascript: 40 },
   },
   code: {
     languages: {

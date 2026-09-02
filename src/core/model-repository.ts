@@ -87,6 +87,10 @@ export class AlgorithmModelRepository {
         ? { s: 'abacbe', n: 6 }
         : spec.id === 'party-without-boss'
         ? { n: 7 }
+        : spec.id === 'height-removal-queries'
+        ? { queries: [4], n: 6 }
+        : spec.id === 'minimum-score-after-removals'
+        ? { nums: [1, 5, 5, 4, 11], n: 5 }
         : spec.id === 'can-i-win'
         ? { n: 4, m: 6 }
         : spec.id === 'matchsticks-to-square'
@@ -257,6 +261,23 @@ export class AlgorithmModelRepository {
 
     const model = this.getModel(id);
     const compiled = YamlModelLoader.getCompiledStageConfig(model, stageKey, direction);
+
+    // 兜底桥接：若某阶段或其变体的 anchorMap 为空，自动通过 spec.semanticLines 注入
+    const spec = DpStepEngine.get(id);
+    if (spec && spec.semanticLines) {
+      const fallbackAnchorMap = bridgeSemanticLinesToAnchorMap(spec.semanticLines, 'java');
+      if (!compiled.anchorMap || Object.keys(compiled.anchorMap).length === 0) {
+        compiled.anchorMap = { ...fallbackAnchorMap, ...(compiled.anchorMap || {}) };
+      }
+      if (compiled.variants) {
+        for (const variant of Object.values(compiled.variants)) {
+          if (!variant.anchorMap || Object.keys(variant.anchorMap).length === 0) {
+            variant.anchorMap = { ...fallbackAnchorMap, ...(variant.anchorMap || {}) };
+          }
+        }
+      }
+    }
+
     this.stageCache.set(cacheKey, compiled);
     return compiled;
   }
@@ -297,6 +318,105 @@ export class AlgorithmModelRepository {
   private static getStageAnnotatedCode(specId: string, stage: string, spec: any): string {
     const template = StageCodeCompiler.getAnnotatedTemplate(specId, stage);
     if (template) return template;
-    return spec.code?.languages?.java?.join('\n') || spec.code?.languages?.javascript?.join('\n') || '';
+
+    const rawLines = spec.code?.languages?.java || spec.code?.languages?.javascript;
+    if (!rawLines || !Array.isArray(rawLines)) {
+      return '';
+    }
+
+    if (!spec.semanticLines) {
+      return rawLines.join('\n');
+    }
+
+    const anchorMap = bridgeSemanticLinesToAnchorMap(spec.semanticLines, 'java');
+    const lineToTag = new Map<number, string>();
+    if (anchorMap.entry) lineToTag.set(anchorMap.entry, 'entry');
+    if (anchorMap.guard) lineToTag.set(anchorMap.guard, 'guard');
+    if (anchorMap.init && !lineToTag.has(anchorMap.init)) lineToTag.set(anchorMap.init, 'init');
+    if (anchorMap.loop_i && !lineToTag.has(anchorMap.loop_i)) lineToTag.set(anchorMap.loop_i, 'loop_i');
+    if (anchorMap.transfer && !lineToTag.has(anchorMap.transfer)) lineToTag.set(anchorMap.transfer, 'transfer');
+    if (anchorMap.return && !lineToTag.has(anchorMap.return)) lineToTag.set(anchorMap.return, 'return');
+
+    const annotatedLines = rawLines.map((lineStr: string, idx: number) => {
+      const lineNum = idx + 1;
+      const tag = lineToTag.get(lineNum);
+      if (tag && !lineStr.includes('@step:')) {
+        return `${lineStr} // @step:${tag}`;
+      }
+      return lineStr;
+    });
+
+    return annotatedLines.join('\n');
   }
+}
+
+/**
+ * 将 AlgorithmSpec 中的结构化 semanticLines 字典安全解析为标量行号
+ */
+function resolveSemanticLine(value: any, lang: string = 'java'): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'number') return value;
+  if (Array.isArray(value)) return value[value.length - 1];
+  if (typeof value === 'object') {
+    const langVal = value[lang];
+    if (typeof langVal === 'number') return langVal;
+    if (Array.isArray(langVal)) return langVal[langVal.length - 1];
+    if (langVal && typeof langVal === 'object' && 'primary' in langVal) {
+      return typeof langVal.primary === 'number'
+        ? langVal.primary
+        : Array.isArray(langVal.primary)
+        ? langVal.primary[0]
+        : undefined;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * 将 AlgorithmSpec 中的结构化 semanticLines 字典桥接转换为标准 anchorMap
+ */
+export function bridgeSemanticLinesToAnchorMap(
+  semanticLines: any,
+  lang: string = 'java'
+): Record<string, number> {
+  const map: Record<string, number> = {};
+  if (!semanticLines) return map;
+
+  const entry = resolveSemanticLine(semanticLines.entry, lang);
+  if (entry) map.entry = entry;
+
+  const guard = resolveSemanticLine(semanticLines.guard, lang);
+  if (guard) map.guard = guard;
+
+  const init = resolveSemanticLine(semanticLines.init, lang);
+  if (init) map.init = init;
+
+  const loopCheck = resolveSemanticLine(semanticLines.loopCheck, lang);
+  if (loopCheck) {
+    map.loop_i = loopCheck;
+    map.loopCheck = loopCheck;
+  }
+
+  const innerLoopCheck = resolveSemanticLine(semanticLines.innerLoopCheck, lang);
+  if (innerLoopCheck) {
+    map.loop_j = innerLoopCheck;
+    map.innerLoopCheck = innerLoopCheck;
+  }
+
+  const transfer = resolveSemanticLine(semanticLines.stateTransfer, lang);
+  if (transfer) {
+    map.transfer = transfer;
+    map.stateTransfer = transfer;
+  }
+
+  const loopExit = resolveSemanticLine(semanticLines.loopExit, lang);
+  if (loopExit) map.loopExit = loopExit;
+
+  const returnResult = resolveSemanticLine(semanticLines.returnResult, lang);
+  if (returnResult) {
+    map.return = returnResult;
+    map.returnResult = returnResult;
+  }
+
+  return map;
 }

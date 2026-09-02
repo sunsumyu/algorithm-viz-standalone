@@ -32,6 +32,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new TreeDpStrategy('minimum-fuel-cost'));
   AlgorithmStrategyRegistry.register(new TreeDpStrategy('longest-path-different-characters'));
   AlgorithmStrategyRegistry.register(new TreeDpStrategy('party-without-boss'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('height-removal-queries'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('minimum-score-after-removals'));
 
   // Bitmask DP (状压 DP 专题 — 第080讲、第081讲)
   AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('can-i-win'));

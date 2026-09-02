@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AlgorithmModelRepository } from './model-repository';
+import { AlgorithmModelRepository, bridgeSemanticLinesToAnchorMap } from './model-repository';
 
 describe('AlgorithmModelRepository Deep Module', () => {
   it('应该成功预加载并获取 unique-paths 算法模型', () => {
@@ -130,5 +130,80 @@ describe('AlgorithmModelRepository Deep Module', () => {
     AlgorithmModelRepository.warmup('fibonacci');
     const compiled = AlgorithmModelRepository.getCompiledStage('fibonacci', 'stage-1', 'forward');
     expect(compiled).toBeDefined();
+  });
+
+  it('bridgeSemanticLinesToAnchorMap 应该能正确将 spec 语义字典转换为 anchorMap', () => {
+    const semanticLines = {
+      entry: { java: 8, js: 1 },
+      guard: { java: 21, js: 6 },
+      init: { java: 9, js: 18 },
+      stateTransfer: { java: [10, 11, 12, 13, 16, 17], js: [23, 24, 25, 26, 33] },
+      returnResult: { java: 19, js: 36 },
+    };
+
+    const anchorMap = bridgeSemanticLinesToAnchorMap(semanticLines, 'java');
+    expect(anchorMap.entry).toBe(8);
+    expect(anchorMap.guard).toBe(21);
+    expect(anchorMap.init).toBe(9);
+    expect(anchorMap.transfer).toBe(17);
+    expect(anchorMap.stateTransfer).toBe(17);
+    expect(anchorMap.return).toBe(19);
+    expect(anchorMap.returnResult).toBe(19);
+  });
+
+  it('合成模型 (如 height-removal-queries) 应该能通过管道自动获得准确且不越界的 anchorMap', () => {
+    AlgorithmModelRepository.clearCache();
+    const compiled = AlgorithmModelRepository.getCompiledStage('height-removal-queries', 'stage-3', 'forward');
+    expect(compiled).toBeDefined();
+
+    // 验证 anchorMap 已经自动注入且与 Java 代码精准对应
+    const anchorMap = compiled.anchorMap || compiled.variants?.standard?.anchorMap;
+    expect(anchorMap).toBeDefined();
+    expect(anchorMap?.entry).toBe(8);
+    expect(anchorMap?.transfer).toBe(17);
+    expect(anchorMap?.return).toBe(19);
+
+    // 验证生成的纯净源码中无残留的 @step 标签
+    if (compiled.codeHtml) {
+      expect(compiled.codeHtml).not.toContain('@step:');
+    }
+  });
+
+  it('守护测试：所有已注册模型的 anchorMap 行号均在有效代码范围内且严禁越界', () => {
+    const ids = AlgorithmModelRepository.getAllIds();
+    for (const id of ids) {
+      const model = AlgorithmModelRepository.getModel(id);
+      if (!model || !model.stages) continue;
+
+      for (const stageKey of Object.keys(model.stages)) {
+        const compiled = AlgorithmModelRepository.getCompiledStage(id, stageKey, 'forward');
+        const mapsToCheck: Array<Record<string, number> | undefined> = [compiled.anchorMap];
+        if (compiled.variants) {
+          for (const variant of Object.values(compiled.variants)) {
+            mapsToCheck.push(variant.anchorMap);
+          }
+        }
+
+        // 计算总行数
+        const lineCount = (compiled.codeHtml?.match(/class="code-line"/g) || []).length;
+        if (lineCount === 0) continue;
+
+        for (const map of mapsToCheck) {
+          if (!map) continue;
+          for (const [key, line] of Object.entries(map)) {
+            if (typeof line === 'number') {
+              expect(
+                line,
+                `模型 [${id}] 阶段 [${stageKey}] 锚点 [${key}] 行号 ${line} 超出代码行数 ${lineCount}`
+              ).toBeLessThanOrEqual(lineCount);
+              expect(
+                line,
+                `模型 [${id}] 阶段 [${stageKey}] 锚点 [${key}] 行号 ${line} 必须大于 0`
+              ).toBeGreaterThan(0);
+            }
+          }
+        }
+      }
+    }
   });
 });

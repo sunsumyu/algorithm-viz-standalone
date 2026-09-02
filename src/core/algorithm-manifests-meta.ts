@@ -2457,6 +2457,28 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "learningGoal": "掌握树型DP独立集模型：父子互斥状态二元组的设计与多叉子树独立性求和"
   },
   {
+    "id": "height-removal-queries",
+    "name": "移除子树后的二叉树高度",
+    "viewId": "height-removal-queries",
+    "category": "dynamic-programming",
+    "description": "树型DP与DFN序打平技巧：先序遍历映射连续区间，前后缀极值 O(1) 回答移除子树后的树高度 (LeetCode 2458)。",
+    "icon": "✂️",
+    "difficulty": 3,
+    "levelOrder": 68.1,
+    "learningGoal": "掌握树型DP与DFS序打平结合的思想：将子树剔除转化为一维区间挖除，利用前后缀最大深度数组 O(1) 求解"
+  },
+  {
+    "id": "minimum-score-after-removals",
+    "name": "从树中删除边的最小分数",
+    "viewId": "minimum-score-after-removals",
+    "category": "dynamic-programming",
+    "description": "树型DP与拓扑关系判定：DFN序区间包含判定，O(n^2) 枚举断边方案求3连通块最小异或差值 (LeetCode 2322)。",
+    "icon": "🪓",
+    "difficulty": 3,
+    "levelOrder": 68.2,
+    "learningGoal": "掌握DFN序快速判定树上节点拓扑包含关系以及子树异或和运算的自反律化简技巧"
+  },
+  {
     "id": "can-i-win",
     "name": "我能赢吗",
     "viewId": "can-i-win",

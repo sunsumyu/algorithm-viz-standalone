@@ -12,7 +12,9 @@ export type TreeDpModelId =
   | 'course-selection'
   | 'minimum-fuel-cost'
   | 'longest-path-different-characters'
-  | 'party-without-boss';
+  | 'party-without-boss'
+  | 'height-removal-queries'
+  | 'minimum-score-after-removals';
 
 interface RawTreeNode {
   id: string;
@@ -102,7 +104,9 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       modelId === 'course-selection' ||
       modelId === 'minimum-fuel-cost' ||
       modelId === 'longest-path-different-characters' ||
-      modelId === 'party-without-boss'
+      modelId === 'party-without-boss' ||
+      modelId === 'height-removal-queries' ||
+      modelId === 'minimum-score-after-removals'
     );
   }
 
@@ -129,6 +133,10 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         return this.compileLongestPathDifferentCharacters(model, stage, anchorMap);
       case 'party-without-boss':
         return this.compilePartyWithoutBoss(model, stage, anchorMap);
+      case 'height-removal-queries':
+        return this.compileHeightRemovalQueries(model, stage, anchorMap);
+      case 'minimum-score-after-removals':
+        return this.compileMinimumScoreAfterRemovals(model, stage, anchorMap);
       default:
         return this.compileMaxDistance(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap);
     }
@@ -980,4 +988,212 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
 
     return steps;
   }
+
+  // =========================================================================
+  // 10. 移除子树后的二叉树高度 (Height After Subtree Removal, LC 2458)
+  // =========================================================================
+  private compileHeightRemovalQueries(
+    _model: IYamlAlgorithmModel,
+    _stage: number,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const treeRootNode: UniversalTreeNode = {
+      id: 'node-1',
+      r: 0,
+      c: 0,
+      val: '点#1(深0)',
+      status: 'visited',
+      tag: 'DFN:0|深:0',
+      children: [
+        {
+          id: 'node-3',
+          r: 1,
+          c: 0,
+          val: '点#3(深1)',
+          status: 'visited',
+          tag: 'DFN:1|深:1',
+          children: [
+            { id: 'node-2', r: 2, c: 0, val: '点#2(深2)', status: 'visited', tag: 'DFN:2|深:2', children: [] },
+          ],
+        },
+        {
+          id: 'node-4',
+          r: 1,
+          c: 1,
+          val: '点#4(深1)',
+          status: 'visited',
+          tag: 'DFN:3|深:1',
+          children: [
+            { id: 'node-6', r: 2, c: 1, val: '点#6(深2)', status: 'visited', tag: 'DFN:4|深:2', children: [] },
+            { id: 'node-5', r: 2, c: 2, val: '点#5(深2)', status: 'visited', tag: 'DFN:5|深:2', children: [] },
+          ],
+        },
+      ],
+    };
+
+    steps.push({
+      type: 'entry',
+      line: anchorMap?.entry || 8,
+      i: 0,
+      j: 0,
+      dp1d: [0, 1, 2, 1, 2, 2],
+      memo: [0, 1, 2, 1, 2, 2],
+      activeSlot: 0,
+      tag: 'DFN打平+深度数组',
+      log: '🌲 二叉树先序建立 DFN 序与各节点深度，预处理前缀最大值 maxLeft 与后缀最大值 maxRight',
+      msg: '启动预处理：以根为原点遍历整棵二叉树，构建 DFN 序映射，将子树剔除转化为序列连续区间挖除。',
+      activeNodeId: treeRootNode.id,
+      treeRoot: cloneTree(treeRootNode),
+    });
+
+    const queryTree = cloneTree(treeRootNode);
+    // Mark subtree of node 4 as disabled
+    const markDisabled = (node: UniversalTreeNode) => {
+      if (node.id === 'node-4' || node.id === 'node-6' || node.id === 'node-5') {
+        node.status = 'inactive';
+        node.tag = '已剔除';
+      }
+      node.children?.forEach(markDisabled);
+    };
+    markDisabled(queryTree);
+
+    steps.push({
+      type: 'update',
+      line: anchorMap?.transfer || 17,
+      i: 4,
+      j: 2,
+      dp1d: [2],
+      memo: [2],
+      activeSlot: 0,
+      tag: '查询删除节点#4: 剩余高度2',
+      log: '| ⚡ 查询移除节点 4 子树 [DFN 3..5]: 前缀 maxLeft[2]=2, 后缀 maxRight[6]=0 → 剩余树最大高度为 2',
+      msg: '查询 <strong>query=4</strong>：剔除节点 4 的整个子树，合并左侧前缀最大深度 <code>2</code> 与右侧后缀深度 <code>0</code>，剩余最大高度为 <strong>2</strong>。',
+      activeNodeId: 'node-4',
+      treeRoot: queryTree,
+    });
+
+    steps.push({
+      type: 'return',
+      line: anchorMap?.return || 19,
+      i: 0,
+      j: 0,
+      dp1d: [2],
+      memo: [2],
+      activeSlot: 0,
+      tag: '查询结果: [2]',
+      log: '| 🏆 全部查询计算完成，O(1) 快速回答每个子树剔除高度',
+      msg: '🏆 演化推导完成！所有查询均在 $O(1)$ 时间内由前后缀极值数组合并完成。',
+      activeNodeId: treeRootNode.id,
+      treeRoot: cloneTree(treeRootNode),
+    });
+
+    return steps;
+  }
+
+  // =========================================================================
+  // 11. 从树中删除边的最小分数 (Minimum Score After Removals, LC 2322)
+  // =========================================================================
+  private compileMinimumScoreAfterRemovals(
+    _model: IYamlAlgorithmModel,
+    _stage: number,
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const treeRootNode: UniversalTreeNode = {
+      id: 'score-0',
+      r: 0,
+      c: 0,
+      val: '点#0(值1)',
+      status: 'visited',
+      tag: '异或:14|总',
+      children: [
+        {
+          id: 'score-1',
+          r: 1,
+          c: 0,
+          val: '点#1(值5)',
+          status: 'visited',
+          tag: '异或:15',
+          children: [
+            { id: 'score-2', r: 2, c: 0, val: '点#2(值5)', status: 'visited', tag: '异或:5', children: [] },
+            {
+              id: 'score-3',
+              r: 2,
+              c: 1,
+              val: '点#3(值4)',
+              status: 'visited',
+              tag: '异或:15',
+              children: [
+                { id: 'score-4', r: 3, c: 1, val: '点#4(值11)', status: 'visited', tag: '异或:11', children: [] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    steps.push({
+      type: 'entry',
+      line: anchorMap?.entry || 3,
+      i: 0,
+      j: 0,
+      dp1d: [14],
+      memo: [14],
+      activeSlot: 0,
+      tag: 'DFS后序统计子树异或',
+      log: '🌲 从树中删除边：以节点 0 为根建树，DFS 统计各节点 DFN 序、子树规模与子树全部异或和（allXor = 14）',
+      msg: '启动后序遍历：预处理出各子树节点异或总和，整树全部节点异或值为 <code>14</code>。',
+      activeNodeId: treeRootNode.id,
+      treeRoot: cloneTree(treeRootNode),
+    });
+
+    const cutTree = cloneTree(treeRootNode);
+    // Component 3 (root): score-0
+    cutTree.status = 'normal';
+    cutTree.tag = '块3(异或1)';
+    // Component 2 (mid): score-1, score-3, score-4
+    if (cutTree.children?.[0]) {
+      cutTree.children[0].status = 'visited';
+      cutTree.children[0].tag = '块2(异或10)';
+      // Component 1 (deep): score-2
+      if (cutTree.children[0].children?.[0]) {
+        cutTree.children[0].children[0].status = 'active';
+        cutTree.children[0].children[0].tag = '块1(异或5)';
+      }
+    }
+
+    steps.push({
+      type: 'update',
+      line: anchorMap?.transfer || 31,
+      i: 1,
+      j: 2,
+      dp1d: [5, 10, 1],
+      memo: [5, 10, 1],
+      activeSlot: 1,
+      tag: '断边(0-1)与(1-2): 差值9',
+      log: '| ⚡ 测试断边方案：切除以 #1 与 #2 为根的两子树。#2 在 #1 子树内，三块异或和分别为 5, 10, 1 → 极差 10 - 1 = 9 (最优！)',
+      msg: '枚举断边 <strong>(0,1)</strong> 与 <strong>(1,2)</strong>：子树 #2 包含在子树 #1 中，三个组件异或和分别为 <code>5, 10, 1</code>，最大与最小之差为 <code>10 - 1 = 9</code>，刷新全局最小分数！',
+      activeNodeId: 'score-1',
+      treeRoot: cutTree,
+    });
+
+    steps.push({
+      type: 'return',
+      line: anchorMap?.return || 34,
+      i: 0,
+      j: 0,
+      dp1d: [9],
+      memo: [9],
+      activeSlot: 0,
+      tag: '最小分数: 9',
+      log: '| 🏆 枚举完成！删除两条边切分 3 连通块的最小分数极差为 9',
+      msg: '🏆 演化推导完成！所有边对切分方案中，最小分数为 <strong>9</strong>。',
+      activeNodeId: treeRootNode.id,
+      treeRoot: cloneTree(treeRootNode),
+    });
+
+    return steps;
+  }
 }
+

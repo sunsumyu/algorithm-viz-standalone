@@ -85,12 +85,12 @@ export const HeightRemovalQueriesSpec: AlgorithmSpec = {
     guard: { java: 21, cpp: 8, python: 6, javascript: 7 },
     init: { java: 9, cpp: 17, python: 18, javascript: 20 },
     stateTransfer: {
-      java: [10, 11, 12, 13, 16],
+      java: [10, 11, 12, 13, 16, 17],
       cpp: [18, 19, 20, 21, 24],
       python: [22, 23, 24, 25, 30],
       javascript: [23, 24, 25, 26, 33],
     },
-    returnResult: { java: 18, cpp: 26, python: 32, javascript: 36 },
+    returnResult: { java: 19, cpp: 26, python: 32, javascript: 36 },
   },
   code: {
     languages: {
