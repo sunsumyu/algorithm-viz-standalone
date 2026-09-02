@@ -167,6 +167,17 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
       );
     }
 
+    // 树型DP root 输入解析（层序数组字符串 → number|null 数组）
+    const rootInput = root?.querySelector('#dp-input-root') as HTMLInputElement | null;
+    if (rootInput) {
+      inputObj.root = rootInput.value
+        .split(',')
+        .map((s: string) => {
+          const t = s.trim();
+          return t === 'null' || t === '' ? null : Number(t);
+        });
+    }
+
     const rawSteps = DpStepEngine.generateSteps(specId, inputObj, mode);
     return rawSteps.map(convertTraceStep);
   };
@@ -471,6 +482,186 @@ const demos: DemoDef[] = [
     examples: [{ label: 's="bbbab"', values: { s: 'bbbab' } }, { label: 's="cbbd"', values: { s: 'cbbd' } }],
     build: makeEngineBuilder('longest-palindromic-subsequence'),
   },
+
+  // 树型DP 演示 (Tree DP Demos — 第078讲)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'max-distance-in-tree',
+    name: '树的最大距离',
+    description: '树型DP二元组汇报：[maxDepth, maxDist]，穿越当前节点路径=左深度+右深度，子树内最大距离=三方向取max。',
+    icon: '📏',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
+    examples: [
+      { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
+      { label: '[1,2,3,4,null,null,null,5]', values: { root: '1,2,3,4,null,null,null,5' } },
+    ],
+    build: makeEngineBuilder('max-distance-in-tree'),
+  },
+  {
+    id: 'max-path-sum',
+    name: '二叉树最大路径和',
+    description: '树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和。',
+    icon: '🏔️',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '-10,9,20,null,null,15,7', width: 220 }],
+    examples: [
+      { label: '[-10,9,20,null,null,15,7]', values: { root: '-10,9,20,null,null,15,7' } },
+      { label: '[1,2,3]', values: { root: '1,2,3' } },
+      { label: '[-3]', values: { root: '-3' } },
+    ],
+    build: makeEngineBuilder('max-path-sum'),
+  },
+  {
+    id: 'largest-bst-subtree',
+    name: '最大BST子树',
+    description: '树型DP四元组汇报：[isBST, min, max, size]，后序遍历融合判断BST条件，找节点数最多的BST子树。',
+    icon: '🔍',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '10,5,15,1,8,null,7', width: 220 }],
+    examples: [
+      { label: '[10,5,15,1,8,null,7]', values: { root: '10,5,15,1,8,null,7' } },
+      { label: '[3,1,5,0,2,4,6]', values: { root: '3,1,5,0,2,4,6' } },
+    ],
+    build: makeEngineBuilder('largest-bst-subtree'),
+  },
+  {
+    id: 'tree-diameter',
+    name: '二叉树的直径',
+    description: '树型DP路径类经典：每个节点向父汇报最大深度，以当前节点为拐点的直径=左深度+右深度，全局取最大。',
+    icon: '📐',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
+    examples: [
+      { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
+      { label: '[1,2]', values: { root: '1,2' } },
+    ],
+    build: makeEngineBuilder('tree-diameter'),
+  },
+  {
+    id: 'binary-tree-cameras',
+    name: '监控二叉树',
+    description: '树型DP状态机：每个节点三种状态（不覆盖/被覆盖/安摄像头），后序遍历贪心最优化摄像头总数。',
+    icon: '📷',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '0,0,null,0,0', width: 200 }],
+    examples: [
+      { label: '[0,0,null,0,0]', values: { root: '0,0,null,0,0' } },
+      { label: '[0,0,null,0,null,0,null,null,0]', values: { root: '0,0,null,0,null,0,null,null,0' } },
+    ],
+    build: makeEngineBuilder('binary-tree-cameras'),
+  },
+  {
+    id: 'course-selection',
+    name: '选课（树上背包DP）',
+    description: '树上背包DP：以虚拟节点0为根，dp[u][j]表示以u为根选j门课的最大学分，分组背包合并子树。',
+    icon: '🎓',
+    inputs: [
+      { id: 'n', label: '课程数 n', value: '4', width: 80 },
+      { id: 'm', label: '最多选 m 门', value: '3', width: 80 },
+    ],
+    examples: [
+      { label: 'n=4, m=3', values: { n: '4', m: '3' } },
+      { label: 'n=6, m=4', values: { n: '6', m: '4' } },
+    ],
+    build: makeEngineBuilder('course-selection'),
+  },
+  {
+    id: 'minimum-fuel-cost',
+    name: '到达首都的最少油耗',
+    description: '树型DP子树人数汇聚：每条边所需车辆与油耗 = ⌈子树代表总人数 / 车辆座位数⌉ (LeetCode 2477)。',
+    icon: '⛽',
+    inputs: [
+      { id: 'seats', label: '车座 seats', value: '2', width: 80 },
+    ],
+    examples: [
+      { label: 'seats=2', values: { seats: '2' } },
+      { label: 'seats=5', values: { seats: '5' } },
+    ],
+    build: makeEngineBuilder('minimum-fuel-cost'),
+  },
+  {
+    id: 'longest-path-different-characters',
+    name: '相邻字符不同的最长路径',
+    description: '树型DP多叉树拐点模型：贪心维护最长与次长有效子链 max1/max2，拐点路径 = 1+max1+max2 (LeetCode 2246)。',
+    icon: '🔤',
+    inputs: [
+      { id: 's', label: '字符分配 s', value: 'abacbe', width: 140 },
+    ],
+    examples: [
+      { label: 's="abacbe"', values: { s: 'abacbe' } },
+      { label: 's="aabc"', values: { s: 'aabc' } },
+    ],
+    build: makeEngineBuilder('longest-path-different-characters'),
+  },
+  {
+    id: 'party-without-boss',
+    name: '没有上司的舞会',
+    description: '树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。',
+    icon: '🎭',
+    inputs: [
+      { id: 'n', label: '员工数 n', value: '7', width: 80 },
+    ],
+    examples: [
+      { label: 'n=7, 全乐4/1/2/3', values: { n: '7' } },
+    ],
+    build: makeEngineBuilder('party-without-boss'),
+  },
+
+  // 状压DP 演示 (Bitmask DP Demos — 第080讲)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'can-i-win',
+    name: '我能赢吗',
+    description: '状压DP + 博弈论：用位掩码记录 1~n 哪些数字已被选取，记忆化搜索判断先手是否必胜 (LeetCode 464)。',
+    icon: '🎲',
+    inputs: [
+      { id: 'n', label: '可选上限 n', value: '4', width: 80 },
+      { id: 'm', label: '目标 m', value: '6', width: 80 },
+    ],
+    examples: [
+      { label: 'n=4, m=6', values: { n: '4', m: '6' } },
+      { label: 'n=10, m=11', values: { n: '10', m: '11' } },
+    ],
+    build: makeEngineBuilder('can-i-win'),
+  },
+  {
+    id: 'matchsticks-to-square',
+    name: '火柴拼正方形',
+    description: '状压DP / 回溯：判断一组火柴能否恰好拼成一个正方形。将火柴分入 4 条等长边 (LeetCode 473)。',
+    icon: '🔥',
+    inputs: [
+      { id: 'nums', label: '火柴长度', value: '1,1,2,2,2', width: 160 },
+    ],
+    examples: [
+      { label: '[1,1,2,2,2]', values: { nums: '1,1,2,2,2' } },
+      { label: '[3,3,3,3,4]', values: { nums: '3,3,3,3,4' } },
+    ],
+    build: makeEngineBuilder('matchsticks-to-square'),
+  },
+  {
+    id: 'partition-k-equal-subsets',
+    name: '划分为k个相等子集',
+    description: '状压DP / 回溯：将 n 个数划分为 k 个和相等的子集。回溯搜索 + 排序剪枝 (LeetCode 698)。',
+    icon: '📦',
+    inputs: [
+      { id: 'nums', label: '数组', value: '4,3,2,3,5,2,1', width: 180 },
+      { id: 'k', label: 'k', value: '4', width: 60 },
+    ],
+    examples: [
+      { label: '[4,3,2,3,5,2,1], k=4', values: { nums: '4,3,2,3,5,2,1', k: '4' } },
+      { label: '[1,2,3,4], k=3', values: { nums: '1,2,3,4', k: '3' } },
+    ],
+    build: makeEngineBuilder('partition-k-equal-subsets'),
+  },
+  {
+    id: 'tsp-bitmask-dp',
+    name: '旅行商问题 TSP',
+    description: '经典状压DP：dp[S][i] 表示经过集合 S 中所有城市且当前在 i 的最短路径，O(2^n·n^2) 求最短回路。',
+    icon: '🗺️',
+    inputs: [
+      { id: 'n', label: '城市数 n', value: '4', width: 80 },
+    ],
+    examples: [
+      { label: 'n=4', values: { n: '4' } },
+    ],
+    build: makeEngineBuilder('tsp-bitmask-dp'),
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -539,6 +730,22 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'article', id: 'edit-distance-summary' },
   { type: 'demo', id: 'palindromic-substrings' },
   { type: 'demo', id: 'longest-palindromic-subsequence' },
+  // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
+  { type: 'article', id: 'tree-dp-theory' },
+  { type: 'demo', id: 'max-distance-in-tree' },
+  { type: 'demo', id: 'max-path-sum' },
+  { type: 'demo', id: 'largest-bst-subtree' },
+  { type: 'demo', id: 'tree-diameter' },
+  { type: 'demo', id: 'binary-tree-cameras' },
+  { type: 'demo', id: 'course-selection' },
+  { type: 'demo', id: 'minimum-fuel-cost' },
+  { type: 'demo', id: 'longest-path-different-characters' },
+  { type: 'demo', id: 'party-without-boss' },
+  // 状压DP 专题（第080讲：状压dp-上）
+  { type: 'demo', id: 'can-i-win' },
+  { type: 'demo', id: 'matchsticks-to-square' },
+  { type: 'demo', id: 'partition-k-equal-subsets' },
+  { type: 'demo', id: 'tsp-bitmask-dp' },
   { type: 'article', id: 'dp-final-summary' },
 ];
 

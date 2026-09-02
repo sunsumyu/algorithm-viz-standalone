@@ -787,23 +787,77 @@ public int[] robTree(TreeNode cur) {
     ],
   },
 
-  // 16. 动态规划总结篇
+  // 17. 树型DP理论篇（左程云算法通关课第078讲）
+  {
+    id: 'tree-dp-theory',
+    name: '树型DP理论篇（必备套路）',
+    description: '树型动态规划的核心思想：后序遍历自底向上汇聚信息，每个节点向父节点汇报完成决策所需的充分信息元组。',
+    icon: '🌲',
+    difficulty: 2 as 1 | 2 | 3,
+    learningGoal: '掌握树型DP"信息汇报元组"设计范式，学会从子节点收集信息、在当前节点完成决策',
+    sections: [
+      [
+        '树型DP的核心思维方式',
+        `<p><strong>树型DP</strong> 是动态规划在树形结构上的延伸，核心思想：</p>
+        <ol>
+          <li><strong>以每个节点为"决策者"</strong>：想清楚当前节点在做什么决策</li>
+          <li><strong>向子节点"索取"信息</strong>：把当前节点完成决策所需要的所有信息组成"信息元组"</li>
+          <li><strong>后序遍历自底向上融合</strong>：先递归处理左右子树，再在当前节点利用子树信息完成计算</li>
+          <li><strong>向父节点"汇报"同样的信息元组</strong></li>
+        </ol>
+        <div class="highlight-box">
+          <p><strong>套路公式</strong>：设计 <code>info(u)</code> 函数返回信息元组，使得父节点调用后能完成所有判断。</p>
+        </div>`,
+      ],
+      [
+        '四大经典信息汇报模式',
+        `<table>
+          <thead>
+            <tr><th>题型</th><th>汇报元组</th><th>核心判断</th><th>代表题</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>路径类</strong></td><td><code>[maxDepth, maxDist]</code></td><td>穿越当前节点路径 = 左深度 + 右深度</td><td>树的最大距离、二叉树直径</td></tr>
+            <tr><td><strong>路径和类</strong></td><td><code>[maxGain]</code></td><td>拱顶路径 = val + gain(L) + gain(R)</td><td>最大路径和 (LC124)</td></tr>
+            <tr><td><strong>BST验证类</strong></td><td><code>[isBST, min, max, size]</code></td><td>isBST = lBST ∧ rBST ∧ lMax &lt; val &lt; rMin</td><td>最大BST子树 (LC333)</td></tr>
+            <tr><td><strong>状态机类</strong></td><td><code>[s0cost, s1cost, s2cost]</code></td><td>三状态转移（不覆盖/被覆盖/有摄像头）</td><td>监控二叉树 (LC968)</td></tr>
+            <tr><td><strong>背包类</strong></td><td><code>dp[u][j]</code></td><td>以u为根选j个节点最大价值</td><td>选课/树上背包 (P2014)</td></tr>
+          </tbody>
+        </table>`,
+      ],
+      [
+        '树型DP解题五步法',
+        `<ol>
+          <li><strong>Step 1</strong>：明确当前节点的决策——需要回答什么问题？</li>
+          <li><strong>Step 2</strong>：设计信息元组——完成决策所需的最小信息集合</li>
+          <li><strong>Step 3</strong>：写递归基准——空节点的信息元组</li>
+          <li><strong>Step 4</strong>：写信息融合逻辑——如何用子树信息计算当前节点信息元组</li>
+          <li><strong>Step 5</strong>：更新全局答案——在每个节点计算中尝试更新全局最优</li>
+        </ol>
+        <div class="highlight-box">
+          <p>🔑 <strong>关键原则</strong>：信息元组要"自洽"——父节点仅凭元组内容就能完成所有判断。</p>
+        </div>`,
+      ],
+    ],
+  },
+
+  // 18. 动态规划总结篇
   {
     id: 'dp-final-summary',
     name: '动态规划总结篇',
-    description: '动态规划全景复盘：基础、背包、打家劫舍、股票、子序列各大流派题型地图。',
+    description: '动态规划全景复盘：基础、背包、打家劫舍、股票、子序列、树型DP各大流派题型地图。',
     icon: '🏁',
     sections: [
       [
         '动态规划全景知识图谱',
-        `<p>动态规划的核心题型可划分为以下 6 大流派：</p>
+        `<p>动态规划的核心题型可划分为以下 7 大流派：</p>
         <ol>
-          <li><strong>基础线性 & 网格 DP</strong>：斐波那契、爬楼梯、最小花费、不同路径 I/II、整数拆分、不同 BST。</li>
+          <li><strong>基础线性 &amp; 网格 DP</strong>：斐波那契、爬楼梯、最小花费、不同路径 I/II、整数拆分、不同 BST。</li>
           <li><strong>背包问题家族</strong>：0/1 背包、完全背包（组合/排列/最值）、多重背包、二维费用背包。</li>
           <li><strong>打家劫舍家族</strong>：线性打家劫舍、环形打家劫舍、树形打家劫舍。</li>
           <li><strong>股票买卖家族</strong>：1次、多次、2次、K次、冷冻期、手续费。</li>
-          <li><strong>连续/不连续子序列</strong>：最长递增子序列 (LIS)、最长连续递增序列、最长重复子数组、最长公共子序列 (LCS)、最大子数组和。</li>
-          <li><strong>编辑距离与回文串</strong>：判断子序列、不同子序列、两个字符串删除、编辑距离、回文子串、最长回文子序列。</li>
+          <li><strong>连续/不连续子序列</strong>：LIS、LCIS、最长重复子数组、LCS、最大子数组和。</li>
+          <li><strong>编辑距离与回文串</strong>：判断子序列、不同子序列、两字符串删除、编辑距离、回文子串、最长回文子序列。</li>
+          <li><strong>🌲 树型DP</strong>：树的最大距离、最大路径和、最大BST子树、监控二叉树、树上背包。</li>
         </ol>`,
       ],
       [

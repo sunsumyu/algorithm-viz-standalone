@@ -2347,14 +2347,168 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "levelOrder": 57
   },
   {
+    "id": "tree-dp-theory",
+    "name": "树型DP理论篇（必备套路）",
+    "viewId": "tree-dp-theory",
+    "category": "dynamic-programming",
+    "description": "树型动态规划核心套路：信息元组设计、后序遍历汇聚、五步法解题框架。对应左程云算法通关课第078讲。",
+    "icon": "🌲",
+    "difficulty": 2,
+    "levelOrder": 59,
+    "learningGoal": "掌握树型DP\"信息汇报元组\"设计范式，学会后序遍历自底向上融合的树型DP通用套路"
+  },
+  {
+    "id": "max-distance-in-tree",
+    "name": "树的最大距离",
+    "viewId": "max-distance-in-tree",
+    "category": "dynamic-programming",
+    "description": "树型DP二元组汇报：[maxDepth, maxDist]，穿越当前节点路径=左深度+右深度，子树内最大距离=三方向取max。",
+    "icon": "📏",
+    "difficulty": 2,
+    "levelOrder": 60,
+    "learningGoal": "掌握树型DP二元组 [maxDepth, maxDist] 的双信息汇报模式，避免子树内答案丢失"
+  },
+  {
+    "id": "max-path-sum",
+    "name": "二叉树中的最大路径和",
+    "viewId": "max-path-sum",
+    "category": "dynamic-programming",
+    "description": "树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和 (LeetCode 124)。",
+    "icon": "🏔️",
+    "difficulty": 3,
+    "levelOrder": 61,
+    "learningGoal": "掌握树型DP路径和的\"负值截断\"思想：负收益子树不贡献到路径中"
+  },
+  {
+    "id": "largest-bst-subtree",
+    "name": "最大BST子树",
+    "viewId": "largest-bst-subtree",
+    "category": "dynamic-programming",
+    "description": "树型DP四元组汇报：[isBST, min, max, size]，后序遍历融合判断BST条件，找节点数最多的BST子树 (LeetCode 333)。",
+    "icon": "🔍",
+    "difficulty": 2,
+    "levelOrder": 62,
+    "learningGoal": "掌握树型DP四元组 [isBST, min, max, size] 的设计，以及空节点哨兵值的含义"
+  },
+  {
+    "id": "tree-diameter",
+    "name": "二叉树的直径",
+    "viewId": "tree-diameter",
+    "category": "dynamic-programming",
+    "description": "树型DP路径类经典：每个节点向父汇报最大深度，以当前节点为拐点的直径=左深度+右深度 (LeetCode 543)。",
+    "icon": "📐",
+    "difficulty": 1,
+    "levelOrder": 63,
+    "learningGoal": "掌握树型DP路径类单值汇报模式，理解拐点路径结算与向父节点返回单侧深度的区别"
+  },
+  {
+    "id": "binary-tree-cameras",
+    "name": "监控二叉树",
+    "viewId": "binary-tree-cameras",
+    "category": "dynamic-programming",
+    "description": "树型DP状态机：每个节点三种状态（不覆盖/被覆盖/安摄像头），后序遍历贪心最优化摄像头总数 (LeetCode 968)。",
+    "icon": "📷",
+    "difficulty": 3,
+    "levelOrder": 64,
+    "learningGoal": "掌握树型DP状态机设计：每个节点的多状态分类与状态转移"
+  },
+  {
+    "id": "course-selection",
+    "name": "选课（树上背包DP）",
+    "viewId": "course-selection",
+    "category": "dynamic-programming",
+    "description": "树上背包DP：以虚拟节点0为根，dp[u][j]表示以u为根选j门课的最大学分，分组背包合并子树（洛谷 P2014）。",
+    "icon": "🎓",
+    "difficulty": 3,
+    "levelOrder": 65,
+    "learningGoal": "掌握树上背包DP的子树合并技巧：分组背包倒序遍历与虚拟超级根节点"
+  },
+  {
+    "id": "minimum-fuel-cost",
+    "name": "到达首都的最少油耗",
+    "viewId": "minimum-fuel-cost",
+    "category": "dynamic-programming",
+    "description": "树型DP子树人数汇聚：每条边所需车辆与油耗 = ⌈子树代表总人数 / 车辆座位数⌉ (LeetCode 2477)。",
+    "icon": "⛽",
+    "difficulty": 2,
+    "levelOrder": 66,
+    "learningGoal": "掌握树型DP自底向上汇聚子树规模、计算跨边流通成本的贪心与动态规划结合思想"
+  },
+  {
+    "id": "longest-path-different-characters",
+    "name": "相邻字符不同的最长路径",
+    "viewId": "longest-path-different-characters",
+    "category": "dynamic-programming",
+    "description": "树型DP多叉树拐点模型：贪心维护最长与次长有效子链 max1/max2，拐点路径 = 1+max1+max2 (LeetCode 2246)。",
+    "icon": "🔤",
+    "difficulty": 3,
+    "levelOrder": 67,
+    "learningGoal": "掌握树型DP多叉树拐点模型中维护最长和次长两条合法子分支的拼接技巧"
+  },
+  {
+    "id": "party-without-boss",
+    "name": "没有上司的舞会",
+    "viewId": "party-without-boss",
+    "category": "dynamic-programming",
+    "description": "树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。",
+    "icon": "🎭",
+    "difficulty": 2,
+    "levelOrder": 68,
+    "learningGoal": "掌握树型DP独立集模型：父子互斥状态二元组的设计与多叉子树独立性求和"
+  },
+  {
+    "id": "can-i-win",
+    "name": "我能赢吗",
+    "viewId": "can-i-win",
+    "category": "dynamic-programming",
+    "description": "状压DP + 博弈论：用位掩码记录 1~n 哪些数字已被选取，记忆化搜索判断先手是否必胜 (LeetCode 464)。",
+    "icon": "🎲",
+    "difficulty": 2,
+    "levelOrder": 69,
+    "learningGoal": "掌握状压DP的基本思想：用位掩码压缩子集状态，配合记忆化搜索解决博弈问题"
+  },
+  {
+    "id": "matchsticks-to-square",
+    "name": "火柴拼正方形",
+    "viewId": "matchsticks-to-square",
+    "category": "dynamic-programming",
+    "description": "状压DP / 回溯：判断一组火柴能否恰好拼成正方形，将火柴分入 4 条等长边 (LeetCode 473)。",
+    "icon": "🔥",
+    "difficulty": 2,
+    "levelOrder": 70,
+    "learningGoal": "掌握子集枚举+回溯剪枝在等和划分类问题中的应用"
+  },
+  {
+    "id": "partition-k-equal-subsets",
+    "name": "划分为k个相等子集",
+    "viewId": "partition-k-equal-subsets",
+    "category": "dynamic-programming",
+    "description": "状压DP / 回溯：将 n 个数划分为 k 个和相等的子集，排序+剪枝优化搜索 (LeetCode 698)。",
+    "icon": "📦",
+    "difficulty": 2,
+    "levelOrder": 71,
+    "learningGoal": "掌握k等和子集划分问题的回溯搜索与状压DP两种解法"
+  },
+  {
+    "id": "tsp-bitmask-dp",
+    "name": "旅行商问题 TSP",
+    "viewId": "tsp-bitmask-dp",
+    "category": "dynamic-programming",
+    "description": "经典状压DP：dp[S][i] 表示经过集合 S 且当前在 i 的最短路径，O(2^n·n^2) 求最短回路。",
+    "icon": "🗺️",
+    "difficulty": 3,
+    "levelOrder": 72,
+    "learningGoal": "掌握经典TSP状压DP：集合状态转移、子集枚举与最优子结构"
+  },
+  {
     "id": "dp-final-summary",
     "name": "动态规划总结篇",
     "viewId": "dp-final-summary",
     "category": "dynamic-programming",
-    "description": "动态规划专题总复盘：状态、转移、遍历顺序和题型地图。",
+    "description": "动态规划专题总复盘：状态、转移、遍历顺序和题型地图（含树型DP与状压DP全系列）。",
     "icon": "🏁",
     "difficulty": 1,
-    "levelOrder": 58
+    "levelOrder": 73
   },
   {
     "id": "clash-of-algorithms",

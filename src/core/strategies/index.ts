@@ -18,7 +18,31 @@ import { HouseRobberStrategy } from './house-robber-strategy';
 import { StockStrategy } from './stock-strategy';
 import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
 
+import { TreeDpStrategy } from './tree-dp-strategy';
+import { BitmaskDpStrategy } from './bitmask-dp-strategy';
+
 export function registerBuiltinStrategies(): void {
+  // Tree DP (树型 DP 专题 — 第078讲、第079讲)
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('max-distance-in-tree'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('largest-bst-subtree'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('max-path-sum'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('tree-diameter'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('binary-tree-cameras'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('course-selection'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('minimum-fuel-cost'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('longest-path-different-characters'));
+  AlgorithmStrategyRegistry.register(new TreeDpStrategy('party-without-boss'));
+
+  // Bitmask DP (状压 DP 专题 — 第080讲、第081讲)
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('can-i-win'));
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('matchsticks-to-square'));
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('partition-k-equal-subsets'));
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('tsp-bitmask-dp'));
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('number-of-ways-wear-hats'));
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('optimal-account-balancing'));
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('good-subsets'));
+  AlgorithmStrategyRegistry.register(new BitmaskDpStrategy('distribute-repeating-integers'));
+
   // Grid DP
   AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('unique-paths'));
   AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('unique-paths-ii'));
@@ -79,6 +103,7 @@ AlgorithmStrategyRegistry.setDefaultInitializer(registerBuiltinStrategies);
 
 export {
   AlgorithmStrategyRegistry,
+  TreeDpStrategy,
   GridUniquePathsStrategy,
   KnapsackPartitionSubsetStrategy,
   Knapsack01Strategy,

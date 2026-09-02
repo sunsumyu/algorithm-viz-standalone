@@ -152,3 +152,62 @@ DpStepEngine.register(StockIiiSpec);
 DpStepEngine.register(StockIvSpec);
 DpStepEngine.register(StockWithCooldownSpec);
 DpStepEngine.register(StockWithFeeSpec);
+
+// Tree DP specs (树型 DP 专题 — 第078讲、第079讲)
+export * from './tree/tree-diameter.spec';
+export * from './tree/max-path-sum.spec';
+export * from './tree/binary-tree-cameras.spec';
+export * from './tree/course-selection.spec';
+export * from './tree/largest-bst-subtree.spec';
+export * from './tree/max-distance-in-tree.spec';
+export * from './tree/minimum-fuel-cost.spec';
+export * from './tree/longest-path-different-characters.spec';
+export * from './tree/party-without-boss.spec';
+
+import { TreeDiameterSpec } from './tree/tree-diameter.spec';
+import { MaxPathSumSpec } from './tree/max-path-sum.spec';
+import { BinaryTreeCamerasSpec } from './tree/binary-tree-cameras.spec';
+import { CourseSelectionSpec } from './tree/course-selection.spec';
+import { LargestBstSubtreeSpec } from './tree/largest-bst-subtree.spec';
+import { MaxDistanceInTreeSpec } from './tree/max-distance-in-tree.spec';
+import { MinimumFuelCostSpec } from './tree/minimum-fuel-cost.spec';
+import { LongestPathDifferentCharactersSpec } from './tree/longest-path-different-characters.spec';
+import { PartyWithoutBossSpec } from './tree/party-without-boss.spec';
+
+DpStepEngine.register(TreeDiameterSpec);
+DpStepEngine.register(MaxPathSumSpec);
+DpStepEngine.register(BinaryTreeCamerasSpec);
+DpStepEngine.register(CourseSelectionSpec);
+DpStepEngine.register(LargestBstSubtreeSpec);
+DpStepEngine.register(MaxDistanceInTreeSpec);
+DpStepEngine.register(MinimumFuelCostSpec);
+DpStepEngine.register(LongestPathDifferentCharactersSpec);
+DpStepEngine.register(PartyWithoutBossSpec);
+
+// Bitmask DP specs (状压 DP 专题 — 第080讲、第081讲)
+export * from './bitmask/can-i-win.spec';
+export * from './bitmask/matchsticks-to-square.spec';
+export * from './bitmask/partition-k-equal-subsets.spec';
+export * from './bitmask/tsp-bitmask-dp.spec';
+export * from './bitmask/number-of-ways-wear-hats.spec';
+export * from './bitmask/optimal-account-balancing.spec';
+export * from './bitmask/good-subsets.spec';
+export * from './bitmask/distribute-repeating-integers.spec';
+
+import { CanIWinSpec } from './bitmask/can-i-win.spec';
+import { MatchsticksToSquareSpec } from './bitmask/matchsticks-to-square.spec';
+import { PartitionToKEqualSumSubsetsSpec } from './bitmask/partition-k-equal-subsets.spec';
+import { TspSpec } from './bitmask/tsp-bitmask-dp.spec';
+import { NumberOfWaysWearHatsSpec } from './bitmask/number-of-ways-wear-hats.spec';
+import { OptimalAccountBalancingSpec } from './bitmask/optimal-account-balancing.spec';
+import { GoodSubsetsSpec } from './bitmask/good-subsets.spec';
+import { DistributeRepeatingIntegersSpec } from './bitmask/distribute-repeating-integers.spec';
+
+DpStepEngine.register(CanIWinSpec);
+DpStepEngine.register(MatchsticksToSquareSpec);
+DpStepEngine.register(PartitionToKEqualSumSubsetsSpec);
+DpStepEngine.register(TspSpec);
+DpStepEngine.register(NumberOfWaysWearHatsSpec);
+DpStepEngine.register(OptimalAccountBalancingSpec);
+DpStepEngine.register(GoodSubsetsSpec);
+DpStepEngine.register(DistributeRepeatingIntegersSpec);

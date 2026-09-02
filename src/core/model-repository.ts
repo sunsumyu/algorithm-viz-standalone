@@ -71,6 +71,30 @@ export class AlgorithmModelRepository {
         ? { nums: [1, 2, 3], target: 4, n: 4 }
         : spec.id === 'multiple-knapsack'
         ? { weights: [1, 3, 4], values: [15, 20, 30], nums: [2, 3, 2], bagWeight: 4, n: 4 }
+        : spec.id === 'max-distance-in-tree' || spec.id === 'tree-diameter'
+        ? { root: '1,2,3,4,5', n: 5 }
+        : spec.id === 'largest-bst-subtree'
+        ? { root: '10,5,15,1,8,null,7', n: 7 }
+        : spec.id === 'max-path-sum'
+        ? { root: '-10,9,20,null,null,15,7', n: 7 }
+        : spec.id === 'binary-tree-cameras'
+        ? { root: '0,0,null,0,0', n: 4 }
+        : spec.id === 'course-selection'
+        ? { n: 4, m: 3 }
+        : spec.id === 'minimum-fuel-cost'
+        ? { seats: 2, n: 7 }
+        : spec.id === 'longest-path-different-characters'
+        ? { s: 'abacbe', n: 6 }
+        : spec.id === 'party-without-boss'
+        ? { n: 7 }
+        : spec.id === 'can-i-win'
+        ? { n: 4, m: 6 }
+        : spec.id === 'matchsticks-to-square'
+        ? { nums: [1, 1, 2, 2, 2], n: 5 }
+        : spec.id === 'partition-k-equal-subsets'
+        ? { nums: [4, 3, 2, 3, 5, 2, 1], k: 4, n: 7 }
+        : spec.id === 'tsp-bitmask-dp'
+        ? { n: 4 }
         : { n: 6 },
       defaultStage: 'stage-3',
       directions: {

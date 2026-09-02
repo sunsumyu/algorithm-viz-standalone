@@ -11,6 +11,8 @@ export interface StageExecutionParams {
   anchorMap?: Record<string, number>;
   weightsGrid?: number[][];
   obstacleGrid?: number[][];
+  params?: Record<string, any>;
+  [key: string]: any;
 }
 
 /**
