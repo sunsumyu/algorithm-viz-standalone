@@ -36,11 +36,28 @@ export class StateSpacePresenter {
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(modelId, { m, n });
     if (isTreeProblem) {
       // 树型题目：卡片 1 作为主视图展示二叉树拓扑结构图与子树剪枝
-      container.className = 'w-full h-full flex items-center justify-center relative';
+      const threeContainer = document.getElementById('three-canvas-container');
+      if (threeContainer) threeContainer.classList.add('hidden');
+      const threeControls = document.getElementById('three-controls-bar');
+      if (threeControls) {
+        threeControls.classList.add('hidden');
+        threeControls.classList.remove('flex');
+      }
+      const boardWrapper = document.getElementById('grid-board-wrapper');
+      if (boardWrapper) {
+        boardWrapper.classList.remove('hidden');
+        boardWrapper.className = 'w-full h-full flex flex-col items-center justify-start relative overflow-auto';
+      }
+
       const arrowsSvg = document.getElementById('grid-arrows-svg');
       if (arrowsSvg) arrowsSvg.style.display = 'none';
       const riverBarrier = document.getElementById('grid-river-barrier');
       if (riverBarrier) riverBarrier.style.display = 'none';
+
+      container.className = 'w-full h-full flex items-center justify-center relative';
+      container.style.border = 'none';
+      container.style.boxShadow = 'none';
+      container.style.background = 'transparent';
 
       if (step.treeRoot) {
         RecursionTreeAdapter.renderRecursionTree(
@@ -374,6 +391,21 @@ export class StateSpacePresenter {
     const threeControls = document.getElementById('three-controls-bar');
     const btnToggle = document.getElementById('btn-toggle-3d');
     const labelToggle = document.getElementById('label-toggle-3d');
+
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(modelId, { m, n });
+    if (isTreeProblem) {
+      if (threeContainer) threeContainer.classList.add('hidden');
+      if (threeControls) {
+        threeControls.classList.add('hidden');
+        threeControls.classList.remove('flex');
+      }
+      if (boardWrapper) {
+        boardWrapper.classList.remove('hidden');
+        boardWrapper.className = 'w-full h-full flex flex-col items-center justify-start relative overflow-auto';
+      }
+      if (btnToggle) btnToggle.style.display = 'none';
+      return;
+    }
 
     const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(modelId);
 

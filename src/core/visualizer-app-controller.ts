@@ -349,6 +349,7 @@ export class VisualizerAppController {
   }
 
   private renderLiteVisuals(step: UniversalStep, index: number, isReverse: boolean): void {
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(this.modelId, { m: this.m, n: this.n });
     StateSpacePresenter.renderLiteVisuals({
       currentStage: this.currentStage,
       stage3SubView: this.stage3SubView,
@@ -356,7 +357,7 @@ export class VisualizerAppController {
       m: this.m,
       n: this.n,
       isReverse,
-      is3DMode: this.is3DMode,
+      is3DMode: isTreeProblem ? false : this.is3DMode,
       modelId: this.modelId
     }, this.steps, index);
   }
@@ -417,6 +418,8 @@ export class VisualizerAppController {
    * 切换 3D 立体沙盘 / 2D 经典平面透视模式
    */
   public toggle3DPerspective(force?: boolean): void {
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(this.modelId, { m: this.m, n: this.n });
+    if (isTreeProblem) return;
     this.is3DMode = force !== undefined ? force : !this.is3DMode;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('algo-grid-perspective-3d', String(this.is3DMode));
@@ -429,8 +432,9 @@ export class VisualizerAppController {
    */
   public update3DPerspectiveUI(): void {
     const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(this.modelId, { m: this.m, n: this.n });
     StateSpacePresenter.update3DPerspectiveUI({
-      is3DMode: this.is3DMode,
+      is3DMode: isTreeProblem ? false : this.is3DMode,
       modelId: this.modelId,
       m: this.m,
       n: this.n,

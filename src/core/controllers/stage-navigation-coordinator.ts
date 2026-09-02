@@ -180,6 +180,21 @@ export class StageNavigationCoordinator {
     if (card1El) card1El.style.display = '';
     if (btnToggle3d) btnToggle3d.style.display = isTreeProblem ? 'none' : '';
 
+    const threeControls = document.getElementById('three-controls-bar');
+    if (threeControls && isTreeProblem) {
+      threeControls.classList.add('hidden');
+      threeControls.classList.remove('flex');
+    }
+    const threeContainer = document.getElementById('three-canvas-container');
+    if (threeContainer && isTreeProblem) {
+      threeContainer.classList.add('hidden');
+    }
+    const boardWrapper = document.getElementById('grid-board-wrapper');
+    if (boardWrapper && isTreeProblem) {
+      boardWrapper.classList.remove('hidden');
+      boardWrapper.className = 'w-full h-full flex flex-col items-center justify-start relative overflow-auto';
+    }
+
     if (card1TitleEl) {
       if (isTreeProblem) {
         card1TitleEl.innerHTML = `<i class="fa-solid fa-network-wired text-emerald-600"></i> 🌲 二叉树拓扑结构与剪枝 (Tree Topology)`;
@@ -250,13 +265,21 @@ export class StageNavigationCoordinator {
     }
 
     const legendBar = document.getElementById('grid-legend-bar');
-    if (legendBar && !isGridProblem) {
-      legendBar.innerHTML = `
-        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
-        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-slate-100 border border-slate-300"></span> 已求解</span>
-        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> 参考上方</span>
-        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> 参考左方</span>
-      `;
+    if (legendBar) {
+      if (isTreeProblem) {
+        legendBar.innerHTML = `
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500"></span> 访问/聚焦</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 已推导</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span> 剪枝/剔除</span>
+        `;
+      } else if (!isGridProblem) {
+        legendBar.innerHTML = `
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-slate-100 border border-slate-300"></span> 已求解</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> 参考上方</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> 参考左方</span>
+        `;
+      }
     }
   }
 
