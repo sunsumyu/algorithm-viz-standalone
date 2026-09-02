@@ -38,10 +38,10 @@ export const TspSpec: AlgorithmSpec = {
     stateTransfer: {
       java: [12, 13, 14, 15, 16],
       cpp: [13, 14, 15, 16, 17],
-      python: [10, 11, 12, 13, 14],
+      python: [10, 11, 12, 13],
       javascript: [9, 10, 11, 12, 13],
     },
-    returnResult: { java: 20, cpp: 21, python: 17, javascript: 17 },
+    returnResult: { java: 22, cpp: 21, python: 14, javascript: 22 },
   },
   code: {
     languages: {

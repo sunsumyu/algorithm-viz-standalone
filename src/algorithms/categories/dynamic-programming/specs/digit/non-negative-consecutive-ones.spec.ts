@@ -45,15 +45,15 @@ export const NonNegativeConsecutiveOnesSpec: AlgorithmSpec = {
     entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
     guard: { java: 3, cpp: 4, python: 3, javascript: 2 },
     init: { java: 5, cpp: 6, python: 4, javascript: 3 },
-    loopCheck: { java: 9, cpp: 10, python: 8, javascript: 7 },
+    loopCheck: { java: 10, cpp: 10, python: 8, javascript: 9 },
     stateTransfer: {
       java: [11, 12, 13, 14, 15, 16],
-      cpp: [12, 13, 14, 15, 16, 17],
-      python: [10, 11, 12, 13, 14, 15],
-      javascript: [9, 10, 11, 12, 13, 14],
+      cpp: [11, 12, 13, 14, 15, 16],
+      python: [9, 10, 11, 12, 13, 14],
+      javascript: [10, 11, 12, 13, 14, 15],
     },
-    loopExit: { java: 19, cpp: 20, python: 18, javascript: 17 },
-    returnResult: { java: 21, cpp: 22, python: 19, javascript: 19 },
+    loopExit: { java: 18, cpp: 17, python: 15, javascript: 17 },
+    returnResult: { java: 19, cpp: 18, python: 16, javascript: 18 },
   },
   code: {
     languages: {

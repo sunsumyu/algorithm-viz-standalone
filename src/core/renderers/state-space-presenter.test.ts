@@ -296,4 +296,43 @@ describe('StateSpacePresenter (Deep Module Unit Tests)', () => {
     expect(labelToggle.textContent).toBe('2D平面');
     expect(boardWrapper.classList.contains('hidden')).toBe(false);
   });
+
+  it('12. 树型 DP 题目在 renderLiteVisuals 下隐藏 Card 1 与 3D 按钮，并在 Stage 3 优先直出树型图', () => {
+    const card1Wrapper = Object.assign(new MockElement(), { style: { display: '' } });
+    const btnToggle3d = Object.assign(new MockElement(), { style: { display: '' } });
+    const legendRef = Object.assign(new MockElement(), { style: { display: '' } });
+    const memoContainer = new MockElement();
+
+    (globalThis as any).document = {
+      createElement: (tag: string) => new MockElement(tag),
+      getElementById: (id: string) => {
+        const map: Record<string, any> = {
+          'card1-wrapper': card1Wrapper,
+          'btn-toggle-3d': btnToggle3d,
+          'legend-ref': legendRef,
+          'memo-array-container': memoContainer,
+          'log-container': new MockElement(),
+        };
+        return map[id] || null;
+      }
+    };
+
+    const spyTree = vi.spyOn(RecursionTreeAdapter, 'renderRecursionTree').mockImplementation(() => {});
+
+    const mockTreeRoot = { id: 'root', val: 1, children: [] } as any;
+    const step = { type: 'update', treeRoot: mockTreeRoot, activeNodeId: 'root' } as unknown as UniversalStep;
+
+    StateSpacePresenter.renderLiteVisuals(
+      { currentStage: 'stage-3', stage3SubView: 'matrix', step, m: 1, n: 6, modelId: 'height-removal-queries' },
+      [step],
+      0
+    );
+
+    expect(card1Wrapper.style.display).toBe('none');
+    expect(btnToggle3d.style.display).toBe('none');
+    expect(legendRef.style.display).toBe('none');
+    expect(spyTree).toHaveBeenCalledWith(memoContainer, mockTreeRoot, 'root', true);
+
+    spyTree.mockRestore();
+  });
 });

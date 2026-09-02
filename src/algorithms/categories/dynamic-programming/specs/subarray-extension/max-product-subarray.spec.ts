@@ -48,8 +48,8 @@ export const MaxProductSubarraySpec: AlgorithmSpec = {
       python: [6, 7, 8, 9],
       javascript: [5, 6, 7, 8, 9],
     },
-    loopExit: { java: 12, cpp: 13, python: 10, javascript: 11 },
-    returnResult: { java: 13, cpp: 14, python: 11, javascript: 12 },
+    loopExit: { java: 11, cpp: 12, python: 9, javascript: 10 },
+    returnResult: { java: 12, cpp: 13, python: 10, javascript: 11 },
   },
   code: {
     languages: {

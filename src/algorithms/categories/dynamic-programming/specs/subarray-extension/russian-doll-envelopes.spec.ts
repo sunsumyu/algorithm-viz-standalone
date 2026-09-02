@@ -42,15 +42,15 @@ export const RussianDollEnvelopesSpec: AlgorithmSpec = {
     entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
     guard: { java: 3, cpp: 4, python: 3, javascript: 2 },
     init: { java: 4, cpp: 5, python: 4, javascript: 3 },
-    loopCheck: { java: 11, cpp: 12, python: 9, javascript: 9 },
+    loopCheck: { java: 7, cpp: 9, python: 8, javascript: 5 },
     stateTransfer: {
-      java: [12, 13, 14, 15, 16, 17, 18],
-      cpp: [13, 14, 15, 16, 17, 18, 19],
-      python: [10, 11, 12, 13, 14],
-      javascript: [10, 11, 12, 13, 14, 15, 16],
+      java: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+      cpp: [10, 11, 12, 13, 14],
+      python: [9, 10, 11, 12, 13],
+      javascript: [6, 7, 8, 9, 10, 11, 12, 13],
     },
-    loopExit: { java: 20, cpp: 21, python: 15, javascript: 18 },
-    returnResult: { java: 21, cpp: 22, python: 16, javascript: 19 },
+    loopExit: { java: 17, cpp: 14, python: 13, javascript: 14 },
+    returnResult: { java: 18, cpp: 15, python: 14, javascript: 15 },
   },
   code: {
     languages: {

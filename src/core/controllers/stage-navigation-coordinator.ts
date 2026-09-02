@@ -1,4 +1,5 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
+import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 
 export interface StageTabOptions {
   model: IYamlAlgorithmModel;
@@ -167,6 +168,7 @@ export class StageNavigationCoordinator {
       complexityBadge.className = `px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${stageConfig.badgeBg || 'bg-blue-100 text-blue-800'}`;
     }
 
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(model.id);
     const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(model.id);
     const card1El = (document.getElementById('card1-wrapper') || document.getElementById('card1-title')?.parentElement?.parentElement || document.getElementById('card1-title')?.parentElement) as HTMLElement | null;
     const btnToggle3d = document.getElementById('btn-toggle-3d');
@@ -175,8 +177,8 @@ export class StageNavigationCoordinator {
     const card2DescEl = document.getElementById('card2-desc');
     const memoLenBadge = document.getElementById('badge-memo-len');
 
-    if (card1El) card1El.style.display = '';
-    if (btnToggle3d) btnToggle3d.style.display = '';
+    if (card1El) card1El.style.display = isTreeProblem ? 'none' : '';
+    if (btnToggle3d) btnToggle3d.style.display = isTreeProblem ? 'none' : '';
 
     if (card1TitleEl) {
       if (isGridProblem) {
@@ -190,27 +192,43 @@ export class StageNavigationCoordinator {
 
     if (card2TitleEl) {
       let defaultCard2Title = '一维状态数组 (int[] memo)';
-      if (currentStage === 'stage-1') defaultCard2Title = '递归搜索调用树 (Recursive Call Tree)';
-      else if (currentStage === 'stage-2') defaultCard2Title = '记忆化搜索剪枝树 (Memoized Tree)';
-      else if (currentStage === 'stage-3') defaultCard2Title = isStage32D ? '二维 DP 状态转移表 (int[][] dp)' : '一维 DP 状态数组 (int[] dp)';
-      else if (currentStage === 'stage-4') defaultCard2Title = '空间压缩滚动数组 (int[] memo)';
+      if (isTreeProblem) {
+        if (currentStage === 'stage-1') defaultCard2Title = '递归搜索树 (Recursive Tree)';
+        else if (currentStage === 'stage-2') defaultCard2Title = '记忆化剪枝树 (Memoized Tree)';
+        else if (currentStage === 'stage-3') defaultCard2Title = '🌲 二叉树状态推导与拓扑拓展现 (Tree DP)';
+        else defaultCard2Title = '🌲 树型状态推演 (Tree DP)';
+      } else {
+        if (currentStage === 'stage-1') defaultCard2Title = '递归搜索调用树 (Recursive Call Tree)';
+        else if (currentStage === 'stage-2') defaultCard2Title = '记忆化搜索剪枝树 (Memoized Tree)';
+        else if (currentStage === 'stage-3') defaultCard2Title = isStage32D ? '二维 DP 状态转移表 (int[][] dp)' : '一维 DP 状态数组 (int[] dp)';
+        else if (currentStage === 'stage-4') defaultCard2Title = '空间压缩滚动数组 (int[] memo)';
+      }
 
       const stageTitle = (stageConfig.card2Title && typeof stageConfig.card2Title === 'object')
         ? (stageConfig.card2Title[currentDirection] || stageConfig.card2Title.forward)
         : stageConfig.card2Title;
 
-      const resolvedTitle = (currentStage === 'stage-3' && isStage32D)
-        ? '二维 DP 状态转移表 (int[][] dp)'
-        : (stageTitle || defaultCard2Title);
+      const resolvedTitle = isTreeProblem
+        ? (stageTitle || defaultCard2Title)
+        : ((currentStage === 'stage-3' && isStage32D)
+          ? '二维 DP 状态转移表 (int[][] dp)'
+          : (stageTitle || defaultCard2Title));
 
       card2TitleEl.innerHTML = `<i class="fa-solid fa-bars-staggered text-slate-500"></i> ${resolvedTitle}`;
     }
     if (card2DescEl) {
       let defaultCard2Desc = '空间优化: 只保存当前行的数据，不断滚动覆盖。';
-      if (currentStage === 'stage-1') defaultCard2Desc = '自顶向下展开递归调用子问题，呈现指数级爆炸分支与重复计算。';
-      else if (currentStage === 'stage-2') defaultCard2Desc = '引入备忘录剪枝，已计算子问题直接 O(1) 查表剪枝返回。';
-      else if (currentStage === 'stage-3') defaultCard2Desc = isStage32D ? '自底向上顺序填表，二维状态转移方程精准递推。' : '自底向上顺序填表，状态转移方程精准递推。';
-      else if (currentStage === 'stage-4') defaultCard2Desc = '空间优化：利用局部状态依赖，就地滚动更新。';
+      if (isTreeProblem) {
+        if (currentStage === 'stage-1') defaultCard2Desc = '先序/后序遍历整树，自底向上递归求解子树最优解。';
+        else if (currentStage === 'stage-2') defaultCard2Desc = '利用状态缓存避免树上重复遍历与重叠子问题。';
+        else if (currentStage === 'stage-3') defaultCard2Desc = '树型状态转移演化，自适应呈现节点拓扑计算与极值合并。';
+        else defaultCard2Desc = '树型 DP 空间与时间优化求解。';
+      } else {
+        if (currentStage === 'stage-1') defaultCard2Desc = '自顶向下展开递归调用子问题，呈现指数级爆炸分支与重复计算。';
+        else if (currentStage === 'stage-2') defaultCard2Desc = '引入备忘录剪枝，已计算子问题直接 O(1) 查表剪枝返回。';
+        else if (currentStage === 'stage-3') defaultCard2Desc = isStage32D ? '自底向上顺序填表，二维状态转移方程精准递推。' : '自底向上顺序填表，状态转移方程精准递推。';
+        else if (currentStage === 'stage-4') defaultCard2Desc = '空间优化：利用局部状态依赖，就地滚动更新。';
+      }
 
       const resolvedDesc = (stageConfig.card2Desc && typeof stageConfig.card2Desc === 'object')
         ? (stageConfig.card2Desc[currentDirection] || stageConfig.card2Desc.forward || defaultCard2Desc)
@@ -220,7 +238,9 @@ export class StageNavigationCoordinator {
     }
 
     if (memoLenBadge) {
-      if (currentStage === 'stage-4' || is1DProblem) {
+      if (isTreeProblem) {
+        memoLenBadge.textContent = '节点拓扑';
+      } else if (currentStage === 'stage-4' || is1DProblem) {
         memoLenBadge.textContent = `长度: ${effectiveN}`;
       } else {
         memoLenBadge.textContent = `${effectiveM} × ${effectiveN}`;

@@ -47,15 +47,15 @@ export const MaxCircularSubarraySpec: AlgorithmSpec = {
     entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
     guard: { java: 3, cpp: 4, python: 3, javascript: 2 },
     init: { java: 5, cpp: 6, python: 4, javascript: 3 },
-    loopCheck: { java: 8, cpp: 9, python: 7, javascript: 6 },
+    loopCheck: { java: 6, cpp: 7, python: 6, javascript: 5 },
     stateTransfer: {
-      java: [9, 10, 11, 12, 13],
-      cpp: [10, 11, 12, 13, 14],
-      python: [8, 9, 10, 11, 12],
-      javascript: [7, 8, 9, 10, 11],
+      java: [7, 8, 9, 10, 11],
+      cpp: [8, 9, 10, 11, 12],
+      python: [7, 8, 9, 10, 11],
+      javascript: [6, 7, 8, 9, 10],
     },
-    loopExit: { java: 15, cpp: 16, python: 14, javascript: 13 },
-    returnResult: { java: 16, cpp: 17, python: 15, javascript: 14 },
+    loopExit: { java: 12, cpp: 13, python: 11, javascript: 11 },
+    returnResult: { java: 13, cpp: 14, python: 12, javascript: 12 },
   },
   code: {
     languages: {

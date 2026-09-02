@@ -49,8 +49,8 @@ export const SlidingWindowDpSpec: AlgorithmSpec = {
       python: [9, 10, 11, 12, 13, 14],
       javascript: [8, 9, 10, 11, 12, 13],
     },
-    loopExit: { java: 17, cpp: 18, python: 15, javascript: 15 },
-    returnResult: { java: 18, cpp: 19, python: 16, javascript: 16 },
+    loopExit: { java: 15, cpp: 15, python: 14, javascript: 13 },
+    returnResult: { java: 16, cpp: 16, python: 15, javascript: 14 },
   },
   code: {
     languages: {

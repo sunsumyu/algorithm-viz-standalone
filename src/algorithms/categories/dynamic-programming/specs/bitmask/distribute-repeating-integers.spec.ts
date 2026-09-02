@@ -53,7 +53,7 @@ export const DistributeRepeatingIntegersSpec: AlgorithmSpec = {
       python: [16, 17, 18, 19],
       javascript: [15, 16, 17, 18, 19],
     },
-    returnResult: { java: 27, cpp: 28, python: 23, javascript: 23 },
+    returnResult: { java: 26, cpp: 28, python: 22, javascript: 28 },
   },
   code: {
     languages: {

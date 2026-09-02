@@ -43,7 +43,7 @@ export const PartyWithoutBossSpec: AlgorithmSpec = {
       python: [7, 8, 9, 10, 11],
       javascript: [6, 7, 8, 9, 10, 11],
     },
-    returnResult: { java: 17, cpp: 18, python: 15, javascript: 15 },
+    returnResult: { java: 10, cpp: 10, python: 14, javascript: 19 },
   },
   code: {
     languages: {

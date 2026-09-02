@@ -48,7 +48,7 @@ export const LargestBstSubtreeSpec: AlgorithmSpec = {
       python: [8, 9, 10, 11, 12, 13, 14, 15],
       javascript: [7, 8, 9, 10, 11, 12, 13, 14],
     },
-    returnResult: { java: 19, cpp: 20, python: 18, javascript: 18 },
+    returnResult: { java: 6, cpp: 7, python: 15, javascript: 17 },
   },
   code: {
     languages: {

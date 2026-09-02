@@ -43,16 +43,16 @@ export const CanIWinSpec: AlgorithmSpec = {
     ],
   },
   semanticLines: {
-    entry: { java: 3, cpp: 4, python: 2, javascript: 1 },
-    guard: { java: 6, cpp: 7, python: 5, javascript: 4 },
-    init: { java: 10, cpp: 11, python: 9, javascript: 8 },
+    entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
+    guard: { java: 3, cpp: 4, python: 3, javascript: 2 },
+    init: { java: 5, cpp: 6, python: 5, javascript: 5 },
     stateTransfer: {
-      java: [16, 17, 18, 19],
-      cpp: [17, 18, 19, 20],
-      python: [13, 14, 15, 16],
-      javascript: [11, 12, 13, 14],
+      java: [13, 14, 15, 16],
+      cpp: [14, 15, 16, 17],
+      python: [10, 11, 12],
+      javascript: [12, 13, 14, 15],
     },
-    returnResult: { java: 23, cpp: 24, python: 20, javascript: 18 },
+    returnResult: { java: 6, cpp: 7, python: 15, javascript: 6 },
   },
   code: {
     languages: {

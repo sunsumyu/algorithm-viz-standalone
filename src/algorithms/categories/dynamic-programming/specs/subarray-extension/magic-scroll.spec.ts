@@ -46,8 +46,8 @@ export const MagicScrollSpec: AlgorithmSpec = {
       python: [12, 13, 14, 15, 16, 17],
       javascript: [11, 12, 13, 14, 15, 16],
     },
-    loopExit: { java: 24, cpp: 25, python: 22, javascript: 21 },
-    returnResult: { java: 26, cpp: 27, python: 23, javascript: 23 },
+    loopExit: { java: 24, cpp: 23, python: 21, javascript: 24 },
+    returnResult: { java: 25, cpp: 24, python: 22, javascript: 25 },
   },
   code: {
     languages: {

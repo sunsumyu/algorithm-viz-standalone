@@ -54,10 +54,36 @@ export class ProblemDimensionResolver {
     'multiple-knapsack'
   ]);
 
+  private static readonly TREE_PROBLEM_IDS = new Set([
+    'max-distance-in-tree',
+    'largest-bst-subtree',
+    'max-path-sum',
+    'tree-diameter',
+    'binary-tree-cameras',
+    'course-selection',
+    'minimum-fuel-cost',
+    'longest-path-different-characters',
+    'party-without-boss',
+    'height-removal-queries',
+    'minimum-score-after-removals',
+    'house-robber-iii'
+  ]);
+
+  /**
+   * 判断目标模型或参数是否为树型问题
+   */
+  public static isTreeProblem(modelId: string, params?: Record<string, any>): boolean {
+    return this.TREE_PROBLEM_IDS.has(modelId) || !!(params && (params.root !== undefined || (params.edges !== undefined && !params.grid)));
+  }
+
   /**
    * 归一化解析算法默认参数与维度
    */
   public static resolve(modelId: string, params?: Record<string, any>): ResolvedDimensions {
+    if (this.isTreeProblem(modelId, params)) {
+      return { m: 1, n: 6, is1D: true, category: 'tree' };
+    }
+
     if (!params) {
       return { m: 1, n: 6, is1D: true, category: '1d-linear' };
     }

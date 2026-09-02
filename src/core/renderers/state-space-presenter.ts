@@ -8,6 +8,7 @@
 import type { UniversalStep } from '../universal-stage-engine';
 import { GridVisualAdapter, RecursionTreeAdapter } from './grid-visual-adapter';
 import { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
+import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
@@ -78,7 +79,7 @@ export class StateSpacePresenter {
     } else if (currentStage === 'stage-3') {
       // 阶段 3: 状态转移表 vs 状态依赖树
       const is2DGrid = (effectiveM > 1 || (step.grid && step.grid.length > 1));
-      if (stage3SubView === 'tree' && step.treeRoot) {
+      if ((stage3SubView === 'tree' || (!is2DGrid && !step.grid && step.treeRoot)) && step.treeRoot) {
         RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
       } else if (is2DGrid && step.grid && step.grid.length > 1) {
         GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse });
@@ -108,24 +109,32 @@ export class StateSpacePresenter {
   ): void {
     if (typeof document === 'undefined') return;
 
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(options.modelId);
     const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId);
     const fullOptions = { ...options, isGridProblem };
 
     const card1El = (document.getElementById('card1-wrapper') || document.getElementById('card1-title')?.parentElement?.parentElement || document.getElementById('card1-title')?.parentElement) as HTMLElement | null;
     const btnToggle3d = document.getElementById('btn-toggle-3d');
 
-    if (card1El) card1El.style.display = '';
-    if (btnToggle3d) btnToggle3d.style.display = '';
+    if (card1El) card1El.style.display = isTreeProblem ? 'none' : '';
+    if (btnToggle3d) btnToggle3d.style.display = isTreeProblem ? 'none' : '';
 
     // 图例同步
     const legendRefEl = document.getElementById('legend-ref');
     if (legendRefEl) {
-      legendRefEl.innerHTML = options.isReverse ? '🐱 参考下方/右方' : '🐱 参考上方/左方';
+      if (isTreeProblem) {
+        legendRefEl.style.display = 'none';
+      } else {
+        legendRefEl.style.display = '';
+        legendRefEl.innerHTML = options.isReverse ? '🐱 参考下方/右方' : '🐱 参考上方/左方';
+      }
     }
 
-    // 卡片 1: 沙盘 / 网格看板
-    const gridContainer = document.getElementById('grid-container');
-    this.renderCard1(gridContainer, fullOptions);
+    // 卡片 1: 沙盘 / 网格看板 (树型问题无需渲染 1D/3D 沙盘)
+    if (!isTreeProblem) {
+      const gridContainer = document.getElementById('grid-container');
+      this.renderCard1(gridContainer, fullOptions);
+    }
 
     // 卡片 2: 状态展示区
     const memoContainer = document.getElementById('memo-array-container') || document.getElementById('memo-slots-container');

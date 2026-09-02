@@ -47,7 +47,7 @@ export const OptimalAccountBalancingSpec: AlgorithmSpec = {
       python: [16, 17, 18, 19],
       javascript: [15, 16, 17, 18],
     },
-    returnResult: { java: 24, cpp: 25, python: 22, javascript: 21 },
+    returnResult: { java: 28, cpp: 23, python: 20, javascript: 38 },
   },
   code: {
     languages: {

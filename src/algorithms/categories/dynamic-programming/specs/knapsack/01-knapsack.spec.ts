@@ -43,7 +43,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
       javascript: { primary: [8, 10], context: [5, 6] },
     },
     loopExit: { java: 6, cpp: 6, python: 6, javascript: 5 },
-    returnResult: { java: 15, cpp: 15, python: 13, javascript: 14 },
+    returnResult: { java: 15, cpp: 15, python: 12, javascript: 14 },
   },
   code: {
     languages: {

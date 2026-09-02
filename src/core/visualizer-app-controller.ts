@@ -103,6 +103,11 @@ export class VisualizerAppController {
     this.m = resolved.m;
     this.n = resolved.n;
 
+    // 若为树型算法，默认阶段 3 子视图切换为 'tree'
+    if (resolved.category === 'tree') {
+      this.stage3SubView = 'tree';
+    }
+
     // 智能恢复阶段与方向记忆 (URL Hash > LocalStorage 本题记忆 > LocalStorage 全局偏好 > 模型默认)
     this.currentStage = this.getInitialStage(this.modelId);
     this.currentDirection = this.getInitialDirection(this.modelId);

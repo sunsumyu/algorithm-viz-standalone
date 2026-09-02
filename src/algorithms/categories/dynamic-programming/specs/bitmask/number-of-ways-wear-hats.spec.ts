@@ -48,7 +48,7 @@ export const NumberOfWaysWearHatsSpec: AlgorithmSpec = {
       python: [13, 14, 15, 16],
       javascript: [13, 14, 15, 16],
     },
-    returnResult: { java: 22, cpp: 23, python: 19, javascript: 19 },
+    returnResult: { java: 22, cpp: 23, python: 17, javascript: 25 },
   },
   code: {
     languages: {

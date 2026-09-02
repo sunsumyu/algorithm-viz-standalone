@@ -31,7 +31,7 @@ export class StageViewPresenter {
       GridVisualAdapter.renderLiteMemoSlots(container, step, n);
     } else if (currentStage === 'stage-3') {
       const is2DGrid = (m > 1 || (step.grid && step.grid.length > 1));
-      if (stage3SubView === 'tree' && step.treeRoot) {
+      if ((stage3SubView === 'tree' || (!is2DGrid && !step.grid && step.treeRoot)) && step.treeRoot) {
         RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
       } else if (is2DGrid && step.grid && step.grid.length > 1) {
         GridVisualAdapter.renderStage3DPTable(container, step, { m, n, isReverse });

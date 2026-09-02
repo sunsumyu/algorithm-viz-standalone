@@ -39,15 +39,15 @@ export const MatchsticksToSquareSpec: AlgorithmSpec = {
   },
   semanticLines: {
     entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
-    guard: { java: 5, cpp: 6, python: 4, javascript: 3 },
-    init: { java: 8, cpp: 9, python: 7, javascript: 6 },
+    guard: { java: 4, cpp: 5, python: 4, javascript: 3 },
+    init: { java: 6, cpp: 7, python: 6, javascript: 5 },
     stateTransfer: {
-      java: [13, 14, 15, 16, 17],
-      cpp: [14, 15, 16, 17, 18],
-      python: [10, 11, 12, 13, 14],
-      javascript: [9, 10, 11, 12, 13],
+      java: [16, 17, 18, 19, 20],
+      cpp: [13, 14, 15, 16, 17],
+      python: [11, 12, 13, 14, 15],
+      javascript: [14, 15, 16, 17, 18],
     },
-    returnResult: { java: 22, cpp: 23, python: 18, javascript: 17 },
+    returnResult: { java: 12, cpp: 9, python: 18, javascript: 7 },
   },
   code: {
     languages: {
