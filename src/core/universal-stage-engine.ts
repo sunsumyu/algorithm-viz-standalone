@@ -75,6 +75,19 @@ export interface UniversalStep {
   isBlockedStep?: boolean;
   // 行内局部表达式发光聚焦 (Inline Sub-Expression Highlighting)
   highlightText?: string;
+  // 多维状态数组监视器 (Multi-Array State Inspector)
+  stateArrays?: StateArrayItem[];
+}
+
+export interface StateArrayItem {
+  id: string;
+  name: string;
+  label?: string;
+  indices: (number | string)[];
+  values: (number | string | null)[];
+  activeIdx?: number;
+  highlightIndices?: number[];
+  color?: 'blue' | 'emerald' | 'amber' | 'purple' | 'rose' | 'indigo' | 'sky';
 }
 
 export class UniversalStageEngine {

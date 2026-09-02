@@ -112,7 +112,11 @@ export class StateSpacePresenter {
 
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(options.modelId, { m, n });
     if (isTreeProblem) {
-      // 树型题目：卡片 1 已作为主视图呈现二叉树拓扑结构，卡片 2 专注于展示一维 DP 状态转移数组 (int[] dp / memo)
+      // 树型题目：卡片 1 已作为主视图呈现二叉树拓扑结构，卡片 2 专注于展示一维/多维 DP 状态转移监视器
+      if (Array.isArray(step.stateArrays) && step.stateArrays.length > 0) {
+        MemoSlotVisualAdapter.renderStateArrays(container, step.stateArrays, step);
+        return;
+      }
       GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
       return;
     }

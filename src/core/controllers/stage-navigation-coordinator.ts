@@ -226,7 +226,7 @@ export class StageNavigationCoordinator {
         : stageConfig.card2Title;
 
       const resolvedTitle = isTreeProblem
-        ? (stageTitle || defaultCard2Title)
+        ? (options.modelId === 'height-removal-queries' ? '多维状态数组监视面板 (Multi-Array Inspector)' : (stageTitle || defaultCard2Title))
         : ((currentStage === 'stage-3' && isStage32D)
           ? '二维 DP 状态转移表 (int[][] dp)'
           : (stageTitle || defaultCard2Title));
@@ -236,7 +236,9 @@ export class StageNavigationCoordinator {
     if (card2DescEl) {
       let defaultCard2Desc = '空间优化: 只保存当前行的数据，不断滚动覆盖。';
       if (isTreeProblem) {
-        if (currentStage === 'stage-1') defaultCard2Desc = '先序/后序遍历整树，自底向上递归求解子树最优解。';
+        if (options.modelId === 'height-removal-queries') {
+          defaultCard2Desc = '实时跟踪 DFN 时间戳、深度 deep[]、子树大小 size[]、前缀极值 maxLeft[]、后缀极值 maxRight[] 与查询答案 ans[]。';
+        } else if (currentStage === 'stage-1') defaultCard2Desc = '先序/后序遍历整树，自底向上递归求解子树最优解。';
         else if (currentStage === 'stage-2') defaultCard2Desc = '利用状态缓存避免树上重复遍历与重叠子问题。';
         else if (currentStage === 'stage-3') defaultCard2Desc = '自底向上顺序填表，状态转移方程精准递推。';
         else defaultCard2Desc = '树型 DP 空间与时间优化求解。';
@@ -248,14 +250,18 @@ export class StageNavigationCoordinator {
       }
 
       const resolvedDesc = (stageConfig.card2Desc && typeof stageConfig.card2Desc === 'object')
-        ? (stageConfig.card2Desc[currentDirection] || stageConfig.card2Desc.forward || defaultCard2Desc)
-        : (stageConfig.card2Desc || defaultCard2Desc);
+        ? (stageConfig.card2Desc[currentDirection] || stageConfig.card2Desc.forward)
+        : stageConfig.card2Desc;
 
-      card2DescEl.textContent = resolvedDesc;
+      card2DescEl.textContent = (isTreeProblem && options.modelId === 'height-removal-queries')
+        ? defaultCard2Desc
+        : (resolvedDesc || defaultCard2Desc);
     }
 
     if (memoLenBadge) {
-      if (isTreeProblem) {
+      if (options.modelId === 'height-removal-queries') {
+        memoLenBadge.textContent = '6 组状态数组';
+      } else if (isTreeProblem) {
         memoLenBadge.textContent = `状态槽位: ${effectiveN}`;
       } else if (currentStage === 'stage-4' || is1DProblem) {
         memoLenBadge.textContent = `长度: ${effectiveN}`;

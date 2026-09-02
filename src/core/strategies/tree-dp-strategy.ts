@@ -1,6 +1,6 @@
 import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
-import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine';
+import type { UniversalStep, UniversalTreeNode, StateArrayItem } from '../universal-stage-engine';
 import { cloneTree } from './strategy-helpers';
 
 export type TreeDpModelId =
@@ -1169,6 +1169,8 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
     const size: number[] = new Array(7).fill(0);
     const maxLeft: number[] = new Array(7).fill(0);
     const maxRight: number[] = new Array(7).fill(0);
+    const queries = [4];
+    const ans: number[] = new Array(queries.length).fill(0);
     const dp1dDisplay: number[] = [0, 0, 0, 0, 0, 0];
 
     interface SimpleNode {
@@ -1196,8 +1198,83 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       traverse(treeState);
     }
 
+    function getSnapshotStateArrays(activeArrName?: string, activeSlotIdx?: number, highlightIndices?: number[]): StateArrayItem[] {
+      return [
+        {
+          id: 'arr-dfn',
+          name: 'dfn[]',
+          label: '节点访问时间戳',
+          indices: ['#1', '#2', '#3', '#4', '#5', '#6'],
+          values: [dfn[1] || 0, dfn[2] || 0, dfn[3] || 0, dfn[4] || 0, dfn[5] || 0, dfn[6] || 0],
+          activeIdx: activeArrName === 'dfn' ? activeSlotIdx : undefined,
+          color: 'blue',
+        },
+        {
+          id: 'arr-deep',
+          name: 'deep[]',
+          label: 'DFN 节点深度',
+          indices: ['1', '2', '3', '4', '5', '6'],
+          values: [deep[1] || 0, deep[2] || 0, deep[3] || 0, deep[4] || 0, deep[5] || 0, deep[6] || 0],
+          activeIdx: activeArrName === 'deep' ? activeSlotIdx : undefined,
+          color: 'indigo',
+        },
+        {
+          id: 'arr-size',
+          name: 'size[]',
+          label: 'DFN 子树规模',
+          indices: ['1', '2', '3', '4', '5', '6'],
+          values: [size[1] || 0, size[2] || 0, size[3] || 0, size[4] || 0, size[5] || 0, size[6] || 0],
+          activeIdx: activeArrName === 'size' ? activeSlotIdx : undefined,
+          color: 'purple',
+        },
+        {
+          id: 'arr-maxleft',
+          name: 'maxLeft[]',
+          label: '前缀最大深度',
+          indices: ['1', '2', '3', '4', '5', '6'],
+          values: [maxLeft[1] || 0, maxLeft[2] || 0, maxLeft[3] || 0, maxLeft[4] || 0, maxLeft[5] || 0, maxLeft[6] || 0],
+          activeIdx: activeArrName === 'maxLeft' ? activeSlotIdx : undefined,
+          highlightIndices: activeArrName === 'maxLeft' ? highlightIndices : undefined,
+          color: 'emerald',
+        },
+        {
+          id: 'arr-maxright',
+          name: 'maxRight[]',
+          label: '后缀最大深度',
+          indices: ['1', '2', '3', '4', '5', '6'],
+          values: [maxRight[1] || 0, maxRight[2] || 0, maxRight[3] || 0, maxRight[4] || 0, maxRight[5] || 0, maxRight[6] || 0],
+          activeIdx: activeArrName === 'maxRight' ? activeSlotIdx : undefined,
+          highlightIndices: activeArrName === 'maxRight' ? highlightIndices : undefined,
+          color: 'amber',
+        },
+        {
+          id: 'arr-ans',
+          name: 'ans[]',
+          label: '查询结果收集',
+          indices: ['q[0]=4'],
+          values: [ans[0] || 0],
+          activeIdx: activeArrName === 'ans' ? activeSlotIdx : undefined,
+          color: 'rose',
+        },
+      ];
+    }
+
+    function addStep(
+      stepData: Omit<UniversalStep, 'stateArrays'> & {
+        activeArrName?: string;
+        activeArrSlot?: number;
+        highlightArrSlots?: number[];
+      }
+    ) {
+      const { activeArrName, activeArrSlot, highlightArrSlots, ...rest } = stepData;
+      steps.push({
+        ...rest,
+        stateArrays: getSnapshotStateArrays(activeArrName, activeArrSlot, highlightArrSlots),
+      });
+    }
+
     // Line 8: public int[] treeQueries(TreeNode root, int[] queries) {
-    steps.push({
+    addStep({
       type: 'entry',
       line: 8,
       i: 0,
@@ -1213,7 +1290,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
     });
 
     // Line 9: dfs(root, 0);
-    steps.push({
+    addStep({
       type: 'call',
       line: 9,
       i: 0,
@@ -1230,7 +1307,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
 
     function simulateDfs(node: SimpleNode | undefined, d: number) {
       // Line 21: private void dfs(TreeNode node, int d) {
-      steps.push({
+      addStep({
         type: 'entry',
         line: 21,
         i: node ? node.val : 0,
@@ -1247,7 +1324,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
 
       // Line 22: if (node == null) return;
       if (!node) {
-        steps.push({
+        addStep({
           type: 'boundary',
           line: 22,
           i: 0,
@@ -1263,7 +1340,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         return;
       }
 
-      steps.push({
+      addStep({
         type: 'update',
         line: 22,
         i: node.val,
@@ -1282,7 +1359,8 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       dfnCnt++;
       const curI = dfnCnt;
       setNodeStatus(node.id, 'visited', `DFN:${curI}|深:${d}`);
-      steps.push({
+      dfn[node.val] = curI;
+      addStep({
         type: 'update',
         line: 23,
         i: node.val,
@@ -1295,14 +1373,15 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `先序计数器自增：为节点 <strong>#${node.val}</strong> 分配 DFN 序号 <code>i = ++dfnCnt = ${curI}</code>。`,
         activeNodeId: node.id,
         treeRoot: cloneTree(treeState),
+        activeArrName: 'dfn',
+        activeArrSlot: node.val - 1,
       });
 
       // Line 24: dfn[node.val] = i; deep[i] = d; size[i] = 1;
-      dfn[node.val] = curI;
       deep[curI] = d;
       size[curI] = 1;
       dp1dDisplay[curI - 1] = d;
-      steps.push({
+      addStep({
         type: 'update',
         line: 24,
         i: node.val,
@@ -1315,11 +1394,13 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `记录状态：<code>dfn[${node.val}]=${curI}, deep[${curI}]=${d}, size[${curI}]=1</code>。`,
         activeNodeId: node.id,
         treeRoot: cloneTree(treeState),
+        activeArrName: 'deep',
+        activeArrSlot: curI - 1,
       });
 
       // Line 25: if (node.left != null) { dfs(node.left, d + 1); size[i] += size[dfn[node.left.val]]; }
       if (node.left) {
-        steps.push({
+        addStep({
           type: 'call',
           line: 25,
           i: node.val,
@@ -1338,7 +1419,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
 
         // 回溯后累加 size
         size[curI] += size[dfn[node.left.val]];
-        steps.push({
+        addStep({
           type: 'update',
           line: 25,
           i: node.val,
@@ -1351,9 +1432,11 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
           msg: `左孩子回溯：累加左子树大小，<code>size[${curI}] = ${size[curI]}</code>。`,
           activeNodeId: node.id,
           treeRoot: cloneTree(treeState),
+          activeArrName: 'size',
+          activeArrSlot: curI - 1,
         });
       } else {
-        steps.push({
+        addStep({
           type: 'update',
           line: 25,
           i: node.val,
@@ -1371,7 +1454,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
 
       // Line 26: if (node.right != null) { dfs(node.right, d + 1); size[i] += size[dfn[node.right.val]]; }
       if (node.right) {
-        steps.push({
+        addStep({
           type: 'call',
           line: 26,
           i: node.val,
@@ -1390,7 +1473,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
 
         // 回溯后累加 size
         size[curI] += size[dfn[node.right.val]];
-        steps.push({
+        addStep({
           type: 'update',
           line: 26,
           i: node.val,
@@ -1403,9 +1486,11 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
           msg: `右孩子回溯：累加右子树大小，<code>size[${curI}] = ${size[curI]}</code>。`,
           activeNodeId: node.id,
           treeRoot: cloneTree(treeState),
+          activeArrName: 'size',
+          activeArrSlot: curI - 1,
         });
       } else {
-        steps.push({
+        addStep({
           type: 'update',
           line: 26,
           i: node.val,
@@ -1422,7 +1507,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       }
 
       // Line 27: method exit
-      steps.push({
+      addStep({
         type: 'return',
         line: 27,
         i: node.val,
@@ -1435,6 +1520,8 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `节点 <strong>#${node.val}</strong> 遍历完毕，返回上一层调用栈。`,
         activeNodeId: node.id,
         treeRoot: cloneTree(treeState),
+        activeArrName: 'size',
+        activeArrSlot: curI - 1,
       });
     }
 
@@ -1445,7 +1532,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
     maxLeft[1] = deep[1];
     const prefixDisplay: number[] = new Array(6).fill(0);
     prefixDisplay[0] = maxLeft[1];
-    steps.push({
+    addStep({
       type: 'update',
       line: 10,
       i: 1,
@@ -1458,11 +1545,13 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       msg: `初始化前缀最大值数组：<code>maxLeft[1] = deep[1] = ${deep[1]}</code>。`,
       activeNodeId: 'node-1',
       treeRoot: cloneTree(treeState),
+      activeArrName: 'maxLeft',
+      activeArrSlot: 0,
     });
 
     // Line 11: for (int i = 2; i <= dfnCnt; i++) maxLeft[i] = Math.max(maxLeft[i - 1], deep[i]);
     for (let i = 2; i <= dfnCnt; i++) {
-      steps.push({
+      addStep({
         type: 'loop',
         line: 11,
         i,
@@ -1475,12 +1564,14 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `检查前缀循环条件：<code>i = ${i} <= ${dfnCnt}</code> 为真，准备递推计算。`,
         activeNodeId: 'node-1',
         treeRoot: cloneTree(treeState),
+        activeArrName: 'maxLeft',
+        activeArrSlot: i - 1,
       });
 
       maxLeft[i] = Math.max(maxLeft[i - 1], deep[i]);
       prefixDisplay[i - 1] = maxLeft[i];
 
-      steps.push({
+      addStep({
         type: 'update',
         line: 11,
         i,
@@ -1493,6 +1584,9 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `递推前缀极值：<code>maxLeft[${i}] = max(${maxLeft[i - 1]}, ${deep[i]}) = ${maxLeft[i]}</code>。`,
         activeNodeId: 'node-1',
         treeRoot: cloneTree(treeState),
+        activeArrName: 'maxLeft',
+        activeArrSlot: i - 1,
+        highlightArrSlots: [i - 2],
       });
     }
 
@@ -1500,7 +1594,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
     maxRight[dfnCnt] = deep[dfnCnt];
     const suffixDisplay: number[] = new Array(6).fill(0);
     suffixDisplay[dfnCnt - 1] = maxRight[dfnCnt];
-    steps.push({
+    addStep({
       type: 'update',
       line: 12,
       i: dfnCnt,
@@ -1513,11 +1607,13 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       msg: `初始化后缀最大值数组：<code>maxRight[${dfnCnt}] = deep[${dfnCnt}] = ${deep[dfnCnt]}</code>。`,
       activeNodeId: 'node-1',
       treeRoot: cloneTree(treeState),
+      activeArrName: 'maxRight',
+      activeArrSlot: dfnCnt - 1,
     });
 
     // Line 13: for (int i = dfnCnt - 1; i >= 1; i--) maxRight[i] = Math.max(maxRight[i + 1], deep[i]);
     for (let i = dfnCnt - 1; i >= 1; i--) {
-      steps.push({
+      addStep({
         type: 'loop',
         line: 13,
         i,
@@ -1530,12 +1626,14 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `检查后缀循环条件：<code>i = ${i} >= 1</code> 为真，准备逆序递推。`,
         activeNodeId: 'node-1',
         treeRoot: cloneTree(treeState),
+        activeArrName: 'maxRight',
+        activeArrSlot: i - 1,
       });
 
       maxRight[i] = Math.max(maxRight[i + 1], deep[i]);
       suffixDisplay[i - 1] = maxRight[i];
 
-      steps.push({
+      addStep({
         type: 'update',
         line: 13,
         i,
@@ -1548,13 +1646,14 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `递推后缀极值：<code>maxRight[${i}] = max(${maxRight[i + 1]}, ${deep[i]}) = ${maxRight[i]}</code>。`,
         activeNodeId: 'node-1',
         treeRoot: cloneTree(treeState),
+        activeArrName: 'maxRight',
+        activeArrSlot: i - 1,
+        highlightArrSlots: [i],
       });
     }
 
     // Line 14: int[] ans = new int[queries.length];
-    const queries = [4];
-    const ans: number[] = new Array(queries.length).fill(0);
-    steps.push({
+    addStep({
       type: 'update',
       line: 14,
       i: 0,
@@ -1567,11 +1666,13 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       msg: '为答案分配数组：<code>int[] ans = new int[1]</code>。',
       activeNodeId: 'node-1',
       treeRoot: cloneTree(treeState),
+      activeArrName: 'ans',
+      activeArrSlot: 0,
     });
 
     // Line 15: for (int k = 0; k < queries.length; k++) {
     for (let k = 0; k < queries.length; k++) {
-      steps.push({
+      addStep({
         type: 'loop',
         line: 15,
         i: k,
@@ -1584,6 +1685,8 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `进入查询循环：当前处理 <code>queries[${k}] = ${queries[k]}</code>。`,
         activeNodeId: `node-${queries[k]}`,
         treeRoot: cloneTree(treeState),
+        activeArrName: 'ans',
+        activeArrSlot: k,
       });
 
       // Line 16: int i = dfn[queries[k]];
@@ -1601,7 +1704,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       };
       markSubtreePruned(queryTree);
 
-      steps.push({
+      addStep({
         type: 'update',
         line: 16,
         i: targetI,
@@ -1614,6 +1717,8 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `定位子树 DFN 区间：节点 <strong>#${targetVal}</strong> 的时间戳为 <code>${targetI}</code>，子树大小为 <code>${targetSize}</code>，剔除闭区间 <code>[${targetI} .. ${targetI + targetSize - 1}]</code>。`,
         activeNodeId: `node-${targetVal}`,
         treeRoot: queryTree,
+        activeArrName: 'dfn',
+        activeArrSlot: targetVal - 1,
       });
 
       // Line 17: ans[k] = Math.max(maxLeft[i - 1], maxRight[i + size[i]]);
@@ -1622,7 +1727,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       const rightMax = rightIdx <= dfnCnt ? maxRight[rightIdx] : 0;
       ans[k] = Math.max(leftMax, rightMax);
 
-      steps.push({
+      addStep({
         type: 'update',
         line: 17,
         i: targetI,
@@ -1635,11 +1740,13 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         msg: `<strong>核心极值合并</strong>：左侧前缀最大深度 <code>maxLeft[${targetI - 1}]=${leftMax}</code>，右侧后缀最大深度 <code>maxRight[${rightIdx}]=${rightMax}</code>，合并得到整树最大高度 <strong>${ans[k]}</strong>！`,
         activeNodeId: `node-${targetVal}`,
         treeRoot: queryTree,
+        activeArrName: 'ans',
+        activeArrSlot: k,
       });
     }
 
     // Line 15: loop exit
-    steps.push({
+    addStep({
       type: 'loop',
       line: 15,
       i: queries.length,
@@ -1652,10 +1759,12 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       msg: '所有查询处理完毕，跳出循环。',
       activeNodeId: 'node-1',
       treeRoot: cloneTree(treeState),
+      activeArrName: 'ans',
+      activeArrSlot: 0,
     });
 
     // Line 19: return ans;
-    steps.push({
+    addStep({
       type: 'return',
       line: 19,
       i: 0,
@@ -1668,6 +1777,8 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       msg: `🏆 演化推导全部完成！返回答案数组 <strong>[${ans.join(', ')}]</strong>。`,
       activeNodeId: 'node-1',
       treeRoot: cloneTree(treeState),
+      activeArrName: 'ans',
+      activeArrSlot: 0,
     });
 
     return steps;

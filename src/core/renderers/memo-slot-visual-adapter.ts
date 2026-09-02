@@ -30,6 +30,12 @@ export class MemoSlotVisualAdapter {
   public static renderLiteMemoSlots(container: HTMLElement, step: any, n: number): void {
     if (!container || !step) return;
     container.innerHTML = '';
+
+    // 如果该步骤携带了多维状态数组监视数据，直接进入高级多维状态面板渲染
+    if (Array.isArray(step.stateArrays) && step.stateArrays.length > 0) {
+      this.renderStateArrays(container, step.stateArrays, step);
+      return;
+    }
     
     // 强制重置容器为竖向列式居中容器，杜绝与上层 HTML 任何 flex-row 冲突
     container.className = 'w-full h-full flex flex-col items-center justify-center gap-2 p-1 relative overflow-auto';
@@ -222,6 +228,101 @@ export class MemoSlotVisualAdapter {
           badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-slate-100 text-slate-400';
         }
       }
+    }
+  }
+
+  /**
+   * 渲染多维状态数组监视器 (Multi-Array State Inspector)
+   * 适用于包含多个状态数组的算法 (如 DFN 序、deep[]、size[]、maxLeft[]、maxRight[]、ans[])
+   */
+  public static renderStateArrays(
+    container: HTMLElement,
+    stateArrays: any[],
+    step?: any
+  ): void {
+    if (!container || !stateArrays || stateArrays.length === 0) return;
+    container.innerHTML = '';
+    container.className = 'w-full h-full flex flex-col justify-start items-stretch gap-1.5 p-1 overflow-auto font-mono-code select-none';
+
+    // 1. 顶部当前状态与操作提示条
+    if (step && (step.msg || step.log || step.tag)) {
+      const topBanner = document.createElement('div');
+      topBanner.className = 'w-full px-2.5 py-1 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/70 rounded-lg border border-blue-200/80 text-xs flex items-center justify-between gap-2 shadow-2xs flex-shrink-0';
+      topBanner.innerHTML = `
+        <span class="font-extrabold text-blue-900 flex items-center gap-1.5 truncate">
+          <span class="animal-frog">🐸</span>
+          <span>${step.tag || '状态同步'}</span>
+        </span>
+        <span class="text-[11px] font-mono text-slate-600 truncate">${step.log ? step.log.replace(/^[| ]+/, '') : ''}</span>
+      `;
+      container.appendChild(topBanner);
+    }
+
+    const colorMap: Record<string, { bg: string; border: string; text: string; ring: string; activeBg: string }> = {
+      blue: { bg: 'bg-blue-50/90', border: 'border-blue-200', text: 'text-blue-700', ring: 'ring-blue-400', activeBg: 'bg-blue-100 border-blue-500 text-blue-950' },
+      indigo: { bg: 'bg-indigo-50/90', border: 'border-indigo-200', text: 'text-indigo-700', ring: 'ring-indigo-400', activeBg: 'bg-indigo-100 border-indigo-500 text-indigo-950' },
+      purple: { bg: 'bg-purple-50/90', border: 'border-purple-200', text: 'text-purple-700', ring: 'ring-purple-400', activeBg: 'bg-purple-100 border-purple-500 text-purple-950' },
+      emerald: { bg: 'bg-emerald-50/90', border: 'border-emerald-200', text: 'text-emerald-700', ring: 'ring-emerald-400', activeBg: 'bg-emerald-100 border-emerald-500 text-emerald-950' },
+      amber: { bg: 'bg-amber-50/90', border: 'border-amber-200', text: 'text-amber-700', ring: 'ring-amber-400', activeBg: 'bg-amber-100 border-amber-500 text-amber-950' },
+      rose: { bg: 'bg-rose-50/90', border: 'border-rose-200', text: 'text-rose-700', ring: 'ring-rose-400', activeBg: 'bg-rose-100 border-rose-500 text-rose-950' },
+      sky: { bg: 'bg-sky-50/90', border: 'border-sky-200', text: 'text-sky-700', ring: 'ring-sky-400', activeBg: 'bg-sky-100 border-sky-500 text-sky-950' },
+    };
+
+    // 2. 依次渲染各个状态数组
+    for (const arr of stateArrays) {
+      const row = document.createElement('div');
+      row.className = 'w-full flex items-center gap-2 py-0.5 px-2 rounded-xl bg-white border border-slate-200 shadow-2xs hover:border-slate-300 transition flex-shrink-0';
+
+      const theme = colorMap[arr.color || 'blue'] || colorMap.blue;
+
+      // 标签头
+      const header = document.createElement('div');
+      header.className = `w-28 sm:w-32 flex-shrink-0 flex flex-col justify-center px-2 py-1 rounded-lg ${theme.bg} border ${theme.border}`;
+      header.innerHTML = `
+        <span class="text-xs font-black font-mono ${theme.text}">${arr.name}</span>
+        ${arr.label ? `<span class="text-[10px] text-slate-500 truncate leading-tight">${arr.label}</span>` : ''}
+      `;
+      row.appendChild(header);
+
+      // 单元格列表
+      const cellsContainer = document.createElement('div');
+      cellsContainer.className = 'flex-1 flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5';
+
+      const indices = arr.indices || [];
+      const values = arr.values || [];
+      const len = Math.max(indices.length, values.length);
+
+      for (let idx = 0; idx < len; idx++) {
+        const indexLabel = indices[idx] !== undefined ? indices[idx] : idx;
+        const val = values[idx];
+        const isActive = arr.activeIdx === idx || (arr.highlightIndices && arr.highlightIndices.includes(idx));
+
+        const cell = document.createElement('div');
+        cell.className = 'flex flex-col items-center flex-shrink-0';
+
+        let cellClass = 'w-8 h-8 sm:w-9 sm:h-9 rounded-lg border flex items-center justify-center font-bold text-xs transition-all relative';
+        if (isActive) {
+          cellClass += ` ${theme.activeBg} font-black ring-2 ${theme.ring} shadow-xs scale-105 z-10`;
+        } else if (val !== null && val !== undefined && val !== 0 && val !== '') {
+          cellClass += ' bg-slate-50 border-slate-300 text-slate-800 font-bold';
+        } else {
+          cellClass += ' bg-slate-50/50 border-slate-200 text-slate-300';
+        }
+
+        const displayVal = (val === null || val === undefined) ? '-' : val;
+
+        cell.innerHTML = `
+          <span class="text-[9px] text-slate-400 font-sans leading-none mb-0.5">${indexLabel}</span>
+          <div class="${cellClass}">
+            ${isActive ? '<span class="absolute -top-1.5 -right-1 text-[10px] leading-none">✨</span>' : ''}
+            <span>${displayVal}</span>
+          </div>
+        `;
+        cellsContainer.appendChild(cell);
+      }
+
+      row.appendChild(cellsContainer);
+      container.appendChild(row);
     }
   }
 }
