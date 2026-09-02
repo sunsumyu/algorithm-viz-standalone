@@ -184,18 +184,19 @@ describe('Tree DP Specs Suite', () => {
         anchorMap: compiled.anchorMap || compiled.variants?.standard?.anchorMap,
       });
 
-      expect(steps.length).toBe(3);
+      expect(steps.length).toBeGreaterThanOrEqual(30);
       const javaTotalLines = MinimumScoreAfterRemovalsSpec.code.languages.java.length;
       expect(javaTotalLines).toBe(45);
 
       for (const s of steps) {
         expect(s.line).toBeGreaterThan(0);
         expect(s.line).toBeLessThanOrEqual(javaTotalLines);
+        expect(s.stateArrays).toBeDefined();
+        expect(s.stateArrays?.length).toBe(5);
       }
 
       expect(steps[0].line).toBe(3);
-      expect(steps[1].line).toBe(31);
-      expect(steps[2].line).toBe(34);
+      expect(steps[steps.length - 1].line).toBe(34);
     });
   });
 });

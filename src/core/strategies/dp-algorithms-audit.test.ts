@@ -61,4 +61,12 @@ describe('全面动规演示算法重构完成度审计 (Comprehensive DP Visual
       console.log(`算法 [${manifest.id}] ${manifest.name}: 阶段1=${stageCounts[1]}, 阶段2=${stageCounts[2]}, 阶段3=${stageCounts[3]}, 阶段4=${stageCounts[4]}`);
     });
   }
+
+  it('总结输出所有步骤数 <= 5 的算法清单', () => {
+    const lowStepAlgos = results.filter(r => r.hasModel && Object.values(r.stages).some(c => c > 0 && c <= 5));
+    console.log('\n🚨🚨🚨 步骤数 <= 5 的算法清单 🚨🚨🚨');
+    for (const item of lowStepAlgos) {
+      console.log(`- [${item.id}] ${item.name}: 阶段1=${item.stages[1]}, 阶段2=${item.stages[2]}, 阶段3=${item.stages[3]}, 阶段4=${item.stages[4]}`);
+    }
+  });
 });

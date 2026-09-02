@@ -225,8 +225,18 @@ export class StageNavigationCoordinator {
         ? (stageConfig.card2Title[currentDirection] || stageConfig.card2Title.forward)
         : stageConfig.card2Title;
 
+      const isMultiArrayTree = [
+        'height-removal-queries',
+        'minimum-score-after-removals',
+        'party-without-boss',
+        'house-robber-iii',
+        'minimum-fuel-cost',
+        'longest-path-different-characters',
+        'course-selection',
+      ].includes(model.id);
+
       const resolvedTitle = isTreeProblem
-        ? (model.id === 'height-removal-queries' ? '多维状态数组监视面板 (Multi-Array Inspector)' : (stageTitle || defaultCard2Title))
+        ? (isMultiArrayTree ? '多维状态数组监视面板 (Multi-Array Inspector)' : (stageTitle || defaultCard2Title))
         : ((currentStage === 'stage-3' && isStage32D)
           ? '二维 DP 状态转移表 (int[][] dp)'
           : (stageTitle || defaultCard2Title));
@@ -238,6 +248,18 @@ export class StageNavigationCoordinator {
       if (isTreeProblem) {
         if (model.id === 'height-removal-queries') {
           defaultCard2Desc = '实时跟踪 DFN 时间戳、深度 deep[]、子树大小 size[]、前缀极值 maxLeft[]、后缀极值 maxRight[] 与查询答案 ans[]。';
+        } else if (model.id === 'minimum-score-after-removals') {
+          defaultCard2Desc = '实时跟踪 DFN 时间戳、子树大小 size[]、子树异或和 xor[]、树边深端点 edgeEnds[] 与最小分数 ans。';
+        } else if (model.id === 'party-without-boss') {
+          defaultCard2Desc = '实时跟踪 7 位员工与主管的自身快乐值 happy[]、不参加快乐值 dp[u][0] 与参加快乐值 dp[u][1]。';
+        } else if (model.id === 'house-robber-iii') {
+          defaultCard2Desc = '实时跟踪二叉树各房屋节点的点权值 val[]、不偷最大收益 val0[] 与偷该节点最大收益 val1[]。';
+        } else if (model.id === 'minimum-fuel-cost') {
+          defaultCard2Desc = '实时跟踪 7 座城市的子树代表总人数 people[]、驶向父城所需车数 cars[] 与全国累计总油耗 totalFuel。';
+        } else if (model.id === 'longest-path-different-characters') {
+          defaultCard2Desc = '实时跟踪 6 个节点的字符标号 chars[]、向父节点汇报单链长 chain[] 与全局最长互异路径 maxPath。';
+        } else if (model.id === 'course-selection') {
+          defaultCard2Desc = '实时跟踪各课程自身学分 credits[]、虚拟超级根背包最优学分 dp[0][] 与课#1子树背包学分 dp[1][]。';
         } else if (currentStage === 'stage-1') defaultCard2Desc = '先序/后序遍历整树，自底向上递归求解子树最优解。';
         else if (currentStage === 'stage-2') defaultCard2Desc = '利用状态缓存避免树上重复遍历与重叠子问题。';
         else if (currentStage === 'stage-3') defaultCard2Desc = '自底向上顺序填表，状态转移方程精准递推。';
@@ -249,11 +271,21 @@ export class StageNavigationCoordinator {
         else if (currentStage === 'stage-4') defaultCard2Desc = '空间优化：利用局部状态依赖，就地滚动更新。';
       }
 
+      const isMultiArrayTree = [
+        'height-removal-queries',
+        'minimum-score-after-removals',
+        'party-without-boss',
+        'house-robber-iii',
+        'minimum-fuel-cost',
+        'longest-path-different-characters',
+        'course-selection',
+      ].includes(model.id);
+
       const resolvedDesc = (stageConfig.card2Desc && typeof stageConfig.card2Desc === 'object')
         ? (stageConfig.card2Desc[currentDirection] || stageConfig.card2Desc.forward)
         : stageConfig.card2Desc;
 
-      card2DescEl.textContent = (isTreeProblem && model.id === 'height-removal-queries')
+      card2DescEl.textContent = (isTreeProblem && isMultiArrayTree)
         ? defaultCard2Desc
         : (resolvedDesc || defaultCard2Desc);
     }
@@ -261,6 +293,12 @@ export class StageNavigationCoordinator {
     if (memoLenBadge) {
       if (model.id === 'height-removal-queries') {
         memoLenBadge.textContent = '6 组状态数组';
+      } else if (model.id === 'minimum-score-after-removals') {
+        memoLenBadge.textContent = '5 组状态数组';
+      } else if (
+        ['party-without-boss', 'house-robber-iii', 'minimum-fuel-cost', 'longest-path-different-characters', 'course-selection'].includes(model.id)
+      ) {
+        memoLenBadge.textContent = '3 组状态数组';
       } else if (isTreeProblem) {
         memoLenBadge.textContent = `状态槽位: ${effectiveN}`;
       } else if (currentStage === 'stage-4' || is1DProblem) {
