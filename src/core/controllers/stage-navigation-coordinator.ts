@@ -177,11 +177,13 @@ export class StageNavigationCoordinator {
     const card2DescEl = document.getElementById('card2-desc');
     const memoLenBadge = document.getElementById('badge-memo-len');
 
-    if (card1El) card1El.style.display = isTreeProblem ? 'none' : '';
+    if (card1El) card1El.style.display = '';
     if (btnToggle3d) btnToggle3d.style.display = isTreeProblem ? 'none' : '';
 
     if (card1TitleEl) {
-      if (isGridProblem) {
+      if (isTreeProblem) {
+        card1TitleEl.innerHTML = `<i class="fa-solid fa-network-wired text-emerald-600"></i> 🌲 二叉树拓扑结构与剪枝 (Tree Topology)`;
+      } else if (isGridProblem) {
         card1TitleEl.innerHTML = `<i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 ${effectiveM}×${effectiveN})`;
       } else if (is1DProblem) {
         card1TitleEl.innerHTML = `<i class="fa-solid fa-table-cells text-slate-500"></i> 一维状态槽位 (1×${effectiveN})`;
@@ -193,10 +195,10 @@ export class StageNavigationCoordinator {
     if (card2TitleEl) {
       let defaultCard2Title = '一维状态数组 (int[] memo)';
       if (isTreeProblem) {
-        if (currentStage === 'stage-1') defaultCard2Title = '递归搜索树 (Recursive Tree)';
-        else if (currentStage === 'stage-2') defaultCard2Title = '记忆化剪枝树 (Memoized Tree)';
-        else if (currentStage === 'stage-3') defaultCard2Title = '🌲 二叉树状态推导与拓扑拓展现 (Tree DP)';
-        else defaultCard2Title = '🌲 树型状态推演 (Tree DP)';
+        if (currentStage === 'stage-1') defaultCard2Title = '递归搜索状态栈 (Recursive State)';
+        else if (currentStage === 'stage-2') defaultCard2Title = '记忆化剪枝缓存 (Memoized Cache)';
+        else if (currentStage === 'stage-3') defaultCard2Title = '一维 DP 状态转移数组 (int[] dp)';
+        else defaultCard2Title = '空间压缩滚动数组 (int[] memo)';
       } else {
         if (currentStage === 'stage-1') defaultCard2Title = '递归搜索调用树 (Recursive Call Tree)';
         else if (currentStage === 'stage-2') defaultCard2Title = '记忆化搜索剪枝树 (Memoized Tree)';
@@ -221,7 +223,7 @@ export class StageNavigationCoordinator {
       if (isTreeProblem) {
         if (currentStage === 'stage-1') defaultCard2Desc = '先序/后序遍历整树，自底向上递归求解子树最优解。';
         else if (currentStage === 'stage-2') defaultCard2Desc = '利用状态缓存避免树上重复遍历与重叠子问题。';
-        else if (currentStage === 'stage-3') defaultCard2Desc = '树型状态转移演化，自适应呈现节点拓扑计算与极值合并。';
+        else if (currentStage === 'stage-3') defaultCard2Desc = '自底向上顺序填表，状态转移方程精准递推。';
         else defaultCard2Desc = '树型 DP 空间与时间优化求解。';
       } else {
         if (currentStage === 'stage-1') defaultCard2Desc = '自顶向下展开递归调用子问题，呈现指数级爆炸分支与重复计算。';
@@ -239,7 +241,7 @@ export class StageNavigationCoordinator {
 
     if (memoLenBadge) {
       if (isTreeProblem) {
-        memoLenBadge.textContent = '节点拓扑';
+        memoLenBadge.textContent = `状态槽位: ${effectiveN}`;
       } else if (currentStage === 'stage-4' || is1DProblem) {
         memoLenBadge.textContent = `长度: ${effectiveN}`;
       } else {

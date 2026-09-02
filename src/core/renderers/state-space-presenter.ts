@@ -31,7 +31,27 @@ export class StateSpacePresenter {
     options: StateSpacePresentationOptions
   ): void {
     if (!container) return;
-    const { step, m, n, isReverse = false, is3DMode = false, modelId, isGridProblem = false } = options;
+    const { step, m, n, isReverse = false, is3DMode = false, modelId, isGridProblem = false, currentStage } = options;
+
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(modelId, { m, n });
+    if (isTreeProblem) {
+      // 树型题目：卡片 1 作为主视图展示二叉树拓扑结构图与子树剪枝
+      container.className = 'w-full h-full flex items-center justify-center relative';
+      const arrowsSvg = document.getElementById('grid-arrows-svg');
+      if (arrowsSvg) arrowsSvg.style.display = 'none';
+      const riverBarrier = document.getElementById('grid-river-barrier');
+      if (riverBarrier) riverBarrier.style.display = 'none';
+
+      if (step.treeRoot) {
+        RecursionTreeAdapter.renderRecursionTree(
+          container,
+          step.treeRoot,
+          step.activeNodeId,
+          currentStage === 'stage-2'
+        );
+      }
+      return;
+    }
 
     const effectiveM = (step.grid && step.grid.length > 1) ? step.grid.length : m;
     const effectiveN = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
@@ -72,6 +92,13 @@ export class StateSpacePresenter {
 
     const effectiveM = (step.grid && step.grid.length > 1) ? step.grid.length : m;
     const effectiveN = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
+
+    const isTreeProblem = ProblemDimensionResolver.isTreeProblem(options.modelId, { m, n });
+    if (isTreeProblem) {
+      // 树型题目：卡片 1 已作为主视图呈现二叉树拓扑结构，卡片 2 专注于展示一维 DP 状态转移数组 (int[] dp / memo)
+      GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
+      return;
+    }
 
     if (currentStage === 'stage-4' || currentStage === 'stage-5') {
       // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位
@@ -116,7 +143,7 @@ export class StateSpacePresenter {
     const card1El = (document.getElementById('card1-wrapper') || document.getElementById('card1-title')?.parentElement?.parentElement || document.getElementById('card1-title')?.parentElement) as HTMLElement | null;
     const btnToggle3d = document.getElementById('btn-toggle-3d');
 
-    if (card1El) card1El.style.display = isTreeProblem ? 'none' : '';
+    if (card1El) card1El.style.display = '';
     if (btnToggle3d) btnToggle3d.style.display = isTreeProblem ? 'none' : '';
 
     // 图例同步
@@ -130,13 +157,11 @@ export class StateSpacePresenter {
       }
     }
 
-    // 卡片 1: 沙盘 / 网格看板 (树型问题无需渲染 1D/3D 沙盘)
-    if (!isTreeProblem) {
-      const gridContainer = document.getElementById('grid-container');
-      this.renderCard1(gridContainer, fullOptions);
-    }
+    // 卡片 1: 树型题目展示二叉树拓扑结构图，网格/线性题目展示沙盘看板
+    const gridContainer = document.getElementById('grid-container');
+    this.renderCard1(gridContainer, fullOptions);
 
-    // 卡片 2: 状态展示区
+    // 卡片 2: 状态展示区 (树型题目展示 DP 状态转移数组)
     const memoContainer = document.getElementById('memo-array-container') || document.getElementById('memo-slots-container');
     this.renderCard2(memoContainer, fullOptions);
 

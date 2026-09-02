@@ -297,10 +297,11 @@ describe('StateSpacePresenter (Deep Module Unit Tests)', () => {
     expect(boardWrapper.classList.contains('hidden')).toBe(false);
   });
 
-  it('12. 树型 DP 题目在 renderLiteVisuals 下隐藏 Card 1 与 3D 按钮，并在 Stage 3 优先直出树型图', () => {
+  it('12. 树型 DP 题目在 renderLiteVisuals 下保持双看板显示：Card 1 呈现二叉树拓扑，Card 2 呈现 DP 状态转移数组', () => {
     const card1Wrapper = Object.assign(new MockElement(), { style: { display: '' } });
     const btnToggle3d = Object.assign(new MockElement(), { style: { display: '' } });
     const legendRef = Object.assign(new MockElement(), { style: { display: '' } });
+    const gridContainer = new MockElement();
     const memoContainer = new MockElement();
 
     (globalThis as any).document = {
@@ -310,6 +311,7 @@ describe('StateSpacePresenter (Deep Module Unit Tests)', () => {
           'card1-wrapper': card1Wrapper,
           'btn-toggle-3d': btnToggle3d,
           'legend-ref': legendRef,
+          'grid-container': gridContainer,
           'memo-array-container': memoContainer,
           'log-container': new MockElement(),
         };
@@ -318,9 +320,10 @@ describe('StateSpacePresenter (Deep Module Unit Tests)', () => {
     };
 
     const spyTree = vi.spyOn(RecursionTreeAdapter, 'renderRecursionTree').mockImplementation(() => {});
+    const spyMemo = vi.spyOn(GridVisualAdapter, 'renderLiteMemoSlots').mockImplementation(() => {});
 
     const mockTreeRoot = { id: 'root', val: 1, children: [] } as any;
-    const step = { type: 'update', treeRoot: mockTreeRoot, activeNodeId: 'root' } as unknown as UniversalStep;
+    const step = { type: 'update', treeRoot: mockTreeRoot, activeNodeId: 'root', dp1d: [0, 1, 2] } as unknown as UniversalStep;
 
     StateSpacePresenter.renderLiteVisuals(
       { currentStage: 'stage-3', stage3SubView: 'matrix', step, m: 1, n: 6, modelId: 'height-removal-queries' },
@@ -328,11 +331,13 @@ describe('StateSpacePresenter (Deep Module Unit Tests)', () => {
       0
     );
 
-    expect(card1Wrapper.style.display).toBe('none');
+    expect(card1Wrapper.style.display).toBe('');
     expect(btnToggle3d.style.display).toBe('none');
     expect(legendRef.style.display).toBe('none');
-    expect(spyTree).toHaveBeenCalledWith(memoContainer, mockTreeRoot, 'root', true);
+    expect(spyTree).toHaveBeenCalledWith(gridContainer, mockTreeRoot, 'root', false);
+    expect(spyMemo).toHaveBeenCalledWith(memoContainer, step, 6);
 
     spyTree.mockRestore();
+    spyMemo.mockRestore();
   });
 });
