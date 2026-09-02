@@ -602,6 +602,33 @@ const demos: DemoDef[] = [
     ],
     build: makeEngineBuilder('party-without-boss'),
   },
+  {
+    id: 'height-removal-queries',
+    name: '移除子树后的二叉树高度',
+    description: '树型DP与DFN序打平技巧：先序遍历映射连续区间，前后缀极值 O(1) 回答移除子树后的树高度 (LeetCode 2458)。',
+    icon: '✂️',
+    inputs: [
+      { id: 'queries', label: '查询节点 queries', value: '4', width: 120 },
+    ],
+    examples: [
+      { label: 'queries=[4]', values: { queries: '4' } },
+      { label: 'queries=[3,2]', values: { queries: '3,2' } },
+    ],
+    build: makeEngineBuilder('height-removal-queries'),
+  },
+  {
+    id: 'minimum-score-after-removals',
+    name: '从树中删除边的最小分数',
+    description: '树型DP与拓扑关系判定：DFN序区间包含判定，O(n^2) 枚举断边方案求3连通块最小异或差值 (LeetCode 2322)。',
+    icon: '🪓',
+    inputs: [
+      { id: 'nums', label: '节点权值 nums', value: '1,5,5,4,11', width: 140 },
+    ],
+    examples: [
+      { label: 'nums=[1,5,5,4,11]', values: { nums: '1,5,5,4,11' } },
+    ],
+    build: makeEngineBuilder('minimum-score-after-removals'),
+  },
 
   // 状压DP 演示 (Bitmask DP Demos — 第080讲)
   // ---------------------------------------------------------------------------
@@ -741,6 +768,8 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'minimum-fuel-cost' },
   { type: 'demo', id: 'longest-path-different-characters' },
   { type: 'demo', id: 'party-without-boss' },
+  { type: 'demo', id: 'height-removal-queries' },
+  { type: 'demo', id: 'minimum-score-after-removals' },
   // 状压DP 专题（第080讲：状压dp-上）
   { type: 'demo', id: 'can-i-win' },
   { type: 'demo', id: 'matchsticks-to-square' },

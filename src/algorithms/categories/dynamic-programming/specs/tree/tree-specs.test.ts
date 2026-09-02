@@ -8,6 +8,8 @@ import { CourseSelectionSpec } from './course-selection.spec';
 import { MinimumFuelCostSpec } from './minimum-fuel-cost.spec';
 import { LongestPathDifferentCharactersSpec } from './longest-path-different-characters.spec';
 import { PartyWithoutBossSpec } from './party-without-boss.spec';
+import { HeightRemovalQueriesSpec } from './height-removal-queries.spec';
+import { MinimumScoreAfterRemovalsSpec } from './minimum-score-after-removals.spec';
 import type { AlgorithmSpec } from '../../engine/types';
 
 describe('Tree DP Specs Suite', () => {
@@ -21,6 +23,8 @@ describe('Tree DP Specs Suite', () => {
     MinimumFuelCostSpec,
     LongestPathDifferentCharactersSpec,
     PartyWithoutBossSpec,
+    HeightRemovalQueriesSpec,
+    MinimumScoreAfterRemovalsSpec,
   ];
 
   it('should have complete metadata for all Tree DP specs', () => {
@@ -109,4 +113,37 @@ describe('Tree DP Specs Suite', () => {
       expect(steps.length).toBeGreaterThan(0);
     });
   });
+
+  describe('HeightRemovalQueriesSpec', () => {
+    it('should compute tree height after removing subtrees', () => {
+      // Tree: [1, 3, 4, 2, null, 6, 5, null, null, null, null, null, 7], queries: [4]
+      // Removing subtree at 4 leaves root 1, child 3, child 2 -> max height = 2
+      const steps = HeightRemovalQueriesSpec.generateSteps({
+        root: [1, 3, 4, 2, null, 6, 5, null, null, null, null, null, 7],
+        queries: [4],
+      });
+      expect(steps.length).toBeGreaterThan(0);
+      const queryStep = steps.find((s) => s.metrics?.currentQuery === 4);
+      expect(queryStep?.metrics?.treeHeight).toBe(2);
+    });
+  });
+
+  describe('MinimumScoreAfterRemovalsSpec', () => {
+    it('should compute minimum score after removing two edges', () => {
+      // nums = [1, 5, 5, 4, 11], edges = [[0, 1], [1, 2], [1, 3], [3, 4]] -> score = 9
+      const steps = MinimumScoreAfterRemovalsSpec.generateSteps({
+        nums: [1, 5, 5, 4, 11],
+        edges: [
+          [0, 1],
+          [1, 2],
+          [1, 3],
+          [3, 4],
+        ],
+      });
+      expect(steps.length).toBeGreaterThan(0);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.metrics?.minScore).toBe(9);
+    });
+  });
 });
+
