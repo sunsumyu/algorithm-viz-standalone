@@ -1,6 +1,7 @@
 /**
  * 冗余连接 (LC 684) 可视化器 — 4-Card 标准现代架构
- * 并查集根节点追踪、动态加边合并与冗余环路截断
+ * 并查集根节点追踪、动态加边合并与冗余环路截断 (左程云 class056)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（并查集初始化、逐边遍历、边元解构、find寻根、根相等判环、根不等union合并、冗余边截获返回均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
@@ -11,6 +12,7 @@ import {
   REDUNDANT_EDGE_CODE_LANGUAGES,
 } from './redundant-edge-problem-content';
 import template from './redundant-edge.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
 export interface RedundantStep extends StepBase {
   nodes: number[];
@@ -24,7 +26,8 @@ export interface RedundantStep extends StepBase {
   action: 'init' | 'check' | 'union' | 'found-redundant' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
 export const RE_NODES = [1, 2, 3, 4, 5];
@@ -49,6 +52,18 @@ export function buildRedundantSteps(): RedundantStep[] {
   const n = RE_NODES.length;
   const parent = Array.from({ length: n + 1 }, (_, i) => i);
 
+  // 精准 8 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 3, java: 2, python: 2, javascript: 1 },
+    initParent: { cpp: 5, java: 4, python: 3, javascript: 2 },
+    forEdge: { cpp: 6, java: 5, python: 7, javascript: 4 },
+    unpackEdge: { cpp: 7, java: 6, python: 7, javascript: 4 },
+    findRoots: { cpp: 7, java: 7, python: 8, javascript: 5 },
+    checkRoots: { cpp: 8, java: 8, python: 9, javascript: 6 },
+    unionRoots: { cpp: 9, java: 9, python: 10, javascript: 7 },
+    returnEmpty: { cpp: 11, java: 11, python: 11, javascript: 9 },
+  };
+
   const find = (i: number): number => {
     let root = i;
     while (root !== parent[root]) {
@@ -60,78 +75,69 @@ export function buildRedundantSteps(): RedundantStep[] {
   const treeEdges: [number, number][] = [];
   let foundRedundant: [number, number] | null = null;
 
-  steps.push({
-    nodes: RE_NODES,
-    edges: RE_EDGES,
-    currentEdge: null,
-    rootU: null,
-    rootV: null,
-    treeEdges: [],
-    redundantEdge: null,
-    parent: [...parent],
-    action: 'init',
-    statusText: `初始化并查集：共有 ${n} 个节点，每个节点 parent[i] = i。准备按顺序扫描边集。`,
-    log: `初始化并查集 parent=[${parent.slice(1).join(', ')}]`,
-    codeLine: [3, 4, 5],
-  });
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'check' | 'union' | 'found-redundant' | 'done',
+    statusText: string,
+    log: string,
+    currentEdge: [number, number] | null = null,
+    rootU: number | null = null,
+    rootV: number | null = null
+  ): void {
+    const pStr = parent.slice(1).map((p, i) => `${i + 1}:${p}`).join(', ');
 
+    steps.push({
+      nodes: RE_NODES,
+      edges: RE_EDGES,
+      currentEdge,
+      rootU,
+      rootV,
+      treeEdges: [...treeEdges],
+      redundantEdge: foundRedundant,
+      parent: [...parent],
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-re-cur-edge': currentEdge ? `[${currentEdge[0]}, ${currentEdge[1]}]` : '—',
+        'metric-re-redundant': foundRedundant ? `[${foundRedundant[0]}, ${foundRedundant[1]}]` : '未发现',
+        'metric-re-tree-edges': `${treeEdges.length}`,
+        'metric-re-parent': `[${pStr}]`,
+      },
+    });
+  }
+
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] findRedundantConnection(edges)：启动并查集冗余连接判环。', 'findRedundantConnection 入口');
+  makeStep(lines.initParent, 'init', `📊 [初始化并查集] parent[i] = i；节点 1~${n} 各自独立为一个集合。`, 'init parent[]');
+
+  // 2. 逐边遍历
   for (const edge of RE_EDGES) {
     const [u, v] = edge;
+
+    makeStep(lines.forEdge, 'check', `🔁 [遍历边] 考察边 [${u}, ${v}]。`, `for edge [${u}, ${v}]`, edge);
+    makeStep(lines.unpackEdge, 'check', `  ↳ [解构边两端] u = ${u}, v = ${v}。`, `u=${u}, v=${v}`, edge);
+
     const rU = find(u);
     const rV = find(v);
+    makeStep(lines.findRoots, 'check', `  🔍 [查找根节点] find(${u}) = ${rU}, find(${v}) = ${rV}。`, `rootU=${rU}, rootV=${rV}`, edge, rU, rV);
 
-    if (rU === rV) {
+    const isCycle = rU === rV;
+    makeStep(lines.checkRoots, isCycle ? 'found-redundant' : 'check', `  🔎 [判环核验] if (rootU == rootV) -> (${rU} == ${rV}) -> (${isCycle})。`, `check rootU == rootV`, edge, rU, rV);
+
+    if (isCycle) {
       foundRedundant = edge;
-      steps.push({
-        nodes: RE_NODES,
-        edges: RE_EDGES,
-        currentEdge: edge,
-        rootU: rU,
-        rootV: rV,
-        treeEdges: [...treeEdges],
-        redundantEdge: edge,
-        parent: [...parent],
-        action: 'found-redundant',
-        statusText: `🎯 考察边 [${u}, ${v}]：find(${u})=${rU} 与 find(${v})=${rV} 根相同！说明此边导致环形成，为冗余边！`,
-        log: `[冗余边发现] [${u}, ${v}]: rootU(${rU}) == rootV(${rV})`,
-        codeLine: [8, 9],
-      });
+      makeStep(lines.checkRoots, 'found-redundant', `⚠️ [捕获冗余边] return edge！边 [${u}, ${v}] 两端已在同一连通集合中 (根为 ${rU})，加入该边导致环路形成，此边即为冗余边！`, `found redundant [${u}, ${v}]`, edge, rU, rV);
       break;
     } else {
       parent[rU] = rV;
       treeEdges.push(edge);
-
-      steps.push({
-        nodes: RE_NODES,
-        edges: RE_EDGES,
-        currentEdge: edge,
-        rootU: rU,
-        rootV: rV,
-        treeEdges: [...treeEdges],
-        redundantEdge: null,
-        parent: [...parent],
-        action: 'union',
-        statusText: `考察边 [${u}, ${v}]：find(${u})=${rU} !== find(${v})=${rV}。合并集合 parent[${rU}] = ${rV}。`,
-        log: `合并边 [${u}, ${v}]: parent[${rU}]=${rV}`,
-        codeLine: [8, 10],
-      });
+      makeStep(lines.unionRoots, 'union', `  🔗 [合并集合] parent[${rU}] = ${rV}；边 [${u}, ${v}] 为树边，将两连通块合并！`, `union: parent[${rU}] = ${rV}`, edge, rU, rV);
     }
   }
 
-  steps.push({
-    nodes: RE_NODES,
-    edges: RE_EDGES,
-    currentEdge: null,
-    rootU: null,
-    rootV: null,
-    treeEdges: [...treeEdges],
-    redundantEdge: foundRedundant,
-    parent: [...parent],
-    action: 'done',
-    statusText: `🎉 算法执行完成！成功定位可以删去的冗余连接边: [${foundRedundant?.join(', ')}]。`,
-    log: `✓ 检测完毕: 冗余边为 [${foundRedundant?.join(', ')}]`,
-    codeLine: 12,
-  });
+  makeStep(lines.checkRoots, 'done', `🎉 [冗余连接定位完毕] 检测出最终成环冗余边: [${foundRedundant?.[0]}, ${foundRedundant?.[1]}]，移除后恢复为树结构！`, 'done', foundRedundant);
 
   return steps;
 }
@@ -139,37 +145,27 @@ export function buildRedundantSteps(): RedundantStep[] {
 export class RedundantEdgeVisualizer extends StepVisualizer<RedundantStep> {
   protected codeLanguages = REDUNDANT_EDGE_CODE_LANGUAGES;
   protected codeLines = REDUNDANT_EDGE_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '冗余连接 (LC 684) 代码调试';
+  protected codePanelTitle = '冗余连接 算法代码调试';
 
   private svgCanvas: HTMLElement | null = null;
-  private parentPillsWrap: HTMLElement | null = null;
+  private edgeListBody: HTMLElement | null = null;
   private metricCurEdgeEl: HTMLElement | null = null;
-  private metricRootsEl: HTMLElement | null = null;
-  private metricMergedCountEl: HTMLElement | null = null;
-  private metricResultEdgeEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
+  private metricRedundantEl: HTMLElement | null = null;
+  private metricTreeEdgesEl: HTMLElement | null = null;
   private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
 
     this.svgCanvas = this.root.querySelector('#re-svg-canvas');
-    this.parentPillsWrap = this.root.querySelector('#edges-pills-wrap');
+    this.edgeListBody = this.root.querySelector('#re-edge-list-body');
     this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
-    this.metricRootsEl = this.root.querySelector('#metric-roots');
-    this.metricMergedCountEl = this.root.querySelector('#metric-same-root');
-    this.metricResultEdgeEl = this.root.querySelector('#metric-redundant');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.metricRedundantEl = this.root.querySelector('#metric-redundant-edge');
+    this.metricTreeEdgesEl = this.root.querySelector('#metric-tree-edges');
     this.liveTextEl = this.root.querySelector('#re-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 挂载暗色代码终端深模块
     this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: REDUNDANT_EDGE_PROBLEM_HTML,
@@ -183,156 +179,107 @@ export class RedundantEdgeVisualizer extends StepVisualizer<RedundantStep> {
   }
 
   protected renderStep(step: RedundantStep): void {
-    const { edges, currentEdge, rootU, rootV, treeEdges, redundantEdge, parent, statusText, action } = step;
+    const { currentEdge, treeEdges, redundantEdge, parent, action, statusText } = step;
 
-    // 1. 绘制无向图 SVG 拓扑图
     if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 460 260" style="width:100%; height:100%; max-height:240px;">`;
+      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">`;
 
-      const treeSet = new Set(treeEdges.map(([u, v]) => `${Math.min(u, v)}-${Math.max(u, v)}`));
-
-      for (const e of edges) {
-        const [u, v] = e;
-        const p1 = RE_NODE_POSITIONS[u - 1];
-        const p2 = RE_NODE_POSITIONS[v - 1];
-        const key = `${Math.min(u, v)}-${Math.max(u, v)}`;
-        const isTree = treeSet.has(key);
-        const isRedundant = redundantEdge && ((redundantEdge[0] === u && redundantEdge[1] === v) || (redundantEdge[0] === v && redundantEdge[1] === u));
-        const isCurrent = currentEdge && ((currentEdge[0] === u && currentEdge[1] === v) || (currentEdge[0] === v && currentEdge[1] === u));
+      for (const e of RE_EDGES) {
+        const p1 = RE_NODE_POSITIONS[e[0] - 1];
+        const p2 = RE_NODE_POSITIONS[e[1] - 1];
+        const isCurrent = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
+        const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
+        const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
 
         let strokeColor = '#cbd5e1';
-        let strokeWidth = 1.8;
+        let strokeWidth = 2;
         let strokeDash = 'none';
 
         if (isRedundant) {
           strokeColor = '#ef4444';
           strokeWidth = 4;
-          strokeDash = '4,4';
+          strokeDash = '5,5';
+        } else if (isCurrent && action === 'found-redundant') {
+          strokeColor = '#ef4444';
+          strokeWidth = 4;
+          strokeDash = '5,5';
         } else if (isTree) {
           strokeColor = '#10b981';
           strokeWidth = 3.5;
         } else if (isCurrent) {
-          strokeColor = '#f59e0b';
+          strokeColor = '#3b82f6';
           strokeWidth = 3;
         }
 
         svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
       }
 
-      // 绘制节点
       RE_NODES.forEach((node) => {
         const p = RE_NODE_POSITIONS[node - 1];
-        const isCurrent = currentEdge && (currentEdge[0] === node || currentEdge[1] === node);
+        const isCurrentNode = currentEdge && (currentEdge[0] === node || currentEdge[1] === node);
 
         let fill = '#ffffff';
         let stroke = '#cbd5e1';
-        if (isCurrent) {
-          fill = '#fef08a';
-          stroke = '#eab308';
+        if (isCurrentNode && (action === 'found-redundant' || action === 'done')) {
+          fill = '#fee2e2';
+          stroke = '#ef4444';
+        } else if (isCurrentNode) {
+          fill = '#dbeafe';
+          stroke = '#3b82f6';
         }
 
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
         svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="#64748b" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">p:${parent[node]}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">p:${parent[node]}</text>`;
       });
 
       svgHtml += `</svg>`;
       this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // 2. 渲染 parent 药丸栏
-    if (this.parentPillsWrap) {
-      this.parentPillsWrap.innerHTML = RE_NODES.map((node) => {
-        return `<div class="re-parent-pill">
-          <span style="color:#64748b;">${node}:</span>
-          <span>${parent[node]}</span>
-        </div>`;
+    if (this.edgeListBody) {
+      this.edgeListBody.innerHTML = RE_EDGES.map((e) => {
+        const isCur = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
+        const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
+        const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
+
+        let statusBadge = '<span class="text-slate-400">待检查</span>';
+        if (isRedundant) statusBadge = '<span class="text-red-500 font-bold">⚠️ 冗余成环边</span>';
+        else if (isTree) statusBadge = '<span class="text-emerald-600 font-bold">✔ 树边 (已合并)</span>';
+        else if (isCur) statusBadge = '<span class="text-blue-600 font-bold">检查中</span>';
+
+        return `<tr class="${isCur ? 'bg-blue-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">[${e[0]}, ${e[1]}]</td>
+          <td class="px-3 py-1.5 text-center font-mono text-xs">${statusBadge}</td>
+        </tr>`;
       }).join('');
     }
 
-    // 3. 更新状态监视器
     if (this.metricCurEdgeEl) {
       this.metricCurEdgeEl.textContent = currentEdge ? `[${currentEdge[0]}, ${currentEdge[1]}]` : '—';
     }
-    if (this.metricRootsEl) {
-      this.metricRootsEl.textContent = rootU != null && rootV != null ? `[${rootU}, ${rootV}]` : '—';
+    if (this.metricRedundantEl) {
+      this.metricRedundantEl.textContent = redundantEdge ? `[${redundantEdge[0]}, ${redundantEdge[1]}]` : '暂未发现';
+      this.metricRedundantEl.className = `font-mono font-bold ${redundantEdge ? 'text-red-600 animate-pulse' : 'text-slate-500'}`;
     }
-    if (this.metricMergedCountEl) this.metricMergedCountEl.textContent = `${treeEdges.length}`;
-    if (this.metricResultEdgeEl) {
-      this.metricResultEdgeEl.textContent = redundantEdge ? `[${redundantEdge.join(', ')}]` : '未发现';
-    }
-
-    if (this.formulaActionEl) {
-      if (action === 'found-redundant' && currentEdge) {
-        this.formulaActionEl.textContent = `发现成环: find(${currentEdge[0]}) === find(${currentEdge[1]}) === ${rootU}`;
-      } else if (action === 'union' && currentEdge) {
-        this.formulaActionEl.textContent = `合并: parent[${rootU}] = ${rootV}`;
-      } else {
-        this.formulaActionEl.textContent = 'rootU === rootV -> 发现成环冗余边';
-      }
+    if (this.metricTreeEdgesEl) {
+      this.metricTreeEdgesEl.textContent = `${treeEdges.length} / ${RE_NODES.length - 1}`;
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done' || action === 'found-redundant'
-          ? '#fef2f2'
-          : action === 'union'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done' || action === 'found-redundant'
-          ? '#dc2626'
-          : action === 'union'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done' || action === 'found-redundant'
-          ? '#fecaca'
-          : action === 'union'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
     }
-
-    const badgeRedundant = this.root?.querySelector('#badge-redundant-edge');
-    if (badgeRedundant) {
-      badgeRedundant.textContent = redundantEdge ? `冗余边: [${redundantEdge[0]}, ${redundantEdge[1]}]` : '冗余边: 待检测';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
   }
 }
 
 registerAlgorithm({
   id: 'redundant-edge',
-  name: '冗余连接 (LC 684)',
-  viewId: 'algo-redundant-edge-view',
+  name: '冗余连接 (Redundant Connection)',
   category: 'graph',
-  description: '使用并查集动态查找无向树中导致成环的多余边',
-  icon: '✂️',
   difficulty: 2,
-  levelOrder: 13,
-  learningGoal: '掌握并查集在无向图连通分量与环路检测中的核心应用',
+  levelOrder: 31,
+  description: '左程云算法通关课 Class 056：并查集经典实战，无向图动态加边判环，快速识别导致多余回路的冗余边 (LeetCode 684)',
+  learningGoal: '掌握并查集连通性判环机制、动态合并原则与树的环路消除策略',
   template,
   Visualizer: RedundantEdgeVisualizer,
 });
