@@ -38,11 +38,11 @@ export function buildUnboundedKnapsackSteps(
   const dp = new Array(t + 1).fill(0);
 
   const lines = {
-    initDp: { java: 8, cpp: 312, python: 344, javascript: 353 },
-    itemLoop: { java: 9, cpp: 313, python: 345, javascript: 354 },
-    capLoop: { java: 11, cpp: 315, python: 346, javascript: 356 },
-    updateDp: { java: 12, cpp: 316, python: 347, javascript: 357 },
-    returnAns: { java: 15, cpp: 319, python: 348, javascript: 360 },
+    initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
+    itemLoop: { java: 9, cpp: 9, python: 4, javascript: 4 },
+    capLoop: { java: 11, cpp: 11, python: 5, javascript: 6 },
+    updateDp: { java: 12, cpp: 12, python: 6, javascript: 7 },
+    returnAns: { java: 15, cpp: 15, python: 7, javascript: 10 },
   };
 
   function makeStep(data: Omit<UnboundedKnapsackStep, 'metrics'>): UnboundedKnapsackStep {

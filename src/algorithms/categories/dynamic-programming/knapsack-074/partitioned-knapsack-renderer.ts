@@ -44,16 +44,16 @@ export function buildPartitionedKnapsackSteps(
   const dp = new Array(m + 1).fill(0);
 
   const lines = {
-    sort: { java: 9, cpp: 63, python: 109, javascript: 127 },
-    initDp: { java: 10, cpp: 64, python: 110, javascript: 128 },
-    groupLoop: { java: 11, cpp: 65, python: 112, javascript: 130 },
-    groupEnd: { java: 12, cpp: 66, python: 114, javascript: 132 },
-    capLoop: { java: 13, cpp: 68, python: 116, javascript: 133 },
-    itemLoop: { java: 14, cpp: 69, python: 117, javascript: 134 },
-    ifFit: { java: 15, cpp: 70, python: 119, javascript: 136 },
-    updateDp: { java: 16, cpp: 71, python: 120, javascript: 137 },
-    nextGroup: { java: 20, cpp: 75, python: 121, javascript: 142 },
-    returnAns: { java: 22, cpp: 77, python: 122, javascript: 144 },
+    sort: { java: 9, cpp: 9, python: 3, javascript: 3 },
+    initDp: { java: 10, cpp: 10, python: 4, javascript: 4 },
+    groupLoop: { java: 11, cpp: 11, python: 6, javascript: 6 },
+    groupEnd: { java: 12, cpp: 12, python: 8, javascript: 8 },
+    capLoop: { java: 13, cpp: 14, python: 10, javascript: 9 },
+    itemLoop: { java: 14, cpp: 15, python: 11, javascript: 10 },
+    ifFit: { java: 15, cpp: 16, python: 13, javascript: 12 },
+    updateDp: { java: 16, cpp: 17, python: 14, javascript: 13 },
+    nextGroup: { java: 20, cpp: 21, python: 15, javascript: 17 },
+    returnAns: { java: 22, cpp: 23, python: 16, javascript: 19 },
   };
 
   function makeStep(data: Omit<PartitionedKnapsackStep, 'metrics'>): PartitionedKnapsackStep {

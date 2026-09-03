@@ -38,15 +38,15 @@ export function buildCoinsFromPilesSteps(
   const dp = new Array(K + 1).fill(0);
 
   const lines = {
-    initDp: { java: 8, cpp: 195, python: 239, javascript: 253 },
-    pileLoop: { java: 9, cpp: 196, python: 240, javascript: 254 },
-    calcLimit: { java: 10, cpp: 197, python: 241, javascript: 255 },
-    initPreSum: { java: 11, cpp: 198, python: 242, javascript: 256 },
-    preSumLoop: { java: 12, cpp: 199, python: 243, javascript: 257 },
-    capLoop: { java: 16, cpp: 201, python: 245, javascript: 260 },
-    coinLoop: { java: 17, cpp: 202, python: 246, javascript: 261 },
-    updateDp: { java: 18, cpp: 203, python: 247, javascript: 262 },
-    returnAns: { java: 22, cpp: 207, python: 248, javascript: 265 },
+    initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
+    pileLoop: { java: 9, cpp: 9, python: 4, javascript: 4 },
+    calcLimit: { java: 10, cpp: 10, python: 5, javascript: 5 },
+    initPreSum: { java: 11, cpp: 11, python: 6, javascript: 6 },
+    preSumLoop: { java: 12, cpp: 12, python: 7, javascript: 7 },
+    capLoop: { java: 16, cpp: 14, python: 9, javascript: 10 },
+    coinLoop: { java: 17, cpp: 15, python: 10, javascript: 11 },
+    updateDp: { java: 18, cpp: 16, python: 11, javascript: 12 },
+    returnAns: { java: 22, cpp: 20, python: 12, javascript: 16 },
   };
 
   function makeStep(data: Omit<CoinsFromPilesStep, 'metrics'>): CoinsFromPilesStep {

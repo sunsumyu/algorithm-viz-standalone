@@ -152,48 +152,77 @@ export class DarkCodeTerminalPresenter {
         lineEl.style.fontWeight = '700';
       };
 
-      if (typeof target === 'number') {
-        const lineEl = codeWrapper.querySelector(`.code-line[data-line="${target}"]`) as HTMLElement | null;
-        if (lineEl) {
-          markLine(lineEl);
-          if (typeof lineEl.scrollIntoView === 'function') {
-            lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          }
-        }
-      } else if (typeof target === 'string') {
-        const num = parseInt(target, 10);
-        if (!isNaN(num)) {
-          const lineEl = codeWrapper.querySelector(`.code-line[data-line="${num}"]`) as HTMLElement | null;
+      const applyTarget = (t: SingleLangHighlightTarget | string | null | undefined) => {
+        if (t == null) return;
+        if (typeof t === 'number') {
+          const lineEl = codeWrapper.querySelector(`.code-line[data-line="${t}"]`) as HTMLElement | null;
           if (lineEl) {
             markLine(lineEl);
             if (typeof lineEl.scrollIntoView === 'function') {
               lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             }
           }
-        }
-      } else if (typeof target === 'object') {
-        if ('from' in target && 'to' in target && typeof target.from === 'number' && typeof target.to === 'number') {
-          for (let l = target.from; l <= target.to; l++) {
-            const lineEl = codeWrapper.querySelector(`.code-line[data-line="${l}"]`) as HTMLElement | null;
-            markLine(lineEl);
+        } else if (typeof t === 'string') {
+          const num = parseInt(t, 10);
+          if (!isNaN(num)) {
+            const lineEl = codeWrapper.querySelector(`.code-line[data-line="${num}"]`) as HTMLElement | null;
+            if (lineEl) {
+              markLine(lineEl);
+              if (typeof lineEl.scrollIntoView === 'function') {
+                lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              }
+            }
           }
-          const firstEl = codeWrapper.querySelector(`.code-line[data-line="${target.from}"]`) as HTMLElement | null;
-          if (firstEl && typeof firstEl.scrollIntoView === 'function') {
-            firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          }
-        } else if (Array.isArray(target)) {
-          target.forEach((l) => {
+        } else if (Array.isArray(t)) {
+          t.forEach((l) => {
             const lineEl = codeWrapper.querySelector(`.code-line[data-line="${l}"]`) as HTMLElement | null;
             markLine(lineEl);
           });
-          if (target.length > 0) {
-            const firstEl = codeWrapper.querySelector(`.code-line[data-line="${target[0]}"]`) as HTMLElement | null;
+          if (t.length > 0) {
+            const firstEl = codeWrapper.querySelector(`.code-line[data-line="${t[0]}"]`) as HTMLElement | null;
             if (firstEl && typeof firstEl.scrollIntoView === 'function') {
               firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             }
           }
+        } else if (typeof t === 'object') {
+          if ('from' in t && 'to' in t && typeof t.from === 'number' && typeof t.to === 'number') {
+            for (let l = t.from; l <= t.to; l++) {
+              const lineEl = codeWrapper.querySelector(`.code-line[data-line="${l}"]`) as HTMLElement | null;
+              markLine(lineEl);
+            }
+            const firstEl = codeWrapper.querySelector(`.code-line[data-line="${t.from}"]`) as HTMLElement | null;
+            if (firstEl && typeof firstEl.scrollIntoView === 'function') {
+              firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          } else if ('primary' in t) {
+            const p = (t as any).primary;
+            if (typeof p === 'number' || Array.isArray(p)) {
+              applyTarget(p);
+            }
+          } else {
+            // 多语言字典解包：根据当前激活语言优先匹配
+            const dict = t as Record<string, any>;
+            let resolved = dict[currentLang];
+            if (resolved == null && (currentLang === 'js' || currentLang === 'javascript')) {
+              resolved = dict['javascript'] ?? dict['js'];
+            }
+            if (resolved == null && (currentLang === 'python' || currentLang === 'py')) {
+              resolved = dict['python'] ?? dict['py'];
+            }
+            if (resolved == null && currentLang.includes('cpp')) {
+              resolved = dict['cpp'] ?? dict['c++'];
+            }
+            if (resolved == null) {
+              resolved = dict['java'] ?? Object.values(dict)[0];
+            }
+            if (resolved != null) {
+              applyTarget(resolved);
+            }
+          }
         }
-      }
+      };
+
+      applyTarget(target);
     };
 
     // 6. Tab 切换函数
