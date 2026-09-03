@@ -188,7 +188,8 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
 
       const steps03 = buildTargetSumSteps([1, 1], 0);
       steps03.forEach((s) => {
-        expect(s.codeLine).toBeGreaterThan(0);
+        const line = typeof s.codeLine === 'object' && s.codeLine !== null ? (s.codeLine as any).java : s.codeLine;
+        expect(line).toBeGreaterThan(0);
       });
 
       const steps04 = buildLastStoneWeightIISteps([2, 4, 1]);
