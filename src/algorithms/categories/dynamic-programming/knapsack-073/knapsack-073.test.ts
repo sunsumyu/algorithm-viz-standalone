@@ -202,7 +202,8 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       const items = [null, { cost: 10, val: 20, q: 0 }];
       const steps05 = buildDependentKnapsackSteps(20, 1, items);
       steps05.forEach((s) => {
-        expect(s.codeLine).toBeGreaterThan(0);
+        const line = typeof s.codeLine === 'object' && s.codeLine !== null ? (s.codeLine as any).java : s.codeLine;
+        expect(line).toBeGreaterThan(0);
       });
 
       const steps06 = buildTopKSubsequenceSumSteps([1, 2], 3);
