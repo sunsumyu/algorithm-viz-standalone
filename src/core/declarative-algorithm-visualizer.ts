@@ -194,10 +194,30 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
   }
 
   /**
+   * 确保关键沙盘与指标容器引用始终有效且处于 DOM 连接状态 (防白板防御)
+   */
+  protected ensureContainers(): void {
+    if (!this.root) return;
+    if (!this.sandboxContainer || !this.sandboxContainer.isConnected) {
+      this.sandboxContainer = this.root.querySelector('#dsp-sandbox-container');
+    }
+    if (!this.customMetricsContainer || !this.customMetricsContainer.isConnected) {
+      this.customMetricsContainer = this.root.querySelector('#dsp-custom-metrics-container');
+    }
+    if (!this.liveTextEl || !this.liveTextEl.isConnected) {
+      this.liveTextEl = this.root.querySelector('#dsp-live-text');
+    }
+    if (!this.logContainer || !this.logContainer.isConnected) {
+      this.logContainer = this.root.querySelector('#log-container');
+    }
+  }
+
+  /**
    * 渲染单步状态
    */
   protected renderStep(step: TStep): void {
     if (!step) return;
+    this.ensureContainers();
 
     // 1. 调用 Spec 的领域画布渲染器
     if (this.sandboxContainer && this.spec.renderCanvas) {
