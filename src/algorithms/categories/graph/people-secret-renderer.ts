@@ -154,34 +154,46 @@ export function buildSecretExpertSteps(preset: string = 'classic_6expert'): Secr
   // 2. 按相同时间戳分批处理
   const m = meetings.length;
   for (let l = 0, r = 0; l < m; l = r) {
-    while (r < m && meetings[r][2] === meetings[l][2]) r++;
+    makeStep(lines.timeBatch, `🔁 [外层时间窗口循环] for (int l = ${l}, r = ${r}; l < ${m}; l = r)。`, `for l=${l}`, 'batch_merge');
+
+    while (r < m && meetings[r][2] === meetings[l][2]) {
+      makeStep(lines.timeBatch, `  ↳ [扩展同批次会议] while (meetings[${r}][2] == ${meetings[l][2]}) -> 纳入会议 #${r} (t=${meetings[r][2]})。`, `while r=${r}`, 'batch_merge');
+      r++;
+    }
 
     curTime = meetings[l][2];
     resetNodes = [];
-    makeStep(lines.timeBatch, `📅 [时间窗口推进] 推进至时刻 t = ${curTime}，本批次共有 ${r - l} 场并发会议召开。`, `时刻 t=${curTime}`, 'batch_merge');
+    makeStep(lines.timeBatch, `📅 [推进至时刻 t=${curTime}] 本时间切片包含 [${l}..${r - 1}] 共 ${r - l} 场并发会议。`, `时刻 t=${curTime}`, 'batch_merge');
 
     // 阶段 1: 同批次会议全部合并
     for (let i = l; i < r; i++) {
+      makeStep(lines.merge, `  🔁 [同批合并循环] for (int i = ${i}; i < ${r}; i++)。`, `for i=${i}`, 'cascade');
       const [u, v, t] = meetings[i];
       activeMeeting = [u, v, t];
       union(u, v);
-      makeStep(lines.merge, `🔗 [会议召开合并] 专家 ${u} 与 ${v} 在时刻 ${t} 秘密开会！并查集临时合并两者所在的连通块！`, `union(${u}, ${v})`, 'cascade', 'father', find(u));
+      makeStep(lines.merge, `  🔗 [会议瞬时连通] union(${u}, ${v})：专家 E${u} 与 E${v} 在时刻 ${t} 会晤，并查集临时合并两者所在的连通块！`, `union(${u}, ${v})`, 'cascade', 'father', find(u));
     }
 
     // 阶段 2: 检查连通性，若未能连接到 0 号未知密，撤销重置
     for (let i = l; i < r; i++) {
+      makeStep(lines.rollback, `  🔁 [连通有效性检验循环] for (int i = ${i}; i < ${r}; i++)。`, `for i=${i}`, 'rollback');
       const u = meetings[i][0];
       const v = meetings[i][1];
 
-      if (find(u) !== find(0)) {
+      const uKnown = find(u) === find(0);
+      makeStep(lines.rollback, `  🔎 [核验专家 E${u} 密源连通] if (find(${u}) != find(0)) -> (${find(u)} != ${find(0)}: ${!uKnown})。`, `check find(${u})`, 'rollback');
+      if (!uKnown) {
         father[u] = u;
         resetNodes.push(u);
-        makeStep(lines.rollback, `⏪ [无效接触撤销重置] 专家 ${u} 未能连通至 0 号密源！并查集撤销连通，重置 father[${u}] = ${u}！`, `reset father[${u}]=${u}`, 'rollback', 'father', u);
+        makeStep(lines.rollback, `  ⏪ [无效接触撤销重置] 专家 E${u} 未能连通至 0 号源头！撤销合并，重置 father[${u}] = ${u}！`, `reset father[${u}]=${u}`, 'rollback', 'father', u);
       }
-      if (find(v) !== find(0)) {
+
+      const vKnown = find(v) === find(0);
+      makeStep(lines.rollback, `  🔎 [核验专家 E${v} 密源连通] if (find(${v}) != find(0)) -> (${find(v)} != ${find(0)}: ${!vKnown})。`, `check find(${v})`, 'rollback');
+      if (!vKnown) {
         father[v] = v;
         resetNodes.push(v);
-        makeStep(lines.rollback, `⏪ [无效接触撤销重置] 专家 ${v} 未能连通至 0 号密源！并查集撤销连通，重置 father[${v}] = ${v}！`, `reset father[${v}]=${v}`, 'rollback', 'father', v);
+        makeStep(lines.rollback, `  ⏪ [无效接触撤销重置] 专家 E${v} 未能连通至 0 号源头！撤销合并，重置 father[${v}] = ${v}！`, `reset father[${v}]=${v}`, 'rollback', 'father', v);
       }
     }
   }
@@ -189,14 +201,18 @@ export function buildSecretExpertSteps(preset: string = 'classic_6expert'): Secr
   // 3. 终态收集
   activeMeeting = null;
   resetNodes = [];
-  makeStep(lines.done, '📊 [统计知密名单] 遍历全员 0..n-1，逐一检验其连通性并收集知密专家。', '收集结果 ans', 'done');
+  makeStep(lines.done, '📊 [统计知密名单] List<Integer> ans = new ArrayList<>()；遍历全员 0..n-1 收集结果。', 'ans = new ArrayList()', 'done');
 
   for (let i = 0; i < n; i++) {
+    makeStep(lines.done, `🔄 [结果检验循环] for (int i = ${i}; i < ${n}; i++)。`, `for i=${i}`, 'done');
     const isKnown = find(i) === find(0);
-    makeStep(lines.done, `🔎 [知密核验] 专家 E${i} 所属代表元为 ${find(i)}，${isKnown ? '与 0 号源头保持连通，确认掌握秘密！' : '未与 0 号连通，未获知秘密。'}`, `核验 E${i}`, 'done', 'known', i);
+    makeStep(lines.done, `🔎 [知密判定] if (find(${i}) == find(0)) -> (${find(i)} == ${find(0)}: ${isKnown})。`, `check E${i}`, 'done');
+    if (isKnown) {
+      makeStep(lines.done, `✨ [收集知密专家] ans.add(${i})：确认专家 E${i} 掌握秘密！`, `ans.add(${i})`, 'done', 'known', i);
+    }
   }
 
-  makeStep(lines.done, `🎉 [知密全员锁定] 经时间推演，知晓秘密的所有专家名单为: [${getKnown().join(', ')}]！并查集时间分组与撤销完美还原了因果流动！`, '算法结束', 'done');
+  makeStep(lines.done, `🎉 [返回知密名单] return ans: [${getKnown().map((x) => `E${x}`).join(', ')}]！并查集时序切片算法圆满结束！`, 'return ans', 'done');
 
   return steps;
 }
