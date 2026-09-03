@@ -31,6 +31,13 @@ export interface PartitionedKnapsackStep {
   log: string;
   codeLine?: HighlightTarget;
   metrics?: Record<string, any>;
+  selectedItems?: PartitionedItem[];
+  evalInfo?: {
+    candidateVal?: number;
+    prevVal?: number;
+    fits?: boolean;
+    improved?: boolean;
+  };
 }
 
 export function buildPartitionedKnapsackSteps(
@@ -42,6 +49,7 @@ export function buildPartitionedKnapsackSteps(
   const items = [...rawItems].sort((a, b) => a.group - b.group);
   const n = items.length;
   const dp = new Array(m + 1).fill(0);
+  let bestItemsForCapacity: PartitionedItem[][] = Array.from({ length: m + 1 }, () => []);
 
   const lines = {
     sort: { java: 9, cpp: 9, python: 3, javascript: 3 },
@@ -61,6 +69,7 @@ export function buildPartitionedKnapsackSteps(
     const jStr = data.j >= 0 ? `${data.j}` : '—';
     return {
       ...data,
+      selectedItems: data.selectedItems ? [...data.selectedItems] : [...(bestItemsForCapacity[m] || [])],
       metrics: {
         'metric-cur-group': gStr,
         'metric-cur-capacity': jStr,
@@ -80,6 +89,7 @@ export function buildPartitionedKnapsackSteps(
       maxVal: 0,
       items: [...items],
       currentGroupItems: [],
+      selectedItems: [],
       status: 'init',
       message: `🎒 执行排序：对 ${n} 个物品按组号升序排列，使同一组物品在内存中连续排列。`,
       log: `sort: items by group (total ${n} items)`,
@@ -97,6 +107,7 @@ export function buildPartitionedKnapsackSteps(
       maxVal: 0,
       items: [...items],
       currentGroupItems: [],
+      selectedItems: [],
       status: 'init',
       message: `📊 初始化 DP 数组：容量范围 0..${m}，初始最大收益全为 0。`,
       log: `init: dp[0..${m}] = 0`,
@@ -114,6 +125,7 @@ export function buildPartitionedKnapsackSteps(
         maxVal: 0,
         items: [...items],
         currentGroupItems: [],
+        selectedItems: [],
         status: 'done',
         message: '🏁 容量为 0 或无物品，运算结束，最大收益为 0。',
         log: 'done: ans=0',
@@ -144,6 +156,7 @@ export function buildPartitionedKnapsackSteps(
     // 4. 计算当前组区间 [start, end)
     while (end < n && items[end].group === items[start].group) end++;
     const currentGroup = items.slice(start, end);
+    const nextBestItems = bestItemsForCapacity.map((list) => [...list]);
 
     steps.push(
       makeStep({
@@ -193,7 +206,7 @@ export function buildPartitionedKnapsackSteps(
             items: [...items],
             currentGroupItems: currentGroup,
             status: 'check',
-            message: `📦 组内物品枚举：考察第 ${items[start].group} 组物品 #${k + 1} (体积=${it.cost}, 价值=${it.val})。`,
+            message: `📦 组内物品枚举：考察第 ${items[start].group} 组物品 #${k - start + 1} (体积=${it.cost}, 价值=${it.val})。`,
             log: `item loop: k=${k}, cost=${it.cost}, val=${it.val}`,
             codeLine: lines.itemLoop,
           })
@@ -215,6 +228,11 @@ export function buildPartitionedKnapsackSteps(
               : `❌ 容量不足：容量 j=${j} < 体积 ${it.cost}，无法装入该物品。`,
             log: `if (j >= cost): ${j} >= ${it.cost} => ${fits}`,
             codeLine: lines.ifFit,
+            evalInfo: {
+              fits,
+              candidateVal: fits ? dp[j - it.cost] + it.val : undefined,
+              prevVal: dp[j],
+            },
           })
         );
 
@@ -223,6 +241,7 @@ export function buildPartitionedKnapsackSteps(
           const updated = candidate > dp[j];
           if (updated) {
             dp[j] = candidate;
+            nextBestItems[j] = [...bestItemsForCapacity[j - it.cost], it];
           }
           steps.push(
             makeStep({
@@ -234,16 +253,25 @@ export function buildPartitionedKnapsackSteps(
               items: [...items],
               currentGroupItems: currentGroup,
               status: updated ? 'update' : 'check',
+              selectedItems: [...nextBestItems[m]],
               message: updated
                 ? `✨ 状态转移：dp[${j}] = Math.max(${dp[j]}, dp[${j - it.cost}] + ${it.val}) = ${candidate}，收益提高！`
                 : `⏸️ 状态保持：装入该物品后收益 ${candidate} <= 原收益 ${dp[j]}，保持 dp[${j}]=${dp[j]}。`,
               log: `dp[${j}] = Math.max(${dp[j]}, ${candidate}) => ${dp[j]}`,
               codeLine: lines.updateDp,
+              evalInfo: {
+                fits: true,
+                candidateVal: candidate,
+                prevVal: dp[j],
+                improved: updated,
+              },
             })
           );
         }
       }
     }
+
+    bestItemsForCapacity = nextBestItems;
 
     // 7. 移动组指针
     steps.push(
@@ -255,6 +283,7 @@ export function buildPartitionedKnapsackSteps(
         maxVal: dp[m],
         items: [...items],
         currentGroupItems: currentGroup,
+        selectedItems: [...bestItemsForCapacity[m]],
         status: 'group',
         message: `⏭️ 组指针递增：第 ${items[start].group} 组所有容量枚举完毕，执行 start = end (${end})。`,
         log: `next group: start=${end}`,
@@ -365,6 +394,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<PartitionedKnapsack
     return buildPartitionedKnapsackSteps(m, items);
   },
   renderCanvas: (container, step) => {
+    const selected = step.selectedItems || [];
+    const usedCap = selected.reduce((sum, it) => sum + it.cost, 0);
+    const totalVal = selected.reduce((sum, it) => sum + it.val, 0);
+    const capMax = step.dp.length > 0 ? step.dp.length - 1 : 45;
+    const ratio = Math.min(100, Math.round((usedCap / (capMax || 1)) * 100));
+
     // 渲染组结构
     const groupMap: Record<number, PartitionedItem[]> = {};
     step.items.forEach((it) => {
@@ -376,31 +411,69 @@ const { template, Visualizer } = createDeclarativeVisualizer<PartitionedKnapsack
       .map(([gIdStr, list]) => {
         const gId = parseInt(gIdStr, 10);
         const isCurGroup = step.groupIndex === gId;
-        const bg = isCurGroup ? '#1e1b4b' : '#0f172a';
+        const bg = isCurGroup ? 'rgba(30, 27, 75, 0.7)' : 'rgba(15, 23, 42, 0.6)';
         const border = isCurGroup ? '#818cf8' : '#334155';
 
         const itemsBadges = list
-          .map((it) => {
+          .map((it, idx) => {
+            const isSelected = selected.some(
+              (s) => s.group === it.group && s.cost === it.cost && s.val === it.val
+            );
             const isCurItem =
               step.itemIndex >= 0 &&
-              step.items[step.itemIndex] === it;
-            const itBg = isCurItem ? '#065f46' : '#1e293b';
-            const itBorder = isCurItem ? '#34d399' : '#475569';
+              step.items[step.itemIndex]?.group === it.group &&
+              step.items[step.itemIndex]?.cost === it.cost &&
+              step.items[step.itemIndex]?.val === it.val;
+
+            let badgeHtml = '';
+            let cardBg = '#1e293b';
+            let cardBorder = '#475569';
+
+            if (isSelected) {
+              cardBg = 'rgba(6, 95, 70, 0.4)';
+              cardBorder = '#10b981';
+              badgeHtml = `<span style="background:#059669; color:#ffffff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">✔ 已入选</span>`;
+            } else if (isCurItem) {
+              cardBg = 'rgba(30, 58, 138, 0.45)';
+              cardBorder = '#3b82f6';
+              if (step.evalInfo) {
+                if (!step.evalInfo.fits) {
+                  badgeHtml = `<span style="background:#dc2626; color:#ffffff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">❌ 超重无法装入</span>`;
+                } else if (step.evalInfo.improved) {
+                  badgeHtml = `<span style="background:#16a34a; color:#ffffff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">✨ 收益更优 (+${it.val})</span>`;
+                } else {
+                  badgeHtml = `<span style="background:#ca8a04; color:#ffffff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">⏸ 试算无提升</span>`;
+                }
+              } else {
+                badgeHtml = `<span style="background:#2563eb; color:#ffffff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">🔍 考察中</span>`;
+              }
+            } else {
+              badgeHtml = `<span style="color:#64748b; font-size:9.5px;">⚪ 候选待选</span>`;
+            }
+
             return `
-              <div style="background:${itBg}; border:1px solid ${itBorder}; border-radius:6px; padding:4px 8px; font-size:11px; text-align:center;">
-                <div style="color:#cbd5e1;">体积: ${it.cost}</div>
-                <div style="color:#10b981; font-weight:800;">价值: ${it.val}</div>
+              <div style="background:${cardBg}; border:1.5px solid ${cardBorder}; border-radius:6px; padding:6px 10px; font-size:11px; display:flex; flex-direction:column; gap:3px; transition:all 0.2s ease;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                  <span style="color:#94a3b8; font-weight:700;">#${idx + 1}</span>
+                  ${badgeHtml}
+                </div>
+                <div style="display:flex; justify-content:space-between; gap:10px; margin-top:2px;">
+                  <span style="color:#cbd5e1;">体积: <b style="color:#38bdf8;">${it.cost}</b></span>
+                  <span style="color:#cbd5e1;">价值: <b style="color:#10b981;">${it.val}</b></span>
+                  <span style="color:#94a3b8; font-size:9.5px;">v/c: ${(it.val / it.cost).toFixed(1)}</span>
+                </div>
               </div>
             `;
           })
           .join('');
 
         return `
-          <div style="background:${bg}; border:2px solid ${border}; border-radius:8px; padding:8px 12px; min-width:110px;">
-            <div style="font-size:11px; font-weight:800; color:#c7d2fe; margin-bottom:6px; text-align:center;">
-              第 ${gId} 组 (互斥)
+          <div style="background:${bg}; border:2px solid ${border}; border-radius:8px; padding:10px 12px; min-width:175px; flex:1; max-width:260px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:12px; font-weight:800; color:#c7d2fe;">第 ${gId} 组 (互斥)</span>
+              ${isCurGroup ? '<span style="background:#f59e0b; color:#0f172a; font-size:9px; font-weight:800; padding:1px 5px; border-radius:10px;">正在决策</span>' : '<span style="color:#64748b; font-size:9.5px;">互斥至多选1</span>'}
             </div>
-            <div style="display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
               ${itemsBadges}
             </div>
           </div>
@@ -408,11 +481,52 @@ const { template, Visualizer } = createDeclarativeVisualizer<PartitionedKnapsack
       })
       .join('');
 
+    // 已选入背包的清单
+    const selectedListHtml = selected.length > 0
+      ? selected.map((it) => `
+          <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:4px; padding:3px 8px; font-size:10.5px; display:inline-flex; align-items:center; gap:6px;">
+            <span style="color:#a7f3d0; font-weight:700;">第${it.group}组</span>
+            <span style="color:#cbd5e1;">体积:${it.cost}</span>
+            <span style="color:#34d399; font-weight:800;">价值:+${it.val}</span>
+          </div>
+        `).join('')
+      : `<span style="color:#64748b; font-size:11px;">(背包当前暂无装入物品，等待容量决策...)</span>`;
+
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; justify-content:center; align-items:center; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box;">
-        <div style="font-size:12px; color:#94a3b8; font-weight:700;">分组货架陈列 (Group Compartments)</div>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <!-- 顶部标题与当前决策容量提示 -->
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+          <div style="font-size:12px; color:#94a3b8; font-weight:700;">🗂️ 分组货架陈列 (每组互斥至多选1件)</div>
+          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+            当前考察容量: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${capMax}
+          </div>
+        </div>
+
+        <!-- 货架组卡片陈列 -->
+        <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:flex-start;">
           ${groupsHtml}
+        </div>
+
+        <!-- 底部实时背包货舱装载监视器 -->
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🎒 实时背包载荷舱</span>
+            <div style="display:flex; gap:16px; font-size:11px;">
+              <span>总占用容量: <b style="color:#38bdf8;">${usedCap}</b> / ${capMax}</span>
+              <span>背包累计收益: <b style="color:#10b981;">${totalVal}</b></span>
+            </div>
+          </div>
+
+          <!-- 容量进度条 -->
+          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
+            <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #3b82f6, #10b981); transition:width 0.25s ease;"></div>
+          </div>
+
+          <!-- 已选装物品标签流 -->
+          <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            <span style="color:#94a3b8; font-size:10.5px; min-width:60px;">已装入商品:</span>
+            ${selectedListHtml}
+          </div>
         </div>
       </div>
     `;
