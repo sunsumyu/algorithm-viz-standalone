@@ -1,6 +1,7 @@
 /**
  * Floyd-Warshall 全源最短路径可视化器 — 4-Card 标准现代架构
- * 动态规划阶段推进、全源距离矩阵实时更新与三重循环追踪
+ * 动态规划阶段推进、全源距离矩阵实时更新与三重循环追踪 (左程云 class061)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（对角线初始化、直连边赋予、中转点k循环、起点i循环、终点j循环、松弛状态转移、矩阵更新均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
@@ -11,6 +12,7 @@ import {
   FLOYD_CODE_LANGUAGES,
 } from './floyd-problem-content';
 import template from './floyd.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
 export interface FloydStep extends StepBase {
   matrix: number[][];
@@ -21,7 +23,8 @@ export interface FloydStep extends StepBase {
   action: 'init' | 'check' | 'update' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
 export const FLOYD_NODES = [0, 1, 2, 3];
@@ -38,61 +41,89 @@ export function buildFloydSteps(): FloydStep[] {
   const steps: FloydStep[] = [];
   const n = FLOYD_NODES.length;
 
-  const dist: number[][] = Array.from({ length: n }, () => new Array(n).fill(INF));
-  for (let i = 0; i < n; i++) dist[i][i] = 0;
-  for (const e of FLOYD_EDGES) dist[e.from][e.to] = e.w;
+  // 精准 10 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 1, javascript: 1 },
+    initDist: { cpp: 2, java: 4, python: 2, javascript: 2 },
+    diagZero: { cpp: 3, java: 5, python: 3, javascript: 3 },
+    fillEdges: { cpp: 4, java: 6, python: 4, javascript: 4 },
+    loopK: { cpp: 5, java: 7, python: 5, javascript: 5 },
+    loopI: { cpp: 6, java: 8, python: 6, javascript: 6 },
+    loopJ: { cpp: 7, java: 9, python: 7, javascript: 7 },
+    checkRelax: { cpp: 8, java: 10, python: 8, javascript: 8 },
+    updateDist: { cpp: 9, java: 11, python: 9, javascript: 9 },
+    returnDist: { cpp: 14, java: 16, python: 10, javascript: 14 },
+  };
 
+  const dist: number[][] = Array.from({ length: n }, () => new Array(n).fill(INF));
   let relaxCount = 0;
 
-  steps.push({
-    matrix: dist.map((row) => [...row]),
-    k: null,
-    i: null,
-    j: null,
-    relaxCount: 0,
-    action: 'init',
-    statusText: `初始化 ${n}×${n} 距离矩阵。对角线设为 0，直连边设为边权，其余不可达节点设为 ∞。`,
-    log: `初始化 ${n}x${n} 距离矩阵`,
-    codeLine: [3, 4, 5],
-  });
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'check' | 'update' | 'done',
+    statusText: string,
+    log: string,
+    k: number | null = null,
+    i: number | null = null,
+    j: number | null = null
+  ): void {
+    steps.push({
+      matrix: dist.map((row) => [...row]),
+      k,
+      i,
+      j,
+      relaxCount,
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-floyd-k': k !== null ? `${k}` : '—',
+        'metric-floyd-pair': i !== null && j !== null ? `(${i} ➔ ${j})` : '—',
+        'metric-floyd-relax': `${relaxCount}`,
+        'metric-floyd-dist': i !== null && j !== null ? `${dist[i][j] >= INF ? '∞' : dist[i][j]}` : '—',
+      },
+    });
+  }
 
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] floydWarshall(n=4, edges)：初始化 Floyd-Warshall 全源最短路。', 'floydWarshall 入口');
+  makeStep(lines.initDist, 'init', `📊 [初始化矩阵] int[][] dist = new int[4][4]，初始值全置为 ∞。`, 'init dist[][]');
+
+  for (let i = 0; i < n; i++) dist[i][i] = 0;
+  makeStep(lines.diagZero, 'init', '🌱 [对角线清零] dist[i][i] = 0；任意节点到自身距离为 0。', 'diag = 0');
+
+  for (const e of FLOYD_EDGES) dist[e.from][e.to] = e.w;
+  makeStep(lines.fillEdges, 'init', '➕ [填入直连边] 将图中已知的 4 条有向边权重录入矩阵。', 'fill direct edges');
+
+  // 2. 三重循环阶段推进
   for (let k = 0; k < n; k++) {
+    makeStep(lines.loopK, 'check', `🔄 [阶段推进] for (k = ${k}; k < ${n}; k++)：允许引入中间中转点 k = ${k} 进行松弛。`, `--- 中转点 k = ${k} 阶段 ---`, k);
+
     for (let i = 0; i < n; i++) {
+      makeStep(lines.loopI, 'check', `  ↳ [枚举起点] for (i = ${i}; i < ${n}; i++)：考察以节点 ${i} 为起点的所有路径。`, `起点 i = ${i}`, k, i);
+
       for (let j = 0; j < n; j++) {
-        if (dist[i][k] !== INF && dist[k][j] !== INF && dist[i][k] + dist[k][j] < dist[i][j]) {
+        makeStep(lines.loopJ, 'check', `    ↳ [枚举终点] for (j = ${j}; j < ${n}; j++)：测试路径 (${i} ➔ ${k} ➔ ${j})。`, `终点 j = ${j}`, k, i, j);
+
+        const canRelax = dist[i][k] + dist[k][j] < dist[i][j];
+        const ikStr = dist[i][k] >= INF ? '∞' : `${dist[i][k]}`;
+        const kjStr = dist[k][j] >= INF ? '∞' : `${dist[k][j]}`;
+        const ijStr = dist[i][j] >= INF ? '∞' : `${dist[i][j]}`;
+
+        makeStep(lines.checkRelax, canRelax ? 'update' : 'check', `    🔎 [状态转移方程核验] if (dist[${i}][${k}](${ikStr}) + dist[${k}][${j}](${kjStr}) < dist[${i}][${j}](${ijStr})) -> (${canRelax})。`, `check (${i}->${k}->${j})`, k, i, j);
+
+        if (canRelax) {
           const oldVal = dist[i][j];
           dist[i][j] = dist[i][k] + dist[k][j];
           relaxCount++;
-
-          steps.push({
-            matrix: dist.map((row) => [...row]),
-            k,
-            i,
-            j,
-            relaxCount,
-            action: 'update',
-            statusText: `中转点 k=${k}：经由 k 松弛路径 (${i} -> ${k} -> ${j})，dist[${i}][${j}] 从 ${
-              oldVal === INF ? '∞' : oldVal
-            } 缩短为 ${dist[i][j]}！`,
-            log: `  松弛 dist[${i}][${j}]: 经由 k=${k} 更新为 ${dist[i][j]}`,
-            codeLine: [9, 10],
-          });
+          makeStep(lines.updateDist, 'update', `    ⚡ [DP矩阵松弛更新] 发现更优中转路径！dist[${i}][${j}] 从 ${oldVal >= INF ? '∞' : oldVal} 缩短为 ${dist[i][j]}！`, `dist[${i}][${j}]=${dist[i][j]}`, k, i, j);
         }
       }
     }
   }
 
-  steps.push({
-    matrix: dist.map((row) => [...row]),
-    k: n - 1,
-    i: null,
-    j: null,
-    relaxCount,
-    action: 'done',
-    statusText: `🎉 Floyd-Warshall 算法执行完成！所有顶点对之间的最短距离已全部计算完毕。`,
-    log: `✓ 全源最短路径求解完成: 共松弛 ${relaxCount} 次`,
-    codeLine: 15,
-  });
+  makeStep(lines.returnDist, 'done', `🎉 [Floyd-Warshall 算法达成] return dist！所有顶点对之间的全局最短路径全部求解完毕，总松弛次数: ${relaxCount}。`, 'return dist');
 
   return steps;
 }
@@ -100,35 +131,25 @@ export function buildFloydSteps(): FloydStep[] {
 export class FloydVisualizer extends StepVisualizer<FloydStep> {
   protected codeLanguages = FLOYD_CODE_LANGUAGES;
   protected codeLines = FLOYD_CODE_LANGUAGES['java'];
-  protected codePanelTitle = 'Floyd-Warshall 算法 代码调试';
+  protected codePanelTitle = 'Floyd-Warshall 算法代码调试';
 
-  private matrixCanvas: HTMLElement | null = null;
+  private matrixTableEl: HTMLElement | null = null;
   private metricKEl: HTMLElement | null = null;
-  private metricIEl: HTMLElement | null = null;
-  private metricJEl: HTMLElement | null = null;
+  private metricPairEl: HTMLElement | null = null;
   private metricRelaxCountEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
   private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
 
-    this.matrixCanvas = this.root.querySelector('#floyd-matrix-container');
-    this.metricKEl = this.root.querySelector('#metric-k');
-    this.metricIEl = this.root.querySelector('#metric-i');
-    this.metricJEl = this.root.querySelector('#metric-j');
-    this.metricRelaxCountEl = this.root.querySelector('#metric-update-count');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#fl-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+    this.matrixTableEl = this.root.querySelector('#floyd-matrix-table');
+    this.metricKEl = this.root.querySelector('#metric-cur-k');
+    this.metricPairEl = this.root.querySelector('#metric-cur-pair');
+    this.metricRelaxCountEl = this.root.querySelector('#metric-floyd-relax');
+    this.liveTextEl = this.root.querySelector('#floyd-live-text');
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 挂载暗色代码终端深模块
     this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: FLOYD_PROBLEM_HTML,
@@ -142,116 +163,72 @@ export class FloydVisualizer extends StepVisualizer<FloydStep> {
   }
 
   protected renderStep(step: FloydStep): void {
-    const { matrix, k, i, j, relaxCount, statusText, action } = step;
-    const n = matrix.length;
+    const { matrix, k, i: curI, j: curJ, relaxCount, action, statusText } = step;
+    const n = FLOYD_NODES.length;
 
-    // 1. 渲染距离矩阵表格
-    if (this.matrixCanvas) {
-      let html = '<table class="fl-matrix-table"><thead><tr><th>i \\ j</th>';
+    if (this.matrixTableEl) {
+      let html = `<table class="w-full text-center border-collapse text-xs font-mono"><thead><tr><th class="p-1.5 bg-slate-100 text-slate-500 border border-slate-200">from \\ to</th>`;
       for (let c = 0; c < n; c++) {
-        html += `<th>${c}</th>`;
+        const isKCol = k === c;
+        html += `<th class="p-1.5 border border-slate-200 ${isKCol ? 'bg-amber-100 text-amber-800 font-extrabold' : 'bg-slate-100 text-slate-700 font-bold'}">${c}</th>`;
       }
-      html += '</tr></thead><tbody>';
+      html += `</tr></thead><tbody>`;
 
       for (let r = 0; r < n; r++) {
-        html += `<tr><th>${r}</th>`;
+        const isKRow = k === r;
+        html += `<tr><th class="p-1.5 border border-slate-200 ${isKRow ? 'bg-amber-100 text-amber-800 font-extrabold' : 'bg-slate-100 text-slate-700 font-bold'}">${r}</th>`;
+
         for (let c = 0; c < n; c++) {
           const val = matrix[r][c];
-          const isTarget = i === r && j === c;
-          const isIK = k != null && i === r && k === c;
-          const isKJ = k != null && k === r && j === c;
+          const isTarget = curI === r && curJ === c;
+          const isIK = curI === r && k === c;
+          const isKJ = k === r && curJ === c;
 
-          let cls = '';
-          if (isTarget) {
-            cls = action === 'update' ? 'cell-updated' : 'cell-active-ij';
+          let cellClass = 'p-2 border border-slate-200 transition-colors duration-150 ';
+          if (isTarget && action === 'update') {
+            cellClass += 'bg-emerald-100 text-emerald-800 font-extrabold scale-105 shadow-sm ';
+          } else if (isTarget) {
+            cellClass += 'bg-blue-100 text-blue-800 font-bold ';
           } else if (isIK || isKJ) {
-            cls = 'cell-mid-k';
+            cellClass += 'bg-amber-50 text-amber-900 font-semibold ';
+          } else if (r === c) {
+            cellClass += 'bg-slate-50 text-slate-400 font-semibold ';
+          } else {
+            cellClass += 'text-slate-800 ';
           }
 
-          const displayVal = val >= INF ? '∞' : `${val}`;
-          html += `<td class="${cls}">${displayVal}</td>`;
+          html += `<td class="${cellClass}">${val >= INF ? '∞' : val}</td>`;
         }
-        html += '</tr>';
+        html += `</tr>`;
       }
-
-      html += '</tbody></table>';
-      this.matrixCanvas.innerHTML = html;
+      html += `</tbody></table>`;
+      this.matrixTableEl.innerHTML = html;
     }
 
-    // 2. 更新状态监视器
-    if (this.metricKEl) this.metricKEl.textContent = k != null ? `${k} / ${n - 1}` : '—';
-    if (this.metricIEl) this.metricIEl.textContent = i != null ? `${i}` : '—';
-    if (this.metricJEl) this.metricJEl.textContent = j != null ? `${j}` : '—';
-    if (this.metricRelaxCountEl) this.metricRelaxCountEl.textContent = `${relaxCount}`;
-
-    if (this.formulaActionEl) {
-      if (action === 'update' && k != null && i != null && j != null) {
-        this.formulaActionEl.textContent = `松弛: dist[${i}][${j}] = min(${matrix[i][j]}, ${matrix[i][k]} + ${matrix[k][j]}) -> ${matrix[i][j]}`;
-      } else if (action === 'done') {
-        this.formulaActionEl.textContent = 'Floyd-Warshall 求解完成';
-      } else {
-        this.formulaActionEl.textContent = 'dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])';
-      }
+    if (this.metricKEl) {
+      this.metricKEl.textContent = k !== null ? `${k}` : '未开始';
+    }
+    if (this.metricPairEl) {
+      this.metricPairEl.textContent = curI !== null && curJ !== null ? `(${curI} ➔ ${curJ})` : '—';
+    }
+    if (this.metricRelaxCountEl) {
+      this.metricRelaxCountEl.textContent = `${relaxCount}`;
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'update'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'update'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'update'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
     }
-
-    const badgeMidK = this.root?.querySelector('#badge-mid-k');
-    if (badgeMidK) badgeMidK.textContent = `中继点 k: ${k != null ? k : '—'}`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
   }
 }
 
 registerAlgorithm({
   id: 'floyd',
-  name: 'Floyd-Warshall 多源最短路',
-  viewId: 'algo-floyd-view',
+  name: 'Floyd 全源最短路',
   category: 'graph',
-  description: '使用动态规划阶段枚举中转点计算全源最短路径距离矩阵',
-  icon: '🌐',
-  difficulty: 2,
-  levelOrder: 8,
-  learningGoal: '掌握 Floyd-Warshall 动态规划状态转移与矩阵三层循环结构',
+  difficulty: 3,
+  levelOrder: 25,
+  description: '左程云算法通关课 Class 061：基于动态规划思想的 O(V³) 全源最短路径算法，阶段枚举中转点 k 逐步松弛全局距离矩阵',
+  learningGoal: '深刻理解动态规划在多源最短路中的阶段定义、空间压缩与状态转移方程',
   template,
   Visualizer: FloydVisualizer,
 });
