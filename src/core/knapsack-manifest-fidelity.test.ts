@@ -19,6 +19,12 @@ describe('🛡️ Knapsack 073 & 074 Manifest & Template Registration Fidelity',
     'regex-matching',
     'wildcard-matching',
     'buying-hay-min-cost',
+    // 075 5 个算法
+    'bounded-knapsack-naive',
+    'bounded-knapsack-binary',
+    'cherry-blossom-viewing',
+    'bounded-knapsack-monotonic-queue',
+    'coins-change-kinds',
   ];
 
   beforeAll(async () => {

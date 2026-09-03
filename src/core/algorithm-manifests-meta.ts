@@ -3510,6 +3510,62 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 89,
     "learningGoal": "掌握允许超额时的容量上界安全扩充证明（H + maxVal）与求最小花费完全背包的状态转移"
+  },
+  {
+    "id": "bounded-knapsack-naive",
+    "name": "多重背包朴素枚举 (洛谷 P1776 宝物筛选)",
+    "viewId": "algo-bounded-knapsack-naive-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 075 Code01：洛谷 P1776 宝物筛选，多重背包基准朴素三重循环枚举每种物品件数 k",
+    "icon": "📦",
+    "difficulty": 2,
+    "levelOrder": 90,
+    "learningGoal": "理解多重背包的严格定义、三重循环朴素枚举的运行轨迹与向空间压缩的一维转化"
+  },
+  {
+    "id": "bounded-knapsack-binary",
+    "name": "多重背包二进制拆分 (洛谷 P1776 宝物筛选)",
+    "viewId": "algo-bounded-knapsack-binary-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 075 Code02：洛谷 P1776 宝物筛选，将多重背包物品按二进制位权拆解转化为 01 背包的标准模版",
+    "icon": "✂️",
+    "difficulty": 2,
+    "levelOrder": 91,
+    "learningGoal": "掌握任意整数的二进制区间无缝覆盖定理、衍生小包生成算法与多重背包的最常用解法"
+  },
+  {
+    "id": "cherry-blossom-viewing",
+    "name": "观赏樱花 (洛谷 P1833 混合背包)",
+    "viewId": "algo-cherry-blossom-viewing-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 075 Code03：洛谷 P1833 观赏樱花，统一融合 01 背包、完全背包与多重背包的经典混合背包模版",
+    "icon": "🌸",
+    "difficulty": 2,
+    "levelOrder": 92,
+    "learningGoal": "掌握混合背包的判定边界、完全背包向上界多重背包的数学转化与统一二进制拆分"
+  },
+  {
+    "id": "bounded-knapsack-monotonic-queue",
+    "name": "多重背包单调队列优化 (洛谷 P1776 极速最优解)",
+    "viewId": "algo-bounded-knapsack-monotonic-queue-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 075 Code04：洛谷 P1776 宝物筛选，按余数分组同余链，使用单调双端队列滑动窗口最值达到理论 O(NW) 极限复杂度",
+    "icon": "⚡",
+    "difficulty": 3,
+    "levelOrder": 93,
+    "learningGoal": "深刻掌握同余分组模型、指标函数提取与单调队列优化多重背包的严谨代数推导"
+  },
+  {
+    "id": "coins-change-kinds",
+    "name": "能成功找零的钱数种类 (POJ 1742 混合窗口优化)",
+    "viewId": "algo-coins-change-kinds-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 075 Code05：POJ 1742 找零硬币，混合背包三路分支与布尔窗口滑块统计平摊 O(1) 状态转移",
+    "icon": "💰",
+    "difficulty": 3,
+    "levelOrder": 94,
+    "learningGoal": "掌握混合背包的工程条件分流思想、布尔可行性问题的窗口滑块优化技巧"
   }
 ];
+
 
