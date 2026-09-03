@@ -1,6 +1,7 @@
 /**
  * 从栈中取出K个硬币的最大面值和 (LeetCode 2218) - 声明式 4-Card 沙盘渲染器
  * 核心：硬币栈自顶向下连续取 -> 前缀和预处理转分组背包互斥选择
+ * 架构重构：增加实时硬币收集舱与栈内动态拿取追踪
  */
 
 import { registerAlgorithm } from '../../../../core/registry';
@@ -11,6 +12,12 @@ import {
   COINS_FROM_PILES_CODE_LANGUAGES,
 } from './knapsack-074-problem-content';
 import { HighlightTarget } from '../../../../core/code-panel';
+
+export interface CoinPileTake {
+  pileIdx: number;
+  takeCount: number;
+  sumVal: number;
+}
 
 export interface CoinsFromPilesStep {
   pileIndex: number;
@@ -25,6 +32,7 @@ export interface CoinsFromPilesStep {
   message: string;
   log: string;
   codeLine?: HighlightTarget;
+  selectedTakes: CoinPileTake[];
   metrics?: Record<string, any>;
 }
 
@@ -36,6 +44,7 @@ export function buildCoinsFromPilesSteps(
   const K = Math.max(0, k);
   const n = piles.length;
   const dp = new Array(K + 1).fill(0);
+  let bestTakesForCapacity: CoinPileTake[][] = Array.from({ length: K + 1 }, () => []);
 
   const lines = {
     initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
@@ -75,6 +84,7 @@ export function buildCoinsFromPilesSteps(
       dp: [...dp],
       maxVal: 0,
       kTarget: K,
+      selectedTakes: [],
       status: 'init',
       message: `🪙 初始化取硬币沙盘：目标抽取总次数 k=${K}，硬币栈总数 n=${n}。分配 dp[0..${K}] 空间。`,
       log: `init: dp[0..${K}] = 0`,
@@ -93,8 +103,9 @@ export function buildCoinsFromPilesSteps(
         dp: [...dp],
         maxVal: 0,
         kTarget: K,
+        selectedTakes: [],
         status: 'done',
-        message: '🏁 操作次数为 0 或无硬币栈，获得最大面值 0。',
+        message: '🏁 抽取总次数为 0 或硬币栈为空，最大收益为 0。',
         log: 'done: ans=0',
         codeLine: lines.returnAns,
       })
@@ -105,7 +116,7 @@ export function buildCoinsFromPilesSteps(
   for (let i = 0; i < n; i++) {
     const pile = piles[i];
 
-    // 2. 栈循环开始
+    // 2. 考察当前栈
     steps.push(
       makeStep({
         pileIndex: i,
@@ -116,14 +127,15 @@ export function buildCoinsFromPilesSteps(
         dp: [...dp],
         maxVal: dp[K],
         kTarget: K,
+        selectedTakes: [...(bestTakesForCapacity[K] || [])],
         status: 'pile',
-        message: `🔄 外层栈循环：开始处理硬币栈 #${i + 1}（本栈共 ${pile.length} 枚硬币）。`,
-        log: `pile loop: pile #${i + 1}`,
+        message: `🔄 开始考察硬币栈 #${i + 1}：栈内共 ${pile.length} 枚硬币。`,
+        log: `pile loop: i=${i}, size=${pile.length}`,
         codeLine: lines.pileLoop,
       })
     );
 
-    // 3. 计算本栈最大贡献上限 t
+    // 3. 计算拿取上限
     const t = Math.min(pile.length, K);
     steps.push(
       makeStep({
@@ -135,14 +147,15 @@ export function buildCoinsFromPilesSteps(
         dp: [...dp],
         maxVal: dp[K],
         kTarget: K,
+        selectedTakes: [...(bestTakesForCapacity[K] || [])],
         status: 'pile',
-        message: `📏 确定拿取上限：t = min(栈高度 ${pile.length}, 步数上限 ${K}) = ${t}。`,
-        log: `t = min(${pile.length}, ${K}) = ${t}`,
+        message: `📏 确定拿取上限：最多从本栈拿取 t = min(${pile.length}, ${K}) = ${t} 枚硬币。`,
+        log: `calcLimit: t=min(${pile.length}, ${K})=${t}`,
         codeLine: lines.calcLimit,
       })
     );
 
-    // 4. 前缀和数组初始化
+    // 4. 初始化前缀和
     const preSum = new Array(t + 1).fill(0);
     steps.push(
       makeStep({
@@ -154,6 +167,7 @@ export function buildCoinsFromPilesSteps(
         dp: [...dp],
         maxVal: dp[K],
         kTarget: K,
+        selectedTakes: [...(bestTakesForCapacity[K] || [])],
         status: 'pile',
         message: `📊 初始化前缀和数组 preSum[0..${t}]，准备自顶向下累加硬币面值。`,
         log: `init preSum[0..${t}]`,
@@ -175,12 +189,15 @@ export function buildCoinsFromPilesSteps(
         dp: [...dp],
         maxVal: dp[K],
         kTarget: K,
+        selectedTakes: [...(bestTakesForCapacity[K] || [])],
         status: 'pile',
         message: `📥 计算前缀和完成：preSum = [${preSum.join(', ')}]，分别对应拿取 0..${t} 枚硬币的累加面值。`,
         log: `preSum = [${preSum.join(', ')}]`,
         codeLine: lines.preSumLoop,
       })
     );
+
+    const nextBestTakes = bestTakesForCapacity.map((list) => [...list]);
 
     // 6. 分组背包容量倒序枚举
     for (let j = K; j > 0; j--) {
@@ -194,6 +211,7 @@ export function buildCoinsFromPilesSteps(
           dp: [...dp],
           maxVal: dp[K],
           kTarget: K,
+          selectedTakes: [...(nextBestTakes[K] || [])],
           status: 'check',
           message: `⏳ 容量循环：当前考察抽取次数容量 j=${j}（倒序防止同栈多选）。`,
           log: `capacity loop: j=${j}`,
@@ -212,6 +230,7 @@ export function buildCoinsFromPilesSteps(
             dp: [...dp],
             maxVal: dp[K],
             kTarget: K,
+            selectedTakes: [...(nextBestTakes[K] || [])],
             status: 'check',
             message: `🪙 枚举拿取枚数：从栈 #${i + 1} 拿取 c=${c} 枚硬币（面值 +${preSum[c]}）。`,
             log: `coin loop: c=${c}`,
@@ -223,7 +242,12 @@ export function buildCoinsFromPilesSteps(
         const updated = candidate > dp[j];
         if (updated) {
           dp[j] = candidate;
+          nextBestTakes[j] = [
+            ...bestTakesForCapacity[j - c],
+            { pileIdx: i + 1, takeCount: c, sumVal: preSum[c] },
+          ];
         }
+
         steps.push(
           makeStep({
             pileIndex: i,
@@ -234,6 +258,7 @@ export function buildCoinsFromPilesSteps(
             dp: [...dp],
             maxVal: dp[K],
             kTarget: K,
+            selectedTakes: [...(nextBestTakes[K] || [])],
             status: updated ? 'update' : 'check',
             message: updated
               ? `✨ 状态转移：dp[${j}] = Math.max(${dp[j]}, dp[${j - c}] + ${preSum[c]}) = ${candidate}，收益提高！`
@@ -244,9 +269,11 @@ export function buildCoinsFromPilesSteps(
         );
       }
     }
+
+    bestTakesForCapacity = nextBestTakes;
   }
 
-  // 7. 完成
+  // 7. 返回最终答案
   steps.push(
     makeStep({
       pileIndex: -1,
@@ -257,10 +284,11 @@ export function buildCoinsFromPilesSteps(
       dp: [...dp],
       maxVal: dp[K],
       kTarget: K,
+      selectedTakes: [...(bestTakesForCapacity[K] || [])],
       status: 'done',
-      message: `🎉 拿取完毕！恰好操作 ${K} 次可获得的最大面值和为 ${dp[K]}！`,
-      log: `done: maxVal=${dp[K]}`,
-      codeLine: 26,
+      message: `🎉 取硬币决策完毕！在总拿取 ${K} 枚硬币限制下，最大面值总和为 ${dp[K]}！`,
+      log: `done: dp[${K}]=${dp[K]}`,
+      codeLine: lines.returnAns,
     })
   );
 
@@ -272,51 +300,51 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsFromPilesStep>
   name: '从栈中取出K个硬币的最大面值和',
   category: 'dynamic-programming',
   badge: {
-    mode: '前缀和 · 分组背包',
-    complexity: 'O(K · TotalCoins) · O(K)',
+    mode: '分组背包 · 前缀和预处理',
+    complexity: 'O(N · K · min(len, K)) · O(K)',
   },
-  card1Title: '🪙 硬币栈自顶向下与前缀和收益沙盘',
-  card2Title: '📈 操作次数容量收益向量 dp[j] 监视器',
-  card2Desc: '展示每一个栈视为一个互斥组，按取 1..t 枚硬币的分组背包演进',
+  card1Title: '🪙 硬币栈阵列与实时拾取沙盘',
+  card2Title: '📊 抽取次数容量收益向量 dp[j] 监视器',
+  card2Desc: '展示利用前缀和将每个硬币栈转为互斥物品组（选1枚、2枚...至多选一种）的分组背包推演',
   legend: [
-    { label: '硬币栈顶 (优先出栈)', color: '#f59e0b' },
-    { label: '深层硬币', color: '#38bdf8' },
-    { label: '最优拿取方案', color: '#10b981' },
+    { label: '未被抽取的硬币', color: '#334155' },
+    { label: '已被当前最优解选中的硬币', color: '#10b981' },
+    { label: '当前考察中的试算拿取', color: '#38bdf8' },
   ],
   inputs: [
     {
       id: 'input-k',
-      label: '操作次数 k',
+      label: '拿取硬币总数 K',
       type: 'number',
       defaultValue: 2,
       width: '60px',
     },
     {
       id: 'input-piles-json',
-      label: '硬币栈列表 JSON',
+      label: '硬币栈数组 JSON (从顶向下)',
       type: 'text',
       defaultValue: '[[1,100,3],[7,8,9]]',
-      width: '200px',
+      width: '240px',
     },
   ],
   presets: [
     {
-      label: 'LeetCode 官方典例 (k=2, Ans=101)',
+      label: 'LeetCode 样例 (K=2, 栈[[1,100,3],[7,8,9]], Ans=101)',
       values: {
         'input-k': 2,
         'input-piles-json': '[[1,100,3],[7,8,9]]',
       },
     },
     {
-      label: '3栈平衡测试 (k=4, Ans=120)',
+      label: '深度抉择用例 (K=4, 栈[[10,20],[1,1,100],[50]], Ans=151)',
       values: {
         'input-k': 4,
-        'input-piles-json': '[[10,20],[50],[5,40,5]]',
+        'input-piles-json': '[[10,20],[1,1,100],[50]]',
       },
     },
   ],
   metrics: [
-    { id: 'metric-cur-pile', label: '当前考察栈', color: '#f59e0b' },
+    { id: 'metric-cur-pile', label: '当前硬币栈', color: '#f59e0b' },
     { id: 'metric-cur-j', label: '当前总步数 j', color: '#38bdf8' },
     { id: 'metric-cur-c', label: '当前拿取枚数 c', color: '#8b5cf6' },
     { id: 'metric-max-coins', label: '当前最大面值', color: '#10b981' },
@@ -338,29 +366,63 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsFromPilesStep>
     return buildCoinsFromPilesSteps(rawArr, k);
   },
   renderCanvas: (container, step) => {
+    const selected = step.selectedTakes || [];
+    const usedK = selected.reduce((s, it) => s + it.takeCount, 0);
+    const totalCoinsVal = selected.reduce((s, it) => s + it.sumVal, 0);
+    const ratio = Math.min(100, Math.round((usedK / Math.max(1, step.kTarget)) * 100));
+
     const pilesHtml = step.piles
       .map((pile, pIdx) => {
         const isCurPile = step.pileIndex === pIdx;
-        const bg = isCurPile ? '#1e1b4b' : '#0f172a';
-        const border = isCurPile ? '#818cf8' : '#334155';
+        const takenPlan = selected.find((it) => it.pileIdx === pIdx + 1);
+        const finalTakeCount = takenPlan ? takenPlan.takeCount : 0;
+        const bg = isCurPile ? 'rgba(30, 27, 75, 0.7)' : 'rgba(15, 23, 42, 0.6)';
+        const border = isCurPile ? '#818cf8' : finalTakeCount > 0 ? '#10b981' : '#334155';
 
         const coinsHtml = pile
           .map((coin, cIdx) => {
-            const isTaken = isCurPile && step.c > 0 && cIdx < step.c;
-            const coinBg = isTaken ? '#065f46' : cIdx === 0 ? '#78350f' : '#1e293b';
-            const coinBorder = isTaken ? '#34d399' : cIdx === 0 ? '#f59e0b' : '#38bdf8';
+            const isSelectedInFinal = cIdx < finalTakeCount;
+            const isEvaluating = isCurPile && step.c > 0 && cIdx < step.c;
+
+            let coinBg = '#1e293b';
+            let coinBorder = '#334155';
+            let tag = '';
+
+            if (isSelectedInFinal) {
+              coinBg = 'rgba(6, 95, 70, 0.6)';
+              coinBorder = '#10b981';
+              tag = ' <span style="font-size:9px; color:#34d399;">✔ 取出</span>';
+            } else if (isEvaluating) {
+              coinBg = 'rgba(30, 58, 138, 0.5)';
+              coinBorder = '#38bdf8';
+              tag = ' <span style="font-size:9px; color:#38bdf8;">🔍 考察中</span>';
+            } else if (cIdx === 0) {
+              coinBorder = '#64748b';
+            }
+
             return `
-              <div style="background:${coinBg}; border:1px solid ${coinBorder}; border-radius:4px; padding:3px 8px; margin:2px 0; font-size:11px; text-align:center; font-weight:700; color:#f8fafc;">
-                🪙 ${coin}
+              <div style="background:${coinBg}; border:1px solid ${coinBorder}; border-radius:4px; padding:4px 8px; margin:2px 0; font-size:11px; text-align:center; font-weight:700; color:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+                <span>🪙 ${coin}</span>
+                <span>${tag}</span>
               </div>
             `;
           })
           .join('');
 
+        let badge = '<span style="color:#64748b; font-size:9px;">未取币</span>';
+        if (finalTakeCount > 0) {
+          badge = `<span style="background:#059669; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold;">已取 ${finalTakeCount} 枚</span>`;
+        } else if (isCurPile) {
+          badge = `<span style="background:#f59e0b; color:#0f172a; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold;">考察中</span>`;
+        }
+
         return `
-          <div style="background:${bg}; border:2px solid ${border}; border-radius:8px; padding:8px; min-width:80px; text-align:center;">
-            <div style="font-size:10px; color:#94a3b8; margin-bottom:4px;">栈 #${pIdx + 1}</div>
-            <div style="display:flex; flex-direction:column;">
+          <div style="background:${bg}; border:2px solid ${border}; border-radius:8px; padding:8px 10px; min-width:115px; flex:1; max-width:180px; text-align:center; box-sizing:border-box;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; color:#cbd5e1; font-weight:700;">栈 #${pIdx + 1}</span>
+              ${badge}
+            </div>
+            <div style="display:flex; flex-direction:column; gap:2px;">
               ${coinsHtml}
             </div>
           </div>
@@ -368,11 +430,47 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsFromPilesStep>
       })
       .join('');
 
+    const chipsHtml = selected.length > 0
+      ? selected.map((it) => `
+          <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:4px; padding:2px 8px; font-size:10.5px; display:inline-flex; align-items:center; gap:6px;">
+            <span style="color:#a7f3d0; font-weight:700;">栈 #${it.pileIdx}</span>
+            <span style="color:#cbd5e1;">连续拿取 ${it.takeCount} 枚</span>
+            <span style="color:#34d399; font-weight:800;">面值:+${it.sumVal}</span>
+          </div>
+        `).join('')
+      : `<span style="color:#64748b; font-size:11px;">(硬币袋目前空闲，等待决策抽取...)</span>`;
+
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; justify-content:center; align-items:center; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box;">
-        <div style="font-size:12px; color:#94a3b8; font-weight:700;">硬币栈阵列 (从顶向下连续拿取)</div>
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+          <div style="font-size:12px; color:#94a3b8; font-weight:700;">🪙 硬币栈阵列 (自顶向下连续拿取，每栈互斥选一种拿法)</div>
+          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+            当前拿取限制: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${step.kTarget} 枚
+          </div>
+        </div>
+
         <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center;">
           ${pilesHtml}
+        </div>
+
+        <!-- 底部实时硬币收集袋 -->
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">👛 实时硬币收集舱</span>
+            <div style="display:flex; gap:16px; font-size:11px;">
+              <span>已用抽取机会: <b style="color:#38bdf8;">${usedK}</b> / ${step.kTarget}</span>
+              <span>累计面值: <b style="color:#10b981;">${totalCoinsVal}</b></span>
+            </div>
+          </div>
+
+          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
+            <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #f59e0b, #10b981); transition:width 0.25s ease;"></div>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            <span style="color:#94a3b8; font-size:10.5px; min-width:60px;">已拾取组合:</span>
+            ${chipsHtml}
+          </div>
         </div>
       </div>
     `;
@@ -417,4 +515,3 @@ registerAlgorithm({
   levelOrder: 85,
   learningGoal: '掌握硬币栈连续操作向互斥物品组的转化、前缀和预处理加速与步数容量分组背包',
 });
-
