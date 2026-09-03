@@ -10,6 +10,7 @@ import {
   PARTITIONED_KNAPSACK_ANALYSIS_HTML,
   PARTITIONED_KNAPSACK_CODE_LANGUAGES,
 } from './knapsack-074-problem-content';
+import { HighlightTarget } from '../../../../core/code-panel';
 
 export interface PartitionedItem {
   cost: number;
@@ -25,10 +26,10 @@ export interface PartitionedKnapsackStep {
   maxVal: number;
   items: PartitionedItem[];
   currentGroupItems: PartitionedItem[];
-  status: 'init' | 'group' | 'update' | 'done';
+  status: 'init' | 'group' | 'check' | 'update' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
   metrics?: Record<string, any>;
 }
 
@@ -41,6 +42,19 @@ export function buildPartitionedKnapsackSteps(
   const items = [...rawItems].sort((a, b) => a.group - b.group);
   const n = items.length;
   const dp = new Array(m + 1).fill(0);
+
+  const lines = {
+    sort: { java: 9, cpp: 63, python: 109, javascript: 127 },
+    initDp: { java: 10, cpp: 64, python: 110, javascript: 128 },
+    groupLoop: { java: 11, cpp: 65, python: 112, javascript: 130 },
+    groupEnd: { java: 12, cpp: 66, python: 114, javascript: 132 },
+    capLoop: { java: 13, cpp: 68, python: 116, javascript: 133 },
+    itemLoop: { java: 14, cpp: 69, python: 117, javascript: 134 },
+    ifFit: { java: 15, cpp: 70, python: 119, javascript: 136 },
+    updateDp: { java: 16, cpp: 71, python: 120, javascript: 137 },
+    nextGroup: { java: 20, cpp: 75, python: 121, javascript: 142 },
+    returnAns: { java: 22, cpp: 77, python: 122, javascript: 144 },
+  };
 
   function makeStep(data: Omit<PartitionedKnapsackStep, 'metrics'>): PartitionedKnapsackStep {
     const gStr = data.groupIndex >= 0 ? `第 ${data.groupIndex} 组` : '—';
@@ -56,7 +70,7 @@ export function buildPartitionedKnapsackSteps(
     };
   }
 
-  // 1. 初始化
+  // 1. 排序
   steps.push(
     makeStep({
       groupIndex: -1,
@@ -67,9 +81,26 @@ export function buildPartitionedKnapsackSteps(
       items: [...items],
       currentGroupItems: [],
       status: 'init',
-      message: `🎒 初始化分组背包空间：容量 m=${m}，物品总数 n=${n}。物品已按组号升序排列。`,
-      log: `init: capacity=${m}, items=${n}`,
-      codeLine: 8,
+      message: `🎒 执行排序：对 ${n} 个物品按组号升序排列，使同一组物品在内存中连续排列。`,
+      log: `sort: items by group (total ${n} items)`,
+      codeLine: lines.sort,
+    })
+  );
+
+  // 2. 初始化 DP 数组
+  steps.push(
+    makeStep({
+      groupIndex: -1,
+      itemIndex: -1,
+      j: -1,
+      dp: [...dp],
+      maxVal: 0,
+      items: [...items],
+      currentGroupItems: [],
+      status: 'init',
+      message: `📊 初始化 DP 数组：容量范围 0..${m}，初始最大收益全为 0。`,
+      log: `init: dp[0..${m}] = 0`,
+      codeLine: lines.initDp,
     })
   );
 
@@ -86,16 +117,32 @@ export function buildPartitionedKnapsackSteps(
         status: 'done',
         message: '🏁 容量为 0 或无物品，运算结束，最大收益为 0。',
         log: 'done: ans=0',
-        codeLine: 23,
+        codeLine: lines.returnAns,
       })
     );
     return steps;
   }
 
-  let groupCounter = 0;
   for (let start = 0, end = 1; start < n; ) {
+    // 3. 组循环开始
+    steps.push(
+      makeStep({
+        groupIndex: items[start].group,
+        itemIndex: -1,
+        j: -1,
+        dp: [...dp],
+        maxVal: dp[m],
+        items: [...items],
+        currentGroupItems: [],
+        status: 'group',
+        message: `🔄 外层组循环：start=${start}，开始处理第 ${items[start].group} 组。`,
+        log: `group loop: start=${start}`,
+        codeLine: lines.groupLoop,
+      })
+    );
+
+    // 4. 计算当前组区间 [start, end)
     while (end < n && items[end].group === items[start].group) end++;
-    groupCounter++;
     const currentGroup = items.slice(start, end);
 
     steps.push(
@@ -108,44 +155,117 @@ export function buildPartitionedKnapsackSteps(
         items: [...items],
         currentGroupItems: currentGroup,
         status: 'group',
-        message: `📦 开始处理第 ${items[start].group} 组（包含 ${currentGroup.length} 件互斥物品）。外层容量倒序枚举。`,
-        log: `group ${items[start].group}: ${currentGroup.length} items`,
-        codeLine: 11,
+        message: `🔍 确定组边界：第 ${items[start].group} 组索引范围 [${start}, ${end})，共包含 ${currentGroup.length} 件互斥物品。`,
+        log: `group ${items[start].group}: [${start}, ${end}), size=${currentGroup.length}`,
+        codeLine: lines.groupEnd,
       })
     );
 
-    // 容量倒序枚举
+    // 5. 容量倒序循环
     for (let j = m; j >= 0; j--) {
+      steps.push(
+        makeStep({
+          groupIndex: items[start].group,
+          itemIndex: -1,
+          j,
+          dp: [...dp],
+          maxVal: dp[m],
+          items: [...items],
+          currentGroupItems: currentGroup,
+          status: 'check',
+          message: `⏳ 容量循环：当前考察背包容量 j=${j}（倒序枚举确保每组至多选 1 件）。`,
+          log: `capacity loop: j=${j}`,
+          codeLine: lines.capLoop,
+        })
+      );
+
+      // 6. 组内物品枚举
       for (let k = start; k < end; k++) {
         const it = items[k];
-        if (j >= it.cost) {
+
+        steps.push(
+          makeStep({
+            groupIndex: items[start].group,
+            itemIndex: k,
+            j,
+            dp: [...dp],
+            maxVal: dp[m],
+            items: [...items],
+            currentGroupItems: currentGroup,
+            status: 'check',
+            message: `📦 组内物品枚举：考察第 ${items[start].group} 组物品 #${k + 1} (体积=${it.cost}, 价值=${it.val})。`,
+            log: `item loop: k=${k}, cost=${it.cost}, val=${it.val}`,
+            codeLine: lines.itemLoop,
+          })
+        );
+
+        const fits = j >= it.cost;
+        steps.push(
+          makeStep({
+            groupIndex: items[start].group,
+            itemIndex: k,
+            j,
+            dp: [...dp],
+            maxVal: dp[m],
+            items: [...items],
+            currentGroupItems: currentGroup,
+            status: 'check',
+            message: fits
+              ? `✅ 条件满足：容量 j=${j} >= 体积 ${it.cost}，可以尝试放入该物品。`
+              : `❌ 容量不足：容量 j=${j} < 体积 ${it.cost}，无法装入该物品。`,
+            log: `if (j >= cost): ${j} >= ${it.cost} => ${fits}`,
+            codeLine: lines.ifFit,
+          })
+        );
+
+        if (fits) {
           const candidate = dp[j - it.cost] + it.val;
-          if (candidate > dp[j]) {
+          const updated = candidate > dp[j];
+          if (updated) {
             dp[j] = candidate;
-            steps.push(
-              makeStep({
-                groupIndex: items[start].group,
-                itemIndex: k,
-                j,
-                dp: [...dp],
-                maxVal: dp[m],
-                items: [...items],
-                currentGroupItems: currentGroup,
-                status: 'update',
-                message: `✨ 容量 j=${j}：在组 ${items[start].group} 中选取 (体积 ${it.cost}, 价值 ${it.val})，更新 dp[${j}] 增至 ${dp[j]}！`,
-                log: `update: dp[${j}] = ${dp[j]} with item cost=${it.cost}, val=${it.val}`,
-                codeLine: 16,
-              })
-            );
           }
+          steps.push(
+            makeStep({
+              groupIndex: items[start].group,
+              itemIndex: k,
+              j,
+              dp: [...dp],
+              maxVal: dp[m],
+              items: [...items],
+              currentGroupItems: currentGroup,
+              status: updated ? 'update' : 'check',
+              message: updated
+                ? `✨ 状态转移：dp[${j}] = Math.max(${dp[j]}, dp[${j - it.cost}] + ${it.val}) = ${candidate}，收益提高！`
+                : `⏸️ 状态保持：装入该物品后收益 ${candidate} <= 原收益 ${dp[j]}，保持 dp[${j}]=${dp[j]}。`,
+              log: `dp[${j}] = Math.max(${dp[j]}, ${candidate}) => ${dp[j]}`,
+              codeLine: lines.updateDp,
+            })
+          );
         }
       }
     }
 
+    // 7. 移动组指针
+    steps.push(
+      makeStep({
+        groupIndex: items[start].group,
+        itemIndex: -1,
+        j: -1,
+        dp: [...dp],
+        maxVal: dp[m],
+        items: [...items],
+        currentGroupItems: currentGroup,
+        status: 'group',
+        message: `⏭️ 组指针递增：第 ${items[start].group} 组所有容量枚举完毕，执行 start = end (${end})。`,
+        log: `next group: start=${end}`,
+        codeLine: lines.nextGroup,
+      })
+    );
+
     start = end++;
   }
 
-  // 完成
+  // 8. 返回最终答案
   steps.push(
     makeStep({
       groupIndex: -1,

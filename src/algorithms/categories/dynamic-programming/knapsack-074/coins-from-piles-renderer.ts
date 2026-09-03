@@ -10,6 +10,7 @@ import {
   COINS_FROM_PILES_ANALYSIS_HTML,
   COINS_FROM_PILES_CODE_LANGUAGES,
 } from './knapsack-074-problem-content';
+import { HighlightTarget } from '../../../../core/code-panel';
 
 export interface CoinsFromPilesStep {
   pileIndex: number;
@@ -20,10 +21,10 @@ export interface CoinsFromPilesStep {
   dp: number[];
   maxVal: number;
   kTarget: number;
-  status: 'init' | 'pile' | 'update' | 'done';
+  status: 'init' | 'pile' | 'check' | 'update' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
   metrics?: Record<string, any>;
 }
 
@@ -32,26 +33,38 @@ export function buildCoinsFromPilesSteps(
   k: number
 ): CoinsFromPilesStep[] {
   const steps: CoinsFromPilesStep[] = [];
-  const n = piles.length;
   const K = Math.max(0, k);
+  const n = piles.length;
   const dp = new Array(K + 1).fill(0);
 
+  const lines = {
+    initDp: { java: 8, cpp: 195, python: 239, javascript: 253 },
+    pileLoop: { java: 9, cpp: 196, python: 240, javascript: 254 },
+    calcLimit: { java: 10, cpp: 197, python: 241, javascript: 255 },
+    initPreSum: { java: 11, cpp: 198, python: 242, javascript: 256 },
+    preSumLoop: { java: 12, cpp: 199, python: 243, javascript: 257 },
+    capLoop: { java: 16, cpp: 201, python: 245, javascript: 260 },
+    coinLoop: { java: 17, cpp: 202, python: 246, javascript: 261 },
+    updateDp: { java: 18, cpp: 203, python: 247, javascript: 262 },
+    returnAns: { java: 22, cpp: 207, python: 248, javascript: 265 },
+  };
+
   function makeStep(data: Omit<CoinsFromPilesStep, 'metrics'>): CoinsFromPilesStep {
-    const pileStr = data.pileIndex >= 0 ? `第 ${data.pileIndex + 1} 栈` : '—';
+    const pileStr = data.pileIndex >= 0 ? `栈 #${data.pileIndex + 1}` : '—';
+    const cStr = data.c >= 0 ? `${data.c} 枚` : '—';
     const jStr = data.j >= 0 ? `${data.j}` : '—';
-    const cStr = data.c >= 0 ? `取 ${data.c} 枚` : '—';
     return {
       ...data,
       metrics: {
         'metric-cur-pile': pileStr,
-        'metric-cur-j': jStr,
-        'metric-cur-c': cStr,
-        'metric-max-coins': `${data.maxVal}`,
+        'metric-take-coins': cStr,
+        'metric-cur-capacity': jStr,
+        'metric-max-val': `${data.maxVal}`,
       },
     };
   }
 
-  // 1. 初始化
+  // 1. 初始化 DP 数组
   steps.push(
     makeStep({
       pileIndex: -1,
@@ -63,13 +76,13 @@ export function buildCoinsFromPilesSteps(
       maxVal: 0,
       kTarget: K,
       status: 'init',
-      message: `🪙 初始化硬币栈：共有 ${n} 个栈，目标操作次数 k=${K}。`,
-      log: `init: piles=${n}, k=${K}`,
-      codeLine: 8,
+      message: `🪙 初始化取硬币沙盘：目标抽取总次数 k=${K}，硬币栈总数 n=${n}。分配 dp[0..${K}] 空间。`,
+      log: `init: dp[0..${K}] = 0`,
+      codeLine: lines.initDp,
     })
   );
 
-  if (K === 0 || n === 0) {
+  if (n === 0 || K === 0) {
     steps.push(
       makeStep({
         pileIndex: -1,
@@ -83,7 +96,7 @@ export function buildCoinsFromPilesSteps(
         status: 'done',
         message: '🏁 操作次数为 0 或无硬币栈，获得最大面值 0。',
         log: 'done: ans=0',
-        codeLine: 26,
+        codeLine: lines.returnAns,
       })
     );
     return steps;
@@ -91,12 +104,46 @@ export function buildCoinsFromPilesSteps(
 
   for (let i = 0; i < n; i++) {
     const pile = piles[i];
-    const t = Math.min(pile.length, K);
-    const preSum = new Array(t + 1).fill(0);
-    for (let idx = 0; idx < t; idx++) {
-      preSum[idx + 1] = preSum[idx] + pile[idx];
-    }
 
+    // 2. 栈循环开始
+    steps.push(
+      makeStep({
+        pileIndex: i,
+        j: -1,
+        c: -1,
+        piles: [...piles],
+        preSum: [],
+        dp: [...dp],
+        maxVal: dp[K],
+        kTarget: K,
+        status: 'pile',
+        message: `🔄 外层栈循环：开始处理硬币栈 #${i + 1}（本栈共 ${pile.length} 枚硬币）。`,
+        log: `pile loop: pile #${i + 1}`,
+        codeLine: lines.pileLoop,
+      })
+    );
+
+    // 3. 计算本栈最大贡献上限 t
+    const t = Math.min(pile.length, K);
+    steps.push(
+      makeStep({
+        pileIndex: i,
+        j: -1,
+        c: -1,
+        piles: [...piles],
+        preSum: [],
+        dp: [...dp],
+        maxVal: dp[K],
+        kTarget: K,
+        status: 'pile',
+        message: `📏 确定拿取上限：t = min(栈高度 ${pile.length}, 步数上限 ${K}) = ${t}。`,
+        log: `t = min(${pile.length}, ${K}) = ${t}`,
+        codeLine: lines.calcLimit,
+      })
+    );
+
+    // 4. 前缀和数组初始化
+    const preSum = new Array(t + 1).fill(0);
     steps.push(
       makeStep({
         pileIndex: i,
@@ -108,40 +155,98 @@ export function buildCoinsFromPilesSteps(
         maxVal: dp[K],
         kTarget: K,
         status: 'pile',
-        message: `📥 处理硬币栈 #${i + 1}：计算前缀和 [${preSum.join(', ')}]，至多可贡献 ${t} 枚硬币。`,
-        log: `pile #${i + 1}: size=${pile.length}, preSum=[${preSum.join(', ')}]`,
-        codeLine: 12,
+        message: `📊 初始化前缀和数组 preSum[0..${t}]，准备自顶向下累加硬币面值。`,
+        log: `init preSum[0..${t}]`,
+        codeLine: lines.initPreSum,
       })
     );
 
-    // 分组背包倒序枚举
+    // 5. 累加前缀和
+    for (let idx = 0; idx < t; idx++) {
+      preSum[idx + 1] = preSum[idx] + pile[idx];
+    }
+    steps.push(
+      makeStep({
+        pileIndex: i,
+        j: -1,
+        c: -1,
+        piles: [...piles],
+        preSum: [...preSum],
+        dp: [...dp],
+        maxVal: dp[K],
+        kTarget: K,
+        status: 'pile',
+        message: `📥 计算前缀和完成：preSum = [${preSum.join(', ')}]，分别对应拿取 0..${t} 枚硬币的累加面值。`,
+        log: `preSum = [${preSum.join(', ')}]`,
+        codeLine: lines.preSumLoop,
+      })
+    );
+
+    // 6. 分组背包容量倒序枚举
     for (let j = K; j > 0; j--) {
+      steps.push(
+        makeStep({
+          pileIndex: i,
+          j,
+          c: -1,
+          piles: [...piles],
+          preSum: [...preSum],
+          dp: [...dp],
+          maxVal: dp[K],
+          kTarget: K,
+          status: 'check',
+          message: `⏳ 容量循环：当前考察抽取次数容量 j=${j}（倒序防止同栈多选）。`,
+          log: `capacity loop: j=${j}`,
+          codeLine: lines.capLoop,
+        })
+      );
+
       for (let c = 1; c <= Math.min(t, j); c++) {
+        steps.push(
+          makeStep({
+            pileIndex: i,
+            j,
+            c,
+            piles: [...piles],
+            preSum: [...preSum],
+            dp: [...dp],
+            maxVal: dp[K],
+            kTarget: K,
+            status: 'check',
+            message: `🪙 枚举拿取枚数：从栈 #${i + 1} 拿取 c=${c} 枚硬币（面值 +${preSum[c]}）。`,
+            log: `coin loop: c=${c}`,
+            codeLine: lines.coinLoop,
+          })
+        );
+
         const candidate = dp[j - c] + preSum[c];
-        if (candidate > dp[j]) {
+        const updated = candidate > dp[j];
+        if (updated) {
           dp[j] = candidate;
-          steps.push(
-            makeStep({
-              pileIndex: i,
-              j,
-              c,
-              piles: [...piles],
-              preSum: [...preSum],
-              dp: [...dp],
-              maxVal: dp[K],
-              kTarget: K,
-              status: 'update',
-              message: `✨ 容量 j=${j}：从栈 #${i + 1} 拿取前 ${c} 枚硬币（获得面值 ${preSum[c]}），dp[${j}] 增至 ${dp[j]}！`,
-              log: `update: dp[${j}] = ${dp[j]} taking ${c} coins`,
-              codeLine: 21,
-            })
-          );
         }
+        steps.push(
+          makeStep({
+            pileIndex: i,
+            j,
+            c,
+            piles: [...piles],
+            preSum: [...preSum],
+            dp: [...dp],
+            maxVal: dp[K],
+            kTarget: K,
+            status: updated ? 'update' : 'check',
+            message: updated
+              ? `✨ 状态转移：dp[${j}] = Math.max(${dp[j]}, dp[${j - c}] + ${preSum[c]}) = ${candidate}，收益提高！`
+              : `⏸️ 状态保持：拿取 ${c} 枚后收益 ${candidate} <= 原收益 ${dp[j]}，保持 dp[${j}]=${dp[j]}。`,
+            log: `dp[${j}] = Math.max(${dp[j]}, ${candidate}) => ${dp[j]}`,
+            codeLine: lines.updateDp,
+          })
+        );
       }
     }
   }
 
-  // 完成
+  // 7. 完成
   steps.push(
     makeStep({
       pileIndex: -1,

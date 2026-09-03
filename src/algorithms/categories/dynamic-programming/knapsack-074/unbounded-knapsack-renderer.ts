@@ -10,6 +10,7 @@ import {
   UNBOUNDED_KNAPSACK_ANALYSIS_HTML,
   UNBOUNDED_KNAPSACK_CODE_LANGUAGES,
 } from './knapsack-074-problem-content';
+import { HighlightTarget } from '../../../../core/code-panel';
 
 export interface UnboundedKnapsackStep {
   itemIndex: number;
@@ -19,10 +20,10 @@ export interface UnboundedKnapsackStep {
   dp: number[];
   maxVal: number;
   totalTime: number;
-  status: 'init' | 'item' | 'update' | 'done';
+  status: 'init' | 'item' | 'check' | 'update' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
   metrics?: Record<string, any>;
 }
 
@@ -36,15 +37,22 @@ export function buildUnboundedKnapsackSteps(
   const m = Math.min(cost.length, val.length);
   const dp = new Array(t + 1).fill(0);
 
+  const lines = {
+    initDp: { java: 8, cpp: 312, python: 344, javascript: 353 },
+    itemLoop: { java: 9, cpp: 313, python: 345, javascript: 354 },
+    capLoop: { java: 11, cpp: 315, python: 346, javascript: 356 },
+    updateDp: { java: 12, cpp: 316, python: 347, javascript: 357 },
+    returnAns: { java: 15, cpp: 319, python: 348, javascript: 360 },
+  };
+
   function makeStep(data: Omit<UnboundedKnapsackStep, 'metrics'>): UnboundedKnapsackStep {
-    const itStr = data.itemIndex >= 0 ? `#${data.itemIndex + 1}` : '—';
+    const itemStr = data.itemIndex >= 0 ? `第 ${data.itemIndex + 1} 种` : '—';
     const jStr = data.j >= 0 ? `${data.j}` : '—';
     return {
       ...data,
       metrics: {
-        'metric-cur-item': itStr,
-        'metric-cur-j': jStr,
-        'metric-direction': '正序枚举 →',
+        'metric-cur-herb': itemStr,
+        'metric-cur-time': jStr,
         'metric-max-val': `${data.maxVal}`,
       },
     };
@@ -61,9 +69,9 @@ export function buildUnboundedKnapsackSteps(
       maxVal: 0,
       totalTime: t,
       status: 'init',
-      message: `🌿 初始化完全背包：总时间 T=${t}，草药种类 m=${m}（每种草药无限次选取）。`,
-      log: `init: T=${t}, m=${m}`,
-      codeLine: 8,
+      message: `🌿 初始化完全背包：总时间 T=${t}，草药种类 m=${m}。创建 dp[0..${t}] 空间。`,
+      log: `init: dp[0..${t}] = 0`,
+      codeLine: lines.initDp,
     })
   );
 
@@ -80,7 +88,7 @@ export function buildUnboundedKnapsackSteps(
         status: 'done',
         message: '🏁 时间为 0 或无草药可选，最大收益 0。',
         log: 'done: ans=0',
-        codeLine: 18,
+        codeLine: lines.returnAns,
       })
     );
     return steps;
@@ -89,6 +97,7 @@ export function buildUnboundedKnapsackSteps(
   for (let i = 0; i < m; i++) {
     const c = cost[i], v = val[i];
 
+    // 2. 物品外层循环
     steps.push(
       makeStep({
         itemIndex: i,
@@ -99,37 +108,56 @@ export function buildUnboundedKnapsackSteps(
         maxVal: dp[t],
         totalTime: t,
         status: 'item',
-        message: `🌱 考察第 ${i + 1} 种草药：耗时 ${c}，价值 ${v}。从 j=${c} 到 ${t}【正序】递增枚举。`,
+        message: `🌱 外层循环：考察第 ${i + 1} 种草药（耗时=${c}, 价值=${v}）。完全背包正序枚举！`,
         log: `item #${i + 1}: cost=${c}, val=${v}`,
-        codeLine: 11,
+        codeLine: lines.itemLoop,
       })
     );
 
-    // 正序枚举容量
+    // 3. 正序枚举容量
     for (let j = c; j <= t; j++) {
+      steps.push(
+        makeStep({
+          itemIndex: i,
+          j,
+          cost: [...cost],
+          val: [...val],
+          dp: [...dp],
+          maxVal: dp[t],
+          totalTime: t,
+          status: 'check',
+          message: `⏳ 正序容量循环：当前容量 j=${j}（从 cost=${c} 到 ${t}，支持同轮无限累加）。`,
+          log: `cap loop: j=${j}`,
+          codeLine: lines.capLoop,
+        })
+      );
+
       const candidate = dp[j - c] + v;
-      if (candidate > dp[j]) {
+      const updated = candidate > dp[j];
+      if (updated) {
         dp[j] = candidate;
-        steps.push(
-          makeStep({
-            itemIndex: i,
-            j,
-            cost: [...cost],
-            val: [...val],
-            dp: [...dp],
-            maxVal: dp[t],
-            totalTime: t,
-            status: 'update',
-            message: `✨ 容量 j=${j}：正序由 dp[${j - c}] (${dp[j - c] - v}) 叠加草药 #${i + 1} 获得更优值 dp[${j}]=${dp[j]}！`,
-            log: `update: dp[${j}] = ${dp[j]} using item #${i + 1}`,
-            codeLine: 14,
-          })
-        );
       }
+      steps.push(
+        makeStep({
+          itemIndex: i,
+          j,
+          cost: [...cost],
+          val: [...val],
+          dp: [...dp],
+          maxVal: dp[t],
+          totalTime: t,
+          status: updated ? 'update' : 'check',
+          message: updated
+            ? `✨ 状态更新：dp[${j}] = Math.max(${dp[j]}, dp[${j - c}] + ${v}) = ${candidate}，收益提高！`
+            : `⏸️ 状态保持：放入收益 ${candidate} <= 原收益 ${dp[j]}，保持 dp[${j}]=${dp[j]}。`,
+          log: `dp[${j}] = Math.max(${dp[j]}, ${candidate}) => ${dp[j]}`,
+          codeLine: lines.updateDp,
+        })
+      );
     }
   }
 
-  // 完成
+  // 4. 完成
   steps.push(
     makeStep({
       itemIndex: -1,

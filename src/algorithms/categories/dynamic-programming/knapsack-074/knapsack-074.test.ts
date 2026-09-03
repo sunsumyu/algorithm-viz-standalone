@@ -141,23 +141,25 @@ describe('左程云算法讲解074 (背包DP-分组背包、完全背包) 完整
   // ==========================================
   describe('7. 架构级防 Bug 校验：代码行号合法性', () => {
     it('7.1 所有 6 个算法每个步骤的 codeLine 必须为合法正整数', () => {
+      const getLine = (cl: any): number => (typeof cl === 'number' ? cl : cl?.java ?? cl?.cpp ?? 0);
+
       const s1 = buildPartitionedKnapsackSteps(10, [{ cost: 2, val: 3, group: 1 }]);
-      s1.forEach((s) => expect(s.codeLine).toBeGreaterThan(0));
+      s1.forEach((s) => expect(getLine(s.codeLine)).toBeGreaterThan(0));
 
       const s2 = buildCoinsFromPilesSteps([[1, 2]], 1);
-      s2.forEach((s) => expect(s.codeLine).toBeGreaterThan(0));
+      s2.forEach((s) => expect(getLine(s.codeLine)).toBeGreaterThan(0));
 
       const s3 = buildUnboundedKnapsackSteps(10, [2], [3]);
-      s3.forEach((s) => expect(s.codeLine).toBeGreaterThan(0));
+      s3.forEach((s) => expect(getLine(s.codeLine)).toBeGreaterThan(0));
 
       const s4 = buildRegexMatchingSteps('a', 'a');
-      s4.forEach((s) => expect(s.codeLine).toBeGreaterThan(0));
+      s4.forEach((s) => expect(getLine(s.codeLine)).toBeGreaterThan(0));
 
       const s5 = buildWildcardMatchingSteps('a', 'a');
-      s5.forEach((s) => expect(s.codeLine).toBeGreaterThan(0));
+      s5.forEach((s) => expect(getLine(s.codeLine)).toBeGreaterThan(0));
 
       const s6 = buildBuyingHayMinCostSteps(10, [2], [3]);
-      s6.forEach((s) => expect(s.codeLine).toBeGreaterThan(0));
+      s6.forEach((s) => expect(getLine(s.codeLine)).toBeGreaterThan(0));
     });
   });
 });
