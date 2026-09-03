@@ -211,6 +211,13 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'tree-knapsack-dp': '🎒',
   'convex-hull-3d': '🌐',
   'swim-in-rising-water': '🏊',
+  'knapsack-01-standard': '🎒',
+  'buy-goods-discount': '🏷️',
+  'target-sum-standard': '🎯',
+  'last-stone-weight-ii-standard': '🪨',
+  'dependent-knapsack-standard': '🛒',
+  'top-k-subsequence-sum': '🌳',
+  'find-kth-sum': '🪞',
 };
 
 import {

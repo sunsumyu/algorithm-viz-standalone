@@ -3367,5 +3367,82 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 76,
     "learningGoal": "掌握瓶颈最短路模型转化、网格图 Dijkstra 小根堆松弛技巧与二分+BFS/并查集等价判定"
+  },
+  {
+    "id": "knapsack-01-standard",
+    "name": "01背包模版 (采药)",
+    "viewId": "algo-knapsack-01-standard-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 073 Code01：洛谷 P1048 采药，经典 01 背包与滚动数组倒序空间压缩",
+    "icon": "🎒",
+    "difficulty": 1,
+    "levelOrder": 77,
+    "learningGoal": "掌握 01 背包状态定义、转移方程推导及一维空间压缩中容量倒序枚举的核心原理"
+  },
+  {
+    "id": "buy-goods-discount",
+    "name": "夏季特惠 (01背包转化)",
+    "viewId": "algo-buy-goods-discount-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 073 Code02：LeetCode LCP 51 夏季特惠，心理不吃亏模型向白嫖贪心与 01 背包的双轨转化",
+    "icon": "🏷️",
+    "difficulty": 2,
+    "levelOrder": 78,
+    "learningGoal": "掌握冲动消费不吃亏不等式推导、well>=0 贪心必选扩增预算与剩余商品 01 背包模型构建"
+  },
+  {
+    "id": "target-sum-standard",
+    "name": "目标和 (01背包方案计数)",
+    "viewId": "algo-target-sum-standard-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，正负号划分数学推导转化为恰好凑出容量的方案计数 DP",
+    "icon": "🎯",
+    "difficulty": 2,
+    "levelOrder": 79,
+    "learningGoal": "掌握表达式符号分配向正负子集和的严谨代数化简、奇偶性守恒判定与方案数累加转移"
+  },
+  {
+    "id": "last-stone-weight-ii-standard",
+    "name": "最后一块石头的重量 II",
+    "viewId": "algo-last-stone-weight-ii-standard-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 073 Code04：LeetCode 1049 最后一块石头，两两粉碎对消等价于两堆差值极小化，归约为 <= sum/2 01 背包",
+    "icon": "🪨",
+    "difficulty": 2,
+    "levelOrder": 80,
+    "learningGoal": "掌握碰撞粉碎过程的代数符号转化、最接近半和 near 的求解以及最终结果 sum-2*near 的推导"
+  },
+  {
+    "id": "dependent-knapsack-standard",
+    "name": "有依赖的背包模版 (金明的预算方案)",
+    "viewId": "algo-dependent-knapsack-standard-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 073 Code05：洛谷 P1064 金明的预算方案，每个主件至多 2 个附件展开为 4 种互斥组合的分组背包",
+    "icon": "🛒",
+    "difficulty": 3,
+    "levelOrder": 81,
+    "learningGoal": "掌握主附件拓扑依赖向组内互斥状态的展开技巧、分组背包倒序枚举与最优组合择优决策"
+  },
+  {
+    "id": "top-k-subsequence-sum",
+    "name": "非负数组前K个最小子序列和",
+    "viewId": "algo-top-k-subsequence-sum-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 073 Code06：大容量数据超越 01 背包瓶颈，使用小根堆/优先队列状态机分裂实现 O(N log N + K log K) 扩展",
+    "icon": "🌳",
+    "difficulty": 3,
+    "levelOrder": 82,
+    "learningGoal": "理解超大数据规模下 01 背包的局限性，掌握基于小根堆的状态零冗余分裂规则（替换末尾与追加新数）"
+  },
+  {
+    "id": "find-kth-sum",
+    "name": "找出数组的第K大和",
+    "viewId": "algo-find-kth-sum-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 073 Code07：LeetCode 2386 找出数组的第 K 大和，正数和基准 + 绝对值数组前 K 小和逆向相减对偶转化",
+    "icon": "🪞",
+    "difficulty": 3,
+    "levelOrder": 83,
+    "learningGoal": "掌握含负数数组子序列和极值问题的基准平移法、绝对值数组双射归约与小根堆求第 K 小"
   }
 ];
