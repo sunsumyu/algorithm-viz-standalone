@@ -177,7 +177,8 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
     it('8.1 所有步骤的 codeLine 必须为正整数且不得超出源码范围', () => {
       const steps01 = buildKnapsack01Steps(10, [2, 3], [3, 4]);
       steps01.forEach((s) => {
-        expect(s.codeLine).toBeGreaterThan(0);
+        const line = typeof s.codeLine === 'object' && s.codeLine !== null ? (s.codeLine as any).java : s.codeLine;
+        expect(line).toBeGreaterThan(0);
       });
 
       const steps02 = buildBuyGoodsDiscountSteps(10, [10, 10], [3, 8], [5, 10]);
