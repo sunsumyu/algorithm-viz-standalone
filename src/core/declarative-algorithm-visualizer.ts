@@ -46,8 +46,14 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
     // 缓存指标卡片 DOM 引用
     this.metricElements.clear();
     (this.spec.metrics || []).forEach((m) => {
-      const el = this.root?.querySelector(`#metric-${m.id}`) as HTMLElement | null;
-      if (el) this.metricElements.set(m.id, el);
+      const metricId = m.id.startsWith('metric-') ? m.id : `metric-${m.id}`;
+      const el = this.root?.querySelector(`#${metricId}`) as HTMLElement | null;
+      if (el) {
+        this.metricElements.set(m.id, el);
+        this.metricElements.set(metricId, el);
+        const bareId = m.id.startsWith('metric-') ? m.id.slice(7) : m.id;
+        this.metricElements.set(bareId, el);
+      }
     });
 
     // 绑定标准播放控制
@@ -201,8 +207,20 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
       });
     }
 
-    // 2. 更新通用实时解说文本
+    // 2. 更新通用实时解说文本与指标卡片
     const anyStep = step as any;
+    if (anyStep.metrics && typeof anyStep.metrics === 'object') {
+      Object.entries(anyStep.metrics).forEach(([key, val]) => {
+        const metricEl =
+          this.metricElements.get(key) ||
+          (this.root?.querySelector(`#metric-${key}`) as HTMLElement | null) ||
+          (this.root?.querySelector(`#${key}`) as HTMLElement | null);
+        if (metricEl) {
+          metricEl.textContent = String(val);
+        }
+      });
+    }
+
     const msg = anyStep.message || anyStep.msg || anyStep.log || '';
     if (this.liveTextEl && msg) {
       this.liveTextEl.textContent = `💡 ${msg}`;

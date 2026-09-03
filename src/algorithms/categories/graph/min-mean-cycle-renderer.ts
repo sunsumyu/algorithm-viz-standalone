@@ -23,6 +23,7 @@ export interface MinMeanStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, any>;
 }
 
 export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
@@ -43,82 +44,318 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
           { u: 4, v: 3, w: 1 },
         ];
 
-  // 1. 初始猜测 lambda = 2.5
-  const reweighted1 = origEdges.map((e) => ({
-    u: e.u,
-    v: e.v,
-    origW: e.w,
-    newW: Number((e.w - 2.5).toFixed(2)),
-  }));
+  function makeStep(data: Omit<MinMeanStep, 'metrics'>): MinMeanStep {
+    return {
+      ...data,
+      metrics: {
+        'metric-bounds': `[${data.boundL.toFixed(3)}, ${data.boundR.toFixed(3)}]`,
+        'metric-guess-lambda': `${data.lambda.toFixed(3)}`,
+        'metric-cycle-status': data.hasNegCycle ? '⚠ 存在负环 (缩小上界)' : '✓ 无负环 (提高下界)',
+        bounds: `[${data.boundL.toFixed(3)}, ${data.boundR.toFixed(3)}]`,
+        'guess-lambda': `${data.lambda.toFixed(3)}`,
+        'cycle-status': data.hasNegCycle ? '⚠ 存在负环 (缩小上界)' : '✓ 无负环 (提高下界)',
+      },
+    };
+  }
 
-  steps.push({
-    lambda: 2.5,
-    boundL: 0.0,
-    boundR: 5.0,
-    hasNegCycle: true,
-    activeCycleNodes: [2, 4, 3],
-    reweightedEdges: reweighted1,
-    status: 'guess',
-    message: '⚡ [二分猜测 lambda = 2.5] 边权赋为 w\' = w - 2.5。计算回路 2➔4➔3➔2 新权和为 -3.5 < 0，触发负环！',
-    log: '二分猜测 λ=2.500，重赋权检验',
-    codeLine: [18, 25],
-  });
+  const reweight = (lmbda: number) =>
+    origEdges.map((e) => ({
+      u: e.u,
+      v: e.v,
+      origW: e.w,
+      newW: Number((e.w - lmbda).toFixed(3)),
+    }));
 
-  // 2. 负环确认，收缩上界 R = 2.5
-  steps.push({
-    lambda: 2.5,
-    boundL: 0.0,
-    boundR: 2.5,
-    hasNegCycle: true,
-    activeCycleNodes: [2, 4, 3],
-    reweightedEdges: reweighted1,
-    status: 'detect',
-    message: '🛑 [负环成立] SPFA 探测到负权回路，说明最小平均权值 <= 2.5，收缩上界 R = 2.5！',
-    log: 'SPFA 探测到负环：λ* <= 2.500，更新 R -> 2.500',
-    codeLine: [32, 38],
-  });
+  // 1. 函数入口
+  steps.push(
+    makeStep({
+      lambda: 0,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(0),
+      status: 'guess',
+      message: '🚀 [函数入口] findMinMeanCycle: 开始 0-1 分数规划，求解有向图中边权平均值最小的简单回路。',
+      log: '启动 findMinMeanCycle，有向边总数 m = ' + origEdges.length,
+      codeLine: 56,
+    })
+  );
 
-  // 3. 第二轮猜测 lambda = 1.25
-  const reweighted2 = origEdges.map((e) => ({
-    u: e.u,
-    v: e.v,
-    origW: e.w,
-    newW: Number((e.w - 1.25).toFixed(2)),
-  }));
+  // 2. 初始化二分上下界
+  steps.push(
+    makeStep({
+      lambda: 0,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(0),
+      status: 'guess',
+      message: '📦 [二分区间初始化] 边权范围在 [0, 5]，设定二分搜索区间 [L, R] = [0.000, 5.000]。',
+      log: 'double l = 0.0, r = 5.0;',
+      codeLine: 64,
+    })
+  );
 
-  steps.push({
-    lambda: 1.25,
-    boundL: 1.25,
-    boundR: 2.5,
-    hasNegCycle: false,
-    activeCycleNodes: [],
-    reweightedEdges: reweighted2,
-    status: 'guess',
-    message: '📈 [二分猜测 lambda = 1.25] 边权赋为 w\' = w - 1.25。所有环和均为正数 (无负环)，提高下界 L = 1.25！',
-    log: '无负环：λ* >= 1.250，更新 L -> 1.250',
-    codeLine: [39, 43],
-  });
+  // --- 第 1 轮迭代：二分猜测 mid = 2.500 ---
+  steps.push(
+    makeStep({
+      lambda: 2.5,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(0),
+      status: 'guess',
+      message: '🔄 [第 1 轮二分] 计算中点 mid = (0.000 + 5.000) / 2 = 2.500，假设最小平均边权为 λ = 2.500。',
+      log: 'iter 0: mid = (0.000 + 5.000) / 2 = 2.500',
+      codeLine: 66,
+    })
+  );
 
-  // 4. 收敛至最优均值 lambda* = 1.333
-  const reweightedOpt = origEdges.map((e) => ({
-    u: e.u,
-    v: e.v,
-    origW: e.w,
-    newW: Number((e.w - 1.333).toFixed(3)),
-  }));
+  steps.push(
+    makeStep({
+      lambda: 2.5,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(2.5),
+      status: 'guess',
+      message: '⚡ [边权动态赋权] 全图边权重赋为 w\'(e) = w(e) - 2.500。若重权图存在负环，说明真实最小均值 <= 2.500！',
+      log: 'hasNegativeCycle(2.500): 边权全局减 2.500',
+      codeLine: 38,
+    })
+  );
 
-  steps.push({
-    lambda: 1.333,
-    boundL: 1.333,
-    boundR: 1.333,
-    hasNegCycle: true,
-    activeCycleNodes: [2, 4, 3],
-    reweightedEdges: reweightedOpt,
-    status: 'converged',
-    message: '🎉 [二分收敛完成] 全局最小均值回路为 2 ➔ 4 ➔ 3 ➔ 2，平均边权 lambda* = (1+1+2)/3 = 1.333！',
-    log: '✓ 二分收敛：最小均值回路 λ* = 1.333',
-    codeLine: [46, 50],
-  });
+  steps.push(
+    makeStep({
+      lambda: 2.5,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(2.5),
+      status: 'detect',
+      message: '📥 [SPFA 初始化] 超级源点向所有节点入队，初始化 dist[1..4] = 0, count[1..4] = 0。',
+      log: 'SPFA 队列初始化：节点 1, 2, 3, 4 全部入队',
+      codeLine: 27,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 2.5,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: false,
+      activeCycleNodes: [2, 4],
+      reweightedEdges: reweight(2.5),
+      status: 'detect',
+      message: '🔍 [SPFA 边松弛 1] 弹出节点 2，松弛负权边 2➔4 (w\' = 1 - 2.5 = -1.5)，更新 dist[4] = -1.500。',
+      log: '| relax edge (2->4): newW = -1.500, dist[4] = -1.500',
+      codeLine: 39,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 2.5,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: false,
+      activeCycleNodes: [4, 3],
+      reweightedEdges: reweight(2.5),
+      status: 'detect',
+      message: '🔍 [SPFA 边松弛 2] 弹出节点 4，松弛负权边 4➔3 (w\' = 1 - 2.5 = -1.5)，更新 dist[3] = -3.000。',
+      log: '| relax edge (4->3): newW = -1.500, dist[3] = -3.000',
+      codeLine: 39,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 2.5,
+      boundL: 0.0,
+      boundR: 5.0,
+      hasNegCycle: true,
+      activeCycleNodes: [2, 4, 3],
+      reweightedEdges: reweight(2.5),
+      status: 'detect',
+      message: '🛑 [SPFA 探测到负环] 回路 2➔4➔3➔2 权值和为 (-1.5) + (-1.5) + (-0.5) = -3.500 < 0，节点 2 入队次数超限！',
+      log: '| count[2] >= 4 -> 探测到负权回路 2->4->3->2，return true',
+      codeLine: 42,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 2.5,
+      boundL: 0.0,
+      boundR: 2.5,
+      hasNegCycle: true,
+      activeCycleNodes: [2, 4, 3],
+      reweightedEdges: reweight(2.5),
+      status: 'guess',
+      message: '📉 [收缩上界] 判定存在负环 ⟹ 真实最小均值 λ* <= 2.500，收缩右界 R 🡰 2.500，新区间 [0.000, 2.500]。',
+      log: 'r = mid; // 更新上界 R -> 2.500',
+      codeLine: 68,
+    })
+  );
+
+  // --- 第 2 轮迭代：二分猜测 mid = 1.250 ---
+  steps.push(
+    makeStep({
+      lambda: 1.25,
+      boundL: 0.0,
+      boundR: 2.5,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(1.25),
+      status: 'guess',
+      message: '🔄 [第 2 轮二分] 计算中点 mid = (0.000 + 2.500) / 2 = 1.250，边权赋为 w\'(e) = w(e) - 1.250。',
+      log: 'iter 1: mid = 1.250，边权减 1.250',
+      codeLine: 66,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 1.25,
+      boundL: 0.0,
+      boundR: 2.5,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(1.25),
+      status: 'detect',
+      message: '🔍 [检验回路权值] 检查回路 2➔4➔3➔2 权值和：(1-1.25) + (1-1.25) + (2-1.25) = -0.25 - 0.25 + 0.75 = +0.25 > 0。',
+      log: '回路 2->4->3->2 权值和 +0.250 > 0，非负环',
+      codeLine: 38,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 1.25,
+      boundL: 0.0,
+      boundR: 2.5,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(1.25),
+      status: 'detect',
+      message: '✓ [SPFA 检验完毕] 队列松弛正常结束，无任何节点入队次数达到 n，全图不存在负权回路，返回 false。',
+      log: 'SPFA 队列清空，无负环，return false',
+      codeLine: 52,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 1.25,
+      boundL: 1.25,
+      boundR: 2.5,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(1.25),
+      status: 'guess',
+      message: '📈 [提高下界] 判定无负环 ⟹ 猜测值 λ = 1.250 小于真实最小均值，提高左界 L 🡰 1.250，新区间 [1.250, 2.500]。',
+      log: 'l = mid; // 更新下界 L -> 1.250',
+      codeLine: 70,
+    })
+  );
+
+  // --- 第 3 轮迭代：二分猜测 mid = 1.875 ---
+  steps.push(
+    makeStep({
+      lambda: 1.875,
+      boundL: 1.25,
+      boundR: 2.5,
+      hasNegCycle: false,
+      activeCycleNodes: [],
+      reweightedEdges: reweight(1.875),
+      status: 'guess',
+      message: '🔄 [第 3 轮二分] 计算中点 mid = (1.250 + 2.500) / 2 = 1.875，重新重赋权检验。',
+      log: 'iter 2: mid = 1.875',
+      codeLine: 66,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 1.875,
+      boundL: 1.25,
+      boundR: 2.5,
+      hasNegCycle: true,
+      activeCycleNodes: [2, 4, 3],
+      reweightedEdges: reweight(1.875),
+      status: 'detect',
+      message: '🛑 [SPFA 再次探测负环] 回路 2➔4➔3➔2 权值和为 (1-1.875)*2 + (2-1.875) = -1.625 < 0，再次锁定负权回路！',
+      log: '探测到负权回路，return true',
+      codeLine: 42,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 1.875,
+      boundL: 1.25,
+      boundR: 1.875,
+      hasNegCycle: true,
+      activeCycleNodes: [2, 4, 3],
+      reweightedEdges: reweight(1.875),
+      status: 'guess',
+      message: '📉 [再次收缩上界] 再次收缩右界 R 🡰 1.875，二分区间缩小至 [1.250, 1.875]。',
+      log: 'r = mid; // 更新上界 R -> 1.875',
+      codeLine: 68,
+    })
+  );
+
+  // --- 二分连续逼近收敛 ---
+  steps.push(
+    makeStep({
+      lambda: 1.333,
+      boundL: 1.332,
+      boundR: 1.334,
+      hasNegCycle: false,
+      activeCycleNodes: [2, 4, 3],
+      reweightedEdges: reweight(1.333),
+      status: 'converged',
+      message: '🎯 [二分迭代逼近] 循环 40 次二分逼近，区间跨度 |R - L| < 10⁻⁵，极速收敛至最优解 λ* = 1.333！',
+      log: '二分逼近收敛：|R - L| < 1e-5',
+      codeLine: 65,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 1.333,
+      boundL: 1.333,
+      boundR: 1.333,
+      hasNegCycle: false,
+      activeCycleNodes: [2, 4, 3],
+      reweightedEdges: reweight(1.333),
+      status: 'converged',
+      message: '💎 [最优权值特征验证] 当 λ = 1.333 时，回路 2➔4➔3➔2 新权值和恰好为 0 (零环)，零环即为最优均值回路！',
+      log: '零权回路特征：sum(w - λ*) = 0',
+      codeLine: 38,
+    })
+  );
+
+  steps.push(
+    makeStep({
+      lambda: 1.333,
+      boundL: 1.333,
+      boundR: 1.333,
+      hasNegCycle: false,
+      activeCycleNodes: [2, 4, 3],
+      reweightedEdges: reweight(1.333),
+      status: 'converged',
+      message: '🎉 [求解完毕] 最小均值回路为 2 ➔ 4 ➔ 3 ➔ 2，最小平均边权 λ* = (1 + 1 + 2) / 3 = 1.333！',
+      log: '✓ return l = 1.333; 0-1分数规划圆满完成！',
+      codeLine: 73,
+    })
+  );
 
   return steps;
 }
@@ -241,9 +478,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MinMeanStep>({
 
     const root = container.closest('#algo-min-mean-cycle-view');
     if (root) {
-      const boundsEl = root.querySelector('#metric-bounds');
-      const lambdaEl = root.querySelector('#metric-guess-lambda');
-      const cycleEl = root.querySelector('#metric-cycle-status');
+      const boundsEl = root.querySelector('#metric-bounds') || root.querySelector('#bounds');
+      const lambdaEl = root.querySelector('#metric-guess-lambda') || root.querySelector('#guess-lambda');
+      const cycleEl = root.querySelector('#metric-cycle-status') || root.querySelector('#cycle-status');
 
       if (boundsEl) boundsEl.textContent = `[${step.boundL.toFixed(3)}, ${step.boundR.toFixed(3)}]`;
       if (lambdaEl) lambdaEl.textContent = `${step.lambda.toFixed(3)}`;

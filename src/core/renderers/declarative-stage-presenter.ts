@@ -147,10 +147,11 @@ export class DeclarativeStagePresenter {
     const metricsHtml = (spec.metrics || [])
       .map((m) => {
         const colorStyle = m.color ? `style="color: ${m.color};"` : '';
+        const metricId = m.id.startsWith('metric-') ? m.id : `metric-${m.id}`;
         return `
           <div class="dsp-metric-card">
             <span class="dsp-metric-label">${m.label}</span>
-            <span class="dsp-metric-val" id="metric-${m.id}" ${colorStyle}>—</span>
+            <span class="dsp-metric-val" id="${metricId}" ${colorStyle}>—</span>
           </div>
         `;
       })

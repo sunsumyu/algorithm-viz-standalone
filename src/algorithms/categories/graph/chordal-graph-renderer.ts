@@ -16,59 +16,601 @@ export interface ChordalStep {
   peoOrder: number[];
   labelWeights: Record<number, number>;
   curSelected: number;
+  edges: Array<{ u: number; v: number; isChord?: boolean }>;
   isChordal: boolean;
-  status: 'mcs' | 'peo' | 'verify' | 'done';
+  status: 'init' | 'mcs' | 'verify' | 'fail' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, any>;
 }
 
-export function buildChordalGraphSteps(): ChordalStep[] {
+export function buildChordalGraphSteps(graphType: 'chordal' | 'non-chordal' = 'chordal'): ChordalStep[] {
   const steps: ChordalStep[] = [];
+  const isChordalTarget = graphType === 'chordal';
 
-  steps.push({
-    peoOrder: [4],
-    labelWeights: { 1: 1, 2: 1, 3: 0, 4: 0 },
-    curSelected: 4,
-    isChordal: true,
-    status: 'mcs',
-    message: '1. [MCS 贪心选取] 选取势最大的节点 4 加入 PEO 序列末尾，更新相邻点 1 与 2 的势权重 +1。',
-    log: 'MCS 选取节点 4: PEO=[4]',
-    codeLine: [15, 22],
-  });
+  const baseEdges = [
+    { u: 1, v: 2 },
+    { u: 2, v: 4 },
+    { u: 4, v: 3 },
+    { u: 3, v: 1 },
+  ];
+  const edges = isChordalTarget
+    ? [...baseEdges, { u: 1, v: 4, isChord: true }]
+    : [...baseEdges];
 
-  steps.push({
-    peoOrder: [2, 4],
-    labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
-    curSelected: 2,
-    isChordal: true,
-    status: 'mcs',
-    message: '2. [MCS 选取节点 2] 节点 2 加入 PEO 序列，相邻点 1 与 3 权重更新。',
-    log: 'MCS 选取节点 2: PEO=[2, 4]',
-    codeLine: [15, 22],
-  });
+  function makeStep(data: Omit<ChordalStep, 'edges' | 'metrics'>): ChordalStep {
+    const peoStr = data.peoOrder.length > 0 ? `[${data.peoOrder.join(', ')}]` : '[]';
+    const statusStr =
+      data.status === 'done' || data.status === 'fail'
+        ? data.isChordal
+          ? '✓ 判定为弦图'
+          : '❌ 非弦图 (含无弦环)'
+        : '检验中...';
 
-  steps.push({
-    peoOrder: [1, 2, 4],
-    labelWeights: { 1: 2, 2: 1, 3: 2, 4: 0 },
-    curSelected: 1,
-    isChordal: true,
-    status: 'mcs',
-    message: '3. [MCS 选取节点 1] 节点 1 加入 PEO 序列。',
-    log: 'MCS 选取节点 1: PEO=[1, 2, 4]',
-    codeLine: [15, 22],
-  });
+    return {
+      ...data,
+      edges,
+      metrics: {
+        'metric-cur-node': data.curSelected ? `Node ${data.curSelected}` : '无',
+        'metric-peo-len': `${data.peoOrder.length} / 4`,
+        'metric-chordal-status': statusStr,
+        'cur-node': data.curSelected ? `Node ${data.curSelected}` : '无',
+        'peo-len': `${data.peoOrder.length} / 4`,
+        'chordal-status': statusStr,
+      },
+    };
+  }
 
-  steps.push({
-    peoOrder: [3, 1, 2, 4],
-    labelWeights: { 1: 2, 2: 1, 3: 2, 4: 0 },
-    curSelected: 3,
-    isChordal: true,
-    status: 'done',
-    message: '🎉 [PEO 完美消除序列检验成功] PEO 序列为 [3, 1, 2, 4]，每个点的后继邻居诱导子图均为完全图！判定为合法的弦图！',
-    log: '✓ 判定成功：存在完美消除序列 PEO=[3,1,2,4]，为弦图',
-    codeLine: [28, 35],
-  });
+  if (isChordalTarget) {
+    // 弦图用例 (含弦 1-4)
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'init',
+        message: '🚀 [算法入口] isChordal: 输入 4 节点图，包含环边 1-2, 2-4, 4-3, 3-1 与对角弦 1-4。',
+        log: 'isChordal(n=4, edges=5)',
+        codeLine: 95,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'init',
+        message: '📐 [初始化状态数组] 初始化 adj 邻接表, peo[], rankOrder[], label[] 与 vis[]。',
+        log: 'init(n=4): label=[0,0,0,0], vis=[F,F,F,F]',
+        codeLine: 19,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'init',
+        message: '🔗 [建无向边] 添加 5 条边至邻接表，注意对角弦 1-4 已连接。',
+        log: 'addEdge 5 次完成',
+        codeLine: 29,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'mcs',
+        message: '⚡ [启动 MCS 搜索] 开始最大势搜索 (Maximum Cardinality Search)，逆序确定各节点 PEO 位次。',
+        log: 'mcs() 启动',
+        codeLine: 35,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 4,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=4] 所有未访问点势均为 0，贪心选取编号最大节点 4。',
+        log: 'i=4: maxNode=4, maxLabel=0',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [4],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 4,
+        isChordal: false,
+        status: 'mcs',
+        message: '📍 [放入 PEO] 节点 4 标号为第 4 位：peo[4]=4, rankOrder[4]=4, vis[4]=true。',
+        log: 'peo[4] = 4, rankOrder[4] = 4',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [4],
+        labelWeights: { 1: 1, 2: 1, 3: 1, 4: 0 },
+        curSelected: 4,
+        isChordal: false,
+        status: 'mcs',
+        message: '📈 [更新邻居势] 节点 4 的邻居 1, 2, 3 势全部自增：label[1]=1, label[2]=1, label[3]=1。',
+        log: '更新邻居: label[1]=1, label[2]=1, label[3]=1',
+        codeLine: 52,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [4],
+        labelWeights: { 1: 1, 2: 1, 3: 1, 4: 0 },
+        curSelected: 3,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=3] 节点 1, 2, 3 势均为 1，贪心选取候选最大编号节点 3。',
+        log: 'i=3: maxNode=3, maxLabel=1',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [3, 4],
+        labelWeights: { 1: 1, 2: 1, 3: 1, 4: 0 },
+        curSelected: 3,
+        isChordal: false,
+        status: 'mcs',
+        message: '📍 [放入 PEO] 节点 3 标号为第 3 位：peo[3]=3, rankOrder[3]=3, vis[3]=true。',
+        log: 'peo[3] = 3, rankOrder[3] = 3',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 3,
+        isChordal: false,
+        status: 'mcs',
+        message: '📈 [更新邻居势] 节点 3 的未访问邻居 1 的势自增：label[1] 升至 2！',
+        log: 'label[1] = 2',
+        codeLine: 52,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=2] 节点 1(势2) 显著高于节点 2(势1)，贪心选取节点 1！',
+        log: 'i=2: maxNode=1, maxLabel=2',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'mcs',
+        message: '📍 [放入 PEO] 节点 1 标号为第 2 位：peo[2]=1, rankOrder[1]=2, vis[1]=true。',
+        log: 'peo[2] = 1, rankOrder[1] = 2',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'mcs',
+        message: '📈 [更新邻居势] 节点 1 的未访问邻居 2 的势自增：label[2] 升至 2！',
+        log: 'label[2] = 2',
+        codeLine: 52,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 2,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=1] 仅剩未访问节点 2(势2)，直接选取节点 2。',
+        log: 'i=1: maxNode=2, maxLabel=2',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 2,
+        isChordal: false,
+        status: 'mcs',
+        message: '🏁 [MCS 搜索结束] 逆序构造候选 PEO 序列完成：[2, 1, 3, 4]！',
+        log: '候选 PEO = [2, 1, 3, 4]',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'verify',
+        message: '🔍 [启动 PEO 检验] verifyPEO(): 检查每个顶点的后继邻居集合是否在首个后继处形成团。',
+        log: 'verifyPEO() 开始',
+        codeLine: 61,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 2,
+        isChordal: false,
+        status: 'verify',
+        message: '🔎 [检验点 2] 后继邻居为 {1, 4} (rank: 2, 4)。最早后继为 1，检查 (1, 4) 是否有边：对角弦 1-4 存在！成团！',
+        log: 'Node 2: higher={1,4}, hasEdge[1][4]=true (成团)',
+        codeLine: 69,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'verify',
+        message: '🔎 [检验点 1] 后继邻居为 {3, 4} (rank: 3, 4)。最早后继为 3，检查 (3, 4) 是否有边：边 3-4 存在！成团！',
+        log: 'Node 1: higher={3,4}, hasEdge[3][4]=true (成团)',
+        codeLine: 69,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 3,
+        isChordal: false,
+        status: 'verify',
+        message: '🔎 [检验点 3] 后继邻居为 {4} (rank: 4)。后继仅 1 点，平凡成团！',
+        log: 'Node 3: higher={4} (平凡成团)',
+        codeLine: 69,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 4,
+        isChordal: true,
+        status: 'verify',
+        message: '🔎 [检验点 4] 末尾节点无后继邻居，检查全部通过！所有点后继均诱导完全子图！',
+        log: '所有节点验证通过，PEO 成立',
+        codeLine: 91,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 1, 3, 4],
+        labelWeights: { 1: 2, 2: 2, 3: 1, 4: 0 },
+        curSelected: 0,
+        isChordal: true,
+        status: 'done',
+        message: '🎉 [判定成功] 候选序列 [2, 1, 3, 4] 为完美消除序列 (PEO)！该图为弦图！返回 true！',
+        log: '✓ return true; 判定为弦图！',
+        codeLine: 101,
+      })
+    );
+  } else {
+    // 非弦图用例 (4 节点无弦环 C4: 1-2-4-3-1，缺失弦 1-4 与 2-3)
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'init',
+        message: '🚀 [算法入口] isChordal: 输入 4 节点无弦四边形 C4，包含边 1-2, 2-4, 4-3, 3-1（无对角弦）。',
+        log: 'isChordal(n=4, edges=4)',
+        codeLine: 95,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'init',
+        message: '📐 [初始化图结构] 初始化 adj, peo, rankOrder, label 与 vis 数组。',
+        log: 'init(n=4)',
+        codeLine: 19,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'init',
+        message: '🔗 [建无向边] 建立 4 条环边，注意图内无任何弦边。',
+        log: '添加环边 1-2, 2-4, 4-3, 3-1',
+        codeLine: 29,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'mcs',
+        message: '⚡ [启动 MCS 搜索] 开始最大势搜索，尝试为无弦环寻找候选 PEO。',
+        log: 'mcs() 启动',
+        codeLine: 35,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 4,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=4] 初始势均为 0，贪心选取最大节点 4。',
+        log: 'i=4: 选取 Node 4',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [4],
+        labelWeights: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        curSelected: 4,
+        isChordal: false,
+        status: 'mcs',
+        message: '📍 [放入 PEO] 节点 4 标号第 4 位：peo[4]=4, rankOrder[4]=4, vis[4]=true。',
+        log: 'peo[4] = 4',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [4],
+        labelWeights: { 1: 0, 2: 1, 3: 1, 4: 0 },
+        curSelected: 4,
+        isChordal: false,
+        status: 'mcs',
+        message: '📈 [更新邻居势] 节点 4 的邻居 2 与 3 势自增：label[2]=1, label[3]=1（1 与 4 无边，势保持 0）。',
+        log: 'label[2]=1, label[3]=1, label[1]=0',
+        codeLine: 52,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [4],
+        labelWeights: { 1: 0, 2: 1, 3: 1, 4: 0 },
+        curSelected: 3,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=3] 节点 2 与 3 势为 1，贪心选取候选最大节点 3。',
+        log: 'i=3: 选取 Node 3',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [3, 4],
+        labelWeights: { 1: 0, 2: 1, 3: 1, 4: 0 },
+        curSelected: 3,
+        isChordal: false,
+        status: 'mcs',
+        message: '📍 [放入 PEO] 节点 3 标号第 3 位：peo[3]=3, rankOrder[3]=3, vis[3]=true。',
+        log: 'peo[3] = 3',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [3, 4],
+        labelWeights: { 1: 1, 2: 1, 3: 1, 4: 0 },
+        curSelected: 3,
+        isChordal: false,
+        status: 'mcs',
+        message: '📈 [更新邻居势] 节点 3 的邻居 1 势自增：label[1]=1。此时未访问点 1 与 2 势均为 1。',
+        log: 'label[1] = 1, label[2] = 1',
+        codeLine: 52,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [3, 4],
+        labelWeights: { 1: 1, 2: 1, 3: 1, 4: 0 },
+        curSelected: 2,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=2] 节点 1 与 2 势均为 1，贪心选取最大节点 2。',
+        log: 'i=2: 选取 Node 2',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 3, 4],
+        labelWeights: { 1: 1, 2: 1, 3: 1, 4: 0 },
+        curSelected: 2,
+        isChordal: false,
+        status: 'mcs',
+        message: '📍 [放入 PEO] 节点 2 标号第 2 位：peo[2]=2, rankOrder[2]=2, vis[2]=true。',
+        log: 'peo[2] = 2',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 2,
+        isChordal: false,
+        status: 'mcs',
+        message: '📈 [更新邻居势] 节点 2 的邻居 1 势自增：label[1] 升至 2。',
+        log: 'label[1] = 2',
+        codeLine: 52,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'mcs',
+        message: '⭐ [MCS 轮次 i=1] 仅剩节点 1(势2)，选取节点 1。',
+        log: 'i=1: 选取 Node 1',
+        codeLine: 42,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'mcs',
+        message: '🏁 [候选 PEO 构造完成] 得到候选序列 [1, 2, 3, 4]，必须严格验证其是否为完美消除序列。',
+        log: '候选 PEO = [1, 2, 3, 4]',
+        codeLine: 48,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'verify',
+        message: '🔍 [启动 PEO 检验] 调用 verifyPEO(): 检查每个点的后继邻居在最早后继处是否成团。',
+        log: 'verifyPEO() 开始',
+        codeLine: 61,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'verify',
+        message: '🔎 [检验点 1] 后继邻居集合为 {2, 3} (rank: 2, 3)。最早后继为 2 (rank=2)。',
+        log: 'Node 1: higher={2,3}, firstNext=2',
+        codeLine: 69,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'verify',
+        message: '⚠️ [团条件判定] 要求其他后继 {3} 必须与最早后继 2 相邻，即检查边 (2, 3) 是否存在？',
+        log: '检查 hasEdge[2][3]...',
+        codeLine: 75,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'fail',
+        message: '❌ [后继不成团] hasEdge[2][3] == false！节点 2 与 3 之间没有边！后继邻居诱导子图不连通、不成团！',
+        log: '❌ 检验失败：hasEdge[2][3] == false，后继不成团',
+        codeLine: 84,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 1,
+        isChordal: false,
+        status: 'fail',
+        message: '🛑 [否定弦图定理] 完美消除序列条件破损，原图中存在长度为 4 的无弦简单环，必非弦图！',
+        log: 'return false; 非弦图',
+        codeLine: 87,
+      })
+    );
+
+    steps.push(
+      makeStep({
+        peoOrder: [1, 2, 3, 4],
+        labelWeights: { 1: 2, 2: 1, 3: 1, 4: 0 },
+        curSelected: 0,
+        isChordal: false,
+        status: 'done',
+        message: '❌ [判定结束] 该图不存在完美消除序列 (PEO)，不是弦图！返回 false！',
+        log: '✓ return false; 算法判定完毕！',
+        codeLine: 101,
+      })
+    );
+  }
 
   return steps;
 }
@@ -90,19 +632,37 @@ const { template, Visualizer } = createDeclarativeVisualizer<ChordalStep>({
     { label: '未处理节点', color: '#0284c7' },
     { label: '⭐ 当前选取最大势节点', color: '#f59e0b' },
     { label: '🟢 已入 PEO 序列节点', color: '#10b981' },
+    { label: '🟡 对角弦边 (若存在)', color: '#facc15' },
   ],
-  inputs: [],
+  inputs: [
+    {
+      id: 'input-graph-type',
+      label: '图结构模式',
+      type: 'select',
+      defaultValue: 'chordal',
+      options: [
+        { label: '4 节点弦图 (含对角弦 1-4)', value: 'chordal' },
+        { label: '4 节点无弦环 C4 (非弦图)', value: 'non-chordal' },
+      ],
+      width: '190px',
+    },
+  ],
   presets: [
-    { label: '4 节点弦图 (含对角弦)', values: {} },
+    { label: '4 节点弦图 (含对角弦 1-4)', values: { 'input-graph-type': 'chordal' } },
+    { label: '4 节点无弦环 C4 (非弦图)', values: { 'input-graph-type': 'non-chordal' } },
   ],
   metrics: [
     { id: 'metric-cur-node', label: '当前最大势节点', color: '#f59e0b' },
+    { id: 'metric-peo-len', label: 'PEO 生成进度', color: '#38bdf8' },
     { id: 'metric-chordal-status', label: '弦图判定结论', color: '#10b981' },
   ],
   codeLanguages: CHORDAL_GRAPH_CODE_LANGUAGES,
   problemHtml: CHORDAL_GRAPH_PROBLEM_HTML,
   analysisHtml: CHORDAL_GRAPH_ANALYSIS_HTML,
-  buildSteps: () => buildChordalGraphSteps(),
+  buildSteps: (inputs) => {
+    const type = (inputs['input-graph-type'] || 'chordal') as 'chordal' | 'non-chordal';
+    return buildChordalGraphSteps(type);
+  },
   renderCanvas: (container, step) => {
     const nodeCoords: Record<number, { x: number; y: number }> = {
       1: { x: 80, y: 55 },
@@ -111,20 +671,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<ChordalStep>({
       4: { x: 230, y: 165 },
     };
 
-    const edges = [
-      { u: 1, v: 2 },
-      { u: 2, v: 4 },
-      { u: 4, v: 3 },
-      { u: 3, v: 1 },
-      { u: 1, v: 4 }, // 弦边
-    ];
-
-    const svgEdges = edges
+    const svgEdges = step.edges
       .map((e) => {
         const p1 = nodeCoords[e.u];
         const p2 = nodeCoords[e.v];
         if (!p1 || !p2) return '';
-        const isChord = (e.u === 1 && e.v === 4) || (e.u === 4 && e.v === 1);
+        const isChord = e.isChord;
         const color = isChord ? '#facc15' : '#475569';
         const width = isChord ? 2.5 : 1.5;
 
@@ -160,27 +712,41 @@ const { template, Visualizer } = createDeclarativeVisualizer<ChordalStep>({
           ${svgNodes}
         </svg>
         <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
-          🟡 金色斜线为对角弦边 | 无环四边形均存在弦划分，MCS 逆序生成 PEO 序列
+          ${step.edges.some((e) => e.isChord) ? '🟡 金色斜线为对角弦边 1-4 | 使得四边形环被三角剖分，存在完美消除序列 PEO' : '⚪ 无对角弦 | 4 节点简单环 C4 无弦，无法满足 PEO 后继团充要条件'}
         </div>
       </div>
     `;
 
-    const root = container.closest('#algo-chordal-graph-view');
+    const root =
+      container.closest('#algo-chordal-graph-view') ||
+      container.parentElement ||
+      container.ownerDocument;
     if (root) {
-      const nodeEl = root.querySelector('#metric-cur-node');
-      const chordalEl = root.querySelector('#metric-chordal-status');
+      const nodeEl = root.querySelector('#metric-cur-node') || root.querySelector('#cur-node');
+      const peoLenEl = root.querySelector('#metric-peo-len') || root.querySelector('#peo-len');
+      const chordalEl = root.querySelector('#metric-chordal-status') || root.querySelector('#chordal-status');
 
-      if (nodeEl) nodeEl.textContent = `Node ${step.curSelected}`;
-      if (chordalEl) chordalEl.textContent = step.isChordal ? '✓ 判定为弦图' : '检验中...';
+      if (nodeEl) nodeEl.textContent = step.curSelected ? `Node ${step.curSelected}` : '无';
+      if (peoLenEl) peoLenEl.textContent = `${step.peoOrder.length} / 4`;
+      if (chordalEl) {
+        chordalEl.textContent =
+          step.status === 'done' || step.status === 'fail'
+            ? step.isChordal
+              ? '✓ 判定为弦图'
+              : '❌ 非弦图 (含无弦环)'
+            : '检验中...';
+        chordalEl.style.color =
+          step.isChordal ? '#10b981' : step.status === 'fail' || step.status === 'done' ? '#ef4444' : '#d97706';
+      }
 
       const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
       if (customMetricsContainer) {
-        const peoStr = step.peoOrder.map((u) => `N${u}`).join(' ➔ ');
+        const peoStr = step.peoOrder.length > 0 ? step.peoOrder.map((u) => `N${u}`).join(' ➔ ') : '空';
 
         customMetricsContainer.innerHTML = `
           <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span>当前 PEO 逆序:</span>
+              <span>当前 PEO 序列:</span>
               <strong style="color: #10b981; font-family: monospace;">[${peoStr}]</strong>
             </div>
             <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
@@ -209,3 +775,4 @@ registerAlgorithm({
 });
 
 export { Visualizer as ChordalGraphVisualizer };
+

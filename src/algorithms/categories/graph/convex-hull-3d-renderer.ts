@@ -14,7 +14,7 @@ import {
 
 export interface Hull3DStep {
   activePointIdx: number;
-  faces: Array<{ a: number; b: number; c: number; visible?: boolean; isNew?: boolean }>;
+  faces: Array<{ a: number; b: number; c: number; visible?: boolean; isNew?: boolean; isTesting?: boolean }>;
   horizonEdges: Array<[number, number]>;
   numVertices: number;
   numFaces: number;
@@ -23,6 +23,7 @@ export interface Hull3DStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, any>;
 }
 
 export function buildConvexHull3DSteps(): Hull3DStep[] {
@@ -35,72 +36,310 @@ export function buildConvexHull3DSteps(): Hull3DStep[] {
     { a: 1, b: 3, c: 2 },
   ];
 
-  steps.push({
-    activePointIdx: -1,
-    faces: baseFaces,
-    horizonEdges: [],
-    numVertices: 4,
-    numFaces: 4,
-    numEdges: 6,
-    status: 'base',
-    message: '🔺 [构建初始四面体] 选取 4 个不共面的基底点 P0~P3，构成包含 4 个三角形面的初始凸多面体！',
-    log: '初始化不共面四面体：4 顶点 4 三角面',
-    codeLine: [28, 32],
-  });
+  function makeStep(data: Omit<Hull3DStep, 'metrics'>): Hull3DStep {
+    return {
+      ...data,
+      metrics: {
+        vertices: data.numVertices,
+        faces: data.numFaces,
+        euler: `${data.numVertices} - ${data.numEdges} + ${data.numFaces} = 2`,
+      },
+    };
+  }
 
-  steps.push({
-    activePointIdx: 4,
-    faces: baseFaces,
-    horizonEdges: [],
-    numVertices: 5,
-    numFaces: 4,
-    numEdges: 6,
-    status: 'point',
-    message: '📍 [增量引入新点 P4] 位于右上方外部 (60, 25, 25)，准备计算各三角面对 P4 的空间可见性！',
-    log: '增量加入新点 P4(60, 25, 25)',
-    codeLine: 35,
-  });
+  // 1. 函数入口
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: [],
+      horizonEdges: [],
+      numVertices: 0,
+      numFaces: 0,
+      numEdges: 0,
+      status: 'base',
+      message: '🚀 [函数入口] calcSurfaceArea(pts): 接收 5 个三维空间点 P0~P4，准备增量构建三维凸包。',
+      log: '启动 calcSurfaceArea(Point3D[] pts)，点数 n = 5',
+      codeLine: 37,
+    })
+  );
 
+  // 2. 初始化面表
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: [],
+      horizonEdges: [],
+      numVertices: 4,
+      numFaces: 0,
+      numEdges: 0,
+      status: 'base',
+      message: '📦 [初始化多面体] 创建三角形面表 List<Face> faces，准备选取前 4 个不共面基底点构建初始四面体。',
+      log: 'List<Face> faces = new ArrayList<>();',
+      codeLine: 39,
+    })
+  );
+
+  // 3. 添加基底底面 F0(0,1,2)
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: [{ a: 0, b: 1, c: 2, isNew: true }],
+      horizonEdges: [],
+      numVertices: 3,
+      numFaces: 1,
+      numEdges: 3,
+      status: 'base',
+      message: '🔺 [四面体构面 1/4] 添加底面三角形 F0(P0, P1, P2)。',
+      log: 'faces.add(new Face(0, 1, 2));',
+      codeLine: 41,
+    })
+  );
+
+  // 4. 添加侧面 F1(0,2,3)
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: [{ a: 0, b: 1, c: 2 }, { a: 0, b: 2, c: 3, isNew: true }],
+      horizonEdges: [],
+      numVertices: 4,
+      numFaces: 2,
+      numEdges: 5,
+      status: 'base',
+      message: '🔺 [四面体构面 2/4] 添加后侧面三角形 F1(P0, P2, P3)。',
+      log: 'faces.add(new Face(0, 2, 3));',
+      codeLine: 42,
+    })
+  );
+
+  // 5. 添加左侧面 F2(0,3,1)
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: [{ a: 0, b: 1, c: 2 }, { a: 0, b: 2, c: 3 }, { a: 0, b: 3, c: 1, isNew: true }],
+      horizonEdges: [],
+      numVertices: 4,
+      numFaces: 3,
+      numEdges: 6,
+      status: 'base',
+      message: '🔺 [四面体构面 3/4] 添加左前侧面三角形 F2(P0, P3, P1)。',
+      log: 'faces.add(new Face(0, 3, 1));',
+      codeLine: 43,
+    })
+  );
+
+  // 6. 添加右侧面 F3(1,3,2)
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: baseFaces,
+      horizonEdges: [],
+      numVertices: 4,
+      numFaces: 4,
+      numEdges: 6,
+      status: 'base',
+      message: '🔺 [四面体构建完成] 4 个三角形面 F0~F3 形成严格闭合的三维四面体！满足欧拉示性数 V - E + F = 4 - 6 + 4 = 2。',
+      log: 'faces.add(new Face(1, 3, 2)); // 四面体闭合 V=4, E=6, F=4',
+      codeLine: 44,
+    })
+  );
+
+  // 7. 外层循环：引入新点 P4
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: baseFaces,
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 4,
+      numEdges: 6,
+      status: 'point',
+      message: '📍 [增量循环 i = 4] 考察待加入凸包的新点 P4(60, 25, 25)，准备逐面判定其空间可见性。',
+      log: 'for (int i = 4; i < n; i++) // 考察点 P4',
+      codeLine: 47,
+    })
+  );
+
+  // 8. 判定面 F0(0,1,2)
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: [
+        { a: 0, b: 1, c: 2, isTesting: true, visible: false },
+        { a: 0, b: 2, c: 3 },
+        { a: 0, b: 3, c: 1 },
+        { a: 1, b: 3, c: 2 },
+      ],
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 4,
+      numEdges: 6,
+      status: 'visible',
+      message: '🔍 [可见性测试 F0] 计算点 P4 到面 F0(P0,P1,P2) 的有向体积 Volume ≤ 0 ⟹ 点 P4 在面内部背光侧，不可见 (保留)。',
+      log: '| 面 F0(0,1,2): volume(4, F0) <= 0 -> visible = false (保留)',
+      codeLine: 50,
+    })
+  );
+
+  // 9. 判定面 F1(0,2,3)
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: [
+        { a: 0, b: 1, c: 2, visible: false },
+        { a: 0, b: 2, c: 3, isTesting: true, visible: false },
+        { a: 0, b: 3, c: 1 },
+        { a: 1, b: 3, c: 2 },
+      ],
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 4,
+      numEdges: 6,
+      status: 'visible',
+      message: '🔍 [可见性测试 F1] 计算点 P4 到面 F1(P0,P2,P3) 的有向体积 Volume ≤ 0 ⟹ 不可见 (保留)。',
+      log: '| 面 F1(0,2,3): volume(4, F1) <= 0 -> visible = false (保留)',
+      codeLine: 50,
+    })
+  );
+
+  // 10. 判定面 F2(0,3,1) -> 可见！
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: [
+        { a: 0, b: 1, c: 2, visible: false },
+        { a: 0, b: 2, c: 3, visible: false },
+        { a: 0, b: 3, c: 1, isTesting: true, visible: true },
+        { a: 1, b: 3, c: 2 },
+      ],
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 4,
+      numEdges: 6,
+      status: 'visible',
+      message: '👁️ [可见性测试 F2] 发现可见面！Volume(P4, F2) > 0 ⟹ 点 P4 能直视三角面 F2(0,3,1)，标记为红色可见待清除！',
+      log: '| 🔴 面 F2(0,3,1): volume(4, F2) > 0 -> visible = true (直视可见)',
+      codeLine: 50,
+    })
+  );
+
+  // 11. 判定面 F3(1,3,2) -> 可见！
   const checkedFaces = [
     { a: 0, b: 1, c: 2, visible: false },
     { a: 0, b: 2, c: 3, visible: false },
     { a: 0, b: 3, c: 1, visible: true },
-    { a: 1, b: 3, c: 2, visible: true },
+    { a: 1, b: 3, c: 2, isTesting: true, visible: true },
   ];
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: checkedFaces,
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 4,
+      numEdges: 6,
+      status: 'visible',
+      message: '👁️ [可见性测试 F3] 发现可见面！Volume(P4, F3) > 0 ⟹ 点 P4 能直视三角面 F3(1,3,2)，标记为红色可见待清除！',
+      log: '| 🔴 面 F3(1,3,2): volume(4, F3) > 0 -> visible = true (直视可见)',
+      codeLine: 50,
+    })
+  );
 
-  steps.push({
-    activePointIdx: 4,
-    faces: checkedFaces,
-    horizonEdges: [],
-    numVertices: 5,
-    numFaces: 4,
-    numEdges: 6,
-    status: 'visible',
-    message: '👁️ [面可见性判定] 有向体积 Volume > 0 的面为可见面 (🔴 红色)，点 P4 能够直视面 (0,3,1) 与 (1,3,2)！',
-    log: '面可见性判定：发现 2 个可见三角面',
-    codeLine: [38, 42],
-  });
-
+  // 12. 提取地平线边界 (Horizon)
   const horizons: Array<[number, number]> = [
     [0, 1],
     [1, 2],
     [2, 3],
     [3, 0],
   ];
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: checkedFaces,
+      horizonEdges: horizons,
+      numVertices: 5,
+      numFaces: 4,
+      numEdges: 6,
+      status: 'horizon',
+      message: '🟡 [提取地平线回路] 锁定可见面 (F2, F3) 与背光面 (F0, F1) 的交界分界闭合边 (0,1)-(1,2)-(2,3)-(3,0)！',
+      log: 'findHorizonEdges: 提取 4 条地平线边界回路边',
+      codeLine: 54,
+    })
+  );
 
-  steps.push({
-    activePointIdx: 4,
-    faces: checkedFaces,
-    horizonEdges: horizons,
-    numVertices: 5,
-    numFaces: 4,
-    numEdges: 6,
-    status: 'horizon',
-    message: '🟡 [地平线提取] 锁定可见面与不可见面交界的分界闭合回路 (地平线 Horizon)！',
-    log: '提取地平线闭合边界边',
-    codeLine: 44,
-  });
+  // 13. 保留背光面
+  const retainedFaces = [
+    { a: 0, b: 1, c: 2 },
+    { a: 0, b: 2, c: 3 },
+  ];
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: retainedFaces,
+      horizonEdges: horizons,
+      numVertices: 5,
+      numFaces: 2,
+      numEdges: 5,
+      status: 'sew',
+      message: '🗑️ [剔除内部可见面] 删除被点 P4 完全遮挡的内部三角面 F2 与 F3，保留背光面 F0 与 F1。',
+      log: '剔除可见面 F2, F3，保留不可见面 F0, F1',
+      codeLine: 58,
+    })
+  );
 
+  // 14. 缝合锥面 1
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: [...retainedFaces, { a: 0, b: 1, c: 4, isNew: true }],
+      horizonEdges: horizons.slice(1),
+      numVertices: 5,
+      numFaces: 3,
+      numEdges: 6,
+      status: 'sew',
+      message: '🧵 [锥面缝合 1/4] 连接地平线边 (P0, P1) 与点 P4，生成新三角锥面 (P0, P1, P4)！',
+      log: '| 缝合新面: (P0, P1, P4)',
+      codeLine: 59,
+    })
+  );
+
+  // 15. 缝合锥面 2
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: [...retainedFaces, { a: 0, b: 1, c: 4, isNew: true }, { a: 1, b: 2, c: 4, isNew: true }],
+      horizonEdges: horizons.slice(2),
+      numVertices: 5,
+      numFaces: 4,
+      numEdges: 7,
+      status: 'sew',
+      message: '🧵 [锥面缝合 2/4] 连接地平线边 (P1, P2) 与点 P4，生成新三角锥面 (P1, P2, P4)！',
+      log: '| 缝合新面: (P1, P2, P4)',
+      codeLine: 59,
+    })
+  );
+
+  // 16. 缝合锥面 3
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: [
+        ...retainedFaces,
+        { a: 0, b: 1, c: 4, isNew: true },
+        { a: 1, b: 2, c: 4, isNew: true },
+        { a: 2, b: 3, c: 4, isNew: true },
+      ],
+      horizonEdges: horizons.slice(3),
+      numVertices: 5,
+      numFaces: 5,
+      numEdges: 8,
+      status: 'sew',
+      message: '🧵 [锥面缝合 3/4] 连接地平线边 (P2, P3) 与点 P4，生成新三角锥面 (P2, P3, P4)！',
+      log: '| 缝合新面: (P2, P3, P4)',
+      codeLine: 59,
+    })
+  );
+
+  // 17. 缝合锥面 4
   const updatedFaces = [
     { a: 0, b: 1, c: 2 },
     { a: 0, b: 2, c: 3 },
@@ -109,32 +348,84 @@ export function buildConvexHull3DSteps(): Hull3DStep[] {
     { a: 2, b: 3, c: 4, isNew: true },
     { a: 3, b: 0, c: 4, isNew: true },
   ];
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: updatedFaces,
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 6,
+      numEdges: 9,
+      status: 'sew',
+      message: '🧵 [锥面缝合 4/4] 连接地平线边 (P3, P0) 与点 P4，生成新三角锥面 (P3, P0, P4)！全部缝合完成。',
+      log: '| 缝合新面: (P3, P0, P4) - 4 个新锥面缝合完毕',
+      codeLine: 59,
+    })
+  );
 
-  steps.push({
-    activePointIdx: 4,
-    faces: updatedFaces,
-    horizonEdges: [],
-    numVertices: 5,
-    numFaces: 6,
-    numEdges: 9,
-    status: 'sew',
-    message: '✨ [锥面缝合完成] 剔除可见面，将点 P4 与地平线边界边逐一相连生成 4 个全新三角面！',
-    log: '锥面缝合：生成 4 个新三角面，更新凸包',
-    codeLine: [46, 50],
-  });
+  // 18. 面表更新完成
+  steps.push(
+    makeStep({
+      activePointIdx: 4,
+      faces: updatedFaces,
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 6,
+      numEdges: 9,
+      status: 'sew',
+      message: '✨ [面表更新完毕] faces = nextFaces: 当前凸多面体由 2 个原背光面 + 4 个新缝合面共 6 个面组成。',
+      log: 'faces = nextFaces; 当前三角面总数 F = 6',
+      codeLine: 60,
+    })
+  );
 
-  steps.push({
-    activePointIdx: -1,
-    faces: updatedFaces,
-    horizonEdges: [],
-    numVertices: 5,
-    numFaces: 6,
-    numEdges: 9,
-    status: 'done',
-    message: '🎉 [三维凸包构建完毕] 满足欧拉示性数 V - E + F = 5 - 9 + 6 = 2，三维凸多面体拓扑严谨！',
-    log: '✓ 凸包构建完成：V=5, E=9, F=6, V-E+F=2',
-    codeLine: 52,
-  });
+  // 19. 校验欧拉示性数
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: updatedFaces,
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 6,
+      numEdges: 9,
+      status: 'done',
+      message: '📐 [拓扑校验] 验证欧拉示性数：V - E + F = 5 - 9 + 6 = 2！三维凸包拓扑结构严格满足封闭多面体定理。',
+      log: '✓ 欧拉公式验证：V=5, E=9, F=6, V-E+F=2',
+      codeLine: 61,
+    })
+  );
+
+  // 20. 累加表面积
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: updatedFaces,
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 6,
+      numEdges: 9,
+      status: 'done',
+      message: '📊 [计算总表面积] 遍历当前 6 个三角形面，向量叉乘求模累加各面面积：totalArea = 4328.50。',
+      log: 'for (Face f : faces) totalArea += f.area(pts); // 累加得 4328.50',
+      codeLine: 65,
+    })
+  );
+
+  // 21. 返回最终表面积
+  steps.push(
+    makeStep({
+      activePointIdx: -1,
+      faces: updatedFaces,
+      horizonEdges: [],
+      numVertices: 5,
+      numFaces: 6,
+      numEdges: 9,
+      status: 'done',
+      message: '🏆 [算法执行完成] return totalArea: 三维凸包构建成功，表面积求解完毕！',
+      log: '🏆 return totalArea = 4328.50; 演化推导圆满完成！',
+      codeLine: 66,
+    })
+  );
 
   return steps;
 }
@@ -163,9 +454,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<Hull3DStep>({
     { label: '单点增量构造 (P4724)', values: {} },
   ],
   metrics: [
-    { id: 'metric-vertices', label: '顶点数 V', color: '#2563eb' },
-    { id: 'metric-faces', label: '三角面数 F', color: '#10b981' },
-    { id: 'metric-euler', label: '欧拉示性数 V-E+F', color: '#f59e0b' },
+    { id: 'vertices', label: '顶点数 V', color: '#2563eb' },
+    { id: 'faces', label: '三角面数 F', color: '#10b981' },
+    { id: 'euler', label: '欧拉示性数 V-E+F', color: '#f59e0b' },
   ],
   codeLanguages: CONVEX_HULL_3D_CODE_LANGUAGES,
   problemHtml: CONVEX_HULL_3D_PROBLEM_HTML,
@@ -197,6 +488,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<Hull3DStep>({
         } else if (f.isNew) {
           fill = 'rgba(16, 185, 129, 0.35)';
           stroke = '#10b981';
+        } else if (f.isTesting) {
+          fill = 'rgba(250, 204, 21, 0.25)';
+          stroke = '#facc15';
         }
 
         return `
@@ -249,13 +543,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<Hull3DStep>({
 
     const root = container.closest('#algo-convex-hull-3d-view');
     if (root) {
-      const vEl = root.querySelector('#metric-vertices');
-      const fEl = root.querySelector('#metric-faces');
-      const eulerEl = root.querySelector('#metric-euler');
+      const vEl = root.querySelector('#metric-vertices') || root.querySelector('#vertices');
+      const fEl = root.querySelector('#metric-faces') || root.querySelector('#faces');
+      const eulerEl = root.querySelector('#metric-euler') || root.querySelector('#euler');
 
       if (vEl) vEl.textContent = `${step.numVertices}`;
       if (fEl) fEl.textContent = `${step.numFaces}`;
-      if (eulerEl) eulerEl.textContent = `${step.numVertices} - ${step.numEdges} + ${step.numFaces} = 2`;
+      if (eulerEl) eulerEl.textContent = step.numVertices > 0 ? `${step.numVertices} - ${step.numEdges} + ${step.numFaces} = 2` : '—';
 
       const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
       if (customMetricsContainer) {

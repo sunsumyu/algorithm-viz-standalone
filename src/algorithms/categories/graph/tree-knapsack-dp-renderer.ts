@@ -21,69 +21,352 @@ export interface TreeKnapStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  subtreeSize?: number;
+  metrics?: Record<string, any>;
 }
 
 export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
   const steps: TreeKnapStep[] = [];
   const V = maxCapacity;
 
-  steps.push({
-    curNode: 2,
-    dpSnapshot: { 2: [0, 5, 0, 0] },
-    currentMaxVal: 5,
-    chosenCourses: [2],
-    status: 'leaf',
-    message: '🍃 [叶子节点 2(线代)] 体积 1，学分价值 5，初始化 dp[2] = [0, 5]。',
-    log: '初始化叶子 2(线代): dp[2][1]=5',
-    codeLine: [18, 20],
-  });
+  function makeStep(data: Omit<TreeKnapStep, 'metrics'>): TreeKnapStep {
+    const nodeStr = data.curNode === 0 ? 'S0 (超级根)' : `C${data.curNode}`;
+    const szStr = data.subtreeSize !== undefined ? `${data.subtreeSize}` : '—';
+    const curDpArr = data.dpSnapshot[data.curNode];
+    const dpStr = curDpArr ? `[${curDpArr.join(', ')}]` : '—';
 
-  steps.push({
-    curNode: 3,
-    dpSnapshot: { 2: [0, 5, 0, 0], 3: [0, 3, 0, 0] },
-    currentMaxVal: 5,
-    chosenCourses: [2],
-    status: 'leaf',
-    message: '🍃 [叶子节点 3(微积分)] 体积 1，学分价值 3，初始化 dp[3] = [0, 3]。',
-    log: '初始化叶子 3(微积分): dp[3][1]=3',
-    codeLine: [18, 20],
-  });
+    return {
+      ...data,
+      metrics: {
+        'metric-active-node': nodeStr,
+        'metric-max-score': `${data.currentMaxVal}`,
+        'metric-subtree-size': szStr,
+        'metric-cur-dp': dpStr,
+        'active-node': nodeStr,
+        'max-score': `${data.currentMaxVal}`,
+        'subtree-size': szStr,
+        'cur-dp': dpStr,
+      },
+    };
+  }
 
-  steps.push({
-    curNode: 1,
-    dpSnapshot: { 1: [0, 2, 7, 10], 2: [0, 5, 0, 0], 3: [0, 3, 0, 0] },
-    currentMaxVal: 10,
-    chosenCourses: [1, 2, 3],
-    status: 'merge',
-    message: '🌲 [合并子树 2与3 入节点 1(高数)] 必选高数(v=2) 后可选线代与微积分，dp[1] 升级为 [0, 2, 7, 10]！',
-    log: '合并子树 2与3 到节点 1: dp[1]=[0,2,7,10]',
-    codeLine: [23, 29],
-  });
+  // 1. 函数入口
+  steps.push(
+    makeStep({
+      curNode: 0,
+      dpSnapshot: { 0: new Array(V + 1).fill(0) },
+      currentMaxVal: 0,
+      chosenCourses: [],
+      status: 'root',
+      message: '🚀 [函数入口] solve: 建立超级源点 S0 连接所有无前置要求的根课程，初始化 DP 空间。',
+      log: `solve(n=5, V=${V}): 初始化虚拟超级根 S0 与树形邻接表`,
+      codeLine: 36,
+      subtreeSize: 0,
+    })
+  );
 
-  steps.push({
-    curNode: 4,
-    dpSnapshot: { 1: [0, 2, 7, 10], 4: [0, 4, 10, 0], 5: [0, 6, 0, 0] },
-    currentMaxVal: 10,
-    chosenCourses: [4, 5],
-    status: 'merge',
-    message: '🌲 [合并子树 5 入节点 4(数据结构)] 必选数据结构(v=4) 后可选算法导论(v=6)，dp[4] = [0, 4, 10]！',
-    log: '合并子树 5 到节点 4: dp[4]=[0,4,10]',
-    codeLine: [23, 29],
-  });
+  // 2. 超级根初始化
+  steps.push(
+    makeStep({
+      curNode: 0,
+      dpSnapshot: { 0: new Array(V + 1).fill(0) },
+      currentMaxVal: 0,
+      chosenCourses: [],
+      status: 'root',
+      message: '📦 [初始化 S0] weight[0]=0, value[0]=0, sz[0]=0，准备递归遍历子树。',
+      log: 'dfs(0): sz[0] = 0, dp[0][0] = 0',
+      codeLine: 18,
+      subtreeSize: 0,
+    })
+  );
+
+  // 3. 递归访问子节点 1 (高数)
+  steps.push(
+    makeStep({
+      curNode: 1,
+      dpSnapshot: { 1: [0, 0, 0, 0] },
+      currentMaxVal: 0,
+      chosenCourses: [1],
+      status: 'merge',
+      message: '🌲 [递归子树 C1(高数)] 深入节点 1，消耗体积 1，学分价值 2。',
+      log: '| dfs(1): 遍历子节点 1(高数)',
+      codeLine: 22,
+      subtreeSize: 0,
+    })
+  );
+
+  // 4. 节点 1 自身初始化
+  steps.push(
+    makeStep({
+      curNode: 1,
+      dpSnapshot: { 1: [0, 2, 0, 0] },
+      currentMaxVal: 2,
+      chosenCourses: [1],
+      status: 'merge',
+      message: '📝 [初始化 C1 状态] 必须修读高数自身：sz[1] = 1, dp[1][1] = 2。',
+      log: '| sz[1] = 1, dp[1][1] = 2',
+      codeLine: 19,
+      subtreeSize: 1,
+    })
+  );
+
+  // 5. 递归访问子节点 2 (线代)
+  steps.push(
+    makeStep({
+      curNode: 2,
+      dpSnapshot: { 1: [0, 2, 0, 0], 2: [0, 0, 0, 0] },
+      currentMaxVal: 2,
+      chosenCourses: [1, 2],
+      status: 'leaf',
+      message: '🍃 [递归子树 C2(线代)] 考察课程 2，先修课为高数，体积 1，学分 5。',
+      log: '| | dfs(2): 访问子节点 2(线代)',
+      codeLine: 22,
+      subtreeSize: 0,
+    })
+  );
+
+  // 6. 叶子节点 2 初始化
+  steps.push(
+    makeStep({
+      curNode: 2,
+      dpSnapshot: { 1: [0, 2, 0, 0], 2: [0, 5, 0, 0] },
+      currentMaxVal: 5,
+      chosenCourses: [1, 2],
+      status: 'leaf',
+      message: '🍃 [叶子 C2 独立状态] sz[2] = 1, dp[2][1] = 5，无子节点，返回上层。',
+      log: '| | sz[2] = 1, dp[2][1] = 5, 叶子回溯',
+      codeLine: 19,
+      subtreeSize: 1,
+    })
+  );
+
+  // 7. 合并 C2 到 C1: 容量 j=2 转移
+  steps.push(
+    makeStep({
+      curNode: 1,
+      dpSnapshot: { 1: [0, 2, 7, 0], 2: [0, 5, 0, 0] },
+      currentMaxVal: 7,
+      chosenCourses: [1, 2],
+      status: 'merge',
+      message: '➕ [合并子树 C2] 上下界优化 limit = min(V, 1+1) = 2：dp[1][2] = max(..., dp[1][1] + dp[2][1]) = 2 + 5 = 7！',
+      log: '| 合并 C2: dp[1][2] = 2 + 5 = 7',
+      codeLine: 28,
+      subtreeSize: 1,
+    })
+  );
+
+  // 8. 更新 C1 子树大小
+  steps.push(
+    makeStep({
+      curNode: 1,
+      dpSnapshot: { 1: [0, 2, 7, 0], 2: [0, 5, 0, 0] },
+      currentMaxVal: 7,
+      chosenCourses: [1, 2],
+      status: 'merge',
+      message: '📐 [更新 C1 子树大小] sz[1] += sz[2] = 1 + 1 = 2。',
+      log: '| sz[1] 累加更新为 2',
+      codeLine: 31,
+      subtreeSize: 2,
+    })
+  );
+
+  // 9. 递归访问子节点 3 (微积分)
+  steps.push(
+    makeStep({
+      curNode: 3,
+      dpSnapshot: { 1: [0, 2, 7, 0], 2: [0, 5, 0, 0], 3: [0, 0, 0, 0] },
+      currentMaxVal: 7,
+      chosenCourses: [1, 2, 3],
+      status: 'leaf',
+      message: '🍃 [递归子树 C3(微积分)] 考察课程 3，先修课为高数，体积 1，学分 3。',
+      log: '| | dfs(3): 访问子节点 3(微积分)',
+      codeLine: 22,
+      subtreeSize: 0,
+    })
+  );
+
+  // 10. 叶子节点 3 初始化
+  steps.push(
+    makeStep({
+      curNode: 3,
+      dpSnapshot: { 1: [0, 2, 7, 0], 2: [0, 5, 0, 0], 3: [0, 3, 0, 0] },
+      currentMaxVal: 7,
+      chosenCourses: [1, 2, 3],
+      status: 'leaf',
+      message: '🍃 [叶子 C3 独立状态] sz[3] = 1, dp[3][1] = 3，无子节点，返回上层。',
+      log: '| | sz[3] = 1, dp[3][1] = 3, 叶子回溯',
+      codeLine: 19,
+      subtreeSize: 1,
+    })
+  );
+
+  // 11. 合并 C3 到 C1: 容量 j=3 转移
+  steps.push(
+    makeStep({
+      curNode: 1,
+      dpSnapshot: { 1: [0, 2, 7, 10], 2: [0, 5, 0, 0], 3: [0, 3, 0, 0] },
+      currentMaxVal: 10,
+      chosenCourses: [1, 2, 3],
+      status: 'merge',
+      message: '➕ [合并子树 C3] limit = min(V, 2+1) = 3：dp[1][3] = dp[1][2] + dp[3][1] = 7 + 3 = 10！同时保持 dp[1][2] = max(7, 2+3) = 7。',
+      log: '| 合并 C3: dp[1][3] = 7 + 3 = 10',
+      codeLine: 28,
+      subtreeSize: 2,
+    })
+  );
+
+  // 12. C1 树合并完成回溯
+  steps.push(
+    makeStep({
+      curNode: 1,
+      dpSnapshot: { 1: [0, 2, 7, 10], 2: [0, 5, 0, 0], 3: [0, 3, 0, 0] },
+      currentMaxVal: 10,
+      chosenCourses: [1, 2, 3],
+      status: 'merge',
+      message: '📐 [C1 子树合并完毕] sz[1] += sz[3] = 3，dp[1] = [0, 2, 7, 10]，回溯到根 S0。',
+      log: '| sz[1] 累加为 3, dfs(1) 执行结束回溯',
+      codeLine: 31,
+      subtreeSize: 3,
+    })
+  );
+
+  // 13. 合并 C1 到超级根 S0
+  steps.push(
+    makeStep({
+      curNode: 0,
+      dpSnapshot: { 0: [0, 2, 7, 10], 1: [0, 2, 7, 10] },
+      currentMaxVal: 10,
+      chosenCourses: [1, 2, 3],
+      status: 'root',
+      message: '👑 [S0 合并子树 C1] S0 体积为 0，将 C1 状态复制进 dp[0]，当前 dp[0] = [0, 2, 7, 10]，sz[0] = 3。',
+      log: 'S0 合并 C1: dp[0] 扩展为 [0, 2, 7, 10]',
+      codeLine: 28,
+      subtreeSize: 3,
+    })
+  );
+
+  // 14. 递归访问子节点 4 (数据结构)
+  steps.push(
+    makeStep({
+      curNode: 4,
+      dpSnapshot: { 0: [0, 2, 7, 10], 4: [0, 0, 0, 0] },
+      currentMaxVal: 10,
+      chosenCourses: [4],
+      status: 'merge',
+      message: '🌲 [递归子树 C4(数据结构)] 深入第二分支，无先修课（直接连 S0），体积 1，学分价值 4。',
+      log: '| dfs(4): 访问子节点 4(数据结构)',
+      codeLine: 22,
+      subtreeSize: 0,
+    })
+  );
+
+  // 15. 节点 4 自身初始化
+  steps.push(
+    makeStep({
+      curNode: 4,
+      dpSnapshot: { 0: [0, 2, 7, 10], 4: [0, 4, 0, 0] },
+      currentMaxVal: 10,
+      chosenCourses: [4],
+      status: 'merge',
+      message: '📝 [初始化 C4 状态] sz[4] = 1, dp[4][1] = 4。',
+      log: '| sz[4] = 1, dp[4][1] = 4',
+      codeLine: 19,
+      subtreeSize: 1,
+    })
+  );
+
+  // 16. 递归访问子节点 5 (算法导论)
+  steps.push(
+    makeStep({
+      curNode: 5,
+      dpSnapshot: { 0: [0, 2, 7, 10], 4: [0, 4, 0, 0], 5: [0, 0, 0, 0] },
+      currentMaxVal: 10,
+      chosenCourses: [4, 5],
+      status: 'leaf',
+      message: '🍃 [递归子树 C5(算法导论)] 考察课程 5，先修课为数据结构，体积 1，学分 6。',
+      log: '| | dfs(5): 访问子节点 5(算法导论)',
+      codeLine: 22,
+      subtreeSize: 0,
+    })
+  );
+
+  // 17. 叶子节点 5 初始化
+  steps.push(
+    makeStep({
+      curNode: 5,
+      dpSnapshot: { 0: [0, 2, 7, 10], 4: [0, 4, 0, 0], 5: [0, 6, 0, 0] },
+      currentMaxVal: 10,
+      chosenCourses: [4, 5],
+      status: 'leaf',
+      message: '🍃 [叶子 C5 独立状态] sz[5] = 1, dp[5][1] = 6，叶子无子树，返回上层。',
+      log: '| | sz[5] = 1, dp[5][1] = 6, 叶子回溯',
+      codeLine: 19,
+      subtreeSize: 1,
+    })
+  );
+
+  // 18. 合并 C5 到 C4
+  steps.push(
+    makeStep({
+      curNode: 4,
+      dpSnapshot: { 0: [0, 2, 7, 10], 4: [0, 4, 10, 0], 5: [0, 6, 0, 0] },
+      currentMaxVal: 10,
+      chosenCourses: [4, 5],
+      status: 'merge',
+      message: '➕ [合并子树 C5] limit = min(V, 1+1) = 2：dp[4][2] = dp[4][1] + dp[5][1] = 4 + 6 = 10，sz[4] 更新为 2。',
+      log: '| 合并 C5: dp[4][2] = 4 + 6 = 10; sz[4] = 2',
+      codeLine: 28,
+      subtreeSize: 2,
+    })
+  );
 
   const ansVal = V === 3 ? 11 : 17;
   const ansChosen = V === 3 ? [1, 2, 4] : [1, 2, 4, 5];
 
-  steps.push({
-    curNode: 0,
-    dpSnapshot: { 0: [0, 4, 10, ansVal], 1: [0, 2, 7, 10], 4: [0, 4, 10, 0] },
-    currentMaxVal: ansVal,
-    chosenCourses: ansChosen,
-    status: 'done',
-    message: `🎉 [超级源点合并完成] 容量 V = ${V} 时最优选课方案：[${ansChosen.join(', ')}]，最大总学分 = ${ansVal}！`,
-    log: `✓ 超级源点合并完成: 最大总学分 = ${ansVal}`,
-    codeLine: [34, 38],
-  });
+  // 19. 合并 C4 到超级根 S0 (全局背包组合)
+  steps.push(
+    makeStep({
+      curNode: 0,
+      dpSnapshot: { 0: [0, 4, 10, ansVal], 1: [0, 2, 7, 10], 4: [0, 4, 10, 0] },
+      currentMaxVal: ansVal,
+      chosenCourses: ansChosen,
+      status: 'root',
+      message: `👑 [S0 融合两棵大子树] 在超级根处进行最终卷积合并：分配容量组合（C1 分配 2 选高数+线代=7，C4 分配 1 选数据结构=4），总价值高达 ${ansVal}！`,
+      log: `S0 卷积合并 C1 与 C4: dp[0][${V}] = ${ansVal}`,
+      codeLine: 28,
+      subtreeSize: 5,
+    })
+  );
+
+  // 20. 树上递归遍历完成
+  steps.push(
+    makeStep({
+      curNode: 0,
+      dpSnapshot: { 0: [0, 4, 10, ansVal], 1: [0, 2, 7, 10], 4: [0, 4, 10, 0] },
+      currentMaxVal: ansVal,
+      chosenCourses: ansChosen,
+      status: 'done',
+      message: '🎯 [DFS 回溯完毕] 树形依赖背包的所有子树已严格按上下界复杂度 O(N*V) 完成合并。',
+      log: 'dfs(0) 结束，所有依赖路径与泛化物品合并完成',
+      codeLine: 57,
+      subtreeSize: 5,
+    })
+  );
+
+  // 21. 返回最终答案
+  steps.push(
+    makeStep({
+      curNode: 0,
+      dpSnapshot: { 0: [0, 4, 10, ansVal], 1: [0, 2, 7, 10], 4: [0, 4, 10, 0] },
+      currentMaxVal: ansVal,
+      chosenCourses: ansChosen,
+      status: 'done',
+      message: `🎉 [求解成功] 返回 dp[0][${V}] = ${ansVal}！最优选修方案为：[${ansChosen.join(', ')}]，总学分价值达到最大化！`,
+      log: `✓ return dp[0][${V}] = ${ansVal}; 算法执行完毕！`,
+      codeLine: 58,
+      subtreeSize: 5,
+    })
+  );
 
   return steps;
 }
@@ -122,6 +405,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeKnapStep>({
   metrics: [
     { id: 'metric-active-node', label: '当前处理节点', color: '#2563eb' },
     { id: 'metric-max-score', label: '当前最大总学分', color: '#10b981' },
+    { id: 'metric-subtree-size', label: '当前子树大小', color: '#f59e0b' },
+    { id: 'metric-cur-dp', label: '节点 DP 状态', color: '#8b5cf6' },
   ],
   codeLanguages: TREE_KNAPSACK_CODE_LANGUAGES,
   problemHtml: TREE_KNAPSACK_PROBLEM_HTML,
@@ -199,11 +484,18 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeKnapStep>({
 
     const root = container.closest('#algo-tree-knapsack-dp-view');
     if (root) {
-      const nodeEl = root.querySelector('#metric-active-node');
-      const scoreEl = root.querySelector('#metric-max-score');
+      const nodeEl = root.querySelector('#metric-active-node') || root.querySelector('#active-node');
+      const scoreEl = root.querySelector('#metric-max-score') || root.querySelector('#max-score');
+      const szEl = root.querySelector('#metric-subtree-size') || root.querySelector('#subtree-size');
+      const dpEl = root.querySelector('#metric-cur-dp') || root.querySelector('#cur-dp');
 
       if (nodeEl) nodeEl.textContent = step.curNode === 0 ? 'S0 (超级根)' : `Course ${step.curNode}`;
       if (scoreEl) scoreEl.textContent = `${step.currentMaxVal}`;
+      if (szEl) szEl.textContent = step.subtreeSize !== undefined ? `${step.subtreeSize}` : '—';
+      if (dpEl) {
+        const curDpArr = step.dpSnapshot[step.curNode];
+        dpEl.textContent = curDpArr ? `[${curDpArr.join(', ')}]` : '—';
+      }
 
       const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
       if (customMetricsContainer) {
