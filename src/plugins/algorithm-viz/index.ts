@@ -218,6 +218,12 @@ const ALGORITHM_ICONS: Record<string, string> = {
   'dependent-knapsack-standard': '🛒',
   'top-k-subsequence-sum': '🌳',
   'find-kth-sum': '🪞',
+  'partitioned-knapsack-standard': '🗂️',
+  'coins-from-piles': '🪙',
+  'unbounded-knapsack-standard': '🌿',
+  'regex-matching': '🔤',
+  'wildcard-matching': '🃏',
+  'buying-hay-min-cost': '🌾',
 };
 
 import {

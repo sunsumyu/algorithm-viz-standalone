@@ -14,5 +14,14 @@ import './categories/dynamic-programming/knapsack-073/dependent-knapsack-rendere
 import './categories/dynamic-programming/knapsack-073/top-k-subsequence-sum-renderer';
 import './categories/dynamic-programming/knapsack-073/find-kth-sum-renderer';
 
+// 左程云算法讲解074【必备】背包dp-分组背包、完全背包 6大算法渲染器
+import './categories/dynamic-programming/knapsack-074/partitioned-knapsack-renderer';
+import './categories/dynamic-programming/knapsack-074/coins-from-piles-renderer';
+import './categories/dynamic-programming/knapsack-074/unbounded-knapsack-renderer';
+import './categories/dynamic-programming/knapsack-074/regex-matching-renderer';
+import './categories/dynamic-programming/knapsack-074/wildcard-matching-renderer';
+import './categories/dynamic-programming/knapsack-074/buying-hay-min-cost-renderer';
+
 export {};
+
 

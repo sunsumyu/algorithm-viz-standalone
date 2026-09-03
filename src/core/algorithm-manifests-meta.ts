@@ -3444,5 +3444,72 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 83,
     "learningGoal": "掌握含负数数组子序列和极值问题的基准平移法、绝对值数组双射归约与小根堆求第 K 小"
+  },
+  {
+    "id": "partitioned-knapsack-standard",
+    "name": "分组背包模版 (通天之分组背包)",
+    "viewId": "algo-partitioned-knapsack-standard-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 074 Code01：洛谷 P1757 通天之分组背包，组内物品至多选 1 件，容量倒序外层枚举防止组内多选",
+    "icon": "🗂️",
+    "difficulty": 2,
+    "levelOrder": 84,
+    "learningGoal": "掌握分组背包组内互斥决策建模、外层容量倒序内层枚举组内物品的核心循环顺序"
+  },
+  {
+    "id": "coins-from-piles",
+    "name": "从栈中取出K个硬币的最大面值和",
+    "viewId": "algo-coins-from-piles-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 074 Code02：LeetCode 2218 取硬币，自顶向下连续拿取的前缀和预处理转分组背包互斥选择",
+    "icon": "🪙",
+    "difficulty": 3,
+    "levelOrder": 85,
+    "learningGoal": "掌握硬币栈连续操作向互斥物品组的转化、前缀和预处理加速与步数容量分组背包"
+  },
+  {
+    "id": "unbounded-knapsack-standard",
+    "name": "完全背包模版 (疯狂的采药)",
+    "viewId": "algo-unbounded-knapsack-standard-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 074 Code03：洛谷 P1616 疯狂的采药，每件物品可选任意次，空间压缩后正序枚举容量 j",
+    "icon": "🌿",
+    "difficulty": 1,
+    "levelOrder": 86,
+    "learningGoal": "深刻理解完全背包与 01 背包空间压缩的本质区别：正序从小到大枚举容量使得物品可同轮无限次自叠加"
+  },
+  {
+    "id": "regex-matching",
+    "name": "正则表达式匹配 (LeetCode 10)",
+    "viewId": "algo-regex-matching-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 074 Code04：LeetCode 10 正则匹配，星号 * 任意次匹配转化为完全背包斜率优化 dp[i][j] = dp[i][j+2] || (match && dp[i+1][j])",
+    "icon": "🔤",
+    "difficulty": 3,
+    "levelOrder": 87,
+    "learningGoal": "掌握通配星号向完全背包模型的代数恒等变形、自底向上填表与斜率优化消除循环"
+  },
+  {
+    "id": "wildcard-matching",
+    "name": "通配符匹配 (LeetCode 44)",
+    "viewId": "algo-wildcard-matching-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 074 Code05：LeetCode 44 通配符，通配星号 * 匹配任意字符串转化为经典完全背包斜率优化 dp[i][j] = dp[i+1][j] || dp[i][j+1]",
+    "icon": "🃏",
+    "difficulty": 3,
+    "levelOrder": 88,
+    "learningGoal": "掌握通配符星号任意串匹配向二分支完全背包斜率优化的推导与边界处理"
+  },
+  {
+    "id": "buying-hay-min-cost",
+    "name": "购买足量干草的最小花费 (洛谷 P2918)",
+    "viewId": "algo-buying-hay-min-cost-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法通关课 Class 074 Code06：洛谷 P2918 购买干草，至少 H 磅允许超额，容量上界扩充至 H + maxVal 的完全背包求极小值",
+    "icon": "🌾",
+    "difficulty": 2,
+    "levelOrder": 89,
+    "learningGoal": "掌握允许超额时的容量上界安全扩充证明（H + maxVal）与求最小花费完全背包的状态转移"
   }
 ];
+
