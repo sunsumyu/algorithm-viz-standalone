@@ -1,6 +1,7 @@
 /**
  * Prim 最小生成树可视化器 — 4-Card 标准现代架构
- * 加点法贪心扩充、minDist 切边维护与生成树高亮
+ * 加点法贪心扩充、minDist 切边维护与生成树高亮 (左程云 class058)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V轮外层加点循环、未入树最小点u挑选、纳入inMST标记、权值累加、出边扫描、更优切边更新均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
@@ -11,6 +12,7 @@ import {
   MST_PRIM_CODE_LANGUAGES,
 } from './mst-prim-problem-content';
 import template from './mst-prim.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
 export interface PrimStep extends StepBase {
   nodes: number[];
@@ -24,7 +26,8 @@ export interface PrimStep extends StepBase {
   action: 'init' | 'select' | 'update-edge' | 'skip' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
 export const PRIM_NODES = [0, 1, 2, 3, 4];
@@ -56,50 +59,43 @@ export function buildPrimSteps(): PrimStep[] {
   const inMST = new Array(n).fill(false);
   const mstEdges: { u: number; v: number; w: number }[] = [];
 
-  minDist[0] = 0;
-  let totalWeight = 0;
+  // 精准 14 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 1, javascript: 1 },
+    initMinDist: { cpp: 2, java: 4, python: 2, javascript: 2 },
+    setSrc: { cpp: 4, java: 5, python: 4, javascript: 4 },
+    initInMST: { cpp: 3, java: 6, python: 3, javascript: 3 },
+    initWeight: { cpp: 5, java: 7, python: 5, javascript: 5 },
+    forStep: { cpp: 6, java: 8, python: 6, javascript: 6 },
+    initU: { cpp: 7, java: 9, python: 7, javascript: 7 },
+    findMinU: { cpp: 8, java: 10, python: 8, javascript: 8 },
+    setInMST: { cpp: 11, java: 13, python: 11, javascript: 11 },
+    addWeight: { cpp: 12, java: 14, python: 12, javascript: 12 },
+    forAdj: { cpp: 13, java: 15, python: 13, javascript: 13 },
+    checkUpdate: { cpp: 14, java: 17, python: 14, javascript: 14 },
+    updateMinDist: { cpp: 15, java: 18, python: 15, javascript: 15 },
+    returnAns: { cpp: 20, java: 22, python: 16, javascript: 19 },
+  };
 
-  // Build undirected adjacency list
-  const adj: { to: number; w: number }[][] = Array.from({ length: n }, () => []);
+  // Build adjacency list for undirected graph
+  const adj: { v: number; w: number }[][] = Array.from({ length: n }, () => []);
   for (const e of PRIM_EDGES) {
-    adj[e.u].push({ to: e.v, w: e.w });
-    adj[e.v].push({ to: e.u, w: e.w });
+    adj[e.u].push({ v: e.v, w: e.w });
+    adj[e.v].push({ v: e.u, w: e.w });
   }
 
-  steps.push({
-    nodes: PRIM_NODES,
-    edges: PRIM_EDGES,
-    minDist: [...minDist],
-    inMST: [...inMST],
-    mstEdges: [],
-    currentNode: null,
-    activeEdge: null,
-    totalWeight: 0,
-    action: 'init',
-    statusText: `初始化 Prim 算法：选取节点 0 为生长起点，minDist[0] = 0，其余节点 minDist = ∞。`,
-    log: `初始化 Prim: 起点 0`,
-    codeLine: [3, 4, 5],
-  });
+  let totalWeight = 0;
 
-  for (let i = 0; i < n; i++) {
-    // Find unvisited node with min minDist
-    let u = -1;
-    let minVal = INF;
-    for (let j = 0; j < n; j++) {
-      if (!inMST[j] && minDist[j] < minVal) {
-        minVal = minDist[j];
-        u = j;
-      }
-    }
-
-    if (u === -1) break;
-
-    inMST[u] = true;
-    totalWeight += minDist[u];
-
-    if (parent[u] !== -1) {
-      mstEdges.push({ u: parent[u], v: u, w: minDist[u] });
-    }
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'select' | 'update-edge' | 'skip' | 'done',
+    statusText: string,
+    log: string,
+    currentNode: number | null = null,
+    activeEdge: { u: number; v: number; w: number } | null = null
+  ): void {
+    const dStr = minDist.map((d, i) => `${i}:${d === INF ? '∞' : d}`).join(', ');
+    const mstCnt = inMST.filter(Boolean).length;
 
     steps.push({
       nodes: PRIM_NODES,
@@ -107,98 +103,109 @@ export function buildPrimSteps(): PrimStep[] {
       minDist: [...minDist],
       inMST: [...inMST],
       mstEdges: [...mstEdges],
-      currentNode: u,
-      activeEdge: parent[u] !== -1 ? { u: parent[u], v: u, w: minDist[u] } : null,
+      currentNode,
+      activeEdge,
       totalWeight,
-      action: 'select',
-      statusText: `贪心选取 minDist 最小节点 ${u} 并入生成树 (权值 +${minDist[u]})，当前生成树总权值 = ${totalWeight}。`,
-      log: `选定节点 ${u} 加入 MST: 总权值=${totalWeight}`,
-      codeLine: [8, 9, 10, 11, 12],
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-prim-nodes': `${mstCnt} / ${n}`,
+        'metric-prim-weight': `${totalWeight}`,
+        'metric-prim-edge': activeEdge ? `(${activeEdge.u}➔${activeEdge.v}, w=${activeEdge.w})` : '—',
+        'metric-prim-dist': `[${dStr}]`,
+      },
     });
+  }
 
-    for (const edge of adj[u]) {
-      const v = edge.to;
-      const w = edge.w;
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] primMST(n=5, adj)：启动 Prim 最小生成树加点法。', 'primMST 入口');
+  makeStep(lines.initMinDist, 'init', '📊 [初始化切边距离] Arrays.fill(minDist, INF)；除根节点外初始切边距离全为正无穷。', 'init minDist[]');
 
-      if (!inMST[v]) {
-        if (w < minDist[v]) {
-          const old = minDist[v];
-          minDist[v] = w;
-          parent[v] = u;
+  minDist[0] = 0;
+  makeStep(lines.setSrc, 'init', '🌱 [设置生长根节点] minDist[0] = 0；从节点 0 开始贪心生长最小生成树。', 'minDist[0] = 0');
+  makeStep(lines.initInMST, 'init', '🏷️ [初始化并入标记] boolean[] inMST = new boolean[5]；记录已纳入生成树的点集。', 'init inMST[]');
+  makeStep(lines.initWeight, 'init', '🌱 [初始化权重累加器] int totalWeight = 0。', 'totalWeight = 0');
 
-          steps.push({
-            nodes: PRIM_NODES,
-            edges: PRIM_EDGES,
-            minDist: [...minDist],
-            inMST: [...inMST],
-            mstEdges: [...mstEdges],
-            currentNode: u,
-            activeEdge: { u, v, w },
-            totalWeight,
-            action: 'update-edge',
-            statusText: `节点 ${v} 发现更近切边 (${u} - ${v}, w=${w})：minDist[${v}] 从 ${
-              old === INF ? '∞' : old
-            } 缩短为 ${w}。`,
-            log: `  更新切边 (${u}-${v}, w=${w}): minDist[${v}]=${w}`,
-            codeLine: [14, 15, 16],
-          });
-        }
+  // 2. V 轮贪心加点
+  for (let i = 0; i < n; i++) {
+    makeStep(lines.forStep, 'select', `🔁 [加点主循环] for (i = ${i}; i < ${n}; i++)：开始挑选第 ${i + 1} 个加入生成树的顶点。`, `--- 第 ${i + 1} 次加点 ---`);
+
+    makeStep(lines.initU, 'select', '🔍 [重置选点指针] int u = -1；准备在未并入顶点中搜寻 minDist 最小者。', 'u = -1');
+
+    let u = -1;
+    for (let j = 0; j < n; j++) {
+      if (!inMST[j] && (u === -1 || minDist[j] < minDist[u])) {
+        u = j;
+      }
+    }
+
+    makeStep(lines.findMinU, 'select', `💡 [贪心确定最近点] 确定未并入顶点 u = ${u}，当前切边权值 minDist[${u}] = ${minDist[u]} 为全局最小！`, `选点: u = ${u}`);
+
+    inMST[u] = true;
+    makeStep(lines.setInMST, 'select', `🏷️ [纳入生成树集合] inMST[${u}] = true；顶点 ${u} 正式并入 MST 点集！`, `inMST[${u}] = true`, u);
+
+    totalWeight += minDist[u];
+    if (parent[u] !== -1) {
+      const edge = { u: parent[u], v: u, w: minDist[u] };
+      mstEdges.push(edge);
+      makeStep(lines.addWeight, 'select', `⚡ [固化生成树边] 边 (${parent[u]} ➔ ${u}, w=${minDist[u]}) 固化并入 MST，累计权值增加至 ${totalWeight}！`, `MST add edge (${parent[u]}->${u})`, u, edge);
+    } else {
+      makeStep(lines.addWeight, 'select', `⚡ [固化根节点] 顶点 0 为初始根，无前驱连接边，累计权值: ${totalWeight}。`, 'root node 0', u);
+    }
+
+    // 用 u 更新其余未并入节点的 minDist
+    for (const neighbor of adj[u]) {
+      const v = neighbor.v;
+      const w = neighbor.w;
+      const curEdge = { u, v, w };
+
+      makeStep(lines.forAdj, 'skip', `  ↳ [考察出边] 遍历与 ${u} 相连的边 (${u} ➔ ${v}, 权重 w=${w})。`, `edge (${u}->${v}, w=${w})`, u, curEdge);
+
+      const canUpdate = !inMST[v] && w < minDist[v];
+      makeStep(lines.checkUpdate, canUpdate ? 'update-edge' : 'skip', `  🔎 [更新切边条件] if (!inMST[${v}] && ${w} < minDist[${v}](${minDist[v] === INF ? '∞' : minDist[v]})) -> (${canUpdate})。`, `check cut edge (${u}->${v})`, u, curEdge);
+
+      if (canUpdate) {
+        const oldDist = minDist[v];
+        minDist[v] = w;
+        parent[v] = u;
+        makeStep(lines.updateMinDist, 'update-edge', `  ⚡ [更新切边权值] 发现更优连接边！minDist[${v}] 从 ${oldDist === INF ? '∞' : oldDist} 缩短为 ${w}，前驱 parent[${v}] 设为 ${u}。`, `minDist[${v}]=${w}`, u, curEdge);
+      } else {
+        makeStep(lines.checkUpdate, 'skip', `  ⏭️ [跳过边] 顶点 ${v} ${inMST[v] ? '已在生成树中' : `已有更优或相等切边 (minDist=${minDist[v]})`}，无需更新。`, `skip edge (${u}->${v})`, u, curEdge);
       }
     }
   }
 
-  steps.push({
-    nodes: PRIM_NODES,
-    edges: PRIM_EDGES,
-    minDist: [...minDist],
-    inMST: [...inMST],
-    mstEdges: [...mstEdges],
-    currentNode: null,
-    activeEdge: null,
-    totalWeight,
-    action: 'done',
-    statusText: `🎉 Prim 算法执行完成！成功构建包含 ${mstEdges.length} 条边、最小总权值为 ${totalWeight} 的最小生成树。`,
-    log: `✓ 最小生成树构建完成: 总权值 = ${totalWeight}`,
-    codeLine: 21,
-  });
+  makeStep(lines.returnAns, 'done', `🎉 [Prim 算法达成] return totalWeight！全图所有 ${n} 个顶点全部并入生成树，总边数 ${mstEdges.length}，最小生成树总权值: ${totalWeight}！`, 'return totalWeight');
 
   return steps;
 }
 
-export class PrimMSTVisualizer extends StepVisualizer<PrimStep> {
+export class PrimVisualizer extends StepVisualizer<PrimStep> {
   protected codeLanguages = MST_PRIM_CODE_LANGUAGES;
   protected codeLines = MST_PRIM_CODE_LANGUAGES['java'];
-  protected codePanelTitle = 'Prim 最小生成树 代码调试';
+  protected codePanelTitle = 'Prim 算法代码调试';
 
   private svgCanvas: HTMLElement | null = null;
-  private distPillsWrap: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private metricInMSTCountEl: HTMLElement | null = null;
-  private metricMSTEdgeCountEl: HTMLElement | null = null;
+  private nodeTableBody: HTMLElement | null = null;
+  private metricMstNodesEl: HTMLElement | null = null;
   private metricTotalWeightEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
   private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
 
     this.svgCanvas = this.root.querySelector('#prim-svg-canvas');
-    this.distPillsWrap = this.root.querySelector('#min-dist-pills-wrap');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricInMSTCountEl = this.root.querySelector('#metric-intree-count');
-    this.metricMSTEdgeCountEl = this.root.querySelector('#metric-added-weight');
+    this.nodeTableBody = this.root.querySelector('#prim-node-table-body');
+    this.metricMstNodesEl = this.root.querySelector('#metric-mst-nodes');
     this.metricTotalWeightEl = this.root.querySelector('#metric-total-weight');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
     this.liveTextEl = this.root.querySelector('#prim-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 挂载暗色代码终端深模块
     this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: MST_PRIM_PROBLEM_HTML,
@@ -212,160 +219,111 @@ export class PrimMSTVisualizer extends StepVisualizer<PrimStep> {
   }
 
   protected renderStep(step: PrimStep): void {
-    const { minDist, inMST, mstEdges, currentNode, activeEdge, totalWeight, statusText, action } = step;
+    const { minDist, inMST, mstEdges, currentNode, activeEdge, totalWeight, action, statusText } = step;
 
-    // 1. 绘制无向图 SVG 拓扑图
     if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 460 260" style="width:100%; height:100%; max-height:240px;">`;
-
-      // 边集合
-      const mstEdgeSet = new Set(
-        mstEdges.map((e) => `${Math.min(e.u, e.v)}-${Math.max(e.u, e.v)}`)
-      );
+      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">`;
 
       for (const e of PRIM_EDGES) {
         const p1 = PRIM_NODE_POSITIONS[e.u];
         const p2 = PRIM_NODE_POSITIONS[e.v];
-        const key = `${Math.min(e.u, e.v)}-${Math.max(e.u, e.v)}`;
-        const isMST = mstEdgeSet.has(key);
+        const isMst = mstEdges.some((me) => (me.u === e.u && me.v === e.v) || (me.u === e.v && me.v === e.u));
         const isActive = activeEdge && ((activeEdge.u === e.u && activeEdge.v === e.v) || (activeEdge.u === e.v && activeEdge.v === e.u));
+        const isCut = (inMST[e.u] && !inMST[e.v]) || (!inMST[e.u] && inMST[e.v]);
 
-        const strokeColor = isMST ? '#10b981' : isActive ? '#2563eb' : '#cbd5e1';
-        const strokeWidth = isMST ? 4 : isActive ? 3 : 1.8;
+        let strokeColor = '#cbd5e1';
+        let strokeWidth = 1.8;
+        let strokeDash = 'none';
 
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+        if (isMst) {
+          strokeColor = '#10b981';
+          strokeWidth = 3.5;
+        } else if (isActive && action === 'update-edge') {
+          strokeColor = '#3b82f6';
+          strokeWidth = 3;
+        } else if (isActive) {
+          strokeColor = '#60a5fa';
+          strokeWidth = 2.5;
+        } else if (isCut) {
+          strokeColor = '#f59e0b';
+          strokeWidth = 2;
+          strokeDash = '4,4';
+        }
 
-        const midX = (p1.x + p2.x) / 2 + (p1.y === p2.y ? 0 : p1.y > p2.y ? 10 : -10);
+        const midX = (p1.x + p2.x) / 2;
         const midY = (p1.y + p2.y) / 2 - 8;
-        svgHtml += `<text x="${midX}" y="${midY}" fill="${isMST ? '#059669' : isActive ? '#1d4ed8' : '#64748b'}" font-size="11" font-weight="800" text-anchor="middle">${e.w}</text>`;
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
+        svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
       }
 
-      // 绘制节点
       PRIM_NODES.forEach((node) => {
         const p = PRIM_NODE_POSITIONS[node];
         const isIn = inMST[node];
-        const isCurrent = currentNode === node;
+        const isCur = currentNode === node;
+        const dVal = minDist[node];
 
         let fill = '#ffffff';
         let stroke = '#cbd5e1';
-        if (isCurrent) {
+        if (isCur) {
           fill = '#fef08a';
           stroke = '#eab308';
         } else if (isIn) {
           fill = '#dcfce7';
-          stroke = '#22c55e';
+          stroke = '#10b981';
+        } else if (dVal !== INF) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
         }
 
         svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
         svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-
-        const dVal = minDist[node] === INF ? '∞' : minDist[node];
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isIn ? '#15803d' : '#64748b'}" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">d:${dVal}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : isIn ? '#15803d' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
       });
 
       svgHtml += `</svg>`;
       this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // 2. 渲染 minDist 药丸栏
-    if (this.distPillsWrap) {
-      this.distPillsWrap.innerHTML = PRIM_NODES.map((node) => {
-        const d = minDist[node] === INF ? '∞' : `${minDist[node]}`;
+    if (this.nodeTableBody) {
+      this.nodeTableBody.innerHTML = PRIM_NODES.map((node) => {
+        const dVal = minDist[node];
         const isIn = inMST[node];
+        const isCur = currentNode === node;
 
-        let cls = 'prim-dist-pill';
-        if (isIn) cls += ' is-in-mst';
-
-        return `<div class="${cls}">
-          <span style="color:#64748b;">${node}:</span>
-          <span>${d}</span>
-        </div>`;
+        return `<tr class="${isCur ? 'bg-yellow-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1 text-center font-mono font-bold text-slate-800">${node}</td>
+          <td class="px-3 py-1 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
+          <td class="px-3 py-1 text-center font-mono text-xs ${isIn ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isIn ? '已在生成树' : '等待切入'}</td>
+        </tr>`;
       }).join('');
     }
 
-    // 3. 更新状态监视器
-    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode != null ? `${currentNode}` : '—';
-    if (this.metricInMSTCountEl) {
-      const inCount = inMST.filter(Boolean).length;
-      this.metricInMSTCountEl.textContent = `${inCount} / ${PRIM_NODES.length}`;
+    if (this.metricMstNodesEl) {
+      this.metricMstNodesEl.textContent = `${inMST.filter(Boolean).length} / ${PRIM_NODES.length}`;
     }
-    if (this.metricMSTEdgeCountEl) this.metricMSTEdgeCountEl.textContent = `${mstEdges.length}`;
-    if (this.metricTotalWeightEl) this.metricTotalWeightEl.textContent = `${totalWeight}`;
-
-    if (this.formulaActionEl) {
-      if (action === 'update-edge' && activeEdge) {
-        this.formulaActionEl.textContent = `切边更新: minDist[${activeEdge.v}] = weight(${activeEdge.u}, ${activeEdge.v}) = ${activeEdge.w}`;
-      } else if (action === 'done') {
-        this.formulaActionEl.textContent = `MST 构建完毕: 总权值 = ${totalWeight}`;
-      } else {
-        this.formulaActionEl.textContent = 'minDist[v] = min(minDist[v], weight(u, v))';
-      }
+    if (this.metricTotalWeightEl) {
+      this.metricTotalWeightEl.textContent = `${totalWeight}`;
+    }
+    if (this.metricCurNodeEl) {
+      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'select'
-          ? '#fefce8'
-          : action === 'update-edge'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'select'
-          ? '#854d0e'
-          : action === 'update-edge'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'select'
-          ? '#fef08a'
-          : action === 'update-edge'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
     }
-
-    const badgeMST = this.root?.querySelector('#badge-mst-weight');
-    if (badgeMST) badgeMST.textContent = `MST 总权值: ${totalWeight}`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
   }
 }
 
 registerAlgorithm({
   id: 'mst-prim',
   name: 'Prim 最小生成树',
-  viewId: 'algo-mst-prim-view',
   category: 'graph',
-  description: '使用加点法以点为中心贪心生长构建无向图的最小生成树',
-  icon: '🌲',
-  difficulty: 2,
-  levelOrder: 10,
-  learningGoal: '掌握 Prim 切割性质与 minDist 数组切边维护机制',
+  difficulty: 3,
+  levelOrder: 30,
+  description: '左程云算法通关课 Class 058：加点法全局贪心生长最小生成树，维护切边最小距离数组 minDist',
+  learningGoal: '掌握加点法贪心生长思想、切割性质（Cut Property）与 minDist 切边维护机制',
   template,
-  Visualizer: PrimMSTVisualizer,
+  Visualizer: PrimVisualizer,
 });
