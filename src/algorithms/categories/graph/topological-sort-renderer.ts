@@ -1,6 +1,7 @@
 /**
  * 拓扑排序 (Kahn 算法) 可视化器 — 4-Card 标准现代架构
- * 入度统计、零入度队列进出、邻边剥离与 DAG 拓扑序列重构
+ * 入度统计、零入度队列进出、邻边剥离与 DAG 拓扑序列重构 (LeetCode 210 / 洛谷 B3644)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（建图、入度统计、0入度扫表入队、队列循环、出队记录、出边遍历、入度自减、新0入度入队、最终完备性校验均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
@@ -11,6 +12,7 @@ import {
   TOPOLOGICAL_SORT_CODE_LANGUAGES,
 } from './topological-sort-problem-content';
 import template from './topological-sort.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
 export interface TopoStep extends StepBase {
   nodes: number[];
@@ -23,7 +25,8 @@ export interface TopoStep extends StepBase {
   action: 'init' | 'poll' | 'reduce-degree' | 'enqueue' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
 export const TOPO_NODES = [0, 1, 2, 3, 4, 5];
@@ -51,37 +54,39 @@ export function buildTopoSteps(): TopoStep[] {
   const inDegree = new Array(n).fill(0);
   const adj: number[][] = Array.from({ length: n }, () => []);
 
-  for (const e of TOPO_EDGES) {
-    adj[e.from].push(e.to);
-    inDegree[e.to]++;
-  }
+  // 精准 16 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 2, javascript: 1 },
+    initInDegree: { cpp: 2, java: 3, python: 3, javascript: 2 },
+    initAdj: { cpp: 3, java: 4, python: 4, javascript: 3 },
+    forPrereq: { cpp: 4, java: 6, python: 5, javascript: 4 },
+    addPrereqEdge: { cpp: 5, java: 7, python: 6, javascript: 5 },
+    incrementInDegree: { cpp: 6, java: 8, python: 7, javascript: 6 },
+    initQueue: { cpp: 8, java: 10, python: 8, javascript: 8 },
+    pushZeroInDegree: { cpp: 9, java: 11, python: 8, javascript: 9 },
+    initOrder: { cpp: 10, java: 12, python: 9, javascript: 10 },
+    whileQueue: { cpp: 11, java: 14, python: 10, javascript: 11 },
+    pollQueue: { cpp: 12, java: 15, python: 11, javascript: 12 },
+    appendOrder: { cpp: 13, java: 16, python: 12, javascript: 13 },
+    forAdj: { cpp: 14, java: 17, python: 13, javascript: 14 },
+    decrementInDegree: { cpp: 15, java: 18, python: 14, javascript: 15 },
+    pushNewZero: { cpp: 15, java: 18, python: 15, javascript: 15 },
+    returnOrder: { cpp: 18, java: 21, python: 16, javascript: 18 },
+  };
 
   const queue: number[] = [];
-  for (let i = 0; i < n; i++) {
-    if (inDegree[i] === 0) queue.push(i);
-  }
-
   const order: number[] = [];
 
-  steps.push({
-    nodes: TOPO_NODES,
-    edges: TOPO_EDGES,
-    inDegree: [...inDegree],
-    queue: [...queue],
-    order: [],
-    currentNode: null,
-    activeEdge: null,
-    action: 'init',
-    statusText: `初始化：统计全图所有节点的入度 inDegree。将入度为 0 的节点 [${queue.join(
-      ', '
-    )}] 推入队列。`,
-    log: `初始化入度: [${inDegree.join(', ')}]，初始入队 [${queue.join(', ')}]`,
-    codeLine: [3, 4, 5, 6, 7, 8, 9],
-  });
-
-  while (queue.length > 0) {
-    const cur = queue.shift()!;
-    order.push(cur);
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'poll' | 'reduce-degree' | 'enqueue' | 'done',
+    statusText: string,
+    log: string,
+    currentNode: number | null = null,
+    activeEdge: { from: number; to: number } | null = null
+  ): void {
+    const qStr = queue.length > 0 ? `[${queue.join(', ')}]` : '[]';
+    const ordStr = order.length > 0 ? order.join(' ➔ ') : '尚未产生';
 
     steps.push({
       nodes: TOPO_NODES,
@@ -89,58 +94,82 @@ export function buildTopoSteps(): TopoStep[] {
       inDegree: [...inDegree],
       queue: [...queue],
       order: [...order],
-      currentNode: cur,
-      activeEdge: null,
-      action: 'poll',
-      statusText: `出队节点 ${cur} 并加入拓扑序列：order=[${order.join(
-        ', '
-      )}]。准备将其所有出边的终点入度减 1。`,
-      log: `出队节点 ${cur} -> 写入拓扑序列`,
-      codeLine: [12, 13],
+      currentNode,
+      activeEdge,
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-cur-node': currentNode !== null ? `${currentNode}` : '—',
+        'metric-queue-elements': qStr,
+        'metric-topo-len': `${order.length} / ${n}`,
+        'metric-cycle-status': order.length === n ? '✅ 无环 (DAG)' : '检测中...',
+      },
     });
+  }
 
-    for (const next of adj[cur]) {
-      inDegree[next]--;
-      const reducedToZero = inDegree[next] === 0;
-      if (reducedToZero) {
-        queue.push(next);
-      }
+  // 1. 入口与初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] findOrder(numCourses=6, prerequisites)：初始化 Kahn 拓扑排序算法。', 'findOrder 入口');
+  makeStep(lines.initInDegree, 'init', '📊 [初始化入度表] int[] inDegree = new int[6]，记录每个节点被指向的入度数。', 'init inDegree[]');
+  makeStep(lines.initAdj, 'init', '📦 [构建邻接表] List<Integer>[] adj = new ArrayList[6]，初始化有向邻接链表。', 'init adj[]');
 
-      steps.push({
-        nodes: TOPO_NODES,
-        edges: TOPO_EDGES,
-        inDegree: [...inDegree],
-        queue: [...queue],
-        order: [...order],
-        currentNode: cur,
-        activeEdge: { from: cur, to: next },
-        action: reducedToZero ? 'enqueue' : 'reduce-degree',
-        statusText: `删除出边 (${cur} -> ${next})：节点 ${next} 的入度减为 ${
-          inDegree[next]
-        }。${reducedToZero ? `入度降为 0，将节点 ${next} 推入队列！` : ''}`,
-        log: `  边 (${cur}->${next}): inDegree[${next}]=${inDegree[next]}${
-          reducedToZero ? ' -> 入队' : ''
-        }`,
-        codeLine: [14, 15],
-      });
+  // 建图与统计入度
+  for (const e of TOPO_EDGES) {
+    adj[e.from].push(e.to);
+    inDegree[e.to]++;
+    makeStep(lines.forPrereq, 'init', `🔎 [处理前置依赖] 依赖边 ${e.from} ➔ ${e.to}。`, `edge ${e.from}->${e.to}`, null, e);
+    makeStep(lines.addPrereqEdge, 'init', `➕ [添加邻接边] adj[${e.from}].add(${e.to})。`, `adj[${e.from}].add(${e.to})`, null, e);
+    makeStep(lines.incrementInDegree, 'init', `📈 [入度累加] inDegree[${e.to}]++ = ${inDegree[e.to]}。`, `inDegree[${e.to}]++`, null, e);
+  }
+
+  // 初始化队列与 0 入度入队
+  makeStep(lines.initQueue, 'init', '📦 [初始化零入度队列] Queue<Integer> queue = new LinkedList<>()。', 'init queue');
+  for (let i = 0; i < n; i++) {
+    if (inDegree[i] === 0) {
+      queue.push(i);
+      makeStep(lines.pushZeroInDegree, 'enqueue', `🌱 [0入度入队] 节点 ${i} 入度为 0，不受任何前置依赖约束，queue.offer(${i})！`, `offer 0-indegree node ${i}`, i);
     }
   }
 
-  steps.push({
-    nodes: TOPO_NODES,
-    edges: TOPO_EDGES,
-    inDegree: [...inDegree],
-    queue: [],
-    order: [...order],
-    currentNode: null,
-    activeEdge: null,
-    action: 'done',
-    statusText: `🎉 拓扑排序执行完成！最终线性拓扑序列为: [ ${order.join(
-      ' -> '
-    )} ]。`,
-    log: `✓ 拓扑排序完成: [ ${order.join(' -> ')} ]`,
-    codeLine: 18,
-  });
+  // 初始化拓扑序列容器
+  makeStep(lines.initOrder, 'init', '📝 [初始化结果数组] int[] order = new int[6]; int idx = 0。', 'init order[]');
+
+  // Kahn BFS 队列循环
+  while (queue.length > 0) {
+    makeStep(lines.whileQueue, 'init', `🔁 [Kahn 队列外层循环] while (!queue.isEmpty()) -> 当前就绪队列: [${queue.join(', ')}]。`, '!queue.isEmpty()');
+
+    const cur = queue.shift()!;
+    makeStep(lines.pollQueue, 'poll', `📤 [出队推进] int cur = queue.poll() -> 弹出节点 ${cur}。`, `poll node ${cur}`, cur);
+
+    order.push(cur);
+    makeStep(lines.appendOrder, 'poll', `📝 [写入拓扑序列] order[idx++] = ${cur}；当前拓扑序列为: [${order.join(' ➔ ')}]。`, `order.add(${cur})`, cur);
+
+    // 遍历出边消元
+    for (const next of adj[cur]) {
+      const edge = { from: cur, to: next };
+      makeStep(lines.forAdj, 'reduce-degree', `  ↳ [遍历邻居出边] 考察边 ${cur} ➔ ${next}。`, `edge ${cur}->${next}`, cur, edge);
+
+      inDegree[next]--;
+      const reducedToZero = inDegree[next] === 0;
+
+      makeStep(lines.decrementInDegree, 'reduce-degree', `  📉 [削减邻居入度] 消除依赖！--inDegree[${next}] = ${inDegree[next]}。`, `--inDegree[${next}]=${inDegree[next]}`, cur, edge);
+
+      if (reducedToZero) {
+        queue.push(next);
+        makeStep(lines.pushNewZero, 'enqueue', `  ✨ [新0入度入队] 节点 ${next} 的所有前置依赖均已消除，queue.offer(${next})！`, `offer ${next}`, cur, edge);
+      }
+    }
+  }
+
+  // 终局检测
+  makeStep(lines.whileQueue, 'init', '🔁 [检查队列] while (!queue.isEmpty()) -> (false，队列已清空)。', 'queue empty');
+
+  if (order.length === n) {
+    makeStep(lines.returnOrder, 'done', `🎉 [Kahn 拓扑排序完成] return order！全图 6 个顶点全部成功排序，不存在环状依赖！拓扑序列: [${order.join(' ➔ ')}]。`, 'return order', null);
+  } else {
+    makeStep(lines.returnOrder, 'done', '❌ [检测到环路依赖] order 长度小于 6，图中存在回路，返回空序列！', 'cycle detected', null);
+  }
 
   return steps;
 }
@@ -254,97 +283,68 @@ export class TopologicalSortVisualizer extends StepVisualizer<TopoStep> {
       this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // 2. 渲染 inDegree 药丸栏
+    // 2. 渲染入度小胶囊栏
     if (this.degreePillsWrap) {
       this.degreePillsWrap.innerHTML = TOPO_NODES.map((node) => {
         const deg = inDegree[node];
-        let cls = 'topo-degree-pill';
-        if (deg === 0) cls += ' is-zero';
-
-        return `<div class="${cls}">
-          <span style="color:#64748b;">${node}:</span>
-          <span>${deg}</span>
+        const isZero = deg === 0;
+        return `<div style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:${
+          isZero ? '#ecfdf5' : '#f8fafc'
+        }; border:1px solid ${isZero ? '#a7f3d0' : '#e2e8f0'}; font-size:11px;">
+          <span style="font-weight:700; color:#334155;">节点 ${node}:</span>
+          <span style="font-family:monospace; font-weight:800; color:${
+            isZero ? '#059669' : '#2563eb'
+          };">${deg}</span>
         </div>`;
       }).join('');
     }
 
-    // 3. 更新状态监视器
-    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode != null ? `${currentNode}` : '—';
-    if (this.metricQueueSizeEl) this.metricQueueSizeEl.textContent = `${queue.length}`;
-    if (this.metricOrderCountEl) this.metricOrderCountEl.textContent = `${order.length} / ${TOPO_NODES.length}`;
-    if (this.metricCycleStatusEl) this.metricCycleStatusEl.textContent = '无环 (DAG)';
-
-    if (this.queueElementsEl) {
-      this.queueElementsEl.textContent = queue.length > 0 ? `[ ${queue.join(', ')} ]` : '[ (空) ]';
+    // 3. 监控指标
+    if (this.metricCurNodeEl) {
+      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
     }
+    if (this.metricQueueSizeEl) {
+      this.metricQueueSizeEl.textContent = queue.length > 0 ? `[ ${queue.join(', ')} ]` : '空队列';
+    }
+    if (this.metricOrderCountEl) {
+      this.metricOrderCountEl.textContent = `${order.length} / ${TOPO_NODES.length}`;
+    }
+    if (this.metricCycleStatusEl) {
+      const hasCycle = action === 'done' && order.length < TOPO_NODES.length;
+      this.metricCycleStatusEl.textContent = hasCycle ? '有环 (无拓扑序)' : '无环 (DAG)';
+      this.metricCycleStatusEl.className = `font-mono font-bold ${
+        hasCycle ? 'text-red-600' : 'text-emerald-600'
+      }`;
+    }
+
+    // 4. 拓扑序列结果呈现
     if (this.orderElementsEl) {
-      this.orderElementsEl.textContent = order.length > 0 ? `[ ${order.join(' -> ')} ]` : '[ ]';
+      this.orderElementsEl.innerHTML =
+        order.length > 0
+          ? order
+              .map(
+                (v) =>
+                  `<span style="display:inline-block; padding:2px 7px; border-radius:4px; background:#dcfce7; color:#15803d; font-family:monospace; font-weight:800; border:1px solid #bbf7d0;">${v}</span>`
+              )
+              .join('<span style="color:#94a3b8; font-weight:bold; margin:0 4px;">➔</span>')
+          : '<span style="color:#94a3b8; font-size:12px;">尚未产生元素</span>';
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'poll'
-          ? '#eff6ff'
-          : action === 'enqueue'
-          ? '#fefce8'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'poll'
-          ? '#1d4ed8'
-          : action === 'enqueue'
-          ? '#854d0e'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'poll'
-          ? '#bfdbfe'
-          : action === 'enqueue'
-          ? '#fef08a'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
+    // 5. 实时解说
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
     }
-
-    const badgeTopo = this.root?.querySelector('#badge-topo-count');
-    if (badgeTopo) badgeTopo.textContent = `已排序: ${order.length} / ${TOPO_NODES.length}`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
   }
 }
 
 registerAlgorithm({
   id: 'topological-sort',
-  name: '拓扑排序',
-  viewId: 'algo-topological-sort-view',
+  name: '拓扑排序 (Topological Sort)',
   category: 'graph',
-  description: '使用 Kahn 入度剥离队列算法计算有向无环图 (DAG) 的拓扑依赖序列',
-  icon: '🎯',
   difficulty: 2,
-  levelOrder: 12,
-  learningGoal: '掌握 DAG 依赖拓扑排序与零入度队列驱动的状态转移模型',
+  levelOrder: 22,
+  description: '左程云算法通关课 Class 059 / 060：基于入度削减的 Kahn 算法，实现有向无环图（DAG）的线性拓扑序列求解与环路检测 (LeetCode 210)',
+  learningGoal: '深入理解入度统计、零入度队列进出、邻边消除与有向环判定原理',
   template,
   Visualizer: TopologicalSortVisualizer,
 });
