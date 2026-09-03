@@ -1,6 +1,7 @@
 /**
  * 朴素 Dijkstra (O(V^2)) 可视化器 — 4-Card 标准现代架构
- * 贪心选点、邻接边松弛、距离数组实时追踪与拓扑高亮
+ * 贪心选点、邻接边松弛、距离数组实时追踪与拓扑高亮 (左程云 class061)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V轮外层扫描、未访问最小点u寻找、不可达截断、锁定visited[u]、出边松弛核验、距离缩短更新均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
@@ -11,6 +12,7 @@ import {
   DIJKSTRA_BASIC_CODE_LANGUAGES,
 } from './dijkstra-basic-problem-content';
 import template from './dijkstra-basic.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
 export interface DJBStep extends StepBase {
   nodes: number[];
@@ -24,7 +26,8 @@ export interface DJBStep extends StepBase {
   action: 'init' | 'select' | 'relax' | 'skip' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
 export const DJB_NODES = [0, 1, 2, 3, 4];
@@ -52,51 +55,44 @@ export function buildDJBSteps(): DJBStep[] {
   const n = DJB_NODES.length;
   const source = 0;
 
+  // 精准 12 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 1, javascript: 1 },
+    initDist: { cpp: 2, java: 4, python: 2, javascript: 2 },
+    setSrc: { cpp: 4, java: 5, python: 4, javascript: 4 },
+    initVisited: { cpp: 3, java: 6, python: 3, javascript: 3 },
+    forStep: { cpp: 5, java: 7, python: 5, javascript: 5 },
+    initU: { cpp: 6, java: 8, python: 6, javascript: 6 },
+    findMinU: { cpp: 7, java: 9, python: 7, javascript: 7 },
+    checkReachable: { cpp: 9, java: 11, python: 9, javascript: 9 },
+    lockU: { cpp: 10, java: 12, python: 10, javascript: 10 },
+    forAdj: { cpp: 11, java: 13, python: 11, javascript: 11 },
+    relaxEdge: { cpp: 13, java: 15, python: 12, javascript: 12 },
+    returnDist: { cpp: 16, java: 18, python: 14, javascript: 15 },
+  };
+
   const dist = new Array(n).fill(INF);
   dist[source] = 0;
   const visited = new Set<number>();
   let relaxCount = 0;
   let prevDistSnapshot = [...dist];
 
-  // Build adjacency list
+  // 邻接表
   const adj: { to: number; w: number }[][] = Array.from({ length: n }, () => []);
   for (const e of DJB_EDGES) {
     adj[e.from].push({ to: e.to, w: e.w });
   }
 
-  // Initial step
-  steps.push({
-    nodes: DJB_NODES,
-    edges: DJB_EDGES,
-    dist: [...dist],
-    prevDist: [...prevDistSnapshot],
-    visited: new Set(visited),
-    currentNode: null,
-    relaxEdge: null,
-    relaxCount: 0,
-    action: 'init',
-    statusText: `初始化：源点为节点 ${source}，dist[${source}] = 0，其余节点 dist = ∞。`,
-    log: `初始化 Dijkstra: 源点 0, dist=[0, ∞, ∞, ∞, ∞]`,
-    codeLine: [3, 4, 5],
-  });
-
-  for (let i = 0; i < n; i++) {
-    // Find unvisited node with min dist
-    let u = -1;
-    let minDist = INF;
-    for (let j = 0; j < n; j++) {
-      if (!visited.has(j) && dist[j] < minDist) {
-        minDist = dist[j];
-        u = j;
-      }
-    }
-
-    if (u === -1 || dist[u] === INF) {
-      break; // Remaining unreachable
-    }
-
-    visited.add(u);
-    prevDistSnapshot = [...dist];
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'select' | 'relax' | 'skip' | 'done',
+    statusText: string,
+    log: string,
+    currentNode: number | null = null,
+    relaxEdge: { from: number; to: number } | null = null
+  ): void {
+    const dStr = dist.map((d, i) => `${i}:${d === INF ? '∞' : d}`).join(', ');
+    const visStr = visited.size > 0 ? Array.from(visited).join(', ') : '无';
 
     steps.push({
       nodes: DJB_NODES,
@@ -104,80 +100,75 @@ export function buildDJBSteps(): DJBStep[] {
       dist: [...dist],
       prevDist: [...prevDistSnapshot],
       visited: new Set(visited),
-      currentNode: u,
-      relaxEdge: null,
+      currentNode,
+      relaxEdge,
       relaxCount,
-      action: 'select',
-      statusText: `选择未访问顶点中 dist 最小的节点 ${u} (dist[${u}] = ${dist[u]})，将其锁定为已访问。`,
-      log: `选定节点 ${u} (dist=${dist[u]}) 锁定已访问`,
-      codeLine: [7, 8, 9, 10, 11],
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-cur-node': currentNode !== null ? `${currentNode}` : '—',
+        'metric-visited-nodes': `[${visStr}]`,
+        'metric-relax-count': `${relaxCount}`,
+        'metric-dist-info': `[${dStr}]`,
+      },
     });
+  }
 
-    // Relax neighbors
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] dijkstra(n=5, edges, src=0)：启动朴素 Dijkstra 最短路径算法。', 'dijkstra 入口');
+  makeStep(lines.initDist, 'init', '📊 [初始化距离表] Arrays.fill(dist, INF)；除源点外全部设为正无穷。', 'init dist[]');
+
+  dist[source] = 0;
+  prevDistSnapshot = [...dist];
+  makeStep(lines.setSrc, 'init', '🌱 [设置源点] dist[0] = 0；从源点 0 出发开始贪心探索。', 'dist[0] = 0');
+  makeStep(lines.initVisited, 'init', '🏷️ [初始化访问标记] boolean[] visited = new boolean[5]；记录最短路已确定的点。', 'init visited[]');
+
+  // 2. V 轮贪心探索
+  for (let step = 0; step < n; step++) {
+    makeStep(lines.forStep, 'select', `🔁 [外层探索轮次] 正在执行第 ${step + 1} / ${n} 次顶点锁定。`, `--- 第 ${step + 1} 轮 ---`);
+
+    makeStep(lines.initU, 'select', '🔍 [初始化选点指针] int u = -1；准备在未访问顶点中寻找 dist 最小者。', 'u = -1');
+
+    let u = -1;
+    for (let j = 0; j < n; j++) {
+      if (!visited.has(j) && (u === -1 || dist[j] < dist[u])) {
+        u = j;
+      }
+    }
+    makeStep(lines.findMinU, 'select', `💡 [贪心确定最小点] 选出未访问节点 u = ${u}，当前 dist[${u}] = ${dist[u] === INF ? '∞' : dist[u]} 为全局最小！`, `选点: u = ${u}`);
+
+    makeStep(lines.checkReachable, 'select', `🔎 [检查连通可达性] if (dist[${u}] == INF) -> (${dist[u] === INF})。`, `check dist[${u}]`);
+    if (dist[u] === INF) {
+      break;
+    }
+
+    visited.add(u);
+    makeStep(lines.lockU, 'select', `🔒 [锁定最短路径] visited[${u}] = true；源点到节点 ${u} 的最短路径已确定为 ${dist[u]}！`, `锁定: visited[${u}] = true`, u);
+
+    // 松弛 u 的出边
     for (const edge of adj[u]) {
       const v = edge.to;
       const w = edge.w;
+      const canRelax = dist[u] + w < dist[v];
+      const curEdge = { from: u, to: v };
 
-      if (!visited.has(v)) {
-        if (dist[u] + w < dist[v]) {
-          const oldDist = dist[v];
-          dist[v] = dist[u] + w;
-          relaxCount++;
+      makeStep(lines.forAdj, canRelax ? 'relax' : 'skip', `  ↳ [考察出边] 考察边 (${u} ➔ ${v}, 权重 w=${w})。`, `edge (${u}->${v}, w=${w})`, u, curEdge);
 
-          steps.push({
-            nodes: DJB_NODES,
-            edges: DJB_EDGES,
-            dist: [...dist],
-            prevDist: [...prevDistSnapshot],
-            visited: new Set(visited),
-            currentNode: u,
-            relaxEdge: { from: u, to: v },
-            relaxCount,
-            action: 'relax',
-            statusText: `松弛边 (${u} -> ${v}, w=${w})：dist[${v}] 从 ${
-              oldDist === INF ? '∞' : oldDist
-            } 缩短为 ${dist[v]}。`,
-            log: `  松弛 (${u}->${v}): dist[${v}] = ${dist[v]}`,
-            codeLine: [12, 13, 14],
-          });
-          prevDistSnapshot = [...dist];
-        } else {
-          steps.push({
-            nodes: DJB_NODES,
-            edges: DJB_EDGES,
-            dist: [...dist],
-            prevDist: [...prevDistSnapshot],
-            visited: new Set(visited),
-            currentNode: u,
-            relaxEdge: { from: u, to: v },
-            relaxCount,
-            action: 'skip',
-            statusText: `检查边 (${u} -> ${v}, w=${w})：dist[${u}] + ${w} = ${
-              dist[u] + w
-            } >= dist[${v}] (${dist[v]})，无需更新。`,
-            log: `  检查 (${u}->${v}): 无需松弛`,
-            codeLine: 13,
-          });
-        }
+      if (canRelax) {
+        const oldVal = dist[v];
+        dist[v] = dist[u] + w;
+        relaxCount++;
+        makeStep(lines.relaxEdge, 'relax', `  ⚡ [松弛更新] if (dist[${u}] + ${w} < dist[${v}]) 成立！dist[${v}] 从 ${oldVal === INF ? '∞' : oldVal} 缩短为 ${dist[v]}！`, `dist[${v}]=${dist[v]}`, u, curEdge);
+        prevDistSnapshot = [...dist];
+      } else {
+        makeStep(lines.relaxEdge, 'skip', `  ⏭️ [跳过松弛] dist[${u}] + ${w} (${dist[u] + w}) >= dist[${v}] (${dist[v] === INF ? '∞' : dist[v]})，无需更新。`, `skip (${u}->${v})`, u, curEdge);
       }
     }
   }
 
-  // Done
-  steps.push({
-    nodes: DJB_NODES,
-    edges: DJB_EDGES,
-    dist: [...dist],
-    prevDist: [...prevDistSnapshot],
-    visited: new Set(visited),
-    currentNode: null,
-    relaxEdge: null,
-    relaxCount,
-    action: 'done',
-    statusText: `🎉 算法结束！从源点 0 到所有顶点的最短路径已全部求出。`,
-    log: `✓ Dijkstra 求解完毕: dist=[${dist.join(', ')}]`,
-    codeLine: 17,
-  });
+  makeStep(lines.returnDist, 'done', `🎉 [Dijkstra 算法达成] return dist！全图 ${n} 个顶点的单源最短路径全部确定！结果: [${dist.join(', ')}]。`, 'return dist');
 
   return steps;
 }
@@ -185,37 +176,27 @@ export function buildDJBSteps(): DJBStep[] {
 export class DijkstraBasicVisualizer extends StepVisualizer<DJBStep> {
   protected codeLanguages = DIJKSTRA_BASIC_CODE_LANGUAGES;
   protected codeLines = DIJKSTRA_BASIC_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '朴素 Dijkstra 最短路 代码调试';
+  protected codePanelTitle = '朴素 Dijkstra 代码调试';
 
   private svgCanvas: HTMLElement | null = null;
-  private distPillsWrap: HTMLElement | null = null;
+  private distTableBody: HTMLElement | null = null;
   private metricCurNodeEl: HTMLElement | null = null;
-  private metricRelaxEdgeEl: HTMLElement | null = null;
-  private metricRelaxCountEl: HTMLElement | null = null;
   private metricVisitedCountEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
+  private metricRelaxCountEl: HTMLElement | null = null;
   private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
 
-    this.svgCanvas = this.root.querySelector('#dj-svg-canvas');
-    this.distPillsWrap = this.root.querySelector('#dist-pills-wrap');
+    this.svgCanvas = this.root.querySelector('#djb-svg-canvas');
+    this.distTableBody = this.root.querySelector('#djb-dist-table-body');
     this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricRelaxEdgeEl = this.root.querySelector('#metric-relax-edge');
-    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
     this.metricVisitedCountEl = this.root.querySelector('#metric-visited-nodes');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#dj-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
+    this.liveTextEl = this.root.querySelector('#djb-live-text');
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 挂载暗色代码终端深模块
     this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: DIJKSTRA_BASIC_PROBLEM_HTML,
@@ -229,169 +210,109 @@ export class DijkstraBasicVisualizer extends StepVisualizer<DJBStep> {
   }
 
   protected renderStep(step: DJBStep): void {
-    const { dist, visited, currentNode, relaxEdge, relaxCount, statusText, action } = step;
+    const { dist, visited, currentNode, relaxEdge, relaxCount, action, statusText } = step;
 
-    // 1. 绘制 SVG 拓扑图
     if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 520 260" style="width:100%; height:100%; max-height:240px;">
+      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
         <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <marker id="arrow-djb" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
           </marker>
-          <marker id="arrow-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+          <marker id="arrow-djb-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+          </marker>
+          <marker id="arrow-djb-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
           </marker>
         </defs>`;
 
-      // 绘制边
       for (const e of DJB_EDGES) {
         const p1 = DJB_NODE_POSITIONS[e.from];
         const p2 = DJB_NODE_POSITIONS[e.to];
-        const isActive = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
-        const strokeColor = isActive ? '#2563eb' : '#cbd5e1';
-        const strokeWidth = isActive ? 3.5 : 2;
-        const marker = isActive ? 'url(#arrow-active)' : 'url(#arrow)';
+        const isCurrent = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
+        const isRelaxed = isCurrent && action === 'relax';
+
+        const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
+        const strokeWidth = isCurrent ? 3.5 : 1.8;
+        const marker = isRelaxed ? 'url(#arrow-djb-relax)' : isCurrent ? 'url(#arrow-djb-active)' : 'url(#arrow-djb)';
+
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2 + (e.from === 2 && e.to === 1 ? -12 : 8);
 
         svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-
-        const midX = (p1.x + p2.x) / 2 + (p1.y === p2.y ? 0 : p1.y > p2.y ? 10 : -10);
-        const midY = (p1.y + p2.y) / 2 - 8;
-        svgHtml += `<text x="${midX}" y="${midY}" fill="${isActive ? '#1d4ed8' : '#64748b'}" font-size="11" font-weight="800" text-anchor="middle">${e.w}</text>`;
+        svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
       }
 
-      // 绘制节点
       DJB_NODES.forEach((node) => {
         const p = DJB_NODE_POSITIONS[node];
-        const isCurrent = currentNode === node;
+        const dVal = dist[node];
         const isVisited = visited.has(node);
-        const isSource = node === 0;
+        const isCurrent = currentNode === node;
+        const isTarget = relaxEdge && relaxEdge.to === node;
 
         let fill = '#ffffff';
         let stroke = '#cbd5e1';
         if (isCurrent) {
           fill = '#fef08a';
           stroke = '#eab308';
+        } else if (isTarget && action === 'relax') {
+          fill = '#dcfce7';
+          stroke = '#10b981';
         } else if (isVisited) {
           fill = '#dcfce7';
           stroke = '#22c55e';
-        } else if (isSource) {
+        } else if (dVal !== INF) {
           fill = '#eff6ff';
           stroke = '#3b82f6';
         }
 
         svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
         svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-
-        const dVal = dist[node] === INF ? '∞' : dist[node];
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isVisited ? '#15803d' : '#64748b'}" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">d:${dVal}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : isVisited ? '#15803d' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
       });
 
       svgHtml += `</svg>`;
       this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // 2. 渲染 Dist 药丸栏
-    if (this.distPillsWrap) {
-      this.distPillsWrap.innerHTML = DJB_NODES.map((node) => {
-        const d = dist[node] === INF ? '∞' : `${dist[node]}`;
-        const isLocked = visited.has(node);
-        const isCurrent = currentNode === node;
-
-        let cls = 'djb-dist-pill';
-        if (isCurrent) cls += ' is-active';
-        else if (isLocked) cls += ' is-locked';
-
-        return `<div class="${cls}">
-          <span style="color:#64748b;">${node}:</span>
-          <span>${d}</span>
-        </div>`;
+    if (this.distTableBody) {
+      this.distTableBody.innerHTML = DJB_NODES.map((node) => {
+        const dVal = dist[node];
+        const isVisited = visited.has(node);
+        const isCur = currentNode === node;
+        return `<tr class="${isCur ? 'bg-yellow-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">${node}</td>
+          <td class="px-3 py-1.5 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
+          <td class="px-3 py-1.5 text-center font-mono font-bold ${isVisited ? 'text-emerald-600' : 'text-slate-400'}">${isVisited ? '已锁定' : '待处理'}</td>
+        </tr>`;
       }).join('');
     }
 
-    // 3. 更新状态监视器
-    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode != null ? `${currentNode}` : '—';
-    if (this.metricRelaxEdgeEl) {
-      this.metricRelaxEdgeEl.textContent = relaxEdge ? `(${relaxEdge.from} -> ${relaxEdge.to})` : '—';
+    if (this.metricCurNodeEl) {
+      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
     }
-    if (this.metricRelaxCountEl) this.metricRelaxCountEl.textContent = `${relaxCount}`;
-    if (this.metricVisitedCountEl) this.metricVisitedCountEl.textContent = `${visited.size} / ${DJB_NODES.length}`;
-
-    if (this.formulaActionEl) {
-      if (action === 'relax') {
-        this.formulaActionEl.textContent = `松弛成功: dist[${relaxEdge?.to}] = dist[${relaxEdge?.from}] + w = ${dist[relaxEdge!.to]}`;
-      } else if (action === 'select') {
-        this.formulaActionEl.textContent = `锁定节点: u = ${currentNode} (最小 dist=${dist[currentNode!]})`;
-      } else if (action === 'done') {
-        this.formulaActionEl.textContent = 'Dijkstra 最短路计算完毕';
-      } else {
-        this.formulaActionEl.textContent = 'dist[v] = min(dist[v], dist[u] + w)';
-      }
+    if (this.metricVisitedCountEl) {
+      this.metricVisitedCountEl.textContent = `${visited.size} / ${DJB_NODES.length}`;
+    }
+    if (this.metricRelaxCountEl) {
+      this.metricRelaxCountEl.textContent = `${relaxCount}`;
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'relax'
-          ? '#eff6ff'
-          : action === 'select'
-          ? '#fefce8'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'relax'
-          ? '#1d4ed8'
-          : action === 'select'
-          ? '#854d0e'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'relax'
-          ? '#bfdbfe'
-          : action === 'select'
-          ? '#fef08a'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
     }
-
-    const badgeVisited = this.root?.querySelector('#badge-visited-count');
-    if (badgeVisited) badgeVisited.textContent = `已确定: ${visited.size} / ${DJB_NODES.length}`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
   }
 }
 
 registerAlgorithm({
   id: 'dijkstra-basic',
-  name: '朴素 Dijkstra 最短路径',
-  viewId: 'algo-dijkstra-basic-view',
+  name: 'Dijkstra 朴素最短路',
   category: 'graph',
-  description: '在带权无负边有向图中通过贪心选点与松弛计算单源最短路径',
-  icon: '🧭',
   difficulty: 2,
-  levelOrder: 4,
-  learningGoal: '掌握基于数组线性查找最小顶点的朴素 Dijkstra 算法模板与松弛本质',
+  levelOrder: 27,
+  description: '左程云算法通关课 Class 061：基于贪心策略与三角不等式松弛的单源最短路算法，适用于无负权图与稠密图',
+  learningGoal: '掌握贪心选点、最短路锁定准则以及边松弛操作的核心本质',
   template,
   Visualizer: DijkstraBasicVisualizer,
 });
