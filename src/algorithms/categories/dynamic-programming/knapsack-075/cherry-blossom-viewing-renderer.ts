@@ -1,12 +1,27 @@
+/**
+ * 观赏樱花 (洛谷 P1833 混合背包) - 声明式 4-Card 沙盘渲染器
+ * 核心：统一融合 01 背包、完全背包与多重背包，完全背包视作容量上限多重背包统一拆分
+ * 架构重构：引入四语言代码高亮、行程装载追踪与双层沙盘
+ */
+
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { KNAPSACK_075_PROBLEMS } from './knapsack-075-problem-content';
+import { HighlightTarget } from '../../../../core/code-panel';
+import { renderKnapsackDpMatrix } from '../../../../core/renderers/knapsack-sandbox-stage';
 
 export interface CherryItem {
   cost: number;
   val: number;
   cnt: number;
   type: 'unbounded' | 'bounded' | 'zero-one';
+}
+
+export interface CherryDerivedItem {
+  treeIndex: number;
+  multiplier: number;
+  timeCost: number;
+  valEarned: number;
 }
 
 export interface CherryBlossomViewingStep {
@@ -17,10 +32,13 @@ export interface CherryBlossomViewingStep {
   maxVal: number;
   totalTime: number;
   trees: CherryItem[];
-  status: 'init' | 'tree' | 'update' | 'done';
+  derivedList: CherryDerivedItem[];
+  status: 'init' | 'split' | 'tree' | 'check' | 'update' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
+  selectedDerived: CherryDerivedItem[];
+  metrics?: Record<string, any>;
 }
 
 export function buildCherryBlossomViewingSteps(inputs: Record<string, any>): CherryBlossomViewingStep[] {
@@ -49,102 +67,168 @@ export function buildCherryBlossomViewingSteps(inputs: Record<string, any>): Che
     });
   }
 
-  const dp = new Array(t + 1).fill(0);
+  const lines = {
+    split: { java: 6, cpp: 6, python: 6, javascript: 6 },
+    initDp: { java: 19, cpp: 16, python: 18, javascript: 18 },
+    derivedLoop: { java: 20, cpp: 17, python: 19, javascript: 19 },
+    capLoop: { java: 21, cpp: 18, python: 20, javascript: 20 },
+    updateDp: { java: 22, cpp: 19, python: 21, javascript: 21 },
+    returnAns: { java: 25, cpp: 22, python: 22, javascript: 24 },
+  };
 
-  const makeStep = (p: Partial<CherryBlossomViewingStep>): CherryBlossomViewingStep => ({
-    treeIndex: p.treeIndex ?? -1,
-    derivedIndex: p.derivedIndex ?? -1,
-    j: p.j ?? 0,
-    dp: [...(p.dp ?? dp)],
-    maxVal: p.maxVal ?? dp[t],
-    totalTime: t,
-    trees: [...trees],
-    status: p.status ?? 'tree',
-    message: p.message ?? '',
-    log: p.log ?? '',
-    codeLine: p.codeLine ?? 4,
-  });
+  // 1. 统一二进制拆分
+  const derivedList: CherryDerivedItem[] = [];
+  for (let i = 0; i < n; i++) {
+    const tree = trees[i];
+    let c = tree.cnt === 0 ? Math.max(1, Math.floor(t / Math.max(1, tree.cost))) : tree.cnt;
+
+    for (let k = 1; k <= c; k <<= 1) {
+      derivedList.push({
+        treeIndex: i,
+        multiplier: k,
+        timeCost: k * tree.cost,
+        valEarned: k * tree.val,
+      });
+      c -= k;
+    }
+    if (c > 0) {
+      derivedList.push({
+        treeIndex: i,
+        multiplier: c,
+        timeCost: c * tree.cost,
+        valEarned: c * tree.val,
+      });
+    }
+  }
+
+  const dp = new Array(t + 1).fill(0);
+  let bestDerivedForCapacity: CherryDerivedItem[][] = Array.from({ length: t + 1 }, () => []);
+
+  const makeStep = (data: Partial<CherryBlossomViewingStep> & {
+    status: CherryBlossomViewingStep['status'];
+    message: string;
+    log: string;
+  }): CherryBlossomViewingStep => {
+    const treeIdx = data.treeIndex ?? -1;
+    const jVal = data.j ?? -1;
+    let typeStr = '—';
+    if (treeIdx >= 0 && trees[treeIdx]) {
+      const type = trees[treeIdx].type;
+      typeStr = type === 'unbounded' ? '完全背包 (无限)' : type === 'zero-one' ? '01背包 (单次)' : `多重背包 (×${trees[treeIdx].cnt})`;
+    }
+
+    return {
+      treeIndex: treeIdx,
+      derivedIndex: data.derivedIndex ?? -1,
+      j: jVal,
+      dp: [...dp],
+      maxVal: dp[t],
+      totalTime: t,
+      trees: [...trees],
+      derivedList: [...derivedList],
+      status: data.status,
+      message: data.message,
+      log: data.log,
+      codeLine: data.codeLine,
+      selectedDerived: data.selectedDerived ? [...data.selectedDerived] : [...(bestDerivedForCapacity[t] || [])],
+      metrics: {
+        'metric-total-time': `${t} min`,
+        'metric-cur-tree': treeIdx >= 0 ? `树 #${treeIdx + 1}` : '—',
+        'metric-tree-type': typeStr,
+        'metric-max-val': `${dp[t]}`,
+      },
+    };
+  };
 
   steps.push(
     makeStep({
       status: 'init',
-      message: `🌸 观赏樱花开始：可用时间为 ${t} 分钟，园内共有 ${n} 棵樱花树。`,
+      message: `🌸 观赏樱花开始：总可用时间 t=${t} 分钟，园内共有 ${n} 棵樱花树。`,
       log: `init: t=${t}, n=${n}`,
-      codeLine: 4,
+      codeLine: lines.initDp,
+      selectedDerived: [],
     })
   );
 
-  if (n === 0 || t === 0) {
+  steps.push(
+    makeStep({
+      status: 'split',
+      message: `✂️ 混合拆分完成：将 ${n} 棵树（含无限完全背包与有限多重背包）统一二进制拆解为 ${derivedList.length} 个衍生观赏包！`,
+      log: `split: trees=${n} => derived=${derivedList.length}`,
+      codeLine: lines.split,
+      selectedDerived: [],
+    })
+  );
+
+  if (n === 0 || t === 0 || derivedList.length === 0) {
     steps.push(
       makeStep({
+        j: 0,
         status: 'done',
-        message: '🏁 可用时间为 0 或无樱花树，最大价值为 0。',
+        message: '🏁 可用时间为 0 或无可观赏樱花树，最大美学价值为 0。',
         log: 'done: ans=0',
-        codeLine: 35,
+        codeLine: lines.returnAns,
+        selectedDerived: [],
       })
     );
     return steps;
   }
 
-  // 转化为衍生包并动态规划
-  const derivedV: number[] = [];
-  const derivedW: number[] = [];
-  const derivedTree: number[] = [];
-
-  for (let i = 0; i < n; i++) {
-    const tree = trees[i];
-    // 若 cnt == 0 (无限观赏)，时间最多 1000 分钟，最多看 1000 次
-    let c = tree.cnt === 0 ? Math.max(1, Math.floor(t / Math.max(1, tree.cost))) : tree.cnt;
-
-    for (let k = 1; k <= c; k <<= 1) {
-      derivedV.push(k * tree.val);
-      derivedW.push(k * tree.cost);
-      derivedTree.push(i);
-      c -= k;
-    }
-    if (c > 0) {
-      derivedV.push(c * tree.val);
-      derivedW.push(c * tree.cost);
-      derivedTree.push(i);
-    }
-  }
-
-  for (let idx = 0; idx < derivedV.length; idx++) {
-    const itemV = derivedV[idx];
-    const itemW = derivedW[idx];
-    const treeIdx = derivedTree[idx];
-    const tree = trees[treeIdx];
+  // 2. 01 背包空间压缩
+  for (let idx = 0; idx < derivedList.length; idx++) {
+    const item = derivedList[idx];
+    const tree = trees[item.treeIndex];
 
     steps.push(
       makeStep({
-        treeIndex: treeIdx,
+        treeIndex: item.treeIndex,
         derivedIndex: idx,
         status: 'tree',
-        message: `🌸 考察樱花树 #${treeIdx + 1} (${tree.type === 'unbounded' ? '无限次完全背包' : '有限次多重背包'} 衍生包): 耗时 ${itemW} 分钟，获得美学价值 +${itemV}。`,
-        log: `tree #${treeIdx + 1} derived #${idx + 1}: w=${itemW}, v=${itemV}`,
-        codeLine: 26,
+        message: `🌸 考察樱花树 #${item.treeIndex + 1} 衍生包 #${idx + 1} (×${item.multiplier})：耗时 ${item.timeCost} 分钟，收获美学价值 +${item.valEarned}。`,
+        log: `derived #${idx + 1}: time=${item.timeCost}, val=${item.valEarned}`,
+        codeLine: lines.derivedLoop,
       })
     );
 
-    for (let j = t; j >= itemW; j--) {
-      const candidate = dp[j - itemW] + itemV;
-      if (candidate > dp[j]) {
+    const nextBest = bestDerivedForCapacity.map((list) => [...list]);
+
+    for (let j = t; j >= item.timeCost; j--) {
+      steps.push(
+        makeStep({
+          treeIndex: item.treeIndex,
+          derivedIndex: idx,
+          j,
+          status: 'check',
+          message: `⏳ 时间倒序循环：当前可用时间 j=${j} 分钟 >= 耗时 ${item.timeCost} 分钟。`,
+          log: `cap loop: j=${j}`,
+          codeLine: lines.capLoop,
+        })
+      );
+
+      const candidate = dp[j - item.timeCost] + item.valEarned;
+      const updated = candidate > dp[j];
+      if (updated) {
         dp[j] = candidate;
-        steps.push(
-          makeStep({
-            treeIndex: treeIdx,
-            derivedIndex: idx,
-            j,
-            dp: [...dp],
-            maxVal: dp[t],
-            status: 'update',
-            message: `✨ 时间剩余 j=${j} 分钟：分配时间给樱花树 #${treeIdx + 1}，将累计美学价值刷新至 dp[${j}]=${dp[j]}！`,
-            log: `update: dp[${j}]=${dp[j]}`,
-            codeLine: 31,
-          })
-        );
+        nextBest[j] = [...bestDerivedForCapacity[j - item.timeCost], item];
       }
+
+      steps.push(
+        makeStep({
+          treeIndex: item.treeIndex,
+          derivedIndex: idx,
+          j,
+          status: updated ? 'update' : 'check',
+          selectedDerived: [...(nextBest[t] || [])],
+          message: updated
+            ? `✨ 状态更新：分配时间给樱花树 #${item.treeIndex + 1}，刷新最大美学价值 dp[${j}]=${dp[j]}！`
+            : `⏸️ 状态保持：赏花收益 ${candidate} <= 原收益 ${dp[j]}，保持原行程。`,
+          log: `dp[${j}] = Math.max(${dp[j]}, ${candidate}) => ${dp[j]}`,
+          codeLine: lines.updateDp,
+        })
+      );
     }
+
+    bestDerivedForCapacity = nextBest;
   }
 
   steps.push(
@@ -152,9 +236,10 @@ export function buildCherryBlossomViewingSteps(inputs: Record<string, any>): Che
       treeIndex: -1,
       j: t,
       status: 'done',
-      message: `🎉 游览结束！在 ${t} 分钟时限内，最科学的赏花决策可收获最大美学价值 ${dp[t]}！`,
+      message: `🎉 赏花行程规划完毕！在 ${t} 分钟时限内，最科学的赏花决策可收获最大美学价值 ${dp[t]}！`,
       log: `done: ans=${dp[t]}`,
-      codeLine: 35,
+      codeLine: lines.returnAns,
+      selectedDerived: [...(bestDerivedForCapacity[t] || [])],
     })
   );
 
@@ -169,8 +254,14 @@ const { template, Visualizer } = createDeclarativeVisualizer<CherryBlossomViewin
     mode: '混合背包 · 统一拆分',
     complexity: 'O(T · Σlog c) · O(T)',
   },
-  card1Title: '🌸 樱花树林图谱 (01背包 / 完全背包 / 多重背包全兼容)',
+  card1Title: '🌸 樱花树林图谱与实时赏花行程仓',
   card2Title: '📈 赏花美学价值向量 dp[0..T]',
+  card2Desc: '展示 01 背包、完全背包与多重背包在统一二进制拆分后的时间分配与收益演进',
+  legend: [
+    { label: '未观赏樱花树', color: '#475569' },
+    { label: '已排入行程樱花树', color: '#ec4899' },
+    { label: '当前考察樱花树', color: '#38bdf8' },
+  ],
   inputs: [
     { id: 'input-t', label: '可用时间 t:', type: 'number', defaultValue: 10, width: '55px' },
     { id: 'input-costs', label: '耗时 costs:', type: 'text', defaultValue: '2, 3, 5', width: '110px' },
@@ -197,62 +288,104 @@ const { template, Visualizer } = createDeclarativeVisualizer<CherryBlossomViewin
   problemHtml: KNAPSACK_075_PROBLEMS['cherry-blossom-viewing'].problemHtml,
   analysisHtml: KNAPSACK_075_PROBLEMS['cherry-blossom-viewing'].analysisHtml,
   buildSteps: buildCherryBlossomViewingSteps,
-  renderCustomStep: (step, { container, updateMetric }) => {
-    updateMetric('metric-total-time', `${step.totalTime} min`);
-    updateMetric('metric-cur-tree', step.treeIndex >= 0 ? `树 #${step.treeIndex + 1}` : '—');
-    if (step.treeIndex >= 0 && step.trees[step.treeIndex]) {
-      const type = step.trees[step.treeIndex].type;
-      updateMetric('metric-tree-type', type === 'unbounded' ? '完全背包(无限)' : type === 'zero-one' ? '01背包(单次)' : '多重背包(有限)');
-    } else {
-      updateMetric('metric-tree-type', '—');
-    }
-    updateMetric('metric-max-val', `${step.maxVal}`);
+  renderCanvas: (container, step) => {
+    const selected = step.selectedDerived || [];
+    const usedTime = selected.reduce((s, it) => s + it.timeCost, 0);
+    const totalVal = selected.reduce((s, it) => s + it.valEarned, 0);
+    const ratio = Math.min(100, Math.round((usedTime / Math.max(1, step.totalTime)) * 100));
 
     const treesHtml = step.trees
       .map((tree, idx) => {
         const isCur = idx === step.treeIndex;
         const tag = tree.type === 'unbounded' ? '♾️ 完全' : tree.type === 'zero-one' ? '🎯 01' : `📦 多重×${tree.cnt}`;
+        const isChosen = selected.some((it) => it.treeIndex === idx);
+
+        let bg = 'rgba(15, 23, 42, 0.6)';
+        let border = '#334155';
+        let badge = '<span style="color:#64748b; font-size:9px;">未入选</span>';
+
+        if (isChosen) {
+          bg = 'rgba(131, 24, 67, 0.35)';
+          border = '#ec4899';
+          badge = '<span style="background:#db2777; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold;">✔ 游览行程中</span>';
+        } else if (isCur) {
+          bg = 'rgba(30, 58, 138, 0.5)';
+          border = '#38bdf8';
+          badge = '<span style="background:#2563eb; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold;">🔍 考察中</span>';
+        }
+
         return `
-          <div style="background:${isCur ? '#1e293b' : '#0f172a'}; border:1px solid ${
-          isCur ? '#ec4899' : '#334155'
-        }; border-radius:6px; padding:6px 10px; min-width:95px; flex:1;">
+          <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:8px 12px; min-width:130px; flex:1; max-width:200px; display:flex; flex-direction:column; gap:4px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11px; font-weight:700; color:${isCur ? '#ec4899' : '#f472b6'};">树 #${idx + 1}</span>
+              <span style="font-size:11.5px; font-weight:700; color:#f472b6;">树 #${idx + 1}</span>
               <span style="font-size:9px; background:#831843; color:#fbcfe8; padding:1px 4px; border-radius:3px;">${tag}</span>
             </div>
-            <div style="font-size:12px; color:#f8fafc; margin-top:2px;">🌸 美学: <b>+${tree.val}</b></div>
-            <div style="font-size:10px; color:#94a3b8;">⏱️ 耗时: ${tree.cost} 分钟</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px;">
+              ${badge}
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
+              <span style="color:#cbd5e1;">🌸 美学: <b style="color:#f472b6;">+${tree.val}</b></span>
+              <span style="color:#cbd5e1;">⏱️ 耗时: <b>${tree.cost}m</b></span>
+            </div>
           </div>
         `;
       })
       .join('');
 
-    const dpCells = step.dp
-      .map((val, j) => {
-        const isTarget = j === step.j;
-        return `
-          <div style="flex:1; min-width:30px; background:${isTarget ? '#db2777' : val > 0 ? '#064e3b' : '#1e293b'};
-                      border:1px solid ${isTarget ? '#f472b6' : '#334155'}; border-radius:4px;
-                      padding:4px 2px; text-align:center;">
-            <div style="font-size:9px; color:#94a3b8;">${j}m</div>
-            <div style="font-size:11px; font-weight:700; color:#f8fafc;">${val}</div>
+    const tagsHtml = selected.length > 0
+      ? selected.map((it, idx) => `
+          <div style="background:rgba(131, 24, 67, 0.4); border:1px solid #ec4899; border-radius:4px; padding:2px 8px; font-size:10.5px; display:inline-flex; align-items:center; gap:6px;">
+            <span style="color:#fbcfe8; font-weight:700;">树 #${it.treeIndex + 1} (×${it.multiplier})</span>
+            <span style="color:#cbd5e1;">耗时:${it.timeCost}m</span>
+            <span style="color:#f472b6; font-weight:800;">美学:+${it.valEarned}</span>
           </div>
-        `;
-      })
-      .join('');
+        `).join('')
+      : `<span style="color:#64748b; font-size:11px;">(赏花行程尚未安排，等待时间分配...)</span>`;
 
     container.innerHTML = `
-      <div style="width:100%; display:flex; flex-direction:column; gap:8px; padding:4px 8px; box-sizing:border-box;">
-        <div style="font-size:11px; color:#94a3b8; font-weight:700;">樱花林品种清单 (完全背包 cnt=0 转化为容量上限多重背包)</div>
-        <div style="display:flex; gap:6px; overflow-x:auto; background:#0b1329; padding:6px; border-radius:6px;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+          <div style="font-size:12px; color:#94a3b8; font-weight:700;">🌸 樱花树林图谱 (01背包 / 完全背包 / 多重背包全兼容)</div>
+          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+            当前考察时间: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${step.totalTime} 分钟
+          </div>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
           ${treesHtml}
         </div>
-        <div style="font-size:11px; color:#94a3b8; font-weight:700;">DP 时间收益矩阵 dp[0..${step.totalTime}]</div>
-        <div style="display:flex; gap:3px; overflow-x:auto; background:#0b1329; padding:6px; border-radius:6px;">
-          ${dpCells}
+
+        <!-- 底部实时赏花行程仓 -->
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🌸 实时赏花行程仓</span>
+            <div style="display:flex; gap:16px; font-size:11px;">
+              <span>已用时间: <b style="color:#38bdf8;">${usedTime}</b> / ${step.totalTime} min</span>
+              <span>累计美学价值: <b style="color:#f472b6;">${totalVal}</b></span>
+            </div>
+          </div>
+
+          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
+            <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #ec4899, #38bdf8); transition:width 0.25s ease;"></div>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            <span style="color:#94a3b8; font-size:10.5px; min-width:60px;">已排行程:</span>
+            ${tagsHtml}
+          </div>
         </div>
       </div>
     `;
+  },
+  renderCustomMetrics: (container, step) => {
+    renderKnapsackDpMatrix(container, {
+      ...step,
+      items: [],
+      currentGroupItems: [],
+      selectedItems: [],
+      groupIndex: -1,
+      itemIndex: step.treeIndex,
+    }, `DP 时间收益矩阵 dp[0..${step.totalTime}]`);
   },
 });
 

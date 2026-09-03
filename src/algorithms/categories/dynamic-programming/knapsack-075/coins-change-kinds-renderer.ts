@@ -1,6 +1,13 @@
+/**
+ * 能成功找零的钱数种类 (POJ 1742 混合窗口优化) - 声明式 4-Card 沙盘渲染器
+ * 核心：混合背包三路分支 (c=1 -> 01, v*c>=m -> 完全, 其它 -> 布尔滑块滑动更新)，平摊 O(1)
+ * 架构重构：引入四语言代码联动、双层沙盘与实时找零面值覆盖舱
+ */
+
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { KNAPSACK_075_PROBLEMS } from './knapsack-075-problem-content';
+import { HighlightTarget } from '../../../../core/code-panel';
 
 export interface CoinType {
   val: number;
@@ -16,10 +23,11 @@ export interface CoinsChangeKindsStep {
   totalKinds: number;
   targetM: number;
   coins: CoinType[];
-  status: 'init' | 'coin' | 'update' | 'done';
+  status: 'init' | 'coin' | 'check' | 'update' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
+  metrics?: Record<string, any>;
 }
 
 export function buildCoinsChangeKindsSteps(inputs: Record<string, any>): CoinsChangeKindsStep[] {
@@ -47,6 +55,15 @@ export function buildCoinsChangeKindsSteps(inputs: Record<string, any>): CoinsCh
     });
   }
 
+  const lines = {
+    initDp: { java: 4, cpp: 4, python: 3, javascript: 3 },
+    coinLoop: { java: 6, cpp: 6, python: 5, javascript: 5 },
+    strategy01: { java: 7, cpp: 7, python: 7, javascript: 7 },
+    strategyUnbounded: { java: 9, cpp: 9, python: 9, javascript: 9 },
+    strategyWindow: { java: 11, cpp: 11, python: 11, javascript: 11 },
+    returnAns: { java: 25, cpp: 23, python: 24, javascript: 24 },
+  };
+
   const dp = new Array(m + 1).fill(false);
   dp[0] = true;
 
@@ -58,36 +75,60 @@ export function buildCoinsChangeKindsSteps(inputs: Record<string, any>): CoinsCh
     return count;
   };
 
-  const makeStep = (p: Partial<CoinsChangeKindsStep>): CoinsChangeKindsStep => ({
-    coinIndex: p.coinIndex ?? -1,
-    mod: p.mod ?? -1,
-    j: p.j ?? 0,
-    dp: [...(p.dp ?? dp)],
-    totalKinds: p.totalKinds ?? countKinds(dp),
-    targetM: m,
-    coins: [...coins],
-    status: p.status ?? 'update',
-    message: p.message ?? '',
-    log: p.log ?? '',
-    codeLine: p.codeLine ?? 4,
-  });
+  const makeStep = (data: Partial<CoinsChangeKindsStep> & {
+    status: CoinsChangeKindsStep['status'];
+    message: string;
+    log: string;
+  }): CoinsChangeKindsStep => {
+    const coinIdx = data.coinIndex ?? -1;
+    const modVal = data.mod ?? -1;
+    const jVal = data.j ?? -1;
+    const curTotal = data.totalKinds ?? countKinds(dp);
+
+    let stratStr = '—';
+    if (coinIdx >= 0 && coins[coinIdx]) {
+      const s = coins[coinIdx].strategy;
+      stratStr = s === '01' ? '01背包倒序' : s === 'unbounded' ? '完全背包正序' : '布尔滑窗多重背包';
+    }
+
+    return {
+      coinIndex: coinIdx,
+      mod: modVal,
+      j: jVal,
+      dp: [...dp],
+      totalKinds: curTotal,
+      targetM: m,
+      coins: [...coins],
+      status: data.status,
+      message: data.message,
+      log: data.log,
+      codeLine: data.codeLine,
+      metrics: {
+        'metric-target-m': `${m} 元`,
+        'metric-cur-coin': coinIdx >= 0 ? `货币 #${coinIdx + 1}` : '—',
+        'metric-branch-strategy': stratStr,
+        'metric-total-kinds': `${curTotal} 种`,
+      },
+    };
+  };
 
   steps.push(
     makeStep({
       status: 'init',
-      message: `💰 初始化找零沙盘：目标金额上限 m=${m}，共有 ${n} 种面值货币。`,
+      message: `💰 初始化找零沙盘：目标上限金额 m=${m}，dp[0]=true，共有 ${n} 种可用货币。`,
       log: `init: m=${m}, n=${n}`,
-      codeLine: 4,
+      codeLine: lines.initDp,
     })
   );
 
   if (n === 0 || m === 0) {
     steps.push(
       makeStep({
+        j: 0,
         status: 'done',
-        message: '🏁 目标金额为 0 或无货币可用，可找零种类为 0。',
+        message: '🏁 上限金额为 0 或无可用硬币，能找零的金额种类为 0。',
         log: 'done: kinds=0',
-        codeLine: 40,
+        codeLine: lines.returnAns,
       })
     );
     return steps;
@@ -102,15 +143,24 @@ export function buildCoinsChangeKindsSteps(inputs: Record<string, any>): CoinsCh
       makeStep({
         coinIndex: i,
         status: 'coin',
-        message: `🪙 考察货币 #${i + 1} (面值=${v}, 数量=${c})：满足分支【${
-          coin.strategy === '01' ? '01背包倒序' : coin.strategy === 'unbounded' ? '完全背包正序' : '多重背包布尔滑窗'
-        }】。`,
-        log: `coin #${i + 1}: val=${v}, cnt=${c}, strategy=${coin.strategy}`,
-        codeLine: coin.strategy === '01' ? 7 : coin.strategy === 'unbounded' ? 12 : 18,
+        message: `🪙 考察货币 #${i + 1} (面值=${v} 元，拥有=${c} 张)：进入分支判定。`,
+        log: `coin #${i + 1}: v=${v}, c=${c}`,
+        codeLine: lines.coinLoop,
       })
     );
 
     if (coin.strategy === '01') {
+      // 01 背包倒序
+      steps.push(
+        makeStep({
+          coinIndex: i,
+          status: 'check',
+          message: `🎯 判定为单张 01 背包 (c=1)：倒序枚举容量 j 从 ${m} 到 ${v}。`,
+          log: `strategy: 01 knapsack for coin #${i + 1}`,
+          codeLine: lines.strategy01,
+        })
+      );
+
       for (let j = m; j >= v; j--) {
         if (dp[j - v] && !dp[j]) {
           dp[j] = true;
@@ -118,16 +168,26 @@ export function buildCoinsChangeKindsSteps(inputs: Record<string, any>): CoinsCh
             makeStep({
               coinIndex: i,
               j,
-              dp: [...dp],
               status: 'update',
-              message: `✨ 金额 j=${j}：使用 1 张货币 #${i + 1} 成功找零！`,
-              log: `dp[${j}]=true via 01 knapsack`,
-              codeLine: 9,
+              message: `✨ 解锁新金额：利用面值 ${v} 元成功凑出金额 ${j} 元！`,
+              log: `dp[${j}] = true`,
+              codeLine: lines.strategy01,
             })
           );
         }
       }
     } else if (coin.strategy === 'unbounded') {
+      // 完全背包正序
+      steps.push(
+        makeStep({
+          coinIndex: i,
+          status: 'check',
+          message: `♾️ 判定为充裕完全背包 (v·c=${v * c} >= m=${m})：正序枚举容量 j 从 ${v} 到 ${m}。`,
+          log: `strategy: unbounded knapsack for coin #${i + 1}`,
+          codeLine: lines.strategyUnbounded,
+        })
+      );
+
       for (let j = v; j <= m; j++) {
         if (dp[j - v] && !dp[j]) {
           dp[j] = true;
@@ -135,42 +195,50 @@ export function buildCoinsChangeKindsSteps(inputs: Record<string, any>): CoinsCh
             makeStep({
               coinIndex: i,
               j,
-              dp: [...dp],
               status: 'update',
-              message: `✨ 金额 j=${j}：货币充足视为完全背包正序累加成功找零！`,
-              log: `dp[${j}]=true via unbounded knapsack`,
-              codeLine: 14,
+              message: `✨ 解锁新金额：利用充裕面值 ${v} 累加凑出金额 ${j} 元！`,
+              log: `dp[${j}] = true`,
+              codeLine: lines.strategyUnbounded,
             })
           );
         }
       }
     } else {
-      // 多重背包布尔窗口优化
+      // 布尔滑窗优化
+      steps.push(
+        makeStep({
+          coinIndex: i,
+          status: 'check',
+          message: `🪟 判定为多重背包 (c=${c})：采用同余余数模 ${v} 布尔滑块计数，平摊 O(1) 转移！`,
+          log: `strategy: boolean window for coin #${i + 1}`,
+          codeLine: lines.strategyWindow,
+        })
+      );
+
       for (let mod = 0; mod < v; mod++) {
         let trueCnt = 0;
         for (let j = m - mod, sz = 0; j >= 0 && sz <= c; j -= v, sz++) {
           if (dp[j]) trueCnt++;
         }
+
         for (let j = m - mod, l = j - v * (c + 1); j >= 1; j -= v, l -= v) {
           if (dp[j]) {
             trueCnt--;
-          } else {
-            if (trueCnt > 0) {
-              dp[j] = true;
-              steps.push(
-                makeStep({
-                  coinIndex: i,
-                  mod,
-                  j,
-                  dp: [...dp],
-                  status: 'update',
-                  message: `✨ 金额 j=${j} (同余链 mod=${mod})：布尔滑窗内存在 ${trueCnt} 个可行前驱，判定 dp[${j}]=true 找零成功！`,
-                  log: `dp[${j}]=true via boolean sliding window`,
-                  codeLine: 28,
-                })
-              );
-            }
+          } else if (trueCnt > 0) {
+            dp[j] = true;
+            steps.push(
+              makeStep({
+                coinIndex: i,
+                mod,
+                j,
+                status: 'update',
+                message: `✨ 布尔滑窗命中：当前窗口内存在真值 (trueCnt=${trueCnt})，成功解锁金额 ${j} 元！`,
+                log: `dp[${j}] = true via boolean window`,
+                codeLine: lines.strategyWindow,
+              })
+            );
           }
+
           if (l >= 0 && dp[l]) {
             trueCnt++;
           }
@@ -180,17 +248,15 @@ export function buildCoinsChangeKindsSteps(inputs: Record<string, any>): CoinsCh
   }
 
   const finalKinds = countKinds(dp);
-
   steps.push(
     makeStep({
       coinIndex: -1,
-      mod: -1,
       j: m,
-      status: 'done',
       totalKinds: finalKinds,
-      message: `🎉 找零可行性分析完毕！在 1..${m} 的金额范围内，共有 ${finalKinds} 种钱数能够成功找零！`,
+      status: 'done',
+      message: `🎉 找零种类统计完毕！在 1..${m} 元金额范围内，使用现有货币共能凑出 ${finalKinds} 种不同金额！`,
       log: `done: totalKinds=${finalKinds}`,
-      codeLine: 40,
+      codeLine: lines.returnAns,
     })
   );
 
@@ -205,8 +271,14 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsChangeKindsSte
     mode: '混合背包 · 布尔滑窗优化',
     complexity: 'O(N · M) · O(M)',
   },
-  card1Title: '🪙 货币面值与分支策略 (01 / 完全 / 布尔滑窗自适应分流)',
-  card2Title: '📊 可行性向量 dp[1..M] (绿色表示可成功找零)',
+  card1Title: '🪙 货币储备资产库与找零面值解锁仓',
+  card2Title: '📊 找零金额可行性向量 dp[1..M]',
+  card2Desc: '展示 01背包、完全背包与布尔滑窗根据货币面值与数量的自适应分流推演',
+  legend: [
+    { label: '不可凑出金额 (False)', color: '#475569' },
+    { label: '可成功凑出金额 (True)', color: '#10b981' },
+    { label: '当前正在考察金额 j', color: '#38bdf8' },
+  ],
   inputs: [
     { id: 'input-m', label: '上限 m:', type: 'number', defaultValue: 10, width: '55px' },
     { id: 'input-vals', label: '面值 vals:', type: 'text', defaultValue: '1, 2, 4', width: '110px' },
@@ -232,60 +304,97 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsChangeKindsSte
   problemHtml: KNAPSACK_075_PROBLEMS['coins-change-kinds'].problemHtml,
   analysisHtml: KNAPSACK_075_PROBLEMS['coins-change-kinds'].analysisHtml,
   buildSteps: buildCoinsChangeKindsSteps,
-  renderCustomStep: (step, { container, updateMetric }) => {
-    updateMetric('metric-target-m', `${step.targetM}`);
-    updateMetric('metric-cur-coin', step.coinIndex >= 0 ? `货币 #${step.coinIndex + 1}` : '—');
-    if (step.coinIndex >= 0 && step.coins[step.coinIndex]) {
-      const s = step.coins[step.coinIndex].strategy;
-      updateMetric('metric-branch-strategy', s === '01' ? '01背包倒序' : s === 'unbounded' ? '完全背包正序' : '布尔滑窗多重背包');
-    } else {
-      updateMetric('metric-branch-strategy', '—');
-    }
-    updateMetric('metric-total-kinds', `${step.totalKinds} 种`);
+  renderCanvas: (container, step) => {
+    const ratio = Math.min(100, Math.round((step.totalKinds / Math.max(1, step.targetM)) * 100));
 
     const coinsHtml = step.coins
       .map((c, idx) => {
         const isCur = idx === step.coinIndex;
         const tag = c.strategy === '01' ? '🎯 01背包' : c.strategy === 'unbounded' ? '♾️ 完全' : '🪟 布尔滑窗';
         return `
-          <div style="background:${isCur ? '#1e293b' : '#0f172a'}; border:1px solid ${
+          <div style="background:${isCur ? 'rgba(30, 27, 75, 0.7)' : 'rgba(15, 23, 42, 0.6)'}; border:1.5px solid ${
           isCur ? '#f59e0b' : '#334155'
-        }; border-radius:6px; padding:6px 10px; min-width:95px; flex:1;">
+        }; border-radius:6px; padding:6px 10px; min-width:110px; flex:1; max-width:180px; display:flex; flex-direction:column; gap:3px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:11px; font-weight:700; color:${isCur ? '#f59e0b' : '#fbbf24'};">货币 #${idx + 1}</span>
               <span style="font-size:9px; background:#78350f; color:#fde68a; padding:1px 4px; border-radius:3px;">${tag}</span>
             </div>
-            <div style="font-size:12px; color:#f8fafc; margin-top:2px;">💵 面值: <b>${c.val}</b></div>
-            <div style="font-size:10px; color:#94a3b8;">📦 拥有: <b>${c.cnt}</b> 张</div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
+              <span style="color:#cbd5e1;">面值: <b style="color:#38bdf8;">${c.val} 元</b></span>
+              <span style="color:#cbd5e1;">拥有: <b>${c.cnt} 张</b></span>
+            </div>
           </div>
         `;
       })
       .join('');
 
-    const dpCells = step.dp.slice(1)
-      .map((ok, idx) => {
-        const money = idx + 1;
-        const isTarget = money === step.j;
-        return `
-          <div style="flex:1; min-width:28px; background:${isTarget ? '#2563eb' : ok ? '#065f46' : '#1e293b'};
-                      border:1px solid ${isTarget ? '#60a5fa' : ok ? '#34d399' : '#334155'}; border-radius:4px;
-                      padding:4px 2px; text-align:center;">
-            <div style="font-size:9px; color:#94a3b8;">${money}</div>
-            <div style="font-size:11px; font-weight:700; color:${ok ? '#4ade80' : '#64748b'};">${ok ? 'T' : 'F'}</div>
+    const solvedList: number[] = [];
+    for (let j = 1; j <= step.targetM; j++) {
+      if (step.dp[j]) solvedList.push(j);
+    }
+
+    const solvedTagsHtml = solvedList.length > 0
+      ? solvedList.map((val) => `
+          <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:4px; padding:2px 6px; font-size:10.5px; color:#a7f3d0; font-weight:700;">
+            ${val} 元
           </div>
-        `;
-      })
-      .join('');
+        `).join('')
+      : `<span style="color:#64748b; font-size:11px;">(暂未凑出任何金额)</span>`;
 
     container.innerHTML = `
-      <div style="width:100%; display:flex; flex-direction:column; gap:8px; padding:4px 8px; box-sizing:border-box;">
-        <div style="font-size:11px; color:#94a3b8; font-weight:700;">货币储备资产库</div>
-        <div style="display:flex; gap:6px; overflow-x:auto; background:#0b1329; padding:6px; border-radius:6px;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+          <div style="font-size:12px; color:#94a3b8; font-weight:700;">🪙 货币储备资产库 (01 / 完全 / 布尔滑窗自适应分流)</div>
+          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+            金额上限 M: <b style="color:#38bdf8;">${step.targetM}</b> 元
+          </div>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
           ${coinsHtml}
         </div>
-        <div style="font-size:11px; color:#94a3b8; font-weight:700;">找零金额可行性向量 dp[1..${step.targetM}] (T=可找零, F=不可找零)</div>
-        <div style="display:flex; gap:3px; overflow-x:auto; background:#0b1329; padding:6px; border-radius:6px;">
-          ${dpCells}
+
+        <!-- 底部实时找零解锁舱 -->
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">💰 已解锁可找零金额种类</span>
+            <div style="display:flex; gap:16px; font-size:11px;">
+              <span>解锁种类: <b style="color:#10b981;">${step.totalKinds}</b> / ${step.targetM} 种 (${ratio}%)</span>
+            </div>
+          </div>
+
+          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
+            <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #38bdf8, #10b981); transition:width 0.25s ease;"></div>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+            <span style="color:#94a3b8; font-size:10.5px; min-width:65px;">可找零金额:</span>
+            ${solvedTagsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  },
+  renderCustomMetrics: (container, step) => {
+    const cells = step.dp.slice(1).map((ok, idx) => {
+      const money = idx + 1;
+      const isCur = step.j === money;
+      const bg = isCur ? '#0284c7' : ok ? '#065f46' : '#1e293b';
+      const border = isCur ? '#38bdf8' : ok ? '#34d399' : '#334155';
+      const color = ok ? '#34d399' : '#64748b';
+      return `
+        <div style="display:inline-flex; flex-direction:column; align-items:center; min-width:30px; padding:3px; margin:2px; background:${bg}; border:1px solid ${border}; border-radius:4px;">
+          <span style="font-size:8px; color:#94a3b8;">${money}元</span>
+          <span style="font-size:10.5px; font-weight:700; color:${color};">${ok ? 'T' : 'F'}</span>
+        </div>
+      `;
+    });
+
+    container.innerHTML = `
+      <div style="width:100%; padding:4px 8px; box-sizing:border-box;">
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">找零金额可行性向量 dp[1..${step.targetM}] (T=可找零, F=不可找零)</div>
+        <div style="display:flex; flex-wrap:wrap; max-height:100px; overflow-y:auto; gap:2px; background:#0b1329; padding:6px; border-radius:6px;">
+          ${cells.join('')}
         </div>
       </div>
     `;
