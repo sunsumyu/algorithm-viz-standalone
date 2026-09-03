@@ -1,7 +1,7 @@
 /**
- * 知道秘密的人数 (Number of People Aware of a Secret - LeetCode 2327 / 左程云 Class 067 题目3) 声明式可视化器
- * 核心：延时分享 delay、遗忘期 forget、滑动窗口状态转移 dp[i] = (dp[i] + dp[j]) % MOD
- * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
+ * 找出知晓秘密的所有专家 (Find All People With Secret - LeetCode 2092) 声明式可视化器
+ * 核心：按时间分组、同一时间步瞬时连通合并、未连接到 0 号已知密者的撤销重置 (father[u] = u)
+ * 架构重构：引入四语言代码高亮映射字典、双层社交网络与时间切片扩散舱沙盘、并查集状态监视器
  */
 
 import { registerAlgorithm } from '../../../core/registry';
@@ -11,163 +11,407 @@ import {
   PEOPLE_SECRET_PROBLEM_HTML,
   PEOPLE_SECRET_ANALYSIS_HTML,
 } from './people-secret-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
 
-export interface SecretStep {
-  curDay: number;
-  newKnowers: Record<number, number>;
-  activeSharers: number;
-  totalKnowers: number;
-  status: 'init' | 'share' | 'forget' | 'done';
+export interface SecretExpertStep {
+  n: number;
+  curTime: number;
+  knownExperts: number[];
+  activeMeeting: [number, number, number] | null;
+  father: number[];
+  resetNodes: number[];
+  activeArray?: 'father' | 'known';
+  activeSlot?: number;
+  status: 'init' | 'batch_merge' | 'cascade' | 'rollback' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
-export function buildSecretSteps(): SecretStep[] {
-  const steps: SecretStep[] = [];
+export function buildSecretExpertSteps(preset: string = 'classic_6expert'): SecretExpertStep[] {
+  const steps: SecretExpertStep[] = [];
+  const isMultiTime = preset === 'multitime_5expert';
 
-  steps.push({
-    curDay: 1,
-    newKnowers: { 1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
-    activeSharers: 0,
-    totalKnowers: 1,
-    status: 'init',
-    message: '1. [第 1 天: 初始唯一知情者] 第 1 天 1 人获知秘密，需等待 delay=2 天后开始分享，并在 forget=4 天后遗忘。',
-    log: 'Day 1: 新增 1 人，暂不可分享 (处于延迟期)',
-    codeLine: [15, 22],
-  });
+  const n = isMultiTime ? 5 : 6;
+  const firstPerson = 1;
+  const rawMeetings: Array<[number, number, number]> = isMultiTime
+    ? [
+        [1, 2, 2],
+        [2, 3, 3],
+        [3, 4, 4],
+      ]
+    : [
+        [4, 5, 2],
+        [1, 2, 5],
+        [2, 3, 5],
+        [4, 5, 5],
+      ];
 
-  steps.push({
-    curDay: 3,
-    newKnowers: { 1: 1, 2: 0, 3: 1, 4: 0, 5: 0, 6: 0 },
-    activeSharers: 1,
-    totalKnowers: 2,
-    status: 'share',
-    message: '2. [第 3 天: 首次开始分享] 第 1 天的人进入可分享期，分享给 1 人，第 3 天新增 1 人，总知情人数 = 2！',
-    log: 'Day 3: 1 人活跃分享 ➔ 新增 1 人，总知情 = 2',
-    codeLine: [24, 32],
-  });
+  const father: number[] = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) father[i] = i;
 
-  steps.push({
-    curDay: 5,
-    newKnowers: { 1: 0, 2: 0, 3: 1, 4: 1, 5: 1, 6: 0 },
-    activeSharers: 1,
-    totalKnowers: 3,
-    status: 'forget',
-    message: '3. [第 5 天: 初始知情者遗忘] 第 1 天获知者在第 5 天 (1+4) 彻底遗忘！第 3/4 天获知者继续分享！总知情人数 = 3！',
-    log: 'Day 5: 第 1 天的人遗忘秘密，剩余 3 人知情',
-    codeLine: [34, 42],
-  });
+  function find(i: number): number {
+    if (father[i] !== i) father[i] = find(father[i]);
+    return father[i];
+  }
 
-  steps.push({
-    curDay: 6,
-    newKnowers: { 1: 0, 2: 0, 3: 1, 4: 1, 5: 1, 6: 2 },
-    activeSharers: 2,
-    totalKnowers: 5,
-    status: 'done',
-    message: '🎉 [第 6 天: 秘密扩散结算] 最终在第 6 天结束时，全网仍保留秘密的总人数为 5 人！',
-    log: '✓ Day 6 结算完成：最终知情人数 = 5',
-    codeLine: [44, 48],
-  });
+  function union(x: number, y: number): void {
+    const fx = find(x);
+    const fy = find(y);
+    if (fx !== fy) father[fx] = fy;
+  }
+
+  function getKnown(): number[] {
+    const root0 = find(0);
+    const res: number[] = [];
+    for (let i = 0; i < n; i++) {
+      if (find(i) === root0) res.push(i);
+    }
+    return res;
+  }
+
+  let curTime = 0;
+  let activeMeeting: [number, number, number] | null = null;
+  let resetNodes: number[] = [];
+
+  const lines = {
+    init: { cpp: 16, java: 19, python: 3, javascript: 2 },
+    initFather: { cpp: 22, java: 21, python: 4, javascript: 3 },
+    unionFirst: { cpp: 34, java: 22, python: 17, javascript: 15 },
+    sort: { cpp: 17, java: 24, python: 4, javascript: 3 },
+    timeBatch: { cpp: 37, java: 27, python: 22, javascript: 21 },
+    merge: { cpp: 42, java: 31, python: 26, javascript: 24 },
+    rollback: { cpp: 48, java: 36, python: 30, javascript: 28 },
+    done: { cpp: 55, java: 43, python: 36, javascript: 34 },
+  };
+
+  function makeStep(
+    codeLine: HighlightTarget,
+    message: string,
+    log: string,
+    status: 'init' | 'batch_merge' | 'cascade' | 'rollback' | 'done',
+    activeArray?: 'father' | 'known',
+    activeSlot?: number
+  ): void {
+    const known = getKnown();
+    const timeStr = curTime === 0 ? '时刻 0 (初始化)' : `时刻 t = ${curTime}`;
+    const knownStr = `${known.length} 人 (${known.map((x) => `E${x}`).join(',')})`;
+    const meetingStr =
+      activeMeeting !== null
+        ? `[E${activeMeeting[0]}, E${activeMeeting[1]}, t=${activeMeeting[2]}]`
+        : '无活跃会议';
+
+    const phaseStr =
+      status === 'done'
+        ? '知密全员锁定'
+        : status === 'rollback'
+          ? '无效连通撤销重置'
+          : status === 'cascade'
+            ? '秘密同批瞬时扩散'
+            : status === 'batch_merge'
+              ? '同时间会议连通'
+              : '算法初始化';
+
+    steps.push({
+      n,
+      curTime,
+      knownExperts: [...known],
+      activeMeeting: activeMeeting ? [...activeMeeting] : null,
+      father: [...father],
+      resetNodes: [...resetNodes],
+      activeArray,
+      activeSlot,
+      status,
+      message,
+      log,
+      codeLine,
+      metrics: {
+        'metric-secret-time': timeStr,
+        'metric-known-count': knownStr,
+        'metric-cur-meeting': meetingStr,
+        'metric-secret-phase': phaseStr,
+      },
+    });
+  }
+
+  // 1. 初始化
+  makeStep(lines.init, `🚀 [算法初始化] 建立包含 ${n} 名专家的系统，0 号专家初始掌握秘密，先与专家 ${firstPerson} 共享。`, 'findAllPeople 入口', 'init');
+
+  for (let i = 0; i < n; i++) {
+    makeStep(lines.initFather, `📌 [并查集初始化] father[${i}] = ${i}。`, `father[${i}]=${i}`, 'init', 'father', i);
+  }
+
+  // 初始分享
+  union(0, firstPerson);
+  makeStep(lines.unionFirst, `🤝 [初始分享] 0 号与专家 ${firstPerson} 连通共享秘密！`, `union(0, ${firstPerson})`, 'init', 'known', firstPerson);
+
+  // 会议按时间排序
+  const meetings = rawMeetings.map(([u, v, t]) => [u, v, t] as [number, number, number]);
+  meetings.sort((a, b) => a[2] - b[2]);
+  makeStep(lines.sort, '⏱️ [会议按时刻升序排序] 确保秘密传播严格遵循时间因果律，无法向过去时刻倒流。', '排序会议列表', 'init');
+
+  // 2. 按相同时间戳分批处理
+  const m = meetings.length;
+  for (let l = 0, r = 0; l < m; l = r) {
+    while (r < m && meetings[r][2] === meetings[l][2]) r++;
+
+    curTime = meetings[l][2];
+    resetNodes = [];
+    makeStep(lines.timeBatch, `📅 [时间窗口推进] 推进至时刻 t = ${curTime}，本批次共有 ${r - l} 场并发会议召开。`, `时刻 t=${curTime}`, 'batch_merge');
+
+    // 阶段 1: 同批次会议全部合并
+    for (let i = l; i < r; i++) {
+      const [u, v, t] = meetings[i];
+      activeMeeting = [u, v, t];
+      union(u, v);
+      makeStep(lines.merge, `🔗 [会议召开合并] 专家 ${u} 与 ${v} 在时刻 ${t} 秘密开会！并查集临时合并两者所在的连通块！`, `union(${u}, ${v})`, 'cascade', 'father', find(u));
+    }
+
+    // 阶段 2: 检查连通性，若未能连接到 0 号未知密，撤销重置
+    for (let i = l; i < r; i++) {
+      const u = meetings[i][0];
+      const v = meetings[i][1];
+
+      if (find(u) !== find(0)) {
+        father[u] = u;
+        resetNodes.push(u);
+        makeStep(lines.rollback, `⏪ [无效接触撤销重置] 专家 ${u} 未能连通至 0 号密源！并查集撤销连通，重置 father[${u}] = ${u}！`, `reset father[${u}]=${u}`, 'rollback', 'father', u);
+      }
+      if (find(v) !== find(0)) {
+        father[v] = v;
+        resetNodes.push(v);
+        makeStep(lines.rollback, `⏪ [无效接触撤销重置] 专家 ${v} 未能连通至 0 号密源！并查集撤销连通，重置 father[${v}] = ${v}！`, `reset father[${v}]=${v}`, 'rollback', 'father', v);
+      }
+    }
+  }
+
+  // 3. 终态收集
+  activeMeeting = null;
+  resetNodes = [];
+  makeStep(lines.done, '📊 [统计知密名单] 遍历全员 0..n-1，逐一检验其连通性并收集知密专家。', '收集结果 ans', 'done');
+
+  for (let i = 0; i < n; i++) {
+    const isKnown = find(i) === find(0);
+    makeStep(lines.done, `🔎 [知密核验] 专家 E${i} 所属代表元为 ${find(i)}，${isKnown ? '与 0 号源头保持连通，确认掌握秘密！' : '未与 0 号连通，未获知秘密。'}`, `核验 E${i}`, 'done', 'known', i);
+  }
+
+  makeStep(lines.done, `🎉 [知密全员锁定] 经时间推演，知晓秘密的所有专家名单为: [${getKnown().join(', ')}]！并查集时间分组与撤销完美还原了因果流动！`, '算法结束', 'done');
 
   return steps;
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<SecretStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
   id: 'people-secret',
-  name: '知道秘密的人数 (People Aware of Secret)',
+  name: '找出知晓秘密的所有专家 (Find All People With Secret)',
+  viewId: 'algo-people-secret-view',
   category: 'graph',
   icon: '🤫',
   badge: {
-    mode: '滑动窗口延时 DP',
-    complexity: 'O(N) · O(N)',
+    mode: '时间切片 + 并查集瞬时合并与连通撤销',
+    complexity: 'O(M log M + (N + M) α(N)) · O(N + M)',
   },
-  card1Title: '🤫 每日新增知情者与生命周期沙盘',
-  card2Title: '🧭 活跃分享者与最终留存监视器',
-  card2Desc: '延迟分享期 delay、遗忘期 forget 与每日滚动差分',
+  card1Title: '🤫 专家社交网络与时序扩散撤销舱',
+  card2Title: '📊 秘密状态监视器 (father, 当前已知专家, 撤销节点)',
+  card2Desc: '展示按时间步分组 meetings、同批瞬时级联 union 与未连通 0 号节点撤销重置过程',
   legend: [
-    { label: '延迟期 (未开始分享)', color: '#0284c7' },
-    { label: '⭐ 活跃分享期', color: '#f59e0b' },
-    { label: '🟢 最终留存知情者', color: '#10b981' },
-    { label: '已遗忘 (退出网络)', color: '#475569' },
+    { label: '🤫 知晓秘密专家 (与 0 连通)', color: '#10b981' },
+    { label: '⚪ 未知秘密专家', color: '#1e293b' },
+    { label: '⚡ 当前正在开会', color: '#f59e0b' },
+    { label: '⏪ 撤销重置节点', color: '#ef4444' },
   ],
-  inputs: [],
+  inputs: [
+    {
+      id: 'input-preset',
+      label: '预设专家会议记录',
+      type: 'select',
+      defaultValue: 'classic_6expert',
+      options: [
+        { label: '6 专家含无效开会撤销 (最终知密 [0,1,2,3])', value: 'classic_6expert' },
+        { label: '5 专家多时间步级联 (最终全员知密 [0,1,2,3,4])', value: 'multitime_5expert' },
+      ],
+    },
+  ],
   presets: [
-    { label: 'n=6, delay=2, forget=4 经典用例', values: {} },
+    { label: '6 专家撤销', values: { 'input-preset': 'classic_6expert' } },
+    { label: '5 专家级联', values: { 'input-preset': 'multitime_5expert' } },
   ],
   metrics: [
-    { id: 'metric-secret-day', label: '当前模拟天数', color: '#2563eb' },
-    { id: 'metric-secret-total', label: '当前知情总人数', color: '#10b981' },
+    { id: 'metric-secret-time', label: '当前推演时刻', color: '#38bdf8' },
+    { id: 'metric-known-count', label: '当前知密人数', color: '#10b981' },
+    { id: 'metric-cur-meeting', label: '当前活跃会议', color: '#f59e0b' },
+    { id: 'metric-secret-phase', label: '当前算法阶段', color: '#a855f7' },
   ],
   codeLanguages: PEOPLE_SECRET_CODE_LANGUAGES,
   problemHtml: PEOPLE_SECRET_PROBLEM_HTML,
   analysisHtml: PEOPLE_SECRET_ANALYSIS_HTML,
-  buildSteps: () => buildSecretSteps(),
+  buildSteps: (inputs) => {
+    const preset = (inputs['input-preset'] || 'classic_6expert') as string;
+    return buildSecretExpertSteps(preset);
+  },
   renderCanvas: (container, step) => {
-    const days = [1, 2, 3, 4, 5, 6];
-    const bars = days
-      .map((d) => {
-        const count = step.newKnowers[d] || 0;
-        const height = count * 35;
-        const isCur = step.curDay === d;
-        const bg = count > 0 ? (isCur ? '#f59e0b' : '#0284c7') : '#1e293b';
+    const n = step.n;
+    const is5 = n === 5;
 
-        return `
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-            <span style="font-size: 10px; font-weight: 700; color: #94a3b8;">${count}人</span>
-            <div style="width: 32px; height: ${Math.max(10, height)}px; background: ${bg}; border-radius: 4px; border: 1px solid ${isCur ? '#facc15' : '#38bdf8'}; transition: all 0.2s;"></div>
-            <span style="font-size: 10.5px; font-weight: 800; font-family: monospace; color: #ffffff;">D${d}</span>
-          </div>
-        `;
-      })
-      .join('');
+    const nodeCoords: Record<number, { x: number; y: number }> = is5
+      ? {
+          0: { x: 45, y: 75 },
+          1: { x: 105, y: 45 },
+          2: { x: 165, y: 75 },
+          3: { x: 225, y: 45 },
+          4: { x: 275, y: 75 },
+        }
+      : {
+          0: { x: 45, y: 55 },
+          1: { x: 115, y: 55 },
+          2: { x: 185, y: 55 },
+          3: { x: 255, y: 55 },
+          4: { x: 115, y: 115 },
+          5: { x: 185, y: 115 },
+        };
+
+    let svgEdges = '';
+    if (step.activeMeeting) {
+      const u = step.activeMeeting[0];
+      const v = step.activeMeeting[1];
+      const p1 = nodeCoords[u];
+      const p2 = nodeCoords[v];
+      if (p1 && p2) {
+        svgEdges += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#facc15" stroke-width="3.5" />`;
+      }
+    }
+
+    let svgNodes = '';
+    for (let i = 0; i < n; i++) {
+      const p = nodeCoords[i];
+      if (!p) continue;
+      const isKnown = step.knownExperts.includes(i);
+      const isReset = step.resetNodes.includes(i);
+      const isActive =
+        step.activeMeeting !== null &&
+        (step.activeMeeting[0] === i || step.activeMeeting[1] === i);
+
+      const bg = isKnown ? '#065f46' : isReset ? '#831843' : '#1e293b';
+      const border = isActive
+        ? '#facc15'
+        : isReset
+          ? '#ef4444'
+          : isKnown
+            ? '#10b981'
+            : '#475569';
+
+      svgNodes += `
+        <g>
+          <circle cx="${p.x}" cy="${p.y}" r="15" fill="${bg}" stroke="${border}" stroke-width="${isActive || isKnown ? 2.5 : 1.5}" />
+          <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="10.5" font-weight="800" font-family="monospace" text-anchor="middle">E${i}</text>
+          <text x="${p.x}" y="${p.y + 24}" fill="${border}" font-size="8" font-weight="700" text-anchor="middle">${isKnown ? '知密' : isReset ? '撤销' : '未知'}</text>
+        </g>
+      `;
+    }
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
-        <div style="display: flex; gap: 14px; align-items: flex-end; height: 160px; padding-bottom: 10px;">
-          ${bars}
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🤫 专家社交时序网络</span>
+          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+            当前知密人数: <b style="color: #10b981;">${step.knownExperts.length}</b> 人
+          </span>
         </div>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
-          柱状图显示第 $D_i$ 天新增获知人数 | 满足条件：$D_i - \\text{forget} < D_{\\text{now}} \\le D_i - \\text{delay}$ 时活跃分享
+
+        <div style="width: 100%; min-height: 140px; background: #0f172a; border-radius: 8px; display: flex; justify-content: center; align-items: center; border: 1px solid #334155;">
+          <svg style="width: 100%; height: 140px;" viewBox="0 0 310 140">
+            ${svgEdges}
+            ${svgNodes}
+          </svg>
+        </div>
+
+        <!-- 底部时序扩散与撤销舱 -->
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">⏳ 时序扩散与因果撤销舱</span>
+            <div style="font-size: 11px; color: #38bdf8;">
+              当前时间切片: <b>t = ${step.curTime}</b>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+            <div style="background: rgba(6, 95, 70, 0.4); border: 1px solid #10b981; border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 10.5px; color: #a7f3d0; font-weight: 700;">知密专家集合 (已连通 0 号):</span>
+              <span style="font-size: 11px; color: #ffffff; font-family: monospace;">[${step.knownExperts.map((x) => `E${x}`).join(', ')}]</span>
+            </div>
+
+            ${
+              step.resetNodes.length > 0
+                ? `<div style="background: rgba(153, 27, 27, 0.4); border: 1px solid #ef4444; border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 10.5px; color: #fca5a5; font-weight: 700;">⏪ 本批次撤销重置专家 (未连通 0):</span>
+                    <span style="font-size: 11px; color: #ffffff; font-family: monospace;">[${step.resetNodes.map((x) => `E${x}`).join(', ')}]</span>
+                  </div>`
+                : ''
+            }
+          </div>
         </div>
       </div>
     `;
+  },
+  renderCustomMetrics: (container, step) => {
+    const n = step.father.length;
+    const indices = Array.from({ length: n }, (_, i) => i);
 
-    const root = container.closest('#algo-people-secret-view');
-    if (root) {
-      const dEl = root.querySelector('#metric-secret-day');
-      const tEl = root.querySelector('#metric-secret-total');
+    const renderRow = (name: string, arr: any[], activeName: string, color: string) => {
+      const cells = indices
+        .map((u) => {
+          const val = arr[u] ?? 0;
+          const isActive = step.activeArray === activeName && step.activeSlot === u;
+          const isKnown = step.knownExperts.includes(u);
+          const bg = isActive ? '#78350f' : isKnown ? 'rgba(6, 95, 70, 0.5)' : '#1e293b';
+          const textCol = isActive ? '#fde047' : isKnown ? '#34d399' : '#e2e8f0';
+          const border = isActive ? '2px solid #eab308' : isKnown ? '1px solid #10b981' : '1px solid #475569';
 
-      if (dEl) dEl.textContent = `第 ${step.curDay} 天`;
-      if (tEl) tEl.textContent = `${step.totalKnowers} 人`;
-
-      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
-      if (customMetricsContainer) {
-        customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
-            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
-              <span style="color: #1e40af; font-weight: 700;">👑 延迟传播滑动窗口转移:</span>
-              <strong style="font-family: monospace; color: #2563eb;">sharers = (sharers + dp[i - delay] - dp[i - forget]) % MOD</strong>
+          return `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
+              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">E[${u}]</span>
+              <span style="line-height: 1.1;">${val}</span>
             </div>
+          `;
+        })
+        .join('');
+
+      return `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-family: monospace; font-size: 11px; font-weight: 700; width: 135px; color: ${color};">${name}:</span>
+          <div style="display: flex; gap: 4px;">${cells}</div>
+        </div>
+      `;
+    };
+
+    const fatherRow = renderRow('father[] (父指针)', step.father, 'father', '#38bdf8');
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+          ${fatherRow}
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+            <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">当前已确认掌握秘密人数:</span>
+            <strong style="color: #10b981; font-family: monospace; font-size: 12px;">${step.knownExperts.length} 人 (${step.knownExperts.map((x) => `E${x}`).join(', ')})</strong>
           </div>
-        `;
-      }
-    }
+        </div>
+      </div>
+    `;
   },
 });
 
 registerAlgorithm({
   id: 'people-secret',
-  name: '知道秘密的人数 (People Aware of Secret)',
+  name: '找出知晓秘密的所有专家 (Find All People With Secret)',
   viewId: 'algo-people-secret-view',
   category: 'graph',
-  description: '左程云算法通关课 Class 067 题目3：网络秘密传播模型、延迟分享与遗忘周期、滑动窗口差分 O(N) 动态规划 (LeetCode 2327)',
+  description: '经典并查集时间切片算法：会议按时间排序分批、同批会议瞬时级联合并、未连接到 0 号密源者即时撤销重置 (LeetCode 2092)',
   icon: '🤫',
   template,
   Visualizer,
-  difficulty: 2,
-  levelOrder: 30,
-  learningGoal: '掌握延时与遗忘状态转移方程的滑动窗口优化技巧及 O(N) 滚动数组推导',
+  difficulty: 3,
+  levelOrder: 106,
+  learningGoal: '掌握按时间分组处理静态事件技巧、并查集同层瞬时合并与无效边即时回滚机制',
 });
 
 export { Visualizer as PeopleSecretVisualizer };
