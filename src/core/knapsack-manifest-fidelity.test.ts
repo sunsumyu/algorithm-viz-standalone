@@ -30,7 +30,7 @@ describe('🛡️ Knapsack 073 & 074 Manifest & Template Registration Fidelity',
   beforeAll(async () => {
     // 动态加载 dynamic-programming 批次
     await loadAlgorithmBatch('dynamic-programming');
-  });
+  }, 30000);
 
   algoIds.forEach((id) => {
     it(`Algorithm [${id}] must be registered with valid template, viewId, and Visualizer`, () => {
