@@ -208,12 +208,14 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
 
       const steps06 = buildTopKSubsequenceSumSteps([1, 2], 3);
       steps06.forEach((s) => {
-        expect(s.codeLine).toBeGreaterThan(0);
+        const line = typeof s.codeLine === 'object' && s.codeLine !== null ? (s.codeLine as any).java : s.codeLine;
+        expect(line).toBeGreaterThan(0);
       });
 
       const steps07 = buildFindKthSumSteps([1, -1], 3);
       steps07.forEach((s) => {
-        expect(s.codeLine).toBeGreaterThan(0);
+        const line = typeof s.codeLine === 'object' && s.codeLine !== null ? (s.codeLine as any).java : s.codeLine;
+        expect(line).toBeGreaterThan(0);
       });
     });
   });

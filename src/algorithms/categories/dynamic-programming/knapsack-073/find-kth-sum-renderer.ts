@@ -1,6 +1,7 @@
 /**
  * 找出数组的第K大和 (LeetCode 2386) - 声明式 4-Card 沙盘渲染器
  * 核心：正负数分离基准 + 绝对值数组映射 + 归约为前 K 小和堆优化
+ * 架构重构：引入四语言代码联动、小根堆分支状态机沙盘与第K大和对决舱
  */
 
 import { registerAlgorithm } from '../../../../core/registry';
@@ -10,6 +11,7 @@ import {
   FIND_KTH_SUM_ANALYSIS_HTML,
   FIND_KTH_SUM_CODE_LANGUAGES,
 } from './knapsack-073-problem-content';
+import { HighlightTarget } from '../../../../core/code-panel';
 
 export interface FindKthStep {
   stepIndex: number;
@@ -24,7 +26,7 @@ export interface FindKthStep {
   status: 'init' | 'pop' | 'branch' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
   metrics?: Record<string, any>;
 }
 
@@ -44,6 +46,16 @@ export function buildFindKthSumSteps(
   absNums.sort((a, b) => a - b);
 
   const targetK = Math.min(k, 1 << Math.min(n, 20));
+
+  const lines = {
+    initSum: { java: 6, cpp: 4, python: 3, javascript: 2 },
+    sortAbs: { java: 13, cpp: 9, python: 4, javascript: 8 },
+    pushEmpty: { java: 15, cpp: 13, python: 6, javascript: 9 },
+    loopStart: { java: 16, cpp: 14, python: 7, javascript: 10 },
+    popHeap: { java: 17, cpp: 15, python: 8, javascript: 12 },
+    branch: { java: 21, cpp: 18, python: 10, javascript: 14 },
+    returnAns: { java: 27, cpp: 24, python: 13, javascript: 21 },
+  };
 
   function makeStep(data: Omit<FindKthStep, 'metrics'>): FindKthStep {
     return {
@@ -70,9 +82,9 @@ export function buildFindKthSumSteps(
       currentSmallestVal: 0,
       kthSum: maxSum,
       status: 'init',
-      message: `✨ 绝对值归约初始化：累加所有正数得到全局第 1 大和 maxSum=${maxSum}。生成绝对值排序数组 absNums=[${absNums.join(', ')}]。第 1 小绝对值子序列为空集 (和为 0)。`,
+      message: `✨ 绝对值归约初始化：累加所有正数得到全局第 1 大和 maxSum=${maxSum}。生成绝对值升序数组 absNums=[${absNums.join(', ')}]。空集和为 0 (对应第 1 小损失量)。`,
       log: `init: maxSum=${maxSum}, absNums=[${absNums.join(', ')}]`,
-      codeLine: 8,
+      codeLine: lines.sortAbs,
     })
   );
 
@@ -89,73 +101,70 @@ export function buildFindKthSumSteps(
         currentSmallestVal: 0,
         kthSum: maxSum,
         status: 'done',
-        message: `🎉 第 1 大子序列和即为所有正数全选的和：${maxSum}。`,
-        log: `done: kthSum=${maxSum}`,
-        codeLine: 24,
+        message: `🏁 目标为第 1 大和，直接返回全局最大正数和 ${maxSum}。`,
+        log: `done: ans=${maxSum}`,
+        codeLine: lines.returnAns,
       })
     );
     return steps;
   }
 
-  // 小根堆模拟
   const heap: { idx: number; val: number }[] = [{ idx: -1, val: 0 }];
-  let lastPoppedVal = 0;
 
   for (let i = 1; i < targetK; i++) {
     heap.sort((a, b) => a.val - b.val);
     const cur = heap.shift()!;
-    lastPoppedVal = cur.val;
 
     if (cur.idx + 1 < n) {
-      // 分支1: 追加下一个绝对值
-      heap.push({ idx: cur.idx + 1, val: cur.val + absNums[cur.idx + 1] });
-      // 分支2: 替换
+      const nextAbs = absNums[cur.idx + 1];
+      heap.push({ idx: cur.idx + 1, val: cur.val + nextAbs });
       if (cur.idx >= 0) {
-        heap.push({
-          idx: cur.idx + 1,
-          val: cur.val - absNums[cur.idx] + absNums[cur.idx + 1],
-        });
+        heap.push({ idx: cur.idx + 1, val: cur.val - absNums[cur.idx] + nextAbs });
       }
     }
 
+    heap.sort((a, b) => a.val - b.val);
+    const topOfHeap = heap[0];
+    const rank = i + 1;
+    const ansKth = maxSum - topOfHeap.val;
+
     steps.push(
       makeStep({
-        stepIndex: i,
+        stepIndex: steps.length,
         nums: [...rawNums],
         absNums: [...absNums],
         maxSum,
         kTarget: targetK,
         heapSnapshot: [...heap],
-        currentSmallestRank: i + 1,
-        currentSmallestVal: heap[0]?.val ?? cur.val,
-        kthSum: maxSum - (heap[0]?.val ?? cur.val),
-        status: 'pop',
-        message: `🔍 弹出 absNums 第 ${i} 小子序列和 ${cur.val}，并将后继分支压入小根堆。`,
-        log: `step ${i}: pop val=${cur.val}, heapSize=${heap.length}`,
-        codeLine: 16,
+        currentSmallestRank: rank,
+        currentSmallestVal: topOfHeap.val,
+        kthSum: ansKth,
+        status: 'branch',
+        message: `👑 小根堆第 ${rank} 小绝对值损失量为 ${topOfHeap.val} (右下标=${topOfHeap.idx})。\n对应原数组第 ${rank} 大子序列和 = maxSum(${maxSum}) - 损失(${topOfHeap.val}) = ${ansKth}！`,
+        log: `step #${rank}: loss=${topOfHeap.val}, ans=${ansKth}`,
+        codeLine: lines.branch,
       })
     );
   }
 
-  heap.sort((a, b) => a.val - b.val);
-  const kthSmallestAbsSum = heap[0]?.val ?? lastPoppedVal;
-  const finalAns = maxSum - kthSmallestAbsSum;
+  const finalTop = heap[0] || { idx: -1, val: 0 };
+  const finalAns = maxSum - finalTop.val;
 
   steps.push(
     makeStep({
-      stepIndex: targetK,
+      stepIndex: steps.length,
       nums: [...rawNums],
       absNums: [...absNums],
       maxSum,
       kTarget: targetK,
       heapSnapshot: [...heap],
       currentSmallestRank: targetK,
-      currentSmallestVal: kthSmallestAbsSum,
+      currentSmallestVal: finalTop.val,
       kthSum: finalAns,
       status: 'done',
-      message: `🎉 运算达成！absNums 的第 ${targetK} 小子序列和为 ${kthSmallestAbsSum}。因此原数组第 ${targetK} 大和 = maxSum (${maxSum}) - ${kthSmallestAbsSum} = ${finalAns}！`,
-      log: `done: kthSum=${finalAns}`,
-      codeLine: 24,
+      message: `🎉 第 K 大和推演成功！原数组的第 ${targetK} 大子序列和为 ${finalAns}！`,
+      log: `done: k=${targetK}, ans=${finalAns}`,
+      codeLine: lines.returnAns,
     })
   );
 
@@ -164,57 +173,57 @@ export function buildFindKthSumSteps(
 
 const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
   id: 'find-kth-sum',
-  name: '找出数组的第K大和',
+  name: '找出数组的第K大和 (LeetCode 2386)',
   category: 'dynamic-programming',
   badge: {
-    mode: '绝对值映射 · 对偶归约',
+    mode: '绝对值归约 · 小根堆',
     complexity: 'O(N log N + K log K) · O(K)',
   },
-  card1Title: '🪞 原数组正负分离与绝对值映射沙盘',
-  card2Title: '📉 差值对偶转换与第 K 大值推导监视器',
-  card2Desc: '展示原数组第 K 大和双射归约至 absNums 第 K 小和的逆向相消过程',
+  card1Title: '原数组/绝对值映射与小根堆状态机沙盘',
+  card2Title: '绝对值损失量与第K大和对决监视器',
+  card2Desc: '展示利用 maxSum 减去绝对值数组的第 K 小累加和，将负数处理彻底消解的数学归约过程',
   legend: [
-    { label: '正数 (贡献 maxSum)', color: '#10b981' },
-    { label: '负数/零 (纳入绝对值吸收池)', color: '#f87171' },
-    { label: '小根堆最优候选', color: '#38bdf8' },
+    { label: '普通堆节点', color: '#334155' },
+    { label: '👑 当前堆顶损失量', color: '#10b981' },
+    { label: '绝对值映射项', color: '#38bdf8' },
   ],
   inputs: [
     {
       id: 'input-k',
-      label: '目标排名 K',
+      label: '目标 K',
       type: 'number',
       defaultValue: 5,
-      width: '60px',
+      width: '50px',
     },
     {
       id: 'input-nums',
-      label: '原始数组 nums (可含正负数)',
+      label: '含负数数组 nums',
       type: 'text',
       defaultValue: '2, 4, -2',
-      width: '160px',
+      width: '140px',
     },
   ],
   presets: [
     {
-      label: '经典三元素含负数 (nums=[2, 4, -2], K=5, Ans=2)',
+      label: 'LeetCode 样例 (nums=[2,4,-2], K=5, Ans=2)',
       values: {
         'input-k': 5,
         'input-nums': '2, 4, -2',
       },
     },
     {
-      label: '对称正负测试 (nums=[1, -2, 3, -4], K=6, Ans=0)',
+      label: '较大范围正负用例 (nums=[1,-2,3,4,-10,12], K=16)',
       values: {
-        'input-k': 6,
-        'input-nums': '1, -2, 3, -4',
+        'input-k': 16,
+        'input-nums': '1, -2, 3, 4, -10, 12',
       },
     },
   ],
   metrics: [
-    { id: 'metric-max-sum', label: '所有正数全选基准', color: '#10b981' },
-    { id: 'metric-cur-k', label: '当前分析名次', color: '#f59e0b' },
-    { id: 'metric-abs-val', label: '绝对值第K小减扣项', color: '#f87171' },
-    { id: 'metric-ans-kth', label: '原数组第K大和', color: '#a855f7' },
+    { id: 'metric-max-sum', label: '全局最大和 maxSum', color: '#10b981' },
+    { id: 'metric-cur-k', label: '当前推演顺位', color: '#38bdf8' },
+    { id: 'metric-abs-val', label: '第K小绝对值损失', color: '#f59e0b' },
+    { id: 'metric-ans-kth', label: '第 K 大子序列和', color: '#a855f7' },
   ],
   codeLanguages: FIND_KTH_SUM_CODE_LANGUAGES,
   problemHtml: FIND_KTH_SUM_PROBLEM_HTML,
@@ -228,59 +237,67 @@ const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
     return buildFindKthSumSteps(nums, k);
   },
   renderCanvas: (container, step) => {
-    const origBadges = step.nums
-      .map((x) => {
-        const isPos = x > 0;
-        const color = isPos ? '#10b981' : '#f87171';
-        return `
-          <div style="background:#1e293b; border:1px solid ${color}; border-radius:6px; padding:4px 8px; text-align:center;">
-            <div style="font-size:12px; font-weight:800; color:${color};">${x}</div>
-          </div>
-        `;
-      })
+    const absBadges = step.absNums
+      .map((x, i) => `
+        <div style="background:rgba(15, 23, 42, 0.6); border:1.5px solid #38bdf8; border-radius:6px; padding:5px 8px; min-width:40px; text-align:center;">
+          <div style="font-size:8.5px; color:#94a3b8;">|#${i}|</div>
+          <div style="font-size:12px; font-weight:800; color:#38bdf8;">${x}</div>
+        </div>
+      `)
       .join('');
 
-    const absBadges = step.absNums
-      .map((x, idx) => {
+    const heapList = step.heapSnapshot
+      .map((node, idx) => {
+        const isTop = idx === 0;
         return `
-          <div style="background:#1e293b; border:1px solid #38bdf8; border-radius:6px; padding:4px 8px; text-align:center;">
-            <span style="font-size:8px; color:#94a3b8;">[${idx}]</span>
-            <div style="font-size:12px; font-weight:800; color:#38bdf8;">${x}</div>
+          <div style="background:${isTop ? 'rgba(6, 95, 70, 0.5)' : 'rgba(15, 23, 42, 0.6)'}; border:1.5px solid ${
+          isTop ? '#10b981' : '#334155'
+        }; border-radius:6px; padding:5px 8px; min-width:65px; text-align:center;">
+            <div style="font-size:8.5px; color:${isTop ? '#4ade80' : '#94a3b8'};">${isTop ? '👑 堆顶' : `#${idx + 1}`} (idx=${node.idx})</div>
+            <div style="font-size:12px; font-weight:800; color:#f8fafc;">损失: ${node.val}</div>
           </div>
         `;
       })
       .join('');
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; justify-content:center; align-items:center; background:#0f172a; padding:12px; border-radius:8px; box-sizing:border-box;">
-        <div style="font-size:11px; color:#94a3b8; font-weight:700;">原始数组 (原正负数分布)</div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
-          ${origBadges}
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+          <div style="font-size:12px; color:#94a3b8; font-weight:700;">绝对值数组 absNums (由原数组转化并升序排列)</div>
+          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+            全局最大和 maxSum: <b style="color:#10b981;">${step.maxSum}</b>
+          </div>
         </div>
-        <div style="font-size:11px; color:#94a3b8; font-weight:700; margin-top:4px;">绝对值排序后数组 absNums</div>
+
         <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
           ${absBadges}
         </div>
-        <div style="margin-top:8px; padding:6px 14px; background:#1e293b; border-radius:6px; border:1px solid #334155; font-size:12px; color:#e2e8f0; font-family:monospace;">
-          第 ${step.currentSmallestRank} 大和 = maxSum(${step.maxSum}) - 扣减项(${step.currentSmallestVal}) = <span style="color:#a855f7; font-weight:800;">${step.kthSum}</span>
+
+        <!-- 小根堆优先队列舱 -->
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🌲 绝对值小根堆状态机 (寻找第 K 小损失)</span>
+            <span style="font-size:10.5px; color:#38bdf8;">堆顶即当前最小损失</span>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            ${heapList}
+          </div>
         </div>
       </div>
     `;
   },
   renderCustomMetrics: (container, step) => {
     container.innerHTML = `
-      <div style="display:flex; gap:8px; width:100%; padding:6px; box-sizing:border-box; background:#0b1329; border-radius:6px;">
-        <div style="flex:1; padding:6px 10px; background:#1e293b; border-radius:6px; border:1px solid #334155;">
-          <div style="font-size:10px; color:#94a3b8;">基准正数全选和 maxSum</div>
-          <div style="font-size:16px; font-weight:800; color:#10b981;">${step.maxSum}</div>
-        </div>
-        <div style="flex:1; padding:6px 10px; background:#1e293b; border-radius:6px; border:1px solid #334155;">
-          <div style="font-size:10px; color:#94a3b8;">当前堆顶扣减绝对值和</div>
-          <div style="font-size:16px; font-weight:800; color:#f87171;">-${step.currentSmallestVal}</div>
-        </div>
-        <div style="flex:1; padding:6px 10px; background:#1e293b; border-radius:6px; border:1px solid #a855f7;">
-          <div style="font-size:10px; color:#a855f7;">当前得出第 K 大和</div>
-          <div style="font-size:16px; font-weight:800; color:#a855f7;">${step.kthSum}</div>
+      <div style="width:100%; padding:8px 12px; box-sizing:border-box; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:11.5px; color:#cbd5e1; font-weight:700;">👑 第 K 大和最终对决推导</div>
+        <div style="background:#0b1329; border:1px solid #334155; border-radius:6px; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:12px; color:#94a3b8;">
+            目标：第 <b style="color:#38bdf8;">${step.currentSmallestRank}</b> 大子序列和
+          </div>
+          <div style="font-size:14px; font-weight:800; color:#f8fafc; font-family:monospace;">
+            ans = maxSum (${step.maxSum}) - 绝对值损失 (${step.currentSmallestVal}) = <span style="color:#a855f7;">${step.kthSum}</span>
+          </div>
         </div>
       </div>
     `;
@@ -291,15 +308,14 @@ export const FindKthSumVisualizer = Visualizer;
 
 registerAlgorithm({
   id: 'find-kth-sum',
-  name: '找出数组的第K大和',
+  name: '找出数组的第K大和 (LeetCode 2386)',
   viewId: 'algo-find-kth-sum-view',
   category: 'dynamic-programming',
-  description: '左程云算法通关课 Class 073 Code07：LeetCode 2386 找出数组的第 K 大和，正数和基准 + 绝对值数组前 K 小和逆向相减对偶转化',
-  icon: '🪞',
+  description: '左程云算法通关课 Class 073 Code07：LeetCode 2386 找出数组的第K大和，正负数分离基准 + 绝对值数组映射 + 归约为前 K 小和堆优化',
+  icon: '🔍',
   template,
   Visualizer,
   difficulty: 3,
   levelOrder: 83,
-  learningGoal: '掌握含负数数组子序列和极值问题的基准平移法、绝对值数组双射归约与小根堆求第 K 小',
+  learningGoal: '深刻理解全局最大和作为基准的代数推导、损失量绝对值映射与小根堆极速求解',
 });
-

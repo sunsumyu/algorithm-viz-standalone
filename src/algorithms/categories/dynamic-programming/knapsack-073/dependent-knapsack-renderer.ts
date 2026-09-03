@@ -217,7 +217,7 @@ export function buildDependentKnapsackSteps(
 }
 
 const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackStep>({
-  id: 'dependent-knapsack',
+  id: 'dependent-knapsack-standard',
   name: '有依赖的背包模版 (金明的预算方案)',
   category: 'dynamic-programming',
   badge: {
@@ -368,9 +368,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackSt
 export const DependentKnapsackVisualizer = Visualizer;
 
 registerAlgorithm({
-  id: 'dependent-knapsack',
+  id: 'dependent-knapsack-standard',
   name: '有依赖的背包模版 (金明的预算方案)',
-  viewId: 'algo-dependent-knapsack-view',
+  viewId: 'algo-dependent-knapsack-standard-view',
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 073 Code05：洛谷 P1064 金明的预算方案，主件附件组合展开为互斥分组背包求解',
   icon: '🛍️',
