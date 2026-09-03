@@ -207,6 +207,14 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
       });
     }
 
+    // 1.5 调用 Spec 的自定义指标 / 状态卡片渲染器
+    if (this.customMetricsContainer && this.spec.renderCustomMetrics) {
+      this.spec.renderCustomMetrics(this.customMetricsContainer, step, {
+        mode: this.currentMode,
+        currentIndex: this.currentIndex,
+      });
+    }
+
     // 2. 更新通用实时解说文本与指标卡片
     const anyStep = step as any;
     if (anyStep.metrics && typeof anyStep.metrics === 'object') {
@@ -265,8 +273,14 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
   }
 
   public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
+    this.pause();
+    (this.spec.inputs || []).forEach((input) => {
+      const el = this.root?.querySelector(`#${input.id}`) as HTMLInputElement | HTMLSelectElement | null;
+      if (el && input.defaultValue !== undefined) {
+        el.value = String(input.defaultValue);
+      }
+    });
+    this.start();
   }
 
   public destroy(): void {
