@@ -1,6 +1,7 @@
 /**
  * 完全背包模版 (洛谷 P1616 疯狂的采药) - 声明式 4-Card 沙盘渲染器
  * 核心：每种物品可选任意次，空间压缩后【正序】枚举容量 j，允许当轮重复累加
+ * 架构重构：采用通用背包推演深模块 KnapsackExecutionEngine 与沙盘载荷舱组件 KnapsackSandboxStage
  */
 
 import { registerAlgorithm } from '../../../../core/registry';
@@ -10,21 +11,20 @@ import {
   UNBOUNDED_KNAPSACK_ANALYSIS_HTML,
   UNBOUNDED_KNAPSACK_CODE_LANGUAGES,
 } from './knapsack-074-problem-content';
-import { HighlightTarget } from '../../../../core/code-panel';
+import {
+  runKnapsackEngine,
+  KnapsackExecutionStep,
+  KnapsackItem,
+} from '../../../../core/knapsack-execution-engine';
+import {
+  renderKnapsackSandbox,
+  renderKnapsackDpMatrix,
+} from '../../../../core/renderers/knapsack-sandbox-stage';
 
-export interface UnboundedKnapsackStep {
-  itemIndex: number;
-  j: number;
+export interface UnboundedKnapsackStep extends KnapsackExecutionStep {
   cost: number[];
   val: number[];
-  dp: number[];
-  maxVal: number;
   totalTime: number;
-  status: 'init' | 'item' | 'check' | 'update' | 'done';
-  message: string;
-  log: string;
-  codeLine?: HighlightTarget;
-  metrics?: Record<string, any>;
 }
 
 export function buildUnboundedKnapsackSteps(
@@ -32,149 +32,43 @@ export function buildUnboundedKnapsackSteps(
   cost: number[],
   val: number[]
 ): UnboundedKnapsackStep[] {
-  const steps: UnboundedKnapsackStep[] = [];
-  const t = Math.max(0, totalTime);
   const m = Math.min(cost.length, val.length);
-  const dp = new Array(t + 1).fill(0);
-
-  const lines = {
-    initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
-    itemLoop: { java: 9, cpp: 9, python: 4, javascript: 4 },
-    capLoop: { java: 11, cpp: 11, python: 5, javascript: 6 },
-    updateDp: { java: 12, cpp: 12, python: 6, javascript: 7 },
-    returnAns: { java: 15, cpp: 15, python: 7, javascript: 10 },
-  };
-
-  function makeStep(data: Omit<UnboundedKnapsackStep, 'metrics'>): UnboundedKnapsackStep {
-    const itemStr = data.itemIndex >= 0 ? `第 ${data.itemIndex + 1} 种` : '—';
-    const jStr = data.j >= 0 ? `${data.j}` : '—';
-    return {
-      ...data,
-      metrics: {
-        'metric-cur-herb': itemStr,
-        'metric-cur-time': jStr,
-        'metric-max-val': `${data.maxVal}`,
-      },
-    };
-  }
-
-  // 1. 初始化
-  steps.push(
-    makeStep({
-      itemIndex: -1,
-      j: -1,
-      cost: [...cost],
-      val: [...val],
-      dp: [...dp],
-      maxVal: 0,
-      totalTime: t,
-      status: 'init',
-      message: `🌿 初始化完全背包：总时间 T=${t}，草药种类 m=${m}。创建 dp[0..${t}] 空间。`,
-      log: `init: dp[0..${t}] = 0`,
-      codeLine: lines.initDp,
-    })
-  );
-
-  if (t === 0 || m === 0) {
-    steps.push(
-      makeStep({
-        itemIndex: -1,
-        j: 0,
-        cost: [...cost],
-        val: [...val],
-        dp: [...dp],
-        maxVal: 0,
-        totalTime: t,
-        status: 'done',
-        message: '🏁 时间为 0 或无草药可选，最大收益 0。',
-        log: 'done: ans=0',
-        codeLine: lines.returnAns,
-      })
-    );
-    return steps;
-  }
-
+  const items: KnapsackItem[] = [];
   for (let i = 0; i < m; i++) {
-    const c = cost[i], v = val[i];
-
-    // 2. 物品外层循环
-    steps.push(
-      makeStep({
-        itemIndex: i,
-        j: -1,
-        cost: [...cost],
-        val: [...val],
-        dp: [...dp],
-        maxVal: dp[t],
-        totalTime: t,
-        status: 'item',
-        message: `🌱 外层循环：考察第 ${i + 1} 种草药（耗时=${c}, 价值=${v}）。完全背包正序枚举！`,
-        log: `item #${i + 1}: cost=${c}, val=${v}`,
-        codeLine: lines.itemLoop,
-      })
-    );
-
-    // 3. 正序枚举容量
-    for (let j = c; j <= t; j++) {
-      steps.push(
-        makeStep({
-          itemIndex: i,
-          j,
-          cost: [...cost],
-          val: [...val],
-          dp: [...dp],
-          maxVal: dp[t],
-          totalTime: t,
-          status: 'check',
-          message: `⏳ 正序容量循环：当前容量 j=${j}（从 cost=${c} 到 ${t}，支持同轮无限累加）。`,
-          log: `cap loop: j=${j}`,
-          codeLine: lines.capLoop,
-        })
-      );
-
-      const candidate = dp[j - c] + v;
-      const updated = candidate > dp[j];
-      if (updated) {
-        dp[j] = candidate;
-      }
-      steps.push(
-        makeStep({
-          itemIndex: i,
-          j,
-          cost: [...cost],
-          val: [...val],
-          dp: [...dp],
-          maxVal: dp[t],
-          totalTime: t,
-          status: updated ? 'update' : 'check',
-          message: updated
-            ? `✨ 状态更新：dp[${j}] = Math.max(${dp[j]}, dp[${j - c}] + ${v}) = ${candidate}，收益提高！`
-            : `⏸️ 状态保持：放入收益 ${candidate} <= 原收益 ${dp[j]}，保持 dp[${j}]=${dp[j]}。`,
-          log: `dp[${j}] = Math.max(${dp[j]}, ${candidate}) => ${dp[j]}`,
-          codeLine: lines.updateDp,
-        })
-      );
-    }
+    items.push({ cost: cost[i], val: val[i], id: i + 1, name: `草药 #${i + 1}` });
   }
 
-  // 4. 完成
-  steps.push(
-    makeStep({
-      itemIndex: -1,
-      j: t,
-      cost: [...cost],
-      val: [...val],
-      dp: [...dp],
-      maxVal: dp[t],
-      totalTime: t,
-      status: 'done',
-      message: `🎉 采摘计划制定完成！在时间 ${t} 内无限次采摘的最大总收益为 ${dp[t]}！`,
-      log: `done: maxVal=${dp[t]}`,
-      codeLine: 18,
-    })
-  );
+  const engineSteps = runKnapsackEngine({
+    type: 'unbounded',
+    capacity: totalTime,
+    items,
+    lineMap: {
+      initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
+      outerLoop: { java: 9, cpp: 9, python: 4, javascript: 4 },
+      capLoop: { java: 11, cpp: 11, python: 5, javascript: 6 },
+      updateDp: { java: 12, cpp: 12, python: 6, javascript: 7 },
+      returnAns: { java: 15, cpp: 15, python: 7, javascript: 10 },
+    },
+    customMessages: {
+      init: `🌿 初始化完全背包：总时间 T=${totalTime}，草药种类 m=${m}（每种草药可无限次叠加採摘）。`,
+      done: `🎉 完全背包决策完毕！在总时间 ${totalTime} 内无限选取的最大总收益为答案！`,
+    },
+  });
 
-  return steps;
+  return engineSteps.map((s) => ({
+    ...s,
+    cost: [...cost],
+    val: [...val],
+    totalTime,
+    metrics: {
+      'metric-cur-herb': s.itemIndex >= 0 ? `第 ${s.itemIndex + 1} 种` : '—',
+      'metric-cur-time': s.j >= 0 ? `${s.j}` : '—',
+      'metric-cur-item': s.itemIndex >= 0 ? `#${s.itemIndex + 1}` : '—',
+      'metric-cur-j': s.j >= 0 ? `${s.j}` : '—',
+      'metric-direction': '正序 (从小到大)',
+      'metric-max-val': `${s.maxVal}`,
+    },
+  })) as UnboundedKnapsackStep[];
 }
 
 const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackStep>({
@@ -185,18 +79,18 @@ const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackSt
     mode: '完全背包 · 正序压缩',
     complexity: 'O(M · T) · O(T)',
   },
-  card1Title: '🌿 草药库陈列 (每种可无限次采摘 ∞)',
-  card2Title: '🔄 正序滚动收益向量 dp[j] 监视器',
-  card2Desc: '对比 01 背包逆序枚举，完全背包正序枚举使得同件物品可在同一轮中不断自叠加',
+  card1Title: '🌿 草药资源库与正序推进沙盘',
+  card2Title: '📊 滚动收益向量 dp[j] 监视器',
+  card2Desc: '展示正序容量枚举下，同一草药在同一轮中可以被连续多次装入的累加过程',
   legend: [
-    { label: '可选草药 (无限次)', color: '#38bdf8' },
-    { label: '当前采摘草药', color: '#f59e0b' },
-    { label: '正序叠加更新', color: '#10b981' },
+    { label: '未装入草药', color: '#475569' },
+    { label: '当前考察草药', color: '#f59e0b' },
+    { label: '带来更优更新', color: '#10b981' },
   ],
   inputs: [
     {
       id: 'input-t',
-      label: '总采药时间 T',
+      label: '总时间 T (容量)',
       type: 'number',
       defaultValue: 70,
       width: '60px',
@@ -256,53 +150,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackSt
     return buildUnboundedKnapsackSteps(t, cost, val);
   },
   renderCanvas: (container, step) => {
-    const itemsHtml = step.cost
-      .map((c, idx) => {
-        const v = step.val[idx];
-        const isCur = step.itemIndex === idx;
-        const bg = isCur ? '#1e1b4b' : '#0f172a';
-        const border = isCur ? '#818cf8' : '#334155';
-        return `
-          <div style="background:${bg}; border:2px solid ${border}; border-radius:8px; padding:10px; min-width:110px; text-align:center;">
-            <div style="font-size:11px; color:#cbd5e1; font-weight:700;">草药 #${idx + 1} <span style="color:#10b981;">(可无限取 ∞)</span></div>
-            <div style="margin-top:6px; font-size:11px; color:#94a3b8;">耗时: <b style="color:#f8fafc;">${c}</b></div>
-            <div style="font-size:11px; color:#94a3b8;">价值: <b style="color:#10b981;">${v}</b></div>
-          </div>
-        `;
-      })
-      .join('');
-
-    container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; justify-content:center; align-items:center; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box;">
-        <div style="font-size:12px; color:#94a3b8; font-weight:700;">草药资源库与正序推进方向 (Forward Order)</div>
-        <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center;">
-          ${itemsHtml}
-        </div>
-      </div>
-    `;
+    renderKnapsackSandbox(container, step, {
+      title: '🌿 草药资源库与正序推进沙盘 (每种可无限次叠加 ∞)',
+      isPartitioned: false,
+    });
   },
   renderCustomMetrics: (container, step) => {
-    const cells = step.dp.map((val, idx) => {
-      const isCur = step.j === idx;
-      const bg = isCur ? '#0284c7' : '#1e293b';
-      const border = isCur ? '#38bdf8' : '#334155';
-      const color = val > 0 ? '#10b981' : '#64748b';
-      return `
-        <div style="display:inline-flex; flex-direction:column; align-items:center; min-width:32px; padding:3px; margin:2px; background:${bg}; border:1px solid ${border}; border-radius:4px;">
-          <span style="font-size:8px; color:#94a3b8;">${idx}</span>
-          <span style="font-size:10px; font-weight:700; color:${color};">${val}</span>
-        </div>
-      `;
-    });
-
-    container.innerHTML = `
-      <div style="width:100%; padding:4px 8px; box-sizing:border-box;">
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">正序滚动容量表 dp[0..${step.dp.length - 1}]</div>
-        <div style="display:flex; flex-wrap:wrap; max-height:100px; overflow-y:auto; gap:2px; background:#0b1329; padding:6px; border-radius:6px;">
-          ${cells.join('')}
-        </div>
-      </div>
-    `;
+    renderKnapsackDpMatrix(container, step, `正序滚动容量表 dp[0..${step.dp.length - 1}]`);
   },
 });
 
@@ -321,4 +175,3 @@ registerAlgorithm({
   levelOrder: 86,
   learningGoal: '深刻理解完全背包与 01 背包空间压缩的本质区别：正序从小到大枚举容量使得物品可同轮无限次自叠加',
 });
-
