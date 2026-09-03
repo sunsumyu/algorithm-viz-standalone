@@ -1,6 +1,7 @@
 /**
  * 冗余连接 II (LC 685) 可视化器 — 4-Card 标准现代架构
- * 有向图双父节点冲突统计、并查集有向环判定与多场景分类精讲
+ * 有向图双父节点冲突统计、并查集有向环判定与多场景分类精讲 (左程云 class057)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（入度初始化、首轮遍历统计入度2冲突边、并查集初始化、次轮跳过冲突边建树并检测环路、根判环、并查集合并、三大分支终局判定均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
@@ -11,6 +12,7 @@ import {
   REDUNDANT_EDGE_II_CODE_LANGUAGES,
 } from './redundant-edge-ii-problem-content';
 import template from './redundant-edge-ii.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
 export interface RedundantIIStep extends StepBase {
   nodes: number[];
@@ -25,7 +27,8 @@ export interface RedundantIIStep extends StepBase {
   action: 'init' | 'check-indegree' | 'check-cycle' | 'union' | 'found-conflict' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
 export const RE2_NODES = [1, 2, 3];
@@ -49,132 +52,138 @@ export function buildRedundantIISteps(): RedundantIIStep[] {
   let conflict = -1;
   let cycle = -1;
 
-  steps.push({
-    nodes: RE2_NODES,
-    edges,
-    inDegree: [...inDegree],
-    conflictIndex: -1,
-    cycleIndex: -1,
-    currentEdgeIndex: -1,
-    currentEdge: null,
-    resultEdge: null,
-    parent: Array.from({ length: n + 1 }, (_, i) => i),
-    action: 'init',
-    statusText: `初始化：共 ${n} 个节点，开始第一阶段——统计各节点入度，检测是否存在入度为 2 的双父冲突。`,
-    log: `初始化 LC 685: 统计节点入度`,
-    codeLine: [3, 4, 5],
-  });
+  // 精准 14 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 3, java: 2, python: 2, javascript: 1 },
+    initVars: { cpp: 4, java: 3, python: 3, javascript: 2 },
+    initParent: { cpp: 6, java: 7, python: 9, javascript: 8 },
+    forInDegree: { cpp: 7, java: 8, python: 6, javascript: 5 },
+    checkInDegree: { cpp: 8, java: 9, python: 7, javascript: 6 },
+    recordInDegree: { cpp: 8, java: 10, python: 8, javascript: 6 },
+    forCycle: { cpp: 10, java: 13, python: 10, javascript: 9 },
+    skipConflict: { cpp: 11, java: 14, python: 11, javascript: 10 },
+    findRoots: { cpp: 12, java: 16, python: 12, javascript: 11 },
+    checkRoots: { cpp: 13, java: 17, python: 13, javascript: 12 },
+    unionRoots: { cpp: 14, java: 18, python: 14, javascript: 13 },
+    checkConflictLessZero: { cpp: 16, java: 20, python: 15, javascript: 15 },
+    checkCycleGreaterEqualZero: { cpp: 17, java: 21, python: 16, javascript: 16 },
+    returnConflict: { cpp: 18, java: 22, python: 17, javascript: 17 },
+  };
 
-  // Step 1: Detect indegree == 2
-  for (let i = 0; i < edges.length; i++) {
-    const [u, v] = edges[i];
-    if (inDegree[v] > 0) {
-      conflict = i;
-      steps.push({
-        nodes: RE2_NODES,
-        edges,
-        inDegree: [...inDegree],
-        conflictIndex: conflict,
-        cycleIndex: -1,
-        currentEdgeIndex: i,
-        currentEdge: [u, v],
-        resultEdge: null,
-        parent: Array.from({ length: n + 1 }, (_, i) => i),
-        action: 'found-conflict',
-        statusText: `🚨 边 #${i + 1} [${u}, ${v}]：节点 ${v} 已经有入边，现再次被指向！入度为 2，标记 conflict 边为 [${u}, ${v}]。`,
-        log: `[双父冲突] 发现节点 ${v} 入度为 2 (边 #${i + 1} [${u}, ${v}])`,
-        codeLine: [8, 9, 10],
-      });
-    } else {
-      inDegree[v]++;
-    }
-  }
-
-  // Step 2: Union-Find check
   const parent = Array.from({ length: n + 1 }, (_, i) => i);
+
   const find = (i: number): number => {
     let root = i;
-    while (root !== parent[root]) root = parent[root];
+    while (root !== parent[root]) {
+      root = parent[root];
+    }
     return root;
   };
 
-  for (let i = 0; i < edges.length; i++) {
-    if (i === conflict) continue; // Skip conflict edge temporarily
-    const [u, v] = edges[i];
-    const rU = find(u);
-    const rV = find(v);
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'check-indegree' | 'check-cycle' | 'union' | 'found-conflict' | 'done',
+    statusText: string,
+    log: string,
+    currentEdgeIndex: number = -1,
+    currentEdge: [number, number] | null = null,
+    resultEdge: [number, number] | null = null
+  ): void {
+    const degStr = inDegree.slice(1).map((d, i) => `${i + 1}:${d}`).join(', ');
+    const pStr = parent.slice(1).map((p, i) => `${i + 1}:${p}`).join(', ');
 
-    if (rU === rV) {
-      cycle = i;
-      steps.push({
-        nodes: RE2_NODES,
-        edges,
-        inDegree: [...inDegree],
-        conflictIndex: conflict,
-        cycleIndex: cycle,
-        currentEdgeIndex: i,
-        currentEdge: [u, v],
-        resultEdge: null,
-        parent: [...parent],
-        action: 'check-cycle',
-        statusText: `⚠️ 边 #${i + 1} [${u}, ${v}]：find(${u}) === find(${v})，在跳过 conflict 边后仍发现有向环！`,
-        log: `[环路检测] 边 #${i + 1} [${u}, ${v}] 构成环路`,
-        codeLine: [15, 16],
-      });
+    steps.push({
+      nodes: RE2_NODES,
+      edges,
+      inDegree: [...inDegree],
+      conflictIndex: conflict,
+      cycleIndex: cycle,
+      currentEdgeIndex,
+      currentEdge,
+      resultEdge,
+      parent: [...parent],
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-re2-conflict': conflict >= 0 ? `edges[${conflict}]=[${edges[conflict][0]}, ${edges[conflict][1]}]` : '无',
+        'metric-re2-cycle': cycle >= 0 ? `edges[${cycle}]=[${edges[cycle][0]}, ${edges[cycle][1]}]` : '无',
+        'metric-re2-indegree': `[${degStr}]`,
+        'metric-re2-uf': `[${pStr}]`,
+      },
+    });
+  }
+
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] findRedundantDirectedConnection(edges)：启动有向图冗余连接双父节点与有向环判定。', 'findRedundantDirectedConnection 入口');
+  makeStep(lines.initVars, 'init', `📊 [初始化统计数据] inDegree = [0,0,0,0], conflict = -1, cycle = -1。`, 'init variables');
+
+  // 2. 第一轮：统计入度检测双父节点冲突
+  for (let i = 0; i < n; i++) {
+    const [u, v] = edges[i];
+    makeStep(lines.forInDegree, 'check-indegree', `🔁 [入度遍历] 考察边 edges[${i}] = [${u}, ➔ ${v}]。`, `edges[${i}] = [${u}, ${v}]`, i, edges[i]);
+
+    if (inDegree[v] > 0) {
+      conflict = i;
+      makeStep(lines.checkInDegree, 'found-conflict', `⚠️ [捕获入度为2冲突] 顶点 ${v} 已有入边 (inDegree[${v}]=${inDegree[v]})，边 edges[${i}]=[${u}, ${v}] 为第二条入边！记录 conflict = ${i}。`, `conflict = ${i} ([${u}, ${v}])`, i, edges[i]);
     } else {
-      parent[rU] = rV;
-      steps.push({
-        nodes: RE2_NODES,
-        edges,
-        inDegree: [...inDegree],
-        conflictIndex: conflict,
-        cycleIndex: cycle,
-        currentEdgeIndex: i,
-        currentEdge: [u, v],
-        resultEdge: null,
-        parent: [...parent],
-        action: 'union',
-        statusText: `考察边 #${i + 1} [${u}, ${v}]：并查集无环，合并 parent[${rU}] = ${rV}。`,
-        log: `合并边 #${i + 1} [${u}, ${v}]`,
-        codeLine: 17,
-      });
+      inDegree[v]++;
+      makeStep(lines.recordInDegree, 'check-indegree', `  ↳ [累加入度] inDegree[${v}] 自增为 ${inDegree[v]}。`, `inDegree[${v}]++`, i, edges[i]);
     }
   }
 
-  // Determine result
-  let result: [number, number];
+  // 3. 第二轮：并查集判环 (若有 conflict 则假设跳过 conflict 边)
+  makeStep(lines.initParent, 'init', `🏷️ [初始化并查集] parent[i] = i；重置并查集准备进行环路检测。`, 'init parent[]');
+
+  for (let i = 0; i < n; i++) {
+    makeStep(lines.forCycle, 'check-cycle', `🔁 [环路检测遍历] 考察边 edges[${i}] = [${edges[i][0]}, ${edges[i][1]}]。`, `for cycle edges[${i}]`, i, edges[i]);
+
+    if (i === conflict) {
+      makeStep(lines.skipConflict, 'check-cycle', `⏭️ [假设跳过冲突边] i === conflict (${conflict})，跳过边 edges[${i}]=[${edges[i][0]}, ${edges[i][1]}]，检验其余边是否仍有环。`, `skip conflict edge ${i}`, i, edges[i]);
+      continue;
+    }
+
+    const [u, v] = edges[i];
+    const rU = find(u);
+    const rV = find(v);
+    makeStep(lines.findRoots, 'check-cycle', `  🔍 [查找并查集根] find(${u}) = ${rU}, find(${v}) = ${rV}。`, `find(${u})=${rU}, find(${v})=${rV}`, i, edges[i]);
+
+    if (rU === rV) {
+      cycle = i;
+      makeStep(lines.checkRoots, 'check-cycle', `⚠️ [捕获有向环] rootU == rootV (${rU} == ${rV})！边 edges[${i}]=[${u}, ${v}] 导致形成环路，记录 cycle = ${i}。`, `cycle = ${i} ([${u}, ${v}])`, i, edges[i]);
+    } else {
+      parent[rU] = rV;
+      makeStep(lines.unionRoots, 'union', `  🔗 [合并连通块] parent[${rU}] = ${rV}；将连通分支合并。`, `union: parent[${rU}]=${rV}`, i, edges[i]);
+    }
+  }
+
+  // 4. 终局决策三大分支
+  makeStep(lines.checkConflictLessZero, 'check-cycle', `🔎 [终局判定-分支1] if (conflict < 0) -> (${conflict} < 0) -> (${conflict < 0})；若无入度为2冲突，直接返回成环边。`, 'check conflict < 0');
   if (conflict < 0) {
-    result = edges[cycle];
-  } else if (cycle >= 0) {
-    // Both conflict and cycle exist -> first parent edge is redundant
+    const res = edges[cycle];
+    makeStep(lines.checkConflictLessZero, 'done', `🎉 [无双父节点冲突] return edges[cycle]！无入度2冲突，成环边 edges[${cycle}]=[${res[0]}, ${res[1]}] 即为冗余连接！`, 'return edges[cycle]', cycle, res, res);
+    return steps;
+  }
+
+  makeStep(lines.checkCycleGreaterEqualZero, 'check-cycle', `🔎 [终局判定-分支2] if (cycle >= 0) -> (${cycle} >= 0) -> (${cycle >= 0})；若跳过 conflict 边后仍有环，说明导致环的必须是第一条入边！`, 'check cycle >= 0');
+  if (cycle >= 0) {
+    // 寻找指向 conflict 目标节点的首条边
     const targetV = edges[conflict][1];
-    let firstParentEdge: [number, number] = edges[conflict];
-    for (let i = 0; i < conflict; i++) {
-      if (edges[i][1] === targetV) {
+    let firstParentEdge: [number, number] | null = null;
+    for (let i = 0; i < n; i++) {
+      if (edges[i][1] === targetV && i !== conflict) {
         firstParentEdge = edges[i];
         break;
       }
     }
-    result = firstParentEdge;
-  } else {
-    result = edges[conflict];
+    makeStep(lines.checkCycleGreaterEqualZero, 'done', `🎉 [双父且成环冲突] return firstParentEdge！跳过 conflict 边后仍检测到环 (cycle=${cycle})，故必须删除更早指向节点 ${targetV} 的第一条入边: [${firstParentEdge?.[0]}, ${firstParentEdge?.[1]}]！`, 'return firstParentEdge', conflict, firstParentEdge, firstParentEdge);
+    return steps;
   }
 
-  steps.push({
-    nodes: RE2_NODES,
-    edges,
-    inDegree: [...inDegree],
-    conflictIndex: conflict,
-    cycleIndex: cycle,
-    currentEdgeIndex: -1,
-    currentEdge: null,
-    resultEdge: result,
-    parent: [...parent],
-    action: 'done',
-    statusText: `🎉 判定完成！根据分类决策，最终需删去的冗余有向边为: [${result.join(', ')}]。`,
-    log: `✓ 冗余有向边为: [${result.join(', ')}]`,
-    codeLine: [19, 20, 21],
-  });
+  // 分支3：跳过 conflict 边后无环，说明 conflict 边就是冗余边
+  const res = edges[conflict];
+  makeStep(lines.returnConflict, 'done', `🎉 [双父且跳过无环] return edges[conflict]！跳过该边后整图成为无环合法有向树，边 edges[${conflict}]=[${res[0]}, ${res[1]}] 即为冗余连接！`, 'return edges[conflict]', conflict, res, res);
 
   return steps;
 }
@@ -182,37 +191,27 @@ export function buildRedundantIISteps(): RedundantIIStep[] {
 export class RedundantEdgeIIVisualizer extends StepVisualizer<RedundantIIStep> {
   protected codeLanguages = REDUNDANT_EDGE_II_CODE_LANGUAGES;
   protected codeLines = REDUNDANT_EDGE_II_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '冗余连接 II (LC 685) 代码调试';
+  protected codePanelTitle = '冗余连接 II 算法代码调试';
 
   private svgCanvas: HTMLElement | null = null;
-  private degreePillsWrap: HTMLElement | null = null;
+  private edgeListBody: HTMLElement | null = null;
   private metricConflictEl: HTMLElement | null = null;
   private metricCycleEl: HTMLElement | null = null;
-  private metricCurEdgeEl: HTMLElement | null = null;
-  private metricResultEdgeEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
+  private metricResultEl: HTMLElement | null = null;
   private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
 
     this.svgCanvas = this.root.querySelector('#re2-svg-canvas');
-    this.degreePillsWrap = this.root.querySelector('#re2-edges-pills-wrap');
-    this.metricConflictEl = this.root.querySelector('#metric-two-parents');
-    this.metricCycleEl = this.root.querySelector('#metric-cycle-detect');
-    this.metricCurEdgeEl = this.root.querySelector('#metric-stage');
-    this.metricResultEdgeEl = this.root.querySelector('#metric-redundant');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
+    this.edgeListBody = this.root.querySelector('#re2-edge-list-body');
+    this.metricConflictEl = this.root.querySelector('#metric-re2-conflict');
+    this.metricCycleEl = this.root.querySelector('#metric-re2-cycle');
+    this.metricResultEl = this.root.querySelector('#metric-re2-result');
     this.liveTextEl = this.root.querySelector('#re2-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
     this.bindPlaybackControls();
 
-    // 挂载暗色代码终端深模块
     this.mountTerminal({
       codeLanguages: this.codeLanguages,
       problemHtml: REDUNDANT_EDGE_II_PROBLEM_HTML,
@@ -226,184 +225,123 @@ export class RedundantEdgeIIVisualizer extends StepVisualizer<RedundantIIStep> {
   }
 
   protected renderStep(step: RedundantIIStep): void {
-    const { edges, inDegree, conflictIndex, cycleIndex, currentEdge, resultEdge, statusText, action } = step;
+    const { edges, conflictIndex, cycleIndex, currentEdgeIndex, resultEdge, parent, action, statusText } = step;
 
-    // 1. 绘制有向图 SVG 拓扑图
     if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 420 250" style="width:100%; height:100%; max-height:240px;">
+      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
         <defs>
-          <marker id="arrow-re2" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+          <marker id="re2-arrow-normal" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
           </marker>
-          <marker id="arrow-re2-red" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444" />
+          <marker id="re2-arrow-cur" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
           </marker>
-          <marker id="arrow-re2-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+          <marker id="re2-arrow-red" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
           </marker>
         </defs>`;
 
-      for (let i = 0; i < edges.length; i++) {
-        const [u, v] = edges[i];
-        const p1 = RE2_NODE_POSITIONS[u - 1];
-        const p2 = RE2_NODE_POSITIONS[v - 1];
-        const isConflict = i === conflictIndex;
-        const isResult = resultEdge && resultEdge[0] === u && resultEdge[1] === v;
-        const isCurrent = currentEdge && currentEdge[0] === u && currentEdge[1] === v;
+      edges.forEach((e, idx) => {
+        const p1 = RE2_NODE_POSITIONS[e[0] - 1];
+        const p2 = RE2_NODE_POSITIONS[e[1] - 1];
+        const isCur = currentEdgeIndex === idx;
+        const isResult = resultEdge && resultEdge[0] === e[0] && resultEdge[1] === e[1];
+        const isConflict = conflictIndex === idx;
+        const isCycle = cycleIndex === idx;
 
-        let strokeColor = '#cbd5e1';
+        let strokeColor = '#94a3b8';
         let strokeWidth = 2;
         let strokeDash = 'none';
-        let marker = 'url(#arrow-re2)';
+        let marker = 'url(#re2-arrow-normal)';
 
         if (isResult) {
           strokeColor = '#ef4444';
           strokeWidth = 4;
-          strokeDash = '4,4';
-          marker = 'url(#arrow-re2-red)';
+          strokeDash = '5,5';
+          marker = 'url(#re2-arrow-red)';
         } else if (isConflict) {
-          strokeColor = '#f87171';
+          strokeColor = '#f59e0b';
           strokeWidth = 3;
-          marker = 'url(#arrow-re2-red)';
-        } else if (isCurrent) {
-          strokeColor = '#2563eb';
+          strokeDash = '4,4';
+        } else if (isCycle) {
+          strokeColor = '#ec4899';
+          strokeWidth = 3;
+        } else if (isCur) {
+          strokeColor = '#3b82f6';
           strokeWidth = 3.5;
-          marker = 'url(#arrow-re2-active)';
+          marker = 'url(#re2-arrow-cur)';
         }
 
         svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" marker-end="${marker}" />`;
+      });
 
-        const midX = (p1.x + p2.x) / 2 + (p1.y === p2.y ? 0 : p1.x > p2.x ? 12 : -12);
-        const midY = (p1.y + p2.y) / 2 - 8;
-        svgHtml += `<text x="${midX}" y="${midY}" fill="${isResult ? '#dc2626' : '#64748b'}" font-size="10.5" font-weight="800" text-anchor="middle">#${i + 1}</text>`;
-      }
-
-      // 绘制节点
       RE2_NODES.forEach((node) => {
         const p = RE2_NODE_POSITIONS[node - 1];
-        const isCurrent = currentEdge && (currentEdge[0] === node || currentEdge[1] === node);
-        const isDualParent = inDegree[node] >= 2;
+        const isCurNode = currentEdgeIndex >= 0 && (edges[currentEdgeIndex][0] === node || edges[currentEdgeIndex][1] === node);
 
         let fill = '#ffffff';
         let stroke = '#cbd5e1';
-        if (isDualParent) {
-          fill = '#fee2e2';
-          stroke = '#ef4444';
-        } else if (isCurrent) {
-          fill = '#fef08a';
-          stroke = '#eab308';
+        if (isCurNode) {
+          fill = '#dbeafe';
+          stroke = '#3b82f6';
         }
 
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
         svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isDualParent ? '#dc2626' : '#64748b'}" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">in:${inDegree[node]}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">in:${step.inDegree[node]}</text>`;
       });
 
       svgHtml += `</svg>`;
       this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // 2. 渲染 inDegree 药丸栏
-    if (this.degreePillsWrap) {
-      this.degreePillsWrap.innerHTML = RE2_NODES.map((node) => {
-        const deg = inDegree[node];
-        let cls = 're2-degree-pill';
-        if (deg >= 2) cls += ' is-conflict';
+    if (this.edgeListBody) {
+      this.edgeListBody.innerHTML = edges.map((e, idx) => {
+        const isCur = currentEdgeIndex === idx;
+        const isResult = resultEdge && resultEdge[0] === e[0] && resultEdge[1] === e[1];
+        const isConflict = conflictIndex === idx;
+        const isCycle = cycleIndex === idx;
 
-        return `<div class="${cls}">
-          <span style="color:#64748b;">${node}:</span>
-          <span>${deg}</span>
-        </div>`;
+        let statusBadge = '<span class="text-slate-400">常规边</span>';
+        if (isResult) statusBadge = '<span class="text-red-500 font-bold">🎯 最终冗余边</span>';
+        else if (isConflict) statusBadge = '<span class="text-amber-500 font-bold">⚠️ 双父节点冲突边</span>';
+        else if (isCycle) statusBadge = '<span class="text-pink-500 font-bold">🔁 导致成环边</span>';
+        else if (isCur) statusBadge = '<span class="text-blue-600 font-bold">检查中</span>';
+
+        return `<tr class="${isCur ? 'bg-blue-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">[${e[0]}, ${e[1]}]</td>
+          <td class="px-3 py-1.5 text-center font-mono text-xs">${statusBadge}</td>
+        </tr>`;
       }).join('');
     }
 
-    // 3. 更新状态监视器
     if (this.metricConflictEl) {
-      this.metricConflictEl.textContent = conflictIndex >= 0 ? `边 #${conflictIndex + 1} [${edges[conflictIndex].join(', ')}]` : '无';
+      this.metricConflictEl.textContent = conflictIndex >= 0 ? `edges[${conflictIndex}] = [${edges[conflictIndex][0]}, ${edges[conflictIndex][1]}]` : '无';
+      this.metricConflictEl.className = `font-mono font-bold ${conflictIndex >= 0 ? 'text-amber-600' : 'text-slate-500'}`;
     }
     if (this.metricCycleEl) {
-      this.metricCycleEl.textContent = cycleIndex >= 0 ? `边 #${cycleIndex + 1} [${edges[cycleIndex].join(', ')}]` : '无';
+      this.metricCycleEl.textContent = cycleIndex >= 0 ? `edges[${cycleIndex}] = [${edges[cycleIndex][0]}, ${edges[cycleIndex][1]}]` : '无';
+      this.metricCycleEl.className = `font-mono font-bold ${cycleIndex >= 0 ? 'text-pink-600' : 'text-slate-500'}`;
     }
-    if (this.metricCurEdgeEl) {
-      this.metricCurEdgeEl.textContent = currentEdge ? `[${currentEdge[0]}, ${currentEdge[1]}]` : '—';
-    }
-    if (this.metricResultEdgeEl) {
-      this.metricResultEdgeEl.textContent = resultEdge ? `[${resultEdge.join(', ')}]` : '未确定';
-    }
-
-    if (this.formulaActionEl) {
-      if (action === 'found-conflict') {
-        this.formulaActionEl.textContent = `发现双父冲突: inDegree[${currentEdge?.[1]}] === 2`;
-      } else if (action === 'check-cycle') {
-        this.formulaActionEl.textContent = `跳过 conflict 仍有环: 需删第一条父边`;
-      } else if (action === 'done' && resultEdge) {
-        this.formulaActionEl.textContent = `判定完成: 删去边 [${resultEdge.join(', ')}]`;
-      } else {
-        this.formulaActionEl.textContent = 'conflict >= 0 ? 优先删 conflict 边 : 删成环边';
-      }
+    if (this.metricResultEl) {
+      this.metricResultEl.textContent = resultEdge ? `[${resultEdge[0]}, ${resultEdge[1]}]` : '计算中...';
+      this.metricResultEl.className = `font-mono font-bold ${resultEdge ? 'text-red-600 animate-pulse' : 'text-slate-500'}`;
     }
 
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'found-conflict' || action === 'check-cycle'
-          ? '#fef2f2'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'found-conflict' || action === 'check-cycle'
-          ? '#dc2626'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'found-conflict' || action === 'check-cycle'
-          ? '#fecaca'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
     }
-
-    const badgeRedundant = this.root?.querySelector('#badge-redundant-edge');
-    if (badgeRedundant) {
-      badgeRedundant.textContent = step.resultEdge ? `冗余边: [${step.resultEdge[0]}, ${step.resultEdge[1]}]` : '冗余边: 待检测';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
   }
 }
 
 registerAlgorithm({
   id: 'redundant-edge-ii',
-  name: '冗余连接 II (LC 685)',
-  viewId: 'algo-redundant-edge-ii-view',
+  name: '冗余连接 II (Redundant Connection II)',
   category: 'graph',
-  description: '处理有向树中双父节点入度冲突与有向环并存的复杂冗余边判定',
-  icon: '🔱',
   difficulty: 3,
-  levelOrder: 14,
-  learningGoal: '掌握有向树入度冲突分析与并查集有向环检验的分类讨论模型',
+  levelOrder: 32,
+  description: '左程云算法通关课 Class 057：有向图并查集高阶应用，兼顾入度为 2 双父节点冲突与有向环两大难题 (LeetCode 685)',
+  learningGoal: '掌握有向树双父节点冲突分析、并查集有向环检验与分支回溯消除策略',
   template,
   Visualizer: RedundantEdgeIIVisualizer,
 });
