@@ -1,10 +1,80 @@
 import { describe, it, expect } from 'vitest';
-import { NetworkDelayTimeVisualizer } from './network-delay-time-renderer';
+import {
+  NetworkDelayTimeVisualizer,
+  buildNetworkDelaySteps,
+} from './network-delay-time-renderer';
+import { NETWORK_DELAY_CODE_LANGUAGES } from './network-delay-time-problem-content';
 
 describe('NetworkDelayTime (LeetCode 743)', () => {
   it('should instantiate NetworkDelayTimeVisualizer properly', () => {
     const viz = new NetworkDelayTimeVisualizer();
     expect(viz).toBeDefined();
+  });
+
+  it('should generate at least 20 granular steps for reachable case', () => {
+    const steps = buildNetworkDelaySteps(true);
+    expect(steps.length).toBeGreaterThanOrEqual(20);
+
+    const javaLinesCount = NETWORK_DELAY_CODE_LANGUAGES.java.length;
+    for (const step of steps) {
+      expect(step.message).toBeTruthy();
+      expect(step.log).toBeTruthy();
+      expect(step.codeLine).toBeDefined();
+      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
+        ? (step.codeLine as any).java
+        : step.codeLine;
+      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
+      for (const line of lines) {
+        expect(line).toBeGreaterThan(0);
+        expect(line).toBeLessThanOrEqual(javaLinesCount);
+      }
+      expect(step.distList).toBeDefined();
+      expect(step.visitedList).toBeDefined();
+      expect(step.pqSnapshot).toBeDefined();
+    }
+
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.status).toBe('done');
+    expect(lastStep.isAllReached).toBe(true);
+    expect(lastStep.maxDelaySoFar).toBe(2);
+  });
+
+  it('should generate at least 20 granular steps for unreachable case', () => {
+    const steps = buildNetworkDelaySteps(false);
+    expect(steps.length).toBeGreaterThanOrEqual(20);
+
+    const javaLinesCount = NETWORK_DELAY_CODE_LANGUAGES.java.length;
+    for (const step of steps) {
+      expect(step.message).toBeTruthy();
+      expect(step.log).toBeTruthy();
+      expect(step.codeLine).toBeDefined();
+      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
+        ? (step.codeLine as any).java
+        : step.codeLine;
+      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
+      for (const line of lines) {
+        expect(line).toBeGreaterThan(0);
+        expect(line).toBeLessThanOrEqual(javaLinesCount);
+      }
+    }
+
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.status).toBe('done');
+    expect(lastStep.isAllReached).toBe(false);
+    expect(lastStep.maxDelaySoFar).toBe(-1);
+  });
+
+  it('should have complete code across all languages without empty stubs', () => {
+    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
+      const code = NETWORK_DELAY_CODE_LANGUAGES[lang];
+      expect(code).toBeDefined();
+      expect(code.length).toBeGreaterThanOrEqual(35);
+      const joined = code.join('\n');
+      expect(joined).toMatch(/networkdelaytime|network_delay_time/i);
+      expect(joined).toMatch(/dist/i);
+      expect(joined).toMatch(/visited/i);
+      expect(joined).toMatch(/pq|priority_queue|heap/i);
+    }
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
