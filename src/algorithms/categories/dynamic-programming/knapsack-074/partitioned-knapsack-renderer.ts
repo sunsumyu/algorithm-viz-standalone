@@ -165,7 +165,7 @@ export function buildPartitionedKnapsackSteps(
   return steps;
 }
 
-export const PartitionedKnapsackVisualizer = createDeclarativeVisualizer<PartitionedKnapsackStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<PartitionedKnapsackStep>({
   id: 'partitioned-knapsack-standard',
   name: '分组背包模版 (通天之分组背包)',
   category: 'dynamic-programming',
@@ -323,14 +323,19 @@ export const PartitionedKnapsackVisualizer = createDeclarativeVisualizer<Partiti
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'partitioned-knapsack-standard',
-    name: '分组背包模版 (通天之分组背包)',
-    category: 'dynamic-programming',
-    difficulty: 'medium',
-    description: '洛谷 P1757：组内物品至多选 1 件，外层容量倒序枚举防止组内多选',
-    tags: ['动态规划', '分组背包', '互斥决策', '左程云074'],
-  },
-  PartitionedKnapsackVisualizer
-);
+export const PartitionedKnapsackVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'partitioned-knapsack-standard',
+  name: '分组背包模版 (通天之分组背包)',
+  viewId: 'algo-partitioned-knapsack-standard-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 074 Code01：洛谷 P1757 通天之分组背包，组内物品至多选 1 件，容量倒序外层枚举防止组内多选',
+  icon: '🗂️',
+  template,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 84,
+  learningGoal: '掌握分组背包组内互斥决策建模、外层容量倒序内层枚举组内物品的核心循环顺序',
+});
+

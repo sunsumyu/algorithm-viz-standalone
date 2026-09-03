@@ -149,7 +149,7 @@ export function buildUnboundedKnapsackSteps(
   return steps;
 }
 
-export const UnboundedKnapsackVisualizer = createDeclarativeVisualizer<UnboundedKnapsackStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackStep>({
   id: 'unbounded-knapsack-standard',
   name: '完全背包模版 (疯狂的采药)',
   category: 'dynamic-programming',
@@ -278,14 +278,19 @@ export const UnboundedKnapsackVisualizer = createDeclarativeVisualizer<Unbounded
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'unbounded-knapsack-standard',
-    name: '完全背包模版 (疯狂的采药)',
-    category: 'dynamic-programming',
-    difficulty: 'easy',
-    description: '洛谷 P1616：每种物品可选任意次，空间压缩后正序枚举容量 j',
-    tags: ['动态规划', '完全背包', '空间压缩', '正序枚举', '左程云074'],
-  },
-  UnboundedKnapsackVisualizer
-);
+export const UnboundedKnapsackVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'unbounded-knapsack-standard',
+  name: '完全背包模版 (疯狂的采药)',
+  viewId: 'algo-unbounded-knapsack-standard-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 074 Code03：洛谷 P1616 疯狂的采药，每件物品可选任意次，空间压缩后正序枚举容量 j',
+  icon: '🌿',
+  template,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 86,
+  learningGoal: '深刻理解完全背包与 01 背包空间压缩的本质区别：正序从小到大枚举容量使得物品可同轮无限次自叠加',
+});
+

@@ -177,7 +177,7 @@ export function buildBuyingHayMinCostSteps(
   return steps;
 }
 
-export const BuyingHayMinCostVisualizer = createDeclarativeVisualizer<BuyingHayStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<BuyingHayStep>({
   id: 'buying-hay-min-cost',
   name: '购买足量干草的最小花费 (洛谷 P2918)',
   category: 'dynamic-programming',
@@ -308,14 +308,19 @@ export const BuyingHayMinCostVisualizer = createDeclarativeVisualizer<BuyingHayS
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'buying-hay-min-cost',
-    name: '购买足量干草的最小花费 (洛谷 P2918)',
-    category: 'dynamic-programming',
-    difficulty: 'medium',
-    description: '洛谷 P2918：至少需要 H 磅干草，完全背包上界扩充至 H+maxVal 并在 [H, m] 寻极小值',
-    tags: ['动态规划', '完全背包', '容量扩充', '最优化', '左程云074'],
-  },
-  BuyingHayMinCostVisualizer
-);
+export const BuyingHayMinCostVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'buying-hay-min-cost',
+  name: '购买足量干草的最小花费 (洛谷 P2918)',
+  viewId: 'algo-buying-hay-min-cost-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 074 Code06：洛谷 P2918 购买干草，至少 H 磅允许超额，容量上界扩充至 H + maxVal 的完全背包求极小值',
+  icon: '🌾',
+  template,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 89,
+  learningGoal: '掌握允许超额时的容量上界安全扩充证明（H + maxVal）与求最小花费完全背包的状态转移',
+});
+

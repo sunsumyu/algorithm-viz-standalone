@@ -162,7 +162,7 @@ export function buildFindKthSumSteps(
   return steps;
 }
 
-export const FindKthSumVisualizer = createDeclarativeVisualizer<FindKthStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
   id: 'find-kth-sum',
   name: '找出数组的第K大和',
   category: 'dynamic-programming',
@@ -287,14 +287,19 @@ export const FindKthSumVisualizer = createDeclarativeVisualizer<FindKthStep>({
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'find-kth-sum',
-    name: '找出数组的第K大和',
-    category: 'dynamic-programming',
-    difficulty: 'hard',
-    description: 'LeetCode 2386：将全正数和作为基准，取绝对值数组求前 K 小和进行逆向双射映射',
-    tags: ['堆', '优先队列', '数学转化', '超越01背包', '左程云073'],
-  },
-  FindKthSumVisualizer
-);
+export const FindKthSumVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'find-kth-sum',
+  name: '找出数组的第K大和',
+  viewId: 'algo-find-kth-sum-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 073 Code07：LeetCode 2386 找出数组的第 K 大和，正数和基准 + 绝对值数组前 K 小和逆向相减对偶转化',
+  icon: '🪞',
+  template,
+  Visualizer,
+  difficulty: 3,
+  levelOrder: 83,
+  learningGoal: '掌握含负数数组子序列和极值问题的基准平移法、绝对值数组双射归约与小根堆求第 K 小',
+});
+

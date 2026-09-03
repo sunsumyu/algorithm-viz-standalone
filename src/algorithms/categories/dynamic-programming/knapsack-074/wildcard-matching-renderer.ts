@@ -170,7 +170,7 @@ export function buildWildcardMatchingSteps(
   return steps;
 }
 
-export const WildcardMatchingVisualizer = createDeclarativeVisualizer<WildcardMatchingStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<WildcardMatchingStep>({
   id: 'wildcard-matching',
   name: '通配符匹配 (LeetCode 44)',
   category: 'dynamic-programming',
@@ -303,14 +303,19 @@ export const WildcardMatchingVisualizer = createDeclarativeVisualizer<WildcardMa
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'wildcard-matching',
-    name: '通配符匹配 (LeetCode 44)',
-    category: 'dynamic-programming',
-    difficulty: 'hard',
-    description: 'LeetCode 44：支持 ? 和 * 的通配符匹配，斜率优化自底向上 DP',
-    tags: ['动态规划', '完全背包', '斜率优化', '通配符', '左程云074'],
-  },
-  WildcardMatchingVisualizer
-);
+export const WildcardMatchingVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'wildcard-matching',
+  name: '通配符匹配 (LeetCode 44)',
+  viewId: 'algo-wildcard-matching-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 074 Code05：LeetCode 44 通配符，通配星号 * 匹配任意字符串转化为经典完全背包斜率优化 dp[i][j] = dp[i+1][j] || dp[i][j+1]',
+  icon: '🃏',
+  template,
+  Visualizer,
+  difficulty: 3,
+  levelOrder: 88,
+  learningGoal: '掌握通配符星号任意串匹配向二分支完全背包斜率优化的推导与边界处理',
+});
+

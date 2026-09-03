@@ -187,7 +187,7 @@ export function buildBuyGoodsDiscountSteps(
   return steps;
 }
 
-export const BuyGoodsDiscountVisualizer = createDeclarativeVisualizer<BuyGoodsStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<BuyGoodsStep>({
   id: 'buy-goods-discount',
   name: '夏季特惠 (01背包转化)',
   category: 'dynamic-programming',
@@ -327,14 +327,19 @@ export const BuyGoodsDiscountVisualizer = createDeclarativeVisualizer<BuyGoodsSt
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'buy-goods-discount',
-    name: '夏季特惠 (01背包转化)',
-    category: 'dynamic-programming',
-    difficulty: 'medium',
-    description: 'LeetCode LCP 51 夏季特惠：冲动消费不吃亏模型向白嫖贪心与 01 背包的惊艳转化',
-    tags: ['动态规划', '01背包', '贪心算法', '左程云073'],
-  },
-  BuyGoodsDiscountVisualizer
-);
+export const BuyGoodsDiscountVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'buy-goods-discount',
+  name: '夏季特惠 (01背包转化)',
+  viewId: 'algo-buy-goods-discount-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 073 Code02：LeetCode LCP 51 夏季特惠，心理不吃亏模型向白嫖贪心与 01 背包的双轨转化',
+  icon: '🏷️',
+  template,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 78,
+  learningGoal: '掌握冲动消费不吃亏不等式推导、well>=0 贪心必选扩增预算与剩余商品 01 背包模型构建',
+});
+

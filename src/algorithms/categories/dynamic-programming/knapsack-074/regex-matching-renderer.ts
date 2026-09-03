@@ -173,7 +173,7 @@ export function buildRegexMatchingSteps(
   return steps;
 }
 
-export const RegexMatchingVisualizer = createDeclarativeVisualizer<RegexMatchingStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<RegexMatchingStep>({
   id: 'regex-matching',
   name: '正则表达式匹配 (LeetCode 10)',
   category: 'dynamic-programming',
@@ -306,14 +306,19 @@ export const RegexMatchingVisualizer = createDeclarativeVisualizer<RegexMatching
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'regex-matching',
-    name: '正则表达式匹配 (LeetCode 10)',
-    category: 'dynamic-programming',
-    difficulty: 'hard',
-    description: 'LeetCode 10：支持 . 和 * 的正则匹配，* 号转化为完全背包斜率优化',
-    tags: ['动态规划', '完全背包', '斜率优化', '字符串匹配', '左程云074'],
-  },
-  RegexMatchingVisualizer
-);
+export const RegexMatchingVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'regex-matching',
+  name: '正则表达式匹配 (LeetCode 10)',
+  viewId: 'algo-regex-matching-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 074 Code04：LeetCode 10 正则匹配，星号 * 任意次匹配转化为完全背包斜率优化 dp[i][j] = dp[i][j+2] || (match && dp[i+1][j])',
+  icon: '🔤',
+  template,
+  Visualizer,
+  difficulty: 3,
+  levelOrder: 87,
+  learningGoal: '掌握通配星号向完全背包模型的代数恒等变形、自底向上填表与斜率优化消除循环',
+});
+

@@ -182,7 +182,7 @@ export function buildTargetSumSteps(nums: number[], target: number): TargetSumSt
   return steps;
 }
 
-export const TargetSumVisualizer = createDeclarativeVisualizer<TargetSumStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<TargetSumStep>({
   id: 'target-sum-standard',
   name: '目标和 (01背包方案计数)',
   category: 'dynamic-programming',
@@ -301,14 +301,19 @@ export const TargetSumVisualizer = createDeclarativeVisualizer<TargetSumStep>({
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'target-sum-standard',
-    name: '目标和 (01背包方案计数)',
-    category: 'dynamic-programming',
-    difficulty: 'medium',
-    description: 'LeetCode 494 目标和：将正负符号选取严密推导归约为容量恰好装满的 01 背包计数问题',
-    tags: ['动态规划', '01背包', '集合划分', '左程云073'],
-  },
-  TargetSumVisualizer
-);
+export const TargetSumVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'target-sum-standard',
+  name: '目标和 (01背包方案计数)',
+  viewId: 'algo-target-sum-standard-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，正负号划分数学推导转化为恰好凑出容量的方案计数 DP',
+  icon: '🎯',
+  template,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 79,
+  learningGoal: '掌握表达式符号分配向正负子集和的严谨代数化简、奇偶性守恒判定与方案数累加转移',
+});
+

@@ -174,7 +174,7 @@ export function buildTopKSubsequenceSumSteps(
   return steps;
 }
 
-export const TopKSubsequenceSumVisualizer = createDeclarativeVisualizer<TopKStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<TopKStep>({
   id: 'top-k-subsequence-sum',
   name: '非负数组前K个最小子序列和',
   category: 'dynamic-programming',
@@ -301,14 +301,19 @@ export const TopKSubsequenceSumVisualizer = createDeclarativeVisualizer<TopKStep
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'top-k-subsequence-sum',
-    name: '非负数组前K个最小子序列和',
-    category: 'dynamic-programming',
-    difficulty: 'hard',
-    description: '数据量超越 01 背包承受极限时，使用小根堆/优先队列状态机分裂实现 O(N log N + K log K) 最优解',
-    tags: ['堆', '优先队列', '状态机', '超越01背包', '左程云073'],
-  },
-  TopKSubsequenceSumVisualizer
-);
+export const TopKSubsequenceSumVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'top-k-subsequence-sum',
+  name: '非负数组前K个最小子序列和',
+  viewId: 'algo-top-k-subsequence-sum-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 073 Code06：大容量数据超越 01 背包瓶颈，使用小根堆/优先队列状态机分裂实现 O(N log N + K log K) 扩展',
+  icon: '🌳',
+  template,
+  Visualizer,
+  difficulty: 3,
+  levelOrder: 82,
+  learningGoal: '理解超大数据规模下 01 背包的局限性，掌握基于小根堆的状态零冗余分裂规则（替换末尾与追加新数）',
+});
+

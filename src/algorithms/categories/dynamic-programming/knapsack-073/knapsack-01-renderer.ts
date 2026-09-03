@@ -174,7 +174,7 @@ export function buildKnapsack01Steps(
   return steps;
 }
 
-export const Knapsack01Visualizer = createDeclarativeVisualizer<Knapsack01Step>({
+const { template, Visualizer } = createDeclarativeVisualizer<Knapsack01Step>({
   id: 'knapsack-01-standard',
   name: '01背包模版 (采药)',
   category: 'dynamic-programming',
@@ -310,14 +310,19 @@ export const Knapsack01Visualizer = createDeclarativeVisualizer<Knapsack01Step>(
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'knapsack-01-standard',
-    name: '01背包模版 (采药)',
-    category: 'dynamic-programming',
-    difficulty: 'easy',
-    description: '洛谷 P1048 经典采药问题，展示一维滚动数组逆序遍历空间压缩机制',
-    tags: ['动态规划', '01背包', '空间压缩', '左程云073'],
-  },
-  Knapsack01Visualizer
-);
+export const Knapsack01Visualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'knapsack-01-standard',
+  name: '01背包模版 (采药)',
+  viewId: 'algo-knapsack-01-standard-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 073 Code01：洛谷 P1048 采药，经典 01 背包与滚动数组倒序空间压缩',
+  icon: '🎒',
+  template,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 77,
+  learningGoal: '掌握 01 背包状态定义、转移方程推导及一维空间压缩中容量倒序枚举的核心原理',
+});
+

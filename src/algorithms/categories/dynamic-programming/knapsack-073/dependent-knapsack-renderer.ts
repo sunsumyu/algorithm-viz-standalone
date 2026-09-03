@@ -189,7 +189,7 @@ export function buildDependentKnapsackSteps(
   return steps;
 }
 
-export const DependentKnapsackVisualizer = createDeclarativeVisualizer<DependentKnapsackStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackStep>({
   id: 'dependent-knapsack-standard',
   name: '有依赖的背包模版 (金明的预算方案)',
   category: 'dynamic-programming',
@@ -317,14 +317,19 @@ export const DependentKnapsackVisualizer = createDeclarativeVisualizer<Dependent
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'dependent-knapsack-standard',
-    name: '有依赖的背包模版 (金明的预算方案)',
-    category: 'dynamic-programming',
-    difficulty: 'hard',
-    description: '洛谷 P1064：每个主件至多两个附件，展开为 4 种互斥购买组合，优雅转化为分组背包',
-    tags: ['动态规划', '有依赖背包', '分组背包', '左程云073'],
-  },
-  DependentKnapsackVisualizer
-);
+export const DependentKnapsackVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'dependent-knapsack-standard',
+  name: '有依赖的背包模版 (金明的预算方案)',
+  viewId: 'algo-dependent-knapsack-standard-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 073 Code05：洛谷 P1064 金明的预算方案，每个主件至多 2 个附件展开为 4 种互斥组合的分组背包',
+  icon: '🛒',
+  template,
+  Visualizer,
+  difficulty: 3,
+  levelOrder: 81,
+  learningGoal: '掌握主附件拓扑依赖向组内互斥状态的展开技巧、分组背包倒序枚举与最优组合择优决策',
+});
+

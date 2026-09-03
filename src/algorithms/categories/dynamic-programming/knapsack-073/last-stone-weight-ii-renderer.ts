@@ -152,7 +152,7 @@ export function buildLastStoneWeightIISteps(stones: number[]): LastStoneStep[] {
   return steps;
 }
 
-export const LastStoneWeightIIVisualizer = createDeclarativeVisualizer<LastStoneStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<LastStoneStep>({
   id: 'last-stone-weight-ii-standard',
   name: '最后一块石头的重量 II',
   category: 'dynamic-programming',
@@ -264,14 +264,19 @@ export const LastStoneWeightIIVisualizer = createDeclarativeVisualizer<LastStone
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'last-stone-weight-ii-standard',
-    name: '最后一块石头的重量 II',
-    category: 'dynamic-programming',
-    difficulty: 'medium',
-    description: 'LeetCode 1049：石头碰撞等价差值极小化，归约为 <= sum/2 最接近值的 01 背包',
-    tags: ['动态规划', '01背包', '对称划分', '左程云073'],
-  },
-  LastStoneWeightIIVisualizer
-);
+export const LastStoneWeightIIVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'last-stone-weight-ii-standard',
+  name: '最后一块石头的重量 II',
+  viewId: 'algo-last-stone-weight-ii-standard-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 073 Code04：LeetCode 1049 最后一块石头，两两粉碎对消等价于两堆差值极小化，归约为 <= sum/2 01 背包',
+  icon: '🪨',
+  template,
+  Visualizer,
+  difficulty: 2,
+  levelOrder: 80,
+  learningGoal: '掌握碰撞粉碎过程的代数符号转化、最接近半和 near 的求解以及最终结果 sum-2*near 的推导',
+});
+

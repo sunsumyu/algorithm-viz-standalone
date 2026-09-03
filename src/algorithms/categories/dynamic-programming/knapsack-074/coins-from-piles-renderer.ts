@@ -162,7 +162,7 @@ export function buildCoinsFromPilesSteps(
   return steps;
 }
 
-export const CoinsFromPilesVisualizer = createDeclarativeVisualizer<CoinsFromPilesStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<CoinsFromPilesStep>({
   id: 'coins-from-piles',
   name: '从栈中取出K个硬币的最大面值和',
   category: 'dynamic-programming',
@@ -297,14 +297,19 @@ export const CoinsFromPilesVisualizer = createDeclarativeVisualizer<CoinsFromPil
   },
 });
 
-registerAlgorithm(
-  {
-    id: 'coins-from-piles',
-    name: '从栈中取出K个硬币的最大面值和',
-    category: 'dynamic-programming',
-    difficulty: 'hard',
-    description: 'LeetCode 2218：硬币栈前缀和预处理，转化为以操作步数 k 为容量的分组背包',
-    tags: ['动态规划', '分组背包', '前缀和', '左程云074'],
-  },
-  CoinsFromPilesVisualizer
-);
+export const CoinsFromPilesVisualizer = Visualizer;
+
+registerAlgorithm({
+  id: 'coins-from-piles',
+  name: '从栈中取出K个硬币的最大面值和',
+  viewId: 'algo-coins-from-piles-view',
+  category: 'dynamic-programming',
+  description: '左程云算法通关课 Class 074 Code02：LeetCode 2218 取硬币，自顶向下连续拿取的前缀和预处理转分组背包互斥选择',
+  icon: '🪙',
+  template,
+  Visualizer,
+  difficulty: 3,
+  levelOrder: 85,
+  learningGoal: '掌握硬币栈连续操作向互斥物品组的转化、前缀和预处理加速与步数容量分组背包',
+});
+
