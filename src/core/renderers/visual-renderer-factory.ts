@@ -1,13 +1,14 @@
 import type { IVisualRenderer } from './visual-renderer';
 import { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
 import { DOMGridVisualAdapter } from './dom-grid-visual-adapter';
+import { ThreeGraphTopologyAdapter } from './three-graph-topology-adapter';
 
-export type RendererKind = '3d-voxel' | '2d-grid' | string;
+export type RendererKind = '3d-voxel' | '2d-grid' | '3d-graph' | string;
 
 /**
  * 视觉渲染器工厂深度模块 (VisualRendererFactory Deep Module) - 工厂方法模式 (Factory Pattern)
  * 遵循 GoF 工厂模式与深模块原则：
- * 统一管理 2D DOM 渲染器、3D WebGL 体素渲染器与自定义扩展渲染器的实例化与生命周期缓存。
+ * 统一管理 2D DOM 渲染器、3D WebGL 体素渲染器、3D 空间图论流转渲染器与自定义扩展渲染器的实例化与生命周期缓存。
  */
 export class VisualRendererFactory {
   private static renderers: Map<string, IVisualRenderer> = new Map();
@@ -24,6 +25,9 @@ export class VisualRendererFactory {
     switch (kind) {
       case '3d-voxel':
         renderer = ThreeGridVisualAdapter.getInstance();
+        break;
+      case '3d-graph':
+        renderer = new ThreeGraphTopologyAdapter();
         break;
       case '2d-grid':
         renderer = new DOMGridVisualAdapter();

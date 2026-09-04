@@ -14,39 +14,99 @@
 // ==========================================
 export const PARTITIONED_KNAPSACK_PROBLEM_HTML = `
 <div class="problem-description">
-  <h3>分组背包模版 (洛谷 P1757 通天之分组背包)</h3>
-  <p><strong>题目描述：</strong></p>
-  <p>自 01 背包问世之后，小 A 对此深感兴趣。他发现有 <code>n</code> 个物品和一个容量为 <code>m</code> 的背包。每个物品有自己的体积 <code>c_i</code>、价值 <code>v_i</code>，并且属于某一个组 <code>g_i</code>。</p>
-  <p><strong>限制规则：同一个组内的物品最多只能选择一件！</strong>所有选择的物品体积之和不得超过背包总容量 <code>m</code>。求怎么挑选物品才能使得总价值最大。</p>
-  <p><strong>输入格式：</strong>第一行两个整数 <code>m, n</code>；接下来 <code>n</code> 行每行 3 个整数 <code>c_i, v_i, g_i</code>。</p>
-  <p><strong>测试链接：</strong><a href="https://www.luogu.com.cn/problem/P1757" target="_blank" style="color:#60a5fa;">洛谷 P1757 通天之分组背包</a></p>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+    <h3 style="margin: 0; color: #f8fafc; font-size: 16px;">分组背包模版 (洛谷 P1757 通天之分组背包)</h3>
+    <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">洛谷 普及+/提高</span>
+  </div>
+
+  <div style="margin-bottom: 14px;">
+    <h4 style="color: #38bdf8; font-size: 13px; margin: 0 0 6px 0;">📜 题目背景与描述</h4>
+    <p style="margin: 0 0 8px 0;">自 01 背包问世之后，小 A 对此深感兴趣。他发现有 <code>n</code> 个物品和一个容量为 <code>m</code> 的背包。每个物品有自己的体积 <code>c_i</code>、价值 <code>v_i</code>，并且属于某一个组 <code>g_i</code>。</p>
+    <p style="margin: 0;"><strong>限制规则：同一个组内的物品最多只能选择一件！</strong>所有选择的物品体积之和不得超过背包总容量 <code>m</code>。求怎么挑选物品才能使得总价值最大。</p>
+  </div>
+
+  <div style="margin-bottom: 14px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 10px 12px;">
+    <h4 style="color: #38bdf8; font-size: 13px; margin: 0 0 6px 0;">📥 输入格式规范</h4>
+    <p style="margin: 0 0 4px 0;">第一行两个整数 <code>m, n</code>，分别表示背包总容量和物品总数。</p>
+    <p style="margin: 0;">接下来 <code>n</code> 行，每行 3 个整数 <code>c_i, v_i, g_i</code>，分别表示第 <code>i</code> 个物品的体积、价值和所属组号。</p>
+  </div>
+
+  <div style="margin-bottom: 14px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 10px 12px;">
+    <h4 style="color: #38bdf8; font-size: 13px; margin: 0 0 6px 0;">📤 输出格式规范</h4>
+    <p style="margin: 0;">输出一个整数，表示在满足组内互斥规则的前提下，背包所能装载的最大总价值。</p>
+  </div>
+
+  <div style="margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 10px;">
+      <div style="color: #94a3b8; font-size: 12px; font-weight: 600; margin-bottom: 4px;">输入样例 1</div>
+      <pre style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #f1f5f9; background: transparent; padding: 0;">45 3
+10 10 1
+10 5 1
+50 400 2</pre>
+    </div>
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 10px;">
+      <div style="color: #94a3b8; font-size: 12px; font-weight: 600; margin-bottom: 4px;">输出样例 1</div>
+      <pre style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #34d399; font-weight: 700; background: transparent; padding: 0;">10</pre>
+      <div style="margin-top: 6px; font-size: 11px; color: #94a3b8;">说明：组 1 中选 (10, 10)；组 2 物品体积 50 超过背包容量 45 无法选入。总价值为 10。</div>
+    </div>
+  </div>
+
+  <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+    <div style="color: #38bdf8; font-weight: 700; font-size: 12px; margin-bottom: 4px;">📊 数据规模与约定</div>
+    <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+      <li><code>1 &le; m, n &le; 1000</code>，组号 <code>g_i &le; 100</code>。物品价值与体积均为正整数且不超过 1000。</li>
+    </ul>
+  </div>
+
+  <div style="font-size: 12px;">
+    <strong>测试链接：</strong>
+    <a href="https://www.luogu.com.cn/problem/P1757" target="_blank" style="color: #60a5fa; text-decoration: underline;">洛谷 P1757 通天之分组背包</a>
+  </div>
 </div>
 `;
 
 export const PARTITIONED_KNAPSACK_ANALYSIS_HTML = `
 <div class="problem-analysis">
-  <h3>分组背包算法逻辑与组内互斥状态转移</h3>
-  <ol>
-    <li><strong>问题特征与排序分块：</strong>
-      <p>物品被明确划分为若干个互斥组。先按组号 <code>g_i</code> 排序，以便把属于同一组的物品聚合在一起处理。</p>
-    </li>
-    <li><strong>状态定义与转移方程：</strong>
-      <p><code>dp[i][j]</code> 表示考察完前 <code>i</code> 组物品，在背包容量不超过 <code>j</code> 的前提下的最大收益。</p>
-      <ul>
-        <li>情况 1：第 <code>i</code> 组中<strong>一个物品都不选</strong>：<code>dp[i][j] = dp[i-1][j]</code>；</li>
-        <li>情况 2：第 <code>i</code> 组中<strong>选且仅选某一件物品 <code>k</code></strong>：<code>dp[i][j] = max(dp[i][j], dp[i-1][j - cost[k]] + val[k])</code>。</li>
+  <div style="margin-bottom: 14px;">
+    <h4 style="color: #34d399; font-size: 14px; margin: 0 0 6px 0;">🎯 分组背包算法逻辑与组内互斥状态转移</h4>
+    <p style="margin: 0; color: #cbd5e1;">分组背包的核心是<strong>同一组内的物品存在排他互斥性（选 A 就不能选 B）</strong>。必须通过对组排序聚合 + 容量倒序枚举来杜绝同组多选。</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 12px;">
+      <div style="font-weight: 700; color: #38bdf8; margin-bottom: 6px;">1. 问题特征与按组聚合排序</div>
+      <p style="margin: 0; color: #cbd5e1; line-height: 1.6;">
+        物品按所属组号 <code>g_i</code> 排序，使相同组的物品在内存中连续排列，便于以双指针 <code>[start, end)</code> 批量截取处理每一组。
+      </p>
+    </div>
+
+    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 12px;">
+      <div style="font-weight: 700; color: #a78bfa; margin-bottom: 6px;">2. 状态定义与组间决策转移</div>
+      <p style="margin: 0 0 6px 0; color: #cbd5e1;">
+        <code>dp[i][j]</code> 表示考察完前 <code>i</code> 组物品后，背包容量不超过 <code>j</code> 时的最大收益：
+      </p>
+      <ul style="margin: 0; padding-left: 18px; color: #cbd5e1; line-height: 1.6;">
+        <li><strong>分支 1（本组全都不选）</strong>：直接继承前一组结果 <code>dp[i-1][j]</code>；</li>
+        <li><strong>分支 2（本组内选且仅选某一件物品 k）</strong>：枚举组内所有可能 <code>dp[i-1][j - cost[k]] + val[k]</code>。</li>
       </ul>
-    </li>
-    <li><strong>空间压缩的核心循环顺序（极易出错）：</strong>
-      <p>使用一维数组 <code>dp[j]</code> 时，必须保证<strong>容量 <code>j</code> 在组内枚举的外层倒序遍历</strong>：</p>
-      <pre><code>for each group:
-    for j = m downTo 0:
-        for each item k in group:
-            if j >= cost[k]:
-                dp[j] = max(dp[j], dp[j - cost[k]] + val[k])</code></pre>
-      <p><strong>注意：</strong>容量 <code>j</code> 必须在最外层倒序，内层枚举组内各个物品！这样能确保在同一个容量 <code>j</code> 下，至多只叠加一件该组物品，杜绝同组多选！</p>
-    </li>
-  </ol>
+    </div>
+
+    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 12px;">
+      <div style="font-weight: 700; color: #f59e0b; margin-bottom: 6px;">3. 空间压缩的核心三重循环顺序（致命易错点）</div>
+      <p style="margin: 0 0 6px 0; color: #cbd5e1;">使用一维数组 <code>dp[j]</code> 时，<strong>容量循环与组内物品枚举的内外层顺序绝对不能颠倒</strong>：</p>
+      <div style="background: #0f172a; padding: 8px 12px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: #f1f5f9; font-size: 12px;">
+for each group:
+    for j = m downTo 0:                  // 容量 j 必须在外层倒序！
+        for each item k in group:        // 内层遍历组内各候选物品
+            if (j &gt;= cost[k]) {
+                dp[j] = max(dp[j], dp[j - cost[k]] + val[k]);
+            }
+      </div>
+      <p style="margin: 6px 0 0 0; font-size: 12px; color: #f87171;">
+        ⚠️ 若将容量倒序放在最内层，同一组内的多个物品会在不同容量之间发生连锁累加，导致“单组多选”，彻底破坏互斥性！
+      </p>
+    </div>
+  </div>
 </div>
 `;
 
@@ -273,30 +333,125 @@ export const COINS_FROM_PILES_CODE_LANGUAGES: Record<string, string[]> = {
 // ==========================================
 export const UNBOUNDED_KNAPSACK_PROBLEM_HTML = `
 <div class="problem-description">
-  <h3>完全背包模版 (洛谷 P1616 疯狂的采药)</h3>
-  <p><strong>题目描述：</strong></p>
-  <p>辰辰是个天资聪颖的孩子，他的梦想是成为世界上最伟大的医师。在完成了上次的试炼后，医师带他来到药草更加丰富的大峡谷。</p>
-  <p>在规定的时间 <code>T</code> 内，山谷里有 <code>M</code> 种草药，<strong>每种草药可以无限制地采摘任意多次！</strong>采摘第 <code>i</code> 种草药需要耗时 <code>costs[i]</code>，获得的价值为 <code>values[i]</code>。求在不超过总时间的情况下，能采到的草药最大总价值。</p>
-  <p><strong>测试链接：</strong><a href="https://www.luogu.com.cn/problem/P1616" target="_blank" style="color:#60a5fa;">洛谷 P1616 疯狂的采药</a></p>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+    <h3 style="margin: 0; color: #f8fafc; font-size: 16px;">完全背包模版 (洛谷 P1616 疯狂的采药)</h3>
+    <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">洛谷 普及+/提高</span>
+  </div>
+
+  <div style="margin-bottom: 14px;">
+    <h4 style="color: #38bdf8; font-size: 13px; margin: 0 0 6px 0;">📜 题目背景与描述</h4>
+    <p style="margin: 0 0 8px 0;">辰辰是个天资聪颖的孩子，他的梦想是成为世界上最伟大的医师。在完成了上次采药的试炼后，医师带他来到药草更加丰富的大峡谷。</p>
+    <p style="margin: 0 0 8px 0;">在规定的总时间 <code>T</code> 内，山谷里生长着 <code>M</code> 种不同药效的草药。与普通 01 采药试炼不同的是：<strong>这里的每种草药储量极大，可以无限制地采摘任意多次（0 次、1 次、2 次……直至耗尽背包时间）！</strong></p>
+    <p style="margin: 0;">采摘第 <code>i</code> 种草药需要花费采摘时间 <code>costs[i]</code>，同时获得草药价值 <code>values[i]</code>。请帮辰辰计算，在不超过总时间 <code>T</code> 的前提下，能够采摘到的草药的最大总价值。</p>
+  </div>
+
+  <div style="margin-bottom: 14px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 10px 12px;">
+    <h4 style="color: #38bdf8; font-size: 13px; margin: 0 0 6px 0;">📥 输入格式规范</h4>
+    <p style="margin: 0 0 4px 0;">第一行输入两个正整数 <code>T</code> 和 <code>M</code>，分别表示采药的总时间限制和山谷中药草的种类数。</p>
+    <p style="margin: 0;">接下来的 <code>M</code> 行，每行包含两个正整数，第 <code>i</code> 行的两个数分别表示采摘第 <code>i</code> 种药草的时间 <code>costs[i]</code> 和该草药的价值 <code>values[i]</code>。</p>
+  </div>
+
+  <div style="margin-bottom: 14px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 10px 12px;">
+    <h4 style="color: #38bdf8; font-size: 13px; margin: 0 0 6px 0;">📤 输出格式规范</h4>
+    <p style="margin: 0;">输出一个整数，表示在规定的时间 <code>T</code> 内可以采到的草药的最大总价值。</p>
+  </div>
+
+  <div style="margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 10px;">
+      <div style="color: #94a3b8; font-size: 12px; font-weight: 600; margin-bottom: 4px;">输入样例 1</div>
+      <pre style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #f1f5f9; background: transparent; padding: 0;">70 3
+71 100
+69 1
+1 2</pre>
+    </div>
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 10px;">
+      <div style="color: #94a3b8; font-size: 12px; font-weight: 600; margin-bottom: 4px;">输出样例 1</div>
+      <pre style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #34d399; font-weight: 700; background: transparent; padding: 0;">140</pre>
+      <div style="margin-top: 6px; font-size: 11px; color: #94a3b8;">说明：第 3 种草药耗时 1、价值 2，采摘 70 次获得最大价值 70 &times; 2 = 140。</div>
+    </div>
+  </div>
+
+  <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+    <div style="color: #f87171; font-weight: 700; font-size: 12px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+      <span>⚠️ 考点与数据规模约定 (大厂/竞赛核心避坑项)</span>
+    </div>
+    <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+      <li>对于 100% 的数据：<code>1 &le; T &le; 10^7</code>，<code>1 &le; M &le; 10^4</code>，草药耗时与价值 <code>costs[i], values[i] &le; 10^4</code>。</li>
+      <li><strong>64 位整型溢出陷阱</strong>：理论最大总价值可达 <code>10^7 &times; 10^4 = 10^{11}</code>，远超 32 位 signed int 上界（约 <code>2.14 &times; 10^9</code>）。因此 <strong>DP 数组与最大价值累加器必须采用 64 位整数（C++ long long / Java long）</strong>，否则在平台测评时会因数值溢出直接爆负数判定为 WA！</li>
+    </ul>
+  </div>
+
+  <div style="font-size: 12px;">
+    <strong>测试链接：</strong>
+    <a href="https://www.luogu.com.cn/problem/P1616" target="_blank" style="color: #60a5fa; text-decoration: underline;">洛谷 P1616 疯狂的采药</a>
+  </div>
 </div>
 `;
 
 export const UNBOUNDED_KNAPSACK_ANALYSIS_HTML = `
 <div class="problem-analysis">
-  <h3>完全背包与 01 背包空间压缩的本质区别：正序枚举</h3>
-  <ol>
-    <li><strong>状态定义与原始方程：</strong>
-      <p><code>dp[i][j]</code> 表示前 <code>i</code> 种草药，在容量 <code>j</code> 下的最大价值。因为草药可无限次采摘：</p>
-      <code>dp[i][j] = max(dp[i-1][j], dp[i][j - cost[i]] + val[i])</code>
-      <p><strong>关键观察：</strong>第二项是 <code>dp[i][j - cost[i]]</code>（第 <code>i</code> 层自身），而不是 01 背包的 <code>dp[i-1][j - cost[i]]</code>！这表示一旦选了该物品，后续还允许在该层继续选！</p>
-    </li>
-    <li><strong>空间压缩的神奇逆转（从倒序到正序）：</strong>
-      <p>在 01 背包中，为了防止同一件物品被多次选择，我们必须<strong>从大到小倒序枚举 <code>j</code></strong>；而在完全背包中，我们恰恰需要利用“刚才已经选过当前物品累加出来的最新值”来继续选择！</p>
-      <p style="text-align:center;font-weight:700;color:#10b981;">因此完全背包空间压缩：容量 j 必须从小到大正序枚举！</p>
-      <code>for j = cost[i] to T: dp[j] = max(dp[j], dp[j - cost[i]] + val[i])</code>
-    </li>
-    <li><strong>复杂度：</strong>时间复杂度 <code>O(M &middot; T)</code>，空间复杂度 <code>O(T)</code>。</li>
-  </ol>
+  <div style="margin-bottom: 14px;">
+    <h4 style="color: #34d399; font-size: 14px; margin: 0 0 6px 0;">🎯 核心机制：从 01 背包逆序到完全背包正序的数学逆转</h4>
+    <p style="margin: 0; color: #cbd5e1;">完全背包与 01 背包在模型上的唯一区别是<strong>物品是否可以无限制地重复选取</strong>。然而在空间压缩为一维数组后，循环遍历方向发生根本性转变：从“倒序防重”变成了“正序叠加”。</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 12px;">
+      <div style="font-weight: 700; color: #38bdf8; margin-bottom: 6px;">1. 状态定义与二维原始方程推导</div>
+      <p style="margin: 0 0 6px 0;">设 <code>dp[i][j]</code> 为：仅考虑前 <code>i</code> 种草药，在时间预算不超过 <code>j</code> 时的最大总价值。</p>
+      <ul style="margin: 0; padding-left: 18px; color: #cbd5e1; line-height: 1.6;">
+        <li><strong>不采摘第 <code>i</code> 种草药</strong>：完全继承前 <code>i - 1</code> 种草药在容量 <code>j</code> 下的最优决策，即 <code>dp[i - 1][j]</code>；</li>
+        <li><strong>采摘至少 1 次第 <code>i</code> 种草药</strong>：付出 <code>costs[i]</code> 的时间代价换取 <code>values[i]</code> 的价值回报。<strong>关键差异点</strong>：由于该草药之后仍允许继续采摘，剩余可用时间 <code>j - costs[i]</code> 依然停留在第 <code>i</code> 层继续递归决策，即 <code>dp[i][j - costs[i]] + values[i]</code>！</li>
+      </ul>
+      <div style="margin-top: 8px; background: #0f172a; padding: 8px 12px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: #34d399; font-size: 12px;">
+dp[i][j] = max(dp[i - 1][j], dp[i][j - costs[i]] + values[i])
+      </div>
+      <p style="margin: 6px 0 0 0; font-size: 12px; color: #f59e0b;">
+        🔍 <strong>对照 01 背包</strong>：01 背包第二项为 <code>dp[i - 1][j - costs[i]]</code>（下标为 <code>i - 1</code>），而完全背包第二项为 <code>dp[i][j - costs[i]]</code>（下标为 <code>i</code>），这就是无限复选的数学根源！
+      </p>
+    </div>
+
+    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 12px;">
+      <div style="font-weight: 700; color: #a78bfa; margin-bottom: 6px;">2. 空间压缩魔法：为什么容量 j 必须正序遍历？</div>
+      <p style="margin: 0 0 6px 0;">当我们把二维表 <code>dp[i][j]</code> 压缩为一维滚动数组 <code>dp[j]</code> 时：</p>
+      <ul style="margin: 0; padding-left: 18px; color: #cbd5e1; line-height: 1.6;">
+        <li><strong>在 01 背包中</strong>：我们必须<strong>从大到小倒序更新</strong>（<code>j = T downTo costs[i]</code>），目的就是防止更新 <code>dp[j]</code> 时用到的 <code>dp[j - costs[i]]</code> 已经在这一轮被篡改过，保证每件物品至多生效 1 次；</li>
+        <li><strong>在完全背包中</strong>：我们恰恰需要<strong>从小到大正序更新</strong>（<code>j = costs[i] to T</code>）！当遍历到较大的 <code>j</code> 时，前面较小容量 <code>j - costs[i]</code> 已经写入了“本轮纳入第 <code>i</code> 种草药后的最新更优解”，从而自动实现了 <strong>1 次、2 次、3 次乃至无限次同种草药的滚雪球累加</strong>！</li>
+      </ul>
+      <div style="margin-top: 8px; background: #0f172a; padding: 8px 12px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: #f1f5f9; font-size: 12px;">
+for (int i = 0; i &lt; M; ++i) {
+    for (int j = costs[i]; j &lt;= T; ++j) { // 正序从小到大遍历！
+        dp[j] = max(dp[j], dp[j - costs[i]] + values[i]);
+    }
+}
+      </div>
+    </div>
+
+    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 12px;">
+      <div style="font-weight: 700; color: #f59e0b; margin-bottom: 6px;">3. 算法复杂度与工程性能</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 1px solid #334155; color: #94a3b8;">
+            <th style="padding: 6px 8px;">考量维度</th>
+            <th style="padding: 6px 8px;">理论复杂度</th>
+            <th style="padding: 6px 8px;">底层原理剖析</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid rgba(51, 65, 85, 0.5);">
+            <td style="padding: 6px 8px; color: #38bdf8;">时间复杂度</td>
+            <td style="padding: 6px 8px; font-family: 'JetBrains Mono', monospace; color: #34d399;">O(M &times; T)</td>
+            <td style="padding: 6px 8px; color: #cbd5e1;">外层循环遍历 M 种草药，内层遍历总容量 T。状态转移为 O(1) 代数比较。</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 8px; color: #38bdf8;">空间复杂度</td>
+            <td style="padding: 6px 8px; font-family: 'JetBrains Mono', monospace; color: #34d399;">O(T)</td>
+            <td style="padding: 6px 8px; color: #cbd5e1;">仅需维护一维大小为 T + 1 的收益向量，完全消除 M &times; T 的巨额二维内存开销。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 `;
 

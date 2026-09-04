@@ -115,6 +115,21 @@
 - **定义**：将多态单步事件流 (`DpTraceStep` / `UniversalStep`) 归一化为三维空间切片立方体的纯逻辑深模块。
 - **职责**：100% 零 DOM 依赖。对外暴露 `adapt` 与 `buildCubeFromSteps`，自动从步进中提取层级维度 $k$，累积维护 $K \times M \times N$ 状态立方体快照，并解析上一层到本层的跨层有向依赖集合（`interLayerDependencies`）。
 
+### ThreeGraphTopologyAdapter (3D 空间图论拓扑与网络流粒子沙盘表现器深模块)
+- **定义**：专为复杂图论算法（网络最大流 Dinic、Dijkstra/A* 寻路、Tarjan 强连通分量、二分图匹配等）设计的 WebGL 3D 空间立体拓扑沙盘深模块。
+- **职责**：实现 `IVisualRenderer` 标准生命周期契约。对外暴露 `mount`、`render`、`setLayoutMode` 与 `dispose` 极窄接口；内部封装 Three.js 场景树、3D 空间发光节点悬浮球体（带文字 Sprite 标牌与探测状态光晕）、流光能量管道与箭头几何体、沿 Z 轴递增的半透明多层立交网格底盘（Layer Plazas）以及 OrbitControls 360° 自由旋转视角交互。
+
+### ThreeGraphLayoutEngine (3D 空间图论自适应布局引擎)
+- **定义**：负责将抽象图结构（节点、边）转换为三维空间欧氏坐标的纯算法数学深模块。
+- **职责**：100% 零 DOM / 零 WebGL 依赖。对外提供三大空间布局算法：
+  1. `computeLayeredLayout`：分层立交布局，按 BFS 深度/拓扑分层将节点分布在各 Z 轴平面并呈环状均匀展开；
+  2. `computeProjectionLayout`：平面 2D 坐标升维投影，按度数/权重赋予地势落差；
+  3. `computeForceLayout`：三维空间库仑-胡克引力斥力迭代，使无序图自然舒展。
+
+### ThreeGraphParticleFlow (3D 空间图论流光管道与水流粒子流动引擎)
+- **定义**：负责在有向网络边、增广多路流束与最短路路径上实时推演流光粒子微观动力学的纯状态机引擎。
+- **职责**：100% 零 DOM 强依赖。对外暴露粒子坐标插值与时钟驱动（`step(deltaSeconds)`）；内部基于抛物线/二次贝塞尔平滑弧线插值计算粒子轨迹，根据流量与容量比（$\text{flow}/\text{cap}$）动态调节流速与密度，并自适应映射增广金芒、饱和警戒红与清澈水流蓝。
+
 ---
 
 ## 2. 模块接缝与关系 (Module Seams & Relationships)

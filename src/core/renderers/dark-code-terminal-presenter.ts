@@ -243,10 +243,71 @@ export class DarkCodeTerminalPresenter {
       }
     }
     if (modalBody) {
-      if (config.problemHtml) {
-        modalBody.innerHTML = config.problemHtml;
-      } else if (config.problemDetail) {
-        ProblemAnalysisViewer.renderProblemDetail(modalBody, config.problemDetail);
+      const hasProblem = Boolean(config.problemHtml || config.problemDetail);
+      const hasAnalysis = Boolean(config.analysisHtml || config.keyPoints);
+
+      if (hasProblem && hasAnalysis) {
+        let probHtml = '';
+        if (config.problemHtml) {
+          probHtml = config.problemHtml;
+        } else if (config.problemDetail) {
+          const temp = DarkCodeTerminalPresenter.createSafeElement('div');
+          ProblemAnalysisViewer.renderProblemDetail(temp, config.problemDetail);
+          probHtml = temp.innerHTML;
+        }
+
+        let analysisHtml = '';
+        if (config.analysisHtml) {
+          analysisHtml = config.analysisHtml;
+        } else if (config.keyPoints) {
+          const temp = DarkCodeTerminalPresenter.createSafeElement('div');
+          ProblemAnalysisViewer.renderKeyPoints(temp, config.keyPoints);
+          analysisHtml = temp.innerHTML;
+        }
+
+        modalBody.innerHTML = `
+          <div class="modal-combined-container" style="display: flex; flex-direction: column; gap: 20px;">
+            <section class="modal-section-problem" style="background: rgba(15, 23, 42, 0.65); border: 1px solid #334155; border-radius: 10px; padding: 18px 20px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 14px;">
+                <span style="font-weight: 700; font-size: 15px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                  📖 题目规格与说明
+                </span>
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                  Problem Spec
+                </span>
+              </div>
+              <div class="modal-section-body" style="font-size: 13px; line-height: 1.7; color: #cbd5e1;">
+                ${probHtml}
+              </div>
+            </section>
+
+            <section class="modal-section-analysis" style="background: rgba(15, 23, 42, 0.65); border: 1px solid #334155; border-radius: 10px; padding: 18px 20px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 14px;">
+                <span style="font-weight: 700; font-size: 15px; color: #34d399; display: flex; align-items: center; gap: 6px;">
+                  💡 核心算法原理与状态推导
+                </span>
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);">
+                  Algorithm Principles
+                </span>
+              </div>
+              <div class="modal-section-body" style="font-size: 13px; line-height: 1.7; color: #cbd5e1;">
+                ${analysisHtml}
+              </div>
+            </section>
+          </div>
+        `;
+      } else if (hasProblem) {
+        if (config.problemHtml) {
+          modalBody.innerHTML = config.problemHtml;
+        } else if (config.problemDetail) {
+          ProblemAnalysisViewer.renderProblemDetail(modalBody, config.problemDetail);
+        }
+      } else if (hasAnalysis) {
+        if (config.analysisHtml) {
+          modalBody.innerHTML = config.analysisHtml;
+        } else if (config.keyPoints) {
+          ProblemAnalysisViewer.renderKeyPoints(modalBody, config.keyPoints);
+        }
       }
     }
     if (viewAnalysis) {

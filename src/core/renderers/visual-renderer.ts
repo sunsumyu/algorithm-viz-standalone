@@ -38,4 +38,5 @@ export interface IVisualRenderer {
 export { DOMGridVisualAdapter } from './dom-grid-visual-adapter';
 export { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
 export { ThreeLayeredVoxelAdapter } from './three-layered-voxel-adapter';
+export { ThreeGraphTopologyAdapter } from './three-graph-topology-adapter';
 

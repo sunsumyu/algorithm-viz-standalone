@@ -12,6 +12,7 @@ import {
   DINIC_MAX_FLOW_CODE_LANGUAGES,
 } from './dinic-max-flow-problem-content';
 import { HighlightTarget } from '../../../core/code-panel';
+import { ThreeGraphTopologyAdapter } from '../../../core/renderers/three-graph-topology-adapter';
 
 export interface DinicStep {
   levels: Record<string, number>;
@@ -351,25 +352,41 @@ const { template, Visualizer } = createDeclarativeVisualizer<DinicStep>({
       })
       .join('');
 
+    // 判断或读取当前视口模式 (默认 2D)
+    const currentMode = (container as any)._dinicMode || '2d';
+
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🌊 残量网络拓扑 (流/容量)</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🌊 残量网络拓扑 (流/容量)</span>
+            <div style="display: flex; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px; gap: 2px;">
+              <button id="btn-dinic-2d" style="background: ${currentMode === '2d' ? '#2563eb' : 'transparent'}; border: none; color: ${currentMode === '2d' ? '#ffffff' : '#94a3b8'}; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; cursor: pointer;">🌐 2D</button>
+              <button id="btn-dinic-3d" style="background: ${currentMode === '3d' ? '#2563eb' : 'transparent'}; border: none; color: ${currentMode === '3d' ? '#ffffff' : '#94a3b8'}; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; cursor: pointer;">🪐 3D 沙盘</button>
+            </div>
+          </div>
           <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
             当前全网最大流: <b style="color: #10b981;">${step.curMaxFlow}</b>
           </span>
         </div>
 
-        <div style="width: 100%; min-height: 160px; background: #0f172a; border-radius: 8px; display: flex; justify-content: center; align-items: center; border: 1px solid #334155;">
-          <svg style="width: 100%; height: 160px;" viewBox="0 0 310 160">
-            <defs>
-              <marker id="dinic-arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
-              </marker>
-            </defs>
-            ${svgEdges}
-            ${svgNodes}
-          </svg>
+        <div id="dinic-view-mount" style="width: 100%; min-height: 180px; height: 180px; background: #0f172a; border-radius: 8px; display: flex; justify-content: center; align-items: center; border: 1px solid #334155; overflow: hidden; position: relative;">
+          ${
+            currentMode === '2d'
+              ? `
+            <svg style="width: 100%; height: 100%;" viewBox="0 0 310 160">
+              <defs>
+                <marker id="dinic-arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+                </marker>
+              </defs>
+              ${svgEdges}
+              ${svgNodes}
+            </svg>
+          `
+              : `<div id="dinic-3d-canvas-container" style="width: 100%; height: 100%;"></div>
+                 <div style="position: absolute; bottom: 6px; right: 8px; font-size: 9.5px; color: #64748b; pointer-events: none; background: rgba(15, 23, 42, 0.7); padding: 2px 6px; border-radius: 4px;">🖱️ 拖拽旋转 / 滚轮缩放</div>`
+          }
         </div>
 
         <!-- 底部多路增广阻塞流舱 -->
@@ -392,6 +409,56 @@ const { template, Visualizer } = createDeclarativeVisualizer<DinicStep>({
         </div>
       </div>
     `;
+
+    // 绑定 2D / 3D 视图切换事件
+    const btn2d = container.querySelector('#btn-dinic-2d') as HTMLButtonElement | null;
+    const btn3d = container.querySelector('#btn-dinic-3d') as HTMLButtonElement | null;
+    if (btn2d && btn3d) {
+      btn2d.onclick = () => {
+        (container as any)._dinicMode = '2d';
+        if ((container as any)._dinic3dAdapter) {
+          (container as any)._dinic3dAdapter.destroy();
+          (container as any)._dinic3dAdapter = null;
+        }
+        (Visualizer as any).renderStep?.(step);
+      };
+      btn3d.onclick = () => {
+        (container as any)._dinicMode = '3d';
+        (Visualizer as any).renderStep?.(step);
+      };
+    }
+
+    // 3D 空间图论沙盘挂载与渲染
+    if (currentMode === '3d') {
+      const mountEl = container.querySelector('#dinic-3d-canvas-container') as HTMLElement | null;
+      if (mountEl) {
+        let adapter: ThreeGraphTopologyAdapter = (container as any)._dinic3dAdapter;
+        if (!adapter) {
+          adapter = new ThreeGraphTopologyAdapter();
+          adapter.mount(mountEl);
+          (container as any)._dinic3dAdapter = adapter;
+        }
+
+        adapter.render({
+          nodes: [
+            { id: 'S', label: '源点 S', level: 0 },
+            { id: 'A', label: '节点 A', level: step.levels.A || 1, status: step.levels.A > 0 ? 'visited' : 'default' },
+            { id: 'B', label: '节点 B', level: step.levels.B || 1, status: step.levels.B > 0 ? 'visited' : 'default' },
+            { id: 'T', label: '汇点 T', level: 2, status: step.levels.T > 0 ? 'current' : 'default' },
+          ],
+          edges: step.flowEdges.map((e) => ({
+            from: e.u,
+            to: e.v,
+            flow: e.flow,
+            cap: e.cap,
+            isActivePath: isPathEdge(e.u, e.v),
+            isSaturated: e.flow === e.cap && e.cap > 0,
+          })),
+          activePath: step.activePath,
+          layoutMode: 'layered',
+        });
+      }
+    }
   },
   renderCustomMetrics: (container, step) => {
     const nodes = ['S', 'A', 'B', 'T'];

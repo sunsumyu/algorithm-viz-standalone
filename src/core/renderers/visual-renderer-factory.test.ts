@@ -22,6 +22,12 @@ describe('VisualRendererFactory Deep Module Guard (Factory Pattern)', () => {
     expect(r3d.id).toBe('three-grid-visual-adapter');
   });
 
+  it('should create and cache 3d-graph renderer correctly', () => {
+    const rGraph = VisualRendererFactory.getRenderer('3d-graph');
+    expect(rGraph).toBeDefined();
+    expect(rGraph.id).toBe('three-graph-topology-adapter');
+  });
+
   it('should support registering and retrieving custom renderer', () => {
     const mockCustomRenderer: IVisualRenderer = {
       id: 'custom-webgpu-adapter',
