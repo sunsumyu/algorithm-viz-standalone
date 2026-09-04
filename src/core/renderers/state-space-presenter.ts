@@ -8,6 +8,8 @@
 import type { UniversalStep } from '../universal-stage-engine';
 import { GridVisualAdapter, RecursionTreeAdapter, MemoSlotVisualAdapter } from './grid-visual-adapter';
 import { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
+import { ThreeLayeredVoxelAdapter } from './three-layered-voxel-adapter';
+import { LayeredVoxelStepAdapter } from './layered-voxel-step-adapter';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 
 export interface StateSpacePresentationOptions {
@@ -18,11 +20,53 @@ export interface StateSpacePresentationOptions {
   n: number;
   isReverse?: boolean;
   is3DMode?: boolean;
+  is3DLayered?: boolean;
   modelId: string;
   isGridProblem?: boolean;
 }
 
 export class StateSpacePresenter {
+  /**
+   * 局部容器查询辅助方法 (Scoped Locality Query)
+   * 优先在局部挂载根/当前容器层级内查找部件，避免全局 ID 冲突；
+   * 若局部无匹配且在浏览器环境中，才降级查找 document。
+   */
+  private static queryScoped(scope: HTMLElement | null, selector: string): HTMLElement | null {
+    if (!scope) {
+      if (typeof document !== 'undefined') {
+        try {
+          if (selector.startsWith('#') && typeof document.getElementById === 'function') {
+            const el = document.getElementById(selector.slice(1));
+            if (el) return el as HTMLElement;
+          }
+          return document.querySelector ? (document.querySelector(selector) as HTMLElement | null) : null;
+        } catch {}
+      }
+      return null;
+    }
+    try {
+      const fromScope = scope.querySelector?.(selector) as HTMLElement | null;
+      if (fromScope) return fromScope;
+    } catch {}
+    try {
+      const parent = ((scope as any).closest?.('.view-container') || scope.parentElement) as HTMLElement | null;
+      if (parent) {
+        const fromParent = parent.querySelector?.(selector) as HTMLElement | null;
+        if (fromParent) return fromParent;
+      }
+    } catch {}
+    if (typeof document !== 'undefined') {
+      try {
+        if (selector.startsWith('#') && typeof document.getElementById === 'function') {
+          const el = document.getElementById(selector.slice(1));
+          if (el) return el as HTMLElement;
+        }
+        return document.querySelector ? (document.querySelector(selector) as HTMLElement | null) : null;
+      } catch {}
+    }
+    return null;
+  }
+
   /**
    * 统合渲染 Card 1 (沙盘/网格看板)
    */
@@ -36,22 +80,22 @@ export class StateSpacePresenter {
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(modelId, { m, n });
     if (isTreeProblem) {
       // 树型题目：卡片 1 作为主视图展示二叉树拓扑结构图与子树剪枝
-      const threeContainer = document.getElementById('three-canvas-container');
+      const threeContainer = this.queryScoped(container, '#three-canvas-container');
       if (threeContainer) threeContainer.classList.add('hidden');
-      const threeControls = document.getElementById('three-controls-bar');
+      const threeControls = this.queryScoped(container, '#three-controls-bar');
       if (threeControls) {
         threeControls.classList.add('hidden');
         threeControls.classList.remove('flex');
       }
-      const boardWrapper = document.getElementById('grid-board-wrapper');
+      const boardWrapper = this.queryScoped(container, '#grid-board-wrapper');
       if (boardWrapper) {
         boardWrapper.classList.remove('hidden');
         boardWrapper.className = 'w-full h-full flex flex-col items-center justify-start relative overflow-auto';
       }
 
-      const arrowsSvg = document.getElementById('grid-arrows-svg');
+      const arrowsSvg = this.queryScoped(container, '#grid-arrows-svg');
       if (arrowsSvg) arrowsSvg.style.display = 'none';
-      const riverBarrier = document.getElementById('grid-river-barrier');
+      const riverBarrier = this.queryScoped(container, '#grid-river-barrier');
       if (riverBarrier) riverBarrier.style.display = 'none';
 
       container.className = 'w-full h-full flex items-center justify-center relative';
@@ -74,16 +118,33 @@ export class StateSpacePresenter {
     const effectiveN = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
 
     // 1. 3D WebGL 立体透视沙盘更新
-    if (is3DMode && typeof document !== 'undefined') {
-      const threeContainer = document.getElementById('three-canvas-container');
+    if (is3DMode) {
+      const threeContainer = this.queryScoped(container, '#three-canvas-container');
       if (threeContainer && !threeContainer.classList.contains('hidden')) {
-        ThreeGridVisualAdapter.getInstance().updateStep(step, {
-          m: effectiveM,
-          n: effectiveN,
-          isReverse,
-          modelId,
-          isGridProblem
-        });
+        const is3DLayered = options.is3DLayered ?? (['out-of-boundary-paths', 'knight-probability', 'paths-divisible-by-k', 'profitable-schemes', 'scramble-string'].includes(modelId));
+        if (is3DLayered) {
+          const adapter = ThreeLayeredVoxelAdapter.getInstance();
+          adapter.mount(threeContainer);
+          const kLayers = Math.max(3, (step as any).maxMove ? (step as any).maxMove + 1 : 4);
+          const stepData = LayeredVoxelStepAdapter.adapt(step, {
+            layers: kLayers,
+            rows: effectiveM,
+            cols: effectiveN
+          });
+          adapter.render(stepData, {
+            layers: kLayers,
+            rows: effectiveM,
+            cols: effectiveN
+          });
+        } else {
+          ThreeGridVisualAdapter.getInstance().updateStep(step, {
+            m: effectiveM,
+            n: effectiveN,
+            isReverse,
+            modelId,
+            isGridProblem
+          });
+        }
       }
     }
 
@@ -153,22 +214,25 @@ export class StateSpacePresenter {
   public static renderLiteVisuals(
     options: StateSpacePresentationOptions,
     steps: UniversalStep[],
-    currentIndex: number
+    currentIndex: number,
+    rootScope?: HTMLElement | null
   ): void {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' && !rootScope) return;
 
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(options.modelId);
     const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId);
     const fullOptions = { ...options, isGridProblem };
 
-    const card1El = (document.getElementById('card1-wrapper') || document.getElementById('card1-title')?.parentElement?.parentElement || document.getElementById('card1-title')?.parentElement) as HTMLElement | null;
-    const btnToggle3d = document.getElementById('btn-toggle-3d');
+    const card1El = (this.queryScoped(rootScope || null, '#card1-wrapper') ||
+      this.queryScoped(rootScope || null, '#card1-title')?.parentElement?.parentElement ||
+      this.queryScoped(rootScope || null, '#card1-title')?.parentElement) as HTMLElement | null;
+    const btnToggle3d = this.queryScoped(rootScope || null, '#btn-toggle-3d');
 
     if (card1El) card1El.style.display = '';
     if (btnToggle3d) btnToggle3d.style.display = isTreeProblem ? 'none' : '';
 
     // 图例同步
-    const legendRefEl = document.getElementById('legend-ref');
+    const legendRefEl = this.queryScoped(rootScope || null, '#legend-ref');
     if (legendRefEl) {
       if (isTreeProblem) {
         legendRefEl.style.display = 'none';
@@ -179,16 +243,16 @@ export class StateSpacePresenter {
     }
 
     // 卡片 1: 树型题目展示二叉树拓扑结构图，网格/线性题目展示沙盘看板
-    const gridContainer = document.getElementById('grid-container');
+    const gridContainer = this.queryScoped(rootScope || null, '#grid-container');
     this.renderCard1(gridContainer, fullOptions);
 
     // 卡片 2: 状态展示区 (树型题目展示 DP 状态转移数组)
-    const memoContainer = document.getElementById('memo-array-container') || document.getElementById('memo-slots-container');
+    const memoContainer = this.queryScoped(rootScope || null, '#memo-array-container') || this.queryScoped(rootScope || null, '#memo-slots-container');
     this.renderCard2(memoContainer, fullOptions);
 
     // 执行日志渲染
-    const logContainer = document.getElementById('log-container');
-    const logCountEl = document.getElementById('log-count');
+    const logContainer = this.queryScoped(rootScope || null, '#log-container');
+    const logCountEl = this.queryScoped(rootScope || null, '#log-count');
     this.renderStepLogStream(logContainer, steps, currentIndex, logCountEl);
   }
 
@@ -204,17 +268,19 @@ export class StateSpacePresenter {
     if (!container || !steps || steps.length === 0) return;
     container.innerHTML = '';
 
-    const currentStep = steps[currentIndex];
     if (logCountEl) {
       logCountEl.textContent = `${currentIndex + 1} / ${steps.length} 记录`;
     }
 
-    const logList = document.createElement('div');
+    const doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    if (!doc) return;
+
+    const logList = doc.createElement('div');
     logList.className = 'space-y-1 font-mono-code text-xs';
 
     for (let idx = 0; idx <= currentIndex; idx++) {
       const s = steps[idx];
-      const line = document.createElement('div');
+      const line = doc.createElement('div');
       const isCurrent = idx === currentIndex;
 
       line.className = isCurrent
@@ -302,7 +368,7 @@ export class StateSpacePresenter {
     if (varJ) varJ.textContent = step.j !== undefined && step.j >= 0 ? String(step.j) : '-';
     if (varDown) varDown.textContent = step.topI !== undefined ? String(step.grid?.[step.topI]?.[step.topJ || 0] ?? '-') : '-';
     if (varRight) varRight.textContent = step.leftI !== undefined ? String(step.grid?.[step.leftI]?.[step.leftJ || 0] ?? '-') : '-';
-    if (varMemoj) varMemoj.textContent = step.grid?.[step.i]?.[step.j] !== undefined ? String(step.grid[step.i][step.j]) : '-';
+    if (varMemoj) varMemoj.textContent = (step.i !== undefined && step.j !== undefined && step.grid?.[step.i]?.[step.j] !== undefined) ? String(step.grid[step.i][step.j]) : '-';
     if (varReturn) varReturn.textContent = step.grid?.[m - 1]?.[n - 1] !== undefined ? String(step.grid[m - 1][n - 1]) : '-';
   }
 
@@ -412,15 +478,33 @@ export class StateSpacePresenter {
     }
 
     const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(modelId);
+    const is3DLayered = ['out-of-boundary-paths', 'knight-probability', 'paths-divisible-by-k', 'profitable-schemes', 'scramble-string'].includes(modelId);
 
     if (is3DMode) {
       if (threeContainer) {
         threeContainer.classList.remove('hidden');
-        ThreeGridVisualAdapter.getInstance().mount(threeContainer);
-        if (currentStep) {
-          ThreeGridVisualAdapter.getInstance().updateStep(currentStep, {
-            m, n, modelId, isGridProblem
-          });
+        if (is3DLayered) {
+          ThreeLayeredVoxelAdapter.getInstance().mount(threeContainer);
+          if (currentStep) {
+            const kLayers = Math.max(3, (currentStep as any).maxMove ? (currentStep as any).maxMove + 1 : 4);
+            const stepData = LayeredVoxelStepAdapter.adapt(currentStep, {
+              layers: kLayers,
+              rows: m,
+              cols: n
+            });
+            ThreeLayeredVoxelAdapter.getInstance().render(stepData, {
+              layers: kLayers,
+              rows: m,
+              cols: n
+            });
+          }
+        } else {
+          ThreeGridVisualAdapter.getInstance().mount(threeContainer);
+          if (currentStep) {
+            ThreeGridVisualAdapter.getInstance().updateStep(currentStep, {
+              m, n, modelId, isGridProblem
+            });
+          }
         }
       }
       if (threeControls) {
@@ -431,6 +515,7 @@ export class StateSpacePresenter {
     } else {
       if (threeContainer) {
         threeContainer.classList.add('hidden');
+        ThreeLayeredVoxelAdapter.getInstance().dispose();
         ThreeGridVisualAdapter.getInstance().dispose();
       }
       if (threeControls) {
