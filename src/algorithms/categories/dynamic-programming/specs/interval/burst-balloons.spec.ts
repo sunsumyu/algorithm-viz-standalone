@@ -194,7 +194,7 @@ export const BurstBalloonsSpec: AlgorithmSpec = {
     const totalLen = n + 2;
     const steps: DpTraceStep[] = [];
 
-    const dp: DpCell[][] = Array.from({ length: totalLen }, () =>
+    const dp: Array<Array<{ value: number; state: string }>> = Array.from({ length: totalLen }, () =>
       Array.from({ length: totalLen }, () => ({
         value: 0,
         state: 'empty',

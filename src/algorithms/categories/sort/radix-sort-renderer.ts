@@ -404,7 +404,7 @@ export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
     }
 
     // 6. 同步代码高亮
-    this.highlightCode(step.codeLine);
+    this.codeTerminal?.highlightLine(step.codeLine);
 
     const badgeExp = this.root?.querySelector('#badge-exp');
     if (badgeExp) {
@@ -416,7 +416,7 @@ export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
+    if (this.codeTerminal) this.codeTerminal.highlightLine(0);
   }
 }
 

@@ -15,6 +15,10 @@ import {
   BacktrackLogItem,
 } from '../../../core/renderers/backtrack-state-space-presenter';
 import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
+import {
   BacktrackTreeNode,
   BacktrackTreeStep,
   layoutTree,

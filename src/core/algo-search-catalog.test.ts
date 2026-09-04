@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { AlgoSearchCatalog, algoSearchCatalog } from './algo-search-catalog';
-import { AlgorithmConfig } from './algorithm-manager';
+import type { AlgorithmMetadata } from './registry';
 import { CATEGORY_CONFIG } from './category-config';
 
 describe('AlgoSearchCatalog Deep Domain Model Guard', () => {
-  const mockAlgorithms: AlgorithmConfig[] = [
+  const mockAlgorithms: AlgorithmMetadata[] = [
     {
       id: 'binary-search',
       name: '二分查找',

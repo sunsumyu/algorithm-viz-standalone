@@ -11,6 +11,10 @@ import {
   ASSIGN_COOKIES_CODE_LANGUAGES,
 } from './assign-cookies-problem-content';
 import template from './assign-cookies.html?raw';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
 
 export type AcPhase = 'init' | 'check' | 'matched' | 'skip' | 'done';
 

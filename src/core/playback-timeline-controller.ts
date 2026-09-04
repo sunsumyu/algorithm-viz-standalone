@@ -38,6 +38,9 @@ export class PlaybackTimelineController {
     setStep: (step: number) => {
       this.coordinator.seek(step);
     },
+    reset: () => {
+      this.coordinator.reset();
+    },
     getStepData: (idx: number) => ({ index: idx })
   };
 

@@ -308,6 +308,8 @@ export class DijkstraBasicVisualizer extends StepVisualizer<DJBStep> {
 registerAlgorithm({
   id: 'dijkstra-basic',
   name: 'Dijkstra 朴素最短路',
+  viewId: 'algo-dijkstra-basic-view',
+  icon: '📍',
   category: 'graph',
   difficulty: 2,
   levelOrder: 27,

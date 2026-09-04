@@ -8,13 +8,14 @@
  * 5. 关键词高亮片段安全切分 (Highlight Segmentation)
  */
 
-import { algorithmManager, AlgorithmConfig } from './algorithm-manager';
+import { algorithmRegistry } from './algorithm-registry';
+import type { AlgorithmMetadata } from './registry';
 import { CATEGORY_CONFIG, CategoryConfig } from './category-config';
 
 export interface CategoryGroup {
   category: string;
   config: CategoryConfig;
-  algorithms: AlgorithmConfig[];
+  algorithms: AlgorithmMetadata[];
 }
 
 export interface HighlightSegment {
@@ -26,12 +27,12 @@ export interface SearchCatalogResult {
   query: string;
   totalMatches: number;
   groups: CategoryGroup[];
-  matchedAlgorithms: AlgorithmConfig[];
+  matchedAlgorithms: AlgorithmMetadata[];
 }
 
 export interface NavigationLinkState {
-  prev: AlgorithmConfig | null;
-  next: AlgorithmConfig | null;
+  prev: AlgorithmMetadata | null;
+  next: AlgorithmMetadata | null;
   currentIndex: number;
   total: number;
 }
@@ -50,8 +51,8 @@ export class AlgoSearchCatalog {
    * 获取按关卡大纲有序排列的算法清单
    * 遵循先按分类预设优先级，再按关卡序号 (levelOrder) 严格排序
    */
-  public getOrderedAlgorithms(algorithms?: AlgorithmConfig[]): AlgorithmConfig[] {
-    const list = algorithms || algorithmManager.getAllAlgorithms();
+  public getOrderedAlgorithms(algorithms?: AlgorithmMetadata[]): AlgorithmMetadata[] {
+    const list = algorithms || algorithmRegistry.getAllMetadata();
     return [...list].sort((a, b) => {
       const orderA = CATEGORY_CONFIG[a.category]?.order ?? 999;
       const orderB = CATEGORY_CONFIG[b.category]?.order ?? 999;
@@ -65,7 +66,7 @@ export class AlgoSearchCatalog {
    */
   public getPrevAndNext(
     currentAlgorithmId: string | null,
-    algorithms?: AlgorithmConfig[]
+    algorithms?: AlgorithmMetadata[]
   ): NavigationLinkState {
     const list = this.getOrderedAlgorithms(algorithms);
     const total = list.length;
@@ -86,9 +87,9 @@ export class AlgoSearchCatalog {
   /**
    * 将算法列表聚类为有序分类组
    */
-  public groupCategories(algorithms?: AlgorithmConfig[]): CategoryGroup[] {
+  public groupCategories(algorithms?: AlgorithmMetadata[]): CategoryGroup[] {
     const list = algorithms || this.getOrderedAlgorithms();
-    const map = new Map<string, AlgorithmConfig[]>();
+    const map = new Map<string, AlgorithmMetadata[]>();
 
     list.forEach((algo) => {
       const cat = algo.category || 'other';
@@ -124,7 +125,7 @@ export class AlgoSearchCatalog {
    * 多维即时分词检索
    * 匹配范围：算法名称 (name)、分类名称 (category name)、详细描述 (description)、学习目标 (learningGoal)
    */
-  public search(query: string, algorithms?: AlgorithmConfig[]): SearchCatalogResult {
+  public search(query: string, algorithms?: AlgorithmMetadata[]): SearchCatalogResult {
     const rawList = algorithms || this.getOrderedAlgorithms();
     const cleanQuery = query.trim().toLowerCase();
 

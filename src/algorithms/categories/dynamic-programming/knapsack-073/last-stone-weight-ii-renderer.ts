@@ -244,11 +244,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<LastStoneStep>({
   codeLanguages: LAST_STONE_WEIGHT_II_CODE_LANGUAGES,
   problemHtml: LAST_STONE_WEIGHT_II_PROBLEM_HTML,
   analysisHtml: LAST_STONE_WEIGHT_II_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
-    const stones = (inputs['input-stones'] || '2, 7, 4, 1, 8, 1')
+  buildSteps: (inputs: Record<string, any>) => {
+    const stones = String(inputs['input-stones'] || '2, 7, 4, 1, 8, 1')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
     return buildLastStoneWeightIISteps(stones);
   },
   renderCanvas: (container, step) => {

@@ -1,4 +1,4 @@
-import { codeStepIndexer } from './code-step-indexer';
+import { codeStepIndexer, type ResolvedHighlightTarget } from './code-step-indexer';
 import { highlightTokens } from './code-highlighter';
 import type { StepVar } from './interfaces';
 
@@ -12,7 +12,13 @@ export interface KeyPointItem {
 export interface KeyPointsData {
   title?: string;
   summary?: string;
-  points: KeyPointItem[];
+  points?: KeyPointItem[];
+  thinking?: string;
+  state?: string;
+  equation?: string;
+  initAndBounds?: string;
+  complexity?: string;
+  [key: string]: any;
 }
 
 export interface ProblemExample {
@@ -122,6 +128,15 @@ export class CodePresentationModel {
     return false;
   }
 
+  public getAlgoKey(): string {
+    return this.algoKey;
+  }
+
+  public resolveAnchorLine(anchor: string, lang?: string): ResolvedHighlightTarget | null {
+    const targetLang = lang || this.currentLang;
+    return codeStepIndexer.resolveHighlight(this.algoKey, anchor, targetLang);
+  }
+
   public getAvailableLanguages(): string[] {
     return [...this.langOrder];
   }
@@ -149,6 +164,22 @@ export class CodePresentationModel {
     const line = lines[lineIndex] ?? '';
     const targetLang = lang || this.currentLang;
     return highlightTokens(line, targetLang);
+  }
+
+  /**
+   * 动态设置指定行号的讲解内容
+   */
+  public setLineExplanation(lineNum: number, text: string, lang?: string): void {
+    const targetLang = lang || this.currentLang;
+    if (!this.lineExplanations) {
+      this.lineExplanations = {};
+    }
+    const explanations = this.lineExplanations as any;
+    if (typeof explanations[targetLang] === 'object') {
+      explanations[targetLang][lineNum] = text;
+    } else {
+      explanations[lineNum] = text;
+    }
   }
 
   /**

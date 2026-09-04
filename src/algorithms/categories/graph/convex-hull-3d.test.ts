@@ -39,9 +39,9 @@ describe('ConvexHull3D (3D Convex Hull - P4724)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.metrics).toBeDefined();
-      expect(step.metrics.vertices).toBeDefined();
-      expect(step.metrics.faces).toBeDefined();
-      expect(step.metrics.euler).toBeDefined();
+      expect(step.metrics!.vertices).toBeDefined();
+      expect(step.metrics!.faces).toBeDefined();
+      expect(step.metrics!.euler).toBeDefined();
 
       const rawLines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
       for (const line of rawLines) {

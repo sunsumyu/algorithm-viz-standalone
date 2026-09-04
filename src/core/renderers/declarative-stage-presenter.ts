@@ -39,6 +39,7 @@ export interface LegendItemDef {
 export interface DeclarativeAlgorithmSpec<TStep = any> {
   id: string;
   name: string;
+  viewId?: string;
   category: string;
   icon?: string;
   badge?: {
@@ -58,6 +59,7 @@ export interface DeclarativeAlgorithmSpec<TStep = any> {
   analysisHtml: string;
   buildSteps: (inputs: Record<string, any>, mode?: string) => TStep[];
   renderCanvas?: (container: HTMLElement, step: TStep, extra?: any) => void;
+  renderCustomMetrics?: (container: HTMLElement, step: TStep, extra?: any) => void;
 }
 
 export class DeclarativeStagePresenter {
@@ -65,7 +67,7 @@ export class DeclarativeStagePresenter {
    * 根据声明式 Spec 编译生成纯粹、无多余嵌套框的标准 4-Card HTML 骨架
    */
   public static generateTemplate(spec: DeclarativeAlgorithmSpec): string {
-    const viewId = `algo-${spec.id}-view`;
+    const viewId = spec.viewId || `algo-${spec.id}-view`;
     const icon = spec.icon || '📊';
     const modeBadge = spec.badge?.mode || '标准模式';
     const complexityBadge = spec.badge?.complexity || 'O(n) · O(1)';

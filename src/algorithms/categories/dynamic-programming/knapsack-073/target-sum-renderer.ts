@@ -290,12 +290,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<TargetSumStep>({
   codeLanguages: TARGET_SUM_CODE_LANGUAGES,
   problemHtml: TARGET_SUM_PROBLEM_HTML,
   analysisHtml: TARGET_SUM_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
+  buildSteps: (inputs: Record<string, any>) => {
     const target = parseInt(inputs['input-target'] || '3', 10);
-    const nums = (inputs['input-nums'] || '1, 1, 1, 1, 1')
+    const nums = String(inputs['input-nums'] || '1, 1, 1, 1, 1')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
     return buildTargetSumSteps(nums, target);
   },
   renderCanvas: (container, step) => {

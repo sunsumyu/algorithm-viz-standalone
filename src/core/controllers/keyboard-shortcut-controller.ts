@@ -33,12 +33,15 @@ export class KeyboardShortcutController {
   private customHandlers: Map<string, ShortcutDefinition[]> = new Map();
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
   private isEnabled: boolean = true;
-  private configRepo: ShortcutConfigRepository;
-  private dispatcher: ShortcutActionDispatcher;
+  private get configRepo(): ShortcutConfigRepository {
+    return shortcutConfigRepo;
+  }
+
+  private get dispatcher(): ShortcutActionDispatcher {
+    return shortcutDispatcher;
+  }
 
   private constructor() {
-    this.configRepo = shortcutConfigRepo;
-    this.dispatcher = shortcutDispatcher;
     this.initListener();
   }
 

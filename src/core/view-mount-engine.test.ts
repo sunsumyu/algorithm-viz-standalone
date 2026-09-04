@@ -94,7 +94,14 @@ class MockHTMLElement {
 (globalThis as any).document = {
   createElement: (tag: string) => new MockHTMLElement(tag),
   getElementById: (id: string) => null,
+  querySelector: (sel: string) => null,
   body: new MockHTMLElement('body'),
+};
+
+(globalThis as any).window = {
+  dispatchEvent: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
 };
 
 describe('ViewMountEngine', () => {
@@ -178,5 +185,77 @@ describe('ViewMountEngine', () => {
 
     expect(destroySpy1).toHaveBeenCalledTimes(1);
     expect(viewMountEngine.getCurrentAlgorithmId()).toBe('algo-2');
+  });
+
+  it('当未传入 templateContent 或 VisualizerClass 时应自动委托 AlgorithmRegistry 解析', async () => {
+    const { algorithmRegistry } = await import('./algorithm-registry');
+    class AutoViz implements IVisualizer {
+      init = vi.fn().mockResolvedValue(undefined);
+      destroy = vi.fn();
+    }
+
+    algorithmRegistry.register({
+      id: 'test-auto-algo',
+      name: '自动挂载算法',
+      viewId: 'algo-auto-view',
+      category: 'test',
+      description: '测试自动挂载',
+      icon: 'fa-robot',
+      difficulty: 1,
+      levelOrder: 1,
+      template: '<div id="auto-content">Auto Content</div>',
+      Visualizer: AutoViz,
+    });
+
+    const parent = new MockHTMLElement('div');
+    const viz = await viewMountEngine.mount({
+      algorithmId: 'test-auto-algo',
+      containerParent: parent as any,
+    });
+
+    expect(viz).toBeInstanceOf(AutoViz);
+    expect(viewMountEngine.getCurrentAlgorithmId()).toBe('test-auto-algo');
+    const container = viewMountEngine.getActiveContainer();
+    expect(container?.innerHTML).toContain('Auto Content');
+  });
+
+  it('showAlgorithm 应自动隐藏选择器、挂载算法并广播 algo:mounted 事件', async () => {
+    const { algorithmRegistry } = await import('./algorithm-registry');
+    class ShowViz implements IVisualizer {
+      init = vi.fn().mockResolvedValue(undefined);
+      destroy = vi.fn();
+    }
+
+    algorithmRegistry.register({
+      id: 'test-show-algo',
+      name: '展示测试算法',
+      viewId: 'algo-show-view',
+      category: 'test',
+      description: '测试展示',
+      icon: 'fa-play',
+      difficulty: 1,
+      levelOrder: 1,
+      template: '<div>Show Content</div>',
+      Visualizer: ShowViz,
+    });
+
+    const dispatchSpy = (globalThis as any).window.dispatchEvent;
+    dispatchSpy.mockClear();
+
+    const viz = await viewMountEngine.showAlgorithm('test-show-algo');
+    expect(viz).toBeInstanceOf(ShowViz);
+    expect(viewMountEngine.getCurrentAlgorithmId()).toBe('test-show-algo');
+
+    // 验证事件广播
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'algo:mounted' })
+    );
+
+    // 切换回选择器
+    viewMountEngine.showSelector();
+    expect(viewMountEngine.getCurrentAlgorithmId()).toBeNull();
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'algo:selector-shown' })
+    );
   });
 });

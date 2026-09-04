@@ -157,6 +157,33 @@ describe('Complete DP Specs Comprehensive Test Suite', () => {
     expect(steps[steps.length - 1].metrics?.totalSchemes).toBe(2);
   });
 
+  it('PathsDivisibleByKSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('paths-divisible-by-k');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(2435);
+
+    const steps = DpStepEngine.generateSteps('paths-divisible-by-k', {
+      grid: [
+        [5, 2, 4],
+        [3, 0, 5],
+        [0, 7, 2],
+      ],
+      k: 3,
+    });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.totalPathsModK).toBe(2);
+  });
+
+  it('ScrambleStringSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('scramble-string');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(87);
+
+    const steps = DpStepEngine.generateSteps('scramble-string', { s1: 'great', s2: 'rgeat' });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.isScramble).toBe(1);
+  });
+
   it('CountDigitOneSpec executes via DpStepEngine', () => {
     const spec = DpStepEngine.get('count-digit-one');
     expect(spec).toBeDefined();

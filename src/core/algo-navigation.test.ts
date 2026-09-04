@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { algoNavigation } from './algo-navigation';
 import { CATEGORY_CONFIG, getDifficultyConfig } from './category-config';
-import { algorithmManager } from './algorithm-manager';
 
 describe('algoNavigation and Category Config', () => {
   it('should have valid category configurations with orders', () => {

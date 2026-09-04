@@ -32,14 +32,14 @@ export interface KnapsackLanguageLineMap {
 }
 
 export interface KnapsackExecutionStep {
-  groupIndex: number;
-  itemIndex: number;
+  groupIndex?: number;
+  itemIndex?: number;
   j: number;
   dp: number[];
   maxVal: number;
   items: KnapsackItem[];
-  currentGroupItems: KnapsackItem[];
-  status: 'init' | 'group' | 'check' | 'update' | 'done';
+  currentGroupItems?: KnapsackItem[];
+  status: 'init' | 'group' | 'check' | 'update' | 'done' | string;
   message: string;
   log: string;
   codeLine?: HighlightTarget;
@@ -52,6 +52,7 @@ export interface KnapsackExecutionStep {
     improved?: boolean;
   };
   metrics?: Record<string, any>;
+  [key: string]: any;
 }
 
 export interface KnapsackEngineOptions {

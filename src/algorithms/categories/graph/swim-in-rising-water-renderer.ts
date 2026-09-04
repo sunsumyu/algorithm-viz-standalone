@@ -228,7 +228,6 @@ export function buildSwimInRisingWaterSteps(gridType: string = 'leetcode5'): Swi
 const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
   id: 'swim-in-rising-water',
   name: '水位上升的泳池中游泳',
-  viewId: 'algo-swim-in-rising-water-view',
   category: 'graph',
   icon: '🏊',
   badge: {
@@ -389,6 +388,7 @@ registerAlgorithm({
   id: 'swim-in-rising-water',
   name: '水位上升的泳池中游泳',
   viewId: 'algo-swim-in-rising-water-view',
+  icon: '🏊',
   category: 'graph',
   description: '左程云算法通关课 Class 064 Code03：网格图瓶颈最短路、max(t, grid[nr][nc]) 松弛、Dijkstra 小根堆 (LeetCode 778)',
   template,

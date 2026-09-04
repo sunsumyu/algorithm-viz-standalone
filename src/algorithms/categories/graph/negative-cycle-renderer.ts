@@ -327,7 +327,9 @@ export class NegativeCycleVisualizer extends StepVisualizer<NCStep> {
 registerAlgorithm({
   id: 'negative-cycle',
   name: '负权回路检测 (Negative Cycle)',
+  viewId: 'algo-negative-cycle-view',
   category: 'graph',
+  icon: '🔄',
   difficulty: 3,
   levelOrder: 26,
   description: '左程云算法通关课 Class 061：基于 Bellman-Ford 的第 N 轮松弛判定准则，识别图中使得最短路无下界的负权环 (洛谷 P3385)',

@@ -13,6 +13,9 @@ export interface PathStackOptions {
   activeIndex?: number;
   action?: 'push' | 'pop' | 'collect' | 'idle';
   highlightLast?: boolean;
+  capacity?: number;
+  label?: string;
+  [key: string]: any;
 }
 
 export interface PruningMonitorOptions {

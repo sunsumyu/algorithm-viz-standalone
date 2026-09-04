@@ -110,7 +110,7 @@ export const BUILD_TREE_CODE_LANGUAGES: Record<string, string[]> = {
     '        if (pL > pR || iL > iR) return null;',
     '        const rootVal = preorder[pL];',
     '        const root = new TreeNode(rootVal);',
-    '        const inRoot = inMap.get(rootVal);',
+    '        const inRoot = inMap[rootVal];',
     '        const leftLen = inRoot - iL;',
     '        root.left = build(pL + 1, pL + leftLen, iL, inRoot - 1);',
     '        root.right = build(pL + leftLen + 1, pR, inRoot + 1, iR);',

@@ -306,6 +306,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BLStep>({
 registerAlgorithm({
   id: 'buy-land',
   name: '开发商购买土地',
+  viewId: 'algo-buy-land-view',
   category: 'array',
   description: '二维前缀和构建 O(mn)，容斥原理 O(1) 快速计算任意子矩阵开销并在预算内求解最大连续面积',
   icon: '🏞️',

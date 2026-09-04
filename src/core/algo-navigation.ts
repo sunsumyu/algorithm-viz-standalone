@@ -7,11 +7,13 @@
  * 4. 全局快捷键控制 ([, ], M, Escape)
  */
 
-import { algorithmManager, AlgorithmConfig } from './algorithm-manager';
+import { algorithmRegistry } from './algorithm-registry';
+import { viewMountEngine } from './view-mount-engine';
+import type { AlgorithmMetadata } from './registry';
 import { CATEGORY_CONFIG, getDifficultyConfig } from './category-config';
 import { getRecentAlgorithmIds, clearRecentAlgorithms } from './recent-algorithms';
 import { algoSearchCatalog, CategoryGroup } from './algo-search-catalog';
-import { shortcutController } from './controllers/keyboard-shortcut-controller';
+import { catalogPresenter } from './renderers/catalog-presenter';
 
 class AlgoNavigationManager {
   private static instance: AlgoNavigationManager;
@@ -27,7 +29,17 @@ class AlgoNavigationManager {
   private constructor() {
     if (typeof document !== 'undefined') {
       this.ensureDOM();
-      this.initKeydownListener();
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('algo:mounted', (e: Event) => {
+        const detail = (e as CustomEvent).detail;
+        if (detail?.algorithmId) {
+          this.updateActiveAlgorithm(detail.algorithmId);
+        }
+      });
+      window.addEventListener('algo:selector-shown', () => {
+        this.hide();
+      });
     }
   }
 
@@ -103,66 +115,18 @@ class AlgoNavigationManager {
     return true;
   }
 
-  /**
-   * 绑定全局键盘快捷键 (委托 shortcutController 控制中枢深模块)
-   */
-  private initKeydownListener(): void {
-    if (typeof document === 'undefined') return;
-
-    shortcutController.register(
-      'Escape',
-      (e) => {
-        if (this.isDrawerOpen) {
-          e.preventDefault();
-          this.closeDrawer();
-        }
-      },
-      '收起算法目录抽屉',
-      true
-    );
-
-    shortcutController.register(
-      'm',
-      (e) => {
-        if (!this.currentAlgorithmId) return;
-        e.preventDefault();
-        this.toggleDrawer();
-      },
-      '展开/收起算法目录抽屉'
-    );
-
-    shortcutController.register(
-      '[',
-      (e) => {
-        if (!this.currentAlgorithmId) return;
-        e.preventDefault();
-        this.navigateToPrevious();
-      },
-      '导航至上一题'
-    );
-
-    shortcutController.register(
-      ']',
-      (e) => {
-        if (!this.currentAlgorithmId) return;
-        e.preventDefault();
-        this.navigateToNext();
-      },
-      '导航至下一题'
-    );
-  }
 
   /**
    * 获取按关卡大纲有序排列的完整算法清单 (委托给 algoSearchCatalog 领域模型)
    */
-  public getOrderedAlgorithms(): AlgorithmConfig[] {
+  public getOrderedAlgorithms(): AlgorithmMetadata[] {
     return algoSearchCatalog.getOrderedAlgorithms();
   }
 
   /**
    * 获取当前算法的前后算法及导航状态 (委托给 algoSearchCatalog 领域模型)
    */
-  public getPrevAndNext(): { prev: AlgorithmConfig | null; next: AlgorithmConfig | null; currentIndex: number; total: number } {
+  public getPrevAndNext(): { prev: AlgorithmMetadata | null; next: AlgorithmMetadata | null; currentIndex: number; total: number } {
     return algoSearchCatalog.getPrevAndNext(this.currentAlgorithmId);
   }
 
@@ -172,7 +136,7 @@ class AlgoNavigationManager {
   public navigateToPrevious(): void {
     const { prev } = this.getPrevAndNext();
     if (prev) {
-      algorithmManager.showAlgorithm(prev.id);
+      viewMountEngine.showAlgorithm(prev.id);
     }
   }
 
@@ -182,7 +146,7 @@ class AlgoNavigationManager {
   public navigateToNext(): void {
     const { next } = this.getPrevAndNext();
     if (next) {
-      algorithmManager.showAlgorithm(next.id);
+      viewMountEngine.showAlgorithm(next.id);
     }
   }
 
@@ -192,7 +156,7 @@ class AlgoNavigationManager {
   public updateActiveAlgorithm(algorithmId: string): void {
     this.ensureDOM();
     this.currentAlgorithmId = algorithmId;
-    const currentAlgo = algorithmManager.getAlgorithm(algorithmId);
+    const currentAlgo = algorithmRegistry.getMetadata(algorithmId);
     if (currentAlgo && currentAlgo.category) {
       this.expandedCategories.add(currentAlgo.category);
     }
@@ -304,7 +268,7 @@ class AlgoNavigationManager {
     this.topNavContainer.style.display = 'flex';
 
     const { prev, next, currentIndex, total } = this.getPrevAndNext();
-    const currentAlgo = this.currentAlgorithmId ? algorithmManager.getAlgorithm(this.currentAlgorithmId) : null;
+    const currentAlgo = this.currentAlgorithmId ? algorithmRegistry.getMetadata(this.currentAlgorithmId) : null;
     const catConfig = currentAlgo?.category ? CATEGORY_CONFIG[currentAlgo.category] : null;
     const diffConfig = getDifficultyConfig(currentAlgo?.difficulty);
 
@@ -349,7 +313,7 @@ class AlgoNavigationManager {
 
     // 绑定事件
     const backBtn = document.getElementById('algo-nav-back-btn');
-    backBtn?.addEventListener('click', () => algorithmManager.showAlgorithmSelector());
+    backBtn?.addEventListener('click', () => viewMountEngine.showSelector());
 
     const prevBtn = document.getElementById('algo-nav-prev-btn');
     prevBtn?.addEventListener('click', () => this.navigateToPrevious());
@@ -459,156 +423,44 @@ class AlgoNavigationManager {
   }
 
   /**
-   * 渲染抽屉内的关卡树列表
+   * 渲染抽屉内的关卡树列表 (委托给 CatalogPresenter 深模块统一呈现)
    */
   private renderDrawerList(groups: CategoryGroup[], totalMatches: number): void {
     const listEl = document.getElementById('drawer-list');
     if (!listEl) return;
 
-    listEl.innerHTML = '';
-    const query = this.drawerSearchQuery.trim();
+    const recentIds = getRecentAlgorithmIds();
+    const recentAlgos = recentIds
+      .map((id) => algorithmRegistry.getMetadata(id))
+      .filter((a): a is AlgorithmMetadata => a !== undefined);
 
-    // 最近访问区域 (仅在非搜索模式下，且有访问记录时展示)
-    if (!query) {
-      const recentIds = getRecentAlgorithmIds();
-      const recentAlgos = recentIds
-        .map((id) => algorithmManager.getAlgorithm(id))
-        .filter((algo): algo is AlgorithmConfig => Boolean(algo));
-
-      if (recentAlgos.length > 0) {
-        const recentGroup = document.createElement('div');
-        recentGroup.className = 'drawer-recent-section';
-        recentGroup.innerHTML = `
-          <div class="drawer-recent-header">
-            <div class="drawer-recent-title">
-              <span class="drawer-recent-icon">🕒</span>
-              <span>最近访问</span>
-              <span class="drawer-recent-badge">${recentAlgos.length}</span>
-            </div>
-            <button class="drawer-recent-clear-btn" type="button" title="清空最近访问">清空</button>
-          </div>
-          <div class="drawer-recent-chips"></div>
-        `;
-
-        const clearBtn = recentGroup.querySelector('.drawer-recent-clear-btn');
-        clearBtn?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          clearRecentAlgorithms();
-          const res = algoSearchCatalog.search('');
-          this.renderDrawerList(res.groups, res.totalMatches);
-        });
-
-        const chipsContainer = recentGroup.querySelector('.drawer-recent-chips');
-        if (chipsContainer) {
-          recentAlgos.forEach((algo) => {
-            const isCurrent = algo.id === this.currentAlgorithmId;
-            const catConfig = CATEGORY_CONFIG[algo.category];
-            const diff = getDifficultyConfig(algo.difficulty);
-
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = `drawer-recent-chip ${isCurrent ? 'is-active' : ''}`;
-            chip.title = `${algo.name} (${catConfig?.name || algo.category} · ${diff.label})`;
-            chip.innerHTML = `
-              <span class="chip-cat-icon">${catConfig?.icon || '📄'}</span>
-              <span class="chip-name">${algo.name}</span>
-              <span class="chip-diff-dot" style="color: ${diff.color}">●</span>
-            `;
-            chip.addEventListener('click', () => {
-              if (algo.id !== this.currentAlgorithmId) {
-                algorithmManager.showAlgorithm(algo.id);
-              }
-            });
-            chipsContainer.appendChild(chip);
-          });
+    catalogPresenter.renderDrawerContent(listEl, {
+      groups,
+      totalMatches,
+      searchQuery: this.drawerSearchQuery,
+      currentAlgorithmId: this.currentAlgorithmId,
+      expandedCategories: this.expandedCategories,
+      recentAlgorithms: recentAlgos,
+      onSelectAlgorithm: (algoId) => {
+        if (algoId !== this.currentAlgorithmId) {
+          viewMountEngine.showAlgorithm(algoId);
         }
-
-        listEl.appendChild(recentGroup);
-      }
-    }
-
-    groups.forEach(({ category, config, algorithms: algoList }) => {
-      if (algoList.length === 0) return;
-
-      // 搜索模式下默认全部展开；常规模式下按 expandedCategories 展开
-      const isExpanded = query ? true : this.expandedCategories.has(category);
-      const isCurrentCat = this.currentAlgorithmId ? algoList.some((a) => a.id === this.currentAlgorithmId) : false;
-
-      const groupEl = document.createElement('div');
-      groupEl.className = `drawer-group ${isExpanded ? 'is-expanded' : ''} ${isCurrentCat ? 'is-current-cat' : ''}`;
-      groupEl.style.setProperty('--group-color', config.color);
-
-      // 分类头部
-      const headerEl = document.createElement('div');
-      headerEl.className = 'drawer-group-header';
-      headerEl.innerHTML = `
-        <span class="drawer-group-icon">${config.icon}</span>
-        <span class="drawer-group-name">${config.name}</span>
-        <span class="drawer-group-count">${algoList.length} 关</span>
-        <span class="drawer-group-chevron">${isExpanded ? '▾' : '▸'}</span>
-      `;
-      headerEl.addEventListener('click', () => {
-        if (this.expandedCategories.has(category)) {
-          this.expandedCategories.delete(category);
-        } else {
+      },
+      onToggleCategory: (category, expanded) => {
+        if (expanded) {
           this.expandedCategories.add(category);
+        } else {
+          this.expandedCategories.delete(category);
         }
         const res = algoSearchCatalog.search(this.drawerSearchQuery);
         this.renderDrawerList(res.groups, res.totalMatches);
-      });
-      groupEl.appendChild(headerEl);
-
-      // 关卡项列表
-      if (isExpanded) {
-        const itemsContainer = document.createElement('div');
-        itemsContainer.className = 'drawer-items';
-
-        algoList.forEach((algo, index) => {
-          const isCurrent = algo.id === this.currentAlgorithmId;
-          const diff = getDifficultyConfig(algo.difficulty);
-          const levelNum = algo.levelOrder ?? index + 1;
-
-          const itemEl = document.createElement('div');
-          itemEl.className = `drawer-item ${isCurrent ? 'is-active' : ''}`;
-          itemEl.dataset.algoId = algo.id;
-          itemEl.style.setProperty('--diff-color', diff.color);
-          itemEl.style.setProperty('--diff-bg', diff.bg);
-
-          itemEl.innerHTML = `
-            <div class="drawer-item-left">
-              <span class="drawer-item-dot" style="color: ${diff.color}" title="${diff.label}">${diff.dot}</span>
-              <span class="drawer-item-num">${levelNum}</span>
-              <span class="drawer-item-name">${algoSearchCatalog.highlightHtml(algo.name, query)}</span>
-            </div>
-            <div class="drawer-item-right">
-              ${isCurrent ? `<span class="drawer-item-active-tag">正在学习</span>` : ''}
-              <span class="drawer-item-diff-badge" style="color: ${diff.color}; background: ${diff.bg}">${diff.label}</span>
-            </div>
-          `;
-
-          itemEl.addEventListener('click', () => {
-            if (algo.id !== this.currentAlgorithmId) {
-              algorithmManager.showAlgorithm(algo.id);
-            }
-          });
-
-          itemsContainer.appendChild(itemEl);
-        });
-
-        groupEl.appendChild(itemsContainer);
-      }
-
-      listEl.appendChild(groupEl);
+      },
+      onClearRecent: () => {
+        clearRecentAlgorithms();
+        const res = algoSearchCatalog.search(this.drawerSearchQuery);
+        this.renderDrawerList(res.groups, res.totalMatches);
+      },
     });
-
-    if (totalMatches === 0) {
-      listEl.innerHTML = `
-        <div class="drawer-empty-state">
-          <span class="drawer-empty-icon">🔍</span>
-          <span class="drawer-empty-text">未找到与 "${algoSearchCatalog.escapeHtml(query)}" 相关的算法</span>
-        </div>
-      `;
-    }
   }
 
   /**

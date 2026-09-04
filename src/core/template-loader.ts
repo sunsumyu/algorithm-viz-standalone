@@ -3,14 +3,14 @@
  * 用于动态加载和注入 HTML 模板
  */
 
-class TemplateLoader {
-  private templates: Map<string, string> = new Map();
+import { algorithmRegistry } from './algorithm-registry';
 
+class TemplateLoader {
   /**
-   * 注册模板
+   * 注册模板（委托给 AlgorithmRegistry 深模块）
    */
   register(id: string, content: string): void {
-    this.templates.set(id, content);
+    algorithmRegistry.registerTemplate(id, content);
     console.log(`[TemplateLoader] Registered template: ${id}`);
   }
 
@@ -18,7 +18,7 @@ class TemplateLoader {
    * 获取模板内容
    */
   get(id: string): string | undefined {
-    return this.templates.get(id);
+    return algorithmRegistry.getTemplate(id);
   }
 
   /**
@@ -40,7 +40,7 @@ class TemplateLoader {
    * 从注册的模板中加载并注入
    */
   loadAndInject(templateId: string, containerId: string): void {
-    const content = this.templates.get(templateId);
+    const content = this.get(templateId);
     if (!content) {
       console.warn(`[TemplateLoader] Template ${templateId} not found`);
       return;
@@ -51,9 +51,7 @@ class TemplateLoader {
   /**
    * 清除所有注册的模板
    */
-  clear(): void {
-    this.templates.clear();
-  }
+  clear(): void {}
 }
 
 export const templateLoader = new TemplateLoader();

@@ -145,8 +145,8 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
     const pathKeys: string[] = [];
     let cur: { u: number; used: number } | null = { u: targetU, used: targetUsed };
     while (cur) {
-      const curKey = `${cur.u},${cur.used}`;
-      const prevInfo = parent[curKey];
+      const curKey: string = `${cur.u},${cur.used}`;
+      const prevInfo: { u: number; used: number; fromEdgeW: number; isFree: boolean } | null | undefined = parent[curKey];
       if (!prevInfo) break;
       const prevKey = `${prevInfo.u},${prevInfo.used}`;
       pathKeys.push(`${prevKey}->${curKey}`);

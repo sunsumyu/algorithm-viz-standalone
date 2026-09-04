@@ -5,7 +5,7 @@
  */
 
 import { algoNavigation } from '../algo-navigation';
-import { algorithmManager } from '../algorithm-manager';
+import { viewMountEngine } from '../view-mount-engine';
 
 export class ShortcutActionDispatcher {
   private static instance: ShortcutActionDispatcher | null = null;
@@ -67,7 +67,7 @@ export class ShortcutActionDispatcher {
         return this.dispatchSearch();
 
       case 'navigation.backHome':
-        algorithmManager.showAlgorithmSelector();
+        viewMountEngine.showSelector();
         return true;
 
       // 3. 代码与终端

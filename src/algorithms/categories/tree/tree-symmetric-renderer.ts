@@ -234,7 +234,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<TSStep>({
     if (root) {
       const lEl = root.querySelector('#metric-left-node');
       const rEl = root.querySelector('#metric-right-node');
-      const resEl = root.querySelector('#metric-symm-result');
+      const resEl = root.querySelector('#metric-symm-result') as HTMLElement | null;
 
       if (lEl) lEl.textContent = step.leftVal !== null ? `${step.leftVal}` : '—';
       if (rEl) rEl.textContent = step.rightVal !== null ? `${step.rightVal}` : '—';

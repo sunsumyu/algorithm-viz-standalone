@@ -70,7 +70,7 @@ export function convertTraceStep(rs: DpTraceStep): DpDemoStep {
   }
 
   return {
-    message: rs.message,
+    message: rs.message || rs.description || '',
     log: rs.log || '',
     vars: rs.vars,
     codeLine: rs.codeLine,

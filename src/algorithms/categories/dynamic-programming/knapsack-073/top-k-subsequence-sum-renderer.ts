@@ -235,12 +235,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopKStep>({
   codeLanguages: TOP_K_SUBSEQUENCE_SUM_CODE_LANGUAGES,
   problemHtml: TOP_K_SUBSEQUENCE_SUM_PROBLEM_HTML,
   analysisHtml: TOP_K_SUBSEQUENCE_SUM_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
+  buildSteps: (inputs: Record<string, any>) => {
     const k = parseInt(inputs['input-k'] || '6', 10);
-    const nums = (inputs['input-nums'] || '1, 3, 6, 8')
+    const nums = String(inputs['input-nums'] || '1, 3, 6, 8')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
     return buildTopKSubsequenceSumSteps(nums, k);
   },
   renderCanvas: (container, step) => {

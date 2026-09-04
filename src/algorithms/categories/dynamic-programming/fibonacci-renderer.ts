@@ -9,7 +9,7 @@ import {
   FibEvolutionStep,
   buildEvolutionSteps,
 } from './fib-evolution-steps';
-import { renderDpTreeSVG } from './dp-demo-visualizer';
+import { renderDpTreeSVG, DpCell } from './dp-demo-visualizer';
 
 export class FibonacciVisualizer implements IVisualizer {
   private steps: FibEvolutionStep[] = [];
@@ -550,7 +550,7 @@ export class FibonacciVisualizer implements IVisualizer {
     card: HTMLElement,
     step: FibEvolutionStep,
     currentIdx: number,
-    dpArr: (number | string | null)[],
+    dpArr: DpCell[],
   ): void {
     if (currentIdx < 2) {
       // Base case initialization

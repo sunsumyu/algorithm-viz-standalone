@@ -277,7 +277,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<LCAStep>({
       const curEl = root.querySelector('#metric-cur-node');
       const lEl = root.querySelector('#metric-left-ret');
       const rEl = root.querySelector('#metric-right-ret');
-      const lcaEl = root.querySelector('#metric-lca-val');
+      const lcaEl = root.querySelector('#metric-lca-val') as HTMLElement | null;
 
       if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
       if (lEl) lEl.textContent = step.leftReturn != null ? `${step.leftReturn}` : 'null';

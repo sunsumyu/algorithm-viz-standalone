@@ -307,7 +307,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BracketStep>({
     // 更新指标卡片
     const root = container.closest('#algo-bracket-view');
     if (root) {
-      const statusEl = root.querySelector('#metric-match-status');
+      const statusEl = root.querySelector('#metric-match-status') as HTMLElement | null;
       const pairsEl = root.querySelector('#metric-matched-pairs');
       const stackSizeEl = root.querySelector('#metric-stack-size');
 

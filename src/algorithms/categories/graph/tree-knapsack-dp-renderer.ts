@@ -374,7 +374,6 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
 const { template, Visualizer } = createDeclarativeVisualizer<TreeKnapStep>({
   id: 'tree-knapsack-dp',
   name: '树上有依赖背包 (Tree Knapsack DP)',
-  viewId: 'algo-tree-knapsack-dp-view',
   category: 'graph',
   icon: '🎒',
   badge: {

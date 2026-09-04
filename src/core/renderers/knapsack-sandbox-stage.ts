@@ -26,7 +26,7 @@ export function renderKnapsackSandbox(
   step: KnapsackExecutionStep,
   config: KnapsackSandboxConfig = {}
 ): void {
-  const isPartitioned = config.isPartitioned ?? step.groupIndex >= 0;
+  const isPartitioned = config.isPartitioned ?? ((step.groupIndex ?? -1) >= 0);
   const selected = step.selectedItems || [];
   const usedCap = selected.reduce((sum, it) => sum + it.cost, 0);
   const totalVal = selected.reduce((sum, it) => sum + it.val, 0);
@@ -216,6 +216,7 @@ function renderItemCard(
     (s) => s.group === it.group && s.cost === it.cost && s.val === it.val
   );
   const isCurItem =
+    step.itemIndex !== undefined &&
     step.itemIndex >= 0 &&
     step.items[step.itemIndex]?.group === it.group &&
     step.items[step.itemIndex]?.cost === it.cost &&

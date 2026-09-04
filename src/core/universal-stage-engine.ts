@@ -21,15 +21,15 @@ export interface UniversalTreeNode {
   c: number;
   val: string;
   edgeLabel?: string;
-  status: 'normal' | 'current' | 'base' | 'pruned' | 'visited';
+  status: 'normal' | 'current' | 'base' | 'pruned' | 'visited' | 'active' | string;
   tag?: string;
   children: UniversalTreeNode[];
 }
 
 export interface UniversalStep {
-  type: string;
-  i: number;
-  j: number;
+  type?: string;
+  i?: number;
+  j?: number;
   grid?: (number | null)[][];
   activeStack?: string[];
   visited?: string[];
@@ -44,7 +44,7 @@ export interface UniversalStep {
   activeNodeId?: string;
   treeRoot?: UniversalTreeNode | null;
   // 阶段 3 & 4 空间压缩与转移计算专用元数据
-  memo?: number[];
+  memo?: number[] | Record<string | number, any>;
   memoUpdatedIndex?: number;
   memoRefLeftIndex?: number;
   topVal?: number;
@@ -77,6 +77,8 @@ export interface UniversalStep {
   highlightText?: string;
   // 多维状态数组监视器 (Multi-Array State Inspector)
   stateArrays?: StateArrayItem[];
+  stepId?: number;
+  [key: string]: any;
 }
 
 export interface StateArrayItem {

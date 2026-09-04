@@ -39,10 +39,10 @@ describe('PlanarGraphDual (P4001)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.metrics).toBeDefined();
-      expect(step.metrics['metric-cur-face']).toBeDefined();
-      expect(step.metrics['metric-min-cut']).toBeDefined();
-      expect(step.metrics['metric-pq-top']).toBeDefined();
-      expect(step.metrics['metric-visited-count']).toBeDefined();
+      expect(step.metrics!['metric-cur-face']).toBeDefined();
+      expect(step.metrics!['metric-min-cut']).toBeDefined();
+      expect(step.metrics!['metric-pq-top']).toBeDefined();
+      expect(step.metrics!['metric-visited-count']).toBeDefined();
 
       const rawLines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
       for (const line of rawLines) {

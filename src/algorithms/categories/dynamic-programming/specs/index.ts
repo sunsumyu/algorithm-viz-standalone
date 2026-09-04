@@ -222,14 +222,20 @@ DpStepEngine.register(DistributeRepeatingIntegersSpec);
 export * from './three-dimension/knight-probability.spec';
 export * from './three-dimension/out-of-boundary-paths.spec';
 export * from './three-dimension/profitable-schemes.spec';
+export * from './three-dimension/paths-divisible-by-k.spec';
+export * from './three-dimension/scramble-string.spec';
 
 import { KnightProbabilitySpec } from './three-dimension/knight-probability.spec';
 import { OutOfBoundaryPathsSpec } from './three-dimension/out-of-boundary-paths.spec';
 import { ProfitableSchemesSpec } from './three-dimension/profitable-schemes.spec';
+import { PathsDivisibleByKSpec } from './three-dimension/paths-divisible-by-k.spec';
+import { ScrambleStringSpec } from './three-dimension/scramble-string.spec';
 
 DpStepEngine.register(KnightProbabilitySpec);
 DpStepEngine.register(OutOfBoundaryPathsSpec);
 DpStepEngine.register(ProfitableSchemesSpec);
+DpStepEngine.register(PathsDivisibleByKSpec);
+DpStepEngine.register(ScrambleStringSpec);
 
 // Digit DP specs (数位 DP 专题 — 第084讲、第085讲)
 export * from './digit/count-digit-one.spec';

@@ -39,9 +39,9 @@ describe('MinMeanCycle (Karp / 0-1 Fractional Programming)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.metrics).toBeDefined();
-      expect(step.metrics['metric-bounds']).toBeDefined();
-      expect(step.metrics['metric-guess-lambda']).toBeDefined();
-      expect(step.metrics['metric-cycle-status']).toBeDefined();
+      expect(step.metrics!['metric-bounds']).toBeDefined();
+      expect(step.metrics!['metric-guess-lambda']).toBeDefined();
+      expect(step.metrics!['metric-cycle-status']).toBeDefined();
 
       const rawLines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
       for (const line of rawLines) {

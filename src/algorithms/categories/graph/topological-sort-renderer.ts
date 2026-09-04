@@ -340,6 +340,8 @@ export class TopologicalSortVisualizer extends StepVisualizer<TopoStep> {
 registerAlgorithm({
   id: 'topological-sort',
   name: '拓扑排序 (Topological Sort)',
+  viewId: 'algo-topological-sort-view',
+  icon: '🔀',
   category: 'graph',
   difficulty: 2,
   levelOrder: 22,

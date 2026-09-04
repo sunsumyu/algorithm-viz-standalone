@@ -306,6 +306,8 @@ export class DijkstraHeapVisualizer extends StepVisualizer<DJHStep> {
 registerAlgorithm({
   id: 'dijkstra-heap',
   name: 'Dijkstra 堆优化最短路',
+  viewId: 'algo-dijkstra-heap-view',
+  icon: '⚡',
   category: 'graph',
   difficulty: 3,
   levelOrder: 28,

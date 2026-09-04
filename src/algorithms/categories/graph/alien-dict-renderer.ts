@@ -420,6 +420,7 @@ registerAlgorithm({
   id: 'alien-dict',
   name: '火星词典拓扑排序 (Alien Dictionary)',
   viewId: 'algo-alien-dict-view',
+  icon: '👽',
   category: 'graph',
   description: '左程云算法通关课 Class 059：相邻单词首个不同字符提取偏序、非法前缀陷阱与拓扑排序判环 (LeetCode 269)',
   template,

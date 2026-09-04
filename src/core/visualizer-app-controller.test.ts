@@ -135,6 +135,7 @@ describe('VisualizerAppController Deep Module', () => {
     (globalThis as any).document = {
       documentElement: docRoot,
       getElementById: (id: string) => getOrCreate(id),
+      querySelector: (sel: string) => (sel.startsWith('#') ? getOrCreate(sel.slice(1)) : null),
       createElement: () => new MockElement(),
       querySelectorAll: () => [],
       addEventListener: vi.fn()

@@ -292,6 +292,8 @@ export class BellmanFordVisualizer extends StepVisualizer<BFStep> {
 registerAlgorithm({
   id: 'bellman-ford',
   name: 'Bellman-Ford 最短路',
+  viewId: 'algo-bellman-ford-view',
+  icon: '🛤️',
   category: 'graph',
   difficulty: 3,
   levelOrder: 23,

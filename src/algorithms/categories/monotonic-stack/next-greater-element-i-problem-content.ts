@@ -126,7 +126,7 @@ export const NEXT_GREATER_ELEMENT_I_CODE_LANGUAGES: Record<string, string[]> = {
     '        }',
     '        stack.push(num);',
     '    }',
-    '    return nums1.map(num => map.has(num) ? map.get(num) : -1);',
+    '    return nums1.map(num => map.has(num) ? map[num] : -1);',
     '};',
   ],
 };

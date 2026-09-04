@@ -113,7 +113,7 @@ export const TWO_SUM_CODE_LANGUAGES: Record<string, string[]> = {
     '    for (let i = 0; i < nums.length; i++) {',
     '        const complement = target - nums[i];',
     '        if (map.has(complement)) {',
-    '            return [map.get(complement), i];',
+    '            return [map[complement], i];',
     '        }',
     '        map.set(nums[i], i);',
     '    }',

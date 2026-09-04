@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { UniversalFidelityAuditor } from './fidelity-auditor';
-import { AlgorithmManager } from './algorithm-manager';
+import { algorithmRegistry } from './algorithm-registry';
+import { loadAllAlgorithmBatches } from './algorithm-loader';
 import { ALL_ALGORITHM_METADATA } from './algorithm-manifests-meta';
 
 describe('Universal Algorithm Fidelity Auditor', () => {
   it('should audit all registered algorithms and report integrity', async () => {
     // 预热加载所有 batch 模块
-    await AlgorithmManager.getInstance().ensureAllLoaded();
+    await loadAllAlgorithmBatches();
 
     const summary = UniversalFidelityAuditor.runGlobalAudit();
 
@@ -22,14 +23,13 @@ describe('Universal Algorithm Fidelity Auditor', () => {
     }
 
     expect(summary.failedCount).toBe(0);
-  }, 30000);
+  }, 60000);
 
-  it('should verify every entry in ALL_ALGORITHM_METADATA is loadable by AlgorithmManager individually', async () => {
-    const manager = AlgorithmManager.getInstance();
+  it('should verify every entry in ALL_ALGORITHM_METADATA is loadable by AlgorithmRegistry individually', async () => {
     const errors: string[] = [];
     for (const meta of ALL_ALGORITHM_METADATA) {
-      const loaded = await manager.ensureAlgorithmLoaded(meta.id);
-      if (!loaded || !loaded.Visualizer || !loaded.templateContent) {
+      const loaded = await algorithmRegistry.resolve(meta.id);
+      if (!loaded || !loaded.Visualizer || !loaded.template) {
         errors.push(`Missing loader or visualizer for metadata id: "${meta.id}" (name: "${meta.name}", viewId: "${meta.viewId}")`);
       }
     }

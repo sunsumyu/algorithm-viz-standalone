@@ -398,6 +398,7 @@ registerAlgorithm({
   id: 'path-min-effort',
   name: '最小体力消耗路径 (Path With Minimum Effort)',
   viewId: 'algo-path-min-effort-view',
+  icon: '🧗',
   category: 'graph',
   description: '左程云算法通关课 Class 064 Code02：网格图瓶颈最短路、max(|h1 - h2|) 松弛、Dijkstra 优先队列贪心扩展 (LeetCode 1631)',
   template,

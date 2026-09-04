@@ -1,7 +1,7 @@
 /**
- * 电动车充放电最短路 (Electric Vehicle Charging - LeetCode LCP 35 / 左程云 Class 064 题目4) 声明式可视化器
- * 核心：二维状态 (city, power) 分层图最短路、Dijkstra 堆优化
- * 遵循标准 4-Card 声明式沙盘架构 (createDeclarativeVisualizer)
+ * 电动车充放电最短路 (Electric Vehicle Charging - LeetCode LCP 35) 声明式可视化器
+ * 核心：二维状态 (city, power) 分层图最短路、原地充电与道路放电双决策、Dijkstra 堆优化
+ * 遵循标准 4-Card 声明式沙盘架构，支持逐行指令执行与多状态矩阵 (dist[city][power], pq) 实时监控
  */
 
 import { registerAlgorithm } from '../../../core/registry';
@@ -17,127 +17,273 @@ export interface EVStep {
   curPower: number;
   cost: number;
   distGrid: Record<string, number>;
-  status: 'start' | 'charge' | 'move' | 'done';
+  pqList: Array<{ city: number; power: number; cost: number }>;
+  activeArray?: 'dist' | 'vis' | 'pq';
+  activeSlot?: [number, number];
+  status: 'init' | 'charge' | 'move' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string | number>;
 }
 
-export function buildEVChargeSteps(): EVStep[] {
+export function buildEVChargeSteps(preset: string = 'lcp35_3cities'): EVStep[] {
   const steps: EVStep[] = [];
+  const isShortcut = preset === 'lcp35_shortcut';
 
-  steps.push({
-    curCity: 0,
-    curPower: 0,
-    cost: 0,
-    distGrid: { '0,0': 0 },
-    status: 'start',
-    message: '1. [起点初始状态] 位于城市 0，电量 power = 0，耗时 0，压入分层图优先队列！',
-    log: '起点入堆：state(city:0, power:0, cost:0)',
-    codeLine: [18, 22],
-  });
+  // 预设配置
+  // lcp35_3cities: 3 城市 0..2, cnt=2, charge=[2, 1, 5], paths=[[0,1,2],[1,2,2]]. 最优解: 10
+  // lcp35_shortcut: 3 城市 0..2, cnt=2, charge=[3, 2, 5], paths=[[0,1,2],[1,2,1]]. 最优解: 11
+  const n = 3;
+  const cnt = 2;
+  const start = 0;
+  const end = 2;
+  const charge = isShortcut ? [3, 2, 5] : [2, 1, 5];
+  const paths: Array<[number, number, number]> = isShortcut
+    ? [
+        [0, 1, 2],
+        [1, 2, 1],
+      ]
+    : [
+        [0, 1, 2],
+        [1, 2, 2],
+      ];
 
-  steps.push({
-    curCity: 0,
-    curPower: 2,
-    cost: 4,
-    distGrid: { '0,0': 0, '0,2': 4 },
-    status: 'charge',
-    message: '2. [原地充电 2 单位] 城市 0 充电单价为 2，充电 2 单位耗时 +4，状态转移至 (city:0, power:2)！',
-    log: '原地充电：(0, 0) ➔ (0, 2), cost = 4',
-    codeLine: [26, 32],
-  });
+  const adj: Array<Array<{ to: number; w: number }>> = Array.from({ length: n }, () => []);
+  for (const [u, v, w] of paths) {
+    adj[u].push({ to: v, w });
+    adj[v].push({ to: u, w });
+  }
 
-  steps.push({
-    curCity: 1,
-    curPower: 0,
-    cost: 7,
-    distGrid: { '0,0': 0, '0,2': 4, '1,0': 7 },
-    status: 'move',
-    message: '3. [沿公路行驶] 从城市 0 行驶至城市 1，道路耗电 2、耗时 3，到达状态 (city:1, power:0, cost:7)！',
-    log: '行驶至城市 1：耗电 2, 耗时 +3 -> cost=7',
-    codeLine: [34, 42],
-  });
+  const dist: number[][] = Array.from({ length: n }, () =>
+    new Array(cnt + 1).fill(Infinity)
+  );
+  const vis: boolean[][] = Array.from({ length: n }, () =>
+    new Array(cnt + 1).fill(false)
+  );
 
-  steps.push({
-    curCity: 1,
-    curPower: 1,
-    cost: 8,
-    distGrid: { '0,0': 0, '0,2': 4, '1,0': 7, '1,1': 8 },
-    status: 'charge',
-    message: '4. [便宜城市 1 充点电] 城市 1 充电仅需 1/单位，充 1 单位电量，cost = 8！',
-    log: '廉价充电：(1, 0) ➔ (1, 1), cost = 8',
-    codeLine: [26, 32],
-  });
+  const pq: Array<{ city: number; power: number; cost: number }> = [];
 
-  steps.push({
-    curCity: 2,
-    curPower: 0,
-    cost: 10,
-    distGrid: { '0,0': 0, '0,2': 4, '1,0': 7, '1,1': 8, '2,0': 10 },
-    status: 'done',
-    message: '🎉 [到达终点城市 2] 消耗 1 单位电量行驶至终点，全网最优最少总耗时 = 10！',
-    log: '✓ 到达终点城市 2：最优分层图最短路 = 10',
-    codeLine: [45, 50],
-  });
+  function pushPq(city: number, power: number, cost: number): void {
+    pq.push({ city, power, cost });
+    pq.sort((a, b) => a.cost - b.cost);
+  }
+
+  function pollPq(): { city: number; power: number; cost: number } {
+    return pq.shift()!;
+  }
+
+  let curCity = start;
+  let curPower = 0;
+  let curCost = 0;
+
+  function makeStep(
+    codeLine: number | number[],
+    message: string,
+    log: string,
+    status: 'init' | 'charge' | 'move' | 'done',
+    activeArray?: 'dist' | 'vis' | 'pq',
+    activeSlot?: [number, number]
+  ): void {
+    const dGrid: Record<string, number> = {};
+    for (let c = 0; c < n; c++) {
+      for (let p = 0; p <= cnt; p++) {
+        dGrid[`${c},${p}`] = dist[c][p] === Infinity ? 999 : dist[c][p];
+      }
+    }
+
+    const cityStr = `城市 C${curCity}`;
+    const powerStr = `${curPower} / ${cnt} 格电`;
+    const costStr = `${curCost} 单位时间`;
+
+    const phaseStr =
+      status === 'done'
+        ? '抵达目的地'
+        : status === 'charge'
+          ? '原地充电'
+          : status === 'move'
+            ? '道路放电行驶'
+            : '分层图初始化';
+
+    steps.push({
+      curCity,
+      curPower,
+      cost: curCost,
+      distGrid: dGrid,
+      pqList: pq.map((x) => ({ ...x })),
+      activeArray,
+      activeSlot,
+      status,
+      message,
+      log,
+      codeLine,
+      metrics: {
+        'metric-cur-city': cityStr,
+        'metric-cur-power': powerStr,
+        'metric-cur-cost': costStr,
+        'metric-ev-phase': phaseStr,
+      },
+    });
+  }
+
+  // ==================== 1. 初始化 ====================
+  // 行 14: electricCarPlan
+  makeStep(14, `🚀 [算法初始化] 建立包含 ${n} 个城市、最大电量 ${cnt} 的二维状态分层图 (city, power)。`, 'electricCarPlan 入口', 'init');
+
+  // 行 16: 构建双向邻接表
+  makeStep(16, '📦 [构建城市道路网] 存储各城市间双向公路及耗电里程。', '邻接表构建完毕', 'init');
+
+  // 行 23: 初始化 dist 矩阵
+  for (let c = 0; c < n; c++) {
+    for (let p = 0; p <= cnt; p++) {
+      dist[c][p] = Infinity;
+      makeStep(24, `🧹 [距离表初始化] dist[C${c}][电量${p}] 置为 INF。`, `dist[${c}][${p}]=INF`, 'init', 'dist', [c, p]);
+    }
+  }
+
+  // 行 28: 源点 (start, 0) 入堆
+  dist[start][0] = 0;
+  pushPq(start, 0, 0);
+  curCity = start;
+  curPower = 0;
+  curCost = 0;
+  makeStep(28, `🔌 [起点零电就绪] 起点城市 C${start} 初始电量 0，花费 0，压入小根堆 pq。`, `起点 (C${start}, p=0) 入堆`, 'init', 'dist', [start, 0]);
+
+  // ==================== 2. 二维分层图 Dijkstra 循环 ====================
+  while (pq.length > 0) {
+    // 行 32: Node cur = pq.poll();
+    const top = pollPq();
+    curCity = top.city;
+    curPower = top.power;
+    curCost = top.cost;
+
+    // 行 34: if (vis[u][p]) continue;
+    if (vis[curCity][curPower]) {
+      makeStep(34, `⚪ [已锁定状态跳过] 状态 (C${curCity}, 电量${curPower}) 最优耗时已确立，跳过。`, `跳过已访 (C${curCity}, p=${curPower})`, 'move');
+      continue;
+    }
+    vis[curCity][curPower] = true;
+    makeStep(34, `👑 [弹出当前最小花费状态] 弹出状态 (C${curCity}, 电量${curPower}, 耗费=${curCost})！`, `poll (C${curCity}, p=${curPower}, cost=${curCost})`, 'move', 'vis', [curCity, curPower]);
+
+    // 行 36: 到达终点判定
+    if (curCity === end) {
+      makeStep(36, `🏁 [抵达目的城市] 成功抵达终点城市 C${end}！当前最小总耗时为 ${curCost}！`, '到达终点', 'done');
+      break;
+    }
+
+    // 决策 1: 行 38 原地充 1 格电
+    if (curPower < cnt) {
+      const nextPower = curPower + 1;
+      const nextCost = curCost + charge[curCity];
+      if (!vis[curCity][nextPower] && nextCost < dist[curCity][nextPower]) {
+        dist[curCity][nextPower] = nextCost;
+        pushPq(curCity, nextPower, nextCost);
+        makeStep(38, `🔋 [决策 1: 原地充电] 在城市 C${curCity} 充 1 格电 (单价 ${charge[curCity]})：耗时增至 ${nextCost}，电量增至 ${nextPower}，压入小根堆！`, `充电 (C${curCity}, p=${nextPower})`, 'charge', 'dist', [curCity, nextPower]);
+      }
+    }
+
+    // 决策 2: 行 44 沿公路行驶放电
+    for (const edge of adj[curCity]) {
+      const v = edge.to;
+      const w = edge.w;
+      if (curPower >= w) {
+        const nextPower = curPower - w;
+        const nextCost = curCost + w;
+        if (!vis[v][nextPower] && nextCost < dist[v][nextPower]) {
+          dist[v][nextPower] = nextCost;
+          pushPq(v, nextPower, nextCost);
+          makeStep(44, `🚗 [决策 2: 道路行驶] 沿公路开往城市 C${v} (耗时/电量 ${w})：到达新状态 (C${v}, 电量${nextPower}, 耗费=${nextCost})，压入小根堆！`, `行驶 (C${v}, p=${nextPower})`, 'move', 'dist', [v, nextPower]);
+        }
+      }
+    }
+  }
+
+  // 终态
+  makeStep(48, `🎉 [电动车最优方案求解完成] 抵达目的城市 C${end} 的全局最优总耗时为 ${curCost}！分层图通过将电量离散扩维，完美将充电决策融入单源最短路！`, '算法结束', 'done');
 
   return steps;
 }
 
 const { template, Visualizer } = createDeclarativeVisualizer<EVStep>({
   id: 'ev-charge-dijkstra',
-  name: '电动车充放电最短路 (EV Charge)',
+  name: '电动车充放电最短路 (EV Charging Dijkstra)',
+  viewId: 'algo-ev-charge-dijkstra-view',
   category: 'graph',
-  icon: '⚡',
+  icon: '🔌',
   badge: {
-    mode: '二维分层图 (city, power)',
-    complexity: 'O((V · C + E · C) log(V · C)) · O(V · C)',
+    mode: '二维分层图 (city, power) + 充放电双决策',
+    complexity: 'O((M + N·cnt) log(N·cnt)) · O(N·cnt)',
   },
-  card1Title: '⚡ 城市拓扑与 (城市, 电量) 分层沙盘',
-  card2Title: '🧭 电池电量与状态距离监视器',
-  card2Desc: '当前城市、剩余电量、原地充电与道路行驶两类状态转移',
+  card1Title: '🔌 城市路网、充电站单价与分层图沙盘',
+  card2Title: '📊 分层状态监视器 (dist[city][power], pq, 充放电)',
+  card2Desc: '逐行对齐原地充电 p+1 与公路行驶放电 p-w、分层状态扩维与 Dijkstra 堆优化',
   legend: [
-    { label: '城市节点 (0..2)', color: '#0284c7' },
-    { label: '⚡ 充电状态', color: '#f59e0b' },
-    { label: '🟢 到达终点状态', color: '#10b981' },
+    { label: '🏙️ 城市站点', color: '#1e3a8a' },
+    { label: '🔋 原地充电 (单价 charge[u])', color: '#10b981' },
+    { label: '🚗 公路行驶 (耗电/耗时 w)', color: '#38bdf8' },
+    { label: '👑 当前出堆最优状态', color: '#f59e0b' },
   ],
-  inputs: [],
+  inputs: [
+    {
+      id: 'input-preset',
+      label: '预设城市网络',
+      type: 'select',
+      defaultValue: 'lcp35_3cities',
+      options: [
+        { label: '3 城市标准接力充电路网 (最小花费 10)', value: 'lcp35_3cities' },
+        { label: '3 城市快捷直达对比路网 (最小花费 11)', value: 'lcp35_shortcut' },
+      ],
+    },
+  ],
   presets: [
-    { label: '3 城市充放电经典用例 (LCP 35)', values: {} },
+    { label: '标准充电路网', values: { 'input-preset': 'lcp35_3cities' } },
+    { label: '快捷对比路网', values: { 'input-preset': 'lcp35_shortcut' } },
   ],
   metrics: [
-    { id: 'metric-cur-city', label: '当前城市', color: '#2563eb' },
-    { id: 'metric-cur-power', label: '剩余电量', color: '#f59e0b' },
-    { id: 'metric-cur-cost', label: '累计最少耗时', color: '#10b981' },
+    { id: 'metric-cur-city', label: '当前所在城市', color: '#38bdf8' },
+    { id: 'metric-cur-power', label: '当前所持电量', color: '#10b981' },
+    { id: 'metric-cur-cost', label: '累计总耗时间', color: '#f59e0b' },
+    { id: 'metric-ev-phase', label: '当前算法阶段', color: '#a855f7' },
   ],
   codeLanguages: EV_CHARGE_CODE_LANGUAGES,
   problemHtml: EV_CHARGE_PROBLEM_HTML,
   analysisHtml: EV_CHARGE_ANALYSIS_HTML,
-  buildSteps: () => buildEVChargeSteps(),
+  buildSteps: (inputs) => {
+    const preset = (inputs['input-preset'] || 'lcp35_3cities') as string;
+    return buildEVChargeSteps(preset);
+  },
   renderCanvas: (container, step) => {
-    const nodeCoords: Record<number, { x: number; y: number; price: number }> = {
-      0: { x: 75, y: 110, price: 2 },
-      1: { x: 155, y: 55, price: 1 },
-      2: { x: 235, y: 110, price: 5 },
+    const n = 3;
+    const nodeCoords: Record<number, { x: number; y: number }> = {
+      0: { x: 55, y: 105 },
+      1: { x: 155, y: 55 },
+      2: { x: 255, y: 105 },
     };
 
     const edges = [
-      { u: 0, v: 1, cost: 3, power: 2 },
-      { u: 1, v: 2, cost: 2, power: 1 },
+      { u: 0, v: 1, w: 1 },
+      { u: 1, v: 2, w: 1 },
+      { u: 0, v: 2, w: 2 },
     ];
 
     const svgEdges = edges
-      .map((e) => {
-        const p1 = nodeCoords[e.u];
-        const p2 = nodeCoords[e.v];
+      .map(({ u, v, w }) => {
+        const p1 = nodeCoords[u];
+        const p2 = nodeCoords[v];
         if (!p1 || !p2) return '';
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 - 8;
+        const inActive =
+          (step.curCity === u || step.curCity === v) && step.status === 'move';
+
+        const color = inActive ? '#facc15' : '#475569';
+        const width = inActive ? 3 : 1.5;
+
+        const mx = (p1.x + p2.x) / 2;
+        const my = (p1.y + p2.y) / 2 - 4;
 
         return `
           <g>
-            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#475569" stroke-width="2" />
-            <text x="${midX}" y="${midY}" fill="#94a3b8" font-size="8.5" font-weight="700" font-family="monospace" text-anchor="middle">t:${e.cost}, p:${e.power}</text>
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" />
+            <text x="${mx}" y="${my}" fill="${color}" font-size="8.5" font-family="monospace" font-weight="700" text-anchor="middle">w:${w}</text>
           </g>
         `;
       })
@@ -147,17 +293,15 @@ const { template, Visualizer } = createDeclarativeVisualizer<EVStep>({
     const svgNodes = nodes
       .map((u) => {
         const p = nodeCoords[u];
-        if (!p) return '';
         const isCur = step.curCity === u;
-        const isTarget = u === 2;
-        const bg = isCur ? '#f59e0b' : isTarget ? '#065f46' : '#1e3a8a';
-        const border = isCur ? '#facc15' : isTarget ? '#10b981' : '#38bdf8';
+        const bg = isCur ? '#b45309' : '#1e3a8a';
+        const border = isCur ? '#facc15' : '#64748b';
 
         return `
           <g>
-            <circle cx="${p.x}" cy="${p.y}" r="16" fill="${bg}" stroke="${border}" stroke-width="${isCur ? 2.5 : 1.5}" />
+            <circle cx="${p.x}" cy="${p.y}" r="17" fill="${bg}" stroke="${border}" stroke-width="${isCur ? 3 : 1.5}" />
             <text x="${p.x}" y="${p.y + 4}" fill="#ffffff" font-size="11" font-weight="800" font-family="monospace" text-anchor="middle">C${u}</text>
-            <text x="${p.x}" y="${p.y + 28}" fill="#facc15" font-size="8.5" font-weight="700" text-anchor="middle">电价:${p.price}</text>
+            <text x="${p.x}" y="${p.y + 26}" fill="${isCur ? '#facc15' : '#94a3b8'}" font-size="8" font-weight="700" text-anchor="middle">${isCur ? `⚡${step.curPower}` : ''}</text>
           </g>
         `;
       })
@@ -165,33 +309,77 @@ const { template, Visualizer } = createDeclarativeVisualizer<EVStep>({
 
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
-        <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
+        <svg style="width: 100%; height: 205px;" viewBox="0 0 310 200">
           ${svgEdges}
           ${svgNodes}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
-          ⚡ 状态定义为 (city, power) 二维分层状态 | 原地充电 cost+price, 道路行驶 cost+t, power-d
+        <div style="font-size: 10px; color: #94a3b8; text-align: center;">
+          金色为当前电动车所在城市与所持电量 | 分层状态 (city, power) 映射至二维最短路
         </div>
       </div>
     `;
 
-    const root = container.closest('#algo-ev-charge-dijkstra-view');
-    if (root) {
-      const cityEl = root.querySelector('#metric-cur-city');
-      const powEl = root.querySelector('#metric-cur-power');
-      const costEl = root.querySelector('#metric-cur-cost');
+    const rootEl =
+      container.closest('#algo-ev-charge-dijkstra-view') ||
+      container.parentElement ||
+      container.ownerDocument;
+    if (rootEl) {
+      for (const [id, val] of Object.entries(step.metrics ?? {})) {
+        const el = rootEl.querySelector(`#${id}`);
+        if (el) el.textContent = String(val);
+      }
 
-      if (cityEl) cityEl.textContent = `City ${step.curCity}`;
-      if (powEl) powEl.textContent = `${step.curPower} / 2`;
-      if (costEl) costEl.textContent = `${step.cost}`;
-
-      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      // 多数组监视器
+      const customMetricsContainer = rootEl.querySelector('#dsp-custom-metrics-container');
       if (customMetricsContainer) {
+        const rowsHtml = [0, 1, 2].map((c) => {
+          const cells = [0, 1, 2].map((p) => {
+            const val = step.distGrid[`${c},${p}`] ?? 999;
+            const displayVal = val === 999 ? '∞' : `${val}`;
+            const isActive =
+              step.activeSlot && step.activeSlot[0] === c && step.activeSlot[1] === p;
+            const bg = isActive ? '#fef08a' : '#1e293b';
+            const textCol = isActive ? '#854d0e' : '#e2e8f0';
+            const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+
+            return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 32px; height: 26px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 10px; font-weight: 700;">
+              <span style="font-size: 7px; color: #64748b; line-height: 1;">p=${p}</span>
+              <span style="line-height: 1.1;">${displayVal}</span>
+            </div>`;
+          }).join('');
+
+          return `
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: monospace; font-size: 10.5px; font-weight: 700; width: 75px; color: #38bdf8;">C${c} (各电量):</span>
+              <div style="display: flex; gap: 4px;">${cells}</div>
+            </div>
+          `;
+        }).join('');
+
+        const pqPreview =
+          step.pqList.length > 0
+            ? step.pqList
+                .slice(0, 4)
+                .map((x) => `<span style="background: #1e293b; border: 1px solid #f59e0b; color: #facc15; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-family: monospace;">(C${x.city},p=${x.power}:c=${x.cost})</span>`)
+                .join(' ')
+            : '空堆';
+
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #475569; padding: 2px 0;">
-            <div style="display: flex; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px;">
-              <span style="color: #1e40af; font-weight: 700;">👑 二维分层图两类转移:</span>
-              <strong style="font-family: monospace; color: #2563eb;">1. 充电: (u, p) ➔ (u, p+1); 2. 行驶: (u, p) ➔ (v, p-d)</strong>
+          <div style="display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: #cbd5e1; padding: 2px 0;">
+            <div style="display: flex; flex-direction: column; gap: 3px; background: #0f172a; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155;">
+              ${rowsHtml}
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                <span style="font-family: monospace; font-size: 10.5px; font-weight: 700; width: 75px; color: #f59e0b;">小根堆 pq:</span>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">${pqPreview}</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px; border-top: 1px dashed #334155; padding-top: 3px;">
+                <span style="color: #10b981; font-size: 10px; font-weight: 700;">到达终点最小耗费:</span>
+                <strong style="color: #10b981; font-family: monospace; font-size: 11px;">Min Cost: ${step.cost} 单位时间</strong>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #94a3b8; font-size: 10.5px;">执行语句:</span>
+              <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">行 ${Array.isArray(step.codeLine) ? step.codeLine.join('-') : step.codeLine}: ${step.log}</strong>
             </div>
           </div>
         `;
@@ -202,16 +390,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<EVStep>({
 
 registerAlgorithm({
   id: 'ev-charge-dijkstra',
-  name: '电动车充放电最短路 (EV Charge)',
+  name: '电动车充放电最短路 (EV Charging Dijkstra)',
   viewId: 'algo-ev-charge-dijkstra-view',
   category: 'graph',
-  description: '左程云算法通关课 Class 064 题目4：(city, power) 二维分层图、原地充电与公路行驶双转移、Dijkstra 堆优化 (LeetCode LCP 35)',
-  icon: '⚡',
+  icon: '🔌',
   template,
   Visualizer,
+  description: '经典分层图模型：电量与城市二维扩维、原地充电增加电量、公路行驶减少电量、Dijkstra 堆优化 (LeetCode LCP 35)',
   difficulty: 3,
-  levelOrder: 58,
-  learningGoal: '掌握二维状态分层图的构建技巧、原地充电与行驶边的拆分以及 Dijkstra 状态去重',
+  levelOrder: 104,
+  learningGoal: '掌握二维分层图建模思路、充放电状态转移双决策及多维 Dijkstra 求解技巧',
 });
 
 export { Visualizer as EVChargeDijkstraVisualizer };

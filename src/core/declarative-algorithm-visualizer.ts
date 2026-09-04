@@ -3,14 +3,15 @@
  * 封装通用 4-Card 交互、Scrubber 步进、代码终端挂载与多模式事件处理
  */
 
-import { StepVisualizer } from './step-visualizer';
+import { StepVisualizer, StepBase } from './step-visualizer';
 import {
   DeclarativeAlgorithmSpec,
   DeclarativeStagePresenter,
 } from './renderers/declarative-stage-presenter';
 import { SplitterEngine } from './splitter-engine';
 
-export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<TStep> {
+export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extends StepVisualizer<TStep> {
+  protected codeLines: string[] = [];
   protected spec: DeclarativeAlgorithmSpec<TStep>;
   protected currentMode?: string;
   protected sandboxContainer: HTMLElement | null = null;
@@ -317,7 +318,7 @@ export class DeclarativeAlgorithmVisualizer<TStep = any> extends StepVisualizer<
 /**
  * 辅助工厂函数：直接根据 Spec 创建并注册算法
  */
-export function createDeclarativeVisualizer<TStep = any>(
+export function createDeclarativeVisualizer<TStep extends StepBase = any>(
   spec: DeclarativeAlgorithmSpec<TStep>
 ): {
   template: string;

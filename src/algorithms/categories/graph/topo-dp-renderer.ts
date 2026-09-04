@@ -228,7 +228,6 @@ export function buildTopoDPSteps(preset: string = 'classic_5node'): TopoDPStep[]
 const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
   id: 'topo-dp',
   name: '拓扑排序与动态规划 (Topological DP)',
-  viewId: 'algo-topo-dp-view',
   category: 'graph',
   icon: '📈',
   badge: {
@@ -401,7 +400,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
       </div>
     `;
   },
-  renderCustomMetrics: (container, step) => {
+  renderCustomMetrics: (container: HTMLElement, step: TopoDPStep) => {
     const is5Node = Object.keys(step.dpDist).length === 5;
     const n = is5Node ? 5 : 4;
     const indices = Array.from({ length: n }, (_, i) => i + 1);

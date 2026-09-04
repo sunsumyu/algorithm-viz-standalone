@@ -292,6 +292,8 @@ export class SPFAVisualizer extends StepVisualizer<SPFAStep> {
 registerAlgorithm({
   id: 'spfa',
   name: 'SPFA 队列优化最短路',
+  viewId: 'algo-spfa-view',
+  icon: '⚡',
   category: 'graph',
   difficulty: 3,
   levelOrder: 24,

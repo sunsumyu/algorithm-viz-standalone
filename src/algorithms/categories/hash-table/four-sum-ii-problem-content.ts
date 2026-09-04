@@ -107,7 +107,7 @@ export const FOUR_SUM_II_CODE_LANGUAGES: Record<string, string[]> = {
     '    const map = new Map();',
     '    for (const a of nums1) {',
     '        for (const b of nums2) {',
-    '            map.set(a + b, (map.get(a + b) || 0) + 1);',
+    '            map.set(a + b, (map[a + b] || 0) + 1);',
     '        }',
     '    }',
     '    let count = 0;',

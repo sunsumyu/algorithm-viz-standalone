@@ -2087,7 +2087,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
         }
         n.children.forEach(markSubtreePruned);
       };
-      markSubtreePruned(queryTree);
+      if (queryTree) markSubtreePruned(queryTree);
 
       addStep({
         type: 'update',
@@ -2628,7 +2628,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
           }
           node.children.forEach(colorNodes);
         };
-        colorNodes(partitionTree);
+        if (partitionTree) colorNodes(partitionTree);
 
         // Line 24: 检查关系
         addStep({

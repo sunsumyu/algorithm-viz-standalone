@@ -447,11 +447,12 @@ registerAlgorithm({
   id: 'min-cost-max-flow',
   name: '最小费用最大流 (Minimum Cost Maximum Flow)',
   viewId: 'algo-min-cost-max-flow-view',
+  icon: '💰',
   category: 'graph',
   description: '左程云算法通关课 Class 072：残量网络连续最短路增广、SPFA 单位费用最短路与反向弧退费机制 (洛谷 P3381)',
   template,
   Visualizer,
-  difficulty: 4,
+  difficulty: 3,
   levelOrder: 88,
   learningGoal: '掌握费用流连续最短路算法设计、残量网络成对反向弧流量更新与负费用退流机制',
 });

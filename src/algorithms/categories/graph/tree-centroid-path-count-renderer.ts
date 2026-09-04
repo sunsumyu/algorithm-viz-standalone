@@ -426,7 +426,6 @@ export function buildTreeCentroidPathCountSteps(thresholdK: number): TreePathSte
 const { template, Visualizer } = createDeclarativeVisualizer<TreePathStep>({
   id: 'tree-centroid-path-count',
   name: '点分治路径计数 (Centroid Path Count)',
-  viewId: 'algo-tree-centroid-path-count-view',
   category: 'graph',
   icon: '🌲',
   badge: {

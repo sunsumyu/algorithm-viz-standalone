@@ -319,7 +319,9 @@ export class PrimVisualizer extends StepVisualizer<PrimStep> {
 registerAlgorithm({
   id: 'mst-prim',
   name: 'Prim 最小生成树',
+  viewId: 'algo-mst-prim-view',
   category: 'graph',
+  icon: '🌲',
   difficulty: 3,
   levelOrder: 30,
   description: '左程云算法通关课 Class 058：加点法全局贪心生长最小生成树，维护切边最小距离数组 minDist',

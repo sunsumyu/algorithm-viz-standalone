@@ -61,9 +61,9 @@ export function buildUnboundedKnapsackSteps(
     val: [...val],
     totalTime,
     metrics: {
-      'metric-cur-herb': s.itemIndex >= 0 ? `第 ${s.itemIndex + 1} 种` : '—',
+      'metric-cur-herb': s.itemIndex !== undefined && s.itemIndex >= 0 ? `第 ${s.itemIndex + 1} 种` : '—',
       'metric-cur-time': s.j >= 0 ? `${s.j}` : '—',
-      'metric-cur-item': s.itemIndex >= 0 ? `#${s.itemIndex + 1}` : '—',
+      'metric-cur-item': s.itemIndex !== undefined && s.itemIndex >= 0 ? `#${s.itemIndex + 1}` : '—',
       'metric-cur-j': s.j >= 0 ? `${s.j}` : '—',
       'metric-direction': '正序 (从小到大)',
       'metric-max-val': `${s.maxVal}`,
@@ -137,16 +137,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackSt
   codeLanguages: UNBOUNDED_KNAPSACK_CODE_LANGUAGES,
   problemHtml: UNBOUNDED_KNAPSACK_PROBLEM_HTML,
   analysisHtml: UNBOUNDED_KNAPSACK_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
+  buildSteps: (inputs: Record<string, any>) => {
     const t = parseInt(inputs['input-t'] || '70', 10);
-    const cost = (inputs['input-costs'] || '71, 23')
+    const cost = String(inputs['input-costs'] || '71, 23')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const val = (inputs['input-vals'] || '100, 10')
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
+    const val = String(inputs['input-vals'] || '100, 10')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
     return buildUnboundedKnapsackSteps(t, cost, val);
   },
   renderCanvas: (container, step) => {

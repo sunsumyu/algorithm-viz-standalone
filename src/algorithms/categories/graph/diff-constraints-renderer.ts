@@ -481,6 +481,7 @@ registerAlgorithm({
   id: 'diff-constraints',
   name: '差分约束系统 (System of Difference Constraints)',
   viewId: 'algo-diff-constraints-view',
+  icon: '⚖️',
   category: 'graph',
   description: '左程云算法通关课 Class 070：不等式转化为最短路、超级源点建图与 SPFA 负环判定 (洛谷 P5960)',
   template,

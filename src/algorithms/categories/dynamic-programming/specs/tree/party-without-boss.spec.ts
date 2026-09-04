@@ -191,7 +191,7 @@ export const PartyWithoutBossSpec: AlgorithmSpec = {
 
     const tree: number[][] = Array.from({ length: n + 1 }, () => []);
     const hasBoss = new Array(n + 1).fill(false);
-    relations.forEach(([sub, boss]) => {
+    relations.forEach(([sub, boss]: [number, number]) => {
       if (tree[boss]) {
         tree[boss].push(sub);
       }

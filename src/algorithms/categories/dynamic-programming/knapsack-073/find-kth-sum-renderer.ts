@@ -228,12 +228,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
   codeLanguages: FIND_KTH_SUM_CODE_LANGUAGES,
   problemHtml: FIND_KTH_SUM_PROBLEM_HTML,
   analysisHtml: FIND_KTH_SUM_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
+  buildSteps: (inputs: Record<string, any>) => {
     const k = parseInt(inputs['input-k'] || '5', 10);
-    const nums = (inputs['input-nums'] || '2, 4, -2')
+    const nums = String(inputs['input-nums'] || '2, 4, -2')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
     return buildFindKthSumSteps(nums, k);
   },
   renderCanvas: (container, step) => {

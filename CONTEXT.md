@@ -52,12 +52,12 @@
 - **职责**：将原本堆砌在仓储中的 500+ 行硬编码模板解耦，对外暴露统一编译接口 `compile(specId, stage)`。
 
 ### StateSpacePresenter (状态空间与多看板统一表现呈现器)
-- **定义**：统合 Card 1 (执行沙盘/网格/一维槽位/3D透视) 与 Card 2 (状态数组/DP转移表/递归调用树) 多态视觉呈现的深模块。
-- **职责**：对外暴露极简的高杠杆接口 `renderCard1` 与 `renderCard2`，内部自动自适应 1D 滚动槽位、2D DP 矩阵与 3D 立体沙盘。
+- **定义**：统合 Card 1 (执行沙盘/网格/一维槽位/3D透视) 与 Card 2 (状态数组/DP转移表/递归调用树) 多态视觉呈现的深门面模块。
+- **职责**：对外暴露极窄且高杠杆的接口（`renderCard1`、`renderCard2`、`renderLiteVisuals`、`renderStepLogStream`）。通过容器局部限定原语（Scoped Container Locality）彻底杜绝全局 `document.getElementById` 穿透泄漏；内部采用策略/适配器模式分发树形拓扑、2D 平面网格、1D 滚动槽位及 3D 立体沙盘，实现完全的容器隔离与生命周期安全。
 
 ### PlaybackCoordinator (播放时钟与时序协调调度深模块)
-- **定义**：彻底封装播放/暂停状态机、定时器生命周期管理 (`setInterval`/`clearInterval`)、倍速切换与 seek 跳转的深模块。
-- **职责**：对外呈现高杠杆的无 DOM 接口，支持动态总步数获取器与 FakeTimers 单元测试，从根本上防止动画竞态与时钟定时器泄漏。
+- **定义**：100% 零 DOM 依赖（Zero-DOM）的纯状态机与安全定时器调度深模块。
+- **职责**：彻底封装播放/暂停状态流转、单步步进（`next`/`prev`）、任意点跳转（`seek`）、边界自动暂停与重播流转、倍速动态切换以及总步数重构时的索引安全收敛（Clamp/Reset）。通过显式回调（`onStepChange`、`onStateChange`）向外界广播时序坐标，对算法数据结构完全无感，从根本上杜绝时钟泄漏与跨算法动画竞态。
 
 ### StepMatrixCompilerPrimitives (矩阵与单步编译领域原语深模块)
 - **定义**：提供网格深克隆、标准 2D 状态转移步、一维滚动槽位压缩步与收尾返回步骤构造的纯函数原语深模块。
@@ -84,16 +84,36 @@
 - **职责**：对外暴露 `bind(actions)`，实现声明式交互分发，彻底从控制器中消除手写 `addEventListener` 杂乱样板代码。
 
 ### DarkCodeTerminalPresenter (暗色代码终端表现器深模块)
-- **定义**：统合右侧 Card 3 暗色代码终端交互的深模块。
-- **职责**：对外暴露极简的高杠杆接口 `mount(container, config): DarkCodeTerminalInstance`，内部完全封装 Tab 状态机 (Code / Problem / Analysis)、Java/C++/Python/JS 4 语种瞬时切换、字号无缝缩放器 (A- 12 A+)、macOS 红黄绿窗口圆点、单步代码物理行高亮平滑滚动与力扣原题模态弹窗。
+- **定义**：统合右侧 Card 3 暗色代码终端与代码联动的唯一权威深模块。
+- **职责**：彻底消除双轨高亮机制。对外暴露极窄且高杠杆的接口（`mount(container, config): DarkCodeTerminalInstance`、`highlightLine(target)`、`updateVars(vars)`），内部封装 Tab 状态机 (Code / Problem / Analysis)、Java/C++/Python/JS 4 语种瞬时切换、字号无缝缩放器 (A- 12 A+)、单步代码多态入参归一化（物理行/区间/语义锚点）、视口平滑滚动居中、力扣原题模态弹窗与集成式变量监视底栏。兼容遗留 `[data-code-panel]` 挂载点，实现零 DOM 泄漏与极致的变更局部性。
 
 ### BacktrackTraceEngine (回溯决策追踪推导引擎深模块)
 - **定义**：负责根据声明式 `BacktrackSpec` 规则，运行回溯决策树搜索与分支剪枝，生成原子单步领域事件序列的 DDD 核心引擎。
 - **职责**：纯算法数学与状态推导，0 DOM 依赖。对外暴露统一接口 `compile(spec): BacktrackTraceResult`，自动计算树坐标布局、路径栈差分与动态剪枝发现追踪。
 
+### AlgorithmRegistry (算法注册中心与惰性解析深模块)
+- **定义**：全库 330+ 算法元数据、模板与工厂构造器的唯一权威真实来源（Single Source of Truth）。
+- **职责**：统一收拢原本分散在 `registry.ts`、`template-loader.ts` 与 `algorithm-manager.ts` 的三份浅 Map；内部封装按需分包动态加载（`loadAlgorithmBatch`），对外仅提供 `register(manifest)`、`getMetadata(id)`、`resolve(id): Promise<ResolvedAlgorithmEntry>` 与 `getAllMetadata()` 极窄接口，实现零 DOM 依赖的数据自治。
+
 ### ViewMountEngine (算法视图挂载与生命周期引擎)
-- **定义**：管理单一活动算法舞台（Single Active Stage Container）的完整生命周期接缝。
-- **职责**：在切换算法时彻底注销上一个算法的定时器、事件监听器并清空 DOM 树，干净挂载新算法实例，从根本上杜绝 DOM 节点堆积、内存泄漏与全局 ID 冲突。
+- **定义**：管理单一活动算法舞台（Single Active Stage Container）与主视口切换的完整生命周期深模块。
+- **职责**：在切换算法时彻底注销上一个算法的定时器、事件监听器并清空 DOM 树，干净挂载新算法实例；对外暴露 `showAlgorithm(id)` 与 `showSelector()` 统合算法舞台展开与主大纲视口折叠；通过发布 `algo:mounted` 与 `algo:selector-shown` 事件解耦全局导航等观察者，从根本上杜绝循环导入、内存泄漏与 ID 冲突。
+
+### CatalogPresenter (算法目录学与卡片沙盘呈现深模块)
+- **定义**：统合算法卡片网格、侧边分类栏与快捷目录抽屉的统一呈现深模块。
+- **职责**：接收 `AlgoSearchCatalog` 领域查询结果，对外暴露 `renderCategoryNav`、`renderCardGrid`、`renderDrawerContent` 以及 `resolveAlgorithmIcon` 极简接口；内部封装三级图标解析回退机制与高亮标签切分，彻底从插件与导航控制器中消除 800+ 行重复的 DOM 拼装、硬编码字典与分散隐式状态。
+
+### ModelSynthesisEngine (算法模型合成与语义编译引擎)
+- **定义**：负责根据声明式 `IAlgorithmSpec` 规范合成统一 `IYamlAlgorithmModel` 结构的 DDD 领域引擎。
+- **职责**：对外暴露 `synthesizeFromSpec`、`getStageAnnotatedCode`、`resolveSemanticLine` 与 `bridgeSemanticLinesToAnchorMap` 极窄接口；内部封装按题型类别映射的 O(1) `DEFAULT_PARAMS_MAP` 字典与语义行到物理行号的自适应编译，彻底消除仓储层中 35+ 行级联三元推导与模板胶水代码。
+
+### ThreeLayeredVoxelAdapter (3D 分层立交体素沙盘适配器深模块)
+- **定义**：专为三维与高维动态规划（$dp[k][r][c]$ / $dp[i][j][k]$）设计的 WebGL 立体多层晶圆呈现深模块。
+- **职责**：对外暴露 `mount`、`render`、`dispose`、`focusLayer` 与 `focusAll` 极窄高杠杆契约；内部封装垂直 Y 轴分层晶圆网格布局、半透明霓虹层标牌、体素多态水晶材质（活跃浮起、前驱金芒、冰晶穿透）以及基于三维 CatmullRom 样条曲线的跨层贝塞尔导管与光流粒子动画。
+
+### LayeredVoxelStepAdapter (3D 分层切片数据提取与依赖编译器)
+- **定义**：将多态单步事件流 (`DpTraceStep` / `UniversalStep`) 归一化为三维空间切片立方体的纯逻辑深模块。
+- **职责**：100% 零 DOM 依赖。对外暴露 `adapt` 与 `buildCubeFromSteps`，自动从步进中提取层级维度 $k$，累积维护 $K \times M \times N$ 状态立方体快照，并解析上一层到本层的跨层有向依赖集合（`interLayerDependencies`）。
 
 ---
 

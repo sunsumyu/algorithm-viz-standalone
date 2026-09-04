@@ -4,6 +4,7 @@
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
+import { DarkCodeTerminalInstance } from '../../../core/renderers/dark-code-terminal-presenter';
 import { registerAlgorithm } from '../../../core/registry';
 import {
   STRING_MIGRATION_PROBLEM_HTML,

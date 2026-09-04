@@ -346,9 +346,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<KMStep>({
     const svgNodes: string[] = [];
     for (let i = 1; i <= n; i++) {
       const u = `L${i}`;
-      const v = `R${j = i}`;
+      const v = `R${i}`;
       const lp = leftCoords[u];
-      const rp = rightCoords[`R${i}`];
+      const rp = rightCoords[v];
 
       // 左节点
       const isCurL = step.curLeft === u;
@@ -442,6 +442,7 @@ registerAlgorithm({
   id: 'km-algorithm',
   name: 'KM 算法 (Kuhn-Munkres Algorithm)',
   viewId: 'algo-km-algorithm-view',
+  icon: '🤝',
   category: 'graph',
   description: '左程云算法通关课 Class 070：二分图最大权完美匹配、顶标理论与相等子图 O(N³) 算法 (洛谷 P6577)',
   template,

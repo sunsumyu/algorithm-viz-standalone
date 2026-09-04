@@ -295,6 +295,8 @@ export class KruskalVisualizer extends StepVisualizer<KruskalStep> {
 registerAlgorithm({
   id: 'mst-kruskal',
   name: 'Kruskal 最小生成树',
+  viewId: 'algo-mst-kruskal-view',
+  icon: '🌲',
   category: 'graph',
   difficulty: 3,
   levelOrder: 29,

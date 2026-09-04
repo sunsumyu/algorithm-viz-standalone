@@ -268,7 +268,7 @@ export class MoveZeroesVisualizer extends StepVisualizer<MoveZeroesStep> {
     super.reset();
     if (this.logContainer) this.logContainer.innerHTML = '';
     if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.terminalInstance) this.terminalInstance.highlightLine(0);
+    if (this.codeTerminal) this.codeTerminal.highlightLine(0);
   }
 }
 

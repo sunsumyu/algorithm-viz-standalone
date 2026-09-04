@@ -894,7 +894,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<MixedEulerStep>({
               ? '✓ 存在欧拉回路'
               : '❌ 无欧拉回路'
             : '求解中...';
-        eulerEl.style.color = step.isEulerian ? '#10b981' : step.status === 'done' ? '#ef4444' : '#d97706';
+        (eulerEl as HTMLElement).style.color = step.isEulerian ? '#10b981' : step.status === 'done' ? '#ef4444' : '#d97706';
       }
 
       const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');

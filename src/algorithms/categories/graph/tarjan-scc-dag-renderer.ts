@@ -238,7 +238,6 @@ export function buildTarjanSCCSteps(preset: string = 'classic_5node'): TarjanSCC
 const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
   id: 'tarjan-scc-dag',
   name: 'Tarjan 强连通分量与 DAG 缩点 (Tarjan SCC)',
-  viewId: 'algo-tarjan-scc-dag-view',
   category: 'graph',
   icon: '🧬',
   badge: {
@@ -412,7 +411,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
       </div>
     `;
   },
-  renderCustomMetrics: (container, step) => {
+  renderCustomMetrics: (container: HTMLElement, step: TarjanSCCStep) => {
     const n = Object.keys(step.dfnMap).length;
     const indices = Array.from({ length: n }, (_, i) => i + 1);
 

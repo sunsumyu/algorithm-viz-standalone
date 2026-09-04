@@ -39,10 +39,10 @@ describe('MinPathCover (P2764)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.metrics).toBeDefined();
-      expect(step.metrics['metric-match-count']).toBeDefined();
-      expect(step.metrics['metric-path-count']).toBeDefined();
-      expect(step.metrics['metric-cur-node']).toBeDefined();
-      expect(step.metrics['metric-path-formula']).toBeDefined();
+      expect(step.metrics!['metric-match-count']).toBeDefined();
+      expect(step.metrics!['metric-path-count']).toBeDefined();
+      expect(step.metrics!['metric-cur-node']).toBeDefined();
+      expect(step.metrics!['metric-path-formula']).toBeDefined();
 
       const rawLines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
       for (const line of rawLines) {

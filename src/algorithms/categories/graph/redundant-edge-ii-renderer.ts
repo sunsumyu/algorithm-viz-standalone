@@ -337,6 +337,8 @@ export class RedundantEdgeIIVisualizer extends StepVisualizer<RedundantIIStep> {
 registerAlgorithm({
   id: 'redundant-edge-ii',
   name: '冗余连接 II (Redundant Connection II)',
+  viewId: 'algo-redundant-edge-ii-view',
+  icon: '🔁',
   category: 'graph',
   difficulty: 3,
   levelOrder: 32,

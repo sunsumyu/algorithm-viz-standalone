@@ -27,37 +27,33 @@ export interface AlgorithmManifest extends AlgorithmMetadata {
   Visualizer: new () => IVisualizer;
 }
 
-/** 所有自描述算法清单（按添加顺序注册） */
-const manifests: Map<string, AlgorithmManifest> = new Map();
+import { algorithmRegistry } from './algorithm-registry';
 
 /**
- * 注册一个算法清单
+ * 注册一个算法清单（委托给统一的 AlgorithmRegistry 深模块）
  */
 export function registerAlgorithm(manifest: AlgorithmManifest): void {
-  if (manifests.has(manifest.id)) {
-    return;
-  }
-  manifests.set(manifest.id, manifest);
+  algorithmRegistry.register(manifest);
 }
 
 /**
  * 获取指定 ID 的算法清单
  */
 export function getManifest(id: string): AlgorithmManifest | undefined {
-  return manifests.get(id);
+  return algorithmRegistry.getManifest(id);
 }
 
 /**
  * 判断指定 ID 的算法清单是否已注册
  */
 export function hasManifest(id: string): boolean {
-  return manifests.has(id);
+  return algorithmRegistry.hasManifest(id);
 }
 
 /**
  * 获取所有已注册的算法清单
  */
 export function getAllManifests(): AlgorithmManifest[] {
-  return Array.from(manifests.values());
+  return algorithmRegistry.getAllManifests();
 }
 

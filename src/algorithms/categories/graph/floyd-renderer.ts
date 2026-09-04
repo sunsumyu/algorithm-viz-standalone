@@ -224,6 +224,8 @@ export class FloydVisualizer extends StepVisualizer<FloydStep> {
 registerAlgorithm({
   id: 'floyd',
   name: 'Floyd 全源最短路',
+  viewId: 'algo-floyd-view',
+  icon: '🌐',
   category: 'graph',
   difficulty: 3,
   levelOrder: 25,

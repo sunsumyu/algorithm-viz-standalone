@@ -66,7 +66,7 @@ export function renderDpTreeSVG(container: HTMLElement, root: DpTreeNode | null)
 
     return {
       id: measured.node.id,
-      val: measured.node.val,
+      val: measured.node.val ?? measured.node.value ?? '',
       status: measured.node.status || 'normal',
       tag: measured.node.tag,
       x,

@@ -39,10 +39,10 @@ describe('TreeCentroidPathCount (POJ 1741 / P3806)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.metrics).toBeDefined();
-      expect(step.metrics['metric-centroid']).toBeDefined();
-      expect(step.metrics['metric-raw-pairs']).toBeDefined();
-      expect(step.metrics['metric-deduct-pairs']).toBeDefined();
-      expect(step.metrics['metric-valid-pairs']).toBeDefined();
+      expect(step.metrics!['metric-centroid']).toBeDefined();
+      expect(step.metrics!['metric-raw-pairs']).toBeDefined();
+      expect(step.metrics!['metric-deduct-pairs']).toBeDefined();
+      expect(step.metrics!['metric-valid-pairs']).toBeDefined();
 
       const rawLines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
       for (const line of rawLines) {

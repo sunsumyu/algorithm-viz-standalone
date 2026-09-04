@@ -22,6 +22,7 @@ import {
   DarkCodeTerminalInstance,
   DarkCodeTerminalConfig,
 } from './renderers/dark-code-terminal-presenter';
+import { PlaybackCoordinator } from './playback-coordinator';
 
 export interface StepBase {
   /** 语义锚点标识（如 'update', 'loop-outer', 'return'），优先用于代码高亮与多语言对齐 */
@@ -41,9 +42,44 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   protected codePanel: CodePanel | null = null;
   protected codeTerminal: DarkCodeTerminalInstance | null = null;
   protected steps: TStep[] = [];
-  protected currentIndex = 0;
-  protected isPlaying = false;
-  protected playbackSpeed = 900;
+  /** 播放调度引擎深模块（彻底解耦计时器循环与状态流转） */
+  protected readonly playbackCoordinator: PlaybackCoordinator = new PlaybackCoordinator({
+    speed: 900,
+    onStepChange: () => {
+      this.render();
+      this.updateButtons();
+    },
+    onStateChange: () => {
+      this.updateButtons();
+    },
+  });
+
+  protected get currentIndex(): number {
+    return this.playbackCoordinator.currentIndex;
+  }
+  protected set currentIndex(val: number) {
+    if (val !== this.playbackCoordinator.currentIndex) {
+      this.playbackCoordinator.seek(val);
+    }
+  }
+
+  protected get isPlaying(): boolean {
+    return this.playbackCoordinator.isPlaying();
+  }
+  protected set isPlaying(val: boolean) {
+    if (val !== this.playbackCoordinator.isPlaying()) {
+      val ? this.playbackCoordinator.play() : this.playbackCoordinator.pause();
+    }
+  }
+
+  protected get playbackSpeed(): number {
+    return this.playbackCoordinator.speed;
+  }
+  protected set playbackSpeed(val: number) {
+    this.playbackCoordinator.setSpeed(val);
+  }
+
+  /** @deprecated 计时调度已收敛至 PlaybackCoordinator 深模块内部 */
   protected timer: number | null = null;
   protected stepMode: ExecutionStepMode = getSavedStepMode();
   protected viewportMode: DpViewportMode = getSavedViewportMode();
@@ -64,8 +100,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   protected modeSelectorEl: HTMLElement | null = null;
   protected viewportSelectorEl: HTMLElement | null = null;
 
-  /** 代码行数组，子类需提供 */
-  protected abstract codeLines: string[];
+  protected codeLines: string[] = [];
   /** 支持的多语言代码：{ java: [...], cpp: [...] } */
   protected codeLanguages: Record<string, string[]> = {};
   /** 默认代码语言（用于 token 高亮） */
@@ -116,15 +151,34 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     const container = this.root?.querySelector('[data-code-panel]') as HTMLElement | null;
     if (container) {
       const hasLanguages = this.codeLanguages && Object.keys(this.codeLanguages).length > 0;
-      this.codePanel = new CodePanel(container, {
-        lines: this.codeLines,
+      const codeLanguages = hasLanguages
+        ? this.codeLanguages!
+        : this.codeLines
+        ? { [this.codeLanguage || 'java']: this.codeLines }
+        : { java: [] };
+
+      this.codeTerminal = DarkCodeTerminalPresenter.mount(container, {
+        codeLanguages,
         title: this.codePanelTitle,
-        language: this.codeLanguage,
+        initialLang: this.codeLanguage,
         lineExplanations: this.lineExplanations,
         keyPoints: this.keyPoints,
-        scope: this.algorithmId || undefined,
-        ...(hasLanguages ? { languages: this.codeLanguages } : {}),
+        algoKey: this.algorithmId || undefined,
       });
+
+      this.codePanel = new CodePanel(
+        container,
+        {
+          lines: this.codeLines,
+          title: this.codePanelTitle,
+          language: this.codeLanguage,
+          lineExplanations: this.lineExplanations,
+          keyPoints: this.keyPoints,
+          scope: this.algorithmId || undefined,
+          ...(hasLanguages ? { languages: this.codeLanguages } : {}),
+        },
+        this.codeTerminal
+      );
     }
   }
 
@@ -346,9 +400,8 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   }
 
   protected async start(): Promise<void> {
-    this.pause();
     this.steps = this.buildSteps();
-    this.currentIndex = 0;
+    this.playbackCoordinator.setTotalSteps(this.steps.length, true);
     this.render();
     this.updateButtons();
   }
@@ -372,8 +425,11 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
       this.progressSlider.value = String(this.currentIndex);
     }
     if (step.codeLine != null) {
-      this.codePanel?.highlight(step.codeLine);
-      this.codeTerminal?.highlightLine(step.codeLine);
+      if (this.codeTerminal) {
+        this.codeTerminal.highlightLine(step.codeLine);
+      } else if (this.codePanel) {
+        this.codePanel.highlight(step.codeLine);
+      }
     }
     // 更新代码面板下方变量监视器（支持 step.vars 与 step.metrics 双向同步）
     const stepAny = step as { vars?: StepVar[]; metrics?: Record<string, unknown> };
@@ -386,81 +442,43 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
           }))
         : undefined
     );
-    if (effectiveVars && effectiveVars.length > 0) {
-      this.codePanel?.updateVars(effectiveVars);
+    if (this.codeTerminal && typeof this.codeTerminal.updateVars === 'function') {
+      this.codeTerminal.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : []);
+    } else if (this.codePanel) {
+      this.codePanel.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : []);
     }
   }
 
   protected togglePlay(): void {
-    if (this.currentIndex >= this.steps.length - 1) {
-      this.goToStep(0);
-      this.play();
-      return;
-    }
-    this.isPlaying ? this.pause() : this.play();
+    this.playbackCoordinator.togglePlay();
   }
 
   protected play(): void {
-    if (this.currentIndex >= this.steps.length - 1) {
-      this.currentIndex = 0;
-      this.render();
-    }
-    this.isPlaying = true;
-    this.tick();
-    this.updateButtons();
+    this.playbackCoordinator.play();
   }
 
   public pause(): void {
-    this.isPlaying = false;
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-    this.updateButtons();
+    this.playbackCoordinator.pause();
   }
 
-  protected tick(): void {
-    if (!this.isPlaying) return;
-    this.timer = setTimeout(() => {
-      // 在回调中再次检查，防止 pause() 在 timer 触发和回调执行之间被调用
-      if (!this.isPlaying) return;
-      if (this.currentIndex < this.steps.length - 1) {
-        this.nextStep();
-        this.tick();
-      } else {
-        this.pause();
-      }
-    }, this.playbackSpeed) as unknown as number;
-  }
+  /** @deprecated 内部计时调度已委托给 PlaybackCoordinator 深模块，保留为空操作以兼容旧子类 */
+  protected tick(): void {}
 
   protected nextStep(): void {
-    if (this.currentIndex >= this.steps.length - 1) return;
-    this.currentIndex++;
-    this.render();
-    this.updateButtons();
+    this.playbackCoordinator.next();
   }
 
   protected prevStep(): void {
-    if (this.currentIndex <= 0) return;
-    this.currentIndex--;
-    this.render();
-    this.updateButtons();
+    this.playbackCoordinator.prev();
   }
 
   public reset(): void {
-    this.pause();
-    this.currentIndex = 0;
-    this.render();
-    this.updateButtons();
+    this.playbackCoordinator.reset();
   }
 
   /** 直接跳转到指定步骤索引（供时间轴/步骤选择器点击交互） */
   public goToStep(index: number): void {
-    if (index < 0 || index >= this.steps.length) return;
-    this.pause();
-    this.currentIndex = index;
-    this.render();
-    this.updateButtons();
+    this.playbackCoordinator.seek(index);
   }
 
   public get currentStepIndex(): number {
@@ -516,7 +534,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   }
 
   public destroy(): void {
-    this.pause();
+    this.playbackCoordinator.destroy();
     // 移除所有示例按钮监听器
     if (this.root) {
       this.root.querySelectorAll<HTMLElement>('[data-id]').forEach((btn) => {
@@ -528,7 +546,6 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
       });
     }
     this.steps = [];
-    this.currentIndex = 0;
     this.codePanel?.destroy();
     this.codeTerminal?.destroy();
     this.codeTerminal = null;

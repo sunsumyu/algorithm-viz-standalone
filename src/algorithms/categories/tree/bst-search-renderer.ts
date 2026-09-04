@@ -232,7 +232,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BSTSStep>({
     if (root) {
       const curEl = root.querySelector('#metric-cur-node');
       const decEl = root.querySelector('#metric-branch-decision');
-      const foundEl = root.querySelector('#metric-found-status');
+      const foundEl = root.querySelector('#metric-found-status') as HTMLElement | null;
 
       if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
       if (decEl) decEl.textContent = step.decision;

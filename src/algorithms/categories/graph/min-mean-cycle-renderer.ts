@@ -486,7 +486,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<MinMeanStep>({
       if (lambdaEl) lambdaEl.textContent = `${step.lambda.toFixed(3)}`;
       if (cycleEl) {
         cycleEl.textContent = step.hasNegCycle ? '⚠ 存在负环 (缩小上界)' : '✓ 无负环 (提高下界)';
-        cycleEl.style.color = step.hasNegCycle ? '#ef4444' : '#10b981';
+        (cycleEl as HTMLElement).style.color = step.hasNegCycle ? '#ef4444' : '#10b981';
       }
 
       const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');

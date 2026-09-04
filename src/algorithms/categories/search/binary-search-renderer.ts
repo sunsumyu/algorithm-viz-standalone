@@ -254,7 +254,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BSStep>({
     if (root) {
       const midEl = root.querySelector('#metric-mid-val');
       const countEl = root.querySelector('#metric-compare-count');
-      const resEl = root.querySelector('#metric-search-result');
+      const resEl = root.querySelector('#metric-search-result') as HTMLElement | null;
 
       if (midEl) midEl.textContent = hasMid ? `nums[${step.mid}] = ${step.array[step.mid]}` : '—';
       if (countEl) countEl.textContent = `${step.comparisons} 次`;

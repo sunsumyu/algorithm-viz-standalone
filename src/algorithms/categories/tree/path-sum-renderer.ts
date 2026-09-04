@@ -228,7 +228,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PSStep>({
     if (root) {
       const sumEl = root.querySelector('#metric-cur-sum');
       const diffEl = root.querySelector('#metric-remain-diff');
-      const foundEl = root.querySelector('#metric-found-status');
+      const foundEl = root.querySelector('#metric-found-status') as HTMLElement | null;
 
       if (sumEl) sumEl.textContent = `${step.currentSum} / ${step.targetSum}`;
       if (diffEl) diffEl.textContent = `${step.remain}`;

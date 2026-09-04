@@ -196,7 +196,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<VBStep>({
     if (root) {
       const curEl = root.querySelector('#metric-cur-node');
       const prevEl = root.querySelector('#metric-prev-node');
-      const resEl = root.querySelector('#metric-bst-result');
+      const resEl = root.querySelector('#metric-bst-result') as HTMLElement | null;
 
       if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
       if (prevEl) prevEl.textContent = step.prev != null ? `${step.prev}` : '无 (首节点)';

@@ -274,21 +274,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackSt
   codeLanguages: DEPENDENT_KNAPSACK_CODE_LANGUAGES,
   problemHtml: DEPENDENT_KNAPSACK_PROBLEM_HTML,
   analysisHtml: DEPENDENT_KNAPSACK_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
+  buildSteps: (inputs: Record<string, any>) => {
     const budget = parseInt(inputs['input-budget'] || '1000', 10);
     const m = parseInt(inputs['input-m'] || '5', 10);
     const rawItems: (DependentItem | null)[] = new Array(m + 1).fill(null);
 
-    const parts = (inputs['input-items'] || '')
+    const parts = String(inputs['input-items'] || '')
       .split(';')
-      .map((s) => s.trim())
+      .map((s: string) => s.trim())
       .filter(Boolean);
 
     for (let i = 0; i < parts.length && i < m; i++) {
       const nums = parts[i]
         .split(',')
-        .map((x) => parseInt(x.trim(), 10))
-        .filter((n) => !isNaN(n));
+        .map((x: string) => parseInt(x.trim(), 10))
+        .filter((n: number) => !isNaN(n));
       if (nums.length >= 3) {
         rawItems[i + 1] = { cost: nums[0], val: nums[1], q: nums[2] };
       }

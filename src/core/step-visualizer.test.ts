@@ -209,6 +209,7 @@ describe('StepVisualizer Deep Module Guard', () => {
     const highlightedLines: any[] = [];
     const mockTerminal = {
       highlightLine: (line: any) => highlightedLines.push(line),
+      updateVars: vi.fn(),
       switchLanguage: () => {},
       switchTab: () => {},
       getCurrentLanguage: () => 'java',

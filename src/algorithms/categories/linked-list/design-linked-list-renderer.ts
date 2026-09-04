@@ -486,7 +486,7 @@ export class DesignLinkedListVisualizer extends StepVisualizer<DLLStep> {
     }
 
     // 6. 暗色终端代码行高亮
-    this.terminalInstance?.highlightLine(step.codeLine);
+    this.codeTerminal?.highlightLine(step.codeLine);
 
     // 7. 渲染执行日志流 (Card 4)
     if (this.logContainer) {

@@ -74,7 +74,7 @@ export function populateHandbookContent(contentEl: HTMLElement | null, config: H
       <div class="dp-handbook-sec-title">🧠 二、动态规划 5 步法系统推导</div>
       ${kp.summary ? `<div style="background: rgba(59,130,246,0.15); border-left: 3px solid #3b82f6; padding: 8px 12px; border-radius: 4px; margin-bottom: 8px; color: #93c5fd;">${kp.summary}</div>` : ''}
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        ${kp.points.map(pt => `
+        ${(kp.points || []).map(pt => `
           <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px;">
             <div style="font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
               <span>${pt.icon || '📌'}</span>

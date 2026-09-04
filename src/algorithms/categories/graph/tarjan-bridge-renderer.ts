@@ -210,7 +210,6 @@ export function buildTarjanBridgeSteps(preset: string = 'classic_5node'): Bridge
 const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
   id: 'tarjan-bridge',
   name: 'Tarjan 割点与桥 (Cut Vertices & Bridges)',
-  viewId: 'algo-tarjan-bridge-view',
   category: 'graph',
   icon: '🌉',
   badge: {
@@ -363,7 +362,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
       </div>
     `;
   },
-  renderCustomMetrics: (container, step) => {
+  renderCustomMetrics: (container: HTMLElement, step: BridgeStep) => {
     const n = Object.keys(step.dfnMap).length;
     const indices = Array.from({ length: n }, (_, i) => i + 1);
 

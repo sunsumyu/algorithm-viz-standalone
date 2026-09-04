@@ -11,14 +11,16 @@ import './styles/settings-modal.css';
 import { pluginLoader } from './core/plugin-loader';
 import { setupTauriWindowControls } from './core/tauri-window-controls';
 import { algorithmVizPlugin } from './plugins/algorithm-viz/index';
-import { algorithmManager } from './core/algorithm-manager';
+import { algorithmRegistry } from './core/algorithm-registry';
+import { viewMountEngine } from './core/view-mount-engine';
 import { shortcutController } from './core/controllers/keyboard-shortcut-controller';
 import { shortcutManagerModal } from './core/shortcuts/shortcut-manager-modal';
 import { appSettingsRepo } from './core/settings/app-settings-repository';
 import { appSettingsModal } from './core/settings/app-settings-modal';
 
 if (typeof window !== 'undefined') {
-  (window as unknown as { algorithmManager: typeof algorithmManager }).algorithmManager = algorithmManager;
+  (window as any).algorithmRegistry = algorithmRegistry;
+  (window as any).viewMountEngine = viewMountEngine;
   (window as unknown as { shortcutManagerModal: typeof shortcutManagerModal }).shortcutManagerModal = shortcutManagerModal;
   (window as unknown as { appSettingsModal: typeof appSettingsModal }).appSettingsModal = appSettingsModal;
   (window as unknown as { appSettingsRepo: typeof appSettingsRepo }).appSettingsRepo = appSettingsRepo;
@@ -31,7 +33,7 @@ async function main(): Promise<void> {
   const startTime = performance.now();
   console.log('[Main] Starting Algorithm Visualization Desktop App...');
   console.log(`[Main] Platform: ${navigator.platform}, User Agent: ${navigator.userAgent}`);
-  console.log(`[Main] Initial Algorithm Metadata Count: ${algorithmManager.getAllAlgorithms().length}`);
+  console.log(`[Main] Initial Algorithm Metadata Count: ${algorithmRegistry.getAllMetadata().length}`);
 
   try {
     // 1. 立即注册并加载核心 UI 插件（毫秒级瞬间渲染侧边栏和算法卡片）
@@ -53,7 +55,7 @@ async function main(): Promise<void> {
     titlebarShortcutsBtn?.addEventListener('click', () => shortcutManagerModal.open());
 
     const totalTime = (performance.now() - startTime).toFixed(1);
-    console.log(`[Main] Application ready in ${totalTime}ms (Total ${algorithmManager.getAllAlgorithms().length} algorithms active)`);
+    console.log(`[Main] Application ready in ${totalTime}ms (Total ${algorithmRegistry.getAllMetadata().length} algorithms active)`);
   } catch (error) {
     console.error('[Main] Failed to initialize:', error);
 

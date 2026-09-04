@@ -628,7 +628,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<ForwardStarStep>({
             : action === 'traverse_done'
             ? '遍历完成'
             : '就绪';
-        actionEl.style.color = action === 'visit_edge' || action === 'update_head' ? '#10b981' : '#2563eb';
+        (actionEl as HTMLElement).style.color = action === 'visit_edge' || action === 'update_head' ? '#10b981' : '#2563eb';
       }
       if (cntEl) cntEl.textContent = `${edges.length}`;
       if (pointerEl) pointerEl.textContent = curEdgeIndex !== null ? `#${curEdgeIndex}` : 'NULL';

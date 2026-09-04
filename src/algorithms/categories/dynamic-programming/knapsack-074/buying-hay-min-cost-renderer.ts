@@ -262,16 +262,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<BuyingHayStep>({
   codeLanguages: BUYING_HAY_MIN_COST_CODE_LANGUAGES,
   problemHtml: BUYING_HAY_MIN_COST_PROBLEM_HTML,
   analysisHtml: BUYING_HAY_MIN_COST_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
+  buildSteps: (inputs: Record<string, any>) => {
     const h = parseInt(inputs['input-h'] || '60', 10);
-    const cost = (inputs['input-costs'] || '5, 100')
+    const cost = String(inputs['input-costs'] || '5, 100')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const val = (inputs['input-vals'] || '10, 100')
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
+    const val = String(inputs['input-vals'] || '10, 100')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
     return buildBuyingHayMinCostSteps(h, cost, val);
   },
   renderCanvas: (container, step) => {

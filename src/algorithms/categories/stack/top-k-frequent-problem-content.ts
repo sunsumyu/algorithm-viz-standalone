@@ -115,7 +115,7 @@ export const TOP_K_FREQUENT_CODE_LANGUAGES: Record<string, string[]> = {
   javascript: [
     'var topKFrequent = function(nums, k) {',
     '    const map = new Map();',
-    '    for (const num of nums) map.set(num, (map.get(num) || 0) + 1);',
+    '    for (const num of nums) map.set(num, (map[num] || 0) + 1);',
     '    // 桶排序或排序取前 k',
     '    return Array.from(map.entries())',
     '        .sort((a, b) => b[1] - a[1])',

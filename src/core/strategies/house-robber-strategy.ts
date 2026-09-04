@@ -1,6 +1,6 @@
 import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
-import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine';
+import type { UniversalStep, UniversalTreeNode, StateArrayItem } from '../universal-stage-engine';
 import { cloneTree, build1DDPDependencyTree, findNodeIdByCoord } from './strategy-helpers';
 
 export type HouseRobberModelId =

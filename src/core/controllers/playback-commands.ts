@@ -19,6 +19,7 @@ export interface IPlaybackReceiver {
   getCurrentStep(): number;
   getTotalSteps(): number;
   setStep(targetStep: number): void;
+  reset?(): void;
   getStepData(index: number): any;
 }
 
@@ -155,7 +156,11 @@ export class ResetTimelineCommand implements IVisualizerCommand {
   public execute(): boolean {
     if (!this.canExecute()) return false;
     this.prevStepIndex = this.receiver.getCurrentStep();
-    this.receiver.setStep(0);
+    if (this.receiver.reset) {
+      this.receiver.reset();
+    } else {
+      this.receiver.setStep(0);
+    }
 
     eventHub.emit('step:change', {
       currentStep: 0,

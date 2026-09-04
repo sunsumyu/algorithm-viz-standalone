@@ -136,7 +136,7 @@ export const PLANAR_DUAL_CODE_LANGUAGES: Record<string, string[]> = {
     '        visited.add(u)',
     '        if u == t_star: return d',
     '        ',
-    '        for v, w in dual_adj.get(u, []):',
+    '        for v, w in dual_adj[u, []]:',
     '            if v not in visited and dist[u] + w < dist[v]:',
     '                dist[v] = dist[u] + w',
     '                heapq.heappush(pq, (dist[v], v))',
