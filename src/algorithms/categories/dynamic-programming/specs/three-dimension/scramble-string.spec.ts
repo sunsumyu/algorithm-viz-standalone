@@ -63,8 +63,8 @@ export const ScrambleStringSpec: AlgorithmSpec = {
       python: [13, 14, 15, 17, 18, 19],
       javascript: [14, 15, 16, 20, 21, 22],
     },
-    loopExit: { java: 30, cpp: 31, python: 22, javascript: 28 },
-    returnResult: { java: 31, cpp: 32, python: 23, javascript: 29 },
+    loopExit: { java: 29, cpp: 28, python: 18, javascript: 28 },
+    returnResult: { java: 30, cpp: 29, python: 19, javascript: 29 },
   },
   code: {
     languages: {

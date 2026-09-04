@@ -922,7 +922,9 @@ export class DarkCodeTerminalPresenter {
 
       modalContent.appendChild(modalBody);
       modalEl.appendChild(modalContent);
-      root.appendChild(modalEl);
+      if (typeof root.appendChild === 'function') {
+        root.appendChild(modalEl);
+      }
     }
   }
 }

@@ -57,8 +57,8 @@ export const PathsDivisibleByKSpec: AlgorithmSpec = {
       python: [16, 17, 18],
       javascript: [19, 20, 21],
     },
-    loopExit: { java: 25, cpp: 26, python: 19, javascript: 24 },
-    returnResult: { java: 26, cpp: 27, python: 20, javascript: 25 },
+    loopExit: { java: 25, cpp: 26, python: 18, javascript: 24 },
+    returnResult: { java: 26, cpp: 27, python: 19, javascript: 25 },
   },
   code: {
     languages: {
