@@ -61,7 +61,7 @@ export function buildKnapsack01Steps(
     val: [...val],
     currentVal: s.maxVal,
     metrics: {
-      'metric-cur-item': s.itemIndex >= 0 ? `#${s.itemIndex + 1} (体积:${cost[s.itemIndex]}, 价值:${val[s.itemIndex]})` : '无',
+      'metric-cur-item': s.itemIndex !== undefined && s.itemIndex >= 0 ? `#${s.itemIndex + 1} (体积:${cost[s.itemIndex]}, 价值:${val[s.itemIndex]})` : '无',
       'metric-cur-capacity': s.j >= 0 ? `${s.j}` : '—',
       'metric-max-val': `${s.maxVal}`,
       'metric-status': s.status.toUpperCase(),
@@ -77,7 +77,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<Knapsack01Step>({
     mode: '01背包 · 倒序压缩',
     complexity: 'O(M · T) · O(T)',
   },
-  card1Title: '待选商品陈列与实时背包载荷舱 (01 背包)',
+  card1Title: '待选草药货架与载荷舱 (01 背包)',
   card2Title: '一维滚动状态向量 dp[0..M] 监视器',
   card2Desc: '展示倒序枚举容量下，每件物品至多选 1 件且无重复计算的填表过程',
   legend: [
@@ -135,21 +135,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<Knapsack01Step>({
   codeLanguages: KNAPSACK_01_CODE_LANGUAGES,
   problemHtml: KNAPSACK_01_PROBLEM_HTML,
   analysisHtml: KNAPSACK_01_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
+  buildSteps: (inputs: Record<string, any>) => {
     const t = parseInt(inputs['input-capacity'] || '70', 10);
-    const costs = (inputs['input-costs'] || '71, 69, 1')
+    const costs = String(inputs['input-costs'] || '71, 69, 1')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const vals = (inputs['input-vals'] || '100, 1, 2')
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
+    const vals = String(inputs['input-vals'] || '100, 1, 2')
       .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !isNaN(n));
     return buildKnapsack01Steps(t, costs, vals);
   },
   renderCanvas: (container, step) => {
     renderKnapsackSandbox(container, step, {
-      title: '待选商品陈列与实时背包载荷舱 (01 背包)',
+      title: '🎒 实时背包载荷与草药货架',
       isPartitioned: false,
     });
   },

@@ -82,6 +82,7 @@ class MockRoot {
     this.register('modal-problem');
     this.register('modal-problem-body');
     this.register('btn-close-problem-modal');
+    this.register('code-vars-watch');
 
     const javaBtn = new MockElement('btn-java', 'button');
     javaBtn.dataset.lang = 'java';
@@ -211,6 +212,58 @@ describe('DarkCodeTerminalPresenter (深模块测试 - 0 DOM依赖环境)', () =
     expect(placeholder.innerHTML).toContain('code-lines-wrapper');
     expect(placeholder.innerHTML).toContain('code-lang-tabs');
   });
+
+  it('支持集成式变量监视底栏更新与渲染', () => {
+    const presenter = DarkCodeTerminalPresenter.mount(root as unknown as HTMLElement, {
+      codeLanguages: { java: ['int a = 10;'] },
+    });
+
+    presenter.updateVars([
+      { name: 'i', value: '3', type: 'number' },
+      { name: 'found', value: 'true', type: 'boolean' },
+    ]);
+
+    const varsEl = root.querySelector('#code-vars-watch');
+    expect(varsEl).not.toBeNull();
+    expect(varsEl?.innerHTML).toContain('i:');
+    expect(varsEl?.innerHTML).toContain('3');
+    expect(varsEl?.innerHTML).toContain('found:');
+    expect(varsEl?.innerHTML).toContain('true');
+
+    // 传入空数组隐藏
+    presenter.updateVars([]);
+    expect(varsEl?.style.display).toBe('none');
+  });
+
+  it('normalizeHighlightTarget 纯函数能精准归一化各类多态高亮目标', () => {
+    expect(DarkCodeTerminalPresenter.normalizeHighlightTarget(3, 'java')).toEqual({
+      lines: [3],
+      focusLine: 3,
+    });
+
+    expect(DarkCodeTerminalPresenter.normalizeHighlightTarget('5', 'java')).toEqual({
+      lines: [5],
+      focusLine: 5,
+    });
+
+    expect(DarkCodeTerminalPresenter.normalizeHighlightTarget([2, 4], 'java')).toEqual({
+      lines: [2, 4],
+      focusLine: 2,
+    });
+
+    expect(DarkCodeTerminalPresenter.normalizeHighlightTarget({ from: 10, to: 12 }, 'java')).toEqual({
+      lines: [10, 11, 12],
+      focusLine: 10,
+    });
+
+    expect(
+      DarkCodeTerminalPresenter.normalizeHighlightTarget({ java: 2, cpp: 8 }, 'cpp')
+    ).toEqual({
+      lines: [8],
+      focusLine: 8,
+    });
+  });
 });
+
 
 
