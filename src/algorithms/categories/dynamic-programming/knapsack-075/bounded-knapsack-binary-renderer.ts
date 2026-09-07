@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 多重背包二进制拆分 (洛谷 P1776 宝物筛选) - 声明式 4-Card 沙盘渲染器
  * 核心：多重背包按二进制 1, 2, 4, 8... 位权拆分为独立衍生 01 包，随后执行 01 空间压缩
  * 架构重构：引入四语言代码高亮映射、装载回溯与双层沙盘
@@ -9,6 +9,22 @@ import { registerAlgorithm } from '../../../../core/registry';
 import { KNAPSACK_075_PROBLEMS } from './knapsack-075-problem-content';
 import { HighlightTarget } from '../../../../core/code-panel';
 import { renderKnapsackDpMatrix } from '../../../../core/renderers/knapsack-sandbox-stage';
+import {
+  BINARY_SPLIT_STAGE1_CODE_LANGUAGES,
+  BINARY_SPLIT_STAGE2_CODE_LANGUAGES,
+  BINARY_SPLIT_STAGE3_CODE_LANGUAGES,
+} from './knapsack-075-stage-codes';
+import {
+  buildBinarySplitRecursionSteps,
+  buildBinarySplitMemoSteps,
+  buildBinarySplit2DSteps,
+  renderSpecialRecursionCard1,
+  renderSpecialMemoCard1,
+  renderSpecialMemoCard2,
+  renderSpecial2DCard1,
+  renderSpecial2DCard2,
+} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
+import { RecursionTreeAdapter } from '../../../../core/renderers/recursion-tree-adapter';
 
 export interface DerivedItem {
   origIndex: number;
@@ -32,7 +48,7 @@ export interface BoundedKnapsackBinaryStep {
   metrics?: Record<string, any>;
 }
 
-export function buildBoundedKnapsackBinarySteps(inputs: Record<string, any>): BoundedKnapsackBinaryStep[] {
+export function parseBinarySplitInputs(inputs: Record<string, any>) {
   const t = Math.max(0, parseInt(inputs['input-t'], 10) || 0);
   const parseList = (str: string) =>
     (str || '')
@@ -45,17 +61,7 @@ export function buildBoundedKnapsackBinarySteps(inputs: Record<string, any>): Bo
   const cList = parseList(inputs['input-c']);
 
   const n = Math.min(vList.length, wList.length, cList.length);
-  const steps: BoundedKnapsackBinaryStep[] = [];
   const derivedItems: DerivedItem[] = [];
-
-  const lines = {
-    split: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    initDp: { java: 18, cpp: 15, python: 17, javascript: 17 },
-    derivedLoop: { java: 19, cpp: 16, python: 18, javascript: 18 },
-    capLoop: { java: 20, cpp: 17, python: 19, javascript: 19 },
-    updateDp: { java: 21, cpp: 18, python: 20, javascript: 20 },
-    returnAns: { java: 24, cpp: 21, python: 21, javascript: 23 },
-  };
 
   // 1. 二进制拆分阶段
   for (let i = 0; i < n; i++) {
@@ -81,6 +87,26 @@ export function buildBoundedKnapsackBinarySteps(inputs: Record<string, any>): Bo
       });
     }
   }
+
+  return { t, vList, wList, cList, n, derivedItems };
+}
+
+export function buildBoundedKnapsackBinarySteps(inputs: Record<string, any>): BoundedKnapsackBinaryStep[] {
+  const { t, vList, wList, cList, n } = parseBinarySplitInputs(inputs);
+  const derivedItems: DerivedItem[] = [];
+  const steps: BoundedKnapsackBinaryStep[] = [];
+
+  const lines = {
+    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
+    splitTreeLoop: { java: 6, cpp: 4, python: 4, javascript: 4 },
+    splitPow2: { java: 8, cpp: 6, python: 7, javascript: 6 },
+    splitRemainder: { java: 12, cpp: 10, python: 11, javascript: 10 },
+    initDp: { java: 16, cpp: 14, python: 13, javascript: 14 },
+    derivedLoop: { java: 17, cpp: 15, python: 14, javascript: 15 },
+    capLoop: { java: 18, cpp: 16, python: 15, javascript: 16 },
+    updateDp: { java: 19, cpp: 17, python: 16, javascript: 17 },
+    returnAns: { java: 22, cpp: 20, python: 17, javascript: 20 },
+  };
 
   const dp = new Array(t + 1).fill(0);
   let bestDerivedForCapacity: DerivedItem[][] = Array.from({ length: t + 1 }, () => []);
@@ -113,16 +139,91 @@ export function buildBoundedKnapsackBinarySteps(inputs: Record<string, any>): Bo
     };
   };
 
+  // 1. 函数入口
+  steps.push(
+    makeStep({
+      status: 'split',
+      message: `🏁 多重背包二进制拆分开始：进入 computeBinary 函数，背包容量 t=${t}，共有 ${n} 种宝物。`,
+      log: `init: t=${t}, n=${n}`,
+      codeLine: lines.entry,
+      selectedDerived: [],
+    })
+  );
+
+  // 2. 逐件宝物二进制拆分 (遍历第 6~15 行)
+  for (let i = 0; i < n; i++) {
+    let cnt = cList[i];
+    const val = vList[i];
+    const weight = wList[i];
+
+    // 2.1 循环进入宝物 i (Line 6)
+    steps.push(
+      makeStep({
+        status: 'split',
+        message: `📦 考察宝物 #${i + 1}：单件价值 ${val}，重量 ${weight}，共有数量 ${cnt} 件。`,
+        log: `split loop: item #${i + 1}, cnt=${cnt}`,
+        codeLine: lines.splitTreeLoop,
+        selectedDerived: [],
+      })
+    );
+
+    // 2.2 二进制拆分 (Line 8~11)
+    for (let k = 1; k <= cnt; k <<= 1) {
+      derivedItems.push({
+        origIndex: i,
+        multiplier: k,
+        val: k * val,
+        weight: k * weight,
+      });
+
+      steps.push(
+        makeStep({
+          curDerivedIndex: derivedItems.length - 1,
+          status: 'split',
+          message: `✂️ 二进制位权拆分：按位权 2^p = ${k} 打包生成衍生包 #${derivedItems.length}（×${k} 件，重量 ${k * weight}，价值 ${k * val}），剩余可用数量 ${cnt - k}。`,
+          log: `split pack #${derivedItems.length}: item #${i + 1} x${k}`,
+          codeLine: lines.splitPow2,
+          selectedDerived: [],
+        })
+      );
+
+      cnt -= k;
+    }
+
+    // 2.3 补齐余数碎片 (Line 12~14)
+    if (cnt > 0) {
+      derivedItems.push({
+        origIndex: i,
+        multiplier: cnt,
+        val: cnt * val,
+        weight: cnt * weight,
+      });
+
+      steps.push(
+        makeStep({
+          curDerivedIndex: derivedItems.length - 1,
+          status: 'split',
+          message: `🧩 补齐余数碎片：宝物 #${i + 1} 剩余数量 ${cnt} 打包为衍生包 #${derivedItems.length}（×${cnt} 件，重量 ${cnt * weight}，价值 ${cnt * val}）！`,
+          log: `split remainder #${derivedItems.length}: item #${i + 1} x${cnt}`,
+          codeLine: lines.splitRemainder,
+          selectedDerived: [],
+        })
+      );
+    }
+  }
+
+  // 2.4 拆分总结
   steps.push(
     makeStep({
       status: 'split',
       message: `✂️ 二进制拆分完毕！原始 ${n} 种多重宝物成功拆分为 ${derivedItems.length} 个独立 01 衍生包，转化为标准 01 背包！`,
       log: `split: orig_n=${n} => derived_m=${derivedItems.length}`,
-      codeLine: lines.split,
+      codeLine: lines.splitPow2,
       selectedDerived: [],
     })
   );
 
+  // 3. DP 数组初始化 (Line 16)
   steps.push(
     makeStep({
       status: 'split',
@@ -252,6 +353,237 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
     { id: 'metric-cur-derived', label: '当前考察衍生包', color: '#f59e0b' },
     { id: 'metric-max-val', label: '最大总价值', color: '#10b981' },
   ],
+  defaultStage: 'stage-4',
+  stages: [
+    {
+      id: 'stage-1',
+      name: '阶段 1: 暴力递归',
+      shortName: '递归',
+      num: 1,
+      timeBadge: 'O(2^M)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '衍生 01 背包 · 暴力递归',
+        complexity: 'O(2^M) · O(M) 栈深',
+      },
+      card1Title: '🌿 衍生 01 包分治展开与调用栈',
+      card2Title: '🌲 衍生 01 背包递归决策调用树',
+      codeLanguages: BINARY_SPLIT_STAGE1_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, derivedItems } = parseBinarySplitInputs(inputs);
+        return buildBinarySplitRecursionSteps(t, derivedItems);
+      },
+      renderCanvas: (container, step) => {
+        const infoHtml = `
+          <div style="background:rgba(15, 23, 42, 0.7); border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; font-weight:700; color:#38bdf8;">
+                ${step.i < step.n ? `正在决策衍生包 #${step.i + 1} (权:${step.derivedItems?.[step.i]?.multiplier ?? '1'}, 重:${step.derivedItems?.[step.i]?.weight ?? '—'}, 价:${step.derivedItems?.[step.i]?.val ?? '—'})` : '所有衍生包决策完成'}
+              </span>
+              <span style="font-size:11px; color:#38bdf8;">剩余容量: <b>${step.remCap}</b></span>
+            </div>
+            <div style="font-size:11px; color:#374151;">决策: <b style="color:#f59e0b;">${step.decision}</b></div>
+            <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
+          </div>
+        `;
+        renderSpecialRecursionCard1(
+          container,
+          `dfsBinary(idx=${step.i}, remCap=${step.remCap})`,
+          step.callStack || [],
+          infoHtml
+        );
+      },
+      renderCustomMetrics: (container, step) => {
+        RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId);
+      },
+    },
+    {
+      id: 'stage-2',
+      name: '阶段 2: 记忆化搜索',
+      shortName: '记忆化',
+      num: 2,
+      timeBadge: 'O(M · W)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '衍生 01 背包 · 记忆化搜索',
+        complexity: 'O(M · W) · O(M · W) 备忘录',
+      },
+      card1Title: '💾 衍生 01 包备忘录探查 (Cache Hit/Miss)',
+      card2Title: '🎯 2D 备忘录缓存热力矩阵 memo[idx][remCap]',
+      codeLanguages: BINARY_SPLIT_STAGE2_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, derivedItems } = parseBinarySplitInputs(inputs);
+        return buildBinarySplitMemoSteps(t, derivedItems);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecialMemoCard1(
+          container,
+          `dfsMemo(idx=${step.i}, remCap=${step.remCap})`,
+          step.memoHit,
+          step.hitCount,
+          step.missCount,
+          step.decision,
+          step.message,
+          step.cachedVal
+        ),
+      renderCustomMetrics: (container, step) =>
+        renderSpecialMemoCard2(
+          container,
+          '衍生 01 背包备忘录 memo[idx][remCap]',
+          step.memoGrid,
+          step.i,
+          step.remCap
+        ),
+    },
+    {
+      id: 'stage-3',
+      name: '阶段 3: 二维动态规划',
+      shortName: '二维DP',
+      num: 3,
+      timeBadge: 'O(M · W)',
+      theme: 'bg-emerald',
+      badge: {
+        mode: '衍生 01 背包 · 严格二维 DP',
+        complexity: 'O(M · W) · O(M · W)',
+      },
+      card1Title: '📐 01 衍生包转移决策推导',
+      card2Title: '📊 严格二维状态表 dp[i][j]',
+      codeLanguages: BINARY_SPLIT_STAGE3_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, derivedItems } = parseBinarySplitInputs(inputs);
+        return buildBinarySplit2DSteps(t, derivedItems);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecial2DCard1(
+          container,
+          `dp[${step.curI}][${step.curJ}]`,
+          `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
+          step.depCells || [],
+          step.decision,
+          step.message
+        ),
+      renderCustomMetrics: (container, step) =>
+        renderSpecial2DCard2(
+          container,
+          '严格二维状态表 dp[i][j] (i 对应衍生包序号)',
+          step.dpTable,
+          step.curI,
+          step.curJ,
+          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
+        ),
+    },
+    {
+      id: 'stage-4',
+      name: '阶段 4: 空间压缩',
+      shortName: '空间优化',
+      num: 4,
+      timeBadge: 'O(W) 空间',
+      theme: 'bg-amber',
+      badge: {
+        mode: '多重背包 · 二进制拆分 + 01 空间压缩',
+        complexity: 'O(W · Σlog c) · O(W)',
+      },
+      card1Title: '✂️ 二进制拆分衍生包货架与实时背包载荷舱',
+      card2Title: '📈 01 背包空间压缩向量 dp[j] 监视器',
+      codeLanguages: KNAPSACK_075_PROBLEMS['bounded-knapsack-binary'].codeLanguages,
+      buildSteps: buildBoundedKnapsackBinarySteps,
+      renderCanvas: (container, step) => {
+        const selected = step.selectedDerived || [];
+        const usedWeight = selected.reduce((s: any, it: any) => s + it.weight, 0);
+        const totalVal = selected.reduce((s: any, it: any) => s + it.val, 0);
+        const ratio = Math.min(100, Math.round((usedWeight / Math.max(1, step.totalCapacity)) * 100));
+
+        const derivedCards = step.derivedItems
+          .map((item: any, idx: number) => {
+            const isCur = idx === step.curDerivedIndex;
+            const isChosen = selected.some((it: any) => it === item);
+
+            let bg = 'rgba(241, 245, 249, 0.9)';
+            let border = '#334155';
+            let badge = '<span style="color:#64748b; font-size:9px;">备选包</span>';
+
+            if (isChosen) {
+              bg = 'rgba(209, 250, 229, 0.9)';
+              border = '#10b981';
+              badge = '<span style="background:#059669; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold;">✔ 已装入</span>';
+            } else if (isCur) {
+              bg = 'rgba(30, 58, 138, 0.5)';
+              border = '#38bdf8';
+              badge = '<span style="background:#2563eb; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold;">🔍 考察中</span>';
+            }
+
+            return `
+              <div style="background:${bg}; border:1.5px solid ${border}; border-radius:6px; padding:6px 10px; min-width:115px; display:flex; flex-direction:column; gap:3px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:10.5px; color:#c7d2fe; font-weight:700;">#${idx + 1} (源#${item.origIndex + 1}×${item.multiplier})</span>
+                  ${badge}
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
+                  <span style="color:#374151;">价值: <b style="color:#10b981;">+${item.val}</b></span>
+                  <span style="color:#374151;">重量: <b style="color:#38bdf8;">${item.weight}</b></span>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+
+        const tagsHtml = selected.length > 0
+          ? selected.map((it: any, idx: number) => `
+              <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:4px; padding:2px 8px; font-size:10.5px; display:inline-flex; align-items:center; gap:6px;">
+                <span style="color:#a7f3d0; font-weight:700;">衍生包 #${idx + 1} (源#${it.origIndex + 1}×${it.multiplier})</span>
+                <span style="color:#374151;">重:${it.weight}</span>
+                <span style="color:#34d399; font-weight:800;">价值:+${it.val}</span>
+              </div>
+            `).join('')
+          : `<span style="color:#64748b; font-size:11px;">(背包当前为空，等待 01 背包装入衍生包...)</span>`;
+
+        container.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+              <div style="font-size:12px; color:#64748b; font-weight:700;">✂️ 二进制拆分衍生包货架 (位权 1, 2, 4... 无漏覆盖)</div>
+              <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
+                当前考察容量: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${step.totalCapacity}
+              </div>
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+              ${derivedCards}
+            </div>
+
+            <!-- 底部实时背包载荷舱 -->
+            <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11.5px; font-weight:800; color:#374151;">🎒 实时背包载荷舱</span>
+                <div style="display:flex; gap:16px; font-size:11px;">
+                  <span>已占重量: <b style="color:#38bdf8;">${usedWeight}</b> / ${step.totalCapacity}</span>
+                  <span>背包累计价值: <b style="color:#10b981;">${totalVal}</b></span>
+                </div>
+              </div>
+
+              <div style="width:100%; height:8px; background:#e8f0fe; border-radius:4px; overflow:hidden;">
+                <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #8b5cf6, #10b981); transition:width 0.25s ease;"></div>
+              </div>
+
+              <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                <span style="color:#64748b; font-size:10.5px; min-width:60px;">已装入衍生包:</span>
+                ${tagsHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      },
+      renderCustomMetrics: (container, step) => {
+        renderKnapsackDpMatrix(container, {
+          ...step,
+          items: [],
+          currentGroupItems: [],
+          selectedItems: [],
+          groupIndex: -1,
+          itemIndex: step.curDerivedIndex,
+        }, `01 背包空间压缩向量 dp[0..${step.totalCapacity}]`);
+      },
+    },
+  ],
   codeLanguages: KNAPSACK_075_PROBLEMS['bounded-knapsack-binary'].codeLanguages,
   problemHtml: KNAPSACK_075_PROBLEMS['bounded-knapsack-binary'].problemHtml,
   analysisHtml: KNAPSACK_075_PROBLEMS['bounded-knapsack-binary'].analysisHtml,
@@ -267,12 +599,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
         const isCur = idx === step.curDerivedIndex;
         const isChosen = selected.some((it) => it === item);
 
-        let bg = 'rgba(15, 23, 42, 0.6)';
+        let bg = 'rgba(241, 245, 249, 0.9)';
         let border = '#334155';
         let badge = '<span style="color:#64748b; font-size:9px;">备选包</span>';
 
         if (isChosen) {
-          bg = 'rgba(6, 95, 70, 0.5)';
+          bg = 'rgba(209, 250, 229, 0.9)';
           border = '#10b981';
           badge = '<span style="background:#059669; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold;">✔ 已装入</span>';
         } else if (isCur) {
@@ -288,8 +620,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
               ${badge}
             </div>
             <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
-              <span style="color:#cbd5e1;">价值: <b style="color:#10b981;">+${item.val}</b></span>
-              <span style="color:#cbd5e1;">重量: <b style="color:#38bdf8;">${item.weight}</b></span>
+              <span style="color:#374151;">价值: <b style="color:#10b981;">+${item.val}</b></span>
+              <span style="color:#374151;">重量: <b style="color:#38bdf8;">${item.weight}</b></span>
             </div>
           </div>
         `;
@@ -300,17 +632,17 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
       ? selected.map((it, idx) => `
           <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:4px; padding:2px 8px; font-size:10.5px; display:inline-flex; align-items:center; gap:6px;">
             <span style="color:#a7f3d0; font-weight:700;">衍生包 #${idx + 1} (源#${it.origIndex + 1}×${it.multiplier})</span>
-            <span style="color:#cbd5e1;">重:${it.weight}</span>
+            <span style="color:#374151;">重:${it.weight}</span>
             <span style="color:#34d399; font-weight:800;">价值:+${it.val}</span>
           </div>
         `).join('')
       : `<span style="color:#64748b; font-size:11px;">(背包当前为空，等待 01 背包装入衍生包...)</span>`;
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-          <div style="font-size:12px; color:#94a3b8; font-weight:700;">✂️ 二进制拆分衍生包货架 (位权 1, 2, 4... 无漏覆盖)</div>
-          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+          <div style="font-size:12px; color:#64748b; font-weight:700;">✂️ 二进制拆分衍生包货架 (位权 1, 2, 4... 无漏覆盖)</div>
+          <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
             当前考察容量: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${step.totalCapacity}
           </div>
         </div>
@@ -320,21 +652,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
         </div>
 
         <!-- 底部实时背包载荷舱 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🎒 实时背包载荷舱</span>
+            <span style="font-size:11.5px; font-weight:800; color:#374151;">🎒 实时背包载荷舱</span>
             <div style="display:flex; gap:16px; font-size:11px;">
               <span>已占重量: <b style="color:#38bdf8;">${usedWeight}</b> / ${step.totalCapacity}</span>
               <span>背包累计价值: <b style="color:#10b981;">${totalVal}</b></span>
             </div>
           </div>
 
-          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
+          <div style="width:100%; height:8px; background:#e8f0fe; border-radius:4px; overflow:hidden;">
             <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #8b5cf6, #10b981); transition:width 0.25s ease;"></div>
           </div>
 
           <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
-            <span style="color:#94a3b8; font-size:10.5px; min-width:60px;">已装入衍生包:</span>
+            <span style="color:#64748b; font-size:10.5px; min-width:60px;">已装入衍生包:</span>
             ${tagsHtml}
           </div>
         </div>

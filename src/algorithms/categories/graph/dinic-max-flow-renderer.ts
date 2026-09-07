@@ -62,28 +62,28 @@ export function buildDinicSteps(preset: string = 'diamond'): DinicStep[] {
   // 精准 22 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
     maxFlowEntry: { cpp: 72, java: 54, python: 32, javascript: 36 },
-    maxFlowWhileBfs: { cpp: 74, java: 56, python: 34, javascript: 38 },
-    bfsEntry: { cpp: 34, java: 17, python: 12, javascript: 11 },
-    bfsFillDepth: { cpp: 35, java: 18, python: 13, javascript: 12 },
-    bfsInitQueue: { cpp: 36, java: 19, python: 14, javascript: 13 },
-    bfsSetSrc: { cpp: 38, java: 21, python: 15, javascript: 14 },
-    bfsWhile: { cpp: 40, java: 23, python: 17, javascript: 16 },
-    bfsPoll: { cpp: 41, java: 24, python: 18, javascript: 17 },
-    bfsForEdges: { cpp: 42, java: 25, python: 19, javascript: 18 },
-    bfsCheckLevel: { cpp: 43, java: 26, python: 20, javascript: 19 },
-    bfsSetLevel: { cpp: 44, java: 27, python: 21, javascript: 20 },
-    bfsReturn: { cpp: 49, java: 32, python: 23, javascript: 24 },
-    maxFlowResetCur: { cpp: 75, java: 57, python: 35, javascript: 39 },
-    dfsEntry: { cpp: 53, java: 35, python: 25, javascript: 26 },
-    dfsBase: { cpp: 54, java: 36, python: 26, javascript: 27 },
-    dfsForCur: { cpp: 57, java: 38, python: 29, javascript: 29 },
-    dfsUpdateCur: { cpp: 57, java: 39, python: 30, javascript: 30 },
-    dfsCheckEdge: { cpp: 59, java: 41, python: 32, javascript: 32 },
-    dfsPush: { cpp: 60, java: 42, python: 33, javascript: 33 },
-    dfsUpdateResidual: { cpp: 62, java: 44, python: 34, javascript: 34 },
-    dfsReturn: { cpp: 69, java: 51, python: 35, javascript: 35 },
-    maxFlowDfsCall: { cpp: 76, java: 58, python: 36, javascript: 40 },
-    maxFlowReturn: { cpp: 78, java: 60, python: 38, javascript: 42 },
+    maxFlowWhileBfs: { cpp: 67, java: 56, python: 34, javascript: 38 },
+    bfsEntry: { cpp: 27, java: 17, python: 12, javascript: 11 },
+    bfsFillDepth: { cpp: 28, java: 18, python: 13, javascript: 12 },
+    bfsInitQueue: { cpp: 29, java: 19, python: 14, javascript: 13 },
+    bfsSetSrc: { cpp: 31, java: 21, python: 15, javascript: 14 },
+    bfsWhile: { cpp: 33, java: 23, python: 17, javascript: 16 },
+    bfsPoll: { cpp: 34, java: 24, python: 18, javascript: 17 },
+    bfsForEdges: { cpp: 35, java: 25, python: 19, javascript: 18 },
+    bfsCheckLevel: { cpp: 36, java: 26, python: 20, javascript: 19 },
+    bfsSetLevel: { cpp: 37, java: 27, python: 21, javascript: 20 },
+    bfsReturn: { cpp: 42, java: 32, python: 23, javascript: 24 },
+    maxFlowResetCur: { cpp: 68, java: 57, python: 35, javascript: 39 },
+    dfsEntry: { cpp: 46, java: 35, python: 25, javascript: 26 },
+    dfsBase: { cpp: 47, java: 36, python: 26, javascript: 27 },
+    dfsForCur: { cpp: 50, java: 38, python: 29, javascript: 29 },
+    dfsUpdateCur: { cpp: 50, java: 39, python: 30, javascript: 30 },
+    dfsCheckEdge: { cpp: 52, java: 41, python: 32, javascript: 32 },
+    dfsPush: { cpp: 53, java: 42, python: 33, javascript: 33 },
+    dfsUpdateResidual: { cpp: 55, java: 44, python: 34, javascript: 34 },
+    dfsReturn: { cpp: 62, java: 51, python: 35, javascript: 35 },
+    maxFlowDfsCall: { cpp: 69, java: 58, python: 36, javascript: 40 },
+    maxFlowReturn: { cpp: 71, java: 60, python: 38, javascript: 42 },
   };
 
   function makeStep(
@@ -356,16 +356,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<DinicStep>({
     const currentMode = (container as any)._dinicMode || '2d';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🌊 残量网络拓扑 (流/容量)</span>
-            <div style="display: flex; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px; gap: 2px;">
+            <span style="font-size: 12px; color: #374151; font-weight: 700;">🌊 残量网络拓扑 (流/容量)</span>
+            <div style="display: flex; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px; gap: 2px;">
               <button id="btn-dinic-2d" style="background: ${currentMode === '2d' ? '#2563eb' : 'transparent'}; border: none; color: ${currentMode === '2d' ? '#ffffff' : '#94a3b8'}; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; cursor: pointer;">🌐 2D</button>
               <button id="btn-dinic-3d" style="background: ${currentMode === '3d' ? '#2563eb' : 'transparent'}; border: none; color: ${currentMode === '3d' ? '#ffffff' : '#94a3b8'}; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; cursor: pointer;">🪐 3D 沙盘</button>
             </div>
           </div>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前全网最大流: <b style="color: #10b981;">${step.curMaxFlow}</b>
           </span>
         </div>
@@ -390,9 +390,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<DinicStep>({
         </div>
 
         <!-- 底部多路增广阻塞流舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🌊 残量网络与多路增广阻塞流舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🌊 残量网络与多路增广阻塞流舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               汇点状态: <b>${step.levels.T > 0 ? `第 ${step.levels.T} 层可达` : '不可达 (增广截止)'}</b>
             </div>
@@ -468,8 +468,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<DinicStep>({
         .map((k, idx) => {
           const val = arr[idx];
           return `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 36px; height: 32px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #e2e8f0; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">${k}</span>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 36px; height: 32px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #1e293b; font-family: monospace; font-size: 11px; font-weight: 700;">
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">${k}</span>
               <span style="line-height: 1.1;">${val}</span>
             </div>
           `;
@@ -488,11 +488,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<DinicStep>({
     const curRow = renderRow('cur[] (当前弧优化)', step.curArray, '#f59e0b');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${lvlRow}
           ${curRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">当前全网最大流:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 12px;">${step.curMaxFlow} 单位</strong>
           </div>

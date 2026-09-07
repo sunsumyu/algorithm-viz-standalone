@@ -7,13 +7,16 @@ import { StepVisualizer, StepBase } from './step-visualizer';
 import {
   DeclarativeAlgorithmSpec,
   DeclarativeStagePresenter,
+  VisualSlot,
 } from './renderers/declarative-stage-presenter';
 import { SplitterEngine } from './splitter-engine';
+import { registerAlgorithm } from './registry';
 
 export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extends StepVisualizer<TStep> {
   protected codeLines: string[] = [];
   protected spec: DeclarativeAlgorithmSpec<TStep>;
   protected currentMode?: string;
+  protected currentStageId?: string;
   protected sandboxContainer: HTMLElement | null = null;
   protected customMetricsContainer: HTMLElement | null = null;
   protected liveTextEl: HTMLElement | null = null;
@@ -27,8 +30,24 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   constructor(spec: DeclarativeAlgorithmSpec<TStep>) {
     super();
     this.spec = spec;
-    this.codeLanguages = spec.codeLanguages;
-    this.codeLines = spec.codeLanguages['java'] || Object.values(spec.codeLanguages)[0] || [];
+    if (spec.stages && spec.stages.length > 0) {
+      let initialStage = spec.defaultStage || spec.stages[0].id;
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const savedStage = localStorage.getItem(`algo-stage-${spec.id}`);
+          if (savedStage && spec.stages.some((s) => s.id === savedStage)) {
+            initialStage = savedStage;
+          }
+        } catch {}
+      }
+      this.currentStageId = initialStage;
+      const curStage = spec.stages.find((s) => s.id === this.currentStageId) || spec.stages[0];
+      this.codeLanguages = curStage.codeLanguages;
+      this.codeLines = curStage.codeLanguages['java'] || Object.values(curStage.codeLanguages)[0] || [];
+    } else {
+      this.codeLanguages = spec.codeLanguages;
+      this.codeLines = spec.codeLanguages['java'] || Object.values(spec.codeLanguages)[0] || [];
+    }
     this.codePanelTitle = `${spec.name} 代码调试`;
     if (spec.modes && spec.modes.length > 0) {
       this.currentMode = spec.modes[0].id;
@@ -70,7 +89,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       });
     });
 
-    // 绑定预设案例 Chips
+    // 绑定预设案例 Chips 与顶栏下拉选框
     this.root.querySelectorAll<HTMLButtonElement>('.dsp-chip[data-preset]').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.root?.querySelectorAll('.dsp-chip[data-preset]').forEach((b) => b.classList.remove('active'));
@@ -91,9 +110,67 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       });
     });
 
+    const presetSelect = this.root.querySelector('#dsp-preset-select') as HTMLSelectElement | null;
+    if (presetSelect) {
+      presetSelect.addEventListener('change', () => {
+        const idx = parseInt(presetSelect.value, 10);
+        if (!isNaN(idx) && this.spec.presets && this.spec.presets[idx]) {
+          const p = this.spec.presets[idx];
+          Object.keys(p.values).forEach((k) => {
+            const input = this.root?.querySelector(`#${k}`) as HTMLInputElement | HTMLSelectElement | null;
+            if (input) input.value = p.values[k];
+          });
+          this.start();
+        }
+      });
+    }
+
+    // 绑定顶栏自定义输入控件事件 (实时响应输入，支持 input 防抖、change、Enter 键自动重新推导)
+    (this.spec.inputs || []).forEach((inputDef) => {
+      const el = this.root?.querySelector(`#${inputDef.id}`) as HTMLInputElement | HTMLSelectElement | null;
+      if (!el) return;
+
+      if (inputDef.type === 'select') {
+        el.addEventListener('change', () => {
+          this.start();
+        });
+      } else {
+        el.addEventListener('change', () => {
+          this.start();
+        });
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            this.start();
+          }
+        });
+        let debounceTimer: any = null;
+        el.addEventListener('input', () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            this.start();
+          }, 250);
+        });
+      }
+    });
+
+    // 绑定阶段演化切换 Tabs
+    this.root.querySelectorAll<HTMLButtonElement>('.dsp-stage-tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const stageId = btn.dataset.stage;
+        if (stageId && stageId !== this.currentStageId) {
+          this.switchStage(stageId);
+        }
+      });
+    });
+
+    // 初始化时同步当前活跃阶段的徽章、标题与图例
+    if (this.currentStageId) {
+      this.applyStageUI(this.currentStageId);
+    }
+
     // 挂载暗色代码终端
     this.mountTerminal({
-      codeLanguages: this.spec.codeLanguages,
+      codeLanguages: this.codeLanguages,
       problemHtml: this.spec.problemHtml,
       analysisHtml: this.spec.analysisHtml,
       initialLang: 'java',
@@ -178,7 +255,98 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   }
 
   /**
-   * 从 UI 控件提取参数并调用 Spec 的纯推导函数
+   * 同步阶段专属 UI 元素 (按钮主题、徽章、Card 1/Card 2 标题和图例)
+   */
+  public applyStageUI(stageId: string): void {
+    if (!this.spec.stages || this.spec.stages.length === 0) return;
+    const stage = this.spec.stages.find((s) => s.id === stageId);
+    if (!stage) return;
+
+    // 1. 更新阶段 Tab 按钮样式与主题色
+    this.root?.querySelectorAll<HTMLButtonElement>('.dsp-stage-tab-btn').forEach((btn) => {
+      btn.classList.remove('active', 'bg-blue', 'bg-emerald', 'bg-amber');
+      if (btn.dataset.stage === stageId) {
+        const isStage4 = stageId === 'stage-4' || stageId === 'stage4' || stage.num === 4;
+        const isStage3 = stageId === 'stage-3' || stageId === 'stage3' || stage.num === 3;
+        const theme = isStage4 ? 'bg-amber' : isStage3 ? 'bg-emerald' : 'bg-blue';
+        btn.classList.add('active', theme);
+      }
+    });
+
+    // 2. 更新顶栏徽章
+    const modeBadgeEl = this.root?.querySelector('#dsp-badge-mode');
+    if (modeBadgeEl) {
+      modeBadgeEl.textContent = stage.badge?.mode || stage.name;
+    }
+    const complexityBadgeEl = this.root?.querySelector('#dsp-badge-complexity');
+    if (complexityBadgeEl) {
+      complexityBadgeEl.textContent = stage.badge?.complexity || stage.timeBadge || '';
+    }
+
+    // 3. 更新 Card 1 / Card 2 标题与描述 (优先使用 primaryVisual / auxiliaryVisual 结构定义)
+    const c1TitleText = stage.primaryVisual?.title || stage.card1Title;
+    if (c1TitleText) {
+      const c1Title = this.root?.querySelector('.dsp-left-section .dsp-card:first-child .dsp-card-title span');
+      if (c1Title) c1Title.textContent = c1TitleText;
+    }
+    const c2TitleText = stage.auxiliaryVisual?.title || stage.card2Title;
+    if (c2TitleText) {
+      const c2Title = this.root?.querySelector('.dsp-left-section .dsp-card:last-child .dsp-card-title');
+      if (c2Title) c2Title.textContent = c2TitleText;
+    }
+    const c2DescText = stage.auxiliaryVisual?.desc || stage.card2Desc;
+    if (c2DescText) {
+      const c2Desc = this.root?.querySelector('.dsp-left-section .dsp-card:last-child .dsp-card-desc');
+      if (c2Desc) c2Desc.textContent = c2DescText;
+    }
+
+    // 3.1 更新 Card 1 图例 (若阶段提供或回退全局)
+    const legendBar = this.root?.querySelector('.dsp-left-section .dsp-card:first-child .dsp-legend-bar');
+    if (legendBar) {
+      const activeLegend = stage.legend || this.spec.legend || [];
+      legendBar.innerHTML = activeLegend
+        .map((lg) => `<div><span class="dsp-legend-dot" style="background: ${lg.color};"></span> ${lg.label}</div>`)
+        .join('');
+    }
+  }
+
+  /**
+   * 阶段演化切换控制器 (Stage Navigation)
+   */
+  public switchStage(stageId: string): void {
+    if (!this.spec.stages || this.spec.stages.length === 0) return;
+    const stage = this.spec.stages.find((s) => s.id === stageId);
+    if (!stage) return;
+    this.currentStageId = stageId;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(`algo-stage-${this.spec.id}`, stageId);
+      } catch {}
+    }
+
+    this.applyStageUI(stageId);
+
+    // 4. 更新暗色代码终端源码
+    const curLang = this.codeTerminal?.getCurrentLanguage() || 'java';
+    this.codeLanguages = stage.codeLanguages;
+    this.codeLines = stage.codeLanguages[curLang] || Object.values(stage.codeLanguages)[0] || [];
+    this.mountTerminal({
+      codeLanguages: stage.codeLanguages,
+      problemHtml: this.spec.problemHtml,
+      analysisHtml: this.spec.analysisHtml,
+      initialLang: curLang,
+    });
+
+    // 5. 重新从当前阶段构建步骤并重置播放状态
+    this.start();
+  }
+
+  public getCurrentStage(): string | undefined {
+    return this.currentStageId;
+  }
+
+  /**
+   * 从 UI 控件提取参数并调用 Spec 或当前阶段的纯推导函数
    */
   protected buildSteps(): TStep[] {
     const inputs: Record<string, any> = {};
@@ -190,6 +358,13 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         inputs[input.id] = input.defaultValue;
       }
     });
+
+    if (this.spec.stages && this.spec.stages.length > 0 && this.currentStageId) {
+      const stage = this.spec.stages.find((s) => s.id === this.currentStageId);
+      if (stage && typeof stage.buildSteps === 'function') {
+        return stage.buildSteps(inputs);
+      }
+    }
 
     return this.spec.buildSteps(inputs, this.currentMode);
   }
@@ -220,19 +395,33 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (!step) return;
     this.ensureContainers();
 
-    // 1. 调用 Spec 的领域画布渲染器
-    if (this.sandboxContainer && this.spec.renderCanvas) {
-      this.spec.renderCanvas(this.sandboxContainer, step, {
+    const stage = this.spec.stages?.find((s) => s.id === this.currentStageId);
+
+    // 1. 调用 Spec / Stage 的 Card 1 主视觉沙盘渲染器 (优先 primaryVisual.render，兼容 renderCanvas)
+    const primaryRender =
+      stage?.primaryVisual?.render ||
+      stage?.renderCanvas ||
+      this.spec.primaryVisual?.render ||
+      this.spec.renderCanvas;
+    if (this.sandboxContainer && primaryRender) {
+      primaryRender(this.sandboxContainer, step, {
         mode: this.currentMode,
         currentIndex: this.currentIndex,
+        stageId: this.currentStageId,
       });
     }
 
-    // 1.5 调用 Spec 的自定义指标 / 状态卡片渲染器
-    if (this.customMetricsContainer && this.spec.renderCustomMetrics) {
-      this.spec.renderCustomMetrics(this.customMetricsContainer, step, {
+    // 1.5 调用 Spec / Stage 的 Card 2 辅助视觉/调用栈/决策树渲染器 (优先 auxiliaryVisual.render，兼容 renderCustomMetrics)
+    const auxRender =
+      stage?.auxiliaryVisual?.render ||
+      stage?.renderCustomMetrics ||
+      this.spec.auxiliaryVisual?.render ||
+      this.spec.renderCustomMetrics;
+    if (this.customMetricsContainer && auxRender) {
+      auxRender(this.customMetricsContainer, step, {
         mode: this.currentMode,
         currentIndex: this.currentIndex,
+        stageId: this.currentStageId,
       });
     }
 
@@ -255,21 +444,29 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       this.liveTextEl.textContent = `💡 ${msg}`;
     }
 
-    // 3. 更新日志流
+    // 2.5 驱动暗色代码终端行高亮与变量监控 (每一行都是一步，绝不跳步)
+    if (this.codeTerminal) {
+      if (anyStep.codeLine != null) {
+        this.codeTerminal.highlightLine(anyStep.codeLine);
+      }
+      // 保证代码框纯净，绝不将 Card 2 外部 metrics 泄露悬浮至代码终端内
+      this.codeTerminal.updateVars(anyStep.vars && anyStep.vars.length > 0 ? anyStep.vars : []);
+    }
+
+    // 3. 更新日志流 (严格对齐 StateSpacePresenter 标准树形日志模板)
     if (this.logContainer) {
       const logs = this.steps.slice(0, this.currentIndex + 1).map((st: any, idx: number) => {
-        const action = st.action || 'step';
-        const badgeColor =
-          action === 'done' || action === 'success' ? '#16a34a' : action === 'pop' || action === 'visit' ? '#2563eb' : '#64748b';
-        const badgeBg =
-          action === 'done' || action === 'success' ? '#f0fdf4' : action === 'pop' || action === 'visit' ? '#eff6ff' : '#f8fafc';
-        const logMsg = st.message || st.msg || st.log || `步骤 #${idx + 1}`;
+        const isCurrent = idx === this.currentIndex;
+        const logMsg = st.log || st.msg || st.message || `步骤 #${idx + 1}`;
+
+        const baseStyle = isCurrent
+          ? 'padding: 3px 8px; border-radius: 6px; background: #eff6ff; color: #1e3a8a; font-weight: 700; border-left: 2.5px solid #3b82f6; display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-bottom: 2px; font-family: monospace; box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);'
+          : 'padding: 2px 8px; border-radius: 4px; color: #64748b; font-size: 11px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; font-family: monospace;';
 
         return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 2px 0; border-bottom: 1px solid #f8fafc; font-size: 10.5px;">
-            <span style="color: #94a3b8; font-family: monospace; min-width: 22px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 0 4px; border-radius: 3px; font-weight: 700; font-size: 9.5px;">${action}</span>
-            <span style="color: #334155; flex: 1;">${logMsg}</span>
+          <div style="${baseStyle}">
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 8px;">${logMsg}</span>
+            <span style="color: #94a3b8; font-size: 10px; font-weight: normal; flex-shrink: 0;">#${idx + 1}</span>
           </div>
         `;
       });
@@ -301,6 +498,21 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         el.value = String(input.defaultValue);
       }
     });
+
+    // 重置后必须从阶段 1 开始并持久化为阶段 1
+    if (this.spec.stages && this.spec.stages.length > 0) {
+      const firstStageId = this.spec.stages[0].id;
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(`algo-stage-${this.spec.id}`, firstStageId);
+        } catch {}
+      }
+      if (this.currentStageId !== firstStageId) {
+        this.switchStage(firstStageId);
+        return;
+      }
+    }
+
     this.start();
   }
 
@@ -337,3 +549,32 @@ export function createDeclarativeVisualizer<TStep extends StepBase = any>(
     Visualizer: GeneratedVisualizer,
   };
 }
+
+/**
+ * 高杠杆一站式声明式算法注册入口 (Deep Module Seam)
+ * 接受纯粹的领域算法声明式规范 (DeclarativeAlgorithmSpec)，
+ * 内部自动完成 HTML 骨架编译、Card 1/Card 2 视觉层级绑定以及 AlgorithmRegistry 注册。
+ */
+export function registerDeclarativeAlgorithm<TStep extends StepBase = any>(
+  spec: DeclarativeAlgorithmSpec<TStep>
+): {
+  template: string;
+  Visualizer: new () => StepVisualizer<TStep>;
+} {
+  const result = createDeclarativeVisualizer(spec);
+  registerAlgorithm({
+    id: spec.id,
+    name: spec.name,
+    viewId: spec.viewId || `algo-${spec.id}-view`,
+    category: spec.category,
+    description: spec.description || spec.name,
+    icon: spec.icon || '📊',
+    difficulty: spec.difficulty || 2,
+    levelOrder: spec.levelOrder || 99,
+    learningGoal: spec.learningGoal || '',
+    template: result.template,
+    Visualizer: result.Visualizer,
+  });
+  return result;
+}
+

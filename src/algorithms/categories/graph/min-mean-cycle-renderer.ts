@@ -6,6 +6,7 @@
 
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   MIN_MEAN_CYCLE_CODE_LANGUAGES,
   MIN_MEAN_CYCLE_PROBLEM_HTML,
@@ -22,12 +23,25 @@ export interface MinMeanStep {
   status: 'guess' | 'detect' | 'converged';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, any>;
 }
 
 export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
   const steps: MinMeanStep[] = [];
+  // 四语言 1-based 相对行号映射字典
+  const lines = {
+    entry:          { java: 56, cpp: 50, python: 23, javascript: 24 },
+    spfaInit:       { java: 27, cpp: 27, python: 7,  javascript: 6 },
+    spfaQueue:      { java: 32, cpp: 29, python: 9,  javascript: 8 },
+    spfaRelax:      { java: 38, cpp: 35, python: 13, javascript: 12 },
+    detectNegCycle: { java: 43, cpp: 39, python: 17, javascript: 16 },
+    noNegCycle:     { java: 52, cpp: 47, python: 21, javascript: 21 },
+    binaryIter:     { java: 66, cpp: 53, python: 27, javascript: 27 },
+    narrowRange:    { java: 67, cpp: 54, python: 29, javascript: 29 },
+    returnAns:      { java: 73, cpp: 60, python: 31, javascript: 33 },
+  };
+
 
   const origEdges =
     graphType === 'three-nodes'
@@ -78,7 +92,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '🚀 [函数入口] findMinMeanCycle: 开始 0-1 分数规划，求解有向图中边权平均值最小的简单回路。',
       log: '启动 findMinMeanCycle，有向边总数 m = ' + origEdges.length,
-      codeLine: 56,
+      codeLine: lines.entry,
     })
   );
 
@@ -94,7 +108,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '📦 [二分区间初始化] 边权范围在 [0, 5]，设定二分搜索区间 [L, R] = [0.000, 5.000]。',
       log: 'double l = 0.0, r = 5.0;',
-      codeLine: 64,
+      codeLine: lines.spfaRelax,
     })
   );
 
@@ -110,7 +124,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '🔄 [第 1 轮二分] 计算中点 mid = (0.000 + 5.000) / 2 = 2.500，假设最小平均边权为 λ = 2.500。',
       log: 'iter 0: mid = (0.000 + 5.000) / 2 = 2.500',
-      codeLine: 66,
+      codeLine: lines.noNegCycle,
     })
   );
 
@@ -125,7 +139,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '⚡ [边权动态赋权] 全图边权重赋为 w\'(e) = w(e) - 2.500。若重权图存在负环，说明真实最小均值 <= 2.500！',
       log: 'hasNegativeCycle(2.500): 边权全局减 2.500',
-      codeLine: 38,
+      codeLine: lines.spfaRelax,
     })
   );
 
@@ -140,7 +154,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'detect',
       message: '📥 [SPFA 初始化] 超级源点向所有节点入队，初始化 dist[1..4] = 0, count[1..4] = 0。',
       log: 'SPFA 队列初始化：节点 1, 2, 3, 4 全部入队',
-      codeLine: 27,
+      codeLine: lines.spfaInit,
     })
   );
 
@@ -155,7 +169,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'detect',
       message: '🔍 [SPFA 边松弛 1] 弹出节点 2，松弛负权边 2➔4 (w\' = 1 - 2.5 = -1.5)，更新 dist[4] = -1.500。',
       log: '| relax edge (2->4): newW = -1.500, dist[4] = -1.500',
-      codeLine: 39,
+      codeLine: lines.detectNegCycle,
     })
   );
 
@@ -170,7 +184,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'detect',
       message: '🔍 [SPFA 边松弛 2] 弹出节点 4，松弛负权边 4➔3 (w\' = 1 - 2.5 = -1.5)，更新 dist[3] = -3.000。',
       log: '| relax edge (4->3): newW = -1.500, dist[3] = -3.000',
-      codeLine: 39,
+      codeLine: lines.detectNegCycle,
     })
   );
 
@@ -185,7 +199,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'detect',
       message: '🛑 [SPFA 探测到负环] 回路 2➔4➔3➔2 权值和为 (-1.5) + (-1.5) + (-0.5) = -3.500 < 0，节点 2 入队次数超限！',
       log: '| count[2] >= 4 -> 探测到负权回路 2->4->3->2，return true',
-      codeLine: 42,
+      codeLine: lines.spfaInit,
     })
   );
 
@@ -200,7 +214,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '📉 [收缩上界] 判定存在负环 ⟹ 真实最小均值 λ* <= 2.500，收缩右界 R 🡰 2.500，新区间 [0.000, 2.500]。',
       log: 'r = mid; // 更新上界 R -> 2.500',
-      codeLine: 68,
+      codeLine: lines.binaryIter,
     })
   );
 
@@ -216,7 +230,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '🔄 [第 2 轮二分] 计算中点 mid = (0.000 + 2.500) / 2 = 1.250，边权赋为 w\'(e) = w(e) - 1.250。',
       log: 'iter 1: mid = 1.250，边权减 1.250',
-      codeLine: 66,
+      codeLine: lines.noNegCycle,
     })
   );
 
@@ -231,7 +245,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'detect',
       message: '🔍 [检验回路权值] 检查回路 2➔4➔3➔2 权值和：(1-1.25) + (1-1.25) + (2-1.25) = -0.25 - 0.25 + 0.75 = +0.25 > 0。',
       log: '回路 2->4->3->2 权值和 +0.250 > 0，非负环',
-      codeLine: 38,
+      codeLine: lines.spfaRelax,
     })
   );
 
@@ -246,7 +260,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'detect',
       message: '✓ [SPFA 检验完毕] 队列松弛正常结束，无任何节点入队次数达到 n，全图不存在负权回路，返回 false。',
       log: 'SPFA 队列清空，无负环，return false',
-      codeLine: 52,
+      codeLine: lines.spfaQueue,
     })
   );
 
@@ -261,7 +275,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '📈 [提高下界] 判定无负环 ⟹ 猜测值 λ = 1.250 小于真实最小均值，提高左界 L 🡰 1.250，新区间 [1.250, 2.500]。',
       log: 'l = mid; // 更新下界 L -> 1.250',
-      codeLine: 70,
+      codeLine: lines.narrowRange,
     })
   );
 
@@ -277,7 +291,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '🔄 [第 3 轮二分] 计算中点 mid = (1.250 + 2.500) / 2 = 1.875，重新重赋权检验。',
       log: 'iter 2: mid = 1.875',
-      codeLine: 66,
+      codeLine: lines.noNegCycle,
     })
   );
 
@@ -292,7 +306,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'detect',
       message: '🛑 [SPFA 再次探测负环] 回路 2➔4➔3➔2 权值和为 (1-1.875)*2 + (2-1.875) = -1.625 < 0，再次锁定负权回路！',
       log: '探测到负权回路，return true',
-      codeLine: 42,
+      codeLine: lines.spfaInit,
     })
   );
 
@@ -307,7 +321,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'guess',
       message: '📉 [再次收缩上界] 再次收缩右界 R 🡰 1.875，二分区间缩小至 [1.250, 1.875]。',
       log: 'r = mid; // 更新上界 R -> 1.875',
-      codeLine: 68,
+      codeLine: lines.binaryIter,
     })
   );
 
@@ -323,7 +337,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'converged',
       message: '🎯 [二分迭代逼近] 循环 40 次二分逼近，区间跨度 |R - L| < 10⁻⁵，极速收敛至最优解 λ* = 1.333！',
       log: '二分逼近收敛：|R - L| < 1e-5',
-      codeLine: 65,
+      codeLine: lines.detectNegCycle,
     })
   );
 
@@ -338,7 +352,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'converged',
       message: '💎 [最优权值特征验证] 当 λ = 1.333 时，回路 2➔4➔3➔2 新权值和恰好为 0 (零环)，零环即为最优均值回路！',
       log: '零权回路特征：sum(w - λ*) = 0',
-      codeLine: 38,
+      codeLine: lines.spfaRelax,
     })
   );
 
@@ -353,7 +367,7 @@ export function buildMinMeanCycleSteps(graphType: string): MinMeanStep[] {
       status: 'converged',
       message: '🎉 [求解完毕] 最小均值回路为 2 ➔ 4 ➔ 3 ➔ 2，最小平均边权 λ* = (1 + 1 + 2) / 3 = 1.333！',
       log: '✓ return l = 1.333; 0-1分数规划圆满完成！',
-      codeLine: 73,
+      codeLine: lines.returnAns,
     })
   );
 
@@ -457,7 +471,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<MinMeanStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 210px;" viewBox="0 0 310 210">
           <defs>
             <marker id="arrow-default" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -470,7 +484,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<MinMeanStep>({
           ${svgEdges}
           ${svgNodes}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           🔴 红色高亮为 SPFA 探测到的负权回路 | 边上标注动态赋权 w'(e) = w(e) - λ
         </div>
       </div>

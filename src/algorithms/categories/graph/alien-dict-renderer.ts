@@ -351,10 +351,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<AlienStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🛸 火星词典偏序依赖图</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🛸 火星词典偏序依赖图</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             词表: [${step.wordList.join(', ')}]
           </span>
         </div>
@@ -367,9 +367,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<AlienStep>({
         </div>
 
         <!-- 底部火星偏序沙盘舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🛸 火星偏序提取与判环舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🛸 火星偏序提取与判环舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               拓扑顺序: <b>${step.topoOrder.length > 0 ? step.topoOrder.join(' ➔ ') : '提取中...'}</b>
             </div>
@@ -390,7 +390,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<AlienStep>({
   renderCustomMetrics: (container, step) => {
     const degItems = step.charList.map((c) => {
       const d = step.inDegrees[c] ?? 0;
-      return `<span style="background: #1e293b; border: 1px solid #334155; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; color: #38bdf8; font-family: monospace;">'${c}': ${d}</span>`;
+      return `<span style="background: #eff6ff; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; color: #38bdf8; font-family: monospace;">'${c}': ${d}</span>`;
     }).join(' ');
 
     const orderStr = step.status === 'error'
@@ -400,13 +400,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<AlienStep>({
         : '排序中...';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #f59e0b;">字符入度表 (inDegree):</span>
             <div style="display: flex; gap: 4px;">${degItems}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">拓扑排序结果:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">${orderStr}</strong>
           </div>

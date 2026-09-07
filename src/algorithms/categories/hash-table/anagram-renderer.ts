@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   ANAGRAM_PROBLEM_HTML,
@@ -27,12 +28,20 @@ export interface AnagramStep {
   isMatch: boolean;
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
   const steps: AnagramStep[] = [];
   const record = new Array(26).fill(0);
+
+  const lines = {
+    lenMismatch: { java: 2, cpp: 4, python: [3, 4], javascript: 2 },
+    initRecord: { java: 3, cpp: 5, python: 5, javascript: 3 },
+    scanS: { java: [4, 5], cpp: 6, python: [6, 7], javascript: [5, 6] },
+    scanT: { java: [7, 8], cpp: 7, python: [8, 9], javascript: [8, 9] },
+    checkRecord: { java: [10, 11, 13], cpp: [8, 9, 11], python: 10, javascript: 11 },
+  };
 
   // 1. 检查长度
   if (s.length !== t.length) {
@@ -47,7 +56,7 @@ export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
       isMatch: false,
       message: `字符串 s 长度 (${s.length}) 与 t 长度 (${t.length}) 不相等，无法构成字母异位词，直接返回 false。`,
       log: `长度不一致: ${s.length} != ${t.length} => false`,
-      codeLine: 2,
+      codeLine: lines.lenMismatch,
     });
     return steps;
   }
@@ -63,7 +72,7 @@ export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
     isMatch: true,
     message: `两字符串长度一致 (len = ${s.length})，初始化 26 长度哈希数组 record = [0, ..., 0]。`,
     log: `长度一致 (len=${s.length})，初始化 record[26]`,
-    codeLine: 3,
+    codeLine: lines.initRecord,
   });
 
   // 2. 扫描 s
@@ -83,7 +92,7 @@ export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
       isMatch: true,
       message: `扫描 s[${i}] = '${char}'：槽位 index = '${char}' - 'a' = ${slot}，频次累加 record[${slot}]++ (变为 ${record[slot]})。`,
       log: `s[${i}]='${char}': record[${slot}]++ => ${record[slot]}`,
-      codeLine: [4, 5],
+      codeLine: lines.scanS,
     });
   }
 
@@ -104,7 +113,7 @@ export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
       isMatch: true,
       message: `扫描 t[${i}] = '${char}'：槽位 index = '${char}' - 'a' = ${slot}，频次扣减 record[${slot}]-- (变为 ${record[slot]})。`,
       log: `t[${i}]='${char}': record[${slot}]-- => ${record[slot]}`,
-      codeLine: [7, 8],
+      codeLine: lines.scanT,
     });
   }
 
@@ -123,7 +132,7 @@ export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
       ? `🎉 遍历 record[26]，所有字符槽位计数全部归零！s 与 t 互为有效的字母异位词，返回 true。`
       : `⚠️ 遍历 record[26]，发现存在非零槽位计数，字符频次不完全一致，返回 false。`,
     log: `检查 record 数组 => ${isAnagram ? '全部归 0 (true)' : '存在非零项 (false)'}`,
-    codeLine: [10, 11, 13],
+    codeLine: lines.checkRecord,
   });
 
   return steps;

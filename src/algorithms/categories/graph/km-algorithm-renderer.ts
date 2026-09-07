@@ -67,26 +67,26 @@ export function buildKMSteps(preset: string = 'standard'): KMStep[] {
 
   // 精准 20 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 45, java: 31, python: 27, javascript: 17 },
-    initLx: { cpp: 48, java: 34, python: 5, javascript: 5 },
-    forLeft: { cpp: 51, java: 36, python: 28, javascript: 20 },
-    initSlack: { cpp: 52, java: 37, python: 29, javascript: 21 },
-    whileAugment: { cpp: 53, java: 38, python: 30, javascript: 22 },
-    resetVis: { cpp: 54, java: 39, python: 31, javascript: 23 },
-    callDfs: { cpp: 56, java: 41, python: 33, javascript: 25 },
-    dfsEntry: { cpp: 27, java: 13, python: 12, javascript: 27 },
-    dfsMarkVisX: { cpp: 28, java: 14, python: 13, javascript: 28 },
-    dfsLoopV: { cpp: 29, java: 15, python: 14, javascript: 29 },
-    dfsCheckVisY: { cpp: 30, java: 16, python: 15, javascript: 30 },
-    dfsCalcDelta: { cpp: 31, java: 17, python: 16, javascript: 31 },
-    dfsCheckDeltaZero: { cpp: 32, java: 18, python: 17, javascript: 32 },
-    dfsMarkVisY: { cpp: 33, java: 19, python: 18, javascript: 33 },
-    dfsTryMatch: { cpp: 34, java: 20, python: 19, javascript: 34 },
-    dfsAssignMatch: { cpp: 35, java: 21, python: 20, javascript: 35 },
-    dfsUpdateSlack: { cpp: 39, java: 25, python: 23, javascript: 38 },
-    calcD: { cpp: 60, java: 44, python: 37, javascript: 42 },
-    adjustLabels: { cpp: 63, java: 47, python: 39, javascript: 44 },
-    returnAns: { cpp: 70, java: 53, python: 46, javascript: 49 },
+    entry: { cpp: 38, java: 31, python: 27, javascript: 17 },
+    initLx: { cpp: 41, java: 34, python: 5, javascript: 5 },
+    forLeft: { cpp: 44, java: 36, python: 28, javascript: 20 },
+    initSlack: { cpp: 45, java: 37, python: 29, javascript: 21 },
+    whileAugment: { cpp: 46, java: 38, python: 30, javascript: 22 },
+    resetVis: { cpp: 47, java: 39, python: 31, javascript: 23 },
+    callDfs: { cpp: 49, java: 41, python: 33, javascript: 25 },
+    dfsEntry: { cpp: 20, java: 13, python: 12, javascript: 27 },
+    dfsMarkVisX: { cpp: 21, java: 14, python: 13, javascript: 28 },
+    dfsLoopV: { cpp: 22, java: 15, python: 14, javascript: 29 },
+    dfsCheckVisY: { cpp: 23, java: 16, python: 15, javascript: 30 },
+    dfsCalcDelta: { cpp: 24, java: 17, python: 16, javascript: 31 },
+    dfsCheckDeltaZero: { cpp: 25, java: 18, python: 17, javascript: 32 },
+    dfsMarkVisY: { cpp: 26, java: 19, python: 18, javascript: 33 },
+    dfsTryMatch: { cpp: 27, java: 20, python: 19, javascript: 34 },
+    dfsAssignMatch: { cpp: 28, java: 21, python: 20, javascript: 35 },
+    dfsUpdateSlack: { cpp: 32, java: 25, python: 23, javascript: 38 },
+    calcD: { cpp: 53, java: 44, python: 37, javascript: 42 },
+    adjustLabels: { cpp: 56, java: 47, python: 39, javascript: 44 },
+    returnAns: { cpp: 63, java: 53, python: 46, javascript: 49 },
   };
 
   function makeStep(
@@ -371,10 +371,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<KMStep>({
     }
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">💘 二分图最大权完备匹配拓扑</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">💘 二分图最大权完备匹配拓扑</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前总权值: <b style="color: #10b981;">${step.totalWeight}</b> | 状态: <b style="color: #f59e0b;">${step.curLeft ? `正在匹配 ${step.curLeft}` : '完备达成'}</b>
           </span>
         </div>
@@ -387,9 +387,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<KMStep>({
         </div>
 
         <!-- 底部顶标与相等子图舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">💘 KM 顶标定理与相等子图舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">💘 KM 顶标定理与相等子图舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               微调量: <b>${step.deltaAdj !== undefined ? `d = ${step.deltaAdj}` : '—'}</b>
             </div>
@@ -414,7 +414,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<KMStep>({
     const slackItems = [];
     for (let i = 1; i <= n; i++) {
       const s = step.slack[`R${i}`];
-      slackItems.push(`<span style="background: #1e293b; border: 1px solid #334155; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; color: #38bdf8; font-family: monospace;">R${i}: ${s ?? 0}</span>`);
+      slackItems.push(`<span style="background: #eff6ff; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; color: #38bdf8; font-family: monospace;">R${i}: ${s ?? 0}</span>`);
     }
 
     const matchedStr = step.matchedEdges.length > 0
@@ -422,13 +422,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<KMStep>({
       : '尚未形成匹配';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #38bdf8;">右部松弛量 (slack):</span>
             <div style="display: flex; gap: 4px;">${slackItems.join(' ')}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">当前匹配对:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">${matchedStr}</strong>
           </div>

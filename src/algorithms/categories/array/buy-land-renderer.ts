@@ -6,6 +6,7 @@
 
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   BUY_LAND_PROBLEM_HTML,
   BUY_LAND_ANALYSIS_HTML,
@@ -28,7 +29,7 @@ export interface BLStep {
   status: 'init' | 'build-prefix' | 'scan-rect' | 'update-best' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function parseGrid(input: string): number[][] {
@@ -56,6 +57,13 @@ export function buildBuyLandSteps(grid: number[][], budget: number): BLStep[] {
   const n = grid[0].length;
   const prefix: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
 
+  const lines = {
+    init: { java: 3, cpp: 5, python: 4, javascript: 3 },
+    buildPrefix: { java: [4, 5, 6], cpp: [6, 7, 8], python: [5, 6, 7], javascript: [4, 5, 6] },
+    updateBest: { java: [13, 14, 15, 16, 17, 18], cpp: [15, 16, 17, 18, 19, 20], python: [14, 15, 16, 17, 18, 19], javascript: [13, 14, 15, 16, 17, 18] },
+    done: { java: 22, cpp: 24, python: 20, javascript: 22 },
+  };
+
   steps.push({
     grid,
     budget,
@@ -72,7 +80,7 @@ export function buildBuyLandSteps(grid: number[][], budget: number): BLStep[] {
     status: 'init',
     message: `初始化 ${m}×${n} 网格，预算 budget=${budget}。首先构建二维前缀和数组。`,
     log: `初始化: 矩阵规模 ${m}×${n}, 预算 ${budget}`,
-    codeLine: 3,
+    codeLine: lines.init,
   });
 
   // 1. 构建二维前缀和
@@ -95,7 +103,7 @@ export function buildBuyLandSteps(grid: number[][], budget: number): BLStep[] {
         status: 'build-prefix',
         message: `计算前缀和 prefix[${i + 1}][${j + 1}] = grid[${i}][${j}] (${grid[i][j]}) + 上 (${prefix[i][j + 1]}) + 左 (${prefix[i + 1][j]}) - 左上 (${prefix[i][j]}) = ${prefix[i + 1][j + 1]}。`,
         log: `前缀和: prefix[${i + 1}][${j + 1}] = ${prefix[i + 1][j + 1]}`,
-        codeLine: [4, 5, 6],
+        codeLine: lines.buildPrefix,
       });
     }
   }
@@ -135,7 +143,7 @@ export function buildBuyLandSteps(grid: number[][], budget: number): BLStep[] {
                 status: 'update-best',
                 message: `🌟 发现更大面积！矩形 [(${r1},${c1})..(${r2},${c2})] 开销 sum=${sum} ≤ budget(${budget})，面积 ${area} > 历史最佳，更新 maxArea=${maxArea}。`,
                 log: `🌟 刷新最佳：面积 ${area} (开销 ${sum} <= ${budget})`,
-                codeLine: [12, 13, 14],
+                codeLine: lines.updateBest,
               });
             }
           }
@@ -160,7 +168,7 @@ export function buildBuyLandSteps(grid: number[][], budget: number): BLStep[] {
     status: 'done',
     message: `🎉 矩形搜索完毕！在预算 ${budget} 下能购买的最大连续土地面积为: ${maxArea}。`,
     log: `✓ 完成：最大购买面积 = ${maxArea}`,
-    codeLine: 16,
+    codeLine: lines.done,
   });
 
   return steps;

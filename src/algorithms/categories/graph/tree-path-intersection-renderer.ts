@@ -6,6 +6,7 @@
 
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   TREE_PATH_INTERSECT_CODE_LANGUAGES,
   TREE_PATH_INTERSECT_PROBLEM_HTML,
@@ -22,12 +23,30 @@ export interface TreeIntersectStep {
   status: 'init' | 'dfs' | 'calc_lca' | 'verify' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, any>;
 }
 
 export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeIntersectStep[] {
   const steps: TreeIntersectStep[] = [];
+  // 四语言 1-based 相对行号映射字典
+  const lines = {
+    entry:          { java: 68, cpp: 52, python: 2,  javascript: 2 },
+    dfsRoot:        { java: 15, cpp: 20, python: 12, javascript: 11 },
+    dfsTraverse:    { java: 21, cpp: 24, python: 19, javascript: 18 },
+    binaryLift:     { java: 19, cpp: 23, python: 16, javascript: 15 },
+    isIntersect:    { java: 59, cpp: 52, python: 2,  javascript: 2 },
+    calcLca1:       { java: 60, cpp: 53, python: 42, javascript: 46 },
+    calcLca2:       { java: 61, cpp: 54, python: 43, javascript: 47 },
+    lcaResult:      { java: 45, cpp: 39, python: 35, javascript: 35 },
+    verifyOnPath:   { java: 54, cpp: 47, python: 39, javascript: 43 },
+    getDist:        { java: 49, cpp: 43, python: 37, javascript: 39 },
+    distCondition:  { java: 55, cpp: 48, python: 40, javascript: 43 },
+    checkSecond:    { java: 63, cpp: 55, python: 44, javascript: 48 },
+    returnResult:   { java: 64, cpp: 55, python: 44, javascript: 48 },
+    done:           { java: 81, cpp: 56, python: 44, javascript: 47 },
+  };
+
 
   function makeStep(data: Omit<TreeIntersectStep, 'metrics'>): TreeIntersectStep {
     const l1Str = data.lca1 ? `Node ${data.lca1}` : '—';
@@ -76,7 +95,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'init',
         message: '🚀 [算法入口] solve: 给定待判定路径 P1=(4 ➔ 5) 与 P2=(4 ➔ 6)，初始化树拓扑。',
         log: 'solve: 输入 P1=(4,5), P2=(4,6)',
-        codeLine: 68,
+        codeLine: lines.entry,
       })
     );
 
@@ -91,7 +110,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🌲 [DFS 预处理] dfs(1, 0, 1): 访问根节点 1，记录 depth[1] = 1，父节点 up[1][0] = 0。',
         log: 'dfs(1, 0, 1): depth[1]=1',
-        codeLine: 16,
+        codeLine: lines.dfsRoot,
       })
     );
 
@@ -106,7 +125,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🌲 [DFS 遍历左支] dfs(2, 1, 2): 深入左子节点 2，depth[2] = 2，up[2][0] = 1。',
         log: 'dfs(2, 1, 2): depth[2]=2',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -121,7 +140,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🍃 [DFS 遍历左叶 4] dfs(4, 2, 3): 节点 4 的深度 depth[4] = 3，up[4][0] = 2。',
         log: 'dfs(4, 2, 3): depth[4]=3',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -136,7 +155,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🍃 [DFS 遍历右叶 5] dfs(5, 2, 3): 节点 5 的深度 depth[5] = 3，up[5][0] = 2。',
         log: 'dfs(5, 2, 3): depth[5]=3',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -151,7 +170,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🌲 [DFS 遍历右支] dfs(3, 1, 2): 回溯后深入右子节点 3，depth[3] = 2，up[3][0] = 1。',
         log: 'dfs(3, 1, 2): depth[3]=2',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -166,7 +185,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🍃 [DFS 遍历叶子 6与7] dfs(6, 3, 3) 与 dfs(7, 3, 3): 记录深度均为 3。',
         log: 'dfs 遍历完毕: depth[6]=3, depth[7]=3',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -181,7 +200,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '📈 [倍增表构建] up[u][i] = up[up[u][i-1]][i-1]，2^i 级祖先关系倍增预处理完毕。',
         log: '倍增表预处理递推完成',
-        codeLine: 18,
+        codeLine: lines.binaryLift,
       })
     );
 
@@ -196,7 +215,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '⚡ [相交判定入口] isPathsIntersect: 开始进行路径相交判定定理检验。',
         log: '进入 isPathsIntersect(4, 5, 4, 6)',
-        codeLine: 59,
+        codeLine: lines.isIntersect,
       })
     );
 
@@ -211,7 +230,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🔍 [求解 P1 最近公共祖先] 调用 getLCA(4, 5)，准备向上跳跃检索。',
         log: 'getLCA(4, 5): 开始倍增跳跃',
-        codeLine: 60,
+        codeLine: lines.calcLca1,
       })
     );
 
@@ -226,7 +245,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🎯 [锁定 LCA1] 节点 4 与 5 的最近公共祖先为节点 2：LCA(P1) = 2。',
         log: 'LCA(4, 5) = 2',
-        codeLine: 45,
+        codeLine: lines.lcaResult,
       })
     );
 
@@ -241,7 +260,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🔍 [求解 P2 最近公共祖先] 调用 getLCA(4, 6)，分属左右两大子树。',
         log: 'getLCA(4, 6): 开始倍增跳跃',
-        codeLine: 61,
+        codeLine: lines.calcLca2,
       })
     );
 
@@ -256,7 +275,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🎯 [锁定 LCA2] 节点 4 与 6 在根节点相交汇：LCA(P2) = 1。',
         log: 'LCA(4, 6) = 1',
-        codeLine: 45,
+        codeLine: lines.lcaResult,
       })
     );
 
@@ -271,7 +290,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '🧪 [充要检验 1] 检验 LCA(P1)=2 是否位于路径 P2=(4, 6) 上：isNodeOnPath(2, 4, 6)。',
         log: 'isNodeOnPath(x=2, u=4, v=6)',
-        codeLine: 62,
+        codeLine: lines.verifyOnPath,
       })
     );
 
@@ -286,7 +305,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '📐 [计算树上距离 dis(4, 2)] depth[4](3) + depth[2](2) - 2*depth[2](2) = 1。',
         log: 'dis(4, 2) = 1',
-        codeLine: 49,
+        codeLine: lines.getDist,
       })
     );
 
@@ -301,7 +320,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '📐 [计算树上距离 dis(2, 6)] depth[2](2) + depth[6](3) - 2*depth[1](1) = 3。',
         log: 'dis(2, 6) = 3',
-        codeLine: 49,
+        codeLine: lines.getDist,
       })
     );
 
@@ -316,7 +335,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '📐 [计算全路径距离 dis(4, 6)] depth[4](3) + depth[6](3) - 2*depth[1](1) = 4。',
         log: 'dis(4, 6) = 4',
-        codeLine: 49,
+        codeLine: lines.getDist,
       })
     );
 
@@ -331,7 +350,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '✨ [三角等式满足] dis(4, 2) + dis(2, 6) = 1 + 3 = 4 == dis(4, 6)！LCA(P1)=2 严格位于路径 P2 上！',
         log: 'dis(4, 2) + dis(2, 6) == dis(4, 6) 成立，LCA1 位于 P2',
-        codeLine: 55,
+        codeLine: lines.distCondition,
       })
     );
 
@@ -346,7 +365,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '✅ [充要条件一侧成立] on1 = true，逻辑或短路，无需继续校验 on2！',
         log: 'on1 = true, 判定相交成立',
-        codeLine: 62,
+        codeLine: lines.verifyOnPath,
       })
     );
 
@@ -361,7 +380,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'done',
         message: '🎉 [相交判定成功] 路径 P1=(4➔2➔5) 与 P2=(4➔2➔1➔3➔6) 相交！交集包含节点 [2, 4]！',
         log: 'isPathsIntersect 返回 true: 路径相交于节点 2 和 4',
-        codeLine: 64,
+        codeLine: lines.returnResult,
       })
     );
 
@@ -376,7 +395,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'done',
         message: '✓ [算法执行完毕] 返回 true。单次查询仅需 O(log N) 树上倍增与距离判定！',
         log: '✓ return true; 算法执行完毕！',
-        codeLine: 81,
+        codeLine: lines.done,
       })
     );
   } else {
@@ -395,7 +414,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'init',
         message: '🚀 [算法入口] solve: 给定待判定路径 P1=(4 ➔ 5) 与 P2=(6 ➔ 7)，初始化树拓扑。',
         log: 'solve: 输入 P1=(4,5), P2=(6,7)',
-        codeLine: 68,
+        codeLine: lines.entry,
       })
     );
 
@@ -410,7 +429,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🌲 [DFS 预处理] dfs(1, 0, 1): 访问根节点 1，depth[1] = 1。',
         log: 'dfs(1, 0, 1): depth[1]=1',
-        codeLine: 16,
+        codeLine: lines.dfsRoot,
       })
     );
 
@@ -425,7 +444,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🌲 [DFS 遍历左支] dfs(2, 1, 2): 深入节点 2，depth[2] = 2。',
         log: 'dfs(2, 1, 2): depth[2]=2',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -440,7 +459,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🍃 [DFS 遍历左叶 4与5] dfs(4, 2, 3) 与 dfs(5, 2, 3): depth[4]=3, depth[5]=3。',
         log: 'dfs 遍历左叶完成',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -455,7 +474,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🌲 [DFS 遍历右支] dfs(3, 1, 2): 深入节点 3，depth[3] = 2。',
         log: 'dfs(3, 1, 2): depth[3]=2',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -470,7 +489,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '🍃 [DFS 遍历右叶 6与7] dfs(6, 3, 3) 与 dfs(7, 3, 3): depth[6]=3, depth[7]=3。',
         log: 'dfs 遍历右叶完成',
-        codeLine: 21,
+        codeLine: lines.dfsTraverse,
       })
     );
 
@@ -485,7 +504,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'dfs',
         message: '📈 [倍增表构建] up[u][i] = up[up[u][i-1]][i-1] 全部构建完毕。',
         log: '倍增表构建完毕',
-        codeLine: 18,
+        codeLine: lines.binaryLift,
       })
     );
 
@@ -500,7 +519,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '⚡ [相交判定入口] isPathsIntersect: 开始进行路径相交判定定理检验。',
         log: '进入 isPathsIntersect(4, 5, 6, 7)',
-        codeLine: 59,
+        codeLine: lines.isIntersect,
       })
     );
 
@@ -515,7 +534,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🔍 [求解 P1 最近公共祖先] 调用 getLCA(4, 5)。',
         log: 'getLCA(4, 5)',
-        codeLine: 60,
+        codeLine: lines.calcLca1,
       })
     );
 
@@ -530,7 +549,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🎯 [锁定 LCA1] 节点 4 与 5 的最近公共祖先为节点 2：LCA(P1) = 2。',
         log: 'LCA(4, 5) = 2',
-        codeLine: 45,
+        codeLine: lines.lcaResult,
       })
     );
 
@@ -545,7 +564,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🔍 [求解 P2 最近公共祖先] 调用 getLCA(6, 7)。',
         log: 'getLCA(6, 7)',
-        codeLine: 61,
+        codeLine: lines.calcLca2,
       })
     );
 
@@ -560,7 +579,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'calc_lca',
         message: '🎯 [锁定 LCA2] 节点 6 与 7 的最近公共祖先为节点 3：LCA(P2) = 3。',
         log: 'LCA(6, 7) = 3',
-        codeLine: 45,
+        codeLine: lines.lcaResult,
       })
     );
 
@@ -575,7 +594,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '🧪 [充要检验 1] 检验 LCA(P1)=2 是否位于路径 P2=(6, 7) 上：isNodeOnPath(2, 6, 7)。',
         log: 'isNodeOnPath(x=2, u=6, v=7)',
-        codeLine: 62,
+        codeLine: lines.verifyOnPath,
       })
     );
 
@@ -590,7 +609,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '📐 [计算树上距离] dis(6, 2) = 3, dis(2, 7) = 3, 总和 = 6；而全路径 dis(6, 7) = 2。',
         log: 'dis(6, 2) + dis(2, 7) = 6 != dis(6, 7)(2)',
-        codeLine: 49,
+        codeLine: lines.getDist,
       })
     );
 
@@ -605,7 +624,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '❌ [前件不成立] 6 != 2，节点 2 不在路径 P2 上，on1 = false。',
         log: 'on1 = false',
-        codeLine: 55,
+        codeLine: lines.distCondition,
       })
     );
 
@@ -620,7 +639,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '🧪 [充要检验 2] 检验 LCA(P2)=3 是否位于路径 P1=(4, 5) 上：isNodeOnPath(3, 4, 5)。',
         log: 'isNodeOnPath(x=3, u=4, v=5)',
-        codeLine: 63,
+        codeLine: lines.checkSecond,
       })
     );
 
@@ -635,7 +654,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '📐 [计算树上距离] dis(4, 3) = 3, dis(3, 5) = 3, 总和 = 6；而全路径 dis(4, 5) = 2。',
         log: 'dis(4, 3) + dis(3, 5) = 6 != dis(4, 5)(2)',
-        codeLine: 49,
+        codeLine: lines.getDist,
       })
     );
 
@@ -650,7 +669,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'verify',
         message: '❌ [后件不成立] 6 != 2，节点 3 亦不在路径 P1 上，on2 = false。',
         log: 'on2 = false',
-        codeLine: 55,
+        codeLine: lines.distCondition,
       })
     );
 
@@ -665,7 +684,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'done',
         message: '🛑 [综合判定] on1 = false 且 on2 = false，相交判定定理充要条件全不满足！',
         log: 'on1 || on2 = false',
-        codeLine: 64,
+        codeLine: lines.returnResult,
       })
     );
 
@@ -680,7 +699,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'done',
         message: '❌ [判定不相交] 路径 P1=(4➔2➔5) 与 P2=(6➔3➔7) 处于树的不同子分支，交集为空！',
         log: 'isPathsIntersect 返回 false: 两路径互不相交',
-        codeLine: 64,
+        codeLine: lines.returnResult,
       })
     );
 
@@ -695,7 +714,7 @@ export function buildTreePathIntersectSteps(isIntersectCase: boolean): TreeInter
         status: 'done',
         message: '✓ [算法执行完毕] 返回 false。树上路径相交判定完毕！',
         log: '✓ return false; 算法执行完毕！',
-        codeLine: 81,
+        codeLine: lines.done,
       })
     );
   }
@@ -800,12 +819,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeIntersectStep>(
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
           ${svgEdges}
           ${svgNodes}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           相交充要条件：两路径相交 ⟺ LCA(P1) 位于 P2 上 或 LCA(P2) 位于 P1 上
         </div>
       </div>

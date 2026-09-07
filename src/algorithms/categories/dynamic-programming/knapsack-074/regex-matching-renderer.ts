@@ -9,7 +9,22 @@ import {
   REGEX_MATCHING_PROBLEM_HTML,
   REGEX_MATCHING_ANALYSIS_HTML,
   REGEX_MATCHING_CODE_LANGUAGES,
+  REGEX_MATCHING_STAGE1_CODE_LANGUAGES,
+  REGEX_MATCHING_STAGE2_CODE_LANGUAGES,
+  REGEX_MATCHING_STAGE3_CODE_LANGUAGES,
 } from './knapsack-074-problem-content';
+import { HighlightTarget } from '../../../../core/code-panel';
+import {
+  buildStringDpRecursionSteps,
+  buildStringDpMemoSteps,
+  buildStringDp2DSteps,
+  renderStringDpRecursionCard1,
+  renderStringDpRecursionCard2,
+  renderStringDpMemoCard1,
+  renderStringDpMemoCard2,
+  renderStringDp2DCard1,
+  renderStringDp2DCard2,
+} from '../../../../core/renderers/string-dp-stage-evolution';
 
 export interface RegexMatchingStep {
   i: number;
@@ -22,7 +37,7 @@ export interface RegexMatchingStep {
   status: 'init' | 'base' | 'cell' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
   metrics?: Record<string, any>;
 }
 
@@ -53,6 +68,16 @@ export function buildRegexMatchingSteps(
     };
   }
 
+  const lines = {
+    entry: { java: 6, cpp: 7, python: 1, javascript: 2 },
+    initDp: { java: 10, cpp: 9, python: 3, javascript: 4 },
+    base: { java: 11, cpp: 10, python: 4, javascript: 5 },
+    emptyStrStar: { java: 13, cpp: 12, python: 6, javascript: 7 },
+    singleMatch: { java: 17, cpp: 17, python: 10, javascript: 12 },
+    starSlopeOpt: { java: 20, cpp: 20, python: 12, javascript: 14 },
+    returnAns: { java: 24, cpp: 24, python: 13, javascript: 18 },
+  };
+
   // 1. 初始化
   steps.push(
     makeStep({
@@ -64,9 +89,9 @@ export function buildRegexMatchingSteps(
       matched: false,
       decision: '初始化 DP 表格',
       status: 'init',
-      message: `🎯 初始化正则匹配表：文本串 s="${s}" (长 ${n})，模式串 p="${p}" (长 ${m})。`,
+      message: `🎯 初始化正则匹配表：进入 isMatch 函数，文本串 s="${s}" (长 ${n})，模式串 p="${p}" (长 ${m})。`,
       log: `init: s="${s}", p="${p}"`,
-      codeLine: 8,
+      codeLine: lines.entry,
     })
   );
 
@@ -84,30 +109,33 @@ export function buildRegexMatchingSteps(
       status: 'base',
       message: '✨ 基底：空串对空模式串自然匹配成功 dp[n][m] = true。',
       log: 'base: dp[n][m] = true',
-      codeLine: 9,
+      codeLine: lines.base,
     })
   );
 
   // s 为空，处理模式串末尾以 * 消解的情况
   for (let j = m - 1; j >= 0; j--) {
-    if (j + 1 < m && p[j + 1] === '*' && dp[n][j + 2]) {
+    const canCancel = j + 1 < m && p[j + 1] === '*' && dp[n][j + 2];
+    if (canCancel) {
       dp[n][j] = true;
-      steps.push(
-        makeStep({
-          i: n,
-          j,
-          s,
-          p,
-          dp: dp.map((row) => [...row]),
-          matched: true,
-          decision: `* 消解空串: '${p[j]}*' 取 0 次`,
-          status: 'base',
-          message: `✨ 基底：模式串 '${p[j]}*' 可匹配 0 次消去，dp[${n}][${j}] = true。`,
-          log: `base: dp[${n}][${j}] = true via '*' cancel`,
-          codeLine: 11,
-        })
-      );
     }
+    steps.push(
+      makeStep({
+        i: n,
+        j,
+        s,
+        p,
+        dp: dp.map((row) => [...row]),
+        matched: dp[n][j],
+        decision: canCancel ? `* 消解空串: '${p[j]}*' 取 0 次` : `'${p[j]}' 无法消解空串`,
+        status: 'base',
+        message: canCancel
+          ? `✨ 基底：模式串 '${p[j]}*' 可匹配 0 次消去，dp[${n}][${j}] = true。`
+          : `🛑 基底：模式串字符 '${p[j]}' 无法匹配消解空文本，dp[${n}][${j}] = false。`,
+        log: `base: j=${j}, cancel=${canCancel}`,
+        codeLine: lines.emptyStrStar,
+      })
+    );
   }
 
   // 严格位置依赖转移
@@ -145,7 +173,7 @@ export function buildRegexMatchingSteps(
           status: 'cell',
           message: `🔍 计算 dp[${i}][${j}] (s[${i}]='${s[i]}', p[${j}]='${p[j]}'): ${dec} → ${dp[i][j]}。`,
           log: `cell [${i}][${j}]: ${dec} => ${dp[i][j]}`,
-          codeLine: j + 1 === m || p[j + 1] !== '*' ? 15 : 18,
+          codeLine: j + 1 === m || p[j + 1] !== '*' ? lines.singleMatch : lines.starSlopeOpt,
         })
       );
     }
@@ -166,14 +194,78 @@ export function buildRegexMatchingSteps(
         finalMatch ? '完全匹配' : '无法匹配'
       } 模式串 "${p}"！`,
       log: `done: ans=${finalMatch}`,
-      codeLine: 23,
+      codeLine: lines.returnAns,
     })
   );
 
   return steps;
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<RegexMatchingStep>({
+function renderRegexStringMatcher(container: HTMLElement, step: RegexMatchingStep) {
+  const sBadges = step.s
+    .split('')
+    .map((ch, idx) => {
+      const isCur = step.i === idx;
+      const bg = isCur ? '#f59e0b' : '#1e293b';
+      const col = isCur ? '#0f172a' : '#cbd5e1';
+      return `<span style="background:${bg}; color:${col}; padding:4px 8px; border-radius:4px; font-weight:800; font-family:monospace; margin:0 2px;">${ch} [${idx}]</span>`;
+    })
+    .join('');
+
+  const pBadges = step.p
+    .split('')
+    .map((ch, idx) => {
+      const isCur = step.j === idx;
+      const bg = isCur ? '#38bdf8' : '#1e293b';
+      const col = isCur ? '#0f172a' : '#cbd5e1';
+      return `<span style="background:${bg}; color:${col}; padding:4px 8px; border-radius:4px; font-weight:800; font-family:monospace; margin:0 2px;">${ch} [${idx}]</span>`;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:16px; width:100%; height:100%; justify-content:center; align-items:center; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; color:#64748b; font-weight:700;">文本串 s:</span>
+        ${sBadges || '<span style="color:#64748b;">(空串)</span>'}
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; color:#64748b; font-weight:700;">模式串 p:</span>
+        ${pBadges || '<span style="color:#64748b;">(空串)</span>'}
+      </div>
+    </div>
+  `;
+}
+
+function renderRegexDpMatrix(container: HTMLElement, step: RegexMatchingStep) {
+  const rowsHtml = step.dp
+    .map((row, rIdx) => {
+      const cells = row
+        .map((val, cIdx) => {
+          const isCur = step.i === rIdx && step.j === cIdx;
+          const bg = isCur ? '#f59e0b' : val ? '#065f46' : '#1e293b';
+          const col = isCur ? '#0f172a' : val ? '#34d399' : '#64748b';
+          return `
+            <div style="width:24px; height:20px; display:flex; justify-content:center; align-items:center; background:${bg}; color:${col}; font-size:9px; font-weight:700; border-radius:2px; margin:1px;">
+              ${val ? 'T' : 'F'}
+            </div>
+          `;
+        })
+        .join('');
+      return `<div style="display:flex; align-items:center;"><span style="font-size:8px; color:#64748b; width:16px;">i=${rIdx}</span>${cells}</div>`;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width:100%; height:100%; display:flex; flex-direction:column; padding:2px 4px; box-sizing:border-box; flex:1; min-height:0; overflow:hidden;">
+      <div style="font-size:11px; color:#64748b; margin-bottom:4px; font-weight:700; flex-shrink:0;">DP 匹配状态网格 (T=true, F=false)</div>
+      <div style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:auto; background:#f1f5f9; padding:4px; border-radius:4px; border:1px solid #e2e8f0;">
+        ${rowsHtml}
+      </div>
+    </div>
+  `;
+}
+
+const { template, Visualizer } = createDeclarativeVisualizer<any>({
   id: 'regex-matching',
   name: '正则表达式匹配 (LeetCode 10)',
   category: 'dynamic-programming',
@@ -181,6 +273,97 @@ const { template, Visualizer } = createDeclarativeVisualizer<RegexMatchingStep>(
     mode: '完全背包 · 斜率优化',
     complexity: 'O(N · M) · O(N · M)',
   },
+  defaultStage: 'stage-4',
+  stages: [
+    {
+      id: 'stage-1',
+      name: '阶段 1: 暴力递归',
+      shortName: '递归',
+      num: 1,
+      timeBadge: 'O(2^(N+M))',
+      theme: 'bg-blue',
+      badge: {
+        mode: '正则表达式 · 递归暴力搜索',
+        complexity: 'O(2^(N+M)) · O(N+M) 栈深',
+      },
+      card1Title: '🌿 递归分支展开与运行时调用栈',
+      card2Title: '📊 递归调用开销与重叠子问题监控',
+      codeLanguages: REGEX_MATCHING_STAGE1_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const s = String(inputs['input-s'] ?? 'aab');
+        const p = String(inputs['input-pat'] ?? inputs['input-p'] ?? 'c*a*b');
+        return buildStringDpRecursionSteps('regex', s, p);
+      },
+      renderCanvas: (container, step) => renderStringDpRecursionCard1(container, step),
+      renderCustomMetrics: (container, step) => renderStringDpRecursionCard2(container, step),
+    },
+    {
+      id: 'stage-2',
+      name: '阶段 2: 记忆化搜索',
+      shortName: '记忆化',
+      num: 2,
+      timeBadge: 'O(N·M)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '正则表达式 · 记忆化搜索',
+        complexity: 'O(N · M) · O(N · M) 备忘录',
+      },
+      card1Title: '💾 备忘录探查追踪 (Cache Hit/Miss)',
+      card2Title: '🎯 2D 备忘录缓存热力矩阵 memo[i][j]',
+      codeLanguages: REGEX_MATCHING_STAGE2_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const s = String(inputs['input-s'] ?? 'aab');
+        const p = String(inputs['input-pat'] ?? inputs['input-p'] ?? 'c*a*b');
+        return buildStringDpMemoSteps('regex', s, p);
+      },
+      renderCanvas: (container, step) => renderStringDpMemoCard1(container, step),
+      renderCustomMetrics: (container, step) => renderStringDpMemoCard2(container, step),
+    },
+    {
+      id: 'stage-3',
+      name: '阶段 3: 二维动态规划',
+      shortName: '二维DP',
+      num: 3,
+      timeBadge: 'O(N·M)',
+      theme: 'bg-emerald',
+      badge: {
+        mode: '正则表达式 · 严格二维填表',
+        complexity: 'O(N · M) · O(N · M)',
+      },
+      card1Title: '🔗 单元格字符对齐与前驱依赖分析',
+      card2Title: '📐 二维动态规划状态表 dp[i][j]',
+      codeLanguages: REGEX_MATCHING_STAGE3_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const s = String(inputs['input-s'] ?? 'aab');
+        const p = String(inputs['input-pat'] ?? inputs['input-p'] ?? 'c*a*b');
+        return buildStringDp2DSteps('regex', s, p);
+      },
+      renderCanvas: (container, step) => renderStringDp2DCard1(container, step),
+      renderCustomMetrics: (container, step) => renderStringDp2DCard2(container, step),
+    },
+    {
+      id: 'stage-4',
+      name: '阶段 4: 完全背包·斜率优化',
+      shortName: '斜率优化',
+      num: 4,
+      timeBadge: 'O(N·M) 最优',
+      theme: 'bg-amber',
+      badge: {
+        mode: '完全背包 · 斜率优化',
+        complexity: 'O(N · M) · O(N · M)',
+      },
+      card1Title: '🔤 字符串与模式串字符指示器',
+      card2Title: '📐 二维状态矩阵 dp[i][j] (自底向上填表)',
+      codeLanguages: REGEX_MATCHING_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const s = String(inputs['input-s'] ?? 'aab');
+        const p = String(inputs['input-pat'] ?? inputs['input-p'] ?? 'c*a*b');
+        return buildRegexMatchingSteps(s, p);
+      },
+      renderCanvas: (container, step) => renderRegexStringMatcher(container, step),
+      renderCustomMetrics: (container, step) => renderRegexDpMatrix(container, step),
+    },
+  ],
   card1Title: '🔤 字符串与模式串字符指示器',
   card2Title: '📐 二维状态矩阵 dp[i][j] (自底向上填表)',
   card2Desc: '展示星号 * 如何通过完全背包斜率优化消解内层重复循环',
@@ -242,68 +425,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<RegexMatchingStep>(
     const p = inputs['input-p'] || 'c*a*b';
     return buildRegexMatchingSteps(s, p);
   },
-  renderCanvas: (container, step) => {
-    const sBadges = step.s
-      .split('')
-      .map((ch, idx) => {
-        const isCur = step.i === idx;
-        const bg = isCur ? '#f59e0b' : '#1e293b';
-        const col = isCur ? '#0f172a' : '#cbd5e1';
-        return `<span style="background:${bg}; color:${col}; padding:4px 8px; border-radius:4px; font-weight:800; font-family:monospace; margin:0 2px;">${ch} [${idx}]</span>`;
-      })
-      .join('');
-
-    const pBadges = step.p
-      .split('')
-      .map((ch, idx) => {
-        const isCur = step.j === idx;
-        const bg = isCur ? '#38bdf8' : '#1e293b';
-        const col = isCur ? '#0f172a' : '#cbd5e1';
-        return `<span style="background:${bg}; color:${col}; padding:4px 8px; border-radius:4px; font-weight:800; font-family:monospace; margin:0 2px;">${ch} [${idx}]</span>`;
-      })
-      .join('');
-
-    container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:16px; width:100%; height:100%; justify-content:center; align-items:center; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:12px; color:#94a3b8; font-weight:700;">文本串 s:</span>
-          ${sBadges || '<span style="color:#64748b;">(空串)</span>'}
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:12px; color:#94a3b8; font-weight:700;">模式串 p:</span>
-          ${pBadges || '<span style="color:#64748b;">(空串)</span>'}
-        </div>
-      </div>
-    `;
-  },
-  renderCustomMetrics: (container, step) => {
-    const rowsHtml = step.dp
-      .map((row, rIdx) => {
-        const cells = row
-          .map((val, cIdx) => {
-            const isCur = step.i === rIdx && step.j === cIdx;
-            const bg = isCur ? '#f59e0b' : val ? '#065f46' : '#1e293b';
-            const col = isCur ? '#0f172a' : val ? '#34d399' : '#64748b';
-            return `
-              <div style="width:24px; height:20px; display:flex; justify-content:center; align-items:center; background:${bg}; color:${col}; font-size:9px; font-weight:700; border-radius:2px; margin:1px;">
-                ${val ? 'T' : 'F'}
-              </div>
-            `;
-          })
-          .join('');
-        return `<div style="display:flex; align-items:center;"><span style="font-size:8px; color:#64748b; width:16px;">i=${rIdx}</span>${cells}</div>`;
-      })
-      .join('');
-
-    container.innerHTML = `
-      <div style="width:100%; padding:4px 8px; box-sizing:border-box;">
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">DP 匹配状态网格 (T=true, F=false)</div>
-        <div style="display:flex; flex-direction:column; max-height:110px; overflow:auto; background:#0b1329; padding:4px; border-radius:4px;">
-          ${rowsHtml}
-        </div>
-      </div>
-    `;
-  },
+  renderCanvas: (container, step) => renderRegexStringMatcher(container, step),
+  renderCustomMetrics: (container, step) => renderRegexDpMatrix(container, step),
 });
 
 export const RegexMatchingVisualizer = Visualizer;

@@ -52,28 +52,28 @@ export function buildTarjanBridgeSteps(preset: string = 'classic_5node'): Bridge
 
   // 精准 22 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 43, java: 33, python: 5, javascript: 9 },
-    initTimer: { cpp: 44, java: 34, python: 6, javascript: 10 },
-    initArrays: { cpp: 45, java: 35, python: 7, javascript: 11 },
-    outerLoop: { cpp: 49, java: 39, python: 35, javascript: 35 },
-    outerCheckDfn: { cpp: 50, java: 40, python: 36, javascript: 36 },
-    tarjanEnter: { cpp: 19, java: 12, python: 12, javascript: 16 },
-    stampDfnLow: { cpp: 20, java: 13, python: 15, javascript: 17 },
-    initChildren: { cpp: 21, java: 14, python: 16, javascript: 18 },
-    loopNeighbors: { cpp: 23, java: 16, python: 18, javascript: 20 },
-    checkFather: { cpp: 24, java: 17, python: 19, javascript: 21 },
-    checkUnvisited: { cpp: 26, java: 19, python: 21, javascript: 22 },
-    incChildren: { cpp: 27, java: 20, python: 22, javascript: 23 },
-    recurseDfs: { cpp: 28, java: 21, python: 23, javascript: 24 },
-    updateLowTree: { cpp: 29, java: 22, python: 24, javascript: 25 },
-    checkNonRootCut: { cpp: 32, java: 24, python: 25, javascript: 26 },
-    markCutNode: { cpp: 32, java: 24, python: 26, javascript: 26 },
-    checkBridge: { cpp: 35, java: 25, python: 27, javascript: 27 },
-    markBridge: { cpp: 35, java: 25, python: 28, javascript: 27 },
-    updateLowBack: { cpp: 37, java: 27, python: 30, javascript: 29 },
-    checkRootCut: { cpp: 40, java: 30, python: 32, javascript: 32 },
-    markRootCut: { cpp: 40, java: 30, python: 33, javascript: 32 },
-    returnDone: { cpp: 52, java: 42, python: 39, javascript: 38 },
+    entry: { cpp: 36, java: 33, python: 5, javascript: 9 },
+    initTimer: { cpp: 37, java: 34, python: 6, javascript: 10 },
+    initArrays: { cpp: 38, java: 35, python: 7, javascript: 11 },
+    outerLoop: { cpp: 42, java: 39, python: 35, javascript: 35 },
+    outerCheckDfn: { cpp: 43, java: 40, python: 36, javascript: 36 },
+    tarjanEnter: { cpp: 12, java: 12, python: 12, javascript: 16 },
+    stampDfnLow: { cpp: 13, java: 13, python: 15, javascript: 17 },
+    initChildren: { cpp: 14, java: 14, python: 16, javascript: 18 },
+    loopNeighbors: { cpp: 16, java: 16, python: 18, javascript: 20 },
+    checkFather: { cpp: 17, java: 17, python: 19, javascript: 21 },
+    checkUnvisited: { cpp: 19, java: 19, python: 21, javascript: 22 },
+    incChildren: { cpp: 20, java: 20, python: 22, javascript: 23 },
+    recurseDfs: { cpp: 21, java: 21, python: 23, javascript: 24 },
+    updateLowTree: { cpp: 22, java: 22, python: 24, javascript: 25 },
+    checkNonRootCut: { cpp: 25, java: 24, python: 25, javascript: 26 },
+    markCutNode: { cpp: 25, java: 24, python: 26, javascript: 26 },
+    checkBridge: { cpp: 28, java: 25, python: 27, javascript: 27 },
+    markBridge: { cpp: 28, java: 25, python: 28, javascript: 27 },
+    updateLowBack: { cpp: 30, java: 27, python: 30, javascript: 29 },
+    checkRootCut: { cpp: 33, java: 30, python: 32, javascript: 32 },
+    markRootCut: { cpp: 33, java: 30, python: 33, javascript: 32 },
+    returnDone: { cpp: 45, java: 42, python: 38, javascript: 38 },
   };
 
   function makeStep(
@@ -324,10 +324,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
       : '<span style="font-size:10.5px; color:#64748b;">(暂未发现桥边)</span>';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🌉 无向图拓扑与连通瓶颈</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🌉 无向图拓扑与连通瓶颈</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前探索节点: <b style="color: #38bdf8;">Node ${step.curNode || '无'}</b>
           </span>
         </div>
@@ -340,9 +340,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
         </div>
 
         <!-- 底部关键割裂舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🛡️ 割点与割边关键割裂舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🛡️ 割点与割边关键割裂舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               割点: <b>${step.cutNodes.length}</b> 个 | 桥边: <b>${step.bridgeEdges.length}</b> 条
             </div>
@@ -350,11 +350,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
 
           <div style="display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 10.5px; color: #94a3b8; width: 60px; font-weight: 700;">割点列表:</span>
+              <span style="font-size: 10.5px; color: #64748b; width: 60px; font-weight: 700;">割点列表:</span>
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">${cutBadges}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 10.5px; color: #94a3b8; width: 60px; font-weight: 700;">割边列表:</span>
+              <span style="font-size: 10.5px; color: #64748b; width: 60px; font-weight: 700;">割边列表:</span>
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">${bridgeBadges}</div>
             </div>
           </div>
@@ -372,13 +372,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
           const val = map[idx];
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
           const displayVal = val === null || val === undefined ? '_' : typeof val === 'boolean' ? (val ? 'T' : 'F') : val;
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">N[${idx}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">N[${idx}]</span>
               <span style="line-height: 1.1;">${displayVal}</span>
             </div>
           `;
@@ -401,8 +401,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
     const cutRow = renderRow('isCut[] (割点)', cutMap, 'isCut', '#ef4444');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${dfnRow}
           ${lowRow}
           ${cutRow}

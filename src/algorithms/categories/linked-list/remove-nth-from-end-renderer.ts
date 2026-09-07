@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   REMOVE_NTH_FROM_END_PROBLEM_HTML,
@@ -23,7 +24,7 @@ export interface RNStep {
   removedIndex: number; // -1 表示未删除
   action: 'init' | 'fast_advance' | 'move_together' | 'delete_node' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function parseValues(input: string): number[] {
@@ -38,6 +39,14 @@ export function buildRNSteps(values: number[], n: number): RNStep[] {
   const steps: RNStep[] = [];
   const len = values.length;
 
+  const lines = {
+    init: { java: [2, 5], cpp: [4, 7], python: [3, 5], javascript: [2, 4] },
+    fastAdvance: { java: [8, 9], cpp: [8, 9], python: [7, 8], javascript: [6, 7] },
+    moveTogether: { java: [13, 15], cpp: [11, 13], python: [10, 12], javascript: [9, 11] },
+    deleteNode: { java: 19, cpp: [16, 17], python: 14, javascript: 13 },
+    done: { java: 20, cpp: 18, python: 15, javascript: 14 },
+  };
+
   if (len === 0 || n > len || n <= 0) {
     steps.push({
       values: [...values],
@@ -46,7 +55,7 @@ export function buildRNSteps(values: number[], n: number): RNStep[] {
       removedIndex: -1,
       action: 'done',
       message: '输入不合法：链表为空或 n 超过链表总长度',
-      codeLine: 1,
+      codeLine: lines.done,
     });
     return steps;
   }
@@ -61,7 +70,7 @@ export function buildRNSteps(values: number[], n: number): RNStep[] {
     removedIndex: -1,
     action: 'init',
     message: `创建虚拟头节点 dummyHead 指向 head，fast = slow = dummyHead。准备让 fast 先走 ${n + 1} 步建立定距窗口。`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   // 2. fast 先走 n + 1 步 (从 -1 走到 n-1，再走到 n)
@@ -74,7 +83,7 @@ export function buildRNSteps(values: number[], n: number): RNStep[] {
       removedIndex: -1,
       action: 'fast_advance',
       message: `① fast 先行第 ${i + 1} / ${n + 1} 步：fast 移动到 ${fast >= len ? 'null' : `节点 ${values[fast]}`}`,
-      codeLine: 8,
+      codeLine: lines.fastAdvance,
     });
   }
 
@@ -89,7 +98,7 @@ export function buildRNSteps(values: number[], n: number): RNStep[] {
       removedIndex: -1,
       action: 'move_together',
       message: `② 同步平移：fast 和 slow 同时前进 1 步 (保持间距)。fast=${fast >= len ? 'null' : `节点 ${values[fast]}`}, slow=${slow === -1 ? 'dummyHead' : `节点 ${values[slow]}`}`,
-      codeLine: 13,
+      codeLine: lines.moveTogether,
     });
   }
 
@@ -106,7 +115,7 @@ export function buildRNSteps(values: number[], n: number): RNStep[] {
     removedIndex: targetIdx,
     action: 'delete_node',
     message: `③ 跨越删除：fast 已到达末尾 null，slow.next 指向待删除的倒数第 ${n} 个节点 (节点 ${targetVal})。执行 slow.next = slow.next.next 完成删除！`,
-    codeLine: 18,
+    codeLine: lines.deleteNode,
   });
 
   // 5. done
@@ -117,7 +126,7 @@ export function buildRNSteps(values: number[], n: number): RNStep[] {
     removedIndex: targetIdx,
     action: 'done',
     message: `🎉 删除完成！返回 dummyHead.next (新头节点 ${nextVals.length > 0 ? `节点 ${nextVals[0]}` : 'null'})`,
-    codeLine: 19,
+    codeLine: lines.done,
   });
 
   return steps;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 多重背包朴素枚举 (洛谷 P1776 宝物筛选) - 声明式 4-Card 沙盘渲染器
  * 核心：三重循环枚举每种物品件数 k，空间压缩倒序枚举容量 j
  * 架构重构：支持 4 语言全真代码高亮流转、动态装载方案回溯与双层交互沙盘
@@ -9,6 +9,22 @@ import { registerAlgorithm } from '../../../../core/registry';
 import { KNAPSACK_075_PROBLEMS } from './knapsack-075-problem-content';
 import { HighlightTarget } from '../../../../core/code-panel';
 import { renderKnapsackDpMatrix } from '../../../../core/renderers/knapsack-sandbox-stage';
+import {
+  BOUNDED_NAIVE_STAGE1_CODE_LANGUAGES,
+  BOUNDED_NAIVE_STAGE2_CODE_LANGUAGES,
+  BOUNDED_NAIVE_STAGE3_CODE_LANGUAGES,
+} from './knapsack-075-stage-codes';
+import {
+  buildBoundedNaiveRecursionSteps,
+  buildBoundedNaiveMemoSteps,
+  buildBoundedNaive2DSteps,
+  renderSpecialRecursionCard1,
+  renderSpecialMemoCard1,
+  renderSpecialMemoCard2,
+  renderSpecial2DCard1,
+  renderSpecial2DCard2,
+} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
+import { RecursionTreeAdapter } from '../../../../core/renderers/recursion-tree-adapter';
 
 export interface BoundedNaiveTake {
   itemIdx: number;
@@ -41,30 +57,21 @@ export interface BoundedKnapsackNaiveStep {
   metrics?: Record<string, any>;
 }
 
-export function buildBoundedKnapsackNaiveSteps(inputs: Record<string, any>): BoundedKnapsackNaiveStep[] {
-  const t = Math.max(0, parseInt(inputs['input-t'], 10) || 0);
-  const parseList = (str: string) =>
-    (str || '')
-      .split(/[,，\s]+/)
-      .map((x) => parseInt(x.trim(), 10))
-      .filter((x) => !isNaN(x));
-
-  const vList = parseList(inputs['input-v']);
-  const wList = parseList(inputs['input-w']);
-  const cList = parseList(inputs['input-c']);
-
+export function buildBoundedKnapsackNaiveSteps(inputs: Record<string, any> = {}): BoundedKnapsackNaiveStep[] {
+  const { t, vList, wList, cList } = parseNaiveInputs(inputs);
   const n = Math.min(vList.length, wList.length, cList.length);
   const steps: BoundedKnapsackNaiveStep[] = [];
   const dp = new Array(t + 1).fill(0);
   let bestTakesForCapacity: BoundedNaiveTake[][] = Array.from({ length: t + 1 }, () => []);
 
   const lines = {
+    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
     initDp: { java: 3, cpp: 3, python: 3, javascript: 3 },
     itemLoop: { java: 4, cpp: 4, python: 4, javascript: 4 },
     capLoop: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    countLoop: { java: 6, cpp: 6, python: 9, javascript: 6 },
-    updateDp: { java: 7, cpp: 7, python: 10, javascript: 7 },
-    returnAns: { java: 11, cpp: 11, python: 12, javascript: 11 },
+    countLoop: { java: 6, cpp: 6, python: 7, javascript: 6 },
+    updateDp: { java: 7, cpp: 7, python: 8, javascript: 7 },
+    returnAns: { java: 11, cpp: 11, python: 10, javascript: 11 },
   };
 
   const makeStep = (data: Partial<BoundedKnapsackNaiveStep> & {
@@ -100,12 +107,23 @@ export function buildBoundedKnapsackNaiveSteps(inputs: Record<string, any>): Bou
     };
   };
 
-  // 1. 初始化
+  // 1. 函数入口
   steps.push(
     makeStep({
       status: 'init',
-      message: `🏁 初始化多重背包沙盘：背包总容量 t=${t}，共有 ${n} 种可拆选宝物。`,
+      message: `🏁 初始化多重背包算法：进入 compute 函数，背包总容量 t=${t}，共有 ${n} 种可拆选宝物。`,
       log: `init: t=${t}, n=${n}`,
+      codeLine: lines.entry,
+      selectedTakes: [],
+    })
+  );
+
+  // 2. 初始化 DP 数组
+  steps.push(
+    makeStep({
+      status: 'init',
+      message: `📊 初始化 DP 数组：分配 dp[0..${t}] 空间，初值全为 0。准备开启三重朴素循环。`,
+      log: `initDp: dp[0..${t}] = 0`,
       codeLine: lines.initDp,
       selectedTakes: [],
     })
@@ -229,7 +247,25 @@ export function buildBoundedKnapsackNaiveSteps(inputs: Record<string, any>): Bou
   return steps;
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackNaiveStep>({
+export function parseNaiveInputs(inputs: Record<string, any> = {}) {
+  const rawT = inputs?.['input-t'];
+  const t = rawT !== undefined && rawT !== '' ? Math.max(0, parseInt(String(rawT), 10) || 0) : 10;
+  const parseList = (val: any, fallback: number[]) => {
+    if (val === undefined || val === null || val === '') return fallback;
+    const list = String(val)
+      .split(/[,，\s]+/)
+      .map((x) => parseInt(x.trim(), 10))
+      .filter((x) => !isNaN(x));
+    return list.length > 0 ? list : fallback;
+  };
+
+  const vList = parseList(inputs?.['input-v'], [3, 4, 7]);
+  const wList = parseList(inputs?.['input-w'], [2, 3, 5]);
+  const cList = parseList(inputs?.['input-c'], [2, 3, 2]);
+  return { t, vList, wList, cList };
+}
+
+const { template, Visualizer } = createDeclarativeVisualizer<any>({
   id: 'bounded-knapsack-naive',
   name: '多重背包朴素枚举 (洛谷 P1776 宝物筛选)',
   category: 'dynamic-programming',
@@ -239,121 +275,392 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackNaiv
   },
   card1Title: '📦 宝物库品类陈列与实时背包载荷舱',
   card2Title: '📈 动态规划收益向量 dp[j] 监视器',
-  card2Desc: '展示三重循环枚举每件物品拿取件数 k 时，状态在倒序容量表上的更新演进',
+  card2Desc: '展示三重循环朴素枚举每种宝物件数 k 状态转移过程与倒序容量空间压缩',
   legend: [
     { label: '未装入宝物', color: '#475569' },
-    { label: '已入选背包宝物', color: '#10b981' },
-    { label: '正在试算的件数', color: '#38bdf8' },
+    { label: '已入选宝物', color: '#10b981' },
+    { label: '当前考察宝物', color: '#818cf8' },
   ],
   inputs: [
-    { id: 'input-t', label: '容量 t:', type: 'number', defaultValue: 15, width: '55px' },
-    { id: 'input-v', label: '价值 v:', type: 'text', defaultValue: '3, 4, 7, 8', width: '110px' },
-    { id: 'input-w', label: '重量 w:', type: 'text', defaultValue: '2, 3, 5, 6', width: '110px' },
-    { id: 'input-c', label: '数量 c:', type: 'text', defaultValue: '2, 3, 2, 2', width: '110px' },
+    { id: 'input-t', label: 't:', type: 'number', defaultValue: 10, width: '42px' },
+    { id: 'input-v', label: 'v:', type: 'text', defaultValue: '3, 4, 7', width: '70px' },
+    { id: 'input-w', label: 'w:', type: 'text', defaultValue: '2, 3, 5', width: '70px' },
+    { id: 'input-c', label: 'c:', type: 'text', defaultValue: '2, 3, 2', width: '70px' },
   ],
   presets: [
     {
-      label: '洛谷经典案例 (t=15, 4种宝物, Ans=21)',
-      values: { 'input-t': 15, 'input-v': '3, 4, 7, 8', 'input-w': '2, 3, 5, 6', 'input-c': '2, 3, 2, 2' },
+      label: '洛谷经典案例 (t=10, 3种宝物, Ans=14)',
+      values: { 'input-t': 10, 'input-v': '3, 4, 7', 'input-w': '2, 3, 5', 'input-c': '2, 3, 2' },
     },
     {
-      label: '高数量宝物测试 (t=20, Ans=23)',
-      values: { 'input-t': 20, 'input-v': '3, 4, 7, 8', 'input-w': '2, 3, 5, 9', 'input-c': '2, 3, 2, 1' },
+      label: '小容量多件案例 (t=8, v=[2,3], w=[2,3], c=[3,2], Ans=8)',
+      values: { 'input-t': 8, 'input-v': '2, 3', 'input-w': '2, 3', 'input-c': '3, 2' },
     },
   ],
   metrics: [
-    { id: 'metric-cur-item', label: '当前宝物', color: '#f59e0b' },
-    { id: 'metric-cur-k', label: '选取件数 k', color: '#8b5cf6' },
-    { id: 'metric-cur-j', label: '当前容量 j', color: '#38bdf8' },
+    { id: 'metric-cur-item', label: '当前宝物品类', color: '#818cf8' },
+    { id: 'metric-cur-k', label: '当前尝试件数 k', color: '#f59e0b' },
+    { id: 'metric-cur-j', label: '当前考察容量 j', color: '#38bdf8' },
     { id: 'metric-max-val', label: '最大总价值', color: '#10b981' },
   ],
   codeLanguages: KNAPSACK_075_PROBLEMS['bounded-knapsack-naive'].codeLanguages,
   problemHtml: KNAPSACK_075_PROBLEMS['bounded-knapsack-naive'].problemHtml,
   analysisHtml: KNAPSACK_075_PROBLEMS['bounded-knapsack-naive'].analysisHtml,
+  defaultStage: 'stage-4',
   buildSteps: buildBoundedKnapsackNaiveSteps,
+  stages: [
+    {
+      id: 'stage-1',
+      name: '阶段 1: 暴力递归',
+      shortName: '递归',
+      num: 1,
+      timeBadge: 'O(Π(c_i+1))',
+      theme: 'bg-blue',
+      badge: {
+        mode: '多重背包 · 递归暴力搜索',
+        complexity: 'O(Π(c_i+1)) · O(N) 栈深',
+      },
+      card1Title: '🌿 递归分支展开与运行时调用栈',
+      card2Title: '🌲 宝物筛选枚举递归决策树',
+      codeLanguages: BOUNDED_NAIVE_STAGE1_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, vList, wList, cList } = parseNaiveInputs(inputs);
+        return buildBoundedNaiveRecursionSteps(t, vList, wList, cList);
+      },
+      renderCanvas: (container, step) => {
+        const infoHtml = `
+          <div style="background:rgba(15, 23, 42, 0.7); border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; font-weight:700; color:#38bdf8;">
+                ${step.i < step.n ? `正在决策宝物 #${step.i + 1} (重:${step.wList[step.i]}, 价:${step.vList[step.i]}, 上限:${step.cList[step.i]})` : '所有宝物决策完成'}
+              </span>
+              <span style="font-size:11px; color:#38bdf8;">剩余容量: <b>${step.remCap}</b></span>
+            </div>
+            <div style="font-size:11px; color:#374151;">决策: <b style="color:#f59e0b;">${step.decision}</b></div>
+            <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
+          </div>
+        `;
+        renderSpecialRecursionCard1(
+          container,
+          `dfs(i=${step.i}, remCap=${step.remCap})`,
+          step.callStack || [],
+          infoHtml
+        );
+      },
+      renderCustomMetrics: (container, step) => {
+        RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId);
+      },
+    },
+    {
+      id: 'stage-2',
+      name: '阶段 2: 记忆化搜索',
+      shortName: '记忆化',
+      num: 2,
+      timeBadge: 'O(N·W·c)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '多重背包 · 记忆化搜索',
+        complexity: 'O(N · W · c) · O(N · W) 备忘录',
+      },
+      card1Title: '💾 备忘录探查追踪 (Cache Hit/Miss)',
+      card2Title: '🎯 2D 备忘录缓存热力矩阵 memo[i][remCap]',
+      codeLanguages: BOUNDED_NAIVE_STAGE2_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, vList, wList, cList } = parseNaiveInputs(inputs);
+        return buildBoundedNaiveMemoSteps(t, vList, wList, cList);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecialMemoCard1(
+          container,
+          `dfsMemo(i=${step.i}, remCap=${step.remCap})`,
+          step.memoHit,
+          step.hitCount,
+          step.missCount,
+          step.decision,
+          step.message,
+          step.cachedVal
+        ),
+      renderCustomMetrics: (container, step) =>
+        renderSpecialMemoCard2(
+          container,
+          '备忘录矩阵 memo[i][remCap]',
+          step.memoGrid,
+          step.i,
+          step.remCap
+        ),
+    },
+    {
+      id: 'stage-3',
+      name: '阶段 3: 二维动态规划',
+      shortName: '二维DP',
+      num: 3,
+      timeBadge: 'O(N·W·c)',
+      theme: 'bg-emerald',
+      badge: {
+        mode: '多重背包 · 严格二维表递推',
+        complexity: 'O(N · W · c) · O(N · W)',
+      },
+      card1Title: '📐 状态转移决策推导',
+      card2Title: '📊 严格二维位置依赖状态表 dp[i][j]',
+      codeLanguages: BOUNDED_NAIVE_STAGE3_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, vList, wList, cList } = parseNaiveInputs(inputs);
+        return buildBoundedNaive2DSteps(t, vList, wList, cList);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecial2DCard1(
+          container,
+          `dp[${step.curI}][${step.curJ}]`,
+          `${step.dpTable[step.curI]?.[step.curJ] ?? 0}`,
+          step.depCells || [],
+          step.decision,
+          step.message
+        ),
+      renderCustomMetrics: (container, step) =>
+        renderSpecial2DCard2(
+          container,
+          '严格二维状态表 dp[i][j]',
+          step.dpTable,
+          step.curI,
+          step.curJ,
+          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
+        ),
+    },
+    {
+      id: 'stage-4',
+      name: '阶段 4: 空间压缩',
+      shortName: '空间优化',
+      num: 4,
+      timeBadge: 'O(W) 空间',
+      theme: 'bg-amber',
+      badge: {
+        mode: '多重背包 · 空间压缩三重循环',
+        complexity: 'O(W · Σc) · O(W)',
+      },
+      card1Title: '📦 宝物库品类陈列与实时背包载荷舱',
+      card2Title: '📈 动态规划收益向量 dp[j] 监视器',
+      codeLanguages: KNAPSACK_075_PROBLEMS['bounded-knapsack-naive'].codeLanguages,
+      buildSteps: buildBoundedKnapsackNaiveSteps,
+      renderCanvas: (container, step) => {
+        const selected = step.selectedTakes || [];
+        const usedWeight = selected.reduce((s: any, it: any) => s + it.takeCount * it.unitWeight, 0);
+        const totalVal = selected.reduce((s: any, it: any) => s + it.takeCount * it.unitVal, 0);
+        const ratio = Math.min(100, Math.round((usedWeight / Math.max(1, step.totalCapacity)) * 100));
+
+        const itemsListHtml = step.vList
+          .map((val: any, idx: number) => {
+            const isCur = idx === step.itemIndex;
+            const w = step.wList[idx];
+            const c = step.cList[idx];
+            const takenPlan = selected.find((it: any) => it.itemIdx === idx + 1);
+            const finalTakes = takenPlan ? takenPlan.takeCount : 0;
+            const bg = finalTakes > 0
+              ? 'rgba(6, 95, 70, 0.45)'
+              : isCur
+              ? 'rgba(30, 27, 75, 0.7)'
+              : 'rgba(15, 23, 42, 0.7)';
+            const border = finalTakes > 0 ? '#10b981' : isCur ? '#818cf8' : '#334155';
+
+            let badge = '<span style="color:#64748b; font-size:9.5px;">⚪ 备选</span>';
+            if (finalTakes > 0) {
+              badge = `<span style="background:#059669; color:#fff; font-size:9.5px; padding:1px 6px; border-radius:3px; font-weight:bold;">✔ 装入 ${finalTakes} 件</span>`;
+            } else if (isCur && step.k > 0) {
+              badge = `<span style="background:#2563eb; color:#fff; font-size:9.5px; padding:1px 6px; border-radius:3px; font-weight:bold;">🔍 试算 k=${step.k}</span>`;
+            }
+
+            return `
+              <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; transition:all 0.2s ease;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:#374151;">宝物 #${idx + 1}</span>
+                  ${badge}
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
+                  <span style="color:#64748b;">价值: <b style="color:#10b981;">+${val}</b></span>
+                  <span style="color:#64748b;">重量: <b style="color:#38bdf8;">${w}</b></span>
+                </div>
+                <div style="font-size:9.5px; color:#64748b;">上限: <b>${c}</b> 件</div>
+              </div>
+            `;
+          })
+          .join('');
+
+        const slotsHtml = selected.length > 0
+          ? selected.map((it: any) => `
+              <div style="background:rgba(6, 95, 70, 0.35); border:1px solid #10b981; border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="color:#a7f3d0; font-weight:800; font-size:11px;">宝物 #${it.itemIdx}</span>
+                  <span style="font-size:10px; color:#374151; background:#065f46; padding:1px 5px; border-radius:3px;">×${it.takeCount}</span>
+                </div>
+                <div style="display:flex; gap:10px; font-size:11px;">
+                  <span style="color:#64748b;">重:<b>${it.takeCount * it.unitWeight}</b></span>
+                  <span style="color:#10b981; font-weight:700;">+${it.takeCount * it.unitVal}</span>
+                </div>
+              </div>
+            `).join('')
+          : `<div style="color:#64748b; font-size:11px; text-align:center; padding:20px 0; border:1px dashed #334155; border-radius:6px;">(背包当前为空，等待容量决策...)</div>`;
+
+        container.innerHTML = `
+          <div style="display:grid; grid-template-columns:1.35fr 1fr; gap:10px; width:100%; height:100%; box-sizing:border-box; padding:6px; min-height:0; overflow:hidden;">
+            <!-- 左舱：宝物库品类陈列 -->
+            <div style="display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; min-height:0; overflow:hidden;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px; flex-shrink:0;">
+                <div style="font-size:11.5px; color:#374151; font-weight:800;">📦 宝物库品类陈列</div>
+                <div style="font-size:10.5px; color:#38bdf8; background:#e8f0fe; padding:2px 6px; border-radius:4px;">
+                  考察容量: <b>${step.j >= 0 ? step.j : '—'}</b> / ${step.totalCapacity}
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; overflow-y:auto; flex:1; align-content:start;">
+                ${itemsListHtml}
+              </div>
+            </div>
+
+            <!-- 右舱：实时背包载荷舱与总收益仪表 -->
+            <div style="display:flex; flex-direction:column; gap:8px; background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px; min-height:0; overflow:hidden;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px; flex-shrink:0;">
+                <span style="font-size:11.5px; font-weight:800; color:#374151;">🎒 实时背包载荷舱</span>
+                <span style="font-size:10.5px; color:#64748b;">已重: <b style="color:#38bdf8;">${usedWeight}</b> / ${step.totalCapacity}</span>
+              </div>
+
+              <!-- 背包负重刻度槽 -->
+              <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
+                <div style="width:100%; height:8px; background:#e8f0fe; border-radius:4px; overflow:hidden;">
+                  <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #3b82f6, #10b981); transition:width 0.25s ease;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:9.5px; color:#64748b;">
+                  <span>0</span>
+                  <span>负载: ${ratio}%</span>
+                  <span>${step.totalCapacity}</span>
+                </div>
+              </div>
+
+              <!-- 已装载宝物插槽清单 -->
+              <div style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+                <div style="font-size:10px; color:#64748b; font-weight:700;">已装入宝物项 (${selected.length}):</div>
+                ${slotsHtml}
+              </div>
+
+              <!-- 底部累计价值大卡 -->
+              <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                <span style="font-size:11px; font-weight:700; color:#a7f3d0;">背包累计价值:</span>
+                <span style="font-size:15px; font-weight:900; color:#10b981; font-family:monospace;">+${totalVal}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      },
+      renderCustomMetrics: (container, step) => {
+        renderKnapsackDpMatrix(container, {
+          ...step,
+          items: [],
+          currentGroupItems: [],
+          selectedItems: [],
+          groupIndex: -1,
+        }, `动态规划收益向量 dp[0..${step.totalCapacity}]`);
+      },
+    },
+  ],
   renderCanvas: (container, step) => {
     const selected = step.selectedTakes || [];
     const usedWeight = selected.reduce((s, it) => s + it.takeCount * it.unitWeight, 0);
     const totalVal = selected.reduce((s, it) => s + it.takeCount * it.unitVal, 0);
     const ratio = Math.min(100, Math.round((usedWeight / Math.max(1, step.totalCapacity)) * 100));
 
-    const itemsHtml = step.vList
-      .map((val, idx) => {
+    const itemsListHtml = step.vList
+      .map((val: any, idx: number) => {
         const isCur = idx === step.itemIndex;
         const w = step.wList[idx];
         const c = step.cList[idx];
-        const takenPlan = selected.find((it) => it.itemIdx === idx + 1);
+        const takenPlan = selected.find((it: any) => it.itemIdx === idx + 1);
         const finalTakes = takenPlan ? takenPlan.takeCount : 0;
         const bg = finalTakes > 0
-          ? 'rgba(6, 95, 70, 0.4)'
+          ? 'rgba(6, 95, 70, 0.45)'
           : isCur
           ? 'rgba(30, 27, 75, 0.7)'
-          : 'rgba(15, 23, 42, 0.6)';
+          : 'rgba(15, 23, 42, 0.7)';
         const border = finalTakes > 0 ? '#10b981' : isCur ? '#818cf8' : '#334155';
 
         let badge = '<span style="color:#64748b; font-size:9.5px;">⚪ 备选</span>';
         if (finalTakes > 0) {
-          badge = `<span style="background:#059669; color:#fff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">✔ 装入 ${finalTakes} 件</span>`;
+          badge = `<span style="background:#059669; color:#fff; font-size:9.5px; padding:1px 6px; border-radius:3px; font-weight:bold;">✔ 装入 ${finalTakes} 件</span>`;
         } else if (isCur && step.k > 0) {
-          badge = `<span style="background:#2563eb; color:#fff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">🔍 试算 k=${step.k}</span>`;
+          badge = `<span style="background:#2563eb; color:#fff; font-size:9.5px; padding:1px 6px; border-radius:3px; font-weight:bold;">🔍 试算 k=${step.k}</span>`;
         }
 
         return `
-          <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:8px 12px; min-width:130px; flex:1; max-width:200px; display:flex; flex-direction:column; gap:4px;">
+          <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; transition:all 0.2s ease;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11.5px; font-weight:700; color:#cbd5e1;">宝物 #${idx + 1}</span>
+              <span style="font-size:12px; font-weight:700; color:#374151;">宝物 #${idx + 1}</span>
               ${badge}
             </div>
             <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
-              <span style="color:#94a3b8;">价值: <b style="color:#10b981;">${val}</b></span>
-              <span style="color:#94a3b8;">单重: <b style="color:#38bdf8;">${w}</b></span>
+              <span style="color:#64748b;">价值: <b style="color:#10b981;">+${val}</b></span>
+              <span style="color:#64748b;">重量: <b style="color:#38bdf8;">${w}</b></span>
             </div>
-            <div style="font-size:9.5px; color:#94a3b8;">可取上限: <b>${c}</b> 件</div>
+            <div style="font-size:9.5px; color:#64748b;">上限: <b>${c}</b> 件</div>
           </div>
         `;
       })
       .join('');
 
-    const tagsHtml = selected.length > 0
-      ? selected.map((it) => `
-          <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:4px; padding:2px 8px; font-size:10.5px; display:inline-flex; align-items:center; gap:6px;">
-            <span style="color:#a7f3d0; font-weight:700;">宝物 #${it.itemIdx}</span>
-            <span style="color:#cbd5e1;">x ${it.takeCount} 件 (重:${it.takeCount * it.unitWeight})</span>
-            <span style="color:#34d399; font-weight:800;">价值:+${it.takeCount * it.unitVal}</span>
+    const slotsHtml = selected.length > 0
+      ? selected.map((it: any) => `
+          <div style="background:rgba(6, 95, 70, 0.35); border:1px solid #10b981; border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="color:#a7f3d0; font-weight:800; font-size:11px;">宝物 #${it.itemIdx}</span>
+              <span style="font-size:10px; color:#374151; background:#065f46; padding:1px 5px; border-radius:3px;">×${it.takeCount}</span>
+            </div>
+            <div style="display:flex; gap:10px; font-size:11px;">
+              <span style="color:#64748b;">重:<b>${it.takeCount * it.unitWeight}</b></span>
+              <span style="color:#10b981; font-weight:700;">+${it.takeCount * it.unitVal}</span>
+            </div>
           </div>
         `).join('')
-      : `<span style="color:#64748b; font-size:11px;">(背包当前为空，等待容量决策...)</span>`;
+      : `<div style="color:#64748b; font-size:11px; text-align:center; padding:20px 0; border:1px dashed #334155; border-radius:6px;">(背包当前为空，等待容量决策...)</div>`;
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-          <div style="font-size:12px; color:#94a3b8; font-weight:700;">📦 宝物库品类陈列 (多重背包·每种至多 c[i] 件)</div>
-          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
-            当前考察容量: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${step.totalCapacity}
+      <div style="display:grid; grid-template-columns:1.35fr 1fr; gap:10px; width:100%; height:100%; box-sizing:border-box; padding:6px; min-height:0; overflow:hidden;">
+        <!-- 左舱：宝物库品类陈列 -->
+        <div style="display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; min-height:0; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px; flex-shrink:0;">
+            <div style="font-size:11.5px; color:#374151; font-weight:800;">📦 宝物库品类陈列</div>
+            <div style="font-size:10.5px; color:#38bdf8; background:#e8f0fe; padding:2px 6px; border-radius:4px;">
+              考察容量: <b>${step.j >= 0 ? step.j : '—'}</b> / ${step.totalCapacity}
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; overflow-y:auto; flex:1; align-content:start;">
+            ${itemsListHtml}
           </div>
         </div>
 
-        <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center;">
-          ${itemsHtml}
-        </div>
+        <!-- 右舱：实时背包载荷舱与总收益仪表 -->
+        <div style="display:flex; flex-direction:column; gap:8px; background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px; min-height:0; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px; flex-shrink:0;">
+            <span style="font-size:11.5px; font-weight:800; color:#374151;">🎒 实时背包载荷舱</span>
+            <span style="font-size:10.5px; color:#64748b;">已重: <b style="color:#38bdf8;">${usedWeight}</b> / ${step.totalCapacity}</span>
+          </div>
 
-        <!-- 底部实时背包载荷舱 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🎒 实时背包载荷舱</span>
-            <div style="display:flex; gap:16px; font-size:11px;">
-              <span>已占重量: <b style="color:#38bdf8;">${usedWeight}</b> / ${step.totalCapacity}</span>
-              <span>背包累计价值: <b style="color:#10b981;">${totalVal}</b></span>
+          <!-- 背包负重刻度槽 -->
+          <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
+            <div style="width:100%; height:8px; background:#e8f0fe; border-radius:4px; overflow:hidden;">
+              <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #3b82f6, #10b981); transition:width 0.25s ease;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:9.5px; color:#64748b;">
+              <span>0</span>
+              <span>负载: ${ratio}%</span>
+              <span>${step.totalCapacity}</span>
             </div>
           </div>
 
-          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
-            <div style="width:${ratio}%; height:100%; background:linear-gradient(90deg, #3b82f6, #10b981); transition:width 0.25s ease;"></div>
+          <!-- 已装载宝物插槽清单 -->
+          <div style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:10px; color:#64748b; font-weight:700;">已装入宝物项 (${selected.length}):</div>
+            ${slotsHtml}
           </div>
 
-          <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
-            <span style="color:#94a3b8; font-size:10.5px; min-width:60px;">已装入宝物:</span>
-            ${tagsHtml}
+          <!-- 底部累计价值大卡 -->
+          <div style="background:rgba(6, 95, 70, 0.4); border:1px solid #10b981; border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <span style="font-size:11px; font-weight:700; color:#a7f3d0;">背包累计价值:</span>
+            <span style="font-size:15px; font-weight:900; color:#10b981; font-family:monospace;">+${totalVal}</span>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   DESIGN_LINKED_LIST_PROBLEM_HTML,
@@ -17,6 +18,15 @@ import {
 import template from './design-linked-list.html?raw';
 
 export type OpType = 'addAtHead' | 'addAtTail' | 'addAtIndex' | 'deleteAtIndex' | 'get' | 'init';
+
+export const DLL_CODE_LINES: Record<OpType, HighlightTarget> = {
+  init: { java: [5, 6, 7], cpp: [10, 11, 12], python: [7, 8, 9], javascript: [1, 2, 3] },
+  get: { java: 11, cpp: 14, python: 11, javascript: 6 },
+  addAtHead: { java: 18, cpp: 20, python: 20, javascript: 14 },
+  addAtTail: { java: 22, cpp: 21, python: 23, javascript: 18 },
+  addAtIndex: { java: 25, cpp: 22, python: 25, javascript: 21 },
+  deleteAtIndex: { java: 36, cpp: 32, python: 38, javascript: 31 },
+};
 
 export interface DLLNode {
   val: number;
@@ -32,7 +42,7 @@ export interface DLLStep {
   ret: number | string;
   size: number;
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export class LinkedListModel {
@@ -122,7 +132,7 @@ export function buildPresetSteps(): DLLStep[] {
     ret: 'void',
     size: 0,
     message: '初始化 MyLinkedList()：虚拟头节点 dummyHead 创建，size = 0',
-    codeLine: 6,
+    codeLine: DLL_CODE_LINES.init,
   });
 
   // 1. addAtHead(1)
@@ -136,7 +146,7 @@ export function buildPresetSteps(): DLLStep[] {
     ret: 'void',
     size: model.getSize(),
     message: 'addAtHead(1)：在头部插入节点 1，当前链表: [1]',
-    codeLine: 18,
+    codeLine: DLL_CODE_LINES.addAtHead,
   });
 
   // 2. addAtTail(3)
@@ -150,7 +160,7 @@ export function buildPresetSteps(): DLLStep[] {
     ret: 'void',
     size: model.getSize(),
     message: 'addAtTail(3)：在尾部追加节点 3，当前链表: [1, 3]',
-    codeLine: 22,
+    codeLine: DLL_CODE_LINES.addAtTail,
   });
 
   // 3. addAtIndex(1, 2)
@@ -164,7 +174,7 @@ export function buildPresetSteps(): DLLStep[] {
     ret: 'void',
     size: model.getSize(),
     message: 'addAtIndex(1, 2)：在索引 1 处插入节点 2，当前链表: [1, 2, 3]',
-    codeLine: 25,
+    codeLine: DLL_CODE_LINES.addAtIndex,
   });
 
   // 4. get(1) -> 2
@@ -178,7 +188,7 @@ export function buildPresetSteps(): DLLStep[] {
     ret: r1,
     size: model.getSize(),
     message: `get(1)：查询索引 1 处的值，返回 ${r1}`,
-    codeLine: 11,
+    codeLine: DLL_CODE_LINES.get,
   });
 
   // 5. deleteAtIndex(1)
@@ -192,7 +202,7 @@ export function buildPresetSteps(): DLLStep[] {
     ret: 'void',
     size: model.getSize(),
     message: 'deleteAtIndex(1)：删除索引 1 处的节点，当前链表: [1, 3]',
-    codeLine: 36,
+    codeLine: DLL_CODE_LINES.deleteAtIndex,
   });
 
   // 6. get(1) -> 3
@@ -206,7 +216,7 @@ export function buildPresetSteps(): DLLStep[] {
     ret: r2,
     size: model.getSize(),
     message: `get(1)：再次查询索引 1 处的值，返回 ${r2}`,
-    codeLine: 11,
+    codeLine: DLL_CODE_LINES.get,
   });
 
   return steps;
@@ -265,7 +275,7 @@ export class DesignLinkedListVisualizer extends StepVisualizer<DLLStep> {
           ret: 'void',
           size: 0,
           message: '重置链表为空状态',
-          codeLine: 6,
+          codeLine: DLL_CODE_LINES.init,
         },
       ];
       this.currentIndex = 0;
@@ -292,38 +302,33 @@ export class DesignLinkedListVisualizer extends StepVisualizer<DLLStep> {
     let ret: number | string = 'void';
     let hlIdx = -1;
     let hlKind: 'add' | 'del' | 'get' | '' = '';
-    let codeLine = 1;
+    const codeLine: HighlightTarget = DLL_CODE_LINES[op] || DLL_CODE_LINES.init;
 
     if (op === 'addAtHead') {
       this.currentModel.addAtHead(val);
       msg = `addAtHead(${val})：头部插入节点 ${val}`;
       hlIdx = 0;
       hlKind = 'add';
-      codeLine = 18;
     } else if (op === 'addAtTail') {
       this.currentModel.addAtTail(val);
       msg = `addAtTail(${val})：尾部追加节点 ${val}`;
       hlIdx = this.currentModel.getSize() - 1;
       hlKind = 'add';
-      codeLine = 22;
     } else if (op === 'addAtIndex') {
       const ok = this.currentModel.addAtIndex(idx, val);
       msg = ok ? `addAtIndex(${idx}, ${val})：索引 ${idx} 插入节点 ${val}` : `addAtIndex(${idx}, ${val})：索引越界忽略`;
       hlIdx = ok ? idx : -1;
       hlKind = ok ? 'add' : '';
-      codeLine = 25;
     } else if (op === 'deleteAtIndex') {
       const ok = this.currentModel.deleteAtIndex(idx);
       msg = ok ? `deleteAtIndex(${idx})：成功删除索引 ${idx} 处节点` : `deleteAtIndex(${idx})：索引无效无法删除`;
       hlIdx = ok ? idx : -1;
       hlKind = ok ? 'del' : '';
-      codeLine = 36;
     } else if (op === 'get') {
       ret = this.currentModel.get(idx);
       msg = `get(${idx})：获取索引 ${idx} 的值，结果为 ${ret}`;
       hlIdx = idx >= 0 && idx < this.currentModel.getSize() ? idx : -1;
       hlKind = 'get';
-      codeLine = 11;
     }
 
     const step: DLLStep = {

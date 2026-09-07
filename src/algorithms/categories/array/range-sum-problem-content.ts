@@ -116,7 +116,11 @@ export const RANGE_SUM_CODE_LANGUAGES: Record<string, string[]> = {
     '    for (let i = 0; i < n; i++) {',
     '        prefix[i + 1] = prefix[i] + arr[i];',
     '    }',
-    '    return queries.map(([L, R]) => prefix[R + 1] - prefix[L]);',
+    '    const results = [];',
+    '    for (const [L, R] of queries) {',
+    '        results.push(prefix[R + 1] - prefix[L]);',
+    '    }',
+    '    return results;',
     '};',
   ],
 };

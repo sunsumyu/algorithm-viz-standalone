@@ -59,20 +59,20 @@ export function buildEulerianCircuitSteps(preset: string = 'classic_4node'): Eul
 
   // 精准四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    solverInit: { cpp: 24, java: 7, python: 6, javascript: 5 },
-    allocGraph: { cpp: 24, java: 10, python: 7, javascript: 6 },
-    allocHead: { cpp: 24, java: 11, python: 10, javascript: 9 },
-    entry: { cpp: 39, java: 28, python: 34, javascript: 34 },
-    sortLoop: { cpp: 41, java: 29, python: 36, javascript: 35 },
-    sortAction: { cpp: 42, java: 29, python: 37, javascript: 35 },
-    startDfsCall: { cpp: 44, java: 30, python: 38, javascript: 36 },
-    dfsDef: { cpp: 30, java: 19, python: 26, javascript: 28 },
-    whileHead: { cpp: 32, java: 21, python: 28, javascript: 30 },
-    popEdge: { cpp: 33, java: 22, python: 29, javascript: 31 },
-    recurseDfs: { cpp: 34, java: 23, python: 31, javascript: 32 },
-    pushPath: { cpp: 36, java: 25, python: 32, javascript: 34 },
-    reversePath: { cpp: 45, java: 31, python: 39, javascript: 37 },
-    returnPath: { cpp: 46, java: 32, python: 39, javascript: 38 },
+    solverInit: { cpp: 17, java: 7, python: 6, javascript: 5 },
+    allocGraph: { cpp: 17, java: 10, python: 7, javascript: 6 },
+    allocHead: { cpp: 17, java: 11, python: 10, javascript: 9 },
+    entry: { cpp: 32, java: 28, python: 34, javascript: 34 },
+    sortLoop: { cpp: 34, java: 29, python: 36, javascript: 35 },
+    sortAction: { cpp: 35, java: 29, python: 37, javascript: 35 },
+    startDfsCall: { cpp: 37, java: 30, python: 38, javascript: 36 },
+    dfsDef: { cpp: 23, java: 19, python: 26, javascript: 28 },
+    whileHead: { cpp: 25, java: 21, python: 28, javascript: 30 },
+    popEdge: { cpp: 26, java: 22, python: 29, javascript: 31 },
+    recurseDfs: { cpp: 27, java: 23, python: 31, javascript: 32 },
+    pushPath: { cpp: 29, java: 25, python: 32, javascript: 34 },
+    reversePath: { cpp: 38, java: 31, python: 39, javascript: 37 },
+    returnPath: { cpp: 39, java: 32, python: 39, javascript: 38 },
   };
 
   function makeStep(
@@ -283,10 +283,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
       : '<span style="font-size: 10.5px; color: #64748b;">(回路构建中...)</span>';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🔄 有向图一笔画拓扑</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🔄 有向图一笔画拓扑</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             已遍历有向边: <b style="color: #10b981;">${step.visitedEdges.length}</b> / ${allEdges.length} 条
           </span>
         </div>
@@ -304,9 +304,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
         </div>
 
         <!-- 底部一笔画轨迹舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🛤️ 一笔画欧拉回路轨迹舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🛤️ 一笔画欧拉回路轨迹舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               当前递归深度: <b>${step.activeStack.length}</b>
             </div>
@@ -329,13 +329,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
         .map((idx) => {
           const val = arr[idx] ?? 0;
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">N[${idx}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">N[${idx}]</span>
               <span style="line-height: 1.1;">${val}</span>
             </div>
           `;
@@ -354,11 +354,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
     const degRow = renderRow('outDeg[] (出度)', step.degArray, 'deg', '#f59e0b');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${headRow}
           ${degRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #a855f7; font-size: 10.5px; font-weight: 700;">递归活跃栈:</span>
             <strong style="color: #a855f7; font-family: monospace; font-size: 11px;">[ ${step.activeStack.join(' ➔ ') || '空'} ]</strong>
           </div>

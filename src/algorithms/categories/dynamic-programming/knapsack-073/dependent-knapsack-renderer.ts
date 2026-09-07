@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 有依赖的背包(模版) (洛谷 P1064 金明的预算方案) - 声明式 4-Card 沙盘渲染器
  * 核心：主件 + 至多2个附件展开为 4 种互斥方案的分组背包
  * 架构重构：引入四语言代码联动、主附组合双层沙盘与实时预算载荷舱
@@ -44,26 +44,14 @@ export function buildDependentKnapsackSteps(
   const N = Math.max(0, budget);
   const dp = new Array(N + 1).fill(0);
 
-  // 1. 构建主件与附件关系
-  const isKing = new Array(m + 1).fill(false);
-  const fans: number[][] = Array.from({ length: m + 1 }, () => []);
-
-  for (let i = 1; i <= m; i++) {
-    const it = rawItems[i];
-    if (!it) continue;
-    if (it.q === 0) {
-      isKing[i] = true;
-    } else {
-      fans[it.q].push(i);
-    }
-  }
-
   const lines = {
-    init: { java: 7, cpp: 13, python: 3, javascript: 3 },
-    groupLoop: { java: 8, cpp: 14, python: 4, javascript: 4 },
-    capLoop: { java: 12, cpp: 19, python: 10, javascript: 10 },
-    updateDp: { java: 13, cpp: 21, python: 11, javascript: 11 },
-    returnAns: { java: 26, cpp: 33, python: 19, javascript: 19 },
+    init: { java: 7, cpp: 8, python: 1, javascript: 2 },
+    parseRelation: { java: 9, cpp: 11, python: 4, javascript: 4 },
+    initDp: { java: 8, cpp: 15, python: 3, javascript: 3 },
+    groupLoop: { java: 9, cpp: 16, python: 4, javascript: 4 },
+    capLoop: { java: 13, cpp: 21, python: 10, javascript: 10 },
+    updateDp: { java: 14, cpp: 23, python: 11, javascript: 11 },
+    returnAns: { java: 27, cpp: 35, python: 18, javascript: 24 },
   };
 
   function makeStep(data: Omit<DependentKnapsackStep, 'metrics'>): DependentKnapsackStep {
@@ -80,7 +68,7 @@ export function buildDependentKnapsackSteps(
     };
   }
 
-  // 初始化
+  // 1. 初始化入口
   steps.push(
     makeStep({
       groupIndex: -1,
@@ -91,9 +79,70 @@ export function buildDependentKnapsackSteps(
       combos: [],
       chosenCombo: '无',
       status: 'init',
-      message: `🛍️ 初始化金明的预算方案：总预算 N=${N}，商品数 M=${m}。建立主件与归属附件树形关系。`,
+      message: `🛍️ 初始化金明的预算方案：总预算 N=${N}，商品数 M=${m}。`,
       log: `init: budget=${N}, items=${m}`,
       codeLine: lines.init,
+    })
+  );
+
+  // 2. 构建主件与附件归属关系
+  const isKing = new Array(m + 1).fill(false);
+  const fans: number[][] = Array.from({ length: m + 1 }, () => []);
+
+  for (let i = 1; i <= m; i++) {
+    const it = rawItems[i];
+    if (!it) continue;
+    if (it.q === 0) {
+      isKing[i] = true;
+      steps.push(
+        makeStep({
+          groupIndex: -1,
+          mainId: i,
+          j: -1,
+          dp: [...dp],
+          maxVal: 0,
+          combos: [],
+          chosenCombo: '主件',
+          status: 'init',
+          message: `👑 识别商品 #${i} 为【主件】(价格=${it.cost}, 重要度=${it.val})，可挂载至多两个附件。`,
+          log: `parse: item #${i} is king`,
+          codeLine: lines.parseRelation,
+        })
+      );
+    } else {
+      fans[it.q].push(i);
+      steps.push(
+        makeStep({
+          groupIndex: -1,
+          mainId: it.q,
+          j: -1,
+          dp: [...dp],
+          maxVal: 0,
+          combos: [],
+          chosenCombo: '附件',
+          status: 'init',
+          message: `📎 识别商品 #${i} 为【附件】(归属主件 #${it.q}, 价格=${it.cost}, 重要度=${it.val})。`,
+          log: `parse: item #${i} is fan of king #${it.q}`,
+          codeLine: lines.parseRelation,
+        })
+      );
+    }
+  }
+
+  // 3. DP 数组初始化
+  steps.push(
+    makeStep({
+      groupIndex: -1,
+      mainId: -1,
+      j: -1,
+      dp: [...dp],
+      maxVal: 0,
+      combos: [],
+      chosenCombo: '无',
+      status: 'init',
+      message: `📊 初始化 DP 数组大小为 ${N + 1}，dp[0..${N}] 初始全为 0。准备开启分组背包决策。`,
+      log: `initDp: size=${N + 1}`,
+      codeLine: lines.initDp,
     })
   );
 
@@ -301,7 +350,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackSt
       ? step.combos
           .map((cb) => {
             const isChosen = step.chosenCombo.includes(cb.label);
-            let bg = 'rgba(15, 23, 42, 0.6)';
+            let bg = 'rgba(241, 245, 249, 0.9)';
             let border = '#334155';
             let badge = '<span style="color:#64748b; font-size:9px;">备选组合</span>';
 
@@ -314,11 +363,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackSt
             return `
               <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:8px 12px; min-width:130px; flex:1; max-width:200px; display:flex; flex-direction:column; gap:3px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:11px; font-weight:700; color:#cbd5e1;">${cb.label}</span>
+                  <span style="font-size:11px; font-weight:700; color:#374151;">${cb.label}</span>
                   ${badge}
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-top:2px;">
-                  <span style="color:#94a3b8;">耗资: <b style="color:#38bdf8;">${cb.cost}</b></span>
+                  <span style="color:#64748b;">耗资: <b style="color:#38bdf8;">${cb.cost}</b></span>
                   <span style="color:#10b981;">满足度: <b>+${cb.val}</b></span>
                 </div>
               </div>
@@ -328,10 +377,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackSt
       : `<span style="color:#64748b; font-size:11px;">(当前无展开方案或已决策完毕)</span>`;
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-          <div style="font-size:12px; color:#94a3b8; font-weight:700;">🛍️ 主件及其归属附件展开方案 (至多 4 种互斥组合)</div>
-          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+          <div style="font-size:12px; color:#64748b; font-weight:700;">🛍️ 主件及其归属附件展开方案 (至多 4 种互斥组合)</div>
+          <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
             当前考察预算: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${step.dp.length - 1}
           </div>
         </div>
@@ -341,9 +390,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<DependentKnapsackSt
         </div>
 
         <!-- 底部实时预算载荷舱 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🛍️ 金明预算载荷舱</span>
+            <span style="font-size:11.5px; font-weight:800; color:#374151;">🛍️ 金明预算载荷舱</span>
             <div style="display:flex; gap:16px; font-size:11px;">
               <span>当前决策组合: <b style="color:#10b981;">${step.chosenCombo}</b></span>
               <span>累计满足度: <b style="color:#f59e0b;">${step.maxVal}</b></span>

@@ -52,14 +52,14 @@ export function buildCouplesSteps(preset: string = 'two_cycles'): CouplesStep[] 
   }
 
   const lines = {
-    init: { cpp: 34, java: 26, python: 17, javascript: 2 },
-    build: { cpp: 18, java: 8, python: 4, javascript: 3 },
-    loop: { cpp: 39, java: 29, python: 20, javascript: 20 },
-    union: { cpp: 40, java: 30, python: 21, javascript: 21 },
-    find: { cpp: 20, java: 13, python: 9, javascript: 8 },
-    merge: { cpp: 27, java: 20, python: 13, javascript: 15 },
-    skip: { cpp: 26, java: 19, python: 12, javascript: 14 },
-    done: { cpp: 43, java: 32, python: 22, javascript: 24 },
+    init: { cpp: 27, java: 26, python: 17, javascript: 2 },
+    build: { cpp: 11, java: 8, python: 4, javascript: 3 },
+    loop: { cpp: 32, java: 29, python: 20, javascript: 20 },
+    union: { cpp: 33, java: 30, python: 21, javascript: 21 },
+    find: { cpp: 13, java: 13, python: 9, javascript: 8 },
+    merge: { cpp: 20, java: 20, python: 13, javascript: 15 },
+    skip: { cpp: 19, java: 19, python: 12, javascript: 14 },
+    done: { cpp: 36, java: 32, python: 22, javascript: 24 },
   };
 
   function makeStep(
@@ -220,7 +220,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
 
       return `
         <div style="display: flex; flex-direction: column; align-items: center; background: ${bg}; border: ${border}; border-radius: 6px; padding: 6px 10px; gap: 4px; min-width: 95px;">
-          <span style="font-size: 9px; color: #94a3b8; font-weight: 700;">🛋️ 沙发 #${i}</span>
+          <span style="font-size: 9px; color: #374151; font-weight: 700;">🛋️ 沙发 #${i}</span>
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 11px; font-weight: 800; color: #38bdf8; font-family: monospace;">${p1} <sub style="color:#f59e0b;">(C${c1})</sub></span>
             <span style="color: ${isMatched ? '#34d399' : '#64748b'}; font-size: 10px;">${isMatched ? '❤️' : '⚡'}</span>
@@ -255,7 +255,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
             <span style="color:#38bdf8;">置换环 根 C${root}</span>
             <span style="color:#a7f3d0;">规模 k=${k}</span>
           </div>
-          <div style="font-size:9.5px; color:#cbd5e1; font-family:monospace;">
+          <div style="font-size:9.5px; color: #374151; font-family:monospace;">
             包含情侣: [${members.map((c) => `C${c}`).join(', ')}]
           </div>
           <div style="font-size:9px; color:#f59e0b; font-weight:600;">
@@ -266,10 +266,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
     }).join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; background: #0b0f19; border-radius: 8px; padding: 12px; box-sizing: border-box; gap: 10px; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🛋️ 沙发就坐人员分布</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; background: #f8fafc; border-radius: 8px; padding: 12px; box-sizing: border-box; gap: 10px; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🛋️ 沙发就坐人员分布</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前最少交换: <b style="color: #ef4444; font-size: 12px;">${step.minSwaps} 次</b>
           </span>
         </div>
@@ -279,10 +279,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
         </div>
 
         <!-- 底部置换环分解舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🔄 置换环分解与理论交换舱</span>
-            <div style="font-size: 11px; color: #94a3b8;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🔄 置换环分解与理论交换舱</span>
+            <div style="font-size: 11px; color: #64748b;">
               置换定理: <b>最少交换 = N - Sets = ${n} - ${step.disjointSetCount} = ${step.minSwaps} 次</b>
             </div>
           </div>
@@ -303,13 +303,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
         .map((idx) => {
           const val = arr[idx] ?? 0;
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">C[${idx}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">C[${idx}]</span>
               <span style="line-height: 1.1;">${val}</span>
             </div>
           `;
@@ -327,10 +327,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
     const parentRow = renderRow('parent[] (代表元)', step.parentArray, 'parent', '#38bdf8');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${parentRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">置换环连通块数 (Sets):</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 12px;">${step.disjointSetCount} 个独立环</strong>
           </div>

@@ -58,29 +58,29 @@ export function buildTarjanSCCSteps(preset: string = 'classic_5node'): TarjanSCC
 
   // 精准四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    tarjanDef: { cpp: 20, java: 12, python: 19, javascript: 10 },
-    stampDfnLow: { cpp: 21, java: 13, python: 22, javascript: 11 },
-    pushStack: { cpp: 22, java: 14, python: 23, javascript: 12 },
-    setInStack: { cpp: 23, java: 15, python: 24, javascript: 13 },
-    loopNeighbors: { cpp: 25, java: 17, python: 26, javascript: 15 },
-    checkUnvisited: { cpp: 26, java: 18, python: 27, javascript: 16 },
-    recurseDfs: { cpp: 27, java: 19, python: 28, javascript: 17 },
-    updateLowTree: { cpp: 28, java: 19, python: 29, javascript: 18 },
-    checkInStack: { cpp: 29, java: 21, python: 30, javascript: 19 },
-    updateLowBack: { cpp: 30, java: 21, python: 31, javascript: 20 },
-    checkSccRoot: { cpp: 35, java: 25, python: 33, javascript: 23 },
-    incSccCount: { cpp: 36, java: 26, python: 34, javascript: 24 },
-    popLoop: { cpp: 37, java: 27, python: 35, javascript: 25 },
-    popNode: { cpp: 38, java: 28, python: 36, javascript: 26 },
-    unsetInStack: { cpp: 39, java: 29, python: 37, javascript: 27 },
-    setSccId: { cpp: 40, java: 30, python: 38, javascript: 28 },
-    breakIfRoot: { cpp: 41, java: 31, python: 39, javascript: 29 },
-    buildDagEntry: { cpp: 47, java: 36, python: 48, javascript: 34 },
-    dagLoopU: { cpp: 49, java: 39, python: 50, javascript: 35 },
-    dagLoopV: { cpp: 50, java: 40, python: 51, javascript: 36 },
-    dagCheckCross: { cpp: 51, java: 41, python: 52, javascript: 37 },
-    dagAddEdge: { cpp: 52, java: 42, python: 53, javascript: 38 },
-    returnDag: { cpp: 56, java: 46, python: 54, javascript: 40 },
+    tarjanDef: { cpp: 13, java: 12, python: 10, javascript: 10 },
+    stampDfnLow: { cpp: 14, java: 13, python: 13, javascript: 11 },
+    pushStack: { cpp: 15, java: 14, python: 14, javascript: 12 },
+    setInStack: { cpp: 16, java: 15, python: 15, javascript: 13 },
+    loopNeighbors: { cpp: 18, java: 17, python: 17, javascript: 15 },
+    checkUnvisited: { cpp: 19, java: 18, python: 18, javascript: 16 },
+    recurseDfs: { cpp: 20, java: 19, python: 19, javascript: 17 },
+    updateLowTree: { cpp: 21, java: 19, python: 20, javascript: 18 },
+    checkInStack: { cpp: 22, java: 21, python: 21, javascript: 19 },
+    updateLowBack: { cpp: 23, java: 21, python: 22, javascript: 20 },
+    checkSccRoot: { cpp: 28, java: 25, python: 24, javascript: 23 },
+    incSccCount: { cpp: 29, java: 26, python: 25, javascript: 24 },
+    popLoop: { cpp: 30, java: 27, python: 26, javascript: 25 },
+    popNode: { cpp: 31, java: 28, python: 27, javascript: 26 },
+    unsetInStack: { cpp: 32, java: 29, python: 28, javascript: 27 },
+    setSccId: { cpp: 33, java: 30, python: 29, javascript: 28 },
+    breakIfRoot: { cpp: 34, java: 31, python: 30, javascript: 29 },
+    buildDagEntry: { cpp: 40, java: 36, python: 39, javascript: 34 },
+    dagLoopU: { cpp: 42, java: 39, python: 41, javascript: 35 },
+    dagLoopV: { cpp: 43, java: 40, python: 42, javascript: 36 },
+    dagCheckCross: { cpp: 44, java: 41, python: 43, javascript: 37 },
+    dagAddEdge: { cpp: 45, java: 42, python: 44, javascript: 38 },
+    returnDag: { cpp: 49, java: 46, python: 45, javascript: 40 },
   };
 
   function makeStep(
@@ -356,7 +356,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
       return `
         <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid ${color}; border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 100px;">
           <div style="font-size: 11px; font-weight: 700; color: ${color};">SCC #${sccNum}</div>
-          <div style="font-size: 10px; color: #cbd5e1; font-family: monospace;">包含: [${comp.join(', ')}]</div>
+          <div style="font-size: 10px; color: #374151; font-family: monospace;">包含: [${comp.join(', ')}]</div>
         </div>
       `;
     }).join('');
@@ -370,10 +370,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
       : '<span style="font-size: 10.5px; color: #64748b;">(缩点跨分量有向边推导中...)</span>';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🧬 有向图原拓扑与强连通环路</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🧬 有向图原拓扑与强连通环路</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             已生成强连通分量: <b style="color: #10b981;">${step.sccList.length}</b> 个
           </span>
         </div>
@@ -391,9 +391,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
         </div>
 
         <!-- 底部 DAG 缩点重构舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">📦 强连通分量与 DAG 缩点重构舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">📦 强连通分量与 DAG 缩点重构舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               辅助栈状态: <b>[ ${step.tarjanStack.join(' ➔ ') || '空'} ]</b>
             </div>
@@ -403,8 +403,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
             ${sccCardsHtml || '<span style="font-size: 10.5px; color: #64748b;">(暂未产生结算分量)</span>'}
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px; border-top: 1px dashed #334155; padding-top: 6px;">
-            <span style="font-size: 10.5px; color: #94a3b8; font-weight: 700;">缩点 DAG 跨分量边:</span>
+          <div style="display: flex; align-items: center; gap: 8px; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+            <span style="font-size: 10.5px; color: #374151; font-weight: 700;">缩点 DAG 跨分量边:</span>
             <div style="display: flex; flex-wrap: wrap; gap: 6px;">${dagEdgesHtml}</div>
           </div>
         </div>
@@ -421,13 +421,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
           const val = map[idx];
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
           const displayVal = val === null || val === undefined ? '_' : typeof val === 'boolean' ? (val ? 'T' : 'F') : val;
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">N[${idx}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">N[${idx}]</span>
               <span style="line-height: 1.1;">${displayVal}</span>
             </div>
           `;
@@ -448,8 +448,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
     const sccIdRow = renderRow('sccId[] (分量号)', step.sccIdMap, 'sccId', '#a855f7');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${dfnRow}
           ${lowRow}
           ${inStackRow}

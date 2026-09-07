@@ -116,7 +116,7 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
     applyPaidRelax: { cpp: 55, java: 38, python: 29, javascript: 29 },
     checkFreeRelax: { cpp: 59, java: 42, python: 32, javascript: 32 },
     applyFreeRelax: { cpp: 60, java: 43, python: 33, javascript: 33 },
-    returnAns: { cpp: 68, java: 51, python: 37, javascript: 39 },
+    returnAns: { cpp: 61, java: 51, python: 37, javascript: 39 },
   };
 
   function snapshotDistGrid(): Record<string, number> {
@@ -431,10 +431,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
     }
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">✈️ 飞行网络双层拓扑</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">✈️ 飞行网络双层拓扑</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前出堆城市: <b style="color: #f59e0b;">Node ${step.curNode} (usedK: ${step.curK})</b>
           </span>
         </div>
@@ -447,9 +447,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
         </div>
 
         <!-- 底部免票跃迁舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🎫 分层图双转移模型舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🎫 分层图双转移模型舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               堆中候选状态: <b>${step.pqList.length}</b> 个
             </div>
@@ -476,24 +476,24 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
                 `<span style="background: #1e293b; border: 1px solid #38bdf8; border-radius: 4px; padding: 2px 6px; color: #38bdf8; font-family: monospace; font-size: 10.5px;">(${item.u}, k:${item.used}, cost:${item.cost})</span>`
             )
             .join(' ')
-        : '<span style="color: #94a3b8; font-size: 10.5px;">(空)</span>';
+        : '<span style="color: #64748b; font-size: 10.5px;">(空)</span>';
 
     const distKeys = Object.keys(step.distGrid);
     const distBadges = distKeys.map((k) => `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 38px; height: 32px; background: #1e293b; border: 1px solid #334155; border-radius: 4px; color: #34d399; font-family: monospace; font-size: 11px; font-weight: 700;">
-        <span style="font-size: 8px; color: #94a3b8;">(${k})</span>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 38px; height: 32px; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; color: #34d399; font-family: monospace; font-size: 11px; font-weight: 700;">
+        <span style="font-size: 8px; color: #64748b;">(${k})</span>
         <span>${step.distGrid[k]}</span>
       </div>
     `).join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; width: 120px; color: #38bdf8;">distance[u][k]:</span>
             <div style="display: flex; gap: 4px; flex-wrap: wrap;">${distBadges}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #a855f7; font-size: 10.5px; font-weight: 700;">小根堆优先队列:</span>
             <div style="display: flex; gap: 4px; flex-wrap: wrap;">${pqBadges}</div>
           </div>

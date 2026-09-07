@@ -528,7 +528,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PrefixOptStep>({
     const isS2Active = activeNode === 'S2';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 230px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 230px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 210px;" viewBox="0 0 350 200">
           <defs>
             <marker id="arrow-blue" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -621,7 +621,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PrefixOptStep>({
           <g><circle cx="220" cy="150" r="13" fill="${activeNode === 4 || activeNode === '4' ? '#38bdf8' : '#0284c7'}" stroke="#38bdf8" stroke-width="1.5" /><text x="220" y="154" fill="#ffffff" font-size="10" font-weight="800" text-anchor="middle">4</text></g>
           <g><circle cx="280" cy="150" r="13" fill="${activeNode === 5 || activeNode === '5' ? '#38bdf8' : '#0284c7'}" stroke="#38bdf8" stroke-width="1.5" /><text x="280" y="154" fill="#ffffff" font-size="10" font-weight="800" text-anchor="middle">5</text></g>
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center; margin-top: 4px;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center; margin-top: 4px;">
           ${
             isPrefix
               ? '⭐ 前缀虚点链 P_i ➔ P_{i-1} 级联传递，连向 P_r 等价于连向 [1, r] 内所有实体节点 (O(1) 连边)'
@@ -657,7 +657,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PrefixOptStep>({
             const isActive = step.activeNode === `P${i}` || step.activeNode === i;
             const bg = isActive ? '#fef08a' : '#1e293b';
             const textCol = isActive ? '#854d0e' : '#e2e8f0';
-            const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+            const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
             return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 32px; height: 30px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 10px; font-weight: 700;">
               <span style="font-size: 7.5px; color: #64748b; line-height: 1;">u[${i}]</span>
@@ -667,19 +667,19 @@ const { template, Visualizer } = createDeclarativeVisualizer<PrefixOptStep>({
           .join('');
 
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #cbd5e1; padding: 2px 0;">
-            <div style="display: flex; flex-direction: column; gap: 4px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #374151; padding: 2px 0;">
+            <div style="display: flex; flex-direction: column; gap: 4px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-family: monospace; font-size: 11px; font-weight: 700; width: 105px; color: #38bdf8;">前缀虚点链 P:</span>
                 <div style="display: flex; gap: 4px;">${pSlots}</div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
                 <span style="color: #f59e0b; font-size: 10px; font-weight: 700;">建图模式 / 边总数:</span>
                 <strong style="color: #facc15; font-family: monospace; font-size: 11px;">${isPrefix ? `前缀优化: ${step.numEdges} 条边 (O(N) 线性)` : `朴素直连: ${step.numEdges} 条边 (O(N²) 爆炸)`}</strong>
               </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 4px 8px;">
-              <span style="color: #94a3b8; font-size: 10.5px;">执行语句:</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #64748b; font-size: 10.5px;">执行语句:</span>
               <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">行 ${Array.isArray(step.codeLine) ? step.codeLine.join('-') : step.codeLine}: ${step.log}</strong>
             </div>
           </div>

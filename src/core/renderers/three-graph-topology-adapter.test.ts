@@ -99,6 +99,43 @@ describe('ThreeGraphTopologyAdapter Deep Module Guard', () => {
     expect(adapter.getCurrentLayoutMode()).toBe('layered');
   });
 
+  it('dynamically adapts network flow steps and derives node sets for arbitrary graphs', () => {
+    adapter.mount(mockContainer);
+
+    // 任意规模网络流 step 测试（如 6 节点费用流/上下界网络）
+    const networkStep = {
+      flowEdges: [
+        { u: 'src', v: 'v1', flow: 10, cap: 10 },
+        { u: 'v1', v: 'v2', flow: 4, cap: 8 },
+        { u: 'v2', v: 'sink', flow: 4, cap: 10 },
+      ],
+      levels: { src: 0, v1: 1, v2: 2, sink: 3 },
+      activePath: ['src', 'v1', 'v2', 'sink'],
+      currentNode: 'v1',
+    };
+
+    adapter.updateStep(networkStep);
+
+    const state = adapter.getCurrentState();
+    expect(state).not.toBeNull();
+    // 动态提取了 4 个节点
+    expect(state?.nodes.map((n) => n.id).sort()).toEqual(['sink', 'src', 'v1', 'v2']);
+    
+    // active 状态与 level 准确反映
+    const srcNode = state?.nodes.find((n) => n.id === 'src');
+    expect(srcNode?.level).toBe(0);
+    expect(srcNode?.status).toBe('active');
+
+    // 边饱和度与增广路径标记
+    const edgeSrcV1 = state?.edges.find((e) => e.from === 'src' && e.to === 'v1');
+    expect(edgeSrcV1?.isSaturated).toBe(true);
+    expect(edgeSrcV1?.isActivePath).toBe(true);
+
+    const edgeV1V2 = state?.edges.find((e) => e.from === 'v1' && e.to === 'v2');
+    expect(edgeV1V2?.isSaturated).toBe(false);
+    expect(edgeV1V2?.isActivePath).toBe(true);
+  });
+
   it('destroys cleanly with zero resource leaks', () => {
     adapter.mount(mockContainer);
     adapter.render({

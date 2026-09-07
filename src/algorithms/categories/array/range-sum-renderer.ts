@@ -7,6 +7,7 @@
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   RANGE_SUM_PROBLEM_HTML,
   RANGE_SUM_ANALYSIS_HTML,
@@ -27,7 +28,7 @@ export interface RSumStep {
   status: 'init' | 'build-prefix' | 'query-start' | 'compute' | 'query-done' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function parseRangeArray(input: string): number[] {
@@ -58,6 +59,13 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
   const prefix: number[] = new Array(n + 1).fill(0);
   const results: number[] = [];
 
+  const lines = {
+    init: { java: [3, 4], cpp: 5, python: [3, 4], javascript: 3 },
+    buildPrefix: { java: [5, 6], cpp: [6, 7], python: [5, 6], javascript: [4, 5] },
+    query: { java: [10, 11], cpp: [11, 12], python: [8, 9], javascript: [8, 9] },
+    done: { java: 13, cpp: 14, python: 10, javascript: 11 },
+  };
+
   // 1. 初始化
   steps.push({
     arr: [...arr],
@@ -73,7 +81,7 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
     status: 'init',
     message: `初始化前缀和数组 prefix，设置 prefix[0] = 0 作为虚拟前置元素。`,
     log: `初始化: prefix[0] = 0`,
-    codeLine: [3, 4],
+    codeLine: lines.init,
   });
 
   // 2. 构建前缀和数组
@@ -93,7 +101,7 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
       status: 'build-prefix',
       message: `计算前缀和 prefix[${i + 1}] = prefix[${i}] (${prefix[i]}) + arr[${i}] (${arr[i]}) = ${prefix[i + 1]}。`,
       log: `构建前缀和: prefix[${i + 1}] = ${prefix[i + 1]}`,
-      codeLine: [5, 6],
+      codeLine: lines.buildPrefix,
     });
   }
 
@@ -119,7 +127,7 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
       status: 'compute',
       message: `区间查询 [${validL}, ${validR}]：sum = prefix[${validR + 1}] (${prefix[validR + 1]}) - prefix[${validL}] (${prefix[validL]}) = ${ans}。`,
       log: `查询 [${validL}, ${validR}]: prefix[${validR + 1}] - prefix[${validL}] = ${ans}`,
-      codeLine: [8, 9, 10],
+      codeLine: lines.query,
     });
   }
 
@@ -137,7 +145,7 @@ export function buildRangeSumSteps(arr: number[], queries: [number, number][]): 
     status: 'done',
     message: `🎉 所有区间查询计算完毕！最终查询结果序列: [${results.join(', ')}]。`,
     log: `✓ 查询完成: [${results.join(', ')}]`,
-    codeLine: 11,
+    codeLine: lines.done,
   });
 
   return steps;

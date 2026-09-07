@@ -68,24 +68,24 @@ export function buildNetworkDelaySteps(isReachable: boolean = true): NetworkDela
 
   // 精准 18 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 18, java: 8, python: 3, javascript: 2 },
-    initDistance: { cpp: 26, java: 17, python: 11, javascript: 11 },
-    initVisited: { cpp: 27, java: 20, python: 12, javascript: 12 },
-    initSrc: { cpp: 30, java: 19, python: 15, javascript: 15 },
-    initPq: { cpp: 31, java: 22, python: 16, javascript: 16 },
-    whilePq: { cpp: 33, java: 24, python: 18, javascript: 18 },
-    popNode: { cpp: 34, java: 25, python: 19, javascript: 19 },
-    checkVisited: { cpp: 35, java: 27, python: 20, javascript: 21 },
-    markVisited: { cpp: 36, java: 28, python: 22, javascript: 22 },
-    loopNeighbors: { cpp: 38, java: 29, python: 25, javascript: 25 },
-    checkRelax: { cpp: 40, java: 31, python: 27, javascript: 27 },
-    applyRelax: { cpp: 41, java: 32, python: 28, javascript: 28 },
-    pushPq: { cpp: 42, java: 33, python: 29, javascript: 29 },
-    initAns: { cpp: 48, java: 38, python: 33, javascript: 33 },
-    loopAns: { cpp: 49, java: 39, python: 34, javascript: 34 },
-    checkUnreachable: { cpp: 50, java: 40, python: 35, javascript: 35 },
-    updateMax: { cpp: 51, java: 41, python: 36, javascript: 36 },
-    returnAns: { cpp: 53, java: 43, python: 37, javascript: 37 },
+    entry: { cpp: 11, java: 8, python: 3, javascript: 2 },
+    initDistance: { cpp: 19, java: 17, python: 11, javascript: 11 },
+    initVisited: { cpp: 20, java: 20, python: 12, javascript: 12 },
+    initSrc: { cpp: 23, java: 19, python: 15, javascript: 15 },
+    initPq: { cpp: 24, java: 22, python: 16, javascript: 16 },
+    whilePq: { cpp: 26, java: 24, python: 18, javascript: 18 },
+    popNode: { cpp: 27, java: 25, python: 19, javascript: 19 },
+    checkVisited: { cpp: 28, java: 27, python: 20, javascript: 21 },
+    markVisited: { cpp: 29, java: 28, python: 22, javascript: 22 },
+    loopNeighbors: { cpp: 31, java: 29, python: 25, javascript: 25 },
+    checkRelax: { cpp: 33, java: 31, python: 27, javascript: 27 },
+    applyRelax: { cpp: 34, java: 32, python: 28, javascript: 28 },
+    pushPq: { cpp: 35, java: 33, python: 29, javascript: 29 },
+    initAns: { cpp: 41, java: 38, python: 33, javascript: 33 },
+    loopAns: { cpp: 42, java: 39, python: 34, javascript: 34 },
+    checkUnreachable: { cpp: 43, java: 40, python: 35, javascript: 35 },
+    updateMax: { cpp: 44, java: 41, python: 36, javascript: 36 },
+    returnAns: { cpp: 46, java: 43, python: 37, javascript: 37 },
   };
 
   function makeStep(
@@ -337,10 +337,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">📡 网络延迟拓扑与信号传播</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">📡 网络延迟拓扑与信号传播</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             信号已收齐: <b style="color: #10b981;">${step.visitedList.filter(Boolean).length}</b> / ${n} 点
           </span>
         </div>
@@ -358,9 +358,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
         </div>
 
         <!-- 底部波前广播舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">📡 信号波前广播舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">📡 信号波前广播舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               当前最迟抵达时间: <b>${step.maxDelaySoFar === -1 ? '-1 (孤立点)' : `${step.maxDelaySoFar} ms`}</b>
             </div>
@@ -388,13 +388,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
           const val = arr[idx];
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
           const displayVal = formatVal(val);
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">N[${idx}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">N[${idx}]</span>
               <span style="line-height: 1.1;">${displayVal}</span>
             </div>
           `;
@@ -415,11 +415,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
     const pqStr = step.pqSnapshot.length > 0 ? step.pqSnapshot.map((x) => `(N${x.u}, ${x.d}ms)`).join(' ➔ ') : '空';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${distRow}
           ${visRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #a855f7; font-size: 10.5px; font-weight: 700;">波前小根堆:</span>
             <strong style="color: #a855f7; font-family: monospace; font-size: 11px;">[ ${pqStr} ]</strong>
           </div>

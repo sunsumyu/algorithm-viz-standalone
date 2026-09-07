@@ -130,6 +130,14 @@
 - **定义**：负责在有向网络边、增广多路流束与最短路路径上实时推演流光粒子微观动力学的纯状态机引擎。
 - **职责**：100% 零 DOM 强依赖。对外暴露粒子坐标插值与时钟驱动（`step(deltaSeconds)`）；内部基于抛物线/二次贝塞尔平滑弧线插值计算粒子轨迹，根据流量与容量比（$\text{flow}/\text{cap}$）动态调节流速与密度，并自适应映射增广金芒、饱和警戒红与清澈水流蓝。
 
+### DeclarativeAlgorithmVisualizer (声明式 4-Card 算法舞台运行引擎与规范深模块)
+- **定义**：全库声明式算法可视化呈现的唯一权威运行引擎深模块。
+- **职责**：将原本由 60+ 个算法渲染器手写的 350+ 行 DOM 胶水、Card 1/Card 2 布局数组、暗色代码终端绑定与阶段切换事件彻底收拢到单一深模块内部。对外暴露高杠杆声明式契约（`primaryVisual` 恒定编译为 Card 1 顶部主沙盘，`auxiliaryVisual` 恒定编译为 Card 2 底部辅助诊断），通过结构类型保证视觉层级不变量，杜绝主辅面板颠倒缺陷；并提供 `registerDeclarativeAlgorithm(spec)` 极窄一站式注册接缝，将算法文件从 400+ 行 DOM 胶水缩减为纯粹的领域算法规范。
+
+### AlgorithmExecutionTraceEngine (算法无头执行与轨迹录制编译引擎)
+- **定义**：负责无头执行算法逻辑、编译原子单步轨迹流（`AlgorithmTraceStep[]`）与多语言语义行号自动对齐的 DDD 核心引擎。
+- **职责**：100% 零 DOM / 零 UI 依赖。对外暴露极简流式录制接口 `AlgorithmExecutionTraceEngine.trace((recorder) => { ... }, options)`；内部封装深克隆快照、状态差分、图论/矩阵领域原语标准化，并通过 `CodeStepIndexer` 自动在编译期将 `@step:anchor` 映射到 Java/C++/Python/JS 4 语种真实物理行号，彻底杜绝算法逻辑层手写各语种行号，赋能 100% 纯内存无头单元测试。
+
 ---
 
 ## 2. 模块接缝与关系 (Module Seams & Relationships)

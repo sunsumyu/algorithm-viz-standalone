@@ -78,6 +78,7 @@ class MockRoot {
     this.register('btn-code-font-dec');
     this.register('code-font-indicator');
     this.register('btn-code-font-inc');
+    this.register('btn-code-copy');
     this.register('btn-open-problem-modal');
     this.register('modal-problem');
     this.register('modal-problem-body');
@@ -262,6 +263,26 @@ describe('DarkCodeTerminalPresenter (深模块测试 - 0 DOM依赖环境)', () =
       lines: [8],
       focusLine: 8,
     });
+  });
+
+  it('copyCode 能够提取当前语言代码并触发复制', async () => {
+    const presenter = DarkCodeTerminalPresenter.mount(root as unknown as HTMLElement, {
+      codeLanguages: {
+        java: ['public void solve() {', '    // solution', '}'],
+        cpp: ['void solve() {', '    // solution', '}'],
+      },
+      initialLang: 'java',
+    });
+
+    const res = await presenter.copyCode();
+    // 在 Node 测试环境中回退执行，返回 boolean
+    expect(typeof res).toBe('boolean');
+
+    const copyBtn = root.querySelector('#btn-code-copy');
+    expect(copyBtn).not.toBeNull();
+    // 模拟用户点击复制按钮
+    copyBtn?.click();
+    expect(copyBtn?.classList.contains('copied')).toBe(true);
   });
 });
 

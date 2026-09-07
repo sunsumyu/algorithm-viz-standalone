@@ -6,6 +6,7 @@
 
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   SPIRAL_MATRIX_II_PROBLEM_HTML,
   SPIRAL_MATRIX_II_ANALYSIS_HTML,
@@ -26,7 +27,7 @@ export interface SpiralStep {
   status: 'fill' | 'turn' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 function clone(matrix: number[][]): number[][] {
@@ -42,7 +43,7 @@ function boundaryStep(
   right: number,
   dir: string,
   log: string,
-  codeLine: number[]
+  codeLine: HighlightTarget
 ): SpiralStep {
   return {
     n,
@@ -71,6 +72,19 @@ export function buildSpiralSteps(n: number): SpiralStep[] {
     right = n - 1;
   let num = 1;
 
+  const lines = {
+    init: { java: [3, 4], cpp: [5, 6], python: [4, 5], javascript: [3, 4] },
+    rightFill: { java: 6, cpp: 8, python: [7, 8, 9], javascript: 6 },
+    shrinkTop: { java: 7, cpp: 9, python: 10, javascript: 7 },
+    downFill: { java: 8, cpp: 10, python: [11, 12, 13], javascript: 8 },
+    shrinkRight: { java: 9, cpp: 11, python: 14, javascript: 9 },
+    leftFill: { java: 10, cpp: 12, python: [15, 16, 17], javascript: 10 },
+    shrinkBottom: { java: 11, cpp: 13, python: 18, javascript: 11 },
+    upFill: { java: 12, cpp: 14, python: [19, 20, 21], javascript: 12 },
+    shrinkLeft: { java: 13, cpp: 15, python: 22, javascript: 13 },
+    done: { java: 15, cpp: 17, python: 23, javascript: 15 },
+  };
+
   steps.push({
     n,
     matrix: clone(matrix),
@@ -85,7 +99,7 @@ export function buildSpiralSteps(n: number): SpiralStep[] {
     status: 'fill',
     message: `初始化边界 top=0, bottom=${bottom}, left=0, right=${right}，准备从 (0,0) 开始顺时针填入 1 ~ ${n * n}。`,
     log: `初始化四边界：top=0, bottom=${bottom}, left=0, right=${right}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   while (num <= n * n) {
@@ -106,13 +120,13 @@ export function buildSpiralSteps(n: number): SpiralStep[] {
         status: 'fill',
         message: `向右填充：在 (${top}, ${c}) 写入 ${num}。`,
         log: `👉 写入 (${top},${c}) = ${num}`,
-        codeLine: [4, 5],
+        codeLine: lines.rightFill,
       });
       num++;
     }
     top++;
     if (top <= bottom) {
-      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向右', `top 下移至 ${top}`, [6]));
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向右', `top 下移至 ${top}`, lines.shrinkTop));
     }
 
     // 2. 向下填充 [top, right] -> [bottom, right]
@@ -132,13 +146,13 @@ export function buildSpiralSteps(n: number): SpiralStep[] {
         status: 'fill',
         message: `向下填充：在 (${r}, ${right}) 写入 ${num}。`,
         log: `👇 写入 (${r},${right}) = ${num}`,
-        codeLine: [7, 8],
+        codeLine: lines.downFill,
       });
       num++;
     }
     right--;
     if (left <= right) {
-      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向下', `right 左移至 ${right}`, [9]));
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向下', `right 左移至 ${right}`, lines.shrinkRight));
     }
 
     // 3. 向左填充 [bottom, right] -> [bottom, left]
@@ -158,13 +172,13 @@ export function buildSpiralSteps(n: number): SpiralStep[] {
         status: 'fill',
         message: `向左填充：在 (${bottom}, ${c}) 写入 ${num}。`,
         log: `👈 写入 (${bottom},${c}) = ${num}`,
-        codeLine: [10, 11],
+        codeLine: lines.leftFill,
       });
       num++;
     }
     bottom--;
     if (top <= bottom) {
-      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向左', `bottom 上移至 ${bottom}`, [12]));
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向左', `bottom 上移至 ${bottom}`, lines.shrinkBottom));
     }
 
     // 4. 向上填充 [bottom, left] -> [top, left]
@@ -184,13 +198,13 @@ export function buildSpiralSteps(n: number): SpiralStep[] {
         status: 'fill',
         message: `向上填充：在 (${r}, ${left}) 写入 ${num}。`,
         log: `👆 写入 (${r},${left}) = ${num}`,
-        codeLine: [13, 14],
+        codeLine: lines.upFill,
       });
       num++;
     }
     left++;
     if (left <= right) {
-      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向上', `left 右移至 ${left}`, [15]));
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向上', `left 右移至 ${left}`, lines.shrinkLeft));
     }
   }
 
@@ -208,7 +222,7 @@ export function buildSpiralSteps(n: number): SpiralStep[] {
     status: 'done',
     message: `🎉 螺旋矩阵 II 全部填满！已成功生成 ${n}×${n} 矩阵。`,
     log: `✓ 完成：已生成 ${n}x${n} 螺旋矩阵`,
-    codeLine: 16,
+    codeLine: lines.done,
   });
 
   return steps;

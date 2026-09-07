@@ -7,6 +7,7 @@
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   MIN_SUBARRAY_LEN_PROBLEM_HTML,
   MIN_SUBARRAY_LEN_ANALYSIS_HTML,
@@ -23,7 +24,7 @@ export interface SWStep {
   status: 'expand' | 'shrink' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function parsePositiveArray(input: string): number[] {
@@ -40,6 +41,14 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
   let sum = 0;
   let minLen = Infinity;
 
+  const lines = {
+    init: { java: 2, cpp: 4, python: [3, 4, 5], javascript: 2 },
+    expand: { java: [3, 4], cpp: [5, 6], python: [6, 7], javascript: [3, 4] },
+    record: { java: [5, 6], cpp: [7, 8], python: [8, 9], javascript: [5, 6] },
+    shrink: { java: [7, 8], cpp: [9, 10], python: [10, 11], javascript: [7, 8] },
+    done: { java: 11, cpp: 13, python: 12, javascript: 11 },
+  };
+
   steps.push({
     array: [...nums],
     left: 0,
@@ -50,7 +59,7 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
     status: 'expand',
     message: `初始化 left=0, right=0, sum=0, minLen=∞，目标 target=${target}。准备向右扩展窗口。`,
     log: `初始化滑动窗口：target=${target}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   for (let right = 0; right < nums.length; right++) {
@@ -65,7 +74,7 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
       status: 'expand',
       message: `右边界扩展 right=${right}：加入 nums[${right}]=${nums[right]}，当前窗口和 sum=${sum}。`,
       log: `扩展 right=${right}，nums[${right}]=${nums[right]}，sum -> ${sum}`,
-      codeLine: [4, 5],
+      codeLine: lines.expand,
     });
 
     while (sum >= target) {
@@ -81,7 +90,7 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
         status: 'shrink',
         message: `sum=${sum} ≥ target(${target})，发现满足条件的窗口 [${left}..${right}]，长度 ${currentLen}，更新 minLen=${minLen}。准备收缩左边界。`,
         log: `达标！窗口长度 ${currentLen}，minLen 更新为 ${minLen}`,
-        codeLine: [6, 7],
+        codeLine: lines.record,
       });
 
       sum -= nums[left];
@@ -96,7 +105,7 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
         status: 'shrink',
         message: `收缩左边界：移出 nums[${left - 1}]=${nums[left - 1]}，left 右移至 ${left}，当前窗口和 sum=${sum}。`,
         log: `收缩 left -> ${left}，移出 ${nums[left - 1]}，sum -> ${sum}`,
-        codeLine: [8, 9],
+        codeLine: lines.shrink,
       });
     }
   }
@@ -113,7 +122,7 @@ export function buildMinSubarrayLenSteps(nums: number[], target: number): SWStep
       ? `🎉 遍历完成！未找到满足 sum >= ${target} 的连续子数组，返回 0。`
       : `🎉 遍历完成！最小子数组长度为 minLen = ${minLen}。`,
     log: minLen === Infinity ? '✓ 完成：未找到 (返回 0)' : `✓ 完成：minLen = ${minLen}`,
-    codeLine: 11,
+    codeLine: lines.done,
   });
 
   return steps;

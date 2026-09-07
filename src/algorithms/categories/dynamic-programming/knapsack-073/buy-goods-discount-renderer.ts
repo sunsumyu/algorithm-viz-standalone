@@ -13,6 +13,21 @@ import {
 } from './knapsack-073-problem-content';
 import { HighlightTarget } from '../../../../core/code-panel';
 import { renderKnapsackDpMatrix } from '../../../../core/renderers/knapsack-sandbox-stage';
+import {
+  BUY_GOODS_STAGE1_CODE_LANGUAGES,
+  BUY_GOODS_STAGE2_CODE_LANGUAGES,
+  BUY_GOODS_STAGE3_CODE_LANGUAGES,
+  buildBuyGoodsRecursionSteps,
+  buildBuyGoodsMemoSteps,
+  buildBuyGoods2DSteps,
+} from './buy-goods-stage-evolution';
+import {
+  renderSpecialRecursionCard1,
+  renderSpecialMemoCard1,
+  renderSpecialMemoCard2,
+  renderSpecial2DCard1,
+  renderSpecial2DCard2,
+} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
 
 export interface BuyGoodsStep {
   phase: 'init' | 'greedy-free' | 'knapsack-dp' | 'done';
@@ -54,14 +69,14 @@ export function buildBuyGoodsDiscountSteps(
   const normalGames: { id: number; cost: number; val: number }[] = [];
 
   const lines = {
-    init: { java: 7, cpp: 4, python: 3, javascript: 3 },
-    greedyLoop: { java: 12, cpp: 8, python: 6, javascript: 6 },
-    greedyFreePick: { java: 14, cpp: 10, python: 8, javascript: 8 },
-    initDp: { java: 21, cpp: 17, python: 14, javascript: 15 },
-    dpOuterLoop: { java: 22, cpp: 18, python: 15, javascript: 16 },
-    dpCapLoop: { java: 23, cpp: 19, python: 16, javascript: 17 },
-    dpUpdate: { java: 24, cpp: 20, python: 17, javascript: 18 },
-    returnAns: { java: 27, cpp: 23, python: 18, javascript: 21 },
+    init: { java: 7, cpp: 7, python: 1, javascript: 2 },
+    greedyLoop: { java: 12, cpp: 10, python: 5, javascript: 5 },
+    greedyFreePick: { java: 14, cpp: 13, python: 8, javascript: 8 },
+    initDp: { java: 22, cpp: 20, python: 13, javascript: 15 },
+    dpOuterLoop: { java: 23, cpp: 21, python: 14, javascript: 16 },
+    dpCapLoop: { java: 24, cpp: 22, python: 15, javascript: 18 },
+    dpUpdate: { java: 25, cpp: 23, python: 16, javascript: 19 },
+    returnAns: { java: 28, cpp: 26, python: 17, javascript: 22 },
   };
 
   function makeStep(data: Omit<BuyGoodsStep, 'metrics'>): BuyGoodsStep {
@@ -277,7 +292,24 @@ export function buildBuyGoodsDiscountSteps(
   return steps;
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<BuyGoodsStep>({
+function parseBuyGoodsInputs(inputs: Record<string, any>) {
+  const initialBudget = parseInt(inputs['input-budget'] || '10', 10);
+  const a = String(inputs['input-a'] || '10, 10')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  const b = String(inputs['input-b'] || '3, 8')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  const w = String(inputs['input-w'] || '5, 10')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  return { initialBudget, a, b, w };
+}
+
+const { template, Visualizer } = createDeclarativeVisualizer<any>({
   id: 'buy-goods-discount',
   name: '夏季特惠 (贪心白嫖+01背包)',
   category: 'dynamic-programming',
@@ -285,6 +317,258 @@ const { template, Visualizer } = createDeclarativeVisualizer<BuyGoodsStep>({
     mode: '贪心白嫖 · 01背包转化',
     complexity: 'O(N · X) · O(X)',
   },
+  defaultStage: 'stage-4',
+  stages: [
+    {
+      id: 'stage-1',
+      name: '阶段 1: 暴力递归',
+      shortName: '递归',
+      num: 1,
+      timeBadge: 'O(2^M)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '普通折扣游戏 · 暴力递归',
+        complexity: 'O(2^M) · O(M) 栈深',
+      },
+      card1Title: '🌿 递归分支展开与运行时调用栈',
+      card2Title: '📊 递归调用深度与预算结余监控',
+      codeLanguages: BUY_GOODS_STAGE1_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { initialBudget, a, b, w } = parseBuyGoodsInputs(inputs);
+        return buildBuyGoodsRecursionSteps(initialBudget, a, b, w);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecialRecursionCard1(
+          container,
+          step.callStack,
+          step.i < step.n
+            ? `正在决策普通游戏 #${step.normalGames?.[step.i]?.id ?? '—'} (花费:${step.normalGames?.[step.i]?.cost ?? '—'}, 快乐:${step.normalGames?.[step.i]?.val ?? '—'})`
+            : '所有普通游戏决策完成',
+          step.remCap,
+          step.decision,
+          step.returnValue
+        ),
+      renderCustomMetrics: (container, step) => {
+        container.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:10px; height:100%; width:100%; justify-content:center; align-items:center; background:rgba(241, 245, 249, 0.9); border:1px solid #e2e8f0; border-radius:8px; padding:16px; box-sizing:border-box;">
+            <div style="font-size:13px; font-weight:700; color:#38bdf8;">📊 普通游戏暴力递归调用监控</div>
+            <div style="display:flex; gap:16px; margin-top:8px;">
+              <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:6px; padding:10px 16px; text-align:center;">
+                <div style="font-size:11px; color:#64748b;">当前调用深度</div>
+                <div style="font-size:20px; font-weight:800; color:#fbbf24;">${step.callStack?.length ?? 0}</div>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:6px; padding:10px 16px; text-align:center;">
+                <div style="font-size:11px; color:#64748b;">普通游戏数 M</div>
+                <div style="font-size:20px; font-weight:800; color:#34d399;">${step.n ?? 0}</div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:#64748b; text-align:center; max-width:320px; margin-top:6px;">
+              白嫖游戏（well>=0）已被贪心必选收割，对剩余普通游戏开展 01 递归分治。
+            </div>
+          </div>
+        `;
+      },
+    },
+    {
+      id: 'stage-2',
+      name: '阶段 2: 记忆化搜索',
+      shortName: '记忆化',
+      num: 2,
+      timeBadge: 'O(M · X)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '普通游戏 · 备忘录缓存',
+        complexity: 'O(M · X) · O(M · X) 备忘录',
+      },
+      card1Title: '💾 备忘录探查追踪 (Cache Hit/Miss)',
+      card2Title: '🎯 2D 备忘录快乐值矩阵 memo[i][rem]',
+      codeLanguages: BUY_GOODS_STAGE2_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { initialBudget, a, b, w } = parseBuyGoodsInputs(inputs);
+        return buildBuyGoodsMemoSteps(initialBudget, a, b, w);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecialMemoCard1(
+          container,
+          `dfs(i=${step.i}, rem=${step.remCap})`,
+          step.memoHit,
+          step.hitCount,
+          step.missCount,
+          step.decision,
+          step.message,
+          step.cachedVal
+        ),
+      renderCustomMetrics: (container, step) =>
+        renderSpecialMemoCard2(
+          container,
+          '备忘录快乐值表 memo[i][rem]',
+          step.memoGrid,
+          step.i,
+          step.remCap
+        ),
+    },
+    {
+      id: 'stage-3',
+      name: '阶段 3: 二维动态规划',
+      shortName: '二维DP',
+      num: 3,
+      timeBadge: 'O(M · X)',
+      theme: 'bg-emerald',
+      badge: {
+        mode: '普通游戏 · 严格二维表递推',
+        complexity: 'O(M · X) · O(M · X)',
+      },
+      card1Title: '📐 状态转移决策推导',
+      card2Title: '📊 严格二维位置依赖状态表 dp[i][j]',
+      codeLanguages: BUY_GOODS_STAGE3_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { initialBudget, a, b, w } = parseBuyGoodsInputs(inputs);
+        return buildBuyGoods2DSteps(initialBudget, a, b, w);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecial2DCard1(
+          container,
+          `dp[${step.curI}][${step.curJ}]`,
+          `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
+          step.depCells || [],
+          step.decision,
+          step.message
+        ),
+      renderCustomMetrics: (container, step) =>
+        renderSpecial2DCard2(
+          container,
+          '严格二维状态表 dp[i][j]',
+          step.dpTable,
+          step.curI,
+          step.curJ,
+          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
+        ),
+    },
+    {
+      id: 'stage-4',
+      name: '阶段 4: 空间压缩',
+      shortName: '空间优化',
+      num: 4,
+      timeBadge: 'O(X) 空间',
+      theme: 'bg-amber',
+      badge: {
+        mode: '贪心白嫖 · 01背包空间压缩',
+        complexity: 'O(N · X) · O(X)',
+      },
+      card1Title: 'Steam 折扣游戏库与实时购物车载荷舱',
+      card2Title: '普通折扣游戏 01 背包 DP 向量 dp[0..X]',
+      codeLanguages: BUY_GOODS_DISCOUNT_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { initialBudget, a, b, w } = parseBuyGoodsInputs(inputs);
+        return buildBuyGoodsDiscountSteps(initialBudget, a, b, w);
+      },
+      renderCanvas: (container, step) => {
+        const gamesCards = step.games
+          .map((g: any, idx: number) => {
+            const isCur = step.gameIndex === idx;
+            const isNormalChosen = (step.selectedNormalGames || []).includes(idx);
+            let bg = 'rgba(241, 245, 249, 0.9)';
+            let border = '#334155';
+            let badge = '<span style="color:#64748b; font-size:9.5px;">普通折扣</span>';
+
+            if (g.isFree) {
+              bg = 'rgba(209, 250, 229, 0.9)';
+              border = '#10b981';
+              badge = `<span style="background:#059669; color:#fff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">🎁 白赚 +${g.well}</span>`;
+            } else if (isNormalChosen) {
+              bg = 'rgba(88, 28, 135, 0.5)';
+              border = '#a855f7';
+              badge = `<span style="background:#7c3aed; color:#fff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">🛍️ 背包装入</span>`;
+            } else if (isCur) {
+              bg = 'rgba(30, 58, 138, 0.5)';
+              border = '#38bdf8';
+              badge = `<span style="background:#2563eb; color:#fff; font-size:9.5px; padding:1px 5px; border-radius:3px; font-weight:bold;">🔍 决策中</span>`;
+            }
+
+            return `
+              <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:8px 12px; min-width:135px; flex:1; max-width:210px; display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:11.5px; font-weight:700; color:#374151;">游戏 #${idx + 1}</span>
+                  ${badge}
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
+                  <span style="color:#64748b;">折后: <b style="color:#38bdf8;">${g.b}</b> <s style="font-size:9px; color:#64748b;">${g.a}</s></span>
+                  <span style="color:#64748b;">快乐: <b style="color:#f59e0b;">+${g.w}</b></span>
+                </div>
+                <div style="font-size:10px; color:${g.well >= 0 ? '#34d399' : '#94a3b8'};">
+                  心理收益 a-2b: <b>${g.well >= 0 ? '+' : ''}${g.well}</b>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+
+        const normalList = step.normalGames || [];
+        const normalChips = normalList
+          .map((ng: any) => {
+            const isChosen = (step.selectedNormalGames || []).includes(ng.id - 1);
+            const isCur = step.gameIndex === ng.id - 1;
+            const bg = isChosen
+              ? 'rgba(88, 28, 135, 0.6)'
+              : isCur
+              ? 'rgba(30, 58, 138, 0.6)'
+              : 'rgba(30, 41, 59, 0.6)';
+            const border = isChosen ? '#a855f7' : isCur ? '#38bdf8' : '#475569';
+            return `
+              <span style="background:${bg}; border:1px solid ${border}; border-radius:4px; padding:3px 8px; font-size:10.5px; color:#374151; display:inline-flex; align-items:center; gap:6px;">
+                <b>#${ng.id}</b>
+                <span style="color:#64748b;">花:${ng.cost}</span>
+                <span style="color:#38bdf8; font-weight:700;">乐:+${ng.val}</span>
+              </span>
+            `;
+          })
+          .join(' ');
+
+        container.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+              <div style="font-size:12px; color:#64748b; font-weight:700;">🎮 Steam 特惠游戏货架与判定机制</div>
+              <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
+                结余可用预算: <b style="color:#38bdf8;">${step.effectiveBudget}</b> 元
+              </div>
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+              ${gamesCards}
+            </div>
+
+            <!-- 底部实时购物车载荷舱 -->
+            <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11.5px; font-weight:800; color:#374151;">🛒 实时购物车载荷舱</span>
+                <div style="display:flex; gap:16px; font-size:11px;">
+                  <span>白嫖快乐: <b style="color:#10b981;">${step.greedyHappy}</b></span>
+                  <span>01背包快乐: <b style="color:#8b5cf6;">${step.dpHappy}</b></span>
+                  <span>最终总快乐: <b style="color:#f59e0b;">${step.totalHappy}</b></span>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                <span style="color:#64748b; font-size:10.5px; min-width:80px;">普通 01 候选:</span>
+                ${normalChips || '<span style="color:#64748b; font-size:10px;">(全部白嫖，无需背包)</span>'}
+              </div>
+            </div>
+          </div>
+        `;
+      },
+      renderCustomMetrics: (container, step) => {
+        renderKnapsackDpMatrix(container, {
+          ...step,
+          items: [],
+          currentGroupItems: [],
+          selectedItems: [],
+          groupIndex: -1,
+          maxVal: step.dpHappy,
+          totalCapacity: step.effectiveBudget,
+        }, `普通折扣游戏 01 背包向量 dp[0..${step.effectiveBudget}]`);
+      },
+    },
+  ],
   card1Title: 'Steam 折扣游戏库与实时购物车载荷舱',
   card2Title: '普通折扣游戏 01 背包 DP 向量 dp[0..X]',
   card2Desc: '展示倒贴白嫖游戏直接收割、普通折扣游戏转化为 01 背包消耗资金的倒序填表过程',
@@ -372,7 +656,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BuyGoodsStep>({
         const normalIdx = step.normalGames.findIndex((ng) => ng.id === idx + 1);
         const isChosenInDp = normalIdx >= 0 && selectedNormal.includes(normalIdx);
 
-        let bg = 'rgba(15, 23, 42, 0.6)';
+        let bg = 'rgba(241, 245, 249, 0.9)';
         let border = '#334155';
         let badge = '<span style="color:#64748b; font-size:9px;">备选</span>';
 
@@ -393,15 +677,15 @@ const { template, Visualizer } = createDeclarativeVisualizer<BuyGoodsStep>({
         return `
           <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:8px 12px; min-width:120px; flex:1; max-width:180px; display:flex; flex-direction:column; gap:3px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11px; font-weight:700; color:#cbd5e1;">游戏 #${idx + 1}</span>
+              <span style="font-size:11px; font-weight:700; color:#374151;">游戏 #${idx + 1}</span>
               ${badge}
             </div>
             <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-top:2px;">
-              <span style="color:#94a3b8;">原价: <s style="color:#ef4444;">${g.a}</s></span>
+              <span style="color:#64748b;">原价: <s style="color:#ef4444;">${g.a}</s></span>
               <span style="color:#38bdf8;">折后: <b>${g.b}</b></span>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:10.5px;">
-              <span style="color:#94a3b8;">心理吃亏: <b style="color:${g.well >= 0 ? '#10b981' : '#f59e0b'};">${g.well}</b></span>
+              <span style="color:#64748b;">心理吃亏: <b style="color:${g.well >= 0 ? '#10b981' : '#f59e0b'};">${g.well}</b></span>
               <span style="color:#10b981;">快乐: <b>+${g.w}</b></span>
             </div>
           </div>
@@ -410,10 +694,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<BuyGoodsStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-          <div style="font-size:12px; color:#94a3b8; font-weight:700;">Steam 平台游戏折扣库 (原价 a - 2*现价 b >= 0 即可直接倒贴白嫖)</div>
-          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+          <div style="font-size:12px; color:#64748b; font-weight:700;">Steam 平台游戏折扣库 (原价 a - 2*现价 b >= 0 即可直接倒贴白嫖)</div>
+          <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
             可用预算: <b style="color:#38bdf8;">${step.effectiveBudget}</b> 元
           </div>
         </div>
@@ -423,9 +707,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<BuyGoodsStep>({
         </div>
 
         <!-- 底部实时购物车载荷舱 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🛒 实时购物车载荷舱</span>
+            <span style="font-size:11.5px; font-weight:800; color:#374151;">🛒 实时购物车载荷舱</span>
             <div style="display:flex; gap:16px; font-size:11px;">
               <span>白嫖快乐: <b style="color:#10b981;">+${step.greedyHappy}</b></span>
               <span>背包选购快乐: <b style="color:#8b5cf6;">+${step.dpHappy}</b></span>

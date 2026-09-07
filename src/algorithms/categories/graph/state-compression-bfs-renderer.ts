@@ -49,22 +49,22 @@ export function buildStateBFSSteps(preset: string = 'classic_3x3'): StateBFSItem
 
   // 精准 16 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 15, java: 12, python: 8, javascript: 2 },
-    initTarget: { cpp: 17, java: 14, python: 11, javascript: 3 },
-    initVisited: { cpp: 20, java: 16, python: 12, javascript: 6 },
-    initQueue: { cpp: 21, java: 17, python: 13, javascript: 7 },
-    forSource: { cpp: 24, java: 20, python: 15, javascript: 9 },
-    pushSource: { cpp: 25, java: 21, python: 16, javascript: 10 },
-    markSource: { cpp: 26, java: 22, python: 17, javascript: 11 },
-    whileQueue: { cpp: 30, java: 26, python: 20, javascript: 14 },
-    pollCur: { cpp: 31, java: 27, python: 21, javascript: 15 },
-    checkTarget: { cpp: 33, java: 30, python: 22, javascript: 17 },
-    loopNeighbors: { cpp: 35, java: 32, python: 24, javascript: 19 },
-    calcNextMask: { cpp: 36, java: 33, python: 25, javascript: 20 },
-    checkVisited: { cpp: 37, java: 34, python: 26, javascript: 21 },
-    markVisited: { cpp: 38, java: 35, python: 27, javascript: 22 },
-    pushQueue: { cpp: 39, java: 36, python: 28, javascript: 23 },
-    returnAns: { cpp: 43, java: 40, python: 32, javascript: 26 },
+    entry: { cpp: 8, java: 12, python: 8, javascript: 2 },
+    initTarget: { cpp: 10, java: 14, python: 11, javascript: 3 },
+    initVisited: { cpp: 13, java: 16, python: 12, javascript: 6 },
+    initQueue: { cpp: 14, java: 17, python: 13, javascript: 7 },
+    forSource: { cpp: 17, java: 20, python: 15, javascript: 9 },
+    pushSource: { cpp: 18, java: 21, python: 16, javascript: 10 },
+    markSource: { cpp: 19, java: 22, python: 17, javascript: 11 },
+    whileQueue: { cpp: 23, java: 26, python: 20, javascript: 14 },
+    pollCur: { cpp: 24, java: 27, python: 21, javascript: 15 },
+    checkTarget: { cpp: 26, java: 30, python: 22, javascript: 17 },
+    loopNeighbors: { cpp: 28, java: 32, python: 24, javascript: 19 },
+    calcNextMask: { cpp: 29, java: 33, python: 25, javascript: 20 },
+    checkVisited: { cpp: 30, java: 34, python: 26, javascript: 21 },
+    markVisited: { cpp: 31, java: 35, python: 27, javascript: 22 },
+    pushQueue: { cpp: 32, java: 36, python: 28, javascript: 23 },
+    returnAns: { cpp: 36, java: 40, python: 32, javascript: 26 },
   };
 
   function makeStep(
@@ -311,7 +311,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<StateBFSItem>({
             return `
               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 48px; height: 48px; background: ${bg}; border: 2px solid ${border}; border-radius: 8px; font-family: monospace; font-size: 13px; font-weight: 800; color: #ffffff; box-sizing: border-box;">
                 <span>${label}</span>
-                <span style="font-size: 8px; color: #94a3b8;">${r},${c}</span>
+                <span style="font-size: 8px; color: #64748b;">${r},${c}</span>
               </div>
             `;
           })
@@ -322,10 +322,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<StateBFSItem>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🔑 状态压缩网格地图 (${rows}x${cols})</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🔑 状态压缩网格地图 (${rows}x${cols})</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前位置: <b style="color: #f59e0b;">(${step.curR}, ${step.curC})</b> | 步数: <b style="color: #10b981;">${step.stepCount}</b>
           </span>
         </div>
@@ -335,9 +335,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<StateBFSItem>({
         </div>
 
         <!-- 底部状态扩维原理舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🔑 状态空间扩维与位掩码舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🔑 状态空间扩维与位掩码舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               目标掩码: <b>0b11 (集齐2把钥匙)</b>
             </div>
@@ -365,20 +365,20 @@ const { template, Visualizer } = createDeclarativeVisualizer<StateBFSItem>({
 
       return `
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 52px; height: 34px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-          <span style="font-size: 8px; color: #94a3b8; line-height: 1;">位 ${bit} (钥匙 ${char})</span>
+          <span style="font-size: 8px; color: #64748b; line-height: 1;">位 ${bit} (钥匙 ${char})</span>
           <span style="line-height: 1.1;">${has ? '1 (持有)' : '0 (未得)'}</span>
         </div>
       `;
     }).join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; width: 140px; color: #f59e0b;">keyMask (二进制位图):</span>
             <div style="display: flex; gap: 6px;">${maskBits}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">当前扩维三元组:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">(r:${step.curR}, c:${step.curC}, mask:${step.keyMask}) | 累计 ${step.stepCount} 步</strong>
           </div>

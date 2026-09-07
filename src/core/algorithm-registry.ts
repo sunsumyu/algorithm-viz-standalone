@@ -54,9 +54,14 @@ export class AlgorithmRegistry {
    * 注册自描述算法清单。
    * 自动完成元数据补充、模板索引以及构造器映射。
    */
-  public register(manifest: AlgorithmManifest): void {
+  public register(manifest: AlgorithmManifest, options: { allowOverride?: boolean } = {}): void {
     if (this.manifestsMap.has(manifest.id)) {
-      return;
+      if (options.allowOverride) {
+        console.warn(`[AlgorithmRegistry] 显式覆盖已注册算法 ID: ${manifest.id}`);
+      } else {
+        console.warn(`[AlgorithmRegistry] 忽略重复注册算法 ID: ${manifest.id} (已存在先验注册)`);
+        return;
+      }
     }
 
     this.manifestsMap.set(manifest.id, manifest);

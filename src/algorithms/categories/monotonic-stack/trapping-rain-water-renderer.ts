@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   TRAPPING_RAIN_WATER_PROBLEM_HTML,
@@ -36,12 +37,20 @@ export interface TRWStep {
   waterPerColumn: number[];
   action: 'init' | 'scan' | 'trap_layer' | 'push' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function buildTrappingRainWaterSteps(rawHeights: number[]): TRWStep[] {
   const steps: TRWStep[] = [];
   const n = rawHeights.length;
+
+  const lines = {
+    init: { java: [4, 5], cpp: [5, 6], python: [5, 6], javascript: [2, 3] },
+    scan: { java: [6, 7], cpp: [7, 8], python: [7, 8], javascript: [4, 5] },
+    trapLayer: { java: [8, 13], cpp: [9, 14], python: [9, 14], javascript: [6, 11] },
+    push: { java: 16, cpp: 17, python: 15, javascript: 14 },
+    done: { java: 18, cpp: 19, python: 16, javascript: 16 },
+  };
 
   if (n <= 2) {
     steps.push({
@@ -57,7 +66,7 @@ export function buildTrappingRainWaterSteps(rawHeights: number[]): TRWStep[] {
       waterPerColumn: new Array(n).fill(0),
       action: 'done',
       message: '柱子数量小于等于 2，无法构成凹槽，接雨水总量为 0',
-      codeLine: 2,
+      codeLine: lines.done,
     });
     return steps;
   }
@@ -80,7 +89,7 @@ export function buildTrappingRainWaterSteps(rawHeights: number[]): TRWStep[] {
     waterPerColumn: [...waterPerColumn],
     action: 'init',
     message: `初始化：共 ${n} 根柱子，单调栈初始为空，按行横向结算凹槽雨水`,
-    codeLine: 4,
+    codeLine: lines.init,
   });
 
   for (let i = 0; i < n; i++) {
@@ -99,7 +108,7 @@ export function buildTrappingRainWaterSteps(rawHeights: number[]): TRWStep[] {
       waterPerColumn: [...waterPerColumn],
       action: 'scan',
       message: `🔍 考察柱子 [${i}] (高度 ${curH})：与单调栈顶 ${stack.length > 0 ? `[${stack[stack.length - 1]}] (高度 ${rawHeights[stack[stack.length - 1]]})` : '（栈空）'} 比对`,
-      codeLine: 6,
+      codeLine: lines.scan,
     });
 
     while (stack.length > 0 && curH > rawHeights[stack[stack.length - 1]]) {
@@ -141,7 +150,7 @@ export function buildTrappingRainWaterSteps(rawHeights: number[]): TRWStep[] {
             waterPerColumn: [...waterPerColumn],
             action: 'trap_layer',
             message: `🌊 触发凹槽横向蓄水！左壁 [${left}] (${leftH}), 槽底 [${mid}] (${midH}), 右壁 [${i}] (${curH}) &rarr; 高度 h=${h}, 宽度 w=${w}, 本层蓄水 = ${layerVol} 单位！累计 = ${totalWater}`,
-            codeLine: 11,
+            codeLine: lines.trapLayer,
           });
         }
       }
@@ -162,7 +171,7 @@ export function buildTrappingRainWaterSteps(rawHeights: number[]): TRWStep[] {
       waterPerColumn: [...waterPerColumn],
       action: 'push',
       message: `📥 将柱子 [${i}] (高度 ${curH}) 压入单调栈，维持栈内单调递减`,
-      codeLine: 13,
+      codeLine: lines.push,
     });
   }
 
@@ -179,7 +188,7 @@ export function buildTrappingRainWaterSteps(rawHeights: number[]): TRWStep[] {
     waterPerColumn: [...waterPerColumn],
     action: 'done',
     message: `🎉 接雨水计算完成！所有凹槽按层横向累加，最终可接雨水总量为 ${totalWater} 单位`,
-    codeLine: 15,
+    codeLine: lines.done,
   });
 
   return steps;

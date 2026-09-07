@@ -456,12 +456,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<CentroidTreeStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
           ${svgEdges}
           ${svgNodes}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           🟢 绿色边为点分树父子关系 | 点分树树高严格不超过 log₂N，动态修改只影响到根的一条链
         </div>
       </div>

@@ -433,12 +433,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<ChordalStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 200px;" viewBox="0 0 310 200">
           ${svgEdges}
           ${svgNodes}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           ${step.edges.some((e) => e.isChord) ? '🟡 金色斜线为对角弦边 1-4 | 使得四边形环被三角剖分，存在完美消除序列 PEO' : '⚪ 无对角弦 | 4 节点简单环 C4 无弦，无法满足 PEO 后继团充要条件'}
         </div>
       </div>
@@ -482,7 +482,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<ChordalStep>({
               const displayVal = val === null || val === undefined ? '_' : typeof val === 'boolean' ? (val ? 'T' : 'F') : val;
               const bg = isActive ? '#fef08a' : '#1e293b';
               const textCol = isActive ? '#854d0e' : '#e2e8f0';
-              const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+              const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
               return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 32px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
                 <span style="font-size: 8px; color: #64748b; line-height: 1;">[${idx}]</span>
@@ -525,15 +525,15 @@ const { template, Visualizer } = createDeclarativeVisualizer<ChordalStep>({
         );
 
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #cbd5e1; padding: 2px 0;">
-            <div style="display: flex; flex-direction: column; gap: 4px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #374151; padding: 2px 0;">
+            <div style="display: flex; flex-direction: column; gap: 4px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
               ${peoRow}
               ${rankRow}
               ${labelRow}
               ${visRow}
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 4px 8px;">
-              <span style="color: #94a3b8; font-size: 10.5px;">当前执行语句:</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #64748b; font-size: 10.5px;">当前执行语句:</span>
               <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">行 ${Array.isArray(step.codeLine) ? step.codeLine.join('-') : step.codeLine}: ${step.log}</strong>
             </div>
           </div>

@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   INTERSECTION_ARRAYS_PROBLEM_HTML,
@@ -28,7 +29,7 @@ export interface IntersectionStep {
   isHit: boolean;
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function parseNumArray(input: string, defaultArr: number[]): number[] {
@@ -43,6 +44,13 @@ export function buildIntersectionSteps(nums1: number[], nums2: number[]): Inters
   const steps: IntersectionStep[] = [];
   const set1 = new Set<number>();
   const resultSet = new Set<number>();
+
+  const lines = {
+    buildSet1: { java: [7, 8], cpp: 4, python: 3, javascript: 2 },
+    scanMiss: { java: [10, 11], cpp: [6, 7], python: [5, 6], javascript: [4, 5] },
+    scanHit: { java: [11, 12], cpp: [7, 8], python: [6, 7], javascript: [5, 6] },
+    done: { java: 15, cpp: 11, python: 8, javascript: 9 },
+  };
 
   // 1. 将 nums1 存入 set1
   for (let i = 0; i < nums1.length; i++) {
@@ -61,7 +69,7 @@ export function buildIntersectionSteps(nums1: number[], nums2: number[]): Inters
       isHit: false,
       message: `遍历 nums1[${i}] = ${val}，将其存入集合 set1。set1 当前大小为 ${set1.size}。`,
       log: `set1.add(${val}) -> [${Array.from(set1).join(', ')}]`,
-      codeLine: [7, 8],
+      codeLine: lines.buildSet1,
     });
   }
 
@@ -87,7 +95,7 @@ export function buildIntersectionSteps(nums1: number[], nums2: number[]): Inters
         ? `🎉 检查 nums2[${j}] = ${val}：在 set1 中存在！将其存入交集结果集 resultSet (现为 [${Array.from(resultSet).join(', ')}])。`
         : `检查 nums2[${j}] = ${val}：不在 set1 中，跳过。`,
       log: hit ? `✓ 命中交集: ${val}` : `比对 nums2[${j}]=${val} (未命中)`,
-      codeLine: hit ? [10, 11] : 10,
+      codeLine: hit ? lines.scanHit : lines.scanMiss,
     });
   }
 
@@ -103,7 +111,7 @@ export function buildIntersectionSteps(nums1: number[], nums2: number[]): Inters
     isHit: false,
     message: `🎉 交集求解完成！最终交集为 [${Array.from(resultSet).join(', ')}]。`,
     log: `求解完成: 交集共 ${resultSet.size} 个元素`,
-    codeLine: 14,
+    codeLine: lines.done,
   });
 
   return steps;

@@ -10,6 +10,9 @@ import {
   KNAPSACK_01_PROBLEM_HTML,
   KNAPSACK_01_ANALYSIS_HTML,
   KNAPSACK_01_CODE_LANGUAGES,
+  KNAPSACK_01_STAGE1_CODE_LANGUAGES,
+  KNAPSACK_01_STAGE2_CODE_LANGUAGES,
+  KNAPSACK_01_STAGE3_CODE_LANGUAGES,
 } from './knapsack-073-problem-content';
 import {
   runKnapsackEngine,
@@ -20,11 +23,40 @@ import {
   renderKnapsackSandbox,
   renderKnapsackDpMatrix,
 } from '../../../../core/renderers/knapsack-sandbox-stage';
+import {
+  buildKnapsackRecursionSteps,
+  buildKnapsackMemoSteps,
+  buildKnapsack2DSteps,
+  renderKnapsackRecursionCard1,
+  renderKnapsackRecursionCard2,
+  renderKnapsackMemoCard1,
+  renderKnapsackMemoCard2,
+  renderKnapsack2DCard1,
+  renderKnapsack2DCard2,
+} from '../../../../core/renderers/knapsack-stage-evolution';
 
 export interface Knapsack01Step extends KnapsackExecutionStep {
   cost: number[];
   val: number[];
   currentVal: number;
+}
+
+function parseKnapsack01Inputs(inputs: Record<string, any>) {
+  const t = parseInt(inputs['input-capacity'] || '70', 10);
+  const costs = String(inputs['input-costs'] || '71, 69, 1')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  const vals = String(inputs['input-vals'] || '100, 1, 2')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  const m = Math.min(costs.length, vals.length);
+  const items: KnapsackItem[] = [];
+  for (let i = 0; i < m; i++) {
+    items.push({ cost: costs[i], val: vals[i], id: i + 1, name: `物品 #${i + 1}` });
+  }
+  return { t, costs, vals, items };
 }
 
 export function buildKnapsack01Steps(
@@ -45,9 +77,9 @@ export function buildKnapsack01Steps(
     lineMap: {
       initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
       outerLoop: { java: 9, cpp: 9, python: 4, javascript: 4 },
-      capLoop: { java: 10, cpp: 10, python: 5, javascript: 5 },
-      updateDp: { java: 11, cpp: 11, python: 6, javascript: 6 },
-      returnAns: { java: 14, cpp: 14, python: 7, javascript: 9 },
+      capLoop: { java: 10, cpp: 11, python: 5, javascript: 6 },
+      updateDp: { java: 11, cpp: 12, python: 6, javascript: 7 },
+      returnAns: { java: 14, cpp: 15, python: 7, javascript: 10 },
     },
     customMessages: {
       init: `🚀 初始化 01 背包空间：容量 T=${capacity}，待选物品数 M=${m}。dp 数组初值置 0。`,
@@ -59,9 +91,9 @@ export function buildKnapsack01Steps(
     ...s,
     cost: [...cost],
     val: [...val],
-    currentVal: s.maxVal,
+    currentVal: s.selectedItems ? s.selectedItems.reduce((acc, it) => acc + it.val, 0) : 0,
     metrics: {
-      'metric-cur-item': s.itemIndex !== undefined && s.itemIndex >= 0 ? `#${s.itemIndex + 1} (体积:${cost[s.itemIndex]}, 价值:${val[s.itemIndex]})` : '无',
+      'metric-cur-item': s.itemIndex !== undefined && s.itemIndex >= 0 ? `#${s.itemIndex + 1}` : '—',
       'metric-cur-capacity': s.j >= 0 ? `${s.j}` : '—',
       'metric-max-val': `${s.maxVal}`,
       'metric-status': s.status.toUpperCase(),
@@ -69,7 +101,7 @@ export function buildKnapsack01Steps(
   })) as Knapsack01Step[];
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<Knapsack01Step>({
+const { template, Visualizer } = createDeclarativeVisualizer<any>({
   id: 'knapsack-01-standard',
   name: '01背包模版 (采药)',
   category: 'dynamic-programming',
@@ -77,13 +109,99 @@ const { template, Visualizer } = createDeclarativeVisualizer<Knapsack01Step>({
     mode: '01背包 · 倒序压缩',
     complexity: 'O(M · T) · O(T)',
   },
-  card1Title: '待选草药货架与载荷舱 (01 背包)',
-  card2Title: '一维滚动状态向量 dp[0..M] 监视器',
-  card2Desc: '展示倒序枚举容量下，每件物品至多选 1 件且无重复计算的填表过程',
-  legend: [
-    { label: '未装入物品', color: '#475569' },
-    { label: '当前考察物品', color: '#f59e0b' },
-    { label: '带来更优更新', color: '#10b981' },
+  defaultStage: 'stage-4',
+  stages: [
+    {
+      id: 'stage-1',
+      name: '阶段 1: 暴力递归',
+      shortName: '递归',
+      num: 1,
+      timeBadge: 'O(2^n)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '01背包 · 递归暴力搜索',
+        complexity: 'O(2^N) · O(N) 栈深',
+      },
+      card1Title: '🎒 递归决策树展开与运行时调用栈',
+      card2Title: '📊 暴力递归开销与重叠子问题分析',
+      codeLanguages: KNAPSACK_01_STAGE1_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, items } = parseKnapsack01Inputs(inputs);
+        return buildKnapsackRecursionSteps('01', t, items);
+      },
+      renderCanvas: (container, step) => renderKnapsackRecursionCard1(container, step),
+      renderCustomMetrics: (container, step) => renderKnapsackRecursionCard2(container, step),
+    },
+    {
+      id: 'stage-2',
+      name: '阶段 2: 记忆化搜索',
+      shortName: '记忆化',
+      num: 2,
+      timeBadge: 'O(M·T)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '01背包 · 记忆化搜索',
+        complexity: 'O(M · T) · O(M · T) 备忘录',
+      },
+      card1Title: '💾 备忘录剪枝探查追踪 (Cache Hit/Miss)',
+      card2Title: '🎯 2D 备忘录缓存热力矩阵 memo[i][j]',
+      codeLanguages: KNAPSACK_01_STAGE2_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, items } = parseKnapsack01Inputs(inputs);
+        return buildKnapsackMemoSteps('01', t, items);
+      },
+      renderCanvas: (container, step) => renderKnapsackMemoCard1(container, step),
+      renderCustomMetrics: (container, step) => renderKnapsackMemoCard2(container, step),
+    },
+    {
+      id: 'stage-3',
+      name: '阶段 3: 二维动态规划',
+      shortName: '二维DP',
+      num: 3,
+      timeBadge: 'O(M·T)',
+      theme: 'bg-emerald',
+      badge: {
+        mode: '01背包 · 严格二维表递推',
+        complexity: 'O(M · T) · O(M · T)',
+      },
+      card1Title: '📐 二维动态规划状态表 dp[i][j]',
+      card2Title: '⚖️ 上一行左侧依赖对比决策台',
+      codeLanguages: KNAPSACK_01_STAGE3_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, items } = parseKnapsack01Inputs(inputs);
+        return buildKnapsack2DSteps('01', t, items);
+      },
+      renderCanvas: (container, step) => renderKnapsack2DCard1(container, step),
+      renderCustomMetrics: (container, step) => renderKnapsack2DCard2(container, step),
+    },
+    {
+      id: 'stage-4',
+      name: '阶段 4: 一维空间压缩',
+      shortName: '一维优化',
+      num: 4,
+      timeBadge: 'O(T) 空间',
+      theme: 'bg-amber',
+      badge: {
+        mode: '01背包 · 倒序压缩',
+        complexity: 'O(M · T) · O(T)',
+      },
+      card1Title: '待选草药货架与载荷舱 (01 背包)',
+      card2Title: '一维滚动状态向量 dp[0..M] 监视器',
+      codeLanguages: KNAPSACK_01_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, costs, vals } = parseKnapsack01Inputs(inputs);
+        return buildKnapsack01Steps(t, costs, vals);
+      },
+      renderCanvas: (container, step) => {
+        renderKnapsackSandbox(container, step, {
+          title: '🎒 实时背包载荷与草药货架',
+          isPartitioned: false,
+        });
+      },
+      renderCustomMetrics: (container, step) => {
+        renderKnapsackDpMatrix(container, step, `一维滚动状态向量 dp[0..${step.dp.length - 1}]`);
+      },
+    },
   ],
   inputs: [
     {
@@ -136,15 +254,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<Knapsack01Step>({
   problemHtml: KNAPSACK_01_PROBLEM_HTML,
   analysisHtml: KNAPSACK_01_ANALYSIS_HTML,
   buildSteps: (inputs: Record<string, any>) => {
-    const t = parseInt(inputs['input-capacity'] || '70', 10);
-    const costs = String(inputs['input-costs'] || '71, 69, 1')
-      .split(',')
-      .map((s: string) => parseInt(s.trim(), 10))
-      .filter((n: number) => !isNaN(n));
-    const vals = String(inputs['input-vals'] || '100, 1, 2')
-      .split(',')
-      .map((s: string) => parseInt(s.trim(), 10))
-      .filter((n: number) => !isNaN(n));
+    const { t, costs, vals } = parseKnapsack01Inputs(inputs);
     return buildKnapsack01Steps(t, costs, vals);
   },
   renderCanvas: (container, step) => {

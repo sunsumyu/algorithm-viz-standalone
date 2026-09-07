@@ -91,16 +91,21 @@ export class StageNavigationCoordinator {
       const isActive = dirKey === options.currentDirection;
       const btn = document.createElement('button');
       btn.dataset.dir = dirKey;
-      btn.title = dirSpec.label || dirKey;
-      const iconClass = dirKey === 'forward' ? 'fa-arrow-down-right-across' : 'fa-arrow-up-left-across';
-      const label = dirSpec.label ? dirSpec.label.replace(/\(.*\)/, '') : dirKey;
+
+      // 统一中文标签提取：优先级 label -> name -> 顺推/逆推兜底，杜绝英文泄漏
+      const defaultLabel = dirKey === 'forward' ? '顺推' : dirKey === 'reverse' ? '逆推' : dirKey;
+      const rawLabel = dirSpec.label || (dirSpec as any).name || defaultLabel;
+      const cleanLabel = rawLabel.replace(/\(.*\)/, '').replace(/（.*）/, '').trim() || defaultLabel;
+
+      btn.title = dirSpec.label || (dirSpec as any).name || (dirSpec as any).description || `${cleanLabel} (${dirKey})`;
+      const iconClass = dirKey === 'forward' ? 'fa-arrow-right' : 'fa-arrow-left';
 
       btn.className = `dir-tab-btn px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-xs transition-all flex items-center gap-1 border ${
         isActive ? 'active bg-blue-600 text-white shadow-sm font-bold border-blue-600' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold'
       }`;
       btn.innerHTML = `
         <i class="fa-solid ${iconClass} text-[9px]"></i>
-        <span class="truncate">${label}</span>
+        <span class="truncate">${cleanLabel}</span>
       `;
 
       btn.addEventListener('click', () => {

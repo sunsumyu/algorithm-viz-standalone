@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   RANSOM_NOTE_PROBLEM_HTML,
@@ -28,12 +29,21 @@ export interface RansomNoteStep {
   overdraftSlot: number | null;
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function buildRansomNoteSteps(ransomNote: string, magazine: string): RansomNoteStep[] {
   const steps: RansomNoteStep[] = [];
   const record = new Array(26).fill(0);
+
+  const lines = {
+    checkLenFail: { java: 2, cpp: 4, python: [3, 4], javascript: 2 },
+    initRecord: { java: 3, cpp: 5, python: 5, javascript: [3, 4] },
+    stockMag: { java: [4, 5], cpp: [6, 7], python: 5, javascript: [5, 6] },
+    deductOverdraft: { java: [8, 9, 10], cpp: [10, 11], python: [7, 8], javascript: [10, 11] },
+    deductSuccess: { java: 8, cpp: 10, python: 9, javascript: 10 },
+    done: { java: 13, cpp: 13, python: 10, javascript: 13 },
+  };
 
   if (ransomNote.length > magazine.length) {
     steps.push({
@@ -48,7 +58,7 @@ export function buildRansomNoteSteps(ransomNote: string, magazine: string): Rans
       overdraftSlot: null,
       message: `赎金信长度 (${ransomNote.length}) 大于杂志库长度 (${magazine.length})，字符总数不足，直接返回 false。`,
       log: `长度不足: ${ransomNote.length} > ${magazine.length} => false`,
-      codeLine: 2,
+      codeLine: lines.checkLenFail,
     });
     return steps;
   }
@@ -65,7 +75,7 @@ export function buildRansomNoteSteps(ransomNote: string, magazine: string): Rans
     overdraftSlot: null,
     message: `长度校验通过 (ransomNote: ${ransomNote.length}, magazine: ${magazine.length})，初始化 26 槽位字符库存表 record。`,
     log: `初始化库存 record[26]`,
-    codeLine: 3,
+    codeLine: lines.initRecord,
   });
 
   // 1. 扫描 magazine 进库
@@ -86,7 +96,7 @@ export function buildRansomNoteSteps(ransomNote: string, magazine: string): Rans
       overdraftSlot: null,
       message: `杂志库进库 magazine[${i}] = '${char}'：槽位 [${slot}] 库存 +1 (现存 ${record[slot]})。`,
       log: `杂志入库 '${char}': record[${slot}] = ${record[slot]}`,
-      codeLine: [4, 5],
+      codeLine: lines.stockMag,
     });
   }
 
@@ -109,7 +119,7 @@ export function buildRansomNoteSteps(ransomNote: string, magazine: string): Rans
         overdraftSlot: slot,
         message: `⚠️ 赎金信扣减 ransomNote[${j}] = '${char}'：槽位 [${slot}] 库存不足透支 (record[${slot}] = ${record[slot]} < 0)！无法构成赎金信，返回 false。`,
         log: `✗ 透支: 字符 '${char}' 不足 (record[${slot}] < 0)`,
-        codeLine: [7, 8, 9],
+        codeLine: lines.deductOverdraft,
       });
       return steps;
     }
@@ -126,7 +136,7 @@ export function buildRansomNoteSteps(ransomNote: string, magazine: string): Rans
       overdraftSlot: null,
       message: `赎金信扣减 ransomNote[${j}] = '${char}'：槽位 [${slot}] 消耗 1 (剩余库存 ${record[slot]})。`,
       log: `消耗 '${char}': record[${slot}] 剩余 ${record[slot]}`,
-      codeLine: [7, 8],
+      codeLine: lines.deductSuccess,
     });
   }
 
@@ -142,7 +152,7 @@ export function buildRansomNoteSteps(ransomNote: string, magazine: string): Rans
     overdraftSlot: null,
     message: `🎉 赎金信所有字符均已成功在杂志库中找到并扣减！可以构成赎金信，返回 true。`,
     log: `✓ 成功构成赎金信 (true)`,
-    codeLine: 12,
+    codeLine: lines.done,
   });
 
   return steps;

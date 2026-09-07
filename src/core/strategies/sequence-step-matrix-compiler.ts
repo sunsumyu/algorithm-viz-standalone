@@ -1638,15 +1638,19 @@ export class SequenceStepMatrixCompiler {
     let callCount = 0;
     const MAX_RECORDED_CALLS = 100;
 
-    const lineEntry = anchorMap?.entry || (isMemo ? 7 : 5);
-    const lineBoundaryCross = anchorMap?.boundary_cross || (isMemo ? 8 : 6);
-    const lineBoundarySingle = anchorMap?.boundary_single || (isMemo ? 9 : 7);
-    const lineCacheHit = anchorMap?.cache_hit || 10;
-    const lineMatch = anchorMap?.match || (isMemo ? 12 : 9);
-    const lineMatchBranch = anchorMap?.match_branch || (isMemo ? 13 : 10);
-    const lineDiff = anchorMap?.diff || (isMemo ? 16 : 13);
-    const lineCombine = anchorMap?.combine || (isMemo ? 19 : 17);
-    const lineReturn = isMemo ? 4 : 3;
+    const lineMainEntry = anchorMap?.entry || 1;
+    const lineMemoInit = anchorMap?.memo_init || 3;
+    const lineCallDfs = anchorMap?.call_dfs || (isMemo ? 4 : 2);
+    const lineDfsEntry = anchorMap?.dfs_entry || (isMemo ? 6 : 4);
+    const lineBoundaryCross = anchorMap?.boundary_cross || (isMemo ? 7 : 5);
+    const lineBoundarySingle = anchorMap?.boundary_single || (isMemo ? 8 : 6);
+    const lineCacheHit = anchorMap?.cache_hit || (isMemo ? 9 : 7);
+    const lineMatch = anchorMap?.match || (isMemo ? 10 : 7);
+    const lineMatchBranch = anchorMap?.match_branch || (isMemo ? 11 : 8);
+    const lineBranchLeft = anchorMap?.branch_left || anchorMap?.diff || (isMemo ? 13 : 10);
+    const lineBranchRight = anchorMap?.branch_right || (isMemo ? 14 : 11);
+    const lineCombine = anchorMap?.combine || (isMemo ? 16 : 13);
+    const lineReturn = anchorMap?.return || lineMainEntry;
 
     const rootNode: UniversalTreeNode = {
       id: `node-${++nodeIdCounter}`,
@@ -1656,6 +1660,57 @@ export class SequenceStepMatrixCompiler {
       status: 'current',
       children: []
     };
+
+    // Step 0: 主函数入口帧 (生命周期闭环不变量)
+    generated.push({
+      type: 'entry',
+      i: 0,
+      j: n - 1,
+      grid: JSON.parse(JSON.stringify(gridState)),
+      activeStack: [],
+      visited: [],
+      line: lineMainEntry,
+      tag: `longestPalindromeSubseq("${s}")`,
+      log: `| 🎯 主函数入口：求解 longestPalindromeSubseq(s="${s}")，规模 n=${n}`,
+      msg: `主函数入口：接收参数 <code>s = "${s}"</code>（长度 <code>${n}</code>），准备求解最长回文子序列长度。`,
+      gridHighlight: { i: 0, j: n - 1 },
+      activeNodeId: rootNode.id,
+      treeRoot: cloneTree(rootNode)
+    });
+
+    if (isMemo) {
+      generated.push({
+        type: 'init',
+        i: 0,
+        j: n - 1,
+        grid: JSON.parse(JSON.stringify(gridState)),
+        activeStack: [],
+        visited: [],
+        line: lineMemoInit,
+        tag: `初始化 memo[${n}][${n}]`,
+        log: `| 📦 创建 Integer[${n}][${n}] 备忘录缓存矩阵`,
+        msg: `创建 <code>${n}×${n}</code> 的备忘录矩阵 <code>memo</code>，初始化全部为 null。`,
+        gridHighlight: { i: 0, j: n - 1 },
+        activeNodeId: rootNode.id,
+        treeRoot: cloneTree(rootNode)
+      });
+    }
+
+    generated.push({
+      type: 'call',
+      i: 0,
+      j: n - 1,
+      grid: JSON.parse(JSON.stringify(gridState)),
+      activeStack: [],
+      visited: [],
+      line: lineCallDfs,
+      tag: `调用 dfs(0, ${n - 1})`,
+      log: `| 🚀 主函数调用 dfs(s, 0, ${n - 1}${isMemo ? ', memo' : ''})，启动区间推演`,
+      msg: `调用辅助递归函数 <code>dfs(s, 0, ${n - 1}${isMemo ? ', memo' : ''})</code>，从全串区间开始深入搜索。`,
+      gridHighlight: { i: 0, j: n - 1 },
+      activeNodeId: rootNode.id,
+      treeRoot: cloneTree(rootNode)
+    });
 
     function dfs(i: number, j: number, currentTreeNode?: UniversalTreeNode): number {
       callCount++;
@@ -1673,7 +1728,7 @@ export class SequenceStepMatrixCompiler {
           grid: JSON.parse(JSON.stringify(gridState)),
           activeStack: [...activeStack],
           visited: [...visitedCells],
-          line: lineEntry,
+          line: lineDfsEntry,
           tag: `dfs(${i}, ${j})`,
           log: `| 📥 进入 dfs(i=${i}, j=${j}) [子串="${s.slice(i, j + 1)}"]`,
           msg: `进入函数 <code>dfs(i = ${i}, j = ${j})</code>，求解子串 <code>s[${i}..${j}] "${s.slice(i, j + 1)}"</code> 的最长回文子序列长度。`,
@@ -1763,8 +1818,6 @@ export class SequenceStepMatrixCompiler {
         return memoCache[key];
       }
 
-      memoCache[key] = (memoCache[key] || 0) + 1;
-
       const isMatch = s[i] === s[j];
       let res = 0;
 
@@ -1779,7 +1832,7 @@ export class SequenceStepMatrixCompiler {
             visited: [...visitedCells],
             line: lineMatch,
             tag: `两端相同 '${s[i]}'`,
-            log: `| 🔀 两端字符相同 s[${i}] == s[${j}] ('${s[i]}')，贡献长度 +2，转移至 dfs(${i + 1}, ${j - 1})`,
+            log: `| 🔀 两端字符相同 s[${i}] == s[${j}] ('${s[i]}')，贡献长度 +2，深入 dfs(${i + 1}, ${j - 1})`,
             msg: `🔀 两端字符相同 <code>s[${i}] == s[${j}] == '${s[i]}'</code>，贡献回文长度 2，进入 <code>dfs(${i + 1}, ${j - 1})</code>。`,
             gridHighlight: { i, j },
             activeNodeId: currentTreeNode.id,
@@ -1827,24 +1880,6 @@ export class SequenceStepMatrixCompiler {
           });
         }
       } else {
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'diff-branch',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineDiff,
-            tag: `端点不同 ('${s[i]}' != '${s[j]}')`,
-            log: `| ⏩ 端点不同 s[${i}]('${s[i]}') != s[${j}]('${s[j]}')，分别尝试舍弃左端 dfs(${i + 1}, ${j}) 与舍弃右端 dfs(${i}, ${j - 1})`,
-            msg: `⏩ 端点不同 <code>s[${i}] ('${s[i]}') != s[${j}] ('${s[j]}')</code>，分别尝试舍弃左端与舍弃右端。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-
         // 分支 1: 舍弃左端 s[i] -> dfs(i+1, j)
         let childLeft: UniversalTreeNode | undefined;
         if (shouldRecord && currentTreeNode) {
@@ -1857,6 +1892,22 @@ export class SequenceStepMatrixCompiler {
             children: []
           };
           currentTreeNode.children.push(childLeft);
+
+          generated.push({
+            type: 'diff-branch-left',
+            i,
+            j,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineBranchLeft,
+            tag: `舍弃左端 s[${i}]('${s[i]}')`,
+            log: `| ⏩ 端点不同 s[${i}]('${s[i]}') != s[${j}]('${s[j]}')，分支 1：舍弃左端，深入探索 dfs(${i + 1}, ${j})`,
+            msg: `⏩ 端点不同 <code>s[${i}] ('${s[i]}') != s[${j}] ('${s[j]}')</code>，分支 1：尝试舍弃左端字符 <code>s[${i}]</code>，计算 <code>skipLeft = dfs(${i + 1}, ${j})</code>。`,
+            gridHighlight: { i, j },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: cloneTree(rootNode)
+          });
         }
         const valLeft = dfs(i + 1, j, childLeft);
 
@@ -1872,6 +1923,22 @@ export class SequenceStepMatrixCompiler {
             children: []
           };
           currentTreeNode.children.push(childRight);
+
+          generated.push({
+            type: 'diff-branch-right',
+            i,
+            j,
+            grid: JSON.parse(JSON.stringify(gridState)),
+            activeStack: [...activeStack],
+            visited: [...visitedCells],
+            line: lineBranchRight,
+            tag: `舍弃右端 s[${j}]('${s[j]}')`,
+            log: `| ⏩ 端点不同，分支 2：舍弃右端，深入探索 dfs(${i}, ${j - 1})`,
+            msg: `⏩ 端点不同，分支 2：尝试舍弃右端字符 <code>s[${j}] ('${s[j]}')</code>，计算 <code>skipRight = dfs(${i}, ${j - 1})</code>。`,
+            gridHighlight: { i, j },
+            activeNodeId: currentTreeNode.id,
+            treeRoot: cloneTree(rootNode)
+          });
         }
         const valRight = dfs(i, j - 1, childRight);
 

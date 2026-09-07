@@ -324,10 +324,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
     }
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🏊 泳池高程网格与淹没水面 (${n}x${m})</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🏊 泳池高程网格与淹没水面 (${n}x${m})</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前探索: <b style="color: #f59e0b;">(${step.r}, ${step.c})</b> | 水位: <b style="color: #38bdf8;">t = ${step.curWaterLevel}</b>
           </span>
         </div>
@@ -337,9 +337,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
         </div>
 
         <!-- 底部瓶颈转移舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🌊 瓶颈最短路松弛转移舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🌊 瓶颈最短路松弛转移舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               转移方程: <b>ncCost = max(cost, grid[nr][nc])</b>
             </div>
@@ -361,20 +361,20 @@ const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
     const top3 = step.pqSnapshot.slice(0, 4);
     const top3Html = top3.length > 0
       ? top3.map((it, idx) => `<span style="background: #1e3a8a; border: 1px solid #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; color: #bae6fd; font-family: monospace;">#${idx + 1}: (${it.r},${it.c}) t=${it.t}</span>`).join(' ')
-      : '<span style="color: #94a3b8; font-size: 10.5px;">队列为空</span>';
+      : '<span style="color: #64748b; font-size: 10.5px;">队列为空</span>';
 
     const pathStr = step.bestPath && step.bestPath.length > 0
       ? step.bestPath.map((p) => `(${p.r},${p.c})`).join(' ➔ ')
       : '寻路进行中';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #38bdf8;">小根堆前沿 Top4:</span>
             <div style="display: flex; gap: 4px; flex-wrap: wrap;">${top3Html}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">最优瓶颈路径:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">${pathStr}</strong>
           </div>

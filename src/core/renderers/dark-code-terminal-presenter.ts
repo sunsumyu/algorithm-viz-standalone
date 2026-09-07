@@ -72,6 +72,8 @@ export interface DarkCodeTerminalInstance {
   getCurrentLanguage(): string;
   /** 获取当前字号 */
   getFontSize(): number;
+  /** 复制代码到系统剪贴板 */
+  copyCode(): Promise<boolean>;
   /** 语义与代码多语言模型 */
   codeModel?: CodePresentationModel;
   /** 销毁实例并解绑事件 */
@@ -214,6 +216,29 @@ export class DarkCodeTerminalPresenter {
     const btnFontDec = root.querySelector('#btn-code-font-dec') as HTMLElement | null;
     const btnFontInc = root.querySelector('#btn-code-font-inc') as HTMLElement | null;
     const fontIndicator = root.querySelector('#code-font-indicator') as HTMLElement | null;
+
+    let btnCopy = root.querySelector('#btn-code-copy') as HTMLElement | null;
+    if (!btnCopy) {
+      const fontContainer = (root.querySelector('#code-font-container') || root.querySelector('.font-tools')) as HTMLElement | null;
+      if (fontContainer && typeof fontContainer.appendChild === 'function') {
+        btnCopy = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-copy');
+        btnCopy.className = 'btn-code-copy';
+        btnCopy.title = '复制当前完整代码';
+        btnCopy.style.cssText =
+          'background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px 7px; color: #94a3b8; font-size: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease; white-space: nowrap; user-select: none;';
+        btnCopy.innerHTML = `
+          <span class="copy-icon" style="display: inline-flex; align-items: center;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </span>
+          <span class="copy-text">复制</span>
+        `;
+        if (typeof fontContainer.insertBefore === 'function' && fontContainer.firstChild) {
+          fontContainer.insertBefore(btnCopy, fontContainer.firstChild);
+        } else {
+          fontContainer.appendChild(btnCopy);
+        }
+      }
+    }
 
     const modalProblem = root.querySelector('#modal-problem') as HTMLElement | null;
     if (modalProblem) {
@@ -570,6 +595,78 @@ export class DarkCodeTerminalPresenter {
     btnFontDec?.addEventListener('click', onFontDecClick);
     btnFontInc?.addEventListener('click', onFontIncClick);
 
+    // 代码复制到剪贴板功能
+    let copyResetTimer: any = null;
+    const copyCodeInternal = async (): Promise<boolean> => {
+      const lines = codeModel.getLines(currentLang);
+      const fullText = lines.join('\n');
+      let success = false;
+
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(fullText);
+          success = true;
+        } else if (typeof document !== 'undefined') {
+          const ta = document.createElement('textarea');
+          ta.value = fullText;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          success = document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+      } catch (e) {
+        console.warn('[DarkCodeTerminalPresenter] Clipboard write failed, falling back to execCommand:', e);
+        try {
+          if (typeof document !== 'undefined') {
+            const ta = document.createElement('textarea');
+            ta.value = fullText;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            success = document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+        } catch {}
+      }
+
+      if (btnCopy) {
+        const copyText = btnCopy.querySelector('.copy-text') || btnCopy;
+        const copyIcon = btnCopy.querySelector('.copy-icon');
+
+        btnCopy.classList.add('copied');
+        btnCopy.style.borderColor = 'rgba(52, 211, 153, 0.5)';
+        btnCopy.style.color = '#34d399';
+        btnCopy.style.background = 'rgba(6, 78, 59, 0.4)';
+        if (copyText) copyText.textContent = '已复制';
+        if (copyIcon) {
+          copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        }
+
+        if (copyResetTimer) clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(() => {
+          btnCopy.classList.remove('copied');
+          btnCopy.style.borderColor = '#334155';
+          btnCopy.style.color = '#94a3b8';
+          btnCopy.style.background = '#0f172a';
+          if (copyText) copyText.textContent = '复制';
+          if (copyIcon) {
+            copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+          }
+        }, 1800);
+      }
+
+      return success;
+    };
+
+    const onCopyClick = () => {
+      void copyCodeInternal();
+    };
+
+    btnCopy?.addEventListener('click', onCopyClick);
+
     // 模态弹窗打开与关闭
     const onOpenModalClick = () => {
       if (modalProblem) {
@@ -643,7 +740,10 @@ export class DarkCodeTerminalPresenter {
       switchTab: (tab) => switchTabInternal(tab),
       getCurrentLanguage: () => currentLang,
       getFontSize: () => codeFontSize,
+      copyCode: () => copyCodeInternal(),
       destroy: () => {
+        if (copyResetTimer) clearTimeout(copyResetTimer);
+        btnCopy?.removeEventListener('click', onCopyClick);
         btnTabCode?.removeEventListener('click', onTabCodeClick);
         btnTabProblem?.removeEventListener('click', onTabProblemClick);
         btnTabAnalysis?.removeEventListener('click', onTabAnalysisClick);
@@ -832,13 +932,13 @@ export class DarkCodeTerminalPresenter {
     tabGroup.className = 'tab-group';
     const btnTabCode = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-code');
     btnTabCode.className = 'tab-item active';
-    btnTabCode.textContent = '💻 代码调试';
+    btnTabCode.textContent = '</> 代码调试';
     const btnTabProblem = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-problem');
     btnTabProblem.className = 'tab-item';
-    btnTabProblem.textContent = '📋 题目描述';
+    btnTabProblem.textContent = '题目描述';
     const btnTabAnalysis = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-analysis');
     btnTabAnalysis.className = 'tab-item';
-    btnTabAnalysis.textContent = '💡 算法精讲';
+    btnTabAnalysis.textContent = '递推精讲';
     tabGroup.appendChild(btnTabCode);
     tabGroup.appendChild(btnTabProblem);
     tabGroup.appendChild(btnTabAnalysis);
@@ -863,6 +963,17 @@ export class DarkCodeTerminalPresenter {
 
     const fontTools = DarkCodeTerminalPresenter.createSafeElement('div');
     fontTools.className = 'font-tools';
+    fontTools.style.display = 'flex';
+    fontTools.style.alignItems = 'center';
+    fontTools.style.gap = '6px';
+    fontTools.style.flexShrink = '0';
+
+    const btnCopy = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-copy');
+    btnCopy.className = 'btn-code-copy';
+    btnCopy.title = '复制当前完整代码';
+    btnCopy.textContent = '复制';
+    fontTools.appendChild(btnCopy);
+
     const fontScaler = DarkCodeTerminalPresenter.createSafeElement('div');
     fontScaler.className = 'font-scaler';
     const btnFontDec = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-font-dec');
@@ -876,6 +987,22 @@ export class DarkCodeTerminalPresenter {
     fontScaler.appendChild(fontIndicator);
     fontScaler.appendChild(btnFontInc);
     fontTools.appendChild(fontScaler);
+
+    const macDots = DarkCodeTerminalPresenter.createSafeElement('div');
+    macDots.className = 'mac-dots';
+    macDots.style.display = 'flex';
+    macDots.style.alignItems = 'center';
+    macDots.style.gap = '4px';
+    ['#ef4444', '#eab308', '#22c55e'].forEach((col) => {
+      const dot = DarkCodeTerminalPresenter.createSafeElement('span');
+      dot.style.width = '7px';
+      dot.style.height = '7px';
+      dot.style.borderRadius = '999px';
+      dot.style.background = col;
+      dot.style.display = 'inline-block';
+      macDots.appendChild(dot);
+    });
+    fontTools.appendChild(macDots);
     header.appendChild(fontTools);
 
     autoFrame.appendChild(header);
@@ -904,9 +1031,9 @@ export class DarkCodeTerminalPresenter {
       <div class="dark-terminal-auto-frame" style="background: #0f172a; border-radius: 16px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%;">
         <div class="terminal-auto-header" style="background: #1e293b; padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid #334155; flex-shrink: 0; min-width: 0; overflow-x: auto; width: 100%; box-sizing: border-box;">
           <div class="tab-group" style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-            <button id="btn-tab-code" class="tab-item active" style="background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">💻 代码调试</button>
-            <button id="btn-tab-problem" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">📋 题目描述</button>
-            <button id="btn-tab-analysis" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">💡 算法精讲</button>
+            <button id="btn-tab-code" class="tab-item active" style="background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;"></> 代码调试</button>
+            <button id="btn-tab-problem" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">题目描述</button>
+            <button id="btn-tab-analysis" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">递推精讲</button>
           </div>
           <div class="lang-group" id="code-lang-tabs" style="display: flex; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px; flex-shrink: 0;">
             <button class="lang-btn active" data-lang="java" style="background: #334155; border: none; color: #93c5fd; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">Java</button>
@@ -914,7 +1041,13 @@ export class DarkCodeTerminalPresenter {
             <button class="lang-btn" data-lang="python" style="background: transparent; border: none; color: #64748b; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">Python</button>
             <button class="lang-btn" data-lang="javascript" style="background: transparent; border: none; color: #64748b; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">JS</button>
           </div>
-          <div class="font-tools" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <div class="font-tools" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <button id="btn-code-copy" title="复制当前完整代码" style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px 7px; color: #94a3b8; font-size: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease; white-space: nowrap; user-select: none;">
+              <span class="copy-icon" style="display: inline-flex; align-items: center;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </span>
+              <span class="copy-text">复制</span>
+            </button>
             <div class="font-scaler" style="display: flex; align-items: center; gap: 2px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 1px 4px;">
               <button id="btn-code-font-dec" title="缩小代码字号" style="background: transparent; border: none; color: #94a3b8; font-size: 9px; font-weight: 700; cursor: pointer; padding: 1px 3px;">A-</button>
               <span id="code-font-indicator" class="font-indicator" style="font-size: 9.5px; font-family: monospace; color: #93c5fd; min-width: 14px; text-align: center;">12</span>

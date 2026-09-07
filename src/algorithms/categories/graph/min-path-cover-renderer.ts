@@ -425,7 +425,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PathCoverStep>({
   buildSteps: () => buildMinPathCoverSteps(),
   renderCanvas: (container, step) => {
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
           <!-- 匹配连线 -->
           ${step.splitMatches
@@ -448,7 +448,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PathCoverStep>({
           <g><circle cx="230" cy="125" r="14" fill="#f59e0b" /><text x="230" y="129" fill="#ffffff" font-size="10" font-weight="800" text-anchor="middle">3_in</text></g>
           <g><circle cx="230" cy="170" r="14" fill="#f59e0b" /><text x="230" y="174" fill="#ffffff" font-size="10" font-weight="800" text-anchor="middle">4_in</text></g>
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           🟢 绿色连线为匹配成功的路径段 | 每匹配一条边，全图路径总数减少 1
         </div>
       </div>

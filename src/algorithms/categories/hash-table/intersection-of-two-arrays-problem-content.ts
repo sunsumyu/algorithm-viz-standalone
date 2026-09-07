@@ -87,7 +87,12 @@ export const INTERSECTION_ARRAYS_CODE_LANGUAGES: Record<string, string[]> = {
   python: [
     'class Solution:',
     '    def intersection(self, nums1: List[int], nums2: List[int]) -> List[int]:',
-    '        return list(set(nums1) & set(nums2))',
+    '        set1 = set(nums1)',
+    '        result_set = set()',
+    '        for num in nums2:',
+    '            if num in set1:',
+    '                result_set.add(num)',
+    '        return list(result_set)',
   ],
   javascript: [
     'var intersection = function(nums1, nums2) {',

@@ -44,14 +44,17 @@ describe('TreeCentroidPathCount (POJ 1741 / P3806)', () => {
       expect(step.metrics!['metric-deduct-pairs']).toBeDefined();
       expect(step.metrics!['metric-valid-pairs']).toBeDefined();
 
-      const rawLines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
+      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in step.codeLine ? (step.codeLine as any).java : step.codeLine;
+      const rawLines = Array.isArray(javaLine) ? javaLine : [javaLine];
       for (const line of rawLines) {
         expect(line).toBeGreaterThanOrEqual(1);
         expect(line).toBeLessThanOrEqual(javaLines);
       }
     }
 
-    expect(steps[0].codeLine).toBe(86);
-    expect(steps[steps.length - 1].codeLine).toBe(105);
+    const firstLine = typeof steps[0].codeLine === 'object' && steps[0].codeLine !== null ? (steps[0].codeLine as any).java : steps[0].codeLine;
+    const lastLine = typeof steps[steps.length - 1].codeLine === 'object' && steps[steps.length - 1].codeLine !== null ? (steps[steps.length - 1].codeLine as any).java : steps[steps.length - 1].codeLine;
+    expect(firstLine).toBe(86);
+    expect(lastLine).toBe(105);
   });
 });

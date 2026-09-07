@@ -76,14 +76,14 @@ export function buildSecretExpertSteps(preset: string = 'classic_6expert'): Secr
   let resetNodes: number[] = [];
 
   const lines = {
-    init: { cpp: 16, java: 19, python: 3, javascript: 2 },
-    initFather: { cpp: 22, java: 21, python: 4, javascript: 3 },
-    unionFirst: { cpp: 34, java: 22, python: 17, javascript: 15 },
-    sort: { cpp: 17, java: 24, python: 4, javascript: 3 },
-    timeBatch: { cpp: 37, java: 27, python: 22, javascript: 21 },
-    merge: { cpp: 42, java: 31, python: 26, javascript: 24 },
-    rollback: { cpp: 48, java: 36, python: 30, javascript: 28 },
-    done: { cpp: 55, java: 43, python: 36, javascript: 34 },
+    init: { cpp: 9, java: 19, python: 3, javascript: 2 },
+    initFather: { cpp: 15, java: 21, python: 4, javascript: 3 },
+    unionFirst: { cpp: 27, java: 22, python: 17, javascript: 15 },
+    sort: { cpp: 10, java: 24, python: 4, javascript: 3 },
+    timeBatch: { cpp: 30, java: 27, python: 22, javascript: 21 },
+    merge: { cpp: 35, java: 31, python: 26, javascript: 24 },
+    rollback: { cpp: 41, java: 36, python: 30, javascript: 28 },
+    done: { cpp: 48, java: 43, python: 36, javascript: 34 },
   };
 
   function makeStep(
@@ -326,10 +326,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
     }
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🤫 专家社交时序网络</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🤫 专家社交时序网络</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前知密人数: <b style="color: #10b981;">${step.knownExperts.length}</b> 人
           </span>
         </div>
@@ -342,9 +342,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
         </div>
 
         <!-- 底部时序扩散与撤销舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">⏳ 时序扩散与因果撤销舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">⏳ 时序扩散与因果撤销舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               当前时间切片: <b>t = ${step.curTime}</b>
             </div>
@@ -385,7 +385,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">E[${u}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">E[${u}]</span>
               <span style="line-height: 1.1;">${val}</span>
             </div>
           `;
@@ -403,10 +403,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
     const fatherRow = renderRow('father[] (父指针)', step.father, 'father', '#38bdf8');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${fatherRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">当前已确认掌握秘密人数:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 12px;">${step.knownExperts.length} 人 (${step.knownExperts.map((x) => `E${x}`).join(', ')})</strong>
           </div>

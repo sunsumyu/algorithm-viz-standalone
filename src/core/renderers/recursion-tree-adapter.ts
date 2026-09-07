@@ -40,32 +40,45 @@ export class RecursionTreeAdapter {
       return maxLen;
     }
 
+    function hasEdgeLabelsOrTags(n: any): boolean {
+      if (!n) return false;
+      if (n.tag || n.edgeLabel) return true;
+      if (n.children && n.children.length > 0) {
+        for (const c of n.children) {
+          if (c.edgeLabel || hasEdgeLabelsOrTags(c)) return true;
+        }
+      }
+      return false;
+    }
+
     const leafCount = countLeaves(root);
     const maxDepth = getDepth(root);
     const maxValLen = getMaxValLen(root);
+    const hasLabels = hasEdgeLabelsOrTags(root);
 
-    let nodeW = Math.max(66, Math.round(maxValLen * 8.2 + 18));
+    // 几何安全尺寸度量：保证分支标签 (edgeLabel) 与返回值徽章 (tag) 绝不遮挡，同时避免纵向过度拉伸
+    let nodeW = Math.max(68, Math.round(maxValLen * 8.0 + 18));
     let nodeH = 26;
     let minGap = 16;
-    let levelH = 56;
+    let levelH = hasLabels ? 66 : 54;
     let fontSize = 10.5;
     let tagFontSize = 8;
-    const topPad = 46;
+    const topPad = 36;
 
     if (leafCount >= 10 || maxDepth >= 4) {
-      nodeW = Math.max(52, Math.round(maxValLen * 7.0 + 14));
-      nodeH = 20;
-      minGap = 8;
-      levelH = 46;
+      nodeW = Math.max(54, Math.round(maxValLen * 7.0 + 14));
+      nodeH = 22;
+      minGap = 10;
+      levelH = hasLabels ? 58 : 46;
       fontSize = 8.5;
-      tagFontSize = 7;
-    } else if (leafCount >= 6 || maxDepth >= 3) {
-      nodeW = Math.max(60, Math.round(maxValLen * 7.6 + 16));
-      nodeH = 23;
-      minGap = 12;
-      levelH = 50;
-      fontSize = 9.5;
       tagFontSize = 7.5;
+    } else if (leafCount >= 6 || maxDepth >= 3) {
+      nodeW = Math.max(62, Math.round(maxValLen * 7.6 + 16));
+      nodeH = 24;
+      minGap = 14;
+      levelH = hasLabels ? 62 : 50;
+      fontSize = 9.5;
+      tagFontSize = 8;
     }
 
     function measure(n: any): any {
@@ -101,11 +114,12 @@ export class RecursionTreeAdapter {
     }
 
     const measured = measure(root);
-    const totalW = Math.max(360, measured.width + 48);
+    const totalW = Math.max(260, measured.width + 36);
     const rootPos = assign(measured, 0, (totalW - measured.width) / 2);
-    const totalH = Math.max(180, topPad + maxDepth * levelH + nodeH + 40);
+    const totalH = Math.max(140, topPad + maxDepth * levelH + nodeH + 36);
 
     const lines: string[] = [];
+    const edgeLabels: string[] = [];
     const nodes: string[] = [];
     let activeX: number | null = null;
     let activeY: number | null = null;
@@ -116,25 +130,39 @@ export class RecursionTreeAdapter {
         const startY = n.y + nodeH / 2;
         const endX = c.x;
         const endY = c.y - nodeH / 2;
-        const midX = (startX + endX) / 2;
-        const midY = (startY + endY) / 2;
 
         const isCurrentBranch = n.id === activeNodeId || c.id === activeNodeId;
         const stroke = isCurrentBranch ? '#3b82f6' : '#cbd5e1';
         const strokeW = isCurrentBranch ? '2' : '1.3';
         const strokeDash = c.status === 'pruned' ? '3,3' : 'none';
 
+        // 贝塞尔曲线平滑连接
+        const curveMidY = (startY + endY) / 2;
         lines.push(
-          `<path d="M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}" fill="none" stroke="${stroke}" stroke-width="${strokeW}" stroke-dasharray="${strokeDash}" />`
+          `<path d="M ${startX} ${startY} C ${startX} ${curveMidY}, ${endX} ${curveMidY}, ${endX} ${endY}" fill="none" stroke="${stroke}" stroke-width="${strokeW}" stroke-dasharray="${strokeDash}" />`
         );
 
         if (c.edgeLabel) {
           const edgeText = String(c.edgeLabel);
-          const edgeW = Math.max(22, edgeText.length * 9.5 + 8);
-          lines.push(`
-            <g transform="translate(${midX}, ${midY})">
-              <rect x="${-edgeW / 2}" y="-6.5" width="${edgeW}" height="13" rx="4" fill="#ffffff" stroke="${isCurrentBranch ? '#3b82f6' : '#94a3b8'}" stroke-width="1" />
-              <text x="0" y="2.5" text-anchor="middle" fill="${isCurrentBranch ? '#1d4ed8' : '#475569'}" font-size="7.5" font-weight="700" font-family="sans-serif">${edgeText}</text>
+          const edgeW = Math.max(20, edgeText.length * 8.5 + 8);
+          const edgeH = 13;
+
+          // 核心几何防重叠：安全垂直净空计算 (Safe Vertical Clearance)
+          const parentBottomPad = n.tag ? 13 : 3;
+          const childTopPad = c.id === activeNodeId ? 18 : 3;
+          const safeTopY = startY + parentBottomPad;
+          const safeBottomY = endY - childTopPad;
+          const safeMidY = safeTopY < safeBottomY ? (safeTopY + safeBottomY) / 2 : curveMidY;
+
+          // 计算沿贝塞尔 S 弯曲线在 safeMidY 处的真实 X 坐标
+          const totalDy = Math.max(1, endY - startY);
+          const t = Math.max(0.12, Math.min(0.88, (safeMidY - startY) / totalDy));
+          const safeMidX = startX + (endX - startX) * (3 * (1 - t) * t * t + t * t * t);
+
+          edgeLabels.push(`
+            <g transform="translate(${safeMidX}, ${safeMidY})">
+              <rect x="${-edgeW / 2}" y="${-edgeH / 2}" width="${edgeW}" height="${edgeH}" rx="3.5" fill="#ffffff" stroke="${isCurrentBranch ? '#2563eb' : '#cbd5e1'}" stroke-width="${isCurrentBranch ? '1.4' : '1'}" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.05))" />
+              <text x="0" y="0" dominant-baseline="central" text-anchor="middle" fill="${isCurrentBranch ? '#1d4ed8' : '#475569'}" font-size="7.5" font-weight="700" font-family="sans-serif">${edgeText}</text>
             </g>
           `);
         }
@@ -191,11 +219,11 @@ export class RecursionTreeAdapter {
       let badgeHtml = '';
       if (n.tag) {
         const tagBg = isOutOfBoundsNode ? '#ef4444' : isPruned ? '#9333ea' : isRepeated ? '#d97706' : '#10b981';
-        const badgeW = Math.min(nodeW + 8, Math.max(26, String(n.tag).length * 6.5 + 8));
+        const badgeW = Math.min(nodeW + 8, Math.max(24, String(n.tag).length * 6.5 + 8));
         badgeHtml = `
-          <g transform="translate(0, ${nodeH / 2 + 7})">
-            <rect x="${-badgeW / 2}" y="-5.5" width="${badgeW}" height="11" rx="3" fill="${tagBg}" />
-            <text x="0" y="2.5" text-anchor="middle" fill="#ffffff" font-size="${tagFontSize}" font-weight="700" font-family="JetBrains Mono, monospace">${n.tag}</text>
+          <g transform="translate(0, ${nodeH / 2 + 6.5})">
+            <rect x="${-badgeW / 2}" y="-5" width="${badgeW}" height="10" rx="3" fill="${tagBg}" />
+            <text x="0" y="0" dominant-baseline="central" text-anchor="middle" fill="#ffffff" font-size="${tagFontSize}" font-weight="700" font-family="JetBrains Mono, monospace">${n.tag}</text>
           </g>
         `;
       }
@@ -203,9 +231,9 @@ export class RecursionTreeAdapter {
       let animalHtml = '';
       if (isCurrent) {
         animalHtml = `
-          <g transform="translate(0, ${-nodeH / 2 - 13})">
-            <ellipse cx="0" cy="5" rx="10" ry="3.5" fill="#3b82f6" opacity="0.22" />
-            <text x="0" y="0" text-anchor="middle" font-size="${Math.max(13, fontSize + 3.5)}" class="animal-frog select-none" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));">🐸</text>
+          <g transform="translate(0, ${-nodeH / 2 - 11})">
+            <ellipse cx="0" cy="4" rx="8" ry="2.5" fill="#3b82f6" opacity="0.22" />
+            <text x="0" y="0" text-anchor="middle" font-size="${Math.max(12, fontSize + 2.5)}" class="animal-frog select-none" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));">🐸</text>
           </g>
         `;
       }
@@ -213,7 +241,7 @@ export class RecursionTreeAdapter {
       nodes.push(`
         <g transform="translate(${n.x}, ${n.y})" ${filterGlow}>
           <rect x="${-nodeW / 2}" y="${-nodeH / 2}" width="${nodeW}" height="${nodeH}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
-          <text x="0" y="3.5" text-anchor="middle" fill="${textColor}" font-size="${fontSize}" font-weight="700" font-family="JetBrains Mono, monospace">${n.val}</text>
+          <text x="0" y="3" text-anchor="middle" fill="${textColor}" font-size="${fontSize}" font-weight="700" font-family="JetBrains Mono, monospace">${n.val}</text>
           ${badgeHtml}
           ${animalHtml}
         </g>
@@ -223,8 +251,9 @@ export class RecursionTreeAdapter {
     draw(rootPos);
 
     const svgContent = `
-      <svg id="tree-svg-canvas" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="min-width: ${totalW}px; min-height: ${totalH}px; display: block; margin: 0 auto;">
+      <svg id="tree-svg-canvas" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="display: block; margin: 0 auto; min-width: ${totalW}px; min-height: ${totalH}px;">
         ${lines.join('')}
+        ${edgeLabels.join('')}
         ${nodes.join('')}
       </svg>
     `;
@@ -234,13 +263,12 @@ export class RecursionTreeAdapter {
 
     if (!scrollBox) {
       container.innerHTML = `
-        <div id="tree-scroll-box" class="w-full h-full flex items-start justify-start overflow-auto p-2">
+        <div id="tree-scroll-box" style="width:100%; height:100%; overflow:auto; padding:10px; box-sizing:border-box; display:flex; justify-content:center; align-items:flex-start;">
           ${svgContent}
         </div>
       `;
       scrollBox = container.querySelector('#tree-scroll-box');
     } else {
-      // 保持现有 scrollBox DOM 容器，仅更新内部 SVG 内容，绝对不粗暴重置滚动坐标
       scrollBox.innerHTML = svgContent;
     }
 

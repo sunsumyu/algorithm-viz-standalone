@@ -32,8 +32,8 @@ import { algorithmRegistry } from './algorithm-registry';
 /**
  * 注册一个算法清单（委托给统一的 AlgorithmRegistry 深模块）
  */
-export function registerAlgorithm(manifest: AlgorithmManifest): void {
-  algorithmRegistry.register(manifest);
+export function registerAlgorithm(manifest: AlgorithmManifest, options?: { allowOverride?: boolean }): void {
+  algorithmRegistry.register(manifest, options);
 }
 
 /**

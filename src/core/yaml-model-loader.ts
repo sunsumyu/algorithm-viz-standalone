@@ -90,10 +90,11 @@ export class YamlModelLoader {
   /**
    * 编译单段带有 @step:anchor 标签的源码，生成纯净代码、行号高亮 HTML 与语义锚点索引表
    */
-  public static compileSource(snippet: IYamlCodeSnippet | undefined, lang: string = 'java'): CompiledCodeResult {
-    if (!snippet || !snippet.source) {
+  public static compileSource(snippet: any, lang: string = 'java'): CompiledCodeResult {
+    const rawSource = snippet?.source || snippet?.code;
+    if (!snippet || typeof rawSource !== 'string') {
       return {
-        title: snippet?.title || '',
+        title: snippet?.title || snippet?.name || '',
         cleanSource: '',
         codeHtml: '',
         lineCount: 0,
@@ -101,10 +102,12 @@ export class YamlModelLoader {
       };
     }
 
-    const lines = snippet.source.trimEnd().split('\n');
+    const lines = rawSource.trimEnd().split('\n');
     const cleanLines: string[] = [];
     const htmlLines: string[] = [];
     const anchorMap: Record<string, number> = {};
+
+    const pendingAnchors: string[] = [];
 
     lines.forEach((rawLine, idx) => {
       const lineNum = idx + 1;
@@ -112,9 +115,10 @@ export class YamlModelLoader {
 
       // 全局提取本行所有 @step:anchor 标签
       const anchorMatches = Array.from(lineText.matchAll(/@step:([a-zA-Z0-9_\-]+)/g));
+      const currentAnchors: string[] = [];
       if (anchorMatches.length > 0) {
         anchorMatches.forEach((m) => {
-          anchorMap[m[1]] = lineNum;
+          currentAnchors.push(m[1]);
         });
         // 剥离所有 @step:anchor 注释标签
         lineText = lineText.replace(/@step:[a-zA-Z0-9_\-]+/g, '');
@@ -123,10 +127,40 @@ export class YamlModelLoader {
         lineText = lineText.replace(/\/\/\s*$/, '').trimEnd();
       }
 
+      // 判断剥离标签后的代码行是否包含有效执行代码（非纯注释且非全空行）
+      const trimmed = lineText.trim();
+      const isPureCommentOrEmpty =
+        trimmed.length === 0 ||
+        trimmed.startsWith('//') ||
+        trimmed.startsWith('#') ||
+        trimmed.startsWith('/*') ||
+        trimmed.startsWith('*');
+
+      if (isPureCommentOrEmpty) {
+        // 如果是纯注释行，将提取到的锚点暂存入 pendingAnchors，待后续第一行有效代码承接
+        pendingAnchors.push(...currentAnchors);
+      } else {
+        // 本行为有效代码行，绑定本行锚点及此前待绑定的所有注释行锚点
+        const anchorsToBind = [...pendingAnchors, ...currentAnchors];
+        anchorsToBind.forEach((anchor) => {
+          anchorMap[anchor] = lineNum;
+        });
+        pendingAnchors.length = 0;
+      }
+
       cleanLines.push(lineText);
       const highlightedCode = highlightTokens(lineText, lang);
       htmlLines.push(`<span class="code-line" data-line="${lineNum}" data-raw-code="${escapeHtml(lineText)}">${highlightedCode}</span>`);
     });
+
+    // 若文件末尾仍有遗留未绑定的锚点，回退绑定至最后一行
+    if (pendingAnchors.length > 0 && lines.length > 0) {
+      pendingAnchors.forEach((anchor) => {
+        if (!anchorMap[anchor]) {
+          anchorMap[anchor] = lines.length;
+        }
+      });
+    }
 
     return {
       title: snippet.title || '',

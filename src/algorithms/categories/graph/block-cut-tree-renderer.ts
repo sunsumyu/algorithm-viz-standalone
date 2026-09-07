@@ -356,13 +356,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<BlockCutStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 205px;" viewBox="0 0 310 200">
           ${svgEdges}
           ${roundSvg}
           ${squareSvg}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           圆形为原图圆点，方形为点双方点 | 圆方相间成树 | 原图两点间所有简单路径的必经点严格等价于圆方树路径上的所有圆点！
         </div>
       </div>
@@ -389,7 +389,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BlockCutStep>({
               const isActive = step.activeArray === activeName && step.activeSlot === idx;
               const bg = isActive ? '#fef08a' : '#1e293b';
               const textCol = isActive ? '#854d0e' : '#e2e8f0';
-              const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+              const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
               return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 30px; height: 30px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 10px; font-weight: 700;">
                 <span style="font-size: 7.5px; color: #64748b; line-height: 1;">[${idx}]</span>
@@ -411,17 +411,17 @@ const { template, Visualizer } = createDeclarativeVisualizer<BlockCutStep>({
         const stStr = step.stackArray.length > 0 ? `[ ${step.stackArray.join(', ')} ]` : '空栈';
 
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #cbd5e1; padding: 2px 0;">
-            <div style="display: flex; flex-direction: column; gap: 4px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #374151; padding: 2px 0;">
+            <div style="display: flex; flex-direction: column; gap: 4px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
               ${dfnRow}
               ${lowRow}
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
                 <span style="color: #f59e0b; font-size: 10px; font-weight: 700;">Tarjan 点双辅助栈:</span>
                 <strong style="color: #facc15; font-family: monospace; font-size: 10.5px;">${stStr}</strong>
               </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 4px 8px;">
-              <span style="color: #94a3b8; font-size: 10.5px;">执行语句:</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #64748b; font-size: 10.5px;">执行语句:</span>
               <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">行 ${Array.isArray(step.codeLine) ? step.codeLine.join('-') : step.codeLine}: ${step.log}</strong>
             </div>
           </div>

@@ -13,6 +13,21 @@ import {
 } from './knapsack-073-problem-content';
 import { HighlightTarget } from '../../../../core/code-panel';
 import { renderKnapsackDpMatrix } from '../../../../core/renderers/knapsack-sandbox-stage';
+import {
+  TARGET_SUM_STAGE1_CODE_LANGUAGES,
+  TARGET_SUM_STAGE2_CODE_LANGUAGES,
+  TARGET_SUM_STAGE3_CODE_LANGUAGES,
+  buildTargetSumRecursionSteps,
+  buildTargetSumMemoSteps,
+  buildTargetSum2DSteps,
+} from './target-sum-stage-evolution';
+import {
+  renderSpecialRecursionCard1,
+  renderSpecialMemoCard1,
+  renderSpecialMemoCard2,
+  renderSpecial2DCard1,
+  renderSpecial2DCard2,
+} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
 
 export interface TargetSumStep {
   numIndex: number;
@@ -39,12 +54,13 @@ export function buildTargetSumSteps(nums: number[], target: number): TargetSumSt
   const requiredSum = isSumValid ? Math.floor((target + sum) / 2) : -1;
 
   const lines = {
-    check: { java: 8, cpp: 8, python: 4, javascript: 4 },
-    initDp: { java: 11, cpp: 10, python: 6, javascript: 6 },
-    numLoop: { java: 13, cpp: 12, python: 8, javascript: 8 },
-    capLoop: { java: 14, cpp: 13, python: 9, javascript: 9 },
-    updateDp: { java: 15, cpp: 14, python: 10, javascript: 10 },
-    returnAns: { java: 18, cpp: 17, python: 11, javascript: 13 },
+    entry: { java: 5, cpp: 7, python: 1, javascript: 2 },
+    check: { java: 8, cpp: 10, python: 4, javascript: 4 },
+    initDp: { java: 11, cpp: 12, python: 7, javascript: 6 },
+    numLoop: { java: 13, cpp: 14, python: 9, javascript: 8 },
+    capLoop: { java: 14, cpp: 15, python: 10, javascript: 9 },
+    updateDp: { java: 15, cpp: 16, python: 11, javascript: 10 },
+    returnAns: { java: 18, cpp: 19, python: 12, javascript: 13 },
   };
 
   function makeStep(data: Omit<TargetSumStep, 'metrics'>): TargetSumStep {
@@ -75,7 +91,7 @@ export function buildTargetSumSteps(nums: number[], target: number): TargetSumSt
       status: 'init',
       message: `🎯 表达式目标和分析：数组 nums=[${nums.join(', ')}]，总和 sum=${sum}，目标 target=${target}。`,
       log: `init: nums=[${nums.join(', ')}], target=${target}, sum=${sum}`,
-      codeLine: lines.check,
+      codeLine: lines.entry,
     })
   );
 
@@ -233,7 +249,77 @@ export function buildTargetSumSteps(nums: number[], target: number): TargetSumSt
   return steps;
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<TargetSumStep>({
+function parseTargetSumInputs(inputs: Record<string, any>) {
+  const target = parseInt(inputs['input-target'] || '3', 10);
+  const nums = String(inputs['input-nums'] || '1, 1, 1, 1, 1')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  return { target, nums };
+}
+
+function renderTargetSumBoard(container: HTMLElement, step: TargetSumStep): void {
+  const numBadges = step.nums
+    .map((n, i) => {
+      const isActive = i === step.numIndex;
+      return `
+        <div style="background:${isActive ? '#eff6ff' : '#f1f5f9'}; border:1.5px solid ${isActive ? '#3b82f6' : '#e2e8f0'}; border-radius:6px; padding:5px 8px; min-width:38px; text-align:center;">
+          <div style="font-size:8.5px; color:#64748b;">#${i}</div>
+          <div style="font-size:13px; font-weight:800; color:${isActive ? '#3b82f6' : '#1e293b'};"> ${n >= 0 ? '+' : ''}${n}</div>
+        </div>
+      `;
+    })
+    .join('');
+
+  const dpBadges = step.dp
+    .map((v, j) => {
+      const isCurrent = j === step.j;
+      const hasWay = v > 0;
+      return `
+        <div style="background:${isCurrent ? '#dbeafe' : hasWay ? '#dcfce7' : '#f1f5f9'}; border:1.5px solid ${isCurrent ? '#3b82f6' : hasWay ? '#22c55e' : '#e2e8f0'}; border-radius:5px; padding:4px 6px; min-width:34px; text-align:center;">
+          <div style="font-size:8px; color:#64748b;">j=${j}</div>
+          <div style="font-size:12px; font-weight:800; color:${isCurrent ? '#3b82f6' : hasWay ? '#16a34a' : '#94a3b8'};"> ${v}</div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+        <div style="font-size:12px; color:#374151; font-weight:700;">待分配符号数字列表</div>
+        <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
+          等价正集容量 t: <b style="color:#10b981;">${step.requiredSum >= 0 ? step.requiredSum : '无解'}</b>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
+        ${numBadges}
+      </div>
+
+      <!-- 代数归约公式 -->
+      <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
+        <div style="font-size:11.5px; font-weight:800; color:#374151;">🎯 代数归约与实时方案仓</div>
+        <div style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; font-size:11.5px; color:#374151; display:flex; flex-direction:column; gap:3px;">
+          <div>式一：<code>sum(P) - sum(N) = target</code>（正集与负集符号差）</div>
+          <div>式二：<code>sum(P) + sum(N) = sum</code>（全集总和）</div>
+          <div style="color:#059669; font-weight:700; margin-top:2px;">
+            两式相加：2·sum(P) = target + sum &rArr; sum(P) = (${step.target} + ${step.sum}) / 2 = ${step.requiredSum >= 0 ? step.requiredSum : '无解'}
+          </div>
+        </div>
+        <div style="font-size:11px; color:#64748b; text-align:right;">当前方案数: <b style="color:#7c3aed; font-size:13px;">${step.ways}</b> 种</div>
+      </div>
+
+      <!-- dp 向量行 -->
+      <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;">
+        ${dpBadges}
+      </div>
+    </div>
+  `;
+}
+
+
+const { template, Visualizer } = createDeclarativeVisualizer<any>({
   id: 'target-sum-standard',
   name: '目标和 (01背包方案计数)',
   category: 'dynamic-programming',
@@ -241,6 +327,160 @@ const { template, Visualizer } = createDeclarativeVisualizer<TargetSumStep>({
     mode: '01背包 · 方案数累加',
     complexity: 'O(N · T) · O(T)',
   },
+  defaultStage: 'stage-4',
+  stages: [
+    {
+      id: 'stage-1',
+      name: '阶段 1: 暴力递归',
+      shortName: '递归',
+      num: 1,
+      timeBadge: 'O(2^N)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '目标和 · 递归分治搜索',
+        complexity: 'O(2^N) · O(N) 栈深',
+      },
+      card1Title: '🌿 递归决策分支展开与运行时调用栈',
+      card2Title: '📊 递归调用深度与方案累加监控',
+      codeLanguages: TARGET_SUM_STAGE1_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { target, nums } = parseTargetSumInputs(inputs);
+        return buildTargetSumRecursionSteps(nums, target);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecialRecursionCard1(
+          container,
+          step.callStack,
+          step.i < step.n
+            ? `正在决策 nums[${step.i}]=${step.nums?.[step.i] ?? '—'}`
+            : '所有元素决策完成',
+          step.remCap,
+          step.decision,
+          step.returnValue
+        ),
+      renderCustomMetrics: (container, step) => {
+        container.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:10px; height:100%; width:100%; justify-content:center; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; box-sizing:border-box;">
+            <div style="font-size:13px; font-weight:700; color:#3b82f6;">📊 目标和暴力递归调用监控</div>
+            <div style="display:flex; gap:16px; margin-top:8px;">
+              <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:6px; padding:10px 16px; text-align:center;">
+                <div style="font-size:11px; color:#64748b;">当前调用深度</div>
+                <div style="font-size:20px; font-weight:800; color:#f59e0b;">${step.callStack?.length ?? 0}</div>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:6px; padding:10px 16px; text-align:center;">
+                <div style="font-size:11px; color:#64748b;">剩余目标和 rem</div>
+                <div style="font-size:20px; font-weight:800; color:#10b981;">${step.remCap !== undefined ? step.remCap : '—'}</div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:#64748b; text-align:center; max-width:320px; margin-top:6px;">
+              每个元素分支为【不选当前数 / 选入当前数】，未缓存时产生 2^N 重叠子问题。
+            </div>
+          </div>
+        `;
+      },
+    },
+    {
+      id: 'stage-2',
+      name: '阶段 2: 记忆化搜索',
+      shortName: '记忆化',
+      num: 2,
+      timeBadge: 'O(N · T)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '目标和 · 备忘录缓存',
+        complexity: 'O(N · T) · O(N · T) 备忘录',
+      },
+      card1Title: '💾 备忘录探查追踪 (Cache Hit/Miss)',
+      card2Title: '🎯 2D 备忘录方案数矩阵 memo[i][rem]',
+      codeLanguages: TARGET_SUM_STAGE2_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { target, nums } = parseTargetSumInputs(inputs);
+        return buildTargetSumMemoSteps(nums, target);
+      },
+      renderCanvas: (container, step) =>
+        renderSpecialMemoCard1(
+          container,
+          `dfs(i=${step.i}, rem=${step.remCap})`,
+          step.memoHit,
+          step.hitCount,
+          step.missCount,
+          step.decision,
+          step.message,
+          step.cachedVal
+        ),
+      renderCustomMetrics: (container, step) =>
+        renderSpecialMemoCard2(
+          container,
+          '方案数备忘录 memo[i][rem]',
+          step.memoGrid,
+          step.i,
+          step.remCap
+        ),
+    },
+    {
+      id: 'stage-3',
+      name: '阶段 3: 二维动态规划',
+      shortName: '二维DP',
+      num: 3,
+      timeBadge: 'O(N · T)',
+      theme: 'bg-emerald',
+      badge: {
+        mode: '目标和 · 严格二维表递推',
+        complexity: 'O(N · T) · O(N · T)',
+      },
+      card1Title: '📐 方案数转移决策推导',
+      card2Title: '📊 严格二维位置依赖状态表 dp[i][j]',
+      codeLanguages: TARGET_SUM_STAGE3_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { target, nums } = parseTargetSumInputs(inputs);
+        return buildTargetSum2DSteps(nums, target);
+      },
+      renderCanvas: (container, step) => {
+        renderTargetSumBoard(container, step);
+      },
+      renderCustomMetrics: (container, step) =>
+        renderSpecial2DCard2(
+          container,
+          '严格二维方案数表 dp[i][j]',
+          step.dpTable,
+          step.curI,
+          step.curJ,
+          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
+        ),
+    },
+    {
+      id: 'stage-4',
+      name: '阶段 4: 空间压缩',
+      shortName: '空间优化',
+      num: 4,
+      timeBadge: 'O(T) 空间',
+      theme: 'bg-amber',
+      badge: {
+        mode: '目标和 · 一维滚动数组逆序更新',
+        complexity: 'O(N · T) · O(T)',
+      },
+      card1Title: '待分配符号数字与正集容量达成舱',
+      card2Title: '凑出累加和方案数向量 dp[0..(target+sum)/2]',
+      codeLanguages: TARGET_SUM_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { target, nums } = parseTargetSumInputs(inputs);
+        return buildTargetSumSteps(nums, target);
+      },
+      renderCanvas: (container, step) => {
+        renderTargetSumBoard(container, step);
+      },
+      renderCustomMetrics: (container, step) => {
+        renderKnapsackDpMatrix(container, {
+          ...step,
+          items: [],
+          currentGroupItems: [],
+          selectedItems: [],
+          groupIndex: -1,
+          maxVal: step.ways,
+        }, `凑出累加和方案数向量 dp[0..${step.dp.length - 1}]`);
+      },
+    },
+  ],
   card1Title: '待分配符号数字与正集容量达成舱',
   card2Title: '凑出累加和方案数向量 dp[0..(target+sum)/2]',
   card2Desc: '展示利用正负集代数转化将添加符号问题变为 01 背包方案数累加的推演过程',
@@ -299,53 +539,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<TargetSumStep>({
     return buildTargetSumSteps(nums, target);
   },
   renderCanvas: (container, step) => {
-    const numBadges = step.nums
-      .map((num, i) => {
-        const isCur = step.numIndex === i;
-        const bg = isCur ? 'rgba(30, 58, 138, 0.6)' : 'rgba(15, 23, 42, 0.6)';
-        const border = isCur ? '#38bdf8' : '#334155';
-        return `
-          <div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:6px 12px; min-width:60px; text-align:center;">
-            <div style="font-size:10px; color:#94a3b8;">#${i + 1}</div>
-            <div style="font-size:14px; font-weight:800; color:#f8fafc; margin-top:2px;">${num}</div>
-          </div>
-        `;
-      })
-      .join('');
-
-    container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-          <div style="font-size:12px; color:#94a3b8; font-weight:700;">待分配符号数字集合 (目标 target=${step.target}，数组总和 sum=${step.sum})</div>
-          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
-            当前考察容量: <b style="color:#38bdf8;">${step.j >= 0 ? step.j : '—'}</b> / ${step.requiredSum >= 0 ? step.requiredSum : '—'}
-          </div>
-        </div>
-
-        <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
-          ${numBadges}
-        </div>
-
-        <!-- 数学归约公式卡片与实时方案仓 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🎯 代数归约与实时方案仓</span>
-            <div style="display:flex; gap:16px; font-size:11px;">
-              <span>等价正集目标和 t: <b style="color:#10b981;">${step.requiredSum >= 0 ? step.requiredSum : '无解'}</b></span>
-              <span>累计方案数: <b style="color:#a855f7;">${step.ways}</b> 种</span>
-            </div>
-          </div>
-
-          <div style="background:#1e293b; border:1px solid #334155; border-radius:6px; padding:8px 12px; font-size:11.5px; color:#cbd5e1; display:flex; flex-direction:column; gap:3px;">
-            <div>式一：<code>sum(P) - sum(N) = target</code> （正集与负集符号差）</div>
-            <div>式二：<code>sum(P) + sum(N) = sum</code> （全集总和）</div>
-            <div style="color:#34d399; font-weight:700; margin-top:2px;">
-              两式相加：2·sum(P) = target + sum &rArr; sum(P) = (${step.target} + ${step.sum}) / 2 = ${step.requiredSum >= 0 ? step.requiredSum : '无解'}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    renderTargetSumBoard(container, step);
   },
   renderCustomMetrics: (container, step) => {
     renderKnapsackDpMatrix(container, {

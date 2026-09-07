@@ -76,26 +76,26 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
 
   // 精准 18 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 26, java: 12, python: 4, javascript: 2 },
-    initDist: { cpp: 28, java: 14, python: 6, javascript: 4 },
-    initDistSrc: { cpp: 32, java: 18, python: 9, javascript: 9 },
-    initVisited: { cpp: 29, java: 20, python: 7, javascript: 5 },
-    initHeap: { cpp: 30, java: 22, python: 10, javascript: 8 },
-    pushSrc: { cpp: 33, java: 23, python: 10, javascript: 8 },
-    whileHeap: { cpp: 37, java: 28, python: 13, javascript: 12 },
-    pollCur: { cpp: 38, java: 29, python: 14, javascript: 14 },
-    checkVisited: { cpp: 40, java: 32, python: 15, javascript: 15 },
-    continueVisited: { cpp: 40, java: 32, python: 16, javascript: 15 },
-    markVisited: { cpp: 41, java: 33, python: 17, javascript: 16 },
-    checkTarget: { cpp: 42, java: 36, python: 18, javascript: 17 },
-    returnCost: { cpp: 42, java: 37, python: 19, javascript: 17 },
-    forDirs: { cpp: 44, java: 40, python: 21, javascript: 19 },
-    checkValidNeighbor: { cpp: 46, java: 42, python: 23, javascript: 21 },
-    calcBottleneck: { cpp: 48, java: 44, python: 24, javascript: 22 },
-    checkRelax: { cpp: 49, java: 45, python: 25, javascript: 23 },
-    updateDist: { cpp: 50, java: 46, python: 26, javascript: 24 },
-    pushHeap: { cpp: 51, java: 47, python: 27, javascript: 25 },
-    returnFail: { cpp: 56, java: 52, python: 28, javascript: 30 },
+    entry: { cpp: 18, java: 12, python: 4, javascript: 2 },
+    initDist: { cpp: 20, java: 14, python: 6, javascript: 4 },
+    initDistSrc: { cpp: 24, java: 18, python: 9, javascript: 9 },
+    initVisited: { cpp: 21, java: 20, python: 7, javascript: 5 },
+    initHeap: { cpp: 22, java: 22, python: 10, javascript: 8 },
+    pushSrc: { cpp: 25, java: 23, python: 10, javascript: 8 },
+    whileHeap: { cpp: 29, java: 28, python: 13, javascript: 12 },
+    pollCur: { cpp: 30, java: 29, python: 14, javascript: 14 },
+    checkVisited: { cpp: 32, java: 32, python: 15, javascript: 15 },
+    continueVisited: { cpp: 32, java: 32, python: 16, javascript: 15 },
+    markVisited: { cpp: 33, java: 33, python: 17, javascript: 16 },
+    checkTarget: { cpp: 34, java: 36, python: 18, javascript: 17 },
+    returnCost: { cpp: 34, java: 37, python: 19, javascript: 17 },
+    forDirs: { cpp: 36, java: 40, python: 21, javascript: 19 },
+    checkValidNeighbor: { cpp: 38, java: 42, python: 23, javascript: 21 },
+    calcBottleneck: { cpp: 40, java: 44, python: 24, javascript: 22 },
+    checkRelax: { cpp: 41, java: 45, python: 25, javascript: 23 },
+    updateDist: { cpp: 42, java: 46, python: 26, javascript: 24 },
+    pushHeap: { cpp: 43, java: 47, python: 27, javascript: 25 },
+    returnFail: { cpp: 48, java: 52, python: 28, javascript: 30 },
   };
 
   function makeStep(
@@ -335,10 +335,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<EffortStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🧗 网格海拔与高度落差地图 (${rows}x${cols})</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🧗 网格海拔与高度落差地图 (${rows}x${cols})</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前位置: <b style="color: #f59e0b;">(${step.curR}, ${step.curC})</b> | 瓶颈体力: <b style="color: #10b981;">${step.minEffortSoFar}</b>
           </span>
         </div>
@@ -348,9 +348,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<EffortStep>({
         </div>
 
         <!-- 底部瓶颈松弛舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🧗 最小体力瓶颈松弛舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🧗 最小体力瓶颈松弛舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               松弛方程: <b>nextEffort = max(curEffort, |h_next - h_cur|)</b>
             </div>
@@ -378,13 +378,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<EffortStep>({
       : '寻路进行中';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #38bdf8;">小根堆候选 Top4:</span>
             <div style="display: flex; gap: 4px; flex-wrap: wrap;">${pqBadges || '队列为空'}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">当前路径:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">${pathStr}</strong>
           </div>

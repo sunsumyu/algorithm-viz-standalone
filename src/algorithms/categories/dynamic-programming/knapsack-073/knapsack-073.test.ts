@@ -57,6 +57,33 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       const last = steps[steps.length - 1];
       expect(last.totalHappy).toBe(0);
     });
+
+    it('2.3 阶段 1 暴力递归产生正确决策分支', async () => {
+      const { buildBuyGoodsRecursionSteps } = await import('./buy-goods-stage-evolution');
+      const steps = buildBuyGoodsRecursionSteps(10, [10, 10], [3, 8], [5, 10]);
+      expect(steps.length).toBeGreaterThan(0);
+      expect(steps[0].action).toBe('callRoot');
+      const hasReturn = steps.some((s) => s.action === 'returnMax');
+      expect(hasReturn).toBe(true);
+    });
+
+    it('2.4 阶段 2 记忆化搜索记录缓存命中', async () => {
+      const { buildBuyGoodsMemoSteps } = await import('./buy-goods-stage-evolution');
+      const steps = buildBuyGoodsMemoSteps(20, [10, 10, 10, 10], [8, 8, 8, 8], [10, 10, 10, 10]);
+      expect(steps.length).toBeGreaterThan(0);
+      const hitSteps = steps.filter((s) => s.memoHit);
+      expect(hitSteps.length).toBeGreaterThan(0);
+    });
+
+    it('2.5 阶段 3 严格二维动态规划正确自底向上填表', async () => {
+      const { buildBuyGoods2DSteps } = await import('./buy-goods-stage-evolution');
+      const steps = buildBuyGoods2DSteps(10, [10, 10], [3, 8], [5, 10]);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('returnAns');
+      // 游戏 1 白嫖 5 快乐，预算由 10 变为 14；游戏 2 花费 6，快乐 10；dp[1][14] = 10，总快乐 = 15
+      expect(last.dpTable[1][14]).toBe(10);
+    });
   });
 
   // ==========================================
@@ -76,6 +103,33 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       const steps = buildTargetSumSteps([1], 2);
       const last = steps[steps.length - 1];
       expect(last.ways).toBe(0);
+    });
+
+    it('3.3 阶段 1 暴力递归产生完整的递归决策树', async () => {
+      const { buildTargetSumRecursionSteps } = await import('./target-sum-stage-evolution');
+      const steps = buildTargetSumRecursionSteps([1, 1, 1], 1);
+      expect(steps.length).toBeGreaterThan(0);
+      expect(steps[0].action).toBe('callRoot');
+      const hasReturn = steps.some((s) => s.action === 'returnSum');
+      expect(hasReturn).toBe(true);
+    });
+
+    it('3.4 阶段 2 记忆化搜索记录缓存命中并返回与递归一致的方案数', async () => {
+      const { buildTargetSumMemoSteps } = await import('./target-sum-stage-evolution');
+      const steps = buildTargetSumMemoSteps([1, 1, 1, 1], 0);
+      expect(steps.length).toBeGreaterThan(0);
+      const hitSteps = steps.filter((s) => s.memoHit);
+      expect(hitSteps.length).toBeGreaterThan(0);
+    });
+
+    it('3.5 阶段 3 严格二维动态规划正确自底向上填表', async () => {
+      const { buildTargetSum2DSteps } = await import('./target-sum-stage-evolution');
+      const steps = buildTargetSum2DSteps([1, 1, 1], 1);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('returnAns');
+      // nums=[1,1,1], sum=3, target=1 -> t=(1+3)/2 = 2, dp[3][2] = 3
+      expect(last.dpTable[3][2]).toBe(3);
     });
   });
 
@@ -97,6 +151,33 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       const steps = buildLastStoneWeightIISteps([2, 2]);
       const last = steps[steps.length - 1];
       expect(last.remainWeight).toBe(0);
+    });
+
+    it('4.3 阶段 1 暴力递归产生正确分支并返回最优收益', async () => {
+      const { buildLastStoneRecursionSteps } = await import('./last-stone-stage-evolution');
+      const steps = buildLastStoneRecursionSteps([2, 7, 4, 1]);
+      expect(steps.length).toBeGreaterThan(0);
+      expect(steps[0].action).toBe('callRoot');
+      const hasReturn = steps.some((s) => s.action === 'returnMax');
+      expect(hasReturn).toBe(true);
+    });
+
+    it('4.4 阶段 2 记忆化搜索记录缓存命中并与递归一致', async () => {
+      const { buildLastStoneMemoSteps } = await import('./last-stone-stage-evolution');
+      const steps = buildLastStoneMemoSteps([2, 2, 4, 4]);
+      expect(steps.length).toBeGreaterThan(0);
+      const hitSteps = steps.filter((s) => s.memoHit);
+      expect(hitSteps.length).toBeGreaterThan(0);
+    });
+
+    it('4.5 阶段 3 严格二维动态规划正确自底向上填表', async () => {
+      const { buildLastStone2DSteps } = await import('./last-stone-stage-evolution');
+      const steps = buildLastStone2DSteps([2, 7, 4, 1, 8, 1]);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('returnAns');
+      // sum=23, t=11, near=11, ans = 23 - 2*11 = 1
+      expect(last.dpTable[6][11]).toBe(11);
     });
   });
 
@@ -126,6 +207,48 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       const last = steps[steps.length - 1];
       expect(last.status).toBe('done');
       expect(last.maxVal).toBe(2000);
+    });
+
+    it('5.2 阶段 1 暴力递归展开主件组各组合并求得最优解', async () => {
+      const { buildDependentRecursionSteps } = await import('./dependent-knapsack-stage-evolution');
+      const items = [
+        null,
+        { cost: 800, val: 1600, q: 0 },
+        { cost: 400, val: 2000, q: 1 },
+      ];
+      const steps = buildDependentRecursionSteps(1000, 2, items);
+      expect(steps.length).toBeGreaterThan(0);
+      expect(steps[0].action).toBe('callRoot');
+      const hasReturn = steps.some((s) => s.action === 'returnMax');
+      expect(hasReturn).toBe(true);
+    });
+
+    it('5.3 阶段 2 记忆化搜索记录缓存命中', async () => {
+      const { buildDependentMemoSteps } = await import('./dependent-knapsack-stage-evolution');
+      const items = [
+        null,
+        { cost: 200, val: 200, q: 0 },
+        { cost: 200, val: 200, q: 0 },
+        { cost: 200, val: 200, q: 0 },
+      ];
+      const steps = buildDependentMemoSteps(400, 3, items);
+      expect(steps.length).toBeGreaterThan(0);
+      const hitSteps = steps.filter((s) => s.memoHit);
+      expect(hitSteps.length).toBeGreaterThan(0);
+    });
+
+    it('5.4 阶段 3 严格二维动态规划正确自底向上填表', async () => {
+      const { buildDependent2DSteps } = await import('./dependent-knapsack-stage-evolution');
+      const items = [
+        null,
+        { cost: 800, val: 1600, q: 0 },
+        { cost: 400, val: 2000, q: 1 },
+      ];
+      const steps = buildDependent2DSteps(1000, 2, items);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('returnAns');
+      expect(last.dpTable[1][1000]).toBe(1600);
     });
   });
 

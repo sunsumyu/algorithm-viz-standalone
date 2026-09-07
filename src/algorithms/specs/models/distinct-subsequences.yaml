@@ -38,7 +38,7 @@ problem:
 
 directions:
   forward:
-    label: "自顶向下 (目标分解)"
+    label: "顺推 (正序)"
     branches:
       - name: "match"
         delta: [-1, -1]
@@ -52,7 +52,7 @@ directions:
         arrow: "⬆️"
     combineFormula: "match + skip"
   reverse:
-    label: "逆向求解"
+    label: "逆推 (倒序)"
     branches:
       - name: "match"
         delta: [-1, -1]

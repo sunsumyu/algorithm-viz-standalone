@@ -1,17 +1,66 @@
 import { describe, it, expect } from 'vitest';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import { buildRemoveElementSteps } from './remove-element-renderer';
+import { REMOVE_ELEMENT_CODE_LANGUAGES } from './remove-element-problem-content';
 import { buildSortedSquaresSteps } from './squares-of-sorted-array-renderer';
+import { SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES } from './squares-of-sorted-array-problem-content';
 import { buildMinSubarrayLenSteps } from './min-subarray-len-renderer';
+import { MIN_SUBARRAY_LEN_CODE_LANGUAGES } from './min-subarray-len-problem-content';
 import { buildSpiralSteps } from './spiral-matrix-ii-renderer';
+import { SPIRAL_MATRIX_II_CODE_LANGUAGES } from './spiral-matrix-ii-problem-content';
 import { buildRangeSumSteps } from './range-sum-renderer';
+import { RANGE_SUM_CODE_LANGUAGES } from './range-sum-problem-content';
 import { buildBuyLandSteps } from './buy-land-renderer';
+import { BUY_LAND_CODE_LANGUAGES } from './buy-land-problem-content';
 import {
   buildAccessSteps,
   buildSearchSteps,
   buildInsertSteps,
   buildDeleteSteps,
 } from './array-theory-renderer';
+import { ARRAY_THEORY_CODE_LANGUAGES } from './array-theory-problem-content';
 import { buildArraySummarySteps, DEMO_QUESTIONS } from './array-summary-renderer';
+import { ARRAY_SUMMARY_CODE_LANGUAGES } from './array-summary-problem-content';
+
+function verifyStepsLineBounds(
+  steps: Array<{ codeLine?: HighlightTarget }>,
+  codeLanguages: Record<string, string[]>
+) {
+  const languages = ['java', 'cpp', 'python', 'javascript'] as const;
+  for (const lang of languages) {
+    const lines = codeLanguages[lang];
+    expect(lines, `Missing language definition: ${lang}`).toBeDefined();
+    const maxLine = lines.length;
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (!step.codeLine) continue;
+      const target = step.codeLine;
+      let lineNums: number[] = [];
+      if (typeof target === 'number') {
+        if (target > 0) lineNums = [target];
+      } else if (Array.isArray(target)) {
+        lineNums = target;
+      } else if (typeof target === 'object' && target !== null) {
+        const langVal = (target as Record<string, any>)[lang];
+        if (typeof langVal === 'number') {
+          if (langVal > 0) lineNums = [langVal];
+        } else if (Array.isArray(langVal)) {
+          lineNums = langVal;
+        }
+      }
+      for (const line of lineNums) {
+        expect(
+          line,
+          `Step ${i} for language ${lang} has line ${line} > maxLine ${maxLine}`
+        ).toBeLessThanOrEqual(maxLine);
+        expect(
+          line,
+          `Step ${i} for language ${lang} has line ${line} < 1`
+        ).toBeGreaterThanOrEqual(1);
+      }
+    }
+  }
+}
 
 describe('Array Category Modernized Algorithms (数组全套核心算法推导测试)', () => {
   describe('1. Remove Element (LeetCode 27 · 移除元素)', () => {
@@ -22,6 +71,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       expect(lastStep.status).toBe('done');
       expect(lastStep.slow).toBe(2);
       expect(lastStep.array.slice(0, 2)).toEqual([2, 2]);
+      verifyStepsLineBounds(steps, REMOVE_ELEMENT_CODE_LANGUAGES);
     });
 
     it('数组 [0, 1, 2, 2, 3, 0, 4, 2], val=2 移除后新长度 slow=5', () => {
@@ -29,6 +79,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       const lastStep = steps[steps.length - 1];
       expect(lastStep.slow).toBe(5);
       expect(lastStep.array.slice(0, 5)).toEqual([0, 1, 3, 0, 4]);
+      verifyStepsLineBounds(steps, REMOVE_ELEMENT_CODE_LANGUAGES);
     });
   });
 
@@ -39,12 +90,14 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       const lastStep = steps[steps.length - 1];
       expect(lastStep.status).toBe('done');
       expect(lastStep.result).toEqual([0, 1, 9, 16, 100]);
+      verifyStepsLineBounds(steps, SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES);
     });
 
     it('全负数输入 [-7, -3, -1] 正确生成 [1, 9, 49]', () => {
       const steps = buildSortedSquaresSteps([-7, -3, -1]);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.result).toEqual([1, 9, 49]);
+      verifyStepsLineBounds(steps, SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES);
     });
   });
 
@@ -55,12 +108,14 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       const lastStep = steps[steps.length - 1];
       expect(lastStep.status).toBe('done');
       expect(lastStep.minLen).toBe(2);
+      verifyStepsLineBounds(steps, MIN_SUBARRAY_LEN_CODE_LANGUAGES);
     });
 
     it('无法满足目标时返回 minLen=Infinity (最终步骤返回 0)', () => {
       const steps = buildMinSubarrayLenSteps([1, 1, 1, 1], 100);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.minLen).toBe(Infinity);
+      verifyStepsLineBounds(steps, MIN_SUBARRAY_LEN_CODE_LANGUAGES);
     });
   });
 
@@ -75,12 +130,14 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
         [8, 9, 4],
         [7, 6, 5],
       ]);
+      verifyStepsLineBounds(steps, SPIRAL_MATRIX_II_CODE_LANGUAGES);
     });
 
     it('n=1 生成 [[1]]', () => {
       const steps = buildSpiralSteps(1);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.matrix).toEqual([[1]]);
+      verifyStepsLineBounds(steps, SPIRAL_MATRIX_II_CODE_LANGUAGES);
     });
   });
 
@@ -99,6 +156,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       expect(lastStep.status).toBe('done');
       expect(lastStep.results).toEqual([6, 9, 12]);
       expect(lastStep.prefix).toEqual([0, 1, 3, 6, 10, 15]);
+      verifyStepsLineBounds(steps, RANGE_SUM_CODE_LANGUAGES);
     });
   });
 
@@ -115,6 +173,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       expect(lastStep.status).toBe('done');
       expect(lastStep.bestArea).toBe(4);
       expect(lastStep.bestRect).toEqual([0, 0, 1, 1]);
+      verifyStepsLineBounds(steps, BUY_LAND_CODE_LANGUAGES);
     });
   });
 
@@ -123,6 +182,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       const steps = buildAccessSteps(2);
       expect(steps.length).toBe(3);
       expect(steps[1].value).toBe(7);
+      verifyStepsLineBounds(steps, ARRAY_THEORY_CODE_LANGUAGES);
     });
 
     it('线性搜索 O(n) 正确比对并找到目标下标', () => {
@@ -130,6 +190,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       const lastStep = steps[steps.length - 1];
       expect(lastStep.status).toBe('search-found');
       expect(lastStep.index).toBe(3);
+      verifyStepsLineBounds(steps, ARRAY_THEORY_CODE_LANGUAGES);
     });
 
     it('元素插入 O(n) 正确后移元素并放入新值', () => {
@@ -138,6 +199,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       expect(lastStep.status).toBe('done');
       expect(lastStep.array).toEqual([3, 99, 5, 7]);
       expect(lastStep.shiftCount).toBe(2);
+      verifyStepsLineBounds(steps, ARRAY_THEORY_CODE_LANGUAGES);
     });
 
     it('元素删除 O(n) 正确前移元素', () => {
@@ -145,6 +207,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       const lastStep = steps[steps.length - 1];
       expect(lastStep.status).toBe('done');
       expect(lastStep.array).toEqual([3, 7, 11]);
+      verifyStepsLineBounds(steps, ARRAY_THEORY_CODE_LANGUAGES);
     });
   });
 
@@ -154,6 +217,7 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
       expect(steps.length).toBe(7);
       expect(steps[0].section).toBe('intro');
       expect(steps[steps.length - 1].section).toBe('done');
+      verifyStepsLineBounds(steps, ARRAY_SUMMARY_CODE_LANGUAGES);
     });
 
     it('包含 5 道自测精选题且均有详细解析', () => {
@@ -167,3 +231,4 @@ describe('Array Category Modernized Algorithms (数组全套核心算法推导�
     });
   });
 });
+

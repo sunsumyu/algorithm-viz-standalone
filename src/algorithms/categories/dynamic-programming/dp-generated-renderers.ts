@@ -457,7 +457,6 @@ const demos: DemoDef[] = [
   numsDef('longest-increasing-subsequence', '最长递增子序列', 'dp[i] 表示以 nums[i] 结尾的最长严格递增子序列长度。', '📈', 'longest-increasing-subsequence', '10,9,2,5,3,7,101,18'),
   numsDef('longest-continuous-increasing-subsequence', '最长连续递增序列', '要求严格相邻连续：只需向前看一位 dp[i] = dp[i-1] + 1。', '📏', 'longest-continuous-increasing-subsequence', '1,3,5,4,7'),
   strDef('longest-repeated-subarray', '最长重复子数组', '两数组中连续公共子数组的最长长度：相等时仅从左上角对角线累加。', '🧩', 'longest-repeated-subarray', '1,2,3,2,1', '3,2,1,4,7'),
-  strDef('longest-common-subsequence', '最长公共子序列', '不要求连续的最长公共子序列：相等时对角线加1，不等时取左方和上方较大值。', '🧬', 'lcs', 'abcde', 'ace'),
   strDef('uncrossed-lines', '不相交的线', '连线不相交等价于两数组的最长公共子序列 (LCS)。', '🧶', 'uncrossed-lines', '1,4,2', '1,2,4'),
   numsDef('max-subarray-dp', '最大子数组和', '连续子数组最大和：dp[i] = max(nums[i], dp[i-1] + nums[i])。', '➕', 'max-subarray-dp', '-2,1,-3,4,-1,2,1,-5,4'),
   strDef('is-subsequence', '判断子序列', '双指针或 DP 判定 s 是否为 t 的子序列。', '🔍', 'is-subsequence', 'abc', 'ahbgdc'),
@@ -472,15 +471,6 @@ const demos: DemoDef[] = [
     inputs: [{ id: 's', label: '字符串 s', value: 'aaa', width: 140 }],
     examples: [{ label: 's="aaa"', values: { s: 'aaa' } }, { label: 's="abc"', values: { s: 'abc' } }],
     build: makeEngineBuilder('palindromic-substrings'),
-  },
-  {
-    id: 'longest-palindromic-subsequence',
-    name: '最长回文子序列',
-    description: '找出字符串中最长的回文子序列长度（区间 DP 向内收缩）。',
-    icon: '👑',
-    inputs: [{ id: 's', label: '字符串 s', value: 'bbbab', width: 140 }],
-    examples: [{ label: 's="bbbab"', values: { s: 'bbbab' } }, { label: 's="cbbd"', values: { s: 'cbbd' } }],
-    build: makeEngineBuilder('longest-palindromic-subsequence'),
   },
 
   // 树型DP 演示 (Tree DP Demos — 第078讲)
@@ -747,7 +737,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'longest-increasing-subsequence' },
   { type: 'demo', id: 'longest-continuous-increasing-subsequence' },
   { type: 'demo', id: 'longest-repeated-subarray' },
-  { type: 'demo', id: 'longest-common-subsequence' },
   { type: 'demo', id: 'uncrossed-lines' },
   { type: 'demo', id: 'max-subarray-dp' },
   { type: 'demo', id: 'is-subsequence' },
@@ -756,7 +745,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'edit-distance' },
   { type: 'article', id: 'edit-distance-summary' },
   { type: 'demo', id: 'palindromic-substrings' },
-  { type: 'demo', id: 'longest-palindromic-subsequence' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
   { type: 'demo', id: 'max-distance-in-tree' },

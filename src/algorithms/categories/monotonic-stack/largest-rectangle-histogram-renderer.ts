@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   LARGEST_RECTANGLE_HISTOGRAM_PROBLEM_HTML,
@@ -29,12 +30,20 @@ export interface LRHStep {
   bestRect: { left: number; right: number; height: number } | null;
   action: 'init' | 'scan' | 'pop_calc' | 'push' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function buildLargestRectangleHistogramSteps(rawHeights: number[]): LRHStep[] {
   const steps: LRHStep[] = [];
   const n = rawHeights.length;
+
+  const lines = {
+    init: { java: [2, 7], cpp: [4, 7], python: [3, 4], javascript: [2, 3] },
+    scan: { java: [9, 10], cpp: [9, 10], python: [6, 7], javascript: [5, 6] },
+    popCalc: { java: [11, 16], cpp: [11, 15], python: [8, 11], javascript: [7, 10] },
+    push: { java: 18, cpp: 17, python: 12, javascript: 12 },
+    done: { java: 20, cpp: 19, python: 13, javascript: 14 },
+  };
 
   if (n === 0) {
     steps.push({
@@ -50,7 +59,7 @@ export function buildLargestRectangleHistogramSteps(rawHeights: number[]): LRHSt
       bestRect: null,
       action: 'done',
       message: '输入数组为空，最大矩形面积为 0',
-      codeLine: 2,
+      codeLine: lines.done,
     });
     return steps;
   }
@@ -73,7 +82,7 @@ export function buildLargestRectangleHistogramSteps(rawHeights: number[]): LRHSt
     bestRect: null,
     action: 'init',
     message: `初始化：首尾插入哨兵 0 构成长度 ${paddedHeights.length} 的扩展数组，将下标 0 (高度 0) 压入栈底`,
-    codeLine: 4,
+    codeLine: lines.init,
   });
 
   for (let i = 1; i < paddedHeights.length; i++) {
@@ -93,7 +102,7 @@ export function buildLargestRectangleHistogramSteps(rawHeights: number[]): LRHSt
       bestRect,
       action: 'scan',
       message: `🔍 考察柱子 [${i}] (${isTailSentinel ? '尾部哨兵 0' : `高度 ${curH}`})：与栈顶 [${stack[stack.length - 1]}] (高度 ${paddedHeights[stack[stack.length - 1]]}) 比对`,
-      codeLine: 8,
+      codeLine: lines.scan,
     });
 
     while (stack.length > 0 && curH < paddedHeights[stack[stack.length - 1]]) {
@@ -124,7 +133,7 @@ export function buildLargestRectangleHistogramSteps(rawHeights: number[]): LRHSt
           bestRect,
           action: 'pop_calc',
           message: `🔥 弹出基准柱 [${mid}] (高度 ${midH})！左侧更矮 [${left}], 右侧更矮 [${right}] &rarr; 宽度 w=${w}, 高度 h=${midH}, 本次面积 = ${area}！全局最大 maxArea = ${maxArea}`,
-          codeLine: 13,
+          codeLine: lines.popCalc,
         });
       }
     }
@@ -144,7 +153,7 @@ export function buildLargestRectangleHistogramSteps(rawHeights: number[]): LRHSt
       bestRect,
       action: 'push',
       message: `📥 将柱子 [${i}] (高度 ${curH}) 压入单调栈，维持单调递增`,
-      codeLine: 15,
+      codeLine: lines.push,
     });
   }
 
@@ -161,7 +170,7 @@ export function buildLargestRectangleHistogramSteps(rawHeights: number[]): LRHSt
     bestRect,
     action: 'done',
     message: `🎉 遍历结算完成！最终可勾勒出的最大矩形面积为：${maxArea} 单位`,
-    codeLine: 17,
+    codeLine: lines.done,
   });
 
   return steps;

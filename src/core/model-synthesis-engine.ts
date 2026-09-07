@@ -66,11 +66,11 @@ export class ModelSynthesisEngine {
       defaultStage: 'stage-3',
       directions: {
         forward: {
-          label: '正向递推',
+          label: '顺推 (正序)',
           branches: [],
         },
         reverse: {
-          label: '逆向递推',
+          label: '逆推 (倒序)',
           branches: [],
         },
       },

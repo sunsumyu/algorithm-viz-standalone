@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 非负数组前k个最小的子序列累加和 (Top K Subsequence Sum) - 声明式 4-Card 沙盘渲染器
  * 核心：大容量数据超越 01 背包限制，使用小根堆/优先队列 O(N log N + K log K) 状态机高效扩展
  * 架构重构：引入四语言代码联动、小根堆分支状态机沙盘与已收集榜单舱
@@ -42,12 +42,13 @@ export function buildTopKSubsequenceSumSteps(
   const heap: { right: number; sum: number }[] = [];
 
   const lines = {
-    sort: { java: 7, cpp: 7, python: 5, javascript: 2 },
-    pushFirst: { java: 10, cpp: 9, python: 7, javascript: 5 },
-    loopStart: { java: 12, cpp: 11, python: 9, javascript: 6 },
-    popHeap: { java: 13, cpp: 12, python: 10, javascript: 8 },
-    branch: { java: 18, cpp: 17, python: 13, javascript: 12 },
-    returnAns: { java: 22, cpp: 22, python: 15, javascript: 16 },
+    entry: { java: 8, cpp: 7, python: 3, javascript: 2 },
+    sort: { java: 9, cpp: 8, python: 5, javascript: 3 },
+    pushFirst: { java: 12, cpp: 12, python: 7, javascript: 6 },
+    loopStart: { java: 14, cpp: 14, python: 9, javascript: 7 },
+    popHeap: { java: 15, cpp: 15, python: 10, javascript: 9 },
+    branch: { java: 19, cpp: 18, python: 12, javascript: 11 },
+    returnAns: { java: 24, cpp: 25, python: 15, javascript: 17 },
   };
 
   function makeStep(data: Omit<TopKStep, 'metrics'>): TopKStep {
@@ -63,7 +64,7 @@ export function buildTopKSubsequenceSumSteps(
     };
   }
 
-  // 1. 初始化
+  // 1. 初始化入口
   steps.push(
     makeStep({
       stepIndex: 0,
@@ -72,8 +73,23 @@ export function buildTopKSubsequenceSumSteps(
       heapSnapshot: [],
       ans: [...ans],
       status: 'init',
-      message: `🚀 初始化算法：数组升序排序为 [${sorted.join(', ')}]。空集和 0 默认作为第 1 小子序列和！`,
-      log: `init: sorted=[${sorted.join(', ')}], ans=[0]`,
+      message: `🚀 初始化算法：进入 topKSum 函数，准备对原数组进行非降序排序。`,
+      log: `init: k=${targetK}`,
+      codeLine: lines.entry,
+    })
+  );
+
+  // 2. 升序排序
+  steps.push(
+    makeStep({
+      stepIndex: 0,
+      kTarget: targetK,
+      sortedNums: [...sorted],
+      heapSnapshot: [],
+      ans: [...ans],
+      status: 'init',
+      message: `📊 数组升序排序为 [${sorted.join(', ')}]。空集和 0 默认作为第 1 小子序列和！`,
+      log: `sort: sorted=[${sorted.join(', ')}], ans=[0]`,
       codeLine: lines.sort,
     })
   );
@@ -251,8 +267,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopKStep>({
         const border = isPoppedRight ? '#10b981' : '#334155';
         return `
           <div style="background:${bg}; border:1.5px solid ${border}; border-radius:6px; padding:6px 10px; min-width:45px; text-align:center;">
-            <div style="font-size:9px; color:#94a3b8;">#${i}</div>
-            <div style="font-size:13px; font-weight:800; color:#f8fafc;">${n}</div>
+            <div style="font-size:9px; color:#64748b;">#${i}</div>
+            <div style="font-size:13px; font-weight:800; color:#1e293b;">${n}</div>
           </div>
         `;
       })
@@ -263,11 +279,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopKStep>({
           .map((item, idx) => {
             const isTop = idx === 0;
             return `
-              <div style="background:${isTop ? 'rgba(6, 95, 70, 0.5)' : 'rgba(15, 23, 42, 0.6)'}; border:1.5px solid ${
-              isTop ? '#10b981' : '#334155'
-            }; border-radius:6px; padding:6px 10px; min-width:70px; text-align:center;">
-                <div style="font-size:9.5px; color:${isTop ? '#4ade80' : '#94a3b8'};">${isTop ? '👑 堆顶' : `#${idx + 1}`} (右=${item.right})</div>
-                <div style="font-size:13px; font-weight:800; color:#f8fafc; margin-top:2px;">和: ${item.sum}</div>
+              <div style="background:${isTop ? 'rgba(209, 250, 229, 0.9)' : 'rgba(241, 245, 249, 0.9)'}; border:1.5px solid ${isTop ? '#10b981' : '#e2e8f0'}; border-radius:6px; padding:6px 10px; min-width:70px; text-align:center;">
+                <div style="font-size:9.5px; color:${isTop ? '#16a34a' : '#64748b'};">${isTop ? '\u{1f451} 堆顶' : `#${idx + 1}`} (右=${item.right})</div>
+                <div style="font-size:13px; font-weight:800; color:#1e293b; margin-top:2px;">和: ${item.sum}</div>
               </div>
             `;
           })
@@ -275,10 +289,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopKStep>({
       : `<span style="color:#64748b; font-size:11px;">(小根堆当前为空)</span>`;
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-          <div style="font-size:12px; color:#94a3b8; font-weight:700;">升序原数组 (作为状态机构建基石)</div>
-          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+          <div style="font-size:12px; color:#64748b; font-weight:700;">升序原数组 (作为状态机构建基石)</div>
+          <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
             已收集: <b style="color:#10b981;">${step.ans.length}</b> / ${step.kTarget} 个
           </div>
         </div>
@@ -288,9 +302,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopKStep>({
         </div>
 
         <!-- 小根堆优先队列舱 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🌲 小根堆状态机优先队列 (队首即全局当前最小和)</span>
+            <span style="font-size:11.5px; font-weight:800; color:#374151;">🌲 小根堆状态机优先队列 (队首即全局当前最小和)</span>
             <span style="font-size:10.5px; color:#38bdf8;">两路分叉：替换最右项 / 追加下一项</span>
           </div>
 
@@ -303,16 +317,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopKStep>({
   },
   renderCustomMetrics: (container, step) => {
     const chips = step.ans.map((sum, i) => `
-      <div style="display:inline-flex; flex-direction:column; align-items:center; min-width:40px; padding:4px 6px; margin:2px; background:#064e3b; border:1px solid #10b981; border-radius:4px;">
+      <div style="display:inline-flex; flex-direction:column; align-items:center; min-width:40px; padding:4px 6px; margin:2px; background:#dcfce7; border:1px solid #22c55e; border-radius:4px;">
         <span style="font-size:9px; color:#a7f3d0;">第 ${i + 1} 小</span>
         <span style="font-size:13px; font-weight:800; color:#ffffff;">${sum}</span>
       </div>
     `);
 
     container.innerHTML = `
-      <div style="width:100%; padding:4px 8px; box-sizing:border-box;">
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">已收录的 Top-K 最小子序列和榜单</div>
-        <div style="display:flex; flex-wrap:wrap; max-height:100px; overflow-y:auto; gap:3px; background:#0b1329; padding:6px; border-radius:6px;">
+      <div style="width:100%; height:100%; display:flex; flex-direction:column; padding:2px 4px; box-sizing:border-box; flex:1; min-height:0; overflow:hidden;">
+        <div style="font-size:11px; color:#64748b; margin-bottom:4px; font-weight:700; flex-shrink:0;">已收录的 Top-K 最小子序列和榜单</div>
+        <div style="display:flex; flex-wrap:wrap; align-content:flex-start; flex:1; min-height:0; overflow-y:auto; gap:3px; background:#f1f5f9; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">
           ${chips.join('')}
         </div>
       </div>

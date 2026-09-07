@@ -425,7 +425,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PlanarStep>({
     const isDone = step.status === 'reach' || step.status === 'done';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 210px;" viewBox="0 0 310 200">
           <!-- 原图网格边 (灰底/红割) -->
           <line x1="60" y1="150" x2="155" y2="150" stroke="${isDone ? '#ef4444' : '#475569'}" stroke-width="${isDone ? 3 : 1.5}" />
@@ -461,7 +461,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PlanarStep>({
           <g><circle cx="205" cy="100" r="10" fill="#f59e0b" /><text x="205" y="104" fill="#ffffff" font-size="8.5" font-weight="800" text-anchor="middle">F3</text></g>
           <g><circle cx="270" cy="20" r="12" fill="#f59e0b" /><text x="270" y="24" fill="#ffffff" font-size="9.5" font-weight="800" text-anchor="middle">T*</text></g>
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           🟢 绿色虚线为对偶图从 S* 到 T* 的最短路径 | 🔴 红色为对应的原图最小割割边
         </div>
       </div>

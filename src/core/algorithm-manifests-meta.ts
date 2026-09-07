@@ -6,17 +6,7 @@
 import type { AlgorithmMetadata } from './registry';
 
 export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
-  {
-    "id": "bracket",
-    "name": "括号匹配",
-    "viewId": "algo-bracket-view",
-    "category": "stack",
-    "description": "使用栈验证括号字符串的有效性",
-    "icon": "📚",
-    "difficulty": 1,
-    "levelOrder": 1,
-    "learningGoal": "掌握用栈匹配括号对的基础模型"
-  },
+
   {
     "id": "stack-queue-theory",
     "name": "栈与队列理论基础",
@@ -2246,16 +2236,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 1,
     "levelOrder": 47
   },
-  {
-    "id": "longest-common-subsequence",
-    "name": "最长公共子序列",
-    "viewId": "longest-common-subsequence",
-    "category": "dynamic-programming",
-    "description": "不要求连续的最长公共子序列：相等时对角线加1，不等时取左方和上方较大值。",
-    "icon": "🧬",
-    "difficulty": 1,
-    "levelOrder": 48
-  },
+
   {
     "id": "uncrossed-lines",
     "name": "不相交的线",
@@ -2336,16 +2317,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 1,
     "levelOrder": 56
   },
-  {
-    "id": "longest-palindromic-subsequence",
-    "name": "最长回文子序列",
-    "viewId": "longest-palindromic-subsequence",
-    "category": "dynamic-programming",
-    "description": "找出字符串中最长的回文子序列长度（区间 DP 向内收缩）。",
-    "icon": "👑",
-    "difficulty": 1,
-    "levelOrder": 57
-  },
+
   {
     "id": "tree-dp-theory",
     "name": "树型DP理论篇（必备套路）",
@@ -3565,6 +3537,72 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 94,
     "learningGoal": "掌握混合背包的工程条件分流思想、布尔可行性问题的窗口滑块优化技巧"
+  },
+  {
+    "id": "min-path-sum",
+    "name": "最小路径和 (LeetCode 64)",
+    "viewId": "algo-min-path-sum-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法讲解067 Code01：LeetCode 64 最小路径和，从递归到二维DP与空间压缩完整演化",
+    "icon": "📉",
+    "difficulty": 2,
+    "levelOrder": 101,
+    "learningGoal": "掌握二维网格DP的递归抽象、状态转移方程推导及一维滚动数组空间压缩技巧"
+  },
+  {
+    "id": "word-search",
+    "name": "单词搜索 (LeetCode 79)",
+    "viewId": "algo-word-search-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法讲解067 Code02：LeetCode 79 单词搜索，无后效性反例深度辨析与启发式剪枝",
+    "icon": "🔍",
+    "difficulty": 2,
+    "levelOrder": 102,
+    "learningGoal": "理解无后效性是动态规划的核心前提，掌握带回溯的现场恢复与首尾字符频次剪枝优化"
+  },
+  {
+    "id": "longest-common-subsequence",
+    "name": "最长公共子序列 (LeetCode 1143)",
+    "viewId": "algo-longest-common-subsequence-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法讲解067 Code03：LeetCode 1143 LCS 最长公共子序列，双样本位置对应模型与空间压缩",
+    "icon": "🧬",
+    "difficulty": 2,
+    "levelOrder": 103,
+    "learningGoal": "掌握双序列位置全可能性分类讨论、二维填表依赖与一维滚动数组空间压缩"
+  },
+  {
+    "id": "longest-palindromic-subsequence",
+    "name": "最长回文子序列 (LeetCode 516)",
+    "viewId": "algo-longest-palindromic-subsequence-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法讲解067 Code04：LeetCode 516 LPS 最长回文子序列，单样本区间DP范围尝试模型",
+    "icon": "🔄",
+    "difficulty": 2,
+    "levelOrder": 104,
+    "learningGoal": "掌握范围尝试模型从对角线向外扩散的填表顺序，以及对角线变量空间压缩"
+  },
+  {
+    "id": "tree-count-height-m",
+    "name": "节点数为n高度不大于m的二叉树结构数",
+    "viewId": "algo-tree-count-height-m-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法讲解067 Code05：牛客网，卡特兰数二维扩展，左右子树节点分配与高度限制",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 105,
+    "learningGoal": "掌握树形结构组合计数的二维DP设计，利用差分技巧与高度上界优化状态转移"
+  },
+  {
+    "id": "longest-increasing-path",
+    "name": "矩阵中的最长递增路径 (LeetCode 329)",
+    "viewId": "algo-longest-increasing-path-view",
+    "category": "dynamic-programming",
+    "description": "左程云算法讲解067 Code06：LeetCode 329 LIP，严格递增天然规避环路，有向无环图记忆化搜索极佳范例",
+    "icon": "📈",
+    "difficulty": 3,
+    "levelOrder": 106,
+    "learningGoal": "理解严格递增条件如何天然保证无后效性，掌握图拓扑DAG与记忆化搜索的等价性"
   }
 ];
 

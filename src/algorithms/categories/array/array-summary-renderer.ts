@@ -5,6 +5,7 @@
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   ARRAY_SUMMARY_PROBLEM_HTML,
   ARRAY_SUMMARY_ANALYSIS_HTML,
@@ -25,7 +26,7 @@ export interface ASStep {
   index: number;
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   technique: string;
   problems: string[];
 }
@@ -73,13 +74,23 @@ export const DEMO_QUESTIONS: DemoQuestion[] = [
 export function buildArraySummarySteps(): ASStep[] {
   const steps: ASStep[] = [];
 
+  const lines = {
+    intro: 1,
+    basics: 1,
+    twoPointer: [2, 3, 4],
+    binarySearch: 5,
+    prefixSum: [6, 7],
+    matrix: 8,
+    done: 1,
+  };
+
   // 0. Intro
   steps.push({
     section: 'intro',
     index: 0,
     message: '欢迎来到数组专题总结篇！我们将系统梳理数组 6 大核心解题范式。',
     log: '📝 数组专题回顾开始',
-    codeLine: 0,
+    codeLine: lines.intro,
     technique: '全景导读',
     problems: ['数组理论基础', '移除元素', '有序数组平方', '最小子数组', '螺旋矩阵', '区间和'],
   });
@@ -90,7 +101,7 @@ export function buildArraySummarySteps(): ASStep[] {
     index: 1,
     message: '基础操作：数组连续内存物理地址直接寻址使得下标访问为 O(1)，但搜索、插入和删除需要 O(n)。',
     log: '📦 基础操作：访问 O(1)，搜索/插入/删除 O(n)',
-    codeLine: 1,
+    codeLine: lines.basics,
     technique: '连续内存寻址',
     problems: ['数组理论基础'],
   });
@@ -101,7 +112,7 @@ export function buildArraySummarySteps(): ASStep[] {
     index: 2,
     message: '双指针法分为：①快慢双指针（原地修改）；②首尾对撞双指针（有序两端归并）；③滑动窗口（连续子数组最值）。',
     log: '👆👆 双指针三剑客：快慢 / 对撞 / 滑动窗口',
-    codeLine: [2, 3],
+    codeLine: lines.twoPointer,
     technique: '双指针三剑客',
     problems: ['LC 27 移除元素', 'LC 977 有序数组平方', 'LC 209 长度最小子数组'],
   });
@@ -112,7 +123,7 @@ export function buildArraySummarySteps(): ASStep[] {
     index: 3,
     message: '二分查找：有序数组的绝对检索利器，掌握左闭右闭 [left, right] 与左闭右开 [left, right) 的循环不变量。',
     log: '🎯 二分查找：区间开闭与循环不变量',
-    codeLine: 2,
+    codeLine: lines.binarySearch,
     technique: '二分查找',
     problems: ['LC 704 二分查找', 'LC 35 搜索插入位置'],
   });
@@ -123,7 +134,7 @@ export function buildArraySummarySteps(): ASStep[] {
     index: 4,
     message: '前缀和：以空间换时间，O(n) 预处理 prefix 数组，O(1) 瞬时响应一维区间求和与二维子矩阵求和。',
     log: '➕ 前缀和：一维差分与二维容斥原理',
-    codeLine: [4, 5],
+    codeLine: lines.prefixSum,
     technique: '前缀和差分与容斥',
     problems: ['Kama 58 区间和', 'Kama 44 购买土地'],
   });
@@ -134,7 +145,7 @@ export function buildArraySummarySteps(): ASStep[] {
     index: 5,
     message: '模拟行为：螺旋矩阵等几何模拟问题，核心在于牢牢守住转折点定义，四边界 (top, bottom, left, right) 顺时针收缩。',
     log: '🌀 模拟行为：四边界顺时针收缩',
-    codeLine: 3,
+    codeLine: lines.matrix,
     technique: '四边界模拟',
     problems: ['LC 59 螺旋矩阵 II', 'LC 54 螺旋矩阵'],
   });
@@ -145,7 +156,7 @@ export function buildArraySummarySteps(): ASStep[] {
     index: 6,
     message: '🎉 恭喜！数组专题 6 大核心解题范式已全部梳理完毕，你已具备扎实的数组解题功底！',
     log: '🏆 数组专题总结完成',
-    codeLine: 0,
+    codeLine: lines.done,
     technique: '数组通关',
     problems: ['全套数组经典题目'],
   });

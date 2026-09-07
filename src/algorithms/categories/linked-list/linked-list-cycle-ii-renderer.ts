@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   LINKED_LIST_CYCLE_II_PROBLEM_HTML,
@@ -25,7 +26,7 @@ export interface CycleStep {
   entryIndex: number; // 入环口下标，-1 未确定
   phase: 'init' | 'chase' | 'meet' | 'find_entry' | 'done_entrance' | 'no_cycle';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
@@ -33,6 +34,16 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
   const n = values.length;
 
   if (n === 0) return steps;
+
+  const lines = {
+    init: { java: [2, 3], cpp: [4, 5], python: [3, 4], javascript: [2, 3] },
+    chase: { java: [7, 8], cpp: [8, 9], python: [7, 8], javascript: [6, 7] },
+    meet: { java: 9, cpp: 10, python: 9, javascript: 8 },
+    findEntryInit: { java: [11, 12], cpp: [11, 12], python: [10, 11], javascript: [9, 10] },
+    findEntryStep: { java: [14, 15], cpp: [14, 15], python: [13, 14], javascript: [12, 13] },
+    doneEntrance: { java: 17, cpp: 17, python: 15, javascript: 15 },
+    noCycle: { java: 20, cpp: 20, python: 17, javascript: 18 },
+  };
 
   steps.push({
     values,
@@ -43,7 +54,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
     entryIndex: -1,
     phase: 'init',
     message: pos === -1 ? '链表无环。fast 与 slow 从 head (下标 0) 出发。' : `链表有环 (尾节点连回下标 ${pos})。fast (每次2步) 与 slow (每次1步) 开始追逐。`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   if (pos === -1) {
@@ -61,7 +72,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
         entryIndex: -1,
         phase: 'chase',
         message: `fast 走2步到 ${fast >= n ? 'null' : `[${fast}](${values[fast]})`}，slow 走1步到 [${slow}](${values[slow]})`,
-        codeLine: 6,
+        codeLine: lines.chase,
       });
     }
     steps.push({
@@ -73,7 +84,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
       entryIndex: -1,
       phase: 'no_cycle',
       message: 'fast 到达 null (fast == null || fast.next == null)，说明无环，返回 null。',
-      codeLine: 17,
+      codeLine: lines.noCycle,
     });
     return steps;
   }
@@ -104,7 +115,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
         entryIndex: -1,
         phase: 'meet',
         message: `🎉 fast 与 slow 在下标 [${meet}] (值 ${values[meet]}) 处相遇！开始启动阶段二：推纳入环口 (x = z)。`,
-        codeLine: 9,
+        codeLine: lines.meet,
       });
       break;
     } else {
@@ -117,7 +128,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
         entryIndex: -1,
         phase: 'chase',
         message: `fast 走2步到 [${fast}](${values[fast]})，slow 走1步到 [${slow}](${values[slow]})`,
-        codeLine: 6,
+        codeLine: lines.chase,
       });
     }
   }
@@ -135,7 +146,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
     entryIndex: -1,
     phase: 'find_entry',
     message: `阶段二初始化：index1 指向 head (下标 0)，index2 指向相遇点 (下标 ${meet})，每次各走 1 步。`,
-    codeLine: 12,
+    codeLine: lines.findEntryInit,
   });
 
   while (index1 !== index2) {
@@ -155,7 +166,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
       entryIndex: -1,
       phase: 'find_entry',
       message: `index1 移动到 [${index1}](${values[index1]})，index2 移动到 [${index2}](${values[index2]})`,
-      codeLine: 14,
+      codeLine: lines.findEntryStep,
     });
   }
 
@@ -169,7 +180,7 @@ export function buildCycleSteps(values: number[], pos: number): CycleStep[] {
     entryIndex: index1,
     phase: 'done_entrance',
     message: `🎉 index1 与 index2 在下标 [${index1}] (值 ${values[index1]}) 处相遇！成功锁定入环起始节点！`,
-    codeLine: 16,
+    codeLine: lines.doneEntrance,
   });
 
   return steps;

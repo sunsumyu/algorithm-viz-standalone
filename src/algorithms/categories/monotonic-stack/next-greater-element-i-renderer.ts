@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   NEXT_GREATER_ELEMENT_I_PROBLEM_HTML,
@@ -26,13 +27,22 @@ export interface NGE1Step {
   answers: number[];
   action: 'init' | 'scan_nums2' | 'pop_map' | 'push_nums2' | 'query_nums1' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]): NGE1Step[] {
   const steps: NGE1Step[] = [];
   const n2 = nums2.length;
   const n1 = nums1.length;
+
+  const lines = {
+    init: { java: [2, 3], cpp: [4, 5], python: [3, 4], javascript: [2, 3] },
+    scanNums2: { java: [5, 6], cpp: [6, 7], python: [5, 6], javascript: [4, 5] },
+    popMap: { java: 7, cpp: [8, 9], python: 7, javascript: 6 },
+    pushNums2: { java: 9, cpp: 11, python: 8, javascript: 8 },
+    queryNums1: { java: [13, 14], cpp: [14, 16], python: [10, 11], javascript: [11, 12] },
+    done: { java: 16, cpp: 19, python: 12, javascript: 14 },
+  };
 
   if (n1 === 0 || n2 === 0) {
     steps.push({
@@ -45,7 +55,7 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
       answers: [],
       action: 'done',
       message: '输入数组为空，返回空数组',
-      codeLine: 2,
+      codeLine: lines.done,
     });
     return steps;
   }
@@ -63,7 +73,7 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
     answers: [],
     action: 'init',
     message: `阶段 1：初始化单调栈与哈希表，准备遍历母集 nums2=[${nums2.join(', ')}] 构建全量下一个更大元素映射`,
-    codeLine: 3,
+    codeLine: lines.init,
   });
 
   // 1. 遍历 nums2 构建映射
@@ -80,7 +90,7 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
       answers: [],
       action: 'scan_nums2',
       message: `🔍 nums2 考察 [${j}]: 值 ${cur}，与单调栈顶 ${stack.length > 0 ? stack[stack.length - 1] : '（栈空）'} 比对`,
-      codeLine: 6,
+      codeLine: lines.scanNums2,
     });
 
     while (stack.length > 0 && cur > stack[stack.length - 1]) {
@@ -97,7 +107,7 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
         answers: [],
         action: 'pop_map',
         message: `🔥 弹出栈顶 ${top}！确立映射：${top} &rarr; 右侧首个更大元素为 ${cur}！`,
-        codeLine: 7,
+        codeLine: lines.popMap,
       });
     }
 
@@ -113,7 +123,7 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
       answers: [],
       action: 'push_nums2',
       message: `📥 将 ${cur} 压入单调栈，维持栈内单调递减`,
-      codeLine: 9,
+      codeLine: lines.pushNums2,
     });
   }
 
@@ -140,7 +150,7 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
       answers: [...answers],
       action: 'query_nums1',
       message: `📋 阶段 2：查询 nums1[${i}] = ${queryVal}，查哈希表得下一个更大元素为 ${ans === -1 ? '-1 (无)' : ans}，写入结果`,
-      codeLine: 14,
+      codeLine: lines.queryNums1,
     });
   }
 
@@ -154,7 +164,7 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
     answers: [...answers],
     action: 'done',
     message: `🎉 查询完毕！nums1 对应的下一个更大元素最终结果数组为：[${answers.join(', ')}]`,
-    codeLine: 16,
+    codeLine: lines.done,
   });
 
   return steps;

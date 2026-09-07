@@ -86,23 +86,23 @@ export function buildAStarJourneySteps(preset: string = 'classic_3x4'): AStarJou
 
   // 精准 17 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 27, java: 10, python: 8, javascript: 2 },
-    initCheck: { cpp: 28, java: 11, python: 10, javascript: 3 },
-    initDist: { cpp: 30, java: 13, python: 11, javascript: 6 },
-    initVisited: { cpp: 31, java: 17, python: 12, javascript: 7 },
-    initHeap: { cpp: 33, java: 19, python: 13, javascript: 8 },
-    pushSrc: { cpp: 35, java: 20, python: 14, javascript: 9 },
-    whileHeap: { cpp: 38, java: 22, python: 18, javascript: 12 },
-    pollCur: { cpp: 39, java: 23, python: 19, javascript: 13 },
-    checkVisited: { cpp: 43, java: 25, python: 21, javascript: 16 },
-    markVisited: { cpp: 44, java: 26, python: 22, javascript: 17 },
-    checkTarget: { cpp: 42, java: 27, python: 20, javascript: 15 },
-    loopDirs: { cpp: 46, java: 29, python: 24, javascript: 19 },
-    checkValidNeighbor: { cpp: 48, java: 31, python: 26, javascript: 21 },
-    checkRelax: { cpp: 50, java: 32, python: 27, javascript: 22 },
-    updateDist: { cpp: 51, java: 33, python: 28, javascript: 23 },
-    pushHeap: { cpp: 52, java: 34, python: 29, javascript: 24 },
-    returnFailed: { cpp: 57, java: 39, python: 33, javascript: 28 },
+    entry: { cpp: 20, java: 10, python: 8, javascript: 2 },
+    initCheck: { cpp: 21, java: 11, python: 10, javascript: 3 },
+    initDist: { cpp: 23, java: 13, python: 11, javascript: 6 },
+    initVisited: { cpp: 24, java: 17, python: 12, javascript: 7 },
+    initHeap: { cpp: 26, java: 19, python: 13, javascript: 8 },
+    pushSrc: { cpp: 28, java: 20, python: 14, javascript: 9 },
+    whileHeap: { cpp: 31, java: 22, python: 18, javascript: 12 },
+    pollCur: { cpp: 32, java: 23, python: 19, javascript: 13 },
+    checkVisited: { cpp: 36, java: 25, python: 21, javascript: 16 },
+    markVisited: { cpp: 37, java: 26, python: 22, javascript: 17 },
+    checkTarget: { cpp: 35, java: 27, python: 20, javascript: 15 },
+    loopDirs: { cpp: 39, java: 29, python: 24, javascript: 19 },
+    checkValidNeighbor: { cpp: 41, java: 31, python: 26, javascript: 21 },
+    checkRelax: { cpp: 43, java: 32, python: 27, javascript: 22 },
+    updateDist: { cpp: 44, java: 33, python: 28, javascript: 23 },
+    pushHeap: { cpp: 45, java: 34, python: 29, javascript: 24 },
+    returnFailed: { cpp: 50, java: 39, python: 33, javascript: 28 },
   };
 
   function makeStep(
@@ -382,10 +382,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<AStarJourneyStep>({
     }
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🧭 A* 启发式网格地图 (${n}x${m})</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🧭 A* 启发式网格地图 (${n}x${m})</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前状态: <b style="color: #10b981;">${step.status === 'done' ? `抵达终点 (路径长 ${step.path.length})` : `探索中 (${step.curR}, ${step.curC})`}</b>
           </span>
         </div>
@@ -397,9 +397,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<AStarJourneyStep>({
         </div>
 
         <!-- 底部启发式原理舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🧭 A* 启发估价与 Open/ClosedSet 舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🧭 A* 启发估价与 Open/ClosedSet 舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               OpenSet: <b>${step.openSet.length}</b> 个 | ClosedSet: <b>${step.closedSet.length}</b> 个
             </div>
@@ -427,13 +427,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<AStarJourneyStep>({
       : '寻路进行中';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #38bdf8;">OpenSet 波前队列:</span>
             <div style="display: flex; gap: 4px; flex-wrap: wrap;">${openBadges}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">路径导航:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">${pathStr}</strong>
           </div>

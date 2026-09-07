@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   TWO_SUM_PROBLEM_HTML,
@@ -27,7 +28,7 @@ export interface TwoSumStep {
   result?: [number, number];
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function parseArray(input: string): number[] {
@@ -42,6 +43,14 @@ export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
   const steps: TwoSumStep[] = [];
   const map = new Map<number, number>();
 
+  const lines = {
+    init: { java: 2, cpp: 4, python: 3, javascript: 2 },
+    check: { java: [3, 4], cpp: [5, 6], python: [4, 5], javascript: [3, 4] },
+    found: { java: [5, 6], cpp: [7, 8], python: [6, 7], javascript: [5, 6] },
+    insert: { java: 8, cpp: 10, python: 8, javascript: 8 },
+    notFound: { java: 10, cpp: 12, python: 9, javascript: 10 },
+  };
+
   steps.push({
     array: [...nums],
     currentIndex: -1,
@@ -52,7 +61,7 @@ export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
     status: 'init',
     message: `初始化哈希表 Map，准备单次遍历寻找两数之和等于 target = ${target}。`,
     log: `初始化 HashMap，target = ${target}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   for (let i = 0; i < nums.length; i++) {
@@ -69,7 +78,7 @@ export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
       status: 'check',
       message: `遍历到 i=${i} (nums[${i}]=${cur})，需要补数 complement = ${target} - ${cur} = ${complement}。查询哈希表中是否存在键 ${complement}。`,
       log: `i=${i}: nums[${i}]=${cur}, 查找补数 ${complement}`,
-      codeLine: [3, 4],
+      codeLine: lines.check,
     });
 
     if (map.has(complement)) {
@@ -85,7 +94,7 @@ export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
         result: [prevIdx, i],
         message: `🎉 在哈希表中找到补数 ${complement} (位于下标 ${prevIdx})！成功配对：nums[${prevIdx}] (${complement}) + nums[${i}] (${cur}) = ${target}。返回下标 [${prevIdx}, ${i}]。`,
         log: `✓ 命中！找到配对 [${prevIdx}, ${i}]`,
-        codeLine: [5, 6],
+        codeLine: lines.found,
       });
       return steps;
     }
@@ -101,7 +110,7 @@ export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
       status: 'insert',
       message: `哈希表中未找到 ${complement}，将当前键值对 (${cur} -> ${i}) 存入哈希表，继续向后扫描。`,
       log: `存入 HashMap: { ${cur} => ${i} }`,
-      codeLine: 8,
+      codeLine: lines.insert,
     });
   }
 
@@ -115,7 +124,7 @@ export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
     status: 'not-found',
     message: `遍历结束，未找到和为 ${target} 的两数对。`,
     log: `未找到有效解`,
-    codeLine: 10,
+    codeLine: lines.notFound,
   });
 
   return steps;

@@ -60,22 +60,22 @@ export function buildHungarianSteps(preset: string = 'four_nodes'): HungarianSte
 
   // 精准 16 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    mainFunc: { cpp: 27, java: 21, python: 2, javascript: 8 },
-    initMatch: { cpp: 28, java: 22, python: 9, javascript: 9 },
-    initCount: { cpp: 29, java: 24, python: 23, javascript: 24 },
-    loopU: { cpp: 31, java: 26, python: 24, javascript: 25 },
-    initVisited: { cpp: 32, java: 27, python: 25, javascript: 26 },
-    checkDfs: { cpp: 33, java: 28, python: 26, javascript: 27 },
-    dfsEntry: { cpp: 13, java: 8, python: 11, javascript: 11 },
-    loopV: { cpp: 14, java: 9, python: 12, javascript: 12 },
-    checkVisited: { cpp: 15, java: 10, python: 13, javascript: 13 },
-    markVisited: { cpp: 16, java: 11, python: 15, javascript: 14 },
-    checkMatchOrDfs: { cpp: 19, java: 13, python: 18, javascript: 16 },
-    applyMatch: { cpp: 20, java: 14, python: 19, javascript: 17 },
-    returnTrue: { cpp: 21, java: 15, python: 20, javascript: 18 },
-    returnFalse: { cpp: 24, java: 18, python: 21, javascript: 21 },
-    incCount: { cpp: 34, java: 29, python: 27, javascript: 27 },
-    returnCount: { cpp: 37, java: 32, python: 29, javascript: 29 },
+    mainFunc: { cpp: 20, java: 21, python: 2, javascript: 8 },
+    initMatch: { cpp: 21, java: 22, python: 9, javascript: 9 },
+    initCount: { cpp: 22, java: 24, python: 23, javascript: 24 },
+    loopU: { cpp: 24, java: 26, python: 24, javascript: 25 },
+    initVisited: { cpp: 25, java: 27, python: 25, javascript: 26 },
+    checkDfs: { cpp: 26, java: 28, python: 26, javascript: 27 },
+    dfsEntry: { cpp: 6, java: 8, python: 11, javascript: 11 },
+    loopV: { cpp: 7, java: 9, python: 12, javascript: 12 },
+    checkVisited: { cpp: 8, java: 10, python: 13, javascript: 13 },
+    markVisited: { cpp: 9, java: 11, python: 15, javascript: 14 },
+    checkMatchOrDfs: { cpp: 12, java: 13, python: 18, javascript: 16 },
+    applyMatch: { cpp: 13, java: 14, python: 19, javascript: 17 },
+    returnTrue: { cpp: 14, java: 15, python: 20, javascript: 18 },
+    returnFalse: { cpp: 17, java: 18, python: 21, javascript: 21 },
+    incCount: { cpp: 27, java: 29, python: 27, javascript: 27 },
+    returnCount: { cpp: 30, java: 32, python: 29, javascript: 29 },
   };
 
   function makeStep(
@@ -364,10 +364,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<HungarianStep>({
       : '<span style="font-size: 10.5px; color: #64748b;">(本轮增广探索结束)</span>';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">💘 二分图拓扑 (左侧 L部 ➔ 右侧 R部)</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">💘 二分图拓扑 (左侧 L部 ➔ 右侧 R部)</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             已建立匹配: <b style="color: #10b981;">${step.matchCount}</b> / ${n} 对
           </span>
         </div>
@@ -380,15 +380,15 @@ const { template, Visualizer } = createDeclarativeVisualizer<HungarianStep>({
         </div>
 
         <!-- 底部增广路交错腾位舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🔍 增广路交错探索与反转腾位舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🔍 增广路交错探索与反转腾位舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               当前探查: <b>${step.curLeft}</b>
             </div>
           </div>
 
-          <div style="background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 6px 10px;">
+          <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 10px;">
             ${pathDisplay}
           </div>
         </div>
@@ -405,13 +405,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<HungarianStep>({
           const val = arr[idx];
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
           const displayVal = formatVal(val);
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">R[${idx}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">R[${idx}]</span>
               <span style="line-height: 1.1;">${displayVal}</span>
             </div>
           `;
@@ -434,11 +434,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<HungarianStep>({
       : '暂无匹配';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${matchRow}
           ${visRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #ec4899; font-size: 10.5px; font-weight: 700;">当前已确定匹配对:</span>
             <strong style="color: #ec4899; font-family: monospace; font-size: 11px;">[ ${matchedPairsStr} ]</strong>
           </div>

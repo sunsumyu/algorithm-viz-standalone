@@ -7,6 +7,7 @@
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   REMOVE_ELEMENT_PROBLEM_HTML,
   REMOVE_ELEMENT_ANALYSIS_HTML,
@@ -21,7 +22,7 @@ export interface RemoveStep {
   status: 'check' | 'skip' | 'copy' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function parseArray(input: string): number[] {
@@ -37,6 +38,14 @@ export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[
   let slow = 0;
   const work = [...arr];
 
+  const lines = {
+    init: { java: 2, cpp: 4,  python: 3, javascript: 2 },
+    loop: { java: 3, cpp: 5,  python: 4, javascript: 3 },
+    copy: { java: 5, cpp: 7,  python: 6, javascript: 5 },
+    skip: { java: 3, cpp: 5,  python: 4, javascript: 3 },
+    done: { java: 9, cpp: 11, python: 8, javascript: 9 },
+  };
+
   steps.push({
     array: [...work],
     fast: 0,
@@ -45,7 +54,7 @@ export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[
     status: 'check',
     message: `初始化 slow = 0，fast 从 0 开始遍历，待移除的目标值 val = ${val}。`,
     log: `初始化快慢指针：slow=0, fast=0, val=${val}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   for (let fast = 0; fast < work.length; fast++) {
@@ -57,7 +66,7 @@ export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[
       status: 'check',
       message: `快指针 fast=${fast}，检查 nums[${fast}]=${work[fast]} 是否等于 val=${val}。`,
       log: `检查 nums[${fast}] = ${work[fast]}`,
-      codeLine: 3,
+      codeLine: lines.loop,
     });
 
     if (work[fast] !== val) {
@@ -71,7 +80,7 @@ export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[
         status: 'copy',
         message: `nums[fast]=${work[fast]} ≠ val，保留此元素：覆写到 nums[slow=${slow}]（原值 ${prevVal}），slow++ → ${slow + 1}。`,
         log: `保留元素: nums[${slow}] = ${work[fast]}，slow 右移至 ${slow + 1}`,
-        codeLine: [4, 5],
+        codeLine: lines.copy,
       });
       slow++;
     } else {
@@ -83,7 +92,7 @@ export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[
         status: 'skip',
         message: `nums[fast]=${work[fast]} == val，遇到待移除元素，跳过不复制，慢指针 slow 保持在 ${slow}。`,
         log: `跳过目标值: nums[${fast}] == ${val}`,
-        codeLine: 3,
+        codeLine: lines.skip,
       });
     }
   }
@@ -96,7 +105,7 @@ export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[
     status: 'done',
     message: `🎉 遍历完成！新数组有效长度为 slow = ${slow}，前 ${slow} 个元素为最终保留结果 [${work.slice(0, slow).join(', ')}]。`,
     log: `✓ 完成：有效长度 k = ${slow}`,
-    codeLine: 6,
+    codeLine: lines.done,
   });
 
   return steps;

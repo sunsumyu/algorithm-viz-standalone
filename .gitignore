@@ -16,7 +16,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .scratch/
+scratch/
 .temp/
+.zcode/
 tsconfig.tsbuildinfo
 
 # IDE & OS

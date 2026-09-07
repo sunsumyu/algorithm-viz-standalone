@@ -20,7 +20,8 @@ describe('MixedEulerianCircuit (POJ 1637)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
+      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in step.codeLine ? (step.codeLine as any).java : step.codeLine;
+      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
       for (const line of lines) {
         expect(line).toBeGreaterThan(0);
         expect(line).toBeLessThanOrEqual(javaLinesCount);
@@ -47,7 +48,8 @@ describe('MixedEulerianCircuit (POJ 1637)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
+      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in step.codeLine ? (step.codeLine as any).java : step.codeLine;
+      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
       for (const line of lines) {
         expect(line).toBeGreaterThan(0);
         expect(line).toBeLessThanOrEqual(javaLinesCount);

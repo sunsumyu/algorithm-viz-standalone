@@ -382,13 +382,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<VirtualTreeStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 6px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 6px; box-sizing: border-box;">
         <svg style="width: 100%; height: 205px;" viewBox="0 0 320 200">
           ${svgOrigEdges}
           ${svgVtreeEdges}
           ${svgNodes}
         </svg>
-        <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+        <div style="font-size: 10.5px; color: #64748b; text-align: center;">
           绿色粗线为虚树边 | 红色为关键点，紫色为必要公共祖先 LCA | 规模压缩至 O(K) 极大提速树形 DP
         </div>
       </div>
@@ -415,7 +415,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<VirtualTreeStep>({
               const isActive = step.activeArray === activeName && step.activeSlot === idx;
               const bg = isActive ? '#fef08a' : '#1e293b';
               const textCol = isActive ? '#854d0e' : '#e2e8f0';
-              const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+              const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
               return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 32px; height: 30px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 10px; font-weight: 700;">
                 <span style="font-size: 7.5px; color: #64748b; line-height: 1;">[${idx}]</span>
@@ -438,11 +438,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<VirtualTreeStep>({
         const vtreeStr = step.virtualTreeNodes.length > 0 ? `{ ${step.virtualTreeNodes.join(', ')} }` : '尚未构建';
 
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #cbd5e1; padding: 2px 0;">
-            <div style="display: flex; flex-direction: column; gap: 4px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #374151; padding: 2px 0;">
+            <div style="display: flex; flex-direction: column; gap: 4px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
               ${dfnRow}
               ${depthRow}
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
                 <span style="color: #38bdf8; font-size: 10px; font-weight: 700;">单调栈维护最右链:</span>
                 <strong style="color: #38bdf8; font-family: monospace; font-size: 10.5px;">[ ${stackStr} ]</strong>
               </div>
@@ -451,8 +451,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<VirtualTreeStep>({
                 <strong style="color: #c084fc; font-family: monospace; font-size: 10.5px;">${vtreeStr}</strong>
               </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 4px 8px;">
-              <span style="color: #94a3b8; font-size: 10.5px;">执行语句:</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #64748b; font-size: 10.5px;">执行语句:</span>
               <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">行 ${Array.isArray(step.codeLine) ? step.codeLine.join('-') : step.codeLine}: ${step.log}</strong>
             </div>
           </div>

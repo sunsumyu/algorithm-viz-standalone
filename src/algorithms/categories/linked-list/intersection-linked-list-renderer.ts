@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   INTERSECTION_LINKED_LIST_PROBLEM_HTML,
@@ -29,7 +30,7 @@ export interface ILLStep {
   missed: boolean;
   action: 'init' | 'step' | 'switch_lane' | 'meet' | 'done_null';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export const LIST_A_MEET = [4, 1, 8, 4, 5];
@@ -43,6 +44,13 @@ export function buildIntersectionSteps(intersect: boolean): ILLStep[] {
   const listB = intersect ? LIST_B_MEET : LIST_B_MISS;
   const skipA = intersect ? 2 : -1;
   const skipB = intersect ? 3 : -1;
+
+  const lines = {
+    init: { java: [3, 4], cpp: [5, 6], python: 5, javascript: [3, 4] },
+    step: { java: [8, 9], cpp: [9, 10], python: [8, 9], javascript: [7, 8] },
+    meet: { java: 12, cpp: 13, python: 11, javascript: 11 },
+    doneNull: { java: 12, cpp: 13, python: 11, javascript: 11 },
+  };
 
   let pa = 0;
   let pb = 0;
@@ -62,7 +70,7 @@ export function buildIntersectionSteps(intersect: boolean): ILLStep[] {
     missed: false,
     action: 'init',
     message: `初始化：pA 指向 headA (节点 ${listA[0]})，pB 指向 headB (节点 ${listB[0]})`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   const MAX_STEPS = 30;
@@ -95,7 +103,7 @@ export function buildIntersectionSteps(intersect: boolean): ILLStep[] {
         missed: false,
         action: 'meet',
         message: `🎉 浪漫相遇！pA 与 pB 在相同内存节点 (值 ${meetVal}) 处相遇，返回交点节点！`,
-        codeLine: 11,
+        codeLine: lines.meet,
       });
       break;
     }
@@ -114,7 +122,7 @@ export function buildIntersectionSteps(intersect: boolean): ILLStep[] {
         missed: true,
         action: 'done_null',
         message: `两指针同时到达 null (pA == pB == null)，说明两链表无相交交点，返回 null`,
-        codeLine: 11,
+        codeLine: lines.doneNull,
       });
       break;
     }
@@ -190,7 +198,7 @@ export function buildIntersectionSteps(intersect: boolean): ILLStep[] {
       missed: false,
       action,
       message: `${action === 'switch_lane' ? '🔀 换道走对方链表' : '双指针前进一步'}：pA 移动到 ${paDesc}，pB 移动到 ${pbDesc}`,
-      codeLine: 7,
+      codeLine: lines.step,
     });
   }
 

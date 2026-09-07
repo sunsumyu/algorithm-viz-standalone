@@ -275,11 +275,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<Trap2Step>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #0f172a; border-radius: 8px; padding: 10px; box-sizing: border-box; gap: 6px;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 220px; background: #f8fafc; border-radius: 8px; padding: 10px; box-sizing: border-box; gap: 6px;">
         <div style="display: flex; flex-direction: column; gap: 6px;">
           ${cellHtml}
         </div>
-        <div style="font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px;">
+        <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 4px;">
           深蓝高亮为蓄水格 (+水深) | 金色边框为当前木桶最短板 | 木桶原理：最矮围栏决定储水上限
         </div>
       </div>
@@ -307,19 +307,19 @@ const { template, Visualizer } = createDeclarativeVisualizer<Trap2Step>({
             : '空堆';
 
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #cbd5e1; padding: 2px 0;">
-            <div style="display: flex; flex-direction: column; gap: 4px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #374151; padding: 2px 0;">
+            <div style="display: flex; flex-direction: column; gap: 4px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-family: monospace; font-size: 11px; font-weight: 700; width: 135px; color: #f59e0b;">小根堆短板序列:</span>
                 <div style="display: flex; gap: 4px; flex-wrap: wrap;">${heapPreview}</div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
                 <span style="color: #38bdf8; font-size: 10px; font-weight: 700;">累计全局蓄水量:</span>
                 <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">Total Water: ${step.totalWater} 滴</strong>
               </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 4px 8px;">
-              <span style="color: #94a3b8; font-size: 10.5px;">执行语句:</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px;">
+              <span style="color: #64748b; font-size: 10.5px;">执行语句:</span>
               <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">行 ${Array.isArray(step.codeLine) ? step.codeLine.join('-') : step.codeLine}: ${step.log}</strong>
             </div>
           </div>

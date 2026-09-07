@@ -5,6 +5,7 @@
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   ARRAY_THEORY_PROBLEM_HTML,
   ARRAY_THEORY_ANALYSIS_HTML,
@@ -30,13 +31,19 @@ export interface ATStep {
     | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function buildAccessSteps(idx: number): ATStep[] {
   const arr = [3, 5, 7, 11, 15];
   const i = Math.max(0, Math.min(idx, arr.length - 1));
   const hexAddr = `0x${(0x1000 + i * 4).toString(16).toUpperCase()}`;
+
+  const lines = {
+    init: { java: 3, cpp: 4, python: 3, javascript: 3 },
+    access: { java: 4, cpp: 5, python: 4, javascript: 4 },
+    done: { java: 4, cpp: 5, python: 4, javascript: 4 },
+  };
 
   return [
     {
@@ -48,7 +55,7 @@ export function buildAccessSteps(idx: number): ATStep[] {
       status: 'init',
       message: `初始化连续内存数组 arr = [${arr.join(', ')}]，基地址 Base = 0x1000。`,
       log: `初始化数组: Base = 0x1000`,
-      codeLine: 1,
+      codeLine: lines.init,
     },
     {
       array: [...arr],
@@ -59,7 +66,7 @@ export function buildAccessSteps(idx: number): ATStep[] {
       status: 'access',
       message: `O(1) 随机访问 arr[${i}] = ${arr[i]}：计算物理内存地址 Base + ${i} × 4B = ${hexAddr}，一次寻址直接获取！`,
       log: `访问 arr[${i}] = ${arr[i]}，地址 = ${hexAddr} (O(1))`,
-      codeLine: [3, 4],
+      codeLine: lines.access,
     },
     {
       array: [...arr],
@@ -70,7 +77,7 @@ export function buildAccessSteps(idx: number): ATStep[] {
       status: 'done',
       message: `🎉 访问完成，返回值 = ${arr[i]}。`,
       log: `完成访问: 返回 ${arr[i]}`,
-      codeLine: 4,
+      codeLine: lines.done,
     },
   ];
 }
@@ -78,6 +85,13 @@ export function buildAccessSteps(idx: number): ATStep[] {
 export function buildSearchSteps(arr: number[], target: number): ATStep[] {
   const steps: ATStep[] = [];
   let found = false;
+
+  const lines = {
+    init: { java: 7, cpp: 8, python: 7, javascript: 8 },
+    check: { java: 8, cpp: 9, python: 8, javascript: 9 },
+    found: { java: 9, cpp: 10, python: [9, 10], javascript: 10 },
+    notFound: { java: 11, cpp: 12, python: 11, javascript: 12 },
+  };
 
   steps.push({
     array: [...arr],
@@ -88,7 +102,7 @@ export function buildSearchSteps(arr: number[], target: number): ATStep[] {
     status: 'init',
     message: `在线性数组 [${arr.join(', ')}] 中搜索目标值 target = ${target}。`,
     log: `开始线性搜索 target = ${target}`,
-    codeLine: 6,
+    codeLine: lines.init,
   });
 
   for (let i = 0; i < arr.length; i++) {
@@ -104,7 +118,7 @@ export function buildSearchSteps(arr: number[], target: number): ATStep[] {
         ? `检查 arr[${i}] = ${target} ✓ 匹配成功！找到目标值下标为 ${i}。`
         : `检查 arr[${i}] = ${arr[i]} ≠ ${target}，继续向后搜索。`,
       log: isMatch ? `找到目标: arr[${i}] == ${target}` : `比对 arr[${i}] != ${target}`,
-      codeLine: isMatch ? [9, 10] : [8, 9],
+      codeLine: isMatch ? lines.found : lines.check,
     });
     if (isMatch) {
       found = true;
@@ -122,7 +136,7 @@ export function buildSearchSteps(arr: number[], target: number): ATStep[] {
       status: 'search-not-found',
       message: `遍历完成，数组中不存在元素 ${target}，返回 -1。`,
       log: `未找到目标 ${target}，返回 -1`,
-      codeLine: 12,
+      codeLine: lines.notFound,
     });
   }
 
@@ -134,6 +148,13 @@ export function buildInsertSteps(arr: number[], insertIdx: number, value: number
   const idx = Math.max(0, Math.min(insertIdx, arr.length));
   const work: (number | null)[] = [...arr, null];
 
+  const lines = {
+    init: { java: 14, cpp: 15, python: 14, javascript: 16 },
+    shift: { java: [15, 16], cpp: [16, 17], python: [15, 16], javascript: [17, 18] },
+    place: { java: 18, cpp: 19, python: 17, javascript: 20 },
+    done: { java: 18, cpp: 19, python: 17, javascript: 20 },
+  };
+
   steps.push({
     array: [...work],
     action: 'insert',
@@ -143,7 +164,7 @@ export function buildInsertSteps(arr: number[], insertIdx: number, value: number
     status: 'init',
     message: `准备在下标 ${idx} 插入元素 ${value}。需要将下标 ${idx} 及其之后的所有元素向后移动一位。`,
     log: `开始插入: 在下标 ${idx} 插入 ${value}`,
-    codeLine: 14,
+    codeLine: lines.init,
   });
 
   let shifts = 0;
@@ -159,7 +180,7 @@ export function buildInsertSteps(arr: number[], insertIdx: number, value: number
       status: 'insert-shift',
       message: `后移元素：arr[${j}] = arr[${j - 1}] (${work[j - 1]})（累计移动 ${shifts} 个元素）。`,
       log: `后移: arr[${j}] = ${work[j]}`,
-      codeLine: [15, 16],
+      codeLine: lines.shift,
     });
   }
 
@@ -173,7 +194,7 @@ export function buildInsertSteps(arr: number[], insertIdx: number, value: number
     status: 'insert-place',
     message: `将新元素 ${value} 放入腾出的空位 arr[${idx}]。`,
     log: `放置新值: arr[${idx}] = ${value}`,
-    codeLine: 18,
+    codeLine: lines.place,
   });
 
   steps.push({
@@ -185,7 +206,7 @@ export function buildInsertSteps(arr: number[], insertIdx: number, value: number
     status: 'done',
     message: `🎉 插入完成！新数组为 [${work.join(', ')}]，总共移动了 ${shifts} 个元素（O(n)）。`,
     log: `插入完成: 移动次数 ${shifts}`,
-    codeLine: 18,
+    codeLine: lines.done,
   });
 
   return steps;
@@ -196,6 +217,12 @@ export function buildDeleteSteps(arr: number[], deleteIdx: number): ATStep[] {
   const idx = Math.max(0, Math.min(deleteIdx, arr.length - 1));
   const work: (number | null)[] = [...arr];
 
+  const lines = {
+    init: { java: 21, cpp: 22, python: 20, javascript: 24 },
+    shift: { java: [22, 23], cpp: [23, 24], python: [21, 22], javascript: [25, 26] },
+    done: { java: 24, cpp: 25, python: 22, javascript: 27 },
+  };
+
   steps.push({
     array: [...work],
     action: 'delete',
@@ -205,7 +232,7 @@ export function buildDeleteSteps(arr: number[], deleteIdx: number): ATStep[] {
     status: 'init',
     message: `准备删除下标 ${idx} 的元素 ${work[idx]}。需要将下标 ${idx + 1} 之后的所有元素向前移动一位。`,
     log: `开始删除: 删除下标 ${idx} 处元素 ${work[idx]}`,
-    codeLine: 14,
+    codeLine: lines.init,
   });
 
   let shifts = 0;
@@ -221,7 +248,7 @@ export function buildDeleteSteps(arr: number[], deleteIdx: number): ATStep[] {
       status: 'delete-shift',
       message: `前移覆盖：arr[${j}] = arr[${j + 1}] (${work[j + 1]})（累计移动 ${shifts} 个元素）。`,
       log: `前移: arr[${j}] = ${work[j]}`,
-      codeLine: 16,
+      codeLine: lines.shift,
     });
   }
 
@@ -235,7 +262,7 @@ export function buildDeleteSteps(arr: number[], deleteIdx: number): ATStep[] {
     status: 'done',
     message: `🎉 删除完成！新数组为 [${work.join(', ')}]，总共移动了 ${shifts} 个元素（O(n)）。`,
     log: `删除完成: 移动次数 ${shifts}`,
-    codeLine: 18,
+    codeLine: lines.done,
   });
 
   return steps;

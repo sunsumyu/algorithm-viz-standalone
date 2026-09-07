@@ -254,27 +254,100 @@ export class ThreeGraphTopologyAdapter implements IVisualRenderer {
 
   /**
    * 统一视觉适配器契约更新接口 (IVisualRenderer)
+   * 具备通用深模块自适应能力：自动自反射推导图拓扑节点集合与边状态，
+   * 兼容 Dinic、费用流、上下界网络流、二分图匹配与通用图算法
    */
   public updateStep(step: any): void {
     if (!step) return;
+
     if (step.nodes && step.edges) {
       this.render(step as GraphTopologyStepData);
-    } else if (step.flowEdges) {
-      const nodes: GraphTopologyNodeItem[] = ['S', 'A', 'B', 'T'].map((id) => ({
-        id,
-        level: step.levels?.[id] || 0,
-        status: step.activePath?.includes(id) ? 'active' : 'default',
-      }));
+      return;
+    }
+
+    const rawEdges: any[] = step.flowEdges || step.edges || [];
+    if (rawEdges.length > 0 || step.levels || step.activePath) {
+      const nodeIds = new Set<string | number>();
+
+      if (step.levels && typeof step.levels === 'object') {
+        Object.keys(step.levels).forEach((k) => nodeIds.add(k));
+      }
+      if (Array.isArray(rawEdges)) {
+        rawEdges.forEach((e: any) => {
+          const from = e.u !== undefined ? e.u : e.from;
+          const to = e.v !== undefined ? e.v : e.to;
+          if (from !== undefined) nodeIds.add(from);
+          if (to !== undefined) nodeIds.add(to);
+        });
+      }
+      if (Array.isArray(step.activePath)) {
+        step.activePath.forEach((id: any) => nodeIds.add(id));
+      }
+      if (nodeIds.size === 0) {
+        ['S', 'A', 'B', 'T'].forEach((k) => nodeIds.add(k));
+      }
+
+      const activePathNodes = new Set(Array.isArray(step.activePath) ? step.activePath.map(String) : []);
+
+      const nodes: GraphTopologyNodeItem[] = Array.from(nodeIds).map((id) => {
+        const idStr = String(id);
+        let status: 'default' | 'active' | 'visited' | 'queued' | 'current' = 'default';
+        if (activePathNodes.has(idStr)) {
+          status = 'active';
+        } else if (step.currentNode !== undefined && String(step.currentNode) === idStr) {
+          status = 'current';
+        } else if (step.visitedNodes && (step.visitedNodes.includes(id) || step.visitedNodes.includes(idStr))) {
+          status = 'visited';
+        }
+
+        const level =
+          step.levels && step.levels[id] !== undefined
+            ? Number(step.levels[id])
+            : step.levels && step.levels[idStr] !== undefined
+              ? Number(step.levels[idStr])
+              : 0;
+
+        return {
+          id: idStr,
+          label: String(id),
+          level,
+          status,
+        };
+      });
+
+      const edges = rawEdges.map((e: any) => {
+        const from = String(e.u !== undefined ? e.u : e.from);
+        const to = String(e.v !== undefined ? e.v : e.to);
+        const flow = typeof e.flow === 'number' ? e.flow : undefined;
+        const cap = typeof e.cap === 'number' ? e.cap : typeof e.capacity === 'number' ? e.capacity : undefined;
+        const isSaturated = cap !== undefined && flow !== undefined && flow >= cap && cap > 0;
+
+        let isActivePath = false;
+        if (Array.isArray(step.activePath) && step.activePath.length >= 2) {
+          for (let i = 0; i < step.activePath.length - 1; i++) {
+            if (String(step.activePath[i]) === from && String(step.activePath[i + 1]) === to) {
+              isActivePath = true;
+              break;
+            }
+          }
+        }
+
+        return {
+          from,
+          to,
+          flow,
+          cap,
+          cost: e.cost,
+          isActivePath,
+          isSaturated,
+        };
+      });
+
       this.render({
         nodes,
-        edges: step.flowEdges.map((e: any) => ({
-          from: e.u,
-          to: e.v,
-          flow: e.flow,
-          cap: e.cap,
-        })),
-        activePath: step.activePath,
-        layoutMode: 'layered',
+        edges,
+        activePath: step.activePath ? step.activePath.map(String) : undefined,
+        layoutMode: step.layoutMode || this.currentLayoutMode || 'layered',
       });
     }
   }

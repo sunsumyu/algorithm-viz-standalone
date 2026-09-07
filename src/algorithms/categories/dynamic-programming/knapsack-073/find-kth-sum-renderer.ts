@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 找出数组的第K大和 (LeetCode 2386) - 声明式 4-Card 沙盘渲染器
  * 核心：正负数分离基准 + 绝对值数组映射 + 归约为前 K 小和堆优化
  * 架构重构：引入四语言代码联动、小根堆分支状态机沙盘与第K大和对决舱
@@ -48,13 +48,14 @@ export function buildFindKthSumSteps(
   const targetK = Math.min(k, 1 << Math.min(n, 20));
 
   const lines = {
-    initSum: { java: 6, cpp: 4, python: 3, javascript: 2 },
-    sortAbs: { java: 13, cpp: 9, python: 4, javascript: 8 },
-    pushEmpty: { java: 15, cpp: 13, python: 6, javascript: 9 },
-    loopStart: { java: 16, cpp: 14, python: 7, javascript: 10 },
-    popHeap: { java: 17, cpp: 15, python: 8, javascript: 12 },
-    branch: { java: 21, cpp: 18, python: 10, javascript: 14 },
-    returnAns: { java: 27, cpp: 24, python: 13, javascript: 21 },
+    entry: { java: 8, cpp: 8, python: 3, javascript: 2 },
+    initSum: { java: 10, cpp: 10, python: 5, javascript: 3 },
+    sortAbs: { java: 18, cpp: 15, python: 6, javascript: 9 },
+    pushEmpty: { java: 20, cpp: 19, python: 8, javascript: 10 },
+    loopStart: { java: 21, cpp: 20, python: 9, javascript: 11 },
+    popHeap: { java: 22, cpp: 22, python: 10, javascript: 13 },
+    branch: { java: 26, cpp: 24, python: 11, javascript: 14 },
+    returnAns: { java: 32, cpp: 30, python: 15, javascript: 22 },
   };
 
   function makeStep(data: Omit<FindKthStep, 'metrics'>): FindKthStep {
@@ -69,7 +70,7 @@ export function buildFindKthSumSteps(
     };
   }
 
-  // 1. 初始化
+  // 1. 初始化入口
   steps.push(
     makeStep({
       stepIndex: 0,
@@ -82,8 +83,46 @@ export function buildFindKthSumSteps(
       currentSmallestVal: 0,
       kthSum: maxSum,
       status: 'init',
-      message: `✨ 绝对值归约初始化：累加所有正数得到全局第 1 大和 maxSum=${maxSum}。生成绝对值升序数组 absNums=[${absNums.join(', ')}]。空集和为 0 (对应第 1 小损失量)。`,
-      log: `init: maxSum=${maxSum}, absNums=[${absNums.join(', ')}]`,
+      message: `✨ 算法初始化：进入 kSum 函数，目标求第 ${targetK} 大子序列和。`,
+      log: `init: targetK=${targetK}`,
+      codeLine: lines.entry,
+    })
+  );
+
+  // 2. 正数累加与绝对值计算
+  steps.push(
+    makeStep({
+      stepIndex: 0,
+      nums: [...rawNums],
+      absNums: [...absNums],
+      maxSum,
+      kTarget: targetK,
+      heapSnapshot: [{ idx: -1, val: 0 }],
+      currentSmallestRank: 1,
+      currentSmallestVal: 0,
+      kthSum: maxSum,
+      status: 'init',
+      message: `➕ 累加所有正数求得全局最大子序列和 maxSum=${maxSum}。`,
+      log: `positive sum: maxSum=${maxSum}`,
+      codeLine: lines.initSum,
+    })
+  );
+
+  // 3. 绝对值升序排序
+  steps.push(
+    makeStep({
+      stepIndex: 0,
+      nums: [...rawNums],
+      absNums: [...absNums],
+      maxSum,
+      kTarget: targetK,
+      heapSnapshot: [{ idx: -1, val: 0 }],
+      currentSmallestRank: 1,
+      currentSmallestVal: 0,
+      kthSum: maxSum,
+      status: 'init',
+      message: `📊 元素绝对值升序排序完成：absNums=[${absNums.join(', ')}]。空集和为 0 (对应第 1 小损失量)。`,
+      log: `abs sort: [${absNums.join(', ')}]`,
       codeLine: lines.sortAbs,
     })
   );
@@ -239,8 +278,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
   renderCanvas: (container, step) => {
     const absBadges = step.absNums
       .map((x, i) => `
-        <div style="background:rgba(15, 23, 42, 0.6); border:1.5px solid #38bdf8; border-radius:6px; padding:5px 8px; min-width:40px; text-align:center;">
-          <div style="font-size:8.5px; color:#94a3b8;">|#${i}|</div>
+        <div style="background:rgba(241, 245, 249, 0.9); border:1.5px solid #38bdf8; border-radius:6px; padding:5px 8px; min-width:40px; text-align:center;">
+          <div style="font-size:8.5px; color:#64748b;">|#${i}|</div>
           <div style="font-size:12px; font-weight:800; color:#38bdf8;">${x}</div>
         </div>
       `)
@@ -250,21 +289,19 @@ const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
       .map((node, idx) => {
         const isTop = idx === 0;
         return `
-          <div style="background:${isTop ? 'rgba(6, 95, 70, 0.5)' : 'rgba(15, 23, 42, 0.6)'}; border:1.5px solid ${
-          isTop ? '#10b981' : '#334155'
-        }; border-radius:6px; padding:5px 8px; min-width:65px; text-align:center;">
-            <div style="font-size:8.5px; color:${isTop ? '#4ade80' : '#94a3b8'};">${isTop ? '👑 堆顶' : `#${idx + 1}`} (idx=${node.idx})</div>
-            <div style="font-size:12px; font-weight:800; color:#f8fafc;">损失: ${node.val}</div>
+          <div style="background:${isTop ? 'rgba(209, 250, 229, 0.9)' : 'rgba(241, 245, 249, 0.9)'}; border:1.5px solid ${isTop ? '#10b981' : '#e2e8f0'}; border-radius:6px; padding:5px 8px; min-width:65px; text-align:center;">
+              <div style="font-size:8.5px; color:${isTop ? '#16a34a' : '#64748b'};">${isTop ? '👑 堆顶' : `#${idx + 1}`} (idx=${node.idx})</div>
+              <div style="font-size:12px; font-weight:800; color:#1e293b;">损失: ${node.val}</div>
           </div>
         `;
       })
       .join('');
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-          <div style="font-size:12px; color:#94a3b8; font-weight:700;">绝对值数组 absNums (由原数组转化并升序排列)</div>
-          <div style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+          <div style="font-size:12px; color:#64748b; font-weight:700;">绝对值数组 absNums (由原数组转化并升序排列)</div>
+          <div style="font-size:11px; color:#374151; background:#e8f0fe; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
             全局最大和 maxSum: <b style="color:#10b981;">${step.maxSum}</b>
           </div>
         </div>
@@ -274,9 +311,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
         </div>
 
         <!-- 小根堆优先队列舱 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🌲 绝对值小根堆状态机 (寻找第 K 小损失)</span>
+            <span style="font-size:11.5px; font-weight:800; color:#374151;">🌲 绝对值小根堆状态机 (寻找第 K 小损失)</span>
             <span style="font-size:10.5px; color:#38bdf8;">堆顶即当前最小损失</span>
           </div>
 
@@ -290,12 +327,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<FindKthStep>({
   renderCustomMetrics: (container, step) => {
     container.innerHTML = `
       <div style="width:100%; padding:8px 12px; box-sizing:border-box; display:flex; flex-direction:column; gap:8px;">
-        <div style="font-size:11.5px; color:#cbd5e1; font-weight:700;">👑 第 K 大和最终对决推导</div>
-        <div style="background:#0b1329; border:1px solid #334155; border-radius:6px; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
-          <div style="font-size:12px; color:#94a3b8;">
+        <div style="font-size:11.5px; color:#374151; font-weight:700;">👑 第 K 大和最终对决推导</div>
+        <div style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:12px; color:#64748b;">
             目标：第 <b style="color:#38bdf8;">${step.currentSmallestRank}</b> 大子序列和
           </div>
-          <div style="font-size:14px; font-weight:800; color:#f8fafc; font-family:monospace;">
+          <div style="font-size:14px; font-weight:800; color:#1e293b; font-family:monospace;">
             ans = maxSum (${step.maxSum}) - 绝对值损失 (${step.currentSmallestVal}) = <span style="color:#a855f7;">${step.kthSum}</span>
           </div>
         </div>

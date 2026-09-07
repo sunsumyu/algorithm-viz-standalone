@@ -65,8 +65,8 @@
           <input type="number" id="input-n" min="1" max="8" value="4" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
         </div>
 
-        <button id="btn-generate" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1">
-          <i class="fa-solid fa-play text-[9px]"></i> <span class="hidden sm:inline">生成</span>
+        <button id="btn-generate" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center justify-center flex-shrink-0" title="应用参数并生成演示">
+          应用
         </button>
 
         <button id="btn-reset" class="px-1.5 sm:px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200">
@@ -220,7 +220,11 @@
             </div>
 
             <!-- 3. 字号缩放器与窗口微控制 -->
-            <div id="code-font-container" class="flex items-center gap-2 flex-shrink-0">
+            <div id="code-font-container" class="flex items-center gap-1.5 flex-shrink-0">
+              <button id="btn-code-copy" title="复制当前完整代码" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer">
+                <i class="fa-regular fa-copy text-[10px]"></i>
+                <span class="copy-text">复制</span>
+              </button>
               <div class="flex items-center bg-slate-800/90 rounded-md border border-slate-700/80 p-0.5 text-slate-300">
                 <button id="btn-code-font-dec" title="缩小代码字号 (A-)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1">A-</button>
                 <span id="code-font-indicator" class="px-1 text-[10px] font-mono text-slate-400">12</span>

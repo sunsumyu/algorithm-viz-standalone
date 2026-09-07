@@ -410,10 +410,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<DiffConstraintStep>
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">⚖️ 差分约束系统图论同构</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">⚖️ 差分约束系统图论同构</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             系统状态: <b style="color: ${step.hasNegativeCycle ? '#ef4444' : '#10b981'};">${step.hasNegativeCycle ? '❌ 存在负环 (无解)' : '✅ 正在收敛/已收敛'}</b>
           </span>
         </div>
@@ -426,9 +426,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<DiffConstraintStep>
         </div>
 
         <!-- 底部差分约束数学与同构舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">⚖️ 差分约束同构与负环检验舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">⚖️ 差分约束同构与负环检验舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               当前队列: <b>[${step.queue?.join(', ') ?? ''}]</b>
             </div>
@@ -453,21 +453,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<DiffConstraintStep>
       const cnt = step.countMap?.[id] ?? 0;
 
       return `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px; height: 36px; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 2px 4px;">
-          <span style="font-size: 8.5px; color: #94a3b8;">x${id} (count:${cnt})</span>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px; height: 36px; background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 4px;">
+          <span style="font-size: 8.5px; color: #64748b;">x${id} (count:${cnt})</span>
           <span style="font-size: 11px; font-weight: 800; font-family: monospace; color: #38bdf8;">d=${dStr}</span>
         </div>
       `;
     }).join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #f59e0b;">变量解向量 (dist):</span>
             <div style="display: flex; gap: 6px;">${distItems}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">解存在性:</span>
             <strong style="color: ${step.hasNegativeCycle ? '#ef4444' : '#10b981'}; font-family: monospace; font-size: 11px;">${step.hasNegativeCycle ? '系统无可行解 (负权回路)' : '存在一组可行解'}</strong>
           </div>

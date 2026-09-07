@@ -6,6 +6,7 @@
 
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   TOP_K_FREQUENT_PROBLEM_HTML,
   TOP_K_FREQUENT_ANALYSIS_HTML,
@@ -27,13 +28,21 @@ export interface TKFStep {
   result: number[];
   action: 'init' | 'count_freq' | 'heap_push' | 'heap_poll_min' | 'collect_result' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function buildTopKFrequentSteps(rawNums: number[], k: number): TKFStep[] {
   const steps: TKFStep[] = [];
   const nums = [...rawNums];
   const n = nums.length;
+
+  const lines = {
+    init:          { java: 2,  cpp: 4,  python: 6,  javascript: 2 },
+    heapPush:      { java: 7,  cpp: 9,  python: 10, javascript: 3 },
+    heapPollMin:   { java: 9,  cpp: 10, python: 12, javascript: 6 },
+    collectResult: { java: 14, cpp: 14, python: 13, javascript: 7 },
+    done:          { java: 16, cpp: 17, python: 13, javascript: 8 },
+  };
 
   if (n === 0 || k <= 0) {
     steps.push({
@@ -46,7 +55,7 @@ export function buildTopKFrequentSteps(rawNums: number[], k: number): TKFStep[] 
       result: [],
       action: 'done',
       message: '输入无效或 k <= 0',
-      codeLine: 1,
+      codeLine: lines.done,
     });
     return steps;
   }
@@ -67,7 +76,7 @@ export function buildTopKFrequentSteps(rawNums: number[], k: number): TKFStep[] 
     result: [],
     action: 'init',
     message: `初始化：共 ${n} 个元素，统计得到 ${freqMap.size} 个不同元素的出现频次，准备建立容量为 k=${k} 的小顶堆`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   // 2. 维护大小为 k 的小顶堆
@@ -95,7 +104,7 @@ export function buildTopKFrequentSteps(rawNums: number[], k: number): TKFStep[] 
       result: [],
       action: 'heap_push',
       message: `📥 将元素 [值:${num}, 频次:${freq}] 压入小顶堆。当前堆大小: ${heap.length} / ${k}`,
-      codeLine: 7,
+      codeLine: lines.heapPush,
     });
 
     if (heap.length > k) {
@@ -110,7 +119,7 @@ export function buildTopKFrequentSteps(rawNums: number[], k: number): TKFStep[] 
         result: [],
         action: 'heap_poll_min',
         message: `💥 堆大小达到 ${k + 1} 超出限制！弹出当前堆顶最小频次元素 [值:${min.num}, 频次:${min.freq}]，保留较高频元素`,
-        codeLine: 9,
+        codeLine: lines.heapPollMin,
       });
     }
   }
@@ -132,7 +141,7 @@ export function buildTopKFrequentSteps(rawNums: number[], k: number): TKFStep[] 
     result: [...result],
     action: 'collect_result',
     message: `🥇 遍历完毕！堆内留存的 ${heap.length} 个元素即为全数组出现频次最高的前 ${k} 个元素`,
-    codeLine: 12,
+    codeLine: lines.collectResult,
   });
 
   steps.push({
@@ -145,7 +154,7 @@ export function buildTopKFrequentSteps(rawNums: number[], k: number): TKFStep[] 
     result: [...result],
     action: 'done',
     message: `🎉 前 K 个高频元素计算完成！最终输出结果: [${result.join(', ')}]`,
-    codeLine: 15,
+    codeLine: lines.done,
   });
 
   return steps;

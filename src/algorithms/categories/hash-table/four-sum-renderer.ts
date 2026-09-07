@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   FOUR_SUM_PROBLEM_HTML,
@@ -39,7 +40,7 @@ export interface FourSumStep {
     | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function parseFourSumArray(input: string): number[] {
@@ -55,6 +56,19 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
   const nums = [...rawNums];
   const results: [number, number, number, number][] = [];
 
+  const lines = {
+    init: { java: 2, cpp: 4, python: 4, javascript: 2 },
+    sort: { java: 3, cpp: 5, python: 3, javascript: 3 },
+    iSkip: { java: 6, cpp: 8, python: [7, 8], javascript: 6 },
+    jSkip: { java: 8, cpp: 10, python: [10, 11], javascript: 8 },
+    jCheck: { java: 9, cpp: 11, python: 12, javascript: 9 },
+    found: { java: [12, 13], cpp: [14, 15], python: [15, 16], javascript: [12, 13] },
+    shrink: { java: 16, cpp: 18, python: [21, 22], javascript: 16 },
+    leftAdvance: { java: 18, cpp: 20, python: 24, javascript: 18 },
+    rightAdvance: { java: 20, cpp: 22, python: 26, javascript: 20 },
+    done: { java: 25, cpp: 27, python: 27, javascript: 25 },
+  };
+
   steps.push({
     array: [...nums],
     i: -1,
@@ -67,7 +81,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
     status: 'init',
     message: `初始数组: [${nums.join(', ')}]，目标 target = ${target}。`,
     log: `初始化原始数组，target = ${target}`,
-    codeLine: 1,
+    codeLine: lines.init,
   });
 
   nums.sort((a, b) => a - b);
@@ -83,7 +97,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
     status: 'sort',
     message: `对数组进行升序排序: [${nums.join(', ')}]。接下来使用外层循环 i、内层循环 j，配合双指针 left、right 扫描。`,
     log: `完成升序排序: [${nums.join(', ')}]`,
-    codeLine: 3,
+    codeLine: lines.sort,
   });
 
   const n = nums.length;
@@ -101,7 +115,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
         status: 'i-skip',
         message: `nums[${i}] = ${nums[i]} 与 nums[${i - 1}] 重复，跳过当前 i 以避免重复（第一级去重）。`,
         log: `跳过重复 i: nums[${i}]=${nums[i]}`,
-        codeLine: 6,
+        codeLine: lines.iSkip,
       });
       continue;
     }
@@ -120,7 +134,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
           status: 'j-skip',
           message: `nums[${j}] = ${nums[j]} 与 nums[${j - 1}] 重复，跳过当前 j（第二级去重）。`,
           log: `跳过重复 j: nums[${j}]=${nums[j]}`,
-          codeLine: 8,
+          codeLine: lines.jSkip,
         });
         continue;
       }
@@ -140,7 +154,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
         status: 'j-check',
         message: `固定 i=${i}(${nums[i]}), j=${j}(${nums[j]})，初始化双指针 left=${left}(${nums[left]}), right=${right}(${nums[right]})。`,
         log: `固定 i=${i}, j=${j}, left=${left}, right=${right}`,
-        codeLine: 9,
+        codeLine: lines.jCheck,
       });
 
       while (left < right) {
@@ -160,7 +174,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
             status: 'found',
             message: `🎉 找到解！nums[${i}] (${nums[i]}) + nums[${j}] (${nums[j]}) + nums[${left}] (${nums[left]}) + nums[${right}] (${nums[right]}) = ${target}。记录四元组 [${nums[i]}, ${nums[j]}, ${nums[left]}, ${nums[right]}]。`,
             log: `✓ 命中四元组: [${nums[i]}, ${nums[j]}, ${nums[left]}, ${nums[right]}]`,
-            codeLine: [12, 13],
+            codeLine: lines.found,
           });
 
           // 去重 left 和 right
@@ -187,7 +201,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
               status: 'compare',
               message: `去重后双指针内缩：left 移至 ${left}，right 移至 ${right}。`,
               log: `双指针内缩: left=${left}, right=${right}`,
-              codeLine: 16,
+              codeLine: lines.shrink,
             });
           }
         } else if (sum < target) {
@@ -203,7 +217,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
             status: 'left-advance',
             message: `四数之和 sum = ${sum} < target (${target})，和偏小，left++ 右移以增大总和。`,
             log: `sum=${sum} < ${target}, left++ (${left} -> ${left + 1})`,
-            codeLine: 18,
+            codeLine: lines.leftAdvance,
           });
           left++;
         } else {
@@ -219,7 +233,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
             status: 'right-advance',
             message: `四数之和 sum = ${sum} > target (${target})，和偏大，right-- 左移以减小总和。`,
             log: `sum=${sum} > ${target}, right-- (${right} -> ${right - 1})`,
-            codeLine: 20,
+            codeLine: lines.rightAdvance,
           });
           right--;
         }
@@ -239,7 +253,7 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
     status: 'done',
     message: `🎉 搜索完成！共找到 ${results.length} 个不重复的四元组解：${JSON.stringify(results)}。`,
     log: `四数之和求解完毕，共 ${results.length} 组解`,
-    codeLine: 26,
+    codeLine: lines.done,
   });
 
   return steps;

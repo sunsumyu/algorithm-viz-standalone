@@ -77,10 +77,10 @@ export function buildBFS01Steps(preset: string = 'classic_5node'): BFS01Step[] {
     loopEdges: { cpp: 35, java: 28, python: 22, javascript: 18 },
     checkRelax: { cpp: 40, java: 33, python: 26, javascript: 20 },
     applyRelax: { cpp: 41, java: 34, python: 27, javascript: 21 },
-    checkWeightZero: { cpp: 42, java: 35, python: 28, javascript: 22 },
-    pushFront: { cpp: 43, java: 36, python: 29, javascript: 23 },
-    pushBack: { cpp: 45, java: 38, python: 31, javascript: 25 },
-    returnAns: { cpp: 50, java: 44, python: 33, javascript: 30 },
+    checkWeightZero: { cpp: 36, java: 35, python: 28, javascript: 22 },
+    pushFront: { cpp: 37, java: 36, python: 29, javascript: 23 },
+    pushBack: { cpp: 39, java: 38, python: 31, javascript: 25 },
+    returnAns: { cpp: 44, java: 44, python: 33, javascript: 30 },
   };
 
   function makeStep(
@@ -349,16 +349,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<BFS01Step>({
       ? step.dequeList.map((item, idx) => `
           <div style="background: ${idx === 0 ? 'rgba(234, 179, 8, 0.2)' : 'rgba(30, 41, 59, 0.7)'}; border: 1px solid ${idx === 0 ? '#eab308' : '#38bdf8'}; border-radius: 4px; padding: 4px 8px; display: flex; flex-direction: column; align-items: center;">
             <span style="font-size: 7.5px; color: ${idx === 0 ? '#facc15' : '#94a3b8'};">${idx === 0 ? '队头 (First)' : `Slot ${idx}`}</span>
-            <span style="font-size: 10.5px; font-weight: 700; color: #e2e8f0;">Node ${item.u} (d=${item.dist})</span>
+            <span style="font-size: 10.5px; font-weight: 700; color: #1e293b;">Node ${item.u} (d=${item.dist})</span>
           </div>
         `).join('')
       : '<span style="font-size: 10.5px; color: #64748b;">(双端队列为空)</span>';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">⚡ 0-1 最短路网络拓扑</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">⚡ 0-1 最短路网络拓扑</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             到达终点耗费: <b style="color: #10b981;">${step.distArray[n - 1] === 999 ? '∞' : step.distArray[n - 1]}</b>
           </span>
         </div>
@@ -376,9 +376,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<BFS01Step>({
         </div>
 
         <!-- 底部双端队列沙盘舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">📦 0-1 双端队列 Deque 沙盘舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">📦 0-1 双端队列 Deque 沙盘舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               队列元素: <b>${step.dequeList.length}</b> 个
             </div>
@@ -401,13 +401,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<BFS01Step>({
           const val = arr[idx] ?? 0;
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
           const displayVal = val === 999 ? '∞' : `${val}`;
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">N[${idx + 1}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">N[${idx + 1}]</span>
               <span style="line-height: 1.1;">${displayVal}</span>
             </div>
           `;
@@ -428,10 +428,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<BFS01Step>({
       : '空';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${distRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">双端队列状态:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">[ ${dqStr} ]</strong>
           </div>

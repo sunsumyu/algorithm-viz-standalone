@@ -66,12 +66,12 @@ export function buildGoodPathsSteps(preset: string = 'classic_4node'): GoodPaths
   let curEdge: [number, number] | undefined = undefined;
 
   const lines = {
-    init: { cpp: 16, java: 32, python: 13, javascript: 19 },
-    sort: { cpp: 30, java: 37, python: 18, javascript: 24 },
-    edgeLoop: { cpp: 36, java: 45, python: 21, javascript: 27 },
-    sameValPair: { cpp: 40, java: 49, python: 25, javascript: 31 },
-    mergeRoot: { cpp: 45, java: 53, python: 30, javascript: 36 },
-    done: { cpp: 50, java: 59, python: 34, javascript: 41 },
+    init: { cpp: 9, java: 32, python: 13, javascript: 19 },
+    sort: { cpp: 23, java: 37, python: 18, javascript: 24 },
+    edgeLoop: { cpp: 29, java: 45, python: 21, javascript: 27 },
+    sameValPair: { cpp: 33, java: 49, python: 25, javascript: 31 },
+    mergeRoot: { cpp: 38, java: 53, python: 30, javascript: 36 },
+    done: { cpp: 43, java: 59, python: 34, javascript: 41 },
   };
 
   function makeStep(
@@ -301,10 +301,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<GoodPathsStep>({
     }
 
     container.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#0b0f19; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:6px;">
-          <span style="font-size:12px; color:#94a3b8; font-weight:700;">🛣️ 树形点权拓扑与连通加边</span>
-          <span style="font-size:11px; color:#e2e8f0; background:#1e293b; padding:2px 8px; border-radius:4px; border:1px solid #334155;">
+      <div style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; justify-content:flex-start; align-items:stretch; background:#f8fafc; padding:12px; border-radius:8px; box-sizing:border-box; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
+          <span style="font-size:12px; color:#374151; font-weight:700;">🛣️ 树形点权拓扑与连通加边</span>
+          <span style="font-size:11px; color:#374151; background:#eff6ff; padding:2px 8px; border-radius:4px; border:1px solid #e2e8f0;">
             已激活边: <b style="color:#10b981;">${step.activeEdges.length}</b> / ${allEdges.length}
           </span>
         </div>
@@ -317,15 +317,15 @@ const { template, Visualizer } = createDeclarativeVisualizer<GoodPathsStep>({
         </div>
 
         <!-- 底部好路径实时收集舱 -->
-        <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#eff6ff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:#cbd5e1;">🛤️ 好路径实时收集舱</span>
+            <span style="font-size:11.5px; font-weight:800; color:#374151;">🛤️ 好路径实时收集舱</span>
             <div style="display:flex; gap:16px; font-size:11px;">
               <span>当前好路径总数: <b style="color:#10b981; font-size:13px;">${step.totalGoodPaths} 条</b></span>
             </div>
           </div>
 
-          <div style="font-size:11px; color:#94a3b8; background:#1e293b; border-radius:6px; padding:6px 10px; border:1px solid #334155;">
+          <div style="font-size:11px; color:#64748b; background:#1e293b; border-radius:6px; padding:6px 10px; border:1px solid #334155;">
             ${
               step.newPathsCount
                 ? `<span style="color:#34d399; font-weight:700;">✨ 触发同值端点配对！本次产生 +${step.newPathsCount} 条新好路径！</span>`

@@ -29,7 +29,16 @@ import './categories/dynamic-programming/knapsack-075/cherry-blossom-viewing-ren
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-monotonic-queue-renderer';
 import './categories/dynamic-programming/knapsack-075/coins-change-kinds-renderer';
 
+// 左程云算法讲解067【必备】从递归入手二维动态规划 6大经典算法渲染器
+import './categories/dynamic-programming/dp-067/min-path-sum-renderer';
+import './categories/dynamic-programming/dp-067/word-search-renderer';
+import './categories/dynamic-programming/dp-067/longest-common-subsequence-renderer';
+import './categories/dynamic-programming/dp-067/longest-palindromic-subsequence-renderer';
+import './categories/dynamic-programming/dp-067/tree-count-height-m-renderer';
+import './categories/dynamic-programming/dp-067/longest-increasing-path-renderer';
+
 export {};
+
 
 
 

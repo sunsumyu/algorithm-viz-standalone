@@ -63,25 +63,25 @@ export function buildMCMFSteps(preset: string = 'standard'): MCMFStep[] {
 
   // 精准 19 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 62, java: 44, python: 36, javascript: 24 },
-    whileSpfa: { cpp: 64, java: 46, python: 38, javascript: 26 },
-    spfaEntry: { cpp: 35, java: 18, python: 16, javascript: 7 },
-    initDist: { cpp: 36, java: 19, python: 17, javascript: 8 },
-    initQueue: { cpp: 38, java: 20, python: 19, javascript: 10 },
-    pushSrc: { cpp: 39, java: 21, python: 20, javascript: 11 },
-    whileQueue: { cpp: 43, java: 25, python: 23, javascript: 14 },
-    pollQueue: { cpp: 44, java: 26, python: 24, javascript: 15 },
-    forEdges: { cpp: 46, java: 28, python: 26, javascript: 17 },
-    checkRelax: { cpp: 48, java: 30, python: 27, javascript: 18 },
-    updateDist: { cpp: 49, java: 31, python: 28, javascript: 19 },
-    recordPre: { cpp: 50, java: 32, python: 29, javascript: 20 },
-    checkInQueue: { cpp: 52, java: 34, python: 31, javascript: 21 },
-    pushQueue: { cpp: 54, java: 36, python: 33, javascript: 22 },
-    returnSpfa: { cpp: 59, java: 41, python: 34, javascript: 23 },
-    calcPushed: { cpp: 65, java: 47, python: 39, javascript: 27 },
-    pushAugment: { cpp: 70, java: 52, python: 47, javascript: 34 },
-    updateTotals: { cpp: 75, java: 57, python: 54, javascript: 40 },
-    returnAns: { cpp: 78, java: 60, python: 56, javascript: 43 },
+    entry: { cpp: 55, java: 44, python: 36, javascript: 24 },
+    whileSpfa: { cpp: 57, java: 46, python: 38, javascript: 26 },
+    spfaEntry: { cpp: 28, java: 18, python: 16, javascript: 7 },
+    initDist: { cpp: 29, java: 19, python: 17, javascript: 8 },
+    initQueue: { cpp: 31, java: 20, python: 19, javascript: 10 },
+    pushSrc: { cpp: 32, java: 21, python: 20, javascript: 11 },
+    whileQueue: { cpp: 36, java: 25, python: 23, javascript: 14 },
+    pollQueue: { cpp: 37, java: 26, python: 24, javascript: 15 },
+    forEdges: { cpp: 39, java: 28, python: 26, javascript: 17 },
+    checkRelax: { cpp: 41, java: 30, python: 27, javascript: 18 },
+    updateDist: { cpp: 42, java: 31, python: 28, javascript: 19 },
+    recordPre: { cpp: 43, java: 32, python: 29, javascript: 20 },
+    checkInQueue: { cpp: 45, java: 34, python: 31, javascript: 21 },
+    pushQueue: { cpp: 47, java: 36, python: 33, javascript: 22 },
+    returnSpfa: { cpp: 52, java: 41, python: 34, javascript: 23 },
+    calcPushed: { cpp: 58, java: 47, python: 39, javascript: 27 },
+    pushAugment: { cpp: 63, java: 52, python: 47, javascript: 34 },
+    updateTotals: { cpp: 68, java: 57, python: 54, javascript: 40 },
+    returnAns: { cpp: 71, java: 60, python: 56, javascript: 43 },
   };
 
   function makeStep(
@@ -379,10 +379,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<MCMFStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🌊 费用流残量网络拓扑</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🌊 费用流残量网络拓扑</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             当前总流: <b style="color: #10b981;">${step.totalFlow}</b> | 总费: <b style="color: #f59e0b;">${step.totalCost}</b>
           </span>
         </div>
@@ -395,9 +395,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MCMFStep>({
         </div>
 
         <!-- 底部费用流原理舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🌊 连续最短路增广与退费舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🌊 连续最短路增广与退费舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               当前推流: <b>${step.pushedFlow !== undefined ? `+${step.pushedFlow} 流 (单价 ${step.unitCost})` : 'SPFA 寻路中'}</b>
             </div>
@@ -419,7 +419,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<MCMFStep>({
     const distItems = ['S', 'A', 'B', 'T'].map((id) => {
       const d = step.distMap?.[id];
       const dStr = d === Infinity ? '∞' : `${d}`;
-      return `<span style="background: #1e293b; border: 1px solid #334155; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; color: #38bdf8; font-family: monospace;">${id}: ${dStr}</span>`;
+      return `<span style="background: #eff6ff; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; color: #38bdf8; font-family: monospace;">${id}: ${dStr}</span>`;
     }).join(' ');
 
     const pathStr = step.activePath && step.activePath.length > 0
@@ -427,13 +427,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<MCMFStep>({
       : '寻找最短路中';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #38bdf8;">最短费用距离 (dist):</span>
             <div style="display: flex; gap: 4px;">${distItems}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">增广路径:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">${pathStr}</strong>
           </div>

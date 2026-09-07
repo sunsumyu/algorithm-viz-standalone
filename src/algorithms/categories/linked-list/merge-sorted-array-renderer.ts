@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   MERGE_SORTED_ARRAY_PROBLEM_HTML,
@@ -28,7 +29,7 @@ export interface MSAStep {
   chosenSource?: 'nums1' | 'nums2';
   chosenValue?: number;
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function parseValues(input: string, defaultVals: number[]): number[] {
@@ -47,6 +48,14 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
   const nums1Full: (number | null)[] = [...nums1Valid, ...new Array(n).fill(null)];
   const nums2Copy = [...nums2Arr];
 
+  const lines = {
+    init: { java: [3, 4, 5], cpp: [4, 5, 6], python: 3, javascript: [2, 3, 4] },
+    compare: { java: 7, cpp: 8, python: 5, javascript: 6 },
+    fillP1: { java: 8, cpp: 9, python: [6, 7], javascript: 7 },
+    fillP2: { java: 10, cpp: 11, python: [9, 10], javascript: 9 },
+    done: { java: 12, cpp: 13, python: 4, javascript: 11 },
+  };
+
   let p1 = m - 1;
   let p2 = n - 1;
   let k = m + n - 1;
@@ -61,7 +70,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
     k,
     action: 'init',
     message: `初始化：nums1 有效长度 m=${m}，nums2 长度 n=${n}。分配写入指针 k=${k}，p1=${p1}，p2=${p2}。从后向前比较填充。`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   while (p2 >= 0) {
@@ -79,7 +88,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
         k,
         action: 'compare',
         message: `比较末尾元素：nums1[${p1}]=${v1} 与 nums2[${p2}]=${v2}。`,
-        codeLine: 6,
+        codeLine: lines.compare,
       });
 
       if (v1 > v2) {
@@ -96,7 +105,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
           chosenSource: 'nums1',
           chosenValue: v1,
           message: `nums1[${p1}]=${v1} > nums2[${p2}]=${v2}，将 ${v1} 写入 nums1[${k}]。p1 和 k 前移。`,
-          codeLine: 7,
+          codeLine: lines.fillP1,
         });
         p1--;
       } else {
@@ -113,7 +122,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
           chosenSource: 'nums2',
           chosenValue: v2,
           message: `nums1[${p1}]=${v1} <= nums2[${p2}]=${v2}，将 ${v2} 写入 nums1[${k}]。p2 和 k 前移。`,
-          codeLine: 9,
+          codeLine: lines.fillP2,
         });
         p2--;
       }
@@ -133,7 +142,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
         chosenSource: 'nums2',
         chosenValue: v2,
         message: `nums1 原有效元素已处理完 (p1 < 0)，将 nums2[${p2}]=${v2} 写入 nums1[${k}]。`,
-        codeLine: 9,
+        codeLine: lines.fillP2,
       });
       p2--;
     }
@@ -150,7 +159,7 @@ export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep
     k,
     action: 'done',
     message: `🎉 合并完成！最终 nums1 为 [${nums1Full.join(', ')}]。`,
-    codeLine: 12,
+    codeLine: lines.done,
   });
 
   return steps;

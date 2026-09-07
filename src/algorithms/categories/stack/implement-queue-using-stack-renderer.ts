@@ -7,6 +7,7 @@
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { DualStructureVisualAdapter } from '../../../core/renderers/adapters/dual-structure-visual-adapter';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   IMPLEMENT_QUEUE_USING_STACK_PROBLEM_HTML,
   IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
@@ -21,7 +22,7 @@ export interface MQStep {
   transferHappened: boolean;
   action: 'init' | 'push' | 'transfer' | 'pop' | 'peek' | 'empty' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[] {
@@ -29,6 +30,16 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
   const inStack: number[] = [];
   const outStack: number[] = [];
   const outputs: Array<{ op: string; value: number | boolean }> = [];
+
+  const lines = {
+    init:     { java: 4,  cpp: 5,  python: 2,  javascript: 1 },
+    push:     { java: 9,  cpp: 7,  python: 6,  javascript: 6 },
+    transfer: { java: 25, cpp: 12, python: 11, javascript: 11 },
+    pop:      { java: 13, cpp: 18, python: 12, javascript: 14 },
+    peek:     { java: 17, cpp: 23, python: 15, javascript: 19 },
+    empty:    { java: 20, cpp: 26, python: 18, javascript: 22 },
+    done:     { java: 28, cpp: 28, python: 18, javascript: 23 },
+  };
 
   const rawOps = (rawOpsInput || 'push 1, push 2, peek, pop, empty')
     .split(/[,，;\n]+/)
@@ -43,7 +54,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
     transferHappened: false,
     action: 'init',
     message: '初始化：inStack (输入栈) 与 outStack (输出栈) 均为空',
-    codeLine: 4,
+    codeLine: lines.init,
   });
 
   for (let i = 0; i < rawOps.length; i++) {
@@ -64,7 +75,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
         transferHappened: false,
         action: 'push',
         message: `📥 执行 push(${num})：直接压入 inStack 栈顶`,
-        codeLine: 8,
+        codeLine: lines.push,
       });
     } else if (op === 'pop') {
       let transfer = false;
@@ -82,7 +93,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           transferHappened: true,
           action: 'transfer',
           message: '🔀 outStack 为空！触发倾倒转移：将 inStack 全部元素依次弹出并压入 outStack，原顺序完全逆转为队头优先！',
-          codeLine: 19,
+          codeLine: lines.transfer,
         });
       }
 
@@ -98,7 +109,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           transferHappened: transfer,
           action: 'pop',
           message: `📤 执行 pop()：从 outStack 弹出栈顶元素 ${popped}（即队列头部）并返回`,
-          codeLine: 14,
+          codeLine: lines.pop,
         });
       } else {
         steps.push({
@@ -109,7 +120,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           transferHappened: false,
           action: 'pop',
           message: '⚠️ 队列为空，pop() 无元素可弹出',
-          codeLine: 14,
+          codeLine: lines.pop,
         });
       }
     } else if (op === 'peek' || op === 'top') {
@@ -128,7 +139,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           transferHappened: true,
           action: 'transfer',
           message: '🔀 peek 操作检测到 outStack 为空，先执行倾倒转移',
-          codeLine: 19,
+          codeLine: lines.transfer,
         });
       }
 
@@ -144,7 +155,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           transferHappened: transfer,
           action: 'peek',
           message: `🔍 执行 peek()：查看到当前队头元素为 ${peekVal}（不弹出）`,
-          codeLine: 23,
+          codeLine: lines.peek,
         });
       } else {
         steps.push({
@@ -155,7 +166,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
           transferHappened: false,
           action: 'peek',
           message: '⚠️ 队列为空，peek() 无队头元素',
-          codeLine: 23,
+          codeLine: lines.peek,
         });
       }
     } else if (op === 'empty') {
@@ -170,7 +181,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
         transferHappened: false,
         action: 'empty',
         message: `⚖️ 执行 empty()：inStack 与 outStack 均${isEmpty ? '为空，返回 true' : '不全为空，返回 false'}`,
-        codeLine: 27,
+        codeLine: lines.empty,
       });
     }
   }
@@ -183,7 +194,7 @@ export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[
     transferHappened: false,
     action: 'done',
     message: '🎉 操作序列执行完毕！',
-    codeLine: 30,
+    codeLine: lines.done,
   });
 
   return steps;

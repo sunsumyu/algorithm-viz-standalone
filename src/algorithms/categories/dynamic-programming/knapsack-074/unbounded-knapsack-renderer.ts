@@ -10,6 +10,9 @@ import {
   UNBOUNDED_KNAPSACK_PROBLEM_HTML,
   UNBOUNDED_KNAPSACK_ANALYSIS_HTML,
   UNBOUNDED_KNAPSACK_CODE_LANGUAGES,
+  UNBOUNDED_KNAPSACK_STAGE1_CODE_LANGUAGES,
+  UNBOUNDED_KNAPSACK_STAGE2_CODE_LANGUAGES,
+  UNBOUNDED_KNAPSACK_STAGE3_CODE_LANGUAGES,
 } from './knapsack-074-problem-content';
 import {
   runKnapsackEngine,
@@ -20,11 +23,40 @@ import {
   renderKnapsackSandbox,
   renderKnapsackDpMatrix,
 } from '../../../../core/renderers/knapsack-sandbox-stage';
+import {
+  buildKnapsackRecursionSteps,
+  buildKnapsackMemoSteps,
+  buildKnapsack2DSteps,
+  renderKnapsackRecursionCard1,
+  renderKnapsackRecursionCard2,
+  renderKnapsackMemoCard1,
+  renderKnapsackMemoCard2,
+  renderKnapsack2DCard1,
+  renderKnapsack2DCard2,
+} from '../../../../core/renderers/knapsack-stage-evolution';
 
 export interface UnboundedKnapsackStep extends KnapsackExecutionStep {
   cost: number[];
   val: number[];
   totalTime: number;
+}
+
+function parseKnapsackInputs(inputs: Record<string, any>) {
+  const t = parseInt(inputs['input-t'] || '70', 10);
+  const cost = String(inputs['input-costs'] || '71, 23')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  const val = String(inputs['input-vals'] || '100, 10')
+    .split(',')
+    .map((s: string) => parseInt(s.trim(), 10))
+    .filter((n: number) => !isNaN(n));
+  const m = Math.min(cost.length, val.length);
+  const items: KnapsackItem[] = [];
+  for (let i = 0; i < m; i++) {
+    items.push({ cost: cost[i], val: val[i], id: i + 1, name: `草药 #${i + 1}` });
+  }
+  return { t, cost, val, items };
 }
 
 export function buildUnboundedKnapsackSteps(
@@ -71,7 +103,7 @@ export function buildUnboundedKnapsackSteps(
   })) as UnboundedKnapsackStep[];
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<any>({
   id: 'unbounded-knapsack-standard',
   name: '完全背包模版 (疯狂的采药)',
   category: 'dynamic-programming',
@@ -79,6 +111,100 @@ const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackSt
     mode: '完全背包 · 正序压缩',
     complexity: 'O(M · T) · O(T)',
   },
+  defaultStage: 'stage-4',
+  stages: [
+    {
+      id: 'stage-1',
+      name: '阶段 1: 暴力递归',
+      shortName: '递归',
+      num: 1,
+      timeBadge: 'O(2^n)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '完全背包 · 递归暴力搜索',
+        complexity: 'O(2^N) · O(N) 栈深',
+      },
+      card1Title: '🌿 递归分支展开与调用栈',
+      card2Title: '📊 递归调用开销与子问题重叠监控',
+      codeLanguages: UNBOUNDED_KNAPSACK_STAGE1_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, items } = parseKnapsackInputs(inputs);
+        return buildKnapsackRecursionSteps('unbounded', t, items);
+      },
+      renderCanvas: (container, step) => renderKnapsackRecursionCard1(container, step),
+      renderCustomMetrics: (container, step) => renderKnapsackRecursionCard2(container, step),
+    },
+    {
+      id: 'stage-2',
+      name: '阶段 2: 记忆化搜索',
+      shortName: '记忆化',
+      num: 2,
+      timeBadge: 'O(M·T)',
+      theme: 'bg-blue',
+      badge: {
+        mode: '完全背包 · 记忆化搜索',
+        complexity: 'O(M · T) · O(M · T) 备忘录',
+      },
+      card1Title: '💾 备忘录剪枝探查追踪 (Cache Hit/Miss)',
+      card2Title: '🎯 2D 备忘录缓存热力矩阵 memo[i][j]',
+      codeLanguages: UNBOUNDED_KNAPSACK_STAGE2_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, items } = parseKnapsackInputs(inputs);
+        return buildKnapsackMemoSteps('unbounded', t, items);
+      },
+      renderCanvas: (container, step) => renderKnapsackMemoCard1(container, step),
+      renderCustomMetrics: (container, step) => renderKnapsackMemoCard2(container, step),
+    },
+    {
+      id: 'stage-3',
+      name: '阶段 3: 二维动态规划',
+      shortName: '二维DP',
+      num: 3,
+      timeBadge: 'O(M·T)',
+      theme: 'bg-emerald',
+      badge: {
+        mode: '完全背包 · 严格二维表递推',
+        complexity: 'O(M · T) · O(M · T)',
+      },
+      card1Title: '📐 二维动态规划状态表 dp[i][j]',
+      card2Title: '⚖️ 同行左侧依赖对比决策台',
+      codeLanguages: UNBOUNDED_KNAPSACK_STAGE3_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, items } = parseKnapsackInputs(inputs);
+        return buildKnapsack2DSteps('unbounded', t, items);
+      },
+      renderCanvas: (container, step) => renderKnapsack2DCard1(container, step),
+      renderCustomMetrics: (container, step) => renderKnapsack2DCard2(container, step),
+    },
+    {
+      id: 'stage-4',
+      name: '阶段 4: 一维空间压缩',
+      shortName: '一维优化',
+      num: 4,
+      timeBadge: 'O(T) 空间',
+      theme: 'bg-amber',
+      badge: {
+        mode: '完全背包 · 正序空间压缩',
+        complexity: 'O(M · T) · O(T)',
+      },
+      card1Title: '🌿 草药资源库与正序推进沙盘',
+      card2Title: '📊 滚动收益向量 dp[j] 监视器',
+      codeLanguages: UNBOUNDED_KNAPSACK_CODE_LANGUAGES,
+      buildSteps: (inputs: Record<string, any>) => {
+        const { t, cost, val } = parseKnapsackInputs(inputs);
+        return buildUnboundedKnapsackSteps(t, cost, val);
+      },
+      renderCanvas: (container, step) => {
+        renderKnapsackSandbox(container, step, {
+          title: '🌿 草药资源库与正序推进沙盘 (每种可无限次叠加 ∞)',
+          isPartitioned: false,
+        });
+      },
+      renderCustomMetrics: (container, step) => {
+        renderKnapsackDpMatrix(container, step, `正序滚动容量表 dp[0..${step.dp.length - 1}]`);
+      },
+    },
+  ],
   card1Title: '🌿 草药资源库与正序推进沙盘',
   card2Title: '📊 滚动收益向量 dp[j] 监视器',
   card2Desc: '展示正序容量枚举下，同一草药在同一轮中可以被连续多次装入的累加过程',
@@ -138,15 +264,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<UnboundedKnapsackSt
   problemHtml: UNBOUNDED_KNAPSACK_PROBLEM_HTML,
   analysisHtml: UNBOUNDED_KNAPSACK_ANALYSIS_HTML,
   buildSteps: (inputs: Record<string, any>) => {
-    const t = parseInt(inputs['input-t'] || '70', 10);
-    const cost = String(inputs['input-costs'] || '71, 23')
-      .split(',')
-      .map((s: string) => parseInt(s.trim(), 10))
-      .filter((n: number) => !isNaN(n));
-    const val = String(inputs['input-vals'] || '100, 10')
-      .split(',')
-      .map((s: string) => parseInt(s.trim(), 10))
-      .filter((n: number) => !isNaN(n));
+    const { t, cost, val } = parseKnapsackInputs(inputs);
     return buildUnboundedKnapsackSteps(t, cost, val);
   },
   renderCanvas: (container, step) => {

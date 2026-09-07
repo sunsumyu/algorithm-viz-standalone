@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   NEXT_GREATER_ELEMENT_II_PROBLEM_HTML,
@@ -26,12 +27,20 @@ export interface NGE2Step {
   poppedIndex: number | null;
   action: 'init' | 'scan' | 'pop_resolve' | 'push' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export function buildNextGreaterElementIISteps(rawNums: number[]): NGE2Step[] {
   const steps: NGE2Step[] = [];
   const n = rawNums.length;
+
+  const lines = {
+    init: { java: [3, 5], cpp: [4, 6], python: [3, 5], javascript: [3, 4] },
+    scan: { java: [7, 8], cpp: [7, 8], python: [6, 7], javascript: [5, 6] },
+    popResolve: { java: 9, cpp: [9, 10], python: 8, javascript: 7 },
+    push: { java: 11, cpp: 12, python: 9, javascript: 9 },
+    done: { java: 13, cpp: 14, python: 10, javascript: 11 },
+  };
 
   if (n === 0) {
     steps.push({
@@ -44,7 +53,7 @@ export function buildNextGreaterElementIISteps(rawNums: number[]): NGE2Step[] {
       poppedIndex: null,
       action: 'done',
       message: '输入数组为空，返回空数组',
-      codeLine: 2,
+      codeLine: lines.done,
     });
     return steps;
   }
@@ -62,7 +71,7 @@ export function buildNextGreaterElementIISteps(rawNums: number[]): NGE2Step[] {
     poppedIndex: null,
     action: 'init',
     message: `初始化：共 ${n} 个元素，结果数组全置 -1，通过模拟 2 轮遍历 (0 &rarr; ${2 * n - 1}) 处理循环边界`,
-    codeLine: 4,
+    codeLine: lines.init,
   });
 
   for (let i = 0; i < 2 * n; i++) {
@@ -80,7 +89,7 @@ export function buildNextGreaterElementIISteps(rawNums: number[]): NGE2Step[] {
       poppedIndex: null,
       action: 'scan',
       message: `🔁 模拟步数 [${i}] (第 ${lap + 1} 轮, 实际下标 [${idx}], 值 ${curVal})：与栈顶 ${stack.length > 0 ? `下标 [${stack[stack.length - 1]}] (${rawNums[stack[stack.length - 1]]})` : '（栈空）'} 比对`,
-      codeLine: 8,
+      codeLine: lines.scan,
     });
 
     while (stack.length > 0 && curVal > rawNums[stack[stack.length - 1]]) {
@@ -97,7 +106,7 @@ export function buildNextGreaterElementIISteps(rawNums: number[]): NGE2Step[] {
         poppedIndex: topIdx,
         action: 'pop_resolve',
         message: `🔥 循环破局！下标 [${idx}] (${curVal}) > 栈顶下标 [${topIdx}] (${rawNums[topIdx]})！设置 res[${topIdx}] = ${curVal}，出栈！`,
-        codeLine: 9,
+        codeLine: lines.popResolve,
       });
     }
 
@@ -113,7 +122,7 @@ export function buildNextGreaterElementIISteps(rawNums: number[]): NGE2Step[] {
       poppedIndex: null,
       action: 'push',
       message: `📥 将下标 [${idx}] (值 ${curVal}) 压入单调栈，维持单调递减`,
-      codeLine: 11,
+      codeLine: lines.push,
     });
   }
 
@@ -127,7 +136,7 @@ export function buildNextGreaterElementIISteps(rawNums: number[]): NGE2Step[] {
     poppedIndex: null,
     action: 'done',
     message: `🎉 2 轮循环遍历结算完成！最终循环下一个更大元素数组：[${result.join(', ')}]`,
-    codeLine: 13,
+    codeLine: lines.done,
   });
 
   return steps;

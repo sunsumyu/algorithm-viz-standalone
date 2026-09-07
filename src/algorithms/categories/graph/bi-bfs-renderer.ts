@@ -53,23 +53,23 @@ export function buildBiBFSSteps(preset: string = 'classic_word'): BiBFSStep[] {
 
   // 精准 17 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 16, java: 8, python: 1, javascript: 2 },
-    checkEndInDict: { cpp: 18, java: 10, python: 27, javascript: 4 },
-    initSets: { cpp: 20, java: 12, python: 29, javascript: 6 },
-    addBeginEnd: { cpp: 20, java: 16, python: 29, javascript: 6 },
-    forLenLoop: { cpp: 26, java: 19, python: 34, javascript: 12 },
-    initNextLevel: { cpp: 27, java: 20, python: 35, javascript: 13 },
-    forSmallWord: { cpp: 29, java: 22, python: 36, javascript: 15 },
-    forCharPos: { cpp: 31, java: 24, python: 37, javascript: 16 },
-    forLetters: { cpp: 33, java: 26, python: 37, javascript: 17 },
-    checkMeet: { cpp: 37, java: 30, python: 38, javascript: 21 },
-    returnLen: { cpp: 37, java: 31, python: 39, javascript: 22 },
-    checkDict: { cpp: 39, java: 33, python: 40, javascript: 24 },
-    addNextLevel: { cpp: 40, java: 34, python: 41, javascript: 25 },
-    checkSwapSets: { cpp: 49, java: 43, python: 45, javascript: 31 },
-    swapToSmall: { cpp: 50, java: 44, python: 46, javascript: 32 },
-    swapToBig: { cpp: 52, java: 46, python: 48, javascript: 34 },
-    returnZero: { cpp: 57, java: 50, python: 52, javascript: 41 },
+    entry: { cpp: 9, java: 8, python: 1, javascript: 2 },
+    checkEndInDict: { cpp: 11, java: 10, python: 12, javascript: 4 },
+    initSets: { cpp: 13, java: 12, python: 15, javascript: 6 },
+    addBeginEnd: { cpp: 13, java: 16, python: 15, javascript: 6 },
+    forLenLoop: { cpp: 19, java: 19, python: 20, javascript: 12 },
+    initNextLevel: { cpp: 20, java: 20, python: 21, javascript: 13 },
+    forSmallWord: { cpp: 22, java: 22, python: 22, javascript: 15 },
+    forCharPos: { cpp: 24, java: 24, python: 23, javascript: 16 },
+    forLetters: { cpp: 26, java: 26, python: 23, javascript: 17 },
+    checkMeet: { cpp: 30, java: 30, python: 24, javascript: 21 },
+    returnLen: { cpp: 30, java: 31, python: 25, javascript: 22 },
+    checkDict: { cpp: 32, java: 33, python: 26, javascript: 24 },
+    addNextLevel: { cpp: 33, java: 34, python: 27, javascript: 25 },
+    checkSwapSets: { cpp: 42, java: 43, python: 31, javascript: 31 },
+    swapToSmall: { cpp: 43, java: 44, python: 32, javascript: 32 },
+    swapToBig: { cpp: 45, java: 46, python: 34, javascript: 34 },
+    returnZero: { cpp: 50, java: 50, python: 38, javascript: 41 },
   };
 
   function makeStep(
@@ -376,10 +376,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<BiBFSStep>({
       .join('');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">↔️ 单词接龙网络拓扑</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">↔️ 单词接龙网络拓扑</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             相遇词: <b style="color: #f59e0b;">${step.meetWord || '扩散中...'}</b>
           </span>
         </div>
@@ -392,9 +392,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<BiBFSStep>({
         </div>
 
         <!-- 底部双向波前碰撞舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">↔️ 双向波前交替与相遇碰撞舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">↔️ 双向波前交替与相遇碰撞舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               当前考察: <b>"${step.curWord}"</b>
             </div>
@@ -426,8 +426,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<BiBFSStep>({
       : '尚未相遇闭合';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #38bdf8;">smallLevel (波前):</span>
             <div>${smallBadges}</div>
@@ -436,7 +436,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BiBFSStep>({
             <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: #f472b6;">bigLevel (对向):</span>
             <div>${bigBadges}</div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10.5px; font-weight: 700;">接龙路径状态:</span>
             <strong style="color: #10b981; font-family: monospace; font-size: 11px;">${pathStr}</strong>
           </div>

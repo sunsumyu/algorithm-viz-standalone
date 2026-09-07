@@ -294,7 +294,7 @@ export class VisualizerHeaderLayoutCoordinator {
       return true;
     }
 
-    if (text.includes('生成') || text.includes('运行') || text.includes('求解') || text.includes('执行')) {
+    if (text.includes('应用') || text.includes('生成') || text.includes('运行') || text.includes('求解') || text.includes('执行') || text.includes('确认')) {
       return true;
     }
 

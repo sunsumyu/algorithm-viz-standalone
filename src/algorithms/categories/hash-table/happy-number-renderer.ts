@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   HAPPY_NUMBER_PROBLEM_HTML,
@@ -26,7 +27,7 @@ export interface HappyNumberStep {
   isHappy: boolean;
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function getNextSquareSum(n: number): { sum: number; formula: string } {
@@ -50,6 +51,13 @@ export function buildHappyNumberSteps(initialN: number): HappyNumberStep[] {
   const seen = new Set<number>();
   let cur = initialN;
 
+  const lines = {
+    init: { java: 2, cpp: 4, python: 3, javascript: 2 },
+    compute: { java: [4, 5], cpp: [6, 7], python: [5, 6], javascript: [13, 14] },
+    happy: { java: 7, cpp: 9, python: 7, javascript: 16 },
+    cycle: { java: 7, cpp: 9, python: 7, javascript: 16 },
+  };
+
   steps.push({
     n: cur,
     nextN: cur,
@@ -60,7 +68,7 @@ export function buildHappyNumberSteps(initialN: number): HappyNumberStep[] {
     isHappy: false,
     message: `初始数字 n = ${cur}，初始化空哈希集合 HashSet seen。`,
     log: `开始计算 n = ${cur}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   while (cur !== 1 && !seen.has(cur)) {
@@ -77,7 +85,7 @@ export function buildHappyNumberSteps(initialN: number): HappyNumberStep[] {
       isHappy: false,
       message: `将 ${cur} 加入 seen 集合。计算各位平方和: ${formula}。`,
       log: `${cur} -> ${formula}`,
-      codeLine: [4, 5],
+      codeLine: lines.compute,
     });
 
     cur = sum;
@@ -94,7 +102,7 @@ export function buildHappyNumberSteps(initialN: number): HappyNumberStep[] {
       isHappy: true,
       message: `🎉 平方和收敛到 1！数字 ${initialN} 是快乐数，返回 true。`,
       log: `✓ 收敛到 1，是快乐数！`,
-      codeLine: 7,
+      codeLine: lines.happy,
     });
   } else {
     steps.push({
@@ -107,7 +115,7 @@ export function buildHappyNumberSteps(initialN: number): HappyNumberStep[] {
       isHappy: false,
       message: `⚠️ 检测到死循环！数字 ${cur} 之前已经在 seen 集合中出现过，陷入死循环，不是快乐数，返回 false。`,
       log: `✗ 检测到循环节点 ${cur}，返回 false`,
-      codeLine: 7,
+      codeLine: lines.cycle,
     });
   }
 

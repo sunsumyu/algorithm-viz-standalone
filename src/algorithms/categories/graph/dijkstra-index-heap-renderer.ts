@@ -96,19 +96,19 @@ export function buildIndexHeapSteps(preset: string = 'classic_4node'): IndexHeap
 
   // 精准 13 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    heapClassInit: { cpp: 20, java: 11, python: 2, javascript: 2 },
-    heapEmptyCheck: { cpp: 22, java: 19, python: 8, javascript: 9 },
-    addOrUpdate: { cpp: 49, java: 48, python: 31, javascript: 39 },
-    whereFirstCheck: { cpp: 50, java: 49, python: 32, javascript: 40 },
-    whereFirstAdd: { cpp: 54, java: 53, python: 36, javascript: 44 },
-    whereUpdateCheck: { cpp: 55, java: 54, python: 38, javascript: 45 },
-    whereDecreaseKey: { cpp: 58, java: 57, python: 41, javascript: 48 },
-    popEntry: { cpp: 63, java: 62, python: 43, javascript: 53 },
-    popAns: { cpp: 64, java: 63, python: 44, javascript: 54 },
-    popSwap: { cpp: 65, java: 64, python: 46, javascript: 55 },
-    popHeapify: { cpp: 66, java: 65, python: 47, javascript: 56 },
-    popSettle: { cpp: 67, java: 66, python: 48, javascript: 57 },
-    returnAns: { cpp: 68, java: 67, python: 49, javascript: 58 },
+    heapClassInit: { cpp: 13, java: 11, python: 2, javascript: 2 },
+    heapEmptyCheck: { cpp: 15, java: 19, python: 8, javascript: 9 },
+    addOrUpdate: { cpp: 42, java: 48, python: 31, javascript: 39 },
+    whereFirstCheck: { cpp: 43, java: 49, python: 32, javascript: 40 },
+    whereFirstAdd: { cpp: 47, java: 53, python: 36, javascript: 44 },
+    whereUpdateCheck: { cpp: 48, java: 54, python: 38, javascript: 45 },
+    whereDecreaseKey: { cpp: 51, java: 57, python: 41, javascript: 48 },
+    popEntry: { cpp: 56, java: 62, python: 43, javascript: 53 },
+    popAns: { cpp: 57, java: 63, python: 44, javascript: 54 },
+    popSwap: { cpp: 58, java: 64, python: 46, javascript: 55 },
+    popHeapify: { cpp: 59, java: 65, python: 47, javascript: 56 },
+    popSettle: { cpp: 60, java: 66, python: 48, javascript: 57 },
+    returnAns: { cpp: 61, java: 67, python: 49, javascript: 58 },
   };
 
   function makeStep(
@@ -384,17 +384,17 @@ const { template, Visualizer } = createDeclarativeVisualizer<IndexHeapStep>({
     const heapBadges = step.heapArray.length > 0
       ? step.heapArray.map((u, idx) => `
           <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid #38bdf8; border-radius: 4px; padding: 4px 8px; display: flex; flex-direction: column; align-items: center;">
-            <span style="font-size: 8px; color: #94a3b8;">heap[${idx}]</span>
-            <span style="font-size: 11px; font-weight: 700; color: #e2e8f0;">Node ${u} (d=${step.distanceArray[u - 1]})</span>
+            <span style="font-size: 8px; color: #64748b;">heap[${idx}]</span>
+            <span style="font-size: 11px; font-weight: 700; color: #1e293b;">Node ${u} (d=${step.distanceArray[u - 1]})</span>
           </div>
         `).join('')
       : '<span style="font-size: 10.5px; color: #64748b;">(当前堆为空)</span>';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">🏔️ 最短路有向网络拓扑</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">🏔️ 最短路有向网络拓扑</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             已锁定结算: <b style="color: #10b981;">${step.settled.length}</b> / ${n} 点
           </span>
         </div>
@@ -412,9 +412,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<IndexHeapStep>({
         </div>
 
         <!-- 底部反向索引堆沙盘舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">📦 小根堆排列与原地 decreaseKey 舱</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">📦 小根堆排列与原地 decreaseKey 舱</span>
             <div style="font-size: 11px; color: #38bdf8;">
               堆规模: <b>${step.heapArray.length}</b> 个节点
             </div>
@@ -438,13 +438,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<IndexHeapStep>({
           const val = arr[idx] ?? 0;
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
           const displayVal = val === 999 ? '∞' : `${val}`;
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">${prefix}[${idx + 1}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">${prefix}[${idx + 1}]</span>
               <span style="line-height: 1.1;">${displayVal}</span>
             </div>
           `;
@@ -463,13 +463,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<IndexHeapStep>({
     const dRow = renderRow('distance[] (距离)', step.distanceArray, 'distance', '#f59e0b', 'N');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${wRow}
           ${dRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #10b981; font-size: 10px; font-weight: 700;">反向索引状态机:</span>
-            <strong style="color: #94a3b8; font-family: monospace; font-size: 10px;">-1: 未入堆 | >=0: 堆中位置 | -2: 已结算锁定</strong>
+            <strong style="color: #64748b; font-family: monospace; font-size: 10px;">-1: 未入堆 | >=0: 堆中位置 | -2: 已结算锁定</strong>
           </div>
         </div>
       </div>

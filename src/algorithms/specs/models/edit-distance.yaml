@@ -40,6 +40,7 @@ problem:
 
 directions:
   forward:
+    label: "顺推 (正序)"
     name: 顺推视角 (自顶向下 / 正向构造)
     description: 从前缀匹配出发，从空串逐步扩展至完整字符串
     branches:
@@ -56,6 +57,7 @@ directions:
         arrow: ←
         description: 插入 word2[j-1]，仅缩减 word2 前缀
   reverse:
+    label: "逆推 (倒序)"
     name: 逆推视角 (后缀消除)
     description: 从两串末尾向前回溯匹配决策
 

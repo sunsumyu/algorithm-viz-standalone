@@ -66,24 +66,24 @@ export function buildTopoDPSteps(preset: string = 'classic_5node'): TopoDPStep[]
 
   // 精准 18 处四语言映射行号字典 (cpp / java / python / javascript)
   const lines = {
-    entry: { cpp: 16, java: 7, python: 11, javascript: 11 },
-    initGraph: { cpp: 17, java: 8, python: 12, javascript: 12 },
-    initInDeg: { cpp: 18, java: 11, python: 13, javascript: 13 },
-    loopRelations: { cpp: 21, java: 12, python: 15, javascript: 14 },
-    incInDeg: { cpp: 23, java: 14, python: 17, javascript: 16 },
-    initCostQueue: { cpp: 26, java: 17, python: 19, javascript: 19 },
-    loopFindZero: { cpp: 27, java: 21, python: 21, javascript: 21 },
-    checkZeroDeg: { cpp: 28, java: 22, python: 22, javascript: 22 },
-    initCostZero: { cpp: 29, java: 23, python: 23, javascript: 23 },
-    pushZeroQueue: { cpp: 30, java: 24, python: 24, javascript: 24 },
-    whileQueue: { cpp: 35, java: 29, python: 27, javascript: 29 },
-    popNode: { cpp: 36, java: 30, python: 28, javascript: 30 },
-    updateAns: { cpp: 38, java: 31, python: 29, javascript: 31 },
-    loopNeighbors: { cpp: 40, java: 33, python: 31, javascript: 33 },
-    relaxCost: { cpp: 41, java: 34, python: 32, javascript: 34 },
-    decInDeg: { cpp: 42, java: 35, python: 33, javascript: 35 },
-    pushNextQueue: { cpp: 43, java: 36, python: 35, javascript: 37 },
-    returnAns: { cpp: 47, java: 40, python: 37, javascript: 41 },
+    entry: { cpp: 9, java: 7, python: 11, javascript: 11 },
+    initGraph: { cpp: 10, java: 8, python: 12, javascript: 12 },
+    initInDeg: { cpp: 11, java: 11, python: 13, javascript: 13 },
+    loopRelations: { cpp: 14, java: 12, python: 15, javascript: 14 },
+    incInDeg: { cpp: 16, java: 14, python: 17, javascript: 16 },
+    initCostQueue: { cpp: 19, java: 17, python: 19, javascript: 19 },
+    loopFindZero: { cpp: 20, java: 21, python: 21, javascript: 21 },
+    checkZeroDeg: { cpp: 21, java: 22, python: 22, javascript: 22 },
+    initCostZero: { cpp: 22, java: 23, python: 23, javascript: 23 },
+    pushZeroQueue: { cpp: 23, java: 24, python: 24, javascript: 24 },
+    whileQueue: { cpp: 28, java: 29, python: 27, javascript: 29 },
+    popNode: { cpp: 29, java: 30, python: 28, javascript: 30 },
+    updateAns: { cpp: 31, java: 31, python: 29, javascript: 31 },
+    loopNeighbors: { cpp: 33, java: 33, python: 31, javascript: 33 },
+    relaxCost: { cpp: 34, java: 34, python: 32, javascript: 34 },
+    decInDeg: { cpp: 35, java: 35, python: 33, javascript: 35 },
+    pushNextQueue: { cpp: 36, java: 36, python: 35, javascript: 37 },
+    returnAns: { cpp: 40, java: 40, python: 37, javascript: 41 },
   };
 
   function makeStep(
@@ -364,10 +364,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
       : '<span style="font-size: 10.5px; color: #64748b;">(拓扑递推计算中...)</span>';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #0b0f19; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-          <span style="font-size: 12px; color: #94a3b8; font-weight: 700;">📈 DAG 有向无环工程网络</span>
-          <span style="font-size: 11px; color: #e2e8f0; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: flex-start; align-items: stretch; background: #f8fafc; padding: 12px; border-radius: 8px; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          <span style="font-size: 12px; color: #374151; font-weight: 700;">📈 DAG 有向无环工程网络</span>
+          <span style="font-size: 11px; color: #1e293b; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             就绪入队节点: <b style="color: #38bdf8;">${step.topoQueue.length}</b> 个
           </span>
         </div>
@@ -385,9 +385,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
         </div>
 
         <!-- 底部关键路径舱 -->
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #eff6ff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #cbd5e1;">🏆 工程最长关键路径舱 (CPM)</span>
+            <span style="font-size: 11.5px; font-weight: 800; color: #374151;">🏆 工程最长关键路径舱 (CPM)</span>
             <div style="font-size: 11px; color: #10b981;">
               最长耗时: <b>${Math.max(...Object.values(step.dpDist))}</b>
             </div>
@@ -410,13 +410,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
         .map((idx) => {
           const val = arr[idx] ?? 0;
           const isActive = step.activeArray === activeName && step.activeSlot === idx;
-          const bg = isActive ? '#78350f' : '#1e293b';
-          const textCol = isActive ? '#fde047' : '#e2e8f0';
-          const border = isActive ? '2px solid #eab308' : '1px solid #475569';
+          const bg = isActive ? '#fef3c7' : '#ffffff';
+          const textCol = isActive ? '#b45309' : '#0f172a';
+          const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
 
           return `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 34px; height: 32px; background: ${bg}; border: ${border}; border-radius: 4px; color: ${textCol}; font-family: monospace; font-size: 11px; font-weight: 700;">
-              <span style="font-size: 8px; color: #94a3b8; line-height: 1;">N[${idx}]</span>
+              <span style="font-size: 8px; color: #64748b; line-height: 1;">N[${idx}]</span>
               <span style="line-height: 1.1;">${val}</span>
             </div>
           `;
@@ -435,11 +435,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
     const inDegRow = renderRow('inDegree[] (入度)', step.inDegreeArray, 'inDegree', '#f59e0b');
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #cbd5e1; padding: 4px 8px; box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 6px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155;">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #374151; padding: 4px 8px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
           ${dpRow}
           ${inDegRow}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #334155; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
             <span style="color: #38bdf8; font-size: 10.5px; font-weight: 700;">拓扑队列:</span>
             <strong style="color: #38bdf8; font-family: monospace; font-size: 11px;">[ ${step.topoQueue.join(', ') || '空'} ]</strong>
           </div>

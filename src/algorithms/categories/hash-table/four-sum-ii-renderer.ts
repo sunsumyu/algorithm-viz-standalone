@@ -8,6 +8,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,
+  HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   FOUR_SUM_II_PROBLEM_HTML,
@@ -35,7 +36,7 @@ export interface FourSumIIStep {
   mapEntries: [number, number][];
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
 export function buildFourSumIISteps(
@@ -47,6 +48,14 @@ export function buildFourSumIISteps(
   const steps: FourSumIIStep[] = [];
   const map = new Map<number, number>();
   let count = 0;
+
+  const lines = {
+    group1Init: { java: 2, cpp: 4, python: 3, javascript: 2 },
+    group1Add: { java: [4, 5, 6], cpp: [5, 6, 7], python: [4, 5, 6], javascript: [3, 4, 5] },
+    group2Init: { java: 9, cpp: 10, python: 7, javascript: 8 },
+    group2Search: { java: [10, 11], cpp: [12, 13, 14], python: [9, 10], javascript: [10, 11] },
+    done: { java: 14, cpp: 18, python: 11, javascript: 14 },
+  };
 
   // 1. Group 1 初始化
   steps.push({
@@ -65,7 +74,7 @@ export function buildFourSumIISteps(
     mapEntries: [],
     message: '初始化哈希表 Map，进入 Phase 1：统计 nums1 与 nums2 所有两数之和出现的频次。',
     log: 'Phase 1: 统计 A+B 频次',
-    codeLine: 2,
+    codeLine: lines.group1Init,
   });
 
   // Group 1: A + B
@@ -92,7 +101,7 @@ export function buildFourSumIISteps(
         mapEntries: Array.from(map.entries()),
         message: `枚举 nums1[${i}] (${nums1[i]}) + nums2[${j}] (${nums2[j]}) = ${sumAB}。将和 ${sumAB} 存入 Map，频次更新为 ${map.get(sumAB)}。`,
         log: `A[${i}]+B[${j}] = ${sumAB} -> Map[${sumAB}] = ${map.get(sumAB)}`,
-        codeLine: [4, 5, 6],
+        codeLine: lines.group1Add,
       });
     }
   }
@@ -114,7 +123,7 @@ export function buildFourSumIISteps(
     mapEntries: Array.from(map.entries()),
     message: '进入 Phase 2：遍历 nums3 与 nums4，寻找 0 - (c + d) 是否在 Map 中存在。',
     log: 'Phase 2: 查找 0 - (C+D)',
-    codeLine: 9,
+    codeLine: lines.group2Init,
   });
 
   // Group 2: C + D
@@ -146,7 +155,7 @@ export function buildFourSumIISteps(
             ? `🎉 nums3[${k}] (${nums3[k]}) + nums4[${l}] (${nums4[l]}) = ${sumCD}，目标 target = 0 - (${sumCD}) = ${target}。在 Map 中找到匹配频次 ${matched} 次，累计 count += ${matched} (现为 ${count})。`
             : `nums3[${k}] (${nums3[k]}) + nums4[${l}] (${nums4[l]}) = ${sumCD}，目标 target = ${target} 未在 Map 中找到，继续扫描。`,
         log: `C[${k}]+D[${l}] = ${sumCD}, 找 ${target} -> 命中 +${matched} (总计: ${count})`,
-        codeLine: [10, 11],
+        codeLine: lines.group2Search,
       });
     }
   }
@@ -167,7 +176,7 @@ export function buildFourSumIISteps(
     mapEntries: Array.from(map.entries()),
     message: `🎉 搜索完成！共找到 ${count} 个满足条件的四元组。`,
     log: `求解完成: 共 ${count} 个合法四元组`,
-    codeLine: 14,
+    codeLine: lines.done,
   });
 
   return steps;

@@ -30,6 +30,7 @@ problem:
 
 directions:
   forward:
+    label: "顺推 (正序)"
     name: 逆序区间填表 (i从底向上, j从左到右)
     description: 由短区间向长区间扩展，dp[i][j] 依赖左下方 dp[i+1][j-1]
     branches:
@@ -42,6 +43,7 @@ directions:
         arrow: •
         description: 长度 <= 2 且端点相同直接判定为回文
   reverse:
+    label: "逆推 (倒序)"
     name: 中心扩散视角
     description: 依次以每个单字符或双字符间隙为中心向两侧扩散判断
 
@@ -57,30 +59,23 @@ stages:
         name: 标准递归区间判定
         desc: 双重循环遍历区间，递归验证首尾与内层
         code: |
-          public int countSubstrings(String s) {
+          public int countSubstrings(String s) { // @step:entry
               int n = s.length();
               int count = 0;
-              // @step:loop_ij 遍历所有可能的子串区间 [i, j]
-              for (int i = 0; i < n; i++) {
+              for (int i = 0; i < n; i++) { // @step:loop_ij
                   for (int j = i; j < n; j++) {
-                      // @step:check 递归判定区间 s[i..j] 是否为回文
-                      if (isPalindrome(s, i, j)) {
-                          // @step:count_inc 命中回文串，总数累加
-                          count++;
+                      if (isPalindrome(s, i, j)) { // @step:check
+                          count++; // @step:count_inc
                       }
                   }
               }
-              // @step:return 返回统计总数
-              return count;
+              return count; // @step:return
           }
 
-          private boolean isPalindrome(String s, int i, int j) {
-              // @step:boundary Base Case: 单字符或空区间必然回文
-              if (i >= j) return true;
-              // @step:diff 端点字符不同，非回文
-              if (s.charAt(i) != s.charAt(j)) return false;
-              // @step:recurse 端点相同，递归验证内部子区间
-              return isPalindrome(s, i + 1, j - 1);
+          private boolean isPalindrome(String s, int i, int j) { // @step:dfs_entry
+              if (i >= j) return true; // @step:boundary
+              if (s.charAt(i) != s.charAt(j)) return false; // @step:diff
+              return isPalindrome(s, i + 1, j - 1); // @step:recurse
           }
 
   stage-2:
@@ -94,30 +89,26 @@ stages:
         name: 二维备忘录区间优化
         desc: 记忆化二维区间 [i, j] 的回文判定结果
         code: |
-          public int countSubstrings(String s) {
+          public int countSubstrings(String s) { // @step:entry
               int n = s.length();
-              Boolean[][] memo = new Boolean[n][n];
+              Boolean[][] memo = new Boolean[n][n]; // @step:memo_init
               int count = 0;
 
-              for (int i = 0; i < n; i++) {
+              for (int i = 0; i < n; i++) { // @step:loop_ij
                   for (int j = i; j < n; j++) {
-                      if (isPalindrome(s, i, j, memo)) {
-                          count++;
+                      if (isPalindrome(s, i, j, memo)) { // @step:check
+                          count++; // @step:count_inc
                       }
                   }
               }
-              return count;
+              return count; // @step:return
           }
 
-          private boolean isPalindrome(String s, int i, int j, Boolean[][] memo) {
-              // @step:boundary Base Case
-              if (i >= j) return true;
-              // @step:cache_hit 备忘录命中直接 O(1) 返回
-              if (memo[i][j] != null) return memo[i][j];
-              // @step:diff 端点不匹配
-              if (s.charAt(i) != s.charAt(j)) return memo[i][j] = false;
-              // @step:recurse 递归并写入缓存
-              return memo[i][j] = isPalindrome(s, i + 1, j - 1, memo);
+          private boolean isPalindrome(String s, int i, int j, Boolean[][] memo) { // @step:dfs_entry
+              if (i >= j) return true; // @step:boundary
+              if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit
+              if (s.charAt(i) != s.charAt(j)) return memo[i][j] = false; // @step:diff
+              return memo[i][j] = isPalindrome(s, i + 1, j - 1, memo); // @step:recurse
           }
 
   stage-3:
@@ -131,32 +122,25 @@ stages:
         name: 上三角区间动态规划
         desc: 严格自底向上推导，解决 dp[i+1][j-1] 逆向拓扑依赖
         code: |
-          public int countSubstrings(String s) {
+          public int countSubstrings(String s) { // @step:entry
               int n = s.length();
-              // @step:init 创建 n x n 状态矩阵 (仅使用上三角)
-              boolean[][] dp = new boolean[n][n];
+              boolean[][] dp = new boolean[n][n]; // @step:init
               int count = 0;
 
-              // @step:loop_i i 从底向上倒序遍历 (保证 dp[i+1] 已先算好)
-              for (int i = n - 1; i >= 0; i--) {
-                  // @step:loop_j j 从 i 向右正序扩展
-                  for (int j = i; j < n; j++) {
-                      // @step:cond 端点字符比较
-                      if (s.charAt(i) == s.charAt(j)) {
-                          // @step:transfer_short 长度为 1 或 2 时直接为 true
-                          if (j - i <= 1) {
+              for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                  for (int j = i; j < n; j++) { // @step:loop_j
+                      if (s.charAt(i) == s.charAt(j)) { // @step:cond
+                          if (j - i <= 1) { // @step:transfer_short
                               dp[i][j] = true;
                               count++;
-                          // @step:transfer_sub 长度 > 2 取决于内层左下角 dp[i+1][j-1]
-                          } else if (dp[i + 1][j - 1]) {
+                          } else if (dp[i + 1][j - 1]) { // @step:transfer_sub
                               dp[i][j] = true;
                               count++;
                           }
                       }
                   }
               }
-              // @step:return 返回统计出的回文子串总数
-              return count;
+              return count; // @step:return
           }
 
   stage-4:
@@ -170,24 +154,20 @@ stages:
         name: 双向中心扩散优化
         desc: 极简双指针原地向外探索回文边界
         code: |
-          public int countSubstrings(String s) {
+          public int countSubstrings(String s) { // @step:entry
               int n = s.length();
               int count = 0;
-              // @step:loop_center 遍历 2n-1 个潜在回文中心
-              for (int center = 0; center < 2 * n - 1; center++) {
+              for (int center = 0; center < 2 * n - 1; center++) { // @step:loop_center
                   int l = center / 2;
                   int r = l + (center % 2); // 奇数中心 l==r, 偶数中心 r==l+1
 
-                  // @step:spread 双指针向外扩散
-                  while (l >= 0 && r < n && s.charAt(l) == s.charAt(r)) {
-                      // @step:match_inc 扩散成功，计数 +1 并继续扩展
-                      count++;
+                  while (l >= 0 && r < n && s.charAt(l) == s.charAt(r)) { // @step:spread
+                      count++; // @step:match_inc
                       l--;
                       r++;
                   }
               }
-              // @step:return 返回扩散累计总数
-              return count;
+              return count; // @step:return
           }
 
 analysis:
