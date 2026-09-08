@@ -4,6 +4,11 @@
  * 统一作为对外呈现接缝，根据算法声明式 Spec 自动生成无冗余子框、标准对齐、紧凑输入的 4-Card 顶层布局
  */
 
+import { ThreeViewControlsAdapter } from './three-view-controls-adapter';
+import { PresetCasePresenter, PresetCaseDef } from './preset-case-presenter';
+
+export type { PresetCaseDef };
+
 export interface InputControlDef {
   id: string;
   label: string;
@@ -12,11 +17,6 @@ export interface InputControlDef {
   width?: string;
   placeholder?: string;
   options?: { label: string; value: any }[];
-}
-
-export interface PresetCaseDef {
-  label: string;
-  values: Record<string, any>;
 }
 
 export interface ModeOptionDef {
@@ -72,8 +72,10 @@ export interface DeclarativeStageSpec<TStep = any> {
   card2Desc?: string;
   legend?: LegendItemDef[];
   metrics?: MetricCardDef[];
+  has3D?: boolean;
   codeLanguages: Record<string, string[]>;
-  buildSteps: (inputs: Record<string, any>) => TStep[];
+  modeCodeLanguages?: Record<string, Record<string, string[]>>;
+  buildSteps: (inputs: Record<string, any>, mode?: string) => TStep[];
   renderCanvas?: (container: HTMLElement, step: TStep, extra?: any) => void;
   renderCustomMetrics?: (container: HTMLElement, step: TStep, extra?: any) => void;
 }
@@ -172,38 +174,33 @@ export class DeclarativeStagePresenter {
       })
       .join('');
 
-    // 2. 预设案例下拉选框 (紧凑型，嵌入顶栏右侧，绝不吃沙盘画布高度)
-    let presetSelectHtml = '';
-    if (spec.presets && spec.presets.length > 0) {
-      const opts = spec.presets
-        .map((p, i) => `<option value="${i}">${p.label.replace(/\(.*\)/, '').trim()}</option>`)
-        .join('');
-      presetSelectHtml = `
-        <div class="dsp-input-group dsp-preset-select-group">
-          <label for="dsp-preset-select" style="color:#64748b;">案例:</label>
-          <select id="dsp-preset-select" class="dsp-select dsp-preset-select" title="快速填入典型测试案例" style="max-width: 95px; font-size: 11px;">
-            <option value="" disabled selected>选择案例...</option>
-            ${opts}
-          </select>
-        </div>
-      `;
-    }
+    // 2. 预设案例下拉选框 (采用全局统一 Shared PresetCasePresenter 渲染)
+    const presetSelectHtml = PresetCasePresenter.renderSelectHtml(spec.presets);
 
-    // 3. 模式选择栏
+    // 3. 顺推 / 逆推 方向切换器 (100% 像素级复用《不同路径》标准 dir-tabs-container 模板)
     let modeBarHtml = '';
     if (spec.modes && spec.modes.length > 0) {
       const modeChipsHtml = spec.modes
-        .map(
-          (m, i) =>
-            `<button class="dsp-chip dsp-mode-chip ${i === 0 ? 'active' : ''}" data-mode="${m.id}">${m.label}</button>`
-        )
+        .map((m, i) => {
+          const isForward = m.id === 'forward' || m.id.includes('forward');
+          const isReverse = m.id === 'reverse' || m.id.includes('reverse');
+          const cleanLabel = isForward ? '顺推' : isReverse ? '逆推' : m.label.replace(/\(.*\)/, '').replace(/（.*）/, '').trim() || m.label;
+          const arrowSymbol = isForward ? '→' : isReverse ? '←' : '';
+          const iconClass = isForward ? 'fa-arrow-right' : isReverse ? 'fa-arrow-left' : '';
+          const isActive = i === 0;
+          return `
+            <button class="dir-tab-btn dsp-mode-chip px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-xs transition-all flex items-center gap-1 border ${
+              isActive ? 'active bg-blue-600 text-white shadow-sm font-bold border-blue-600' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold'
+            }" data-mode="${m.id}" data-dir="${m.id}" title="${m.label || cleanLabel}">
+              <span style="font-size: 11px; font-weight: 700; line-height: 1; display: inline-block;">${arrowSymbol}</span>
+              <span class="truncate">${cleanLabel}</span>
+            </button>
+          `;
+        })
         .join('');
       modeBarHtml = `
-        <div class="dsp-preset-bar" style="margin-top: 4px;">
-          <span class="dsp-preset-label">模式:</span>
-          <div class="dsp-preset-list">
-            ${modeChipsHtml}
-          </div>
+        <div class="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200 flex-shrink-0 dir-tabs-container" id="dir-tabs-container">
+          ${modeChipsHtml}
         </div>
       `;
     }
@@ -302,7 +299,7 @@ export class DeclarativeStagePresenter {
     border-radius: 16px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     flex-shrink: 0;
-    gap: 8px;
+    gap: 16px;
     height: 46px;
     box-sizing: border-box;
     overflow-x: auto;
@@ -310,6 +307,33 @@ export class DeclarativeStagePresenter {
   }
   #${viewId} .dsp-header::-webkit-scrollbar {
     height: 0px;
+  }
+  #${viewId} .dsp-header-left-zone {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 12px;
+  }
+  #${viewId} .dsp-stage-nav-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    flex: 1;
+    min-width: 0;
+  }
+  #${viewId} .dsp-header-right-zone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  #${viewId} .dsp-dir-nav-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
   #${viewId} .dsp-stage-tabs-wrap {
     display: flex;
@@ -365,6 +389,43 @@ export class DeclarativeStagePresenter {
   #${viewId} .dsp-stage-tab-btn.active .dsp-stage-num {
     background: rgba(255, 255, 255, 0.25) !important;
     color: #ffffff !important;
+  }
+  #${viewId} .dir-tabs-container {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    background: rgba(241, 245, 249, 0.9);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+  #${viewId} .dir-tab-btn {
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  #${viewId} .dir-tab-btn:hover {
+    color: #0f172a;
+    background: #ffffff;
+  }
+  #${viewId} .dir-tab-btn.active {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25) !important;
   }
   #${viewId} .dsp-header-left {
     display: flex;
@@ -562,12 +623,17 @@ export class DeclarativeStagePresenter {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    flex: 1 1 50%;
     min-height: 0;
     min-width: 0;
     max-width: 100%;
     padding: 10px 12px;
     box-sizing: border-box;
+  }
+  #${viewId} .dsp-left-section .dsp-card:first-child {
+    flex: 1 1 0;
+  }
+  #${viewId} .dsp-left-section .dsp-card:last-child {
+    flex: 0 0 240px;
   }
   #${viewId} .dsp-sandbox-wrap {
     flex: 1;
@@ -597,6 +663,31 @@ export class DeclarativeStagePresenter {
     display: flex;
     align-items: center;
     gap: 4px;
+  }
+  #${viewId} #btn-toggle-3d,
+  #${viewId} .three-view-toggle-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 2px 8px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    margin-left: 8px !important;
+    line-height: 1.2 !important;
+    user-select: none !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    border: 1px solid #c7d2fe !important;
+    background: rgba(238, 242, 255, 0.85) !important;
+    color: #4338ca !important;
+  }
+  #${viewId} #btn-toggle-3d:hover,
+  #${viewId} .three-view-toggle-btn:hover {
+    background: #e0e7ff !important;
   }
   #${viewId} .dsp-card-desc {
     font-size: 10.5px;
@@ -637,59 +728,7 @@ export class DeclarativeStagePresenter {
     box-sizing: border-box;
   }
 
-  /* 标准单外框对齐预设栏 */
-  #${viewId} .dsp-preset-bar {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 4px 8px;
-    margin-top: 4px;
-    flex-shrink: 0;
-  }
-  #${viewId} .dsp-preset-label {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #64748b;
-    white-space: nowrap;
-    line-height: 20px;
-    flex-shrink: 0;
-  }
-  #${viewId} .dsp-preset-list {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-  }
-  #${viewId} .dsp-chip {
-    padding: 1.5px 6px;
-    border-radius: 4px;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    font-size: 10.5px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    color: #334155;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-    line-height: 16px;
-  }
-  #${viewId} .dsp-chip:hover {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    color: #1d4ed8;
-  }
-  #${viewId} .dsp-chip.active {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #ffffff;
-    font-weight: 700;
-  }
+
 
   /* 贯穿式 Scrubber 进度条与播放控制器 */
   #${viewId} .dsp-playback-bar {
@@ -794,7 +833,7 @@ export class DeclarativeStagePresenter {
     flex-shrink: 0;
   }
 
-  /* 右侧暗色代码终端挂载点 (无多余外框，单层自适应) */
+  /* 右侧暗色代码终端挂载点 (自适应填充上半区，与左侧沙盘+控制条对齐) */
   #${viewId} .dsp-terminal-card {
     background: transparent;
     border: none;
@@ -802,11 +841,12 @@ export class DeclarativeStagePresenter {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    flex: 2;
+    flex: 1 1 0;
     min-height: 0;
+    box-sizing: border-box;
   }
 
-  /* 右下角执行日志卡片 */
+  /* 右下角执行日志卡片 (与左下状态面板严格水平对齐) */
   #${viewId} .dsp-log-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -815,7 +855,7 @@ export class DeclarativeStagePresenter {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    flex: 1;
+    flex: 0 0 240px;
     min-height: 0;
     padding: 10px 12px;
     box-sizing: border-box;
@@ -830,19 +870,26 @@ export class DeclarativeStagePresenter {
 </style>
 
 <div id="${viewId}">
-  <!-- 1. 顶栏 Header -->
+  <!-- 1. 顶栏 Header: 左右两翼分别对齐左侧沙盘面板中心与右侧代码终端面板中心 -->
   <header class="dsp-header">
-    <div class="dsp-header-left">
-      <div class="dsp-icon-btn">${icon}</div>
-      <h1 class="dsp-main-title" id="dsp-main-title" title="${spec.name}">${spec.name}</h1>
-      <button id="btn-open-problem-modal" class="dsp-btn-problem">📋 题目</button>
-      <span class="dsp-badge-mode" id="dsp-badge-mode">${modeBadge}</span>
-      <span class="dsp-badge-complexity" id="dsp-badge-complexity">${complexityBadge}</span>
+    <!-- 左翼 (对应左面板沙盘区): 算法标题/徽章 + 阶段演化 Tabs + 顺推/逆推 方向切换器 (归位在核心演化控制区) -->
+    <div class="dsp-header-left-zone">
+      <div class="dsp-header-left">
+        <div class="dsp-icon-btn">${icon}</div>
+        <h1 class="dsp-main-title" id="dsp-main-title" title="${spec.name}">${spec.name}</h1>
+        <button id="btn-open-problem-modal" class="dsp-btn-problem">📋 题目</button>
+        <span class="dsp-badge-mode" id="dsp-badge-mode">${modeBadge}</span>
+        <span class="dsp-badge-complexity" id="dsp-badge-complexity">${complexityBadge}</span>
+      </div>
+
+      <!-- 阶段与方向演化核心导航区: 紧随阶段演化 Tabs，杜绝顺推/逆推被甩到最末尾 -->
+      <div class="dsp-stage-nav-wrap">
+        ${stageTabsHtml}
+        ${modeBarHtml}
+      </div>
     </div>
 
-    <!-- 阶段演化胶囊选择器 (Stage Switcher) -->
-    ${stageTabsHtml}
-
+    <!-- 右翼 (对应右面板代码与控制区): 预设案例 + 参数输入 + [应用] + [重置] -->
     <div class="dsp-header-right">
       ${presetSelectHtml}
       ${inputsHtml}
@@ -862,8 +909,9 @@ export class DeclarativeStagePresenter {
       <!-- Card 1: 算法沙盘 (100% 充实展示高度，绝不被臃肿预设栏霸占) -->
       <div class="dsp-card">
         <div class="dsp-card-header">
-          <div class="dsp-card-title">
-            <span>${card1Title}</span>
+          <div class="dsp-card-title flex items-center gap-2">
+            <span id="dsp-card1-title-text">${card1Title}</span>
+            ${ThreeViewControlsAdapter.renderToggleButtonHtml(false, !!curStage?.has3D)}
           </div>
           <div class="dsp-legend-bar">
             ${legendHtml}
@@ -872,9 +920,6 @@ export class DeclarativeStagePresenter {
 
         <!-- 扁平纯净沙盘画板 (绝无多层白框) -->
         <div class="dsp-sandbox-wrap" id="dsp-sandbox-container"></div>
-
-        <!-- 模式切换栏 (可选) -->
-        ${modeBarHtml}
       </div>
 
       <!-- 贯穿式 Scrubber 进度条 -->
@@ -925,7 +970,7 @@ export class DeclarativeStagePresenter {
 
       <!-- Card 4: 执行日志流 -->
       <div class="dsp-log-card">
-        <div class="dsp-card-header" style="padding: 6px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+        <div class="dsp-card-header">
           <div class="dsp-card-title" style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #1e293b;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -939,7 +984,7 @@ export class DeclarativeStagePresenter {
           </div>
           <span id="log-count" style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #94a3b8; font-weight: 500;">0 条记录</span>
         </div>
-        <div class="dsp-log-list" id="log-container" style="padding: 6px 8px;"></div>
+        <div class="dsp-log-list" id="log-container"></div>
       </div>
     </section>
   </main>

@@ -51,9 +51,9 @@ describe('DeclarativeStagePresenter Engine Guard', () => {
     expect(template).toContain('style="width: 45px;"');
     expect(template).toContain('style="width: 120px;"');
 
-    // 3. 验证单框包裹预设案例栏与模式切换栏
-    expect(template).toContain('class="dsp-preset-bar"');
-    expect(template).toContain('class="dsp-preset-list"');
+    // 3. 验证预设案例下拉选框与模式切换栏
+    expect(template).toContain('dsp-preset-select-group');
+    expect(template).toContain('id="dsp-preset-select"');
     expect(template).toContain('案例1');
     expect(template).toContain('案例2');
     expect(template).toContain('模式A');

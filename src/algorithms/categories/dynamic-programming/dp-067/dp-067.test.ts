@@ -18,7 +18,21 @@ import {
   buildLcsStage2Steps,
   buildLcsStage3Steps,
   buildLcsStage4Steps,
+  buildLcsStateDepTree,
 } from './longest-common-subsequence-renderer';
+import {
+  renderMemoGridCard,
+  renderDp2DCard2,
+  renderStage1GridCard,
+  renderStage4RollingGridCard,
+  renderLcsCard2CompoundView,
+  setLcs3DMode,
+  isLcs3DMode,
+} from './dp-067-shared';
+import {
+  DEFAULT_THREE_VIEW_CONTROLS_CONFIG,
+  THREE_VIEW_POSITION_PRESETS,
+} from '../../../../core/renderers/three-view-controls-adapter';
 import {
   buildLpsStage1Steps,
   buildLpsStage2Steps,
@@ -50,6 +64,9 @@ import {
   LCS_STAGE2_CODE_LANGUAGES,
   LCS_STAGE3_CODE_LANGUAGES,
   LCS_STAGE4_CODE_LANGUAGES,
+  LCS_STAGE1_FORWARD_CODE_LANGUAGES,
+  LCS_STAGE2_FORWARD_CODE_LANGUAGES,
+  LCS_STAGE3_FORWARD_CODE_LANGUAGES,
   LPS_STAGE1_CODE_LANGUAGES,
   LPS_STAGE2_CODE_LANGUAGES,
   LPS_STAGE3_CODE_LANGUAGES,
@@ -162,26 +179,69 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
   describe('Code03: 最长公共子序列 LCS (LeetCode 1143)', () => {
     const inputs = { 'input-s1': 'abcde', 'input-s2': 'ace' };
 
-    it('阶段 1 暴力递归应正确计算 LCS 长度为 3', () => {
+    it('阶段 1 暴力递归应正确计算 LCS 长度为 3 并产出自适应递归展开树', () => {
       const steps = buildLcsStage1Steps(inputs);
       expect(steps.length).toBeGreaterThan(0);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.metrics?.['metric-ans']).toBe('3');
+      // 验证自适应递归展开树存在且有根节点
+      expect(lastStep.treeRoot).toBeDefined();
+      expect(lastStep.treeRoot?.val).toContain('f(');
+      expect(lastStep.treeRoot?.children.length).toBeGreaterThan(0);
+      // 验证任意单步均携带有效的 activeNodeId
+      expect(lastStep.activeNodeId).toBeDefined();
     });
 
-    it('阶段 2 记忆化搜索应记录缓存命中', () => {
+    it('阶段 2 记忆化搜索应记录缓存命中并产出剪枝标记树', () => {
       const steps = buildLcsStage2Steps(inputs);
       expect(steps.length).toBeGreaterThan(0);
       const finalStep = steps[steps.length - 1];
       expect(finalStep.cachedVal).toBe(3);
+      // 验证命中缓存单步存在
+      const hitSteps = steps.filter((s) => s.memoHit);
+      expect(hitSteps.length).toBeGreaterThan(0);
+      expect(finalStep.treeRoot).toBeDefined();
+      expect(finalStep.treeRoot?.children.length).toBeGreaterThan(0);
     });
 
-    it('阶段 3 严格二维表应展示对角线与上下左右转移', () => {
+    it('阶段 3 严格二维表应展示对角线与上下左右转移并搭载状态依赖拓扑展开树', () => {
       const steps = buildLcsStage3Steps(inputs);
       expect(steps.length).toBeGreaterThan(0);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.currentVal).toBe(3);
       expect(lastStep.dpTable[5][3]).toBe(3);
+
+      // 验证每个单步均附带拓扑状态依赖树
+      expect(lastStep.treeRoot).toBeDefined();
+      expect(lastStep.treeRoot?.id).toBe('dp-5-3');
+      expect(lastStep.treeRoot?.status).toBe('current');
+      expect(lastStep.treeRoot?.children.length).toBeGreaterThan(0);
+
+      // 深度检验 buildLcsStateDepTree 的前驱回溯与边界
+      const dpSample = [
+        [0, 0, 0, 0],
+        [0, 1, 1, 1],
+        [0, 1, 1, 1],
+        [0, 1, 2, 2],
+        [0, 1, 2, 2],
+        [0, 1, 2, 3],
+      ];
+      // 1. 边界单元格 (i=0) 应返回 status: base
+      const baseTree = buildLcsStateDepTree(0, 2, dpSample, 'abcde', 'ace');
+      expect(baseTree.status).toBe('base');
+      expect(baseTree.children.length).toBe(0);
+
+      // 2. 匹配单元格 (i=5, j=3 对应 'e' == 'e') 应生成对角线子节点与次级拓扑展开
+      const matchTree = buildLcsStateDepTree(5, 3, dpSample, 'abcde', 'ace', true, true);
+      expect(matchTree.children.length).toBe(1);
+      expect(matchTree.children[0].edgeLabel).toContain('↖️');
+      expect(matchTree.children[0].children.length).toBeGreaterThan(0); // 次级依赖展开
+
+      // 3. 不匹配单元格 (i=4, j=3 对应 'd' != 'e') 应分叉为上方与左方依赖
+      const mismatchTree = buildLcsStateDepTree(4, 3, dpSample, 'abcde', 'ace', false, true);
+      expect(mismatchTree.children.length).toBe(2);
+      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬆️'))).toBe(true);
+      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬅️'))).toBe(true);
     });
 
     it('阶段 4 空间压缩应正确记录 leftUp 寄存器变化且最终结果为 3', () => {
@@ -189,6 +249,73 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       expect(steps.length).toBeGreaterThan(0);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.dp[3]).toBe(3);
+    });
+
+    // ----------------------------------------------------
+    // LCS 顺推探索模式 (Forward Mode: 从首字符 f(0,0) 开始)
+    // ----------------------------------------------------
+    it('顺推模式：阶段 1 顺推递归应从 f(0,0) 开始展开树并返回 3', () => {
+      const steps = buildLcsStage1Steps(inputs, 'forward');
+      expect(steps.length).toBeGreaterThan(0);
+      expect(steps.some((s) => s.currentCall === 'f(0, 0)')).toBe(true);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.metrics?.['metric-ans']).toBe('3');
+      expect(lastStep.treeRoot).toBeDefined();
+      expect(lastStep.treeRoot?.val).toContain('f(0,0)');
+      expect(lastStep.treeRoot?.children.length).toBeGreaterThan(0);
+    });
+
+    it('顺推模式：阶段 2 顺推记忆化搜索应记录缓存命中并返回 3', () => {
+      const steps = buildLcsStage2Steps(inputs, 'forward');
+      expect(steps.length).toBeGreaterThan(0);
+      const hitSteps = steps.filter((s) => s.memoHit);
+      expect(hitSteps.length).toBeGreaterThan(0);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.cachedVal).toBe(3);
+      expect(lastStep.treeRoot).toBeDefined();
+    });
+
+    it('顺推模式：阶段 3 顺推严格二维表应从 (n,m) 倒推至 (0,0) 且状态依赖树为右/下方向', () => {
+      const steps = buildLcsStage3Steps(inputs, 'forward');
+      expect(steps.length).toBeGreaterThan(0);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.currentVal).toBe(3);
+      expect(lastStep.dpTable[0][0]).toBe(3);
+      expect(lastStep.treeRoot).toBeDefined();
+      expect(lastStep.treeRoot?.id).toBe('dp-0-0');
+
+      // 验证顺推拓扑状态依赖树
+      const dpSampleForward = [
+        [3, 2, 1, 0],
+        [2, 2, 1, 0],
+        [2, 2, 1, 0],
+        [2, 2, 1, 0],
+        [1, 1, 1, 0],
+        [0, 0, 0, 0],
+      ];
+      // 1. 边界单元格 (i=5 或 j=3) 应返回 base 状态 (targetI=5, targetJ=1, s1='abcde' len=5, s2='ace' len=3)
+      const baseTree = buildLcsStateDepTree(5, 1, dpSampleForward, 'abcde', 'ace', false, false, 2, 'forward');
+      expect(baseTree.status).toBe('base');
+      expect(baseTree.children.length).toBe(0);
+
+      // 2. 匹配单元格 (i=0, j=0 对应 'a' == 'a') 应指向右下角 (i+1, j+1) ↘️
+      const matchTree = buildLcsStateDepTree(0, 0, dpSampleForward, 'abcde', 'ace', true, true, 2, 'forward');
+      expect(matchTree.children.length).toBe(1);
+      expect(matchTree.children[0].edgeLabel).toContain('↘️');
+
+      // 3. 不匹配单元格应分叉为下方 (i+1, j) ⬇️ 与右方 (i, j+1) ➡️ 依赖
+      const mismatchTree = buildLcsStateDepTree(1, 0, dpSampleForward, 'abcde', 'ace', false, true, 2, 'forward');
+      expect(mismatchTree.children.length).toBe(2);
+      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬇️'))).toBe(true);
+      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('➡️'))).toBe(true);
+    });
+
+    it('顺推模式：多语言代码模板与行号锚点应完整有效', () => {
+      for (const lang of ['java', 'cpp', 'python', 'javascript'] as const) {
+        expect(LCS_STAGE1_FORWARD_CODE_LANGUAGES[lang].length).toBeGreaterThan(0);
+        expect(LCS_STAGE2_FORWARD_CODE_LANGUAGES[lang].length).toBeGreaterThan(0);
+        expect(LCS_STAGE3_FORWARD_CODE_LANGUAGES[lang].length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -442,6 +569,156 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
           consecutiveCount = 1;
         }
       }
+    });
+
+    it('LCS 阶段 2 与阶段 3 必须正确挂载 2D/3D 双模沙盘骨架并由公共适配器提供视口控制', () => {
+      // 验证 3D 模式状态管理 API
+      setLcs3DMode(false);
+      expect(isLcs3DMode()).toBe(false);
+      setLcs3DMode(true);
+      expect(isLcs3DMode()).toBe(true);
+      setLcs3DMode(false);
+
+      // 验证公用配置文件三维视口位置参数与预设
+      expect(DEFAULT_THREE_VIEW_CONTROLS_CONFIG.floatingBar.layout.positionClass).toContain('top-2 left-2 z-20');
+      expect(THREE_VIEW_POSITION_PRESETS['top-left']).toContain('top-2 left-2');
+      expect(THREE_VIEW_POSITION_PRESETS['top-right']).toContain('top-2 right-2');
+
+      // 轻量 DOM 容器 Mock
+      const mockContainer = {
+        innerHTML: '',
+        querySelector: function (selector: string) {
+          if (selector === '.lcs-sandbox-outer' && this.innerHTML.includes('lcs-sandbox-outer')) {
+            return {
+              querySelector: (s: string) => this.querySelector(s),
+            };
+          }
+          if (selector === `#${DEFAULT_THREE_VIEW_CONTROLS_CONFIG.floatingBar.resetBtnId}`) {
+            return { style: { display: 'none' }, onclick: null as any };
+          }
+          if (selector === '#lcs-three-canvas-container') {
+            return {
+              classList: { remove: () => {}, add: () => {}, contains: () => false },
+              querySelector: (s: string) => this.querySelector(s),
+            };
+          }
+          if (selector === '#lcs-2d-board-wrapper') {
+            return {
+              innerHTML: '',
+              classList: { remove: () => {}, add: () => {}, contains: () => false },
+            };
+          }
+          return null;
+        },
+      } as unknown as HTMLElement;
+
+      // 1. 验证阶段 2 备忘录沙盘渲染
+      renderMemoGridCard(
+        mockContainer,
+        'LCS 备忘录',
+        [[-1, -1], [-1, -1]],
+        0,
+        0,
+        ['Ø', 'a'],
+        ['Ø', 'a']
+      );
+
+      expect(mockContainer.innerHTML).toContain('lcs-sandbox-outer');
+      expect(mockContainer.innerHTML).toContain('lcs-three-canvas-container');
+      expect(mockContainer.innerHTML).toContain('lcs-2d-board-wrapper');
+      expect(mockContainer.innerHTML).toContain(DEFAULT_THREE_VIEW_CONTROLS_CONFIG.floatingBar.resetBtnId);
+
+      // 2. 验证阶段 3 二维 DP 沙盘渲染
+      renderDp2DCard2(
+        mockContainer,
+        'LCS 二维DP',
+        [[0, 0], [0, 1]],
+        1,
+        1,
+        [{ r: 0, c: 0 }],
+        ['Ø', 'a'],
+        ['Ø', 'a']
+      );
+
+      expect(mockContainer.innerHTML).toContain('lcs-sandbox-outer');
+      expect(mockContainer.innerHTML).toContain(DEFAULT_THREE_VIEW_CONTROLS_CONFIG.floatingBar.resetBtnId);
+
+      // 3. 验证阶段 1 递归探索网格沙盘渲染
+      renderStage1GridCard(
+        mockContainer,
+        'LCS 递归探索网格',
+        3,
+        3,
+        1,
+        1,
+        ['Ø', 'a', 'b'],
+        ['Ø', 'a', 'b']
+      );
+      expect(mockContainer.innerHTML).toContain('lcs-sandbox-outer');
+      expect(mockContainer.innerHTML).toContain('lcs-three-canvas-container');
+
+      // 4. 验证阶段 4 空间切片滚动沙盘渲染
+      renderStage4RollingGridCard(
+        mockContainer,
+        'LCS 空间切片滚动',
+        [[0, 0], [0, 1]],
+        1,
+        1,
+        0,
+        ['Ø', 'a'],
+        ['Ø', 'a']
+      );
+      expect(mockContainer.innerHTML).toContain('lcs-sandbox-outer');
+      expect(mockContainer.innerHTML).toContain(DEFAULT_THREE_VIEW_CONTROLS_CONFIG.floatingBar.resetBtnId);
+    });
+
+    it('Card 2 必须支持【决策展开树】与【双字符串比对】一键平滑切换', () => {
+      let activeSubView = '';
+      const mockCard2 = {
+        innerHTML: '',
+        querySelector: function (selector: string) {
+          if (selector === '.lcs-card2-compound' && this.innerHTML.includes('lcs-card2-compound')) {
+            return {
+              querySelector: (s: string) => this.querySelector(s),
+            };
+          }
+          if (selector === '#lcs-tab-tree') {
+            return {
+              style: {},
+              onclick: null as any,
+            };
+          }
+          if (selector === '#lcs-tab-strings') {
+            return {
+              style: {},
+              onclick: null as any,
+            };
+          }
+          if (selector === '#lcs-card2-subview-content') {
+            return {
+              innerHTML: '',
+            };
+          }
+          return null;
+        },
+      } as unknown as HTMLElement;
+
+      renderLcsCard2CompoundView(
+        mockCard2,
+        (treeBox) => {
+          activeSubView = 'tree';
+          treeBox.innerHTML = '<div id="test-tree">TreeContent</div>';
+        },
+        (stringsBox) => {
+          activeSubView = 'strings';
+          stringsBox.innerHTML = '<div id="test-strings">StringsContent</div>';
+        }
+      );
+
+      expect(mockCard2.innerHTML).toContain('lcs-card2-compound');
+      expect(mockCard2.innerHTML).toContain('lcs-tab-tree');
+      expect(mockCard2.innerHTML).toContain('lcs-tab-strings');
+      expect(activeSubView).toBe('tree');
     });
   });
 });

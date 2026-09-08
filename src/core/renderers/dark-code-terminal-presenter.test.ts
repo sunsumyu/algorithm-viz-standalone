@@ -42,12 +42,44 @@ class MockElement {
 
   public scrollIntoView() {}
 
-  public querySelector(_sel: string): MockElement | null {
+  public appendChild(child: MockElement) {
+    this.children.push(child);
+    return child;
+  }
+
+  public removeChild(child: MockElement) {
+    this.children = this.children.filter((c) => c !== child);
+    return child;
+  }
+
+  public querySelector(sel: string): MockElement | null {
+    for (const child of this.children) {
+      if (sel.startsWith('.')) {
+        const classes = sel.split('.').filter(Boolean);
+        const matchAll = classes.every((c) => child.className.includes(c) || child.classList.contains(c));
+        if (matchAll) return child;
+      }
+      if (sel.startsWith('#') && child.id === sel.slice(1)) return child;
+      if (sel.includes('data-line="') && child.dataset.line === sel.match(/data-line="(\d+)"/)?.[1]) return child;
+      const found = child.querySelector(sel);
+      if (found) return found;
+    }
     return null;
   }
 
-  public querySelectorAll(_sel: string): MockElement[] {
-    return [];
+  public querySelectorAll(sel: string): MockElement[] {
+    let res: MockElement[] = [];
+    for (const child of this.children) {
+      if (sel.startsWith('.')) {
+        const classes = sel.split('.').filter(Boolean);
+        const matchAll = classes.every((c) => child.className.includes(c) || child.classList.contains(c));
+        if (matchAll) res.push(child);
+      } else if (sel.startsWith('#') && child.id === sel.slice(1)) {
+        res.push(child);
+      }
+      res = res.concat(child.querySelectorAll(sel));
+    }
+    return res;
   }
 
   public setAttribute(name: string, val: string) {
@@ -283,6 +315,42 @@ describe('DarkCodeTerminalPresenter (深模块测试 - 0 DOM依赖环境)', () =
     // 模拟用户点击复制按钮
     copyBtn?.click();
     expect(copyBtn?.classList.contains('copied')).toBe(true);
+  });
+
+  it('updateVars 能够接收 step 上下文并为当前高亮行生成行末内联调试提示', () => {
+    const presenter = DarkCodeTerminalPresenter.mount(root as unknown as HTMLElement, {
+      codeLanguages: {
+        java: [
+          'public int f(int i, int j) {',
+          '    int p1 = f(i - 1, j);',
+          '    return p1;',
+          '}',
+        ],
+      },
+      initialLang: 'java',
+    });
+
+    // 1. 高亮第 2 行: int p1 = f(i - 1, j);
+    presenter.highlightLine(2);
+
+    // 2. 传入带有 stepContext 的变量 (i=3, j=1)
+    presenter.updateVars([], {
+      i: 3,
+      j: 1,
+      metrics: { 'metric-pos': 'i=3, j=1' },
+    });
+
+    const linesWrapper = root.querySelector('#code-lines-wrapper');
+    expect(linesWrapper).not.toBeNull();
+    const activeLine = linesWrapper?.querySelector('[data-line="2"]');
+    expect(activeLine).not.toBeNull();
+
+    // 验证活动行子节点中生成了 algo-code-inline-hint
+    const inlineHint = activeLine?.querySelector('.algo-code-inline-hint');
+    expect(inlineHint).not.toBeNull();
+    expect(inlineHint?.textContent).toContain('//');
+    expect(inlineHint?.textContent).toContain('i: 3');
+    expect(inlineHint?.textContent).toContain('j: 1');
   });
 });
 

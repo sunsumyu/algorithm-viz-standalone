@@ -11,7 +11,8 @@
  */
 
 import type { StepVar } from '../interfaces';
-import { highlightTokens } from '../code-highlighter';
+import { highlightTokens, escapeHtml } from '../code-highlighter';
+import { VariableContextResolver, type ResolvedVariable } from '../variable-context-resolver';
 import {
   CodePresentationModel,
   type KeyPointsData,
@@ -62,8 +63,8 @@ export interface DarkCodeTerminalConfig {
 export interface DarkCodeTerminalInstance {
   /** 高亮指定物理行或多行目标 */
   highlightLine(target: HighlightTarget | null | undefined): void;
-  /** 同步更新变量监视面板 */
-  updateVars(vars?: StepVar[]): void;
+  /** 同步更新变量监视面板与实时调试上下文 */
+  updateVars(vars?: StepVar[], stepContext?: unknown): void;
   /** 手动切换编程语言 */
   switchLanguage(lang: string): void;
   /** 手动切换看板 Tab */
@@ -84,6 +85,10 @@ export interface NormalizedHighlight {
   lines: number[];
   focusLine?: number;
 }
+
+const TAB_CODE_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
+const TAB_PROBLEM_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>';
+const TAB_ANALYSIS_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"></path></svg>';
 
 export class DarkCodeTerminalPresenter {
   /**
@@ -178,6 +183,7 @@ export class DarkCodeTerminalPresenter {
     let currentLang = config.initialLang || 'java';
     let codeFontSize = config.fontSize || 12;
     let activeLineTarget: HighlightTarget | null | undefined = null;
+    let currentVarsMap = new Map<string, ResolvedVariable>();
 
     // 0. 规范化多语言代码与语义模型
     const initialLangs =
@@ -203,6 +209,34 @@ export class DarkCodeTerminalPresenter {
     const btnTabCode = root.querySelector('#btn-tab-code') as HTMLElement | null;
     const btnTabProblem = root.querySelector('#btn-tab-problem') as HTMLElement | null;
     const btnTabAnalysis = root.querySelector('#btn-tab-analysis') as HTMLElement | null;
+
+    // 强制同步 Tab 按钮的模板标准（对齐不同路径，包含矢量图标与内嵌底槽）
+    if (btnTabCode) {
+      if (!btnTabCode.querySelector('svg') && !btnTabCode.querySelector('i')) {
+        btnTabCode.innerHTML = `${TAB_CODE_ICON}<span>代码调试</span>`;
+      }
+      btnTabCode.style.cssText =
+        'background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.25);';
+    }
+    if (btnTabProblem) {
+      if (!btnTabProblem.querySelector('svg') && !btnTabProblem.querySelector('i')) {
+        btnTabProblem.innerHTML = `${TAB_PROBLEM_ICON}<span>题目描述</span>`;
+      }
+      btnTabProblem.style.cssText =
+        'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+    }
+    if (btnTabAnalysis) {
+      if (!btnTabAnalysis.querySelector('svg') && !btnTabAnalysis.querySelector('i')) {
+        btnTabAnalysis.innerHTML = `${TAB_ANALYSIS_ICON}<span>递推精讲</span>`;
+      }
+      btnTabAnalysis.style.cssText =
+        'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+    }
+    const tabGroupEl = btnTabCode?.parentElement;
+    if (tabGroupEl) {
+      tabGroupEl.style.cssText =
+        'display: flex; align-items: center; gap: 2px; background: #020617; padding: 2px; border-radius: 8px; border: 1px solid #1e293b; flex-shrink: 0;';
+    }
 
     const viewCode = root.querySelector('#code-view-container') as HTMLElement | null;
     const viewProblem = root.querySelector('#problem-view-container') as HTMLElement | null;
@@ -344,6 +378,32 @@ export class DarkCodeTerminalPresenter {
     }
 
     // 4. 渲染代码行 (结合单趟词法扫描进行 Token 级语法高亮)
+    const updateInlineHint = (activeLineEl: HTMLElement | null) => {
+      if (!codeWrapper) return;
+      codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
+        if (typeof el.remove === 'function') el.remove();
+        else if (el.parentElement) el.parentElement.removeChild(el);
+      });
+
+      if (!activeLineEl || currentVarsMap.size === 0) return;
+      const rawLine = activeLineEl.dataset?.raw || activeLineEl.getAttribute?.('data-raw') || '';
+      if (!rawLine) return;
+
+      const hintSummary = VariableContextResolver.formatInlineSummary(currentVarsMap, rawLine);
+      if (!hintSummary) return;
+
+      const hintEl = DarkCodeTerminalPresenter.createSafeElement('span');
+      hintEl.className = 'algo-code-inline-hint';
+      hintEl.style.cssText =
+        'color: #38bdf8; opacity: 0.85; font-style: italic; font-size: 10.5px; margin-left: 14px; user-select: none; font-weight: 500; display: inline-flex; align-items: center;';
+      hintEl.textContent = hintSummary;
+
+      const textEl = activeLineEl.querySelector?.('.algo-code-line-text') || activeLineEl;
+      if (typeof textEl.appendChild === 'function') {
+        textEl.appendChild(hintEl);
+      }
+    };
+
     const renderCodeLines = () => {
       if (!codeWrapper) return;
       const lines = codeModel.getLines(currentLang);
@@ -352,7 +412,7 @@ export class DarkCodeTerminalPresenter {
           const lineNum = idx + 1;
           const highlightedCode = highlightTokens(line, currentLang);
           return `
-            <div class="code-line algo-code-line" data-line="${lineNum}" style="font-size: ${codeFontSize}px; padding: 1px 6px; border-radius: 4px; display: flex; align-items: flex-start; gap: 12px; white-space: pre; border-left: 3px solid transparent; transition: background-color 0.15s ease, border-color 0.15s ease;">
+            <div class="code-line algo-code-line" data-line="${lineNum}" data-raw="${escapeHtml(line)}" style="font-size: ${codeFontSize}px; padding: 1px 6px; border-radius: 4px; display: flex; align-items: flex-start; gap: 12px; white-space: pre; border-left: 3px solid transparent; transition: background-color 0.15s ease, border-color 0.15s ease;">
               <span class="code-line-num algo-code-line-number" style="color: #475569; font-size: 10.5px; min-width: 20px; text-align: right; user-select: none;">${lineNum}</span>
               <span class="code-line-text algo-code-line-text">${highlightedCode}</span>
             </div>
@@ -370,6 +430,7 @@ export class DarkCodeTerminalPresenter {
           const lineEl = DarkCodeTerminalPresenter.createSafeElement('div');
           lineEl.className = 'code-line algo-code-line';
           lineEl.dataset.line = String(lineNum);
+          lineEl.dataset.raw = line;
           lineEl.style.fontSize = `${codeFontSize}px`;
           lineEl.style.padding = '1px 6px';
           lineEl.style.borderRadius = '4px';
@@ -416,6 +477,11 @@ export class DarkCodeTerminalPresenter {
         el.style.fontWeight = 'normal';
       });
 
+      codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
+        if (typeof el.remove === 'function') el.remove();
+        else if (el.parentElement) el.parentElement.removeChild(el);
+      });
+
       if (target == null) return;
 
       const markLine = (lineEl: HTMLElement | null) => {
@@ -425,6 +491,7 @@ export class DarkCodeTerminalPresenter {
         lineEl.style.borderLeftColor = '#2563eb';
         lineEl.style.color = '#ffffff';
         lineEl.style.fontWeight = '700';
+        updateInlineHint(lineEl);
       };
 
       const markContext = (lineEl: HTMLElement | null) => {
@@ -550,11 +617,17 @@ export class DarkCodeTerminalPresenter {
         if (!btn) return;
         if (isActive) {
           btn.classList.add('active');
+          btn.style.background = '#2563eb';
+          btn.style.color = '#ffffff';
+          btn.style.fontWeight = '700';
+          btn.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.25)';
         } else {
           btn.classList.remove('active');
+          btn.style.background = 'transparent';
+          btn.style.color = '#94a3b8';
+          btn.style.fontWeight = '500';
+          btn.style.boxShadow = 'none';
         }
-        btn.style.background = isActive ? '#2563eb' : 'transparent';
-        btn.style.color = isActive ? '#ffffff' : '#94a3b8';
       };
 
       setTabStyle(btnTabCode, tab === 'code');
@@ -697,13 +770,134 @@ export class DarkCodeTerminalPresenter {
       document.addEventListener('keydown', onModalKeyDown);
     }
 
+    // 智能创建/获取全局单例调试悬停气泡 (Debug Hover Tooltip)
+    let hoverTooltip: HTMLElement | null = null;
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+      hoverTooltip = document.getElementById('algo-debug-hover-tooltip');
+      if (!hoverTooltip && document.body) {
+        hoverTooltip = document.createElement('div');
+        hoverTooltip.id = 'algo-debug-hover-tooltip';
+        hoverTooltip.className = 'algo-debug-hover-tooltip';
+        hoverTooltip.style.cssText =
+          'display: none; position: fixed; z-index: 99999; pointer-events: none; background: rgba(15, 23, 42, 0.96); border: 1px solid #38bdf8; box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6); border-radius: 6px; padding: 5px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; backdrop-filter: blur(8px); transition: opacity 0.12s ease; opacity: 0; color: #cbd5e1; line-height: 1.4; max-width: 360px; word-break: break-all;';
+        document.body.appendChild(hoverTooltip);
+      }
+    }
+
+    let hoverDebounceTimer: any = null;
+    let activeHoveredSpan: HTMLElement | null = null;
+
+    const hideHoverTooltip = () => {
+      if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
+      if (activeHoveredSpan) {
+        activeHoveredSpan.style.backgroundColor = '';
+        activeHoveredSpan.style.boxShadow = '';
+        activeHoveredSpan = null;
+      }
+      if (hoverTooltip) {
+        hoverTooltip.style.opacity = '0';
+        hoverTooltip.style.display = 'none';
+      }
+    };
+
+    const onCodeWrapperMouseMove = (e: any) => {
+      if (!hoverTooltip) return;
+      const target = (e.target?.closest?.('.algo-code-ident') || (e.target?.classList?.contains?.('algo-code-ident') ? e.target : null)) as HTMLElement | null;
+
+      if (!target || !codeWrapper || (typeof codeWrapper.contains === 'function' && !codeWrapper.contains(target))) {
+        hideHoverTooltip();
+        return;
+      }
+
+      if (target === activeHoveredSpan) return;
+
+      if (activeHoveredSpan) {
+        activeHoveredSpan.style.backgroundColor = '';
+        activeHoveredSpan.style.boxShadow = '';
+      }
+      activeHoveredSpan = target;
+      target.style.backgroundColor = 'rgba(56, 189, 248, 0.2)';
+      target.style.borderRadius = '2px';
+      target.style.boxShadow = '0 0 0 1px rgba(56, 189, 248, 0.35)';
+
+      if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
+      hoverDebounceTimer = setTimeout(() => {
+        if (!hoverTooltip || activeHoveredSpan !== target) return;
+        const varName = target.dataset?.var || target.textContent?.trim() || '';
+        if (!varName) {
+          hideHoverTooltip();
+          return;
+        }
+
+        const resolved = VariableContextResolver.getVariable(currentVarsMap, varName);
+        if (resolved) {
+          hoverTooltip.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #94a3b8; font-size: 10px;">${resolved.type || 'var'}</span>
+              <span style="color: #f8fafc; font-weight: 700;">${escapeHtml(resolved.name)}</span>
+              <span style="color: #64748b;">=</span>
+              <span style="color: #38bdf8; font-weight: 700;">${escapeHtml(resolved.value)}</span>
+            </div>
+          `;
+        } else {
+          hoverTooltip.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #94a3b8; font-size: 10px;">var</span>
+              <span style="color: #cbd5e1; font-weight: 600;">${escapeHtml(varName)}</span>
+              <span style="color: #64748b; font-style: italic; font-size: 10px;">(当前步骤未捕获)</span>
+            </div>
+          `;
+        }
+
+        if (typeof target.getBoundingClientRect === 'function') {
+          const rect = target.getBoundingClientRect();
+          hoverTooltip.style.display = 'block';
+          hoverTooltip.style.opacity = '1';
+
+          let top = rect.top - (hoverTooltip.offsetHeight || 28) - 6;
+          let left = rect.left;
+          if (top < 10) {
+            top = rect.bottom + 6;
+          }
+          if (typeof window !== 'undefined') {
+            if (left + (hoverTooltip.offsetWidth || 150) > window.innerWidth - 10) {
+              left = window.innerWidth - (hoverTooltip.offsetWidth || 150) - 10;
+            }
+          }
+          if (left < 10) left = 10;
+
+          hoverTooltip.style.top = `${top}px`;
+          hoverTooltip.style.left = `${left}px`;
+        }
+      }, 100);
+    };
+
+    const onCodeWrapperMouseLeave = () => {
+      hideHoverTooltip();
+    };
+
+    if (codeWrapper && typeof codeWrapper.addEventListener === 'function') {
+      codeWrapper.addEventListener('mousemove', onCodeWrapperMouseMove);
+      codeWrapper.addEventListener('mouseleave', onCodeWrapperMouseLeave);
+    }
+
     // 首次渲染代码
     renderCodeLines();
 
     return {
       codeModel,
       highlightLine: (target) => highlightLineInternal(target),
-      updateVars: (vars?: StepVar[]) => {
+      updateVars: (vars?: StepVar[], stepContext?: unknown) => {
+        currentVarsMap = VariableContextResolver.resolve(stepContext || { vars }, currentLang);
+
+        if (codeWrapper) {
+          const activeLineEl = (codeWrapper.querySelector?.('.code-line.active') ||
+            codeWrapper.querySelector?.('.code-line.is-active')) as HTMLElement | null;
+          if (activeLineEl) {
+            updateInlineHint(activeLineEl);
+          }
+        }
+
         let varsWatch = root.querySelector('#code-vars-watch') as any;
         if (!varsWatch) {
           const body = (root.querySelector('.terminal-body') || root.querySelector('#code-view-container')) as any;
@@ -743,6 +937,12 @@ export class DarkCodeTerminalPresenter {
       copyCode: () => copyCodeInternal(),
       destroy: () => {
         if (copyResetTimer) clearTimeout(copyResetTimer);
+        if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
+        hideHoverTooltip();
+        if (codeWrapper && typeof codeWrapper.removeEventListener === 'function') {
+          codeWrapper.removeEventListener('mousemove', onCodeWrapperMouseMove);
+          codeWrapper.removeEventListener('mouseleave', onCodeWrapperMouseLeave);
+        }
         btnCopy?.removeEventListener('click', onCopyClick);
         btnTabCode?.removeEventListener('click', onTabCodeClick);
         btnTabProblem?.removeEventListener('click', onTabProblemClick);
@@ -778,18 +978,29 @@ export class DarkCodeTerminalPresenter {
       listeners: {},
       classList: {
         _classes: new Set<string>(),
+        _sync: function () {
+          if (el.className) {
+            el.className.split(/\s+/).forEach((c: string) => {
+              if (c) this._classes.add(c);
+            });
+          }
+        },
         add: function (...cls: string[]) {
+          this._sync();
           cls.forEach((c) => this._classes.add(c));
           el.className = Array.from(this._classes).join(' ');
         },
         remove: function (...cls: string[]) {
+          this._sync();
           cls.forEach((c) => this._classes.delete(c));
           el.className = Array.from(this._classes).join(' ');
         },
         contains: function (c: string) {
+          this._sync();
           return this._classes.has(c);
         },
         toggle: function (c: string, force?: boolean) {
+          this._sync();
           const has = this._classes.has(c);
           const shouldAdd = force !== undefined ? force : !has;
           if (shouldAdd) this._classes.add(c);
@@ -825,7 +1036,10 @@ export class DarkCodeTerminalPresenter {
       },
       querySelector: function (sel: string) {
         if (sel.startsWith('#') && this.id === sel.slice(1)) return this;
-        if (sel.startsWith('.') && this.classList.contains(sel.slice(1))) return this;
+        if (sel.startsWith('.')) {
+          const classes = sel.split('.').filter(Boolean);
+          if (classes.length > 0 && classes.every((c: string) => this.classList.contains(c))) return this;
+        }
         if (sel.startsWith('[')) {
           const match = sel.match(/\[([a-zA-Z0-9_-]+)(?:=["']?([^"']*)["']?)?\]/);
           if (match) {
@@ -847,7 +1061,10 @@ export class DarkCodeTerminalPresenter {
       querySelectorAll: function (sel: string) {
         const res: any[] = [];
         if (sel.startsWith('#') && this.id === sel.slice(1)) res.push(this);
-        if (sel.startsWith('.') && this.classList.contains(sel.slice(1))) res.push(this);
+        if (sel.startsWith('.')) {
+          const classes = sel.split('.').filter(Boolean);
+          if (classes.length > 0 && classes.every((c: string) => this.classList.contains(c))) res.push(this);
+        }
         if (sel.startsWith('[')) {
           const match = sel.match(/\[([a-zA-Z0-9_-]+)(?:=["']?([^"']*)["']?)?\]/);
           if (match) {
@@ -930,15 +1147,27 @@ export class DarkCodeTerminalPresenter {
 
     const tabGroup = DarkCodeTerminalPresenter.createSafeElement('div');
     tabGroup.className = 'tab-group';
+    tabGroup.style.cssText =
+      'display: flex; align-items: center; gap: 2px; background: #020617; padding: 2px; border-radius: 8px; border: 1px solid #1e293b; flex-shrink: 0;';
+
     const btnTabCode = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-code');
     btnTabCode.className = 'tab-item active';
-    btnTabCode.textContent = '</> 代码调试';
+    btnTabCode.innerHTML = `${TAB_CODE_ICON}<span>代码调试</span>`;
+    btnTabCode.style.cssText =
+      'background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.25);';
+
     const btnTabProblem = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-problem');
     btnTabProblem.className = 'tab-item';
-    btnTabProblem.textContent = '题目描述';
+    btnTabProblem.innerHTML = `${TAB_PROBLEM_ICON}<span>题目描述</span>`;
+    btnTabProblem.style.cssText =
+      'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+
     const btnTabAnalysis = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-analysis');
     btnTabAnalysis.className = 'tab-item';
-    btnTabAnalysis.textContent = '递推精讲';
+    btnTabAnalysis.innerHTML = `${TAB_ANALYSIS_ICON}<span>递推精讲</span>`;
+    btnTabAnalysis.style.cssText =
+      'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+
     tabGroup.appendChild(btnTabCode);
     tabGroup.appendChild(btnTabProblem);
     tabGroup.appendChild(btnTabAnalysis);
@@ -1028,12 +1257,12 @@ export class DarkCodeTerminalPresenter {
     autoFrame.appendChild(varsWatch);
 
     const skeletonHtml = `
-      <div class="dark-terminal-auto-frame" style="background: #0f172a; border-radius: 16px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%;">
+      <div class="dark-terminal-auto-frame" style="background: #0f172a; border-radius: 16px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%; min-height: 0; flex: 1;">
         <div class="terminal-auto-header" style="background: #1e293b; padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid #334155; flex-shrink: 0; min-width: 0; overflow-x: auto; width: 100%; box-sizing: border-box;">
-          <div class="tab-group" style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-            <button id="btn-tab-code" class="tab-item active" style="background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;"></> 代码调试</button>
-            <button id="btn-tab-problem" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">题目描述</button>
-            <button id="btn-tab-analysis" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap;">递推精讲</button>
+          <div class="tab-group" style="display: flex; align-items: center; gap: 2px; background: #020617; padding: 2px; border-radius: 8px; border: 1px solid #1e293b; flex-shrink: 0;">
+            <button id="btn-tab-code" class="tab-item active" style="background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);">${TAB_CODE_ICON}<span>代码调试</span></button>
+            <button id="btn-tab-problem" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">${TAB_PROBLEM_ICON}<span>题目描述</span></button>
+            <button id="btn-tab-analysis" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">${TAB_ANALYSIS_ICON}<span>递推精讲</span></button>
           </div>
           <div class="lang-group" id="code-lang-tabs" style="display: flex; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px; flex-shrink: 0;">
             <button class="lang-btn active" data-lang="java" style="background: #334155; border: none; color: #93c5fd; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">Java</button>
@@ -1060,10 +1289,11 @@ export class DarkCodeTerminalPresenter {
             </div>
           </div>
         </div>
-        <div id="code-view-container" style="flex: 1; min-height: 0; min-width: 0; width: 100%; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;">
-          <div class="terminal-body" style="flex: 1; min-height: 0; min-width: 0; width: 100%; padding: 10px; overflow-y: auto; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; color: #cbd5e1; box-sizing: border-box;">
+        <div id="code-view-container" style="display: flex; flex-direction: column; overflow: hidden; width: 100%; flex: 1; min-height: 0; box-sizing: border-box;">
+          <div class="terminal-body" style="flex: 1; min-height: 0; width: 100%; padding: 10px 10px 4px 10px; overflow-y: auto; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; color: #cbd5e1; box-sizing: border-box;">
             <div id="code-lines-wrapper" style="min-width: 0; width: 100%;"></div>
           </div>
+          <div id="code-vars-watch" class="code-vars-watch-container" style="display: none; border-top: 1px solid rgba(51, 65, 85, 0.5); padding: 5px 12px; background: rgba(15, 23, 42, 0.95); flex-wrap: wrap; gap: 6px; font-size: 11px; flex-shrink: 0; min-height: 28px; align-items: center;"></div>
         </div>
         <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1; font-size: 12px; line-height: 1.6;"></div>
         <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1; font-size: 12px; line-height: 1.6;"></div>

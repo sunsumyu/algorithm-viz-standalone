@@ -31,7 +31,10 @@ describe('🛡️ CodeHighlighter Lexer & Inline Focus Unit Tests', () => {
     // 必须只有 1 个统一的外层 inline-token-focus 胶囊框，杜绝碎块化
     const focusCount = (focusedHtml.match(/class="inline-token-focus"/g) || []).length;
     expect(focusCount).toBe(1);
-    expect(focusedHtml).toContain('<span class="inline-token-focus">dp[i - <span class="algo-code-token-number text-amber-300 font-bold">1</span>][j]</span>');
+    expect(focusedHtml).toContain('inline-token-focus');
+    expect(focusedHtml).toContain('data-var="dp"');
+    expect(focusedHtml).toContain('data-var="i"');
+    expect(focusedHtml).toContain('data-var="j"');
   });
 
   it('should cleanly highlight summation expressions (e.g. fromTop + fromLeft) as ONE unified capsule', () => {
@@ -40,7 +43,9 @@ describe('🛡️ CodeHighlighter Lexer & Inline Focus Unit Tests', () => {
 
     const focusCount = (focusedHtml.match(/class="inline-token-focus"/g) || []).length;
     expect(focusCount).toBe(1);
-    expect(focusedHtml).toContain('<span class="inline-token-focus">fromTop + fromLeft</span>');
+    expect(focusedHtml).toContain('inline-token-focus');
+    expect(focusedHtml).toContain('data-var="fromTop"');
+    expect(focusedHtml).toContain('data-var="fromLeft"');
   });
 
   it('should cleanly highlight conditional guards (e.g. i >= m, grid[i][j] == 1) as ONE unified capsule', () => {
@@ -49,6 +54,21 @@ describe('🛡️ CodeHighlighter Lexer & Inline Focus Unit Tests', () => {
 
     const focusCount = (focusedHtml.match(/class="inline-token-focus"/g) || []).length;
     expect(focusCount).toBe(1);
-    expect(focusedHtml).toContain('<span class="inline-token-focus">grid[i][j] == <span class="algo-code-token-number text-amber-300 font-bold">1</span></span>');
+    expect(focusedHtml).toContain('inline-token-focus');
+    expect(focusedHtml).toContain('data-var="grid"');
+  });
+
+  it('should distinguish variables from function calls', () => {
+    const rawLine = 'int p1 = f(a, b, i - 1, j);';
+    const html = highlightTokens(rawLine, 'java');
+
+    // f 后紧跟 '(' 应识别为函数
+    expect(html).toContain('<span class="algo-code-token-func text-sky-300">f</span>');
+    // p1, a, b, i, j 应当被标记为变量
+    expect(html).toContain('data-var="p1"');
+    expect(html).toContain('data-var="a"');
+    expect(html).toContain('data-var="b"');
+    expect(html).toContain('data-var="i"');
+    expect(html).toContain('data-var="j"');
   });
 });

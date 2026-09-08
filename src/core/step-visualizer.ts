@@ -433,17 +433,30 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     }
     // 更新代码面板下方变量监视器（支持 step.vars 与 step.metrics 双向同步）
     const stepAny = step as { vars?: StepVar[]; metrics?: Record<string, unknown> };
-    const effectiveVars: StepVar[] | undefined = stepAny.vars || (
-      stepAny.metrics
-        ? Object.entries(stepAny.metrics).map(([name, value]) => ({
-            name,
-            value: String(value ?? '-'),
-            type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'string',
-          }))
-        : undefined
-    );
+    let effectiveVars: StepVar[] | undefined = stepAny.vars;
+    if (!effectiveVars && stepAny.metrics) {
+      const filtered: StepVar[] = [];
+      for (const [name, value] of Object.entries(stepAny.metrics)) {
+        if (
+          name.startsWith('metric-') ||
+          name.includes('status') ||
+          name.includes('pos') ||
+          name.includes('title')
+        ) {
+          continue;
+        }
+        filtered.push({
+          name,
+          value: String(value ?? '-'),
+          type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'string',
+        });
+      }
+      if (filtered.length > 0) {
+        effectiveVars = filtered;
+      }
+    }
     if (this.codeTerminal && typeof this.codeTerminal.updateVars === 'function') {
-      this.codeTerminal.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : []);
+      this.codeTerminal.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : [], step);
     } else if (this.codePanel) {
       this.codePanel.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : []);
     }

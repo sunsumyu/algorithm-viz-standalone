@@ -8,8 +8,11 @@ import {
   DeclarativeAlgorithmSpec,
   DeclarativeStagePresenter,
   VisualSlot,
+  PresetCaseDef,
 } from './renderers/declarative-stage-presenter';
-import { SplitterEngine } from './splitter-engine';
+import { PresetCasePresenter } from './renderers/preset-case-presenter';
+import { ThreeViewControlsAdapter } from './renderers/three-view-controls-adapter';
+import { SplitterEngine, SplitterStorage } from './splitter-engine';
 import { registerAlgorithm } from './registry';
 
 export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extends StepVisualizer<TStep> {
@@ -26,6 +29,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   protected mainSplitter: SplitterEngine | null = null;
   protected leftSplitter: SplitterEngine | null = null;
   protected rightSplitter: SplitterEngine | null = null;
+  public is3DMode: boolean = false;
 
   constructor(spec: DeclarativeAlgorithmSpec<TStep>) {
     super();
@@ -79,51 +83,25 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     // 绑定标准播放控制
     this.bindPlaybackControls();
 
-    // 绑定模式切换 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.dsp-mode-chip').forEach((btn) => {
+    // 绑定模式切换 (顺推 / 逆推 dir-tab-btn)
+    this.root.querySelectorAll<HTMLButtonElement>('.dir-tab-btn, .dsp-mode-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.root?.querySelectorAll('.dsp-mode-chip').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.currentMode = btn.dataset.mode || '';
+        this.root?.querySelectorAll('.dir-tab-btn, .dsp-mode-chip').forEach((b) => {
+          b.classList.remove('active', 'bg-blue', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
+          b.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
+        });
+        btn.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
+        btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
+        this.currentMode = btn.dataset.mode || btn.dataset.dir || '';
+        this.syncTerminalCode();
         this.start();
       });
     });
 
-    // 绑定预设案例 Chips 与顶栏下拉选框
-    this.root.querySelectorAll<HTMLButtonElement>('.dsp-chip[data-preset]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.root?.querySelectorAll('.dsp-chip[data-preset]').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        const raw = btn.dataset.preset;
-        if (raw) {
-          try {
-            const values = JSON.parse(raw);
-            Object.keys(values).forEach((k) => {
-              const input = this.root?.querySelector(`#${k}`) as HTMLInputElement | HTMLSelectElement | null;
-              if (input) input.value = values[k];
-            });
-          } catch (e) {
-            console.error('[DeclarativeVisualizer] Failed to parse preset values:', e);
-          }
-        }
-        this.start();
-      });
+    // 绑定 Shared 预设案例下拉选框交互
+    PresetCasePresenter.bindSelect(this.root, this.spec.presets, () => {
+      this.start();
     });
-
-    const presetSelect = this.root.querySelector('#dsp-preset-select') as HTMLSelectElement | null;
-    if (presetSelect) {
-      presetSelect.addEventListener('change', () => {
-        const idx = parseInt(presetSelect.value, 10);
-        if (!isNaN(idx) && this.spec.presets && this.spec.presets[idx]) {
-          const p = this.spec.presets[idx];
-          Object.keys(p.values).forEach((k) => {
-            const input = this.root?.querySelector(`#${k}`) as HTMLInputElement | HTMLSelectElement | null;
-            if (input) input.value = p.values[k];
-          });
-          this.start();
-        }
-      });
-    }
 
     // 绑定顶栏自定义输入控件事件 (实时响应输入，支持 input 防抖、change、Enter 键自动重新推导)
     (this.spec.inputs || []).forEach((inputDef) => {
@@ -162,6 +140,19 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         }
       });
     });
+
+    // 绑定 3D 立体 / 2D 平面沙盘视角切换按钮 (100% 委托系统公共适配器)
+    const btnToggle3D = this.root.querySelector('#btn-toggle-3d') as HTMLButtonElement | null;
+    if (btnToggle3D) {
+      btnToggle3D.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.is3DMode = !this.is3DMode;
+        ThreeViewControlsAdapter.syncToggleButtonState(btnToggle3D, this.is3DMode);
+        if (this.steps[this.currentIndex]) {
+          this.renderStep(this.steps[this.currentIndex]);
+        }
+      });
+    }
 
     // 初始化时同步当前活跃阶段的徽章、标题与图例
     if (this.currentStageId) {
@@ -207,23 +198,56 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     const leftSection = this.root.querySelector('.dsp-left-section') as HTMLElement | null;
     const monitorCard = this.root.querySelector('.dsp-left-section .dsp-card:last-child') as HTMLElement | null;
 
+    // 左右下方面板（Card 2 状态监控 & Card 4 执行日志）支持完全独立调整高度与各自记忆偏好
+    const monitorHeightKey = 'dsp-monitor-card-height';
+    const logHeightKey = 'dsp-log-card-height';
+    const defaultBottomHeight = 240;
+
+    const savedMonitorHeight = SplitterStorage.get(monitorHeightKey, this.spec.id, defaultBottomHeight) || defaultBottomHeight;
+    const savedLogHeight = SplitterStorage.get(logHeightKey, this.spec.id, defaultBottomHeight) || defaultBottomHeight;
+
+    const setMonitorCardHeight = (size: number) => {
+      const clampedSize = Math.max(140, Math.round(size));
+      if (monitorCard) {
+        monitorCard.style.height = `${clampedSize}px`;
+        monitorCard.style.flex = `0 0 ${clampedSize}px`;
+      }
+    };
+
+    const setLogCardHeight = (size: number) => {
+      const clampedSize = Math.max(140, Math.round(size));
+      if (logCard) {
+        logCard.style.height = `${clampedSize}px`;
+        logCard.style.flex = `0 0 ${clampedSize}px`;
+      }
+    };
+
+    // 初始分别应用各自保存的独立高度
+    setMonitorCardHeight(savedMonitorHeight);
+    setLogCardHeight(savedLogHeight);
+
     if (leftSection && monitorCard) {
       try {
         this.leftSplitter?.destroy();
         this.leftSplitter = new SplitterEngine({
-          id: 'dsp-monitor-card-height',
+          id: monitorHeightKey,
           direction: 'vertical',
           targetElement: monitorCard,
           containerElement: leftSection,
-          defaultSize: 200,
-          minSize: 190,
-          maxRatio: 0.50,
+          defaultSize: defaultBottomHeight,
+          minSize: 140,
+          maxRatio: 0.60,
           scope: this.spec.id,
           invert: true,
           mode: 'flex',
           attachPosition: 'before',
           className: 'algo-splitter-vertical',
-          title: '上下拖拽调整沙盘与状态监控面板高度，双击恢复默认',
+          title: '上下拖拽调整状态监视器面板高度，双击恢复默认',
+          onResize: (size) => setMonitorCardHeight(size),
+          onDragEnd: (size) => {
+            setMonitorCardHeight(size);
+            SplitterStorage.set(monitorHeightKey, size, this.spec.id, true);
+          },
         });
       } catch (e) {
         console.warn('[DeclarativeVisualizer] Failed to setup left splitter:', e);
@@ -234,19 +258,24 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       try {
         this.rightSplitter?.destroy();
         this.rightSplitter = new SplitterEngine({
-          id: 'dsp-log-card-height',
+          id: logHeightKey,
           direction: 'vertical',
           targetElement: logCard,
           containerElement: rightSection,
-          defaultSize: 160,
-          minSize: 90,
-          maxRatio: 0.45,
+          defaultSize: defaultBottomHeight,
+          minSize: 140,
+          maxRatio: 0.60,
           scope: this.spec.id,
           invert: true,
           mode: 'flex',
           attachPosition: 'before',
           className: 'algo-splitter-vertical',
           title: '上下拖拽调整执行日志面板高度，双击恢复默认',
+          onResize: (size) => setLogCardHeight(size),
+          onDragEnd: (size) => {
+            setLogCardHeight(size);
+            SplitterStorage.set(logHeightKey, size, this.spec.id, true);
+          },
         });
       } catch (e) {
         console.warn('[DeclarativeVisualizer] Failed to setup right splitter:', e);
@@ -308,6 +337,17 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         .map((lg) => `<div><span class="dsp-legend-dot" style="background: ${lg.color};"></span> ${lg.label}</div>`)
         .join('');
     }
+
+    // 3.2 同步 Card 1 3D 切换按钮可见性与外观 (若阶段声明 has3D)
+    const btnToggle3D = this.root?.querySelector('#btn-toggle-3d') as HTMLButtonElement | null;
+    if (btnToggle3D) {
+      if (stage.has3D) {
+        btnToggle3D.style.display = 'inline-flex';
+        ThreeViewControlsAdapter.syncToggleButtonState(btnToggle3D, this.is3DMode);
+      } else {
+        btnToggle3D.style.display = 'none';
+      }
+    }
   }
 
   /**
@@ -327,18 +367,30 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     this.applyStageUI(stageId);
 
     // 4. 更新暗色代码终端源码
+    this.syncTerminalCode();
+
+    // 5. 重新从当前阶段构建步骤并重置播放状态
+    this.start();
+  }
+
+  /**
+   * 同步暗色终端源码 (根据当前阶段与当前模式 mode 智能匹配)
+   */
+  protected syncTerminalCode(): void {
+    const curStage = this.spec.stages?.find((s) => s.id === this.currentStageId);
+    let targetCodeLangs = curStage?.codeLanguages || this.spec.codeLanguages;
+    if (curStage?.modeCodeLanguages && this.currentMode && curStage.modeCodeLanguages[this.currentMode]) {
+      targetCodeLangs = curStage.modeCodeLanguages[this.currentMode];
+    }
     const curLang = this.codeTerminal?.getCurrentLanguage() || 'java';
-    this.codeLanguages = stage.codeLanguages;
-    this.codeLines = stage.codeLanguages[curLang] || Object.values(stage.codeLanguages)[0] || [];
+    this.codeLanguages = targetCodeLangs;
+    this.codeLines = targetCodeLangs[curLang] || Object.values(targetCodeLangs)[0] || [];
     this.mountTerminal({
-      codeLanguages: stage.codeLanguages,
+      codeLanguages: targetCodeLangs,
       problemHtml: this.spec.problemHtml,
       analysisHtml: this.spec.analysisHtml,
       initialLang: curLang,
     });
-
-    // 5. 重新从当前阶段构建步骤并重置播放状态
-    this.start();
   }
 
   public getCurrentStage(): string | undefined {
@@ -362,7 +414,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (this.spec.stages && this.spec.stages.length > 0 && this.currentStageId) {
       const stage = this.spec.stages.find((s) => s.id === this.currentStageId);
       if (stage && typeof stage.buildSteps === 'function') {
-        return stage.buildSteps(inputs);
+        return stage.buildSteps(inputs, this.currentMode);
       }
     }
 
@@ -408,6 +460,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         mode: this.currentMode,
         currentIndex: this.currentIndex,
         stageId: this.currentStageId,
+        is3DMode: this.is3DMode,
       });
     }
 
@@ -450,7 +503,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         this.codeTerminal.highlightLine(anyStep.codeLine);
       }
       // 保证代码框纯净，绝不将 Card 2 外部 metrics 泄露悬浮至代码终端内
-      this.codeTerminal.updateVars(anyStep.vars && anyStep.vars.length > 0 ? anyStep.vars : []);
+      this.codeTerminal.updateVars(anyStep.vars && anyStep.vars.length > 0 ? anyStep.vars : [], anyStep);
     }
 
     // 3. 更新日志流 (严格对齐 StateSpacePresenter 标准树形日志模板)

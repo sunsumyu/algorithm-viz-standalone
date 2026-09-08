@@ -153,7 +153,7 @@ export function highlightTokens(
       }
     }
 
-    // 标识符：关键字 / 类型名 / 普通标识符
+    // 标识符：关键字 / 类型名 / 函数调用 / 普通变量标识符
     if (/[A-Za-z_$]/.test(ch)) {
       const idMatch = rest.match(/^[A-Za-z_$][A-Za-z0-9_$]*/);
       const word = idMatch![0];
@@ -166,10 +166,16 @@ export function highlightTokens(
         if (after !== '(') {
           out += wrap('algo-code-token-type text-yellow-300', word);
         } else {
-          out += escapeHtml(word);
+          out += `<span class="algo-code-token-func text-sky-300">${escapeHtml(word)}</span>`;
         }
       } else {
-        out += escapeHtml(word);
+        // 判断是否为方法调用（后随紧邻或带空格的 '(' 则为函数，非变量）
+        const isFunc = /^\s*\(/.test(line.slice(j));
+        if (isFunc) {
+          out += `<span class="algo-code-token-func text-sky-300">${escapeHtml(word)}</span>`;
+        } else {
+          out += `<span class="algo-code-ident cursor-help" data-var="${escapeHtml(word)}">${escapeHtml(word)}</span>`;
+        }
       }
       i = j;
       continue;

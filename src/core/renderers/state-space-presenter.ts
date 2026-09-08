@@ -11,6 +11,7 @@ import { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
 import { ThreeLayeredVoxelAdapter } from './three-layered-voxel-adapter';
 import { LayeredVoxelStepAdapter } from './layered-voxel-step-adapter';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
+import { ThreeViewControlsAdapter } from './three-view-controls-adapter';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
@@ -526,13 +527,7 @@ export class StateSpacePresenter {
     }
 
     if (btnToggle) {
-      if (is3DMode) {
-        btnToggle.className = 'px-2 py-0.5 rounded-lg border border-indigo-500 bg-indigo-600 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs';
-        if (labelToggle) labelToggle.textContent = '3D立体';
-      } else {
-        btnToggle.className = 'px-2 py-0.5 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs';
-        if (labelToggle) labelToggle.textContent = '2D平面';
-      }
+      ThreeViewControlsAdapter.syncToggleButtonState(btnToggle, is3DMode);
     }
   }
   /**
