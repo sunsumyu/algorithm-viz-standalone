@@ -36,6 +36,7 @@ import './categories/dynamic-programming/dp-067/longest-common-subsequence-rende
 import './categories/dynamic-programming/dp-067/longest-palindromic-subsequence-renderer';
 import './categories/dynamic-programming/dp-067/tree-count-height-m-renderer';
 import './categories/dynamic-programming/dp-067/longest-increasing-path-renderer';
+import './categories/advanced-topics/hard-interview/burst-balloons-renderer';
 
 export {};
 

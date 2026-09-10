@@ -222,6 +222,7 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'coins-from-piles': '🪙',
   'unbounded-knapsack-standard': '🌿',
   'regex-matching': '🔤',
+  'hard-regex-matching': '🔤',
   'wildcard-matching': '🃏',
   'buying-hay-min-cost': '🌾',
   'cutting-bamboo': '🎋',

@@ -16,5 +16,6 @@ import './categories/sort/bucket-sort-renderer';
 import './categories/sort/sort-basics-004-renderer';
 import './categories/search/binary-search-005-renderer';
 import './categories/advanced-topics/hard-interview/trapping-rain-water-ii-renderer';
+import './categories/sort/netherlands-flag-024-renderer';
 
 export {};

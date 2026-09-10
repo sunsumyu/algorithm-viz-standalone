@@ -17,5 +17,6 @@ import './categories/tree/tree-batch-8-renderer';
 import './categories/tree/trie-xor-max-107-renderer';
 import './categories/tree/trie-tree-017-renderer';
 import './categories/tree/tree-traversal-iterative-020-renderer';
+import './categories/tree/tree-serialization-021-renderer';
 
 export {};

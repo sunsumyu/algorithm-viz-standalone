@@ -5706,6 +5706,94 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 480,
     "learningGoal": "掌握大根堆与小根堆对顶平衡天平，配合延迟删除哈希表实现 O(log K) 动态滑窗求中位数"
+  },
+  {
+    "id": "linked-list-basics-006",
+    "name": "单双链表基本功与栈队列实现 (Class 006)",
+    "viewId": "algo-linked-list-basics-006-view",
+    "category": "linked-list",
+    "description": "左程云算法通关课 Class 006：单双链表就地反转、删除指定节点与双向链表构建 FIFO 队列与 LIFO 栈",
+    "icon": "🔗",
+    "difficulty": 1,
+    "levelOrder": 6,
+    "learningGoal": "掌握单双链表就地反转、删除指定节点与双向链表构建 FIFO 队列与 LIFO 栈"
+  },
+  {
+    "id": "tree-serialization-021",
+    "name": "二叉树序列化与反序列化 (Class 021)",
+    "viewId": "algo-tree-serialization-021-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 021：二叉树先序与层序序列化/反序列化（带 # 空节点标记）",
+    "icon": "🌲",
+    "difficulty": 2,
+    "levelOrder": 21,
+    "learningGoal": "掌握二叉树空节点标记设计，实现先序与层序序列化字符串与二叉树拓扑结构互转"
+  },
+  {
+    "id": "netherlands-flag-024",
+    "name": "荷兰国旗问题与三向切分 (Class 024)",
+    "viewId": "algo-netherlands-flag-024-view",
+    "category": "sort",
+    "description": "左程云算法通关课 Class 024：荷兰国旗小于/等于/大于三向划分算法与随机快排核心切分",
+    "icon": "🇳🇱",
+    "difficulty": 1,
+    "levelOrder": 24,
+    "learningGoal": "深刻掌握荷兰国旗小于/等于/大于三向划分算法，理解随机快速排序 Partition 核心"
+  },
+  {
+    "id": "permutations-subsequences-030",
+    "name": "递归子序列与去重全排列 (Class 030)",
+    "viewId": "algo-permutations-subsequences-030-view",
+    "category": "backtracking",
+    "description": "左程云算法通关课 Class 030：递归二分决策树生成子序列与 swap 回溯结合 visited 剪枝去重生成全排列",
+    "icon": "🔀",
+    "difficulty": 2,
+    "levelOrder": 30,
+    "learningGoal": "深刻掌握递归二分决策树生成子序列与 swap 回溯结合 visited 剪枝去重生成全排列"
+  },
+  {
+    "id": "burst-balloons",
+    "name": "大厂高频真题: 戳气球 (Burst Balloons)",
+    "viewId": "algo-burst-balloons-view",
+    "category": "dynamic-programming",
+    "description": "大厂高频压轴题：LeetCode 312 戳气球，区间 DP 逆向思维枚举最后戳破的气球消解子问题边界依赖",
+    "icon": "🎈",
+    "difficulty": 3,
+    "levelOrder": 312,
+    "learningGoal": "深刻理解区间 DP 逆向思维，通过枚举最后戳破的气球消解子问题边界依赖"
+  },
+  {
+    "id": "hard-regex-matching",
+    "name": "大厂高频真题: 正则表达式匹配 (Regex Matching)",
+    "viewId": "algo-hard-regex-matching-view",
+    "category": "string",
+    "description": "大厂高频压轴题：LeetCode 10 正则表达式匹配，带 . 和 * 字符的二维动态规划状态转移与通配符展开",
+    "icon": "🔤",
+    "difficulty": 3,
+    "levelOrder": 10,
+    "learningGoal": "彻底掌握带 . 和 * 字符的二维动态规划状态转移与通配符展开机制"
+  },
+  {
+    "id": "maximal-rectangle",
+    "name": "大厂高频真题: 柱状图与矩阵最大矩形 (Maximal Rectangle)",
+    "viewId": "algo-maximal-rectangle-view",
+    "category": "monotonic-stack",
+    "description": "大厂高频压轴题：LeetCode 84 & 85 矩阵压缩为一维直方图高度，配合单调递增栈 O(M*N) 求解最大矩形面积",
+    "icon": "📊",
+    "difficulty": 3,
+    "levelOrder": 85,
+    "learningGoal": "掌握二维矩阵压缩为一维直方图高度，配合单调递增栈在 O(M*N) 极速求出最大全 1 矩形"
+  },
+  {
+    "id": "min-window-substring",
+    "name": "大厂高频真题: 最小覆盖子串 (Minimum Window Substring)",
+    "viewId": "algo-min-window-substring-view",
+    "category": "string",
+    "description": "大厂高频压轴题：LeetCode 76 最小覆盖子串，滑动窗口欠账表模型在 O(N) 线性时间内求解最小覆盖子串",
+    "icon": "🪟",
+    "difficulty": 3,
+    "levelOrder": 76,
+    "learningGoal": "深刻掌握滑动窗口欠账表模型，在 O(N) 线性时间内求解最小覆盖子串经典难题"
   }
 ];
 

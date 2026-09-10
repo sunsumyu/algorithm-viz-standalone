@@ -15,5 +15,7 @@ import './categories/string/string-100-105/ac-automaton-renderer';
 import './categories/string/string-100-105/manacher-renderer';
 import './categories/string/string-100-105/z-algorithm-renderer';
 import './categories/string/string-100-105/string-hash-renderer';
+import './categories/advanced-topics/hard-interview/regex-matching-renderer';
+import './categories/advanced-topics/hard-interview/min-window-substring-renderer';
 
 export {};
