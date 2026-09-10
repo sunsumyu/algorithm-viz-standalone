@@ -11,120 +11,25 @@
 
 import { KnapsackItem } from '../knapsack-execution-engine';
 import { HighlightTarget } from './dark-code-terminal-presenter';
+import { getKnapsackAnchor } from './knapsack-stage-codes';
 
 export type KnapsackKind = '01' | 'unbounded' | 'partitioned';
 
 // ==========================================
-// 1. 各阶段 4 语言行号映射字典 (与源码行号严格 1:1 对应)
+// 1. 各阶段 4 语言行号 (由 CodeStepIndexer 从 @step:anchor 编译自动解析)
 // ==========================================
 
 export interface StageLineMap {
   [action: string]: HighlightTarget;
 }
 
-export const STAGE1_LINE_MAPS: Record<KnapsackKind, StageLineMap> = {
-  unbounded: {
-    callRoot: { java: 6, cpp: 8, python: 1, javascript: 2 },
-    fnEnter: { java: 8, cpp: 8, python: 1, javascript: 2 },
-    baseCheck: { java: 9, cpp: 9, python: 3, javascript: 3 },
-    branch1: { java: 10, cpp: 11, python: 5, javascript: 4 },
-    initP2: { java: 11, cpp: 13, python: 6, javascript: 5 },
-    checkFit: { java: 12, cpp: 14, python: 7, javascript: 6 },
-    branch2: { java: 13, cpp: 15, python: 8, javascript: 7 },
-    returnMax: { java: 15, cpp: 17, python: 9, javascript: 9 },
-  },
-  '01': {
-    callRoot: { java: 6, cpp: 6, python: 1, javascript: 2 },
-    fnEnter: { java: 8, cpp: 8, python: 1, javascript: 2 },
-    baseCheck: { java: 9, cpp: 9, python: 3, javascript: 3 },
-    branch1: { java: 10, cpp: 11, python: 5, javascript: 4 },
-    initP2: { java: 11, cpp: 13, python: 6, javascript: 5 },
-    checkFit: { java: 12, cpp: 14, python: 7, javascript: 6 },
-    branch2: { java: 13, cpp: 15, python: 8, javascript: 7 },
-    returnMax: { java: 15, cpp: 17, python: 9, javascript: 9 },
-  },
-  partitioned: {
-    callRoot: { java: 6, cpp: 8, python: 1, javascript: 2 },
-    fnEnter: { java: 7, cpp: 8, python: 1, javascript: 2 },
-    baseCheck: { java: 8, cpp: 9, python: 3, javascript: 3 },
-    branch1: { java: 10, cpp: 11, python: 6, javascript: 4 },
-    loopGroup: { java: 12, cpp: 13, python: 8, javascript: 5 },
-    checkFit: { java: 14, cpp: 14, python: 9, javascript: 6 },
-    branch2: { java: 15, cpp: 15, python: 10, javascript: 7 },
-    returnMax: { java: 18, cpp: 18, python: 11, javascript: 10 },
-  },
-};
-
-export const STAGE2_LINE_MAPS: Record<KnapsackKind, StageLineMap> = {
-  unbounded: {
-    memoInit: { java: 8, cpp: 7, python: 3, javascript: 3 },
-    memoFill: { java: 9, cpp: 7, python: 3, javascript: 3 },
-    callRoot: { java: 10, cpp: 7, python: 13, javascript: 11 },
-    fnEnter: { java: 12, cpp: 7, python: 4, javascript: 4 },
-    baseCheck: { java: 13, cpp: 8, python: 5, javascript: 5 },
-    memoCheck: { java: 14, cpp: 9, python: 7, javascript: 6 },
-    branch1: { java: 15, cpp: 10, python: 9, javascript: 7 },
-    initP2: { java: 16, cpp: 11, python: 10, javascript: 8 },
-    checkFit: { java: 17, cpp: 12, python: 10, javascript: 8 },
-    branch2: { java: 18, cpp: 13, python: 10, javascript: 8 },
-    memoStore: { java: 20, cpp: 15, python: 11, javascript: 9 },
-  },
-  '01': {
-    memoInit: { java: 8, cpp: 7, python: 3, javascript: 3 },
-    memoFill: { java: 9, cpp: 7, python: 3, javascript: 3 },
-    callRoot: { java: 10, cpp: 7, python: 13, javascript: 11 },
-    fnEnter: { java: 12, cpp: 7, python: 4, javascript: 4 },
-    baseCheck: { java: 13, cpp: 8, python: 5, javascript: 5 },
-    memoCheck: { java: 14, cpp: 9, python: 7, javascript: 6 },
-    branch1: { java: 15, cpp: 10, python: 9, javascript: 7 },
-    initP2: { java: 16, cpp: 11, python: 10, javascript: 8 },
-    checkFit: { java: 17, cpp: 12, python: 10, javascript: 8 },
-    branch2: { java: 18, cpp: 13, python: 10, javascript: 8 },
-    memoStore: { java: 20, cpp: 15, python: 11, javascript: 9 },
-  },
-  partitioned: {
-    memoInit: { java: 8, cpp: 7, python: 3, javascript: 3 },
-    fnEnter: { java: 7, cpp: 7, python: 4, javascript: 4 },
-    baseCheck: { java: 8, cpp: 8, python: 5, javascript: 5 },
-    memoCheck: { java: 9, cpp: 9, python: 7, javascript: 6 },
-    branch1: { java: 10, cpp: 10, python: 9, javascript: 7 },
-    loopGroup: { java: 11, cpp: 11, python: 10, javascript: 8 },
-    checkFit: { java: 13, cpp: 12, python: 11, javascript: 9 },
-    branch2: { java: 14, cpp: 13, python: 12, javascript: 10 },
-    memoStore: { java: 17, cpp: 15, python: 14, javascript: 12 },
-  },
-};
-
-export const STAGE3_LINE_MAPS: Record<KnapsackKind, StageLineMap> = {
-  unbounded: {
-    initDp: { java: 6, cpp: 9, python: 3, javascript: 3 },
-    outerLoop: { java: 7, cpp: 10, python: 4, javascript: 4 },
-    capLoop: { java: 8, cpp: 11, python: 5, javascript: 5 },
-    inherit: { java: 9, cpp: 13, python: 6, javascript: 6 },
-    checkFit: { java: 10, cpp: 15, python: 7, javascript: 7 },
-    update: { java: 11, cpp: 16, python: 8, javascript: 8 },
-    returnAns: { java: 15, cpp: 20, python: 9, javascript: 12 },
-  },
-  '01': {
-    initDp: { java: 6, cpp: 9, python: 3, javascript: 3 },
-    outerLoop: { java: 7, cpp: 10, python: 4, javascript: 4 },
-    capLoop: { java: 8, cpp: 11, python: 5, javascript: 5 },
-    inherit: { java: 9, cpp: 13, python: 6, javascript: 6 },
-    checkFit: { java: 10, cpp: 15, python: 7, javascript: 7 },
-    update: { java: 11, cpp: 16, python: 8, javascript: 8 },
-    returnAns: { java: 15, cpp: 20, python: 9, javascript: 12 },
-  },
-  partitioned: {
-    initDp: { java: 8, cpp: 9, python: 4, javascript: 4 },
-    outerLoop: { java: 9, cpp: 10, python: 5, javascript: 5 },
-    capLoop: { java: 10, cpp: 11, python: 6, javascript: 6 },
-    inherit: { java: 11, cpp: 13, python: 7, javascript: 7 },
-    loopGroup: { java: 12, cpp: 15, python: 8, javascript: 8 },
-    checkFit: { java: 13, cpp: 16, python: 9, javascript: 9 },
-    update: { java: 14, cpp: 17, python: 10, javascript: 10 },
-    returnAns: { java: 18, cpp: 21, python: 11, javascript: 13 },
-  },
-};
+/**
+ * 从 CodeStepIndexer 获取某阶段某 kind 的 anchor 对应行号
+ * 替代原有的 STAGE_LINE_MAPS 常量查找
+ */
+function getLine(stage: number, kind: KnapsackKind, anchor: string): HighlightTarget {
+  return getKnapsackAnchor(stage, kind, anchor) as HighlightTarget;
+}
 
 // ==========================================
 // 2. 数据模型定义
@@ -204,7 +109,7 @@ export function buildKnapsackRecursionSteps(
   maxSteps = 800
 ): KnapsackRecursionStep[] {
   const steps: KnapsackRecursionStep[] = [];
-  const lineMap = STAGE1_LINE_MAPS[kind] || STAGE1_LINE_MAPS.unbounded;
+  const resolveLine = (anchor: string) => getLine(1, kind, anchor);
   let callCounter = 0;
   const stack: RecursionStackFrame[] = [];
   let bestValOverall = 0;
@@ -230,7 +135,7 @@ export function buildKnapsackRecursionSteps(
       totalSteps: 0,
       type: stepType,
       action,
-      codeLine: lineMap[codeLineKey],
+      codeLine: resolveLine(codeLineKey),
       curIndex: idx,
       remCap,
       depth,
@@ -352,7 +257,7 @@ export function buildKnapsackMemoSteps(
   maxSteps = 800
 ): KnapsackMemoStep[] {
   const steps: KnapsackMemoStep[] = [];
-  const lineMap = STAGE2_LINE_MAPS[kind] || STAGE2_LINE_MAPS.unbounded;
+  const resolveLine = (anchor: string) => getLine(2, kind, anchor);
   let callCounter = 0;
   let hitCounter = 0;
   let missCounter = 0;
@@ -385,7 +290,7 @@ export function buildKnapsackMemoSteps(
       totalSteps: 0,
       type: stepType,
       action,
-      codeLine: lineMap[codeLineKey],
+      codeLine: resolveLine(codeLineKey),
       curIndex: idx,
       remCap,
       depth,
@@ -530,7 +435,7 @@ export function buildKnapsack2DSteps(
   items: KnapsackItem[]
 ): Knapsack2DStep[] {
   const steps: Knapsack2DStep[] = [];
-  const lineMap = STAGE3_LINE_MAPS[kind] || STAGE3_LINE_MAPS.unbounded;
+  const resolveLine = (anchor: string) => getLine(3, kind, anchor);
   const m = items.length;
   const t = capacity;
 
@@ -551,7 +456,7 @@ export function buildKnapsack2DSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeLineKey],
+      codeLine: resolveLine(codeLineKey),
       curI: i,
       curJ: j,
       dpTable: dp.map((row) => [...row]),
