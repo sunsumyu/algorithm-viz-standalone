@@ -7,8 +7,30 @@
  */
 
 import { HighlightTarget } from '../../../../core/code-panel';
+import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { BUY_GOODS_STAGE1_CODE_LANGUAGES, BUY_GOODS_STAGE2_CODE_LANGUAGES, BUY_GOODS_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
+
+type BuyGoodsCallFrame = { i: number; rem: number; label: string };
+
+interface BuyGoodsRecursionStep extends RecursionStepBase<BuyGoodsCallFrame> {
+  i: number;
+  remCap: number;
+  n: number;
+  normalGames: Array<{ id: number; cost: number; val: number }>;
+}
+
+interface BuyGoodsMemoStep extends MemoStepBase {
+  remCap: number;
+  memoHit: boolean;
+  memoGrid: (number | null)[][];
+  cachedVal?: number;
+}
+
+interface BuyGoods2DStep extends Dp2DStepBase {
+  dpTable: number[][];
+  depCells: Array<{ label: string; val: number; r: number; c: number }>;
+}
 
 
 
@@ -35,9 +57,9 @@ export function parseBuyGoodsNormalGames(initialBudget: number, a: number[], b: 
   return { greedyHappy, curBudget, normalGames };
 }
 
-export function buildBuyGoodsRecursionSteps(initialBudget: number, a: number[], b: number[], w: number[], maxSteps = 800) {
+export function buildBuyGoodsRecursionSteps(initialBudget: number, a: number[], b: number[], w: number[], maxSteps = 800): BuyGoodsRecursionStep[] {
   const { greedyHappy, curBudget, normalGames } = parseBuyGoodsNormalGames(initialBudget, a, b, w);
-  const steps: any[] = [];
+  const steps: BuyGoodsRecursionStep[] = [];
   const n = normalGames.length;
   const callStack: Array<{ i: number; rem: number; label: string }> = [];
 
@@ -105,9 +127,9 @@ export function buildBuyGoodsRecursionSteps(initialBudget: number, a: number[], 
   return steps;
 }
 
-export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: number[], w: number[], maxSteps = 800) {
+export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: number[], w: number[], maxSteps = 800): BuyGoodsMemoStep[] {
   const { greedyHappy, curBudget, normalGames } = parseBuyGoodsNormalGames(initialBudget, a, b, w);
-  const steps: any[] = [];
+  const steps: BuyGoodsMemoStep[] = [];
   const n = normalGames.length;
   const memo: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(curBudget + 1).fill(null));
   let hitCount = 0;
@@ -184,9 +206,9 @@ export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: nu
   return steps;
 }
 
-export function buildBuyGoods2DSteps(initialBudget: number, a: number[], b: number[], w: number[]) {
+export function buildBuyGoods2DSteps(initialBudget: number, a: number[], b: number[], w: number[]): BuyGoods2DStep[] {
   const { greedyHappy, curBudget, normalGames } = parseBuyGoodsNormalGames(initialBudget, a, b, w);
-  const steps: any[] = [];
+  const steps: BuyGoods2DStep[] = [];
   const n = normalGames.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(curBudget + 1).fill(0));
 

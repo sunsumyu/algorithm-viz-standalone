@@ -14,28 +14,19 @@
  */
 
 import { HighlightTarget } from './dark-code-terminal-presenter';
+import { type RecursionStepBase, type MemoStepBase } from '../step-types';
 import { getSpecialKnapsackAnchor } from './knapsack-special-stage-codes';
 
 // ==========================================
 // 1. 购买足量干草 (Buying Hay) 数据结构与步骤生成器
 // ==========================================
 
-export interface BuyingHayRecursionStep {
-  stepIndex: number;
-  totalSteps: number;
-  action: string;
-  codeLine: HighlightTarget;
+export interface BuyingHayRecursionStep extends RecursionStepBase<{ i: number; remH: number; label: string }> {
   i: number;
   remH: number;
   h: number;
   cost: number[];
   val: number[];
-  callStack: Array<{ i: number; remH: number; label: string }>;
-  decision: string;
-  message: string;
-  log: string;
-  returnValue?: number;
-  metrics: Record<string, string>;
 }
 
 export function buildBuyingHayRecursionSteps(
@@ -154,24 +145,13 @@ export function buildBuyingHayRecursionSteps(
   return steps;
 }
 
-export interface BuyingHayMemoStep {
-  stepIndex: number;
-  totalSteps: number;
-  action: string;
-  codeLine: HighlightTarget;
-  i: number;
+export interface BuyingHayMemoStep extends MemoStepBase {
   remH: number;
   h: number;
   cost: number[];
   val: number[];
   memo: number[][];
   cacheHit: boolean;
-  hitCount: number;
-  missCount: number;
-  decision: string;
-  message: string;
-  log: string;
-  metrics: Record<string, string>;
 }
 
 export function buildBuyingHayMemoSteps(
@@ -404,21 +384,11 @@ export function buildBuyingHay2DSteps(
 // 2. 从栈中取出K个硬币 (Coins From Piles) 步骤生成器
 // ==========================================
 
-export interface CoinsFromPilesRecursionStep {
-  stepIndex: number;
-  totalSteps: number;
-  action: string;
-  codeLine: HighlightTarget;
+export interface CoinsFromPilesRecursionStep extends RecursionStepBase<{ i: number; remK: number; label: string }> {
   i: number;
   remK: number;
   k: number;
   piles: number[][];
-  callStack: Array<{ i: number; remK: number; label: string }>;
-  decision: string;
-  message: string;
-  log: string;
-  returnValue?: number;
-  metrics: Record<string, string>;
 }
 
 export function buildCoinsFromPilesRecursionSteps(
@@ -507,23 +477,12 @@ export function buildCoinsFromPilesRecursionSteps(
   return steps;
 }
 
-export interface CoinsFromPilesMemoStep {
-  stepIndex: number;
-  totalSteps: number;
-  action: string;
-  codeLine: HighlightTarget;
-  i: number;
+export interface CoinsFromPilesMemoStep extends MemoStepBase {
   remK: number;
   k: number;
   piles: number[][];
   memo: number[][];
   cacheHit: boolean;
-  hitCount: number;
-  missCount: number;
-  decision: string;
-  message: string;
-  log: string;
-  metrics: Record<string, string>;
 }
 
 export function buildCoinsFromPilesMemoSteps(

@@ -7,8 +7,29 @@
  */
 
 import { HighlightTarget } from '../../../../core/code-panel';
+import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { TARGET_SUM_STAGE1_CODE_LANGUAGES, TARGET_SUM_STAGE2_CODE_LANGUAGES, TARGET_SUM_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
+
+type CallFrame = { i: number; rem: number; label: string };
+
+interface TargetSumRecursionStep extends RecursionStepBase<CallFrame> {
+  i: number;
+  remCap: number;
+  n: number;
+}
+
+interface TargetSumMemoStep extends MemoStepBase {
+  remCap: number;
+  memoHit: boolean;
+  memoGrid: (number | null)[][];
+  cachedVal?: number;
+}
+
+interface TargetSum2DStep extends Dp2DStepBase {
+  dpTable: number[][];
+  depCells: Array<{ label: string; val: number; r: number; c: number }>;
+}
 
 
 
@@ -17,8 +38,8 @@ import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
 // 2. 步骤推演生成器
 // ==========================================
 
-export function buildTargetSumRecursionSteps(nums: number[], target: number, maxSteps = 800) {
-  const steps: any[] = [];
+export function buildTargetSumRecursionSteps(nums: number[], target: number, maxSteps = 800): TargetSumRecursionStep[] {
+  const steps: TargetSumRecursionStep[] = [];
   const sum = nums.reduce((a, b) => a + Math.abs(b), 0);
   const isValid = sum >= Math.abs(target) && (sum + target) % 2 === 0;
   const t = isValid ? Math.floor((sum + target) / 2) : -1;
@@ -93,8 +114,8 @@ export function buildTargetSumRecursionSteps(nums: number[], target: number, max
   return steps;
 }
 
-export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps = 800) {
-  const steps: any[] = [];
+export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps = 800): TargetSumMemoStep[] {
+  const steps: TargetSumMemoStep[] = [];
   const sum = nums.reduce((a, b) => a + Math.abs(b), 0);
   const isValid = sum >= Math.abs(target) && (sum + target) % 2 === 0;
   const t = isValid ? Math.floor((sum + target) / 2) : -1;
@@ -107,7 +128,7 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
       stepIndex: 1,
       totalSteps: 1,
       action: 'check',
-      codeLine: lineMap.check,
+      codeLine: resolveLine('check'),
       i: 0,
       remCap: 0,
       memoHit: false,
@@ -117,6 +138,7 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
       decision: '无整数解',
       message: `🛑 奇偶性或越界无解，直接返回 0。`,
       log: 'check: invalid',
+      metrics: {},
     });
     return steps;
   }
@@ -194,8 +216,8 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
   return steps;
 }
 
-export function buildTargetSum2DSteps(nums: number[], target: number) {
-  const steps: any[] = [];
+export function buildTargetSum2DSteps(nums: number[], target: number): TargetSum2DStep[] {
+  const steps: TargetSum2DStep[] = [];
   const sum = nums.reduce((a, b) => a + Math.abs(b), 0);
   const isValid = sum >= Math.abs(target) && (sum + target) % 2 === 0;
   const t = isValid ? Math.floor((sum + target) / 2) : 0;

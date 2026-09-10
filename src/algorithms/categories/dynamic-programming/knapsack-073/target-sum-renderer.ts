@@ -17,6 +17,8 @@ import {
   TARGET_SUM_STAGE1_CODE_LANGUAGES,
   TARGET_SUM_STAGE2_CODE_LANGUAGES,
   TARGET_SUM_STAGE3_CODE_LANGUAGES,
+} from './knapsack-073-templates';
+import {
   buildTargetSumRecursionSteps,
   buildTargetSumMemoSteps,
   buildTargetSum2DSteps,

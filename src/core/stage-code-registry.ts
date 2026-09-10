@@ -9,17 +9,37 @@
  * `Record<kind, Record<stage, langs>>` 形式的 flat composite-key 模板映射。
  */
 
-import { codeStepIndexer } from './code-step-indexer';
-import type { HighlightTarget } from './renderers/dark-code-terminal-presenter';
+import { codeStepIndexer, type ResolvedHighlightTarget } from './code-step-indexer';
 
 /** Flat composite-key 模板映射：每个 key 是 `prefix:kind:stage` */
 export type StageCodeMap = Record<string, Record<string, string[]>>;
 
+/** 锚点编译产物：4 语种各自的 1-based 物理行号 */
+export interface ResolvedAnchorTarget {
+  java: number;
+  cpp: number;
+  python: number;
+  javascript: number;
+}
+
 export interface StageCodeRegistry<K extends string> {
   /** 将所有模板注册到 CodeStepIndexer（应在模块加载时调用） */
   register(): void;
-  /** 根据阶段、kind、anchor 解析 4 语种物理行号 */
-  getAnchor(stage: number, kind: K, anchor: string): HighlightTarget;
+  /** 根据阶段、kind、anchor 解析 4 语种物理行号（结构上兼容 HighlightTarget） */
+  getAnchor(stage: number, kind: K, anchor: string): ResolvedAnchorTarget;
+}
+
+/** 将 resolveHighlight 的宽返回值归一化为单一 1-based 行号 */
+function toLineNumber(resolved: ResolvedHighlightTarget | null): number | null {
+  if (resolved == null) return null;
+  if (typeof resolved === 'number') return resolved;
+  if (Array.isArray(resolved)) return resolved[0] ?? null;
+  if (typeof resolved === 'object' && 'primary' in resolved) {
+    const p = resolved.primary;
+    if (typeof p === 'number') return p;
+    return p[0] ?? null;
+  }
+  return null;
 }
 
 /**
@@ -42,19 +62,19 @@ export function createStageCodeRegistry<K extends string>(
 
     getAnchor(stage, kind, anchor) {
       const key = `${prefix}:${kind}:s${stage}`;
-      const fallback: HighlightTarget = { java: 1, cpp: 1, python: 1, javascript: 1 };
+      const fallback: ResolvedAnchorTarget = { java: 1, cpp: 1, python: 1, javascript: 1 };
 
-      const java = codeStepIndexer.resolveHighlight(key, anchor, 'java');
-      const cpp = codeStepIndexer.resolveHighlight(key, anchor, 'cpp');
-      const python = codeStepIndexer.resolveHighlight(key, anchor, 'python');
-      const javascript = codeStepIndexer.resolveHighlight(key, anchor, 'javascript');
+      const java = toLineNumber(codeStepIndexer.resolveHighlight(key, anchor, 'java'));
+      const cpp = toLineNumber(codeStepIndexer.resolveHighlight(key, anchor, 'cpp'));
+      const python = toLineNumber(codeStepIndexer.resolveHighlight(key, anchor, 'python'));
+      const javascript = toLineNumber(codeStepIndexer.resolveHighlight(key, anchor, 'javascript'));
 
       if (java != null || cpp != null || python != null || javascript != null) {
         return {
-          java: java ?? (fallback as any).java,
-          cpp: cpp ?? (fallback as any).cpp,
-          python: python ?? (fallback as any).python,
-          javascript: javascript ?? (fallback as any).javascript,
+          java: java ?? fallback.java,
+          cpp: cpp ?? fallback.cpp,
+          python: python ?? fallback.python,
+          javascript: javascript ?? fallback.javascript,
         };
       }
       return fallback;

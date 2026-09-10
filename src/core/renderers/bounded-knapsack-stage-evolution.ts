@@ -9,6 +9,7 @@
  */
 
 import { HighlightTarget } from './dark-code-terminal-presenter';
+import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../step-types';
 import {
   renderSpecialRecursionCard1,
   renderSpecialMemoCard1,
@@ -30,11 +31,7 @@ export {
 // 1. 阶段 1：多重背包暴力递归步骤生成器
 // ==========================================
 
-export interface BoundedRecursionStep {
-  stepIndex: number;
-  totalSteps: number;
-  action: string;
-  codeLine: HighlightTarget;
+export interface BoundedRecursionStep extends RecursionStepBase<{ i: number; remCap: number; label: string }> {
   i: number;
   remCap: number;
   k?: number;
@@ -42,12 +39,6 @@ export interface BoundedRecursionStep {
   vList: number[];
   wList: number[];
   cList: number[];
-  callStack: Array<{ i: number; remCap: number; label: string }>;
-  decision: string;
-  message: string;
-  log: string;
-  returnValue?: number;
-  metrics: Record<string, string>;
   treeRoot?: any;
   activeNodeId?: string;
 }
@@ -276,23 +267,12 @@ export function buildBoundedNaiveRecursionSteps(
 // 2. 阶段 2：多重背包记忆化搜索步骤生成器
 // ==========================================
 
-export interface BoundedMemoStep {
-  stepIndex: number;
-  totalSteps: number;
-  action: string;
-  codeLine: HighlightTarget;
-  i: number;
+export interface BoundedMemoStep extends MemoStepBase {
   remCap: number;
   k?: number;
   memoHit: boolean;
   memoGrid: (number | null)[][];
-  hitCount: number;
-  missCount: number;
-  decision: string;
-  message: string;
-  log: string;
   cachedVal?: number;
-  metrics: Record<string, string>;
 }
 
 export function buildBoundedNaiveMemoSteps(
@@ -478,20 +458,10 @@ export function buildBoundedNaiveMemoSteps(
 // 3. 阶段 3：多重背包二维动态规划步骤生成器
 // ==========================================
 
-export interface Bounded2DStep {
-  stepIndex: number;
-  totalSteps: number;
-  action: string;
-  codeLine: HighlightTarget;
-  curI: number; // 0..n
-  curJ: number; // 0..t
+export interface Bounded2DStep extends Dp2DStepBase {
   curK?: number;
-  dpTable: number[][]; // (n+1) x (t+1)
+  dpTable: number[][];
   depCells: Array<{ label: string; val: number; r: number; c: number }>;
-  decision: string;
-  message: string;
-  log: string;
-  metrics: Record<string, string>;
 }
 
 export function buildBoundedNaive2DSteps(

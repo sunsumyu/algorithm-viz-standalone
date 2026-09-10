@@ -14,6 +14,7 @@
  */
 
 import { HighlightTarget } from './dark-code-terminal-presenter';
+import { type RecursionStepBase, type MemoStepBase } from '../step-types';
 import { getStringDpAnchor } from './string-dp-stage-codes';
 
 export type StringDpKind = 'regex' | 'wildcard';
@@ -237,24 +238,13 @@ export function buildStringDpRecursionSteps(
 // 3. 阶段 2: 记忆化搜索数据模型与生成器
 // ==========================================
 
-export interface StringDpMemoStep {
-  stepIndex: number;
-  totalSteps: number;
+export interface StringDpMemoStep extends MemoStepBase {
   kind: StringDpKind;
-  action: string;
-  codeLine: HighlightTarget;
-  i: number;
   j: number;
   s: string;
   p: string;
   memo: number[][]; // -1: 未计算, 0: false, 1: true
   cacheHit: boolean;
-  hitCount: number;
-  missCount: number;
-  decision: string;
-  message: string;
-  log: string;
-  metrics: Record<string, string>;
 }
 
 export function buildStringDpMemoSteps(

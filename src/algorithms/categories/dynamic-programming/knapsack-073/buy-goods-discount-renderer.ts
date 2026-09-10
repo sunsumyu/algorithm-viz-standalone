@@ -17,6 +17,8 @@ import {
   BUY_GOODS_STAGE1_CODE_LANGUAGES,
   BUY_GOODS_STAGE2_CODE_LANGUAGES,
   BUY_GOODS_STAGE3_CODE_LANGUAGES,
+} from './knapsack-073-templates';
+import {
   buildBuyGoodsRecursionSteps,
   buildBuyGoodsMemoSteps,
   buildBuyGoods2DSteps,

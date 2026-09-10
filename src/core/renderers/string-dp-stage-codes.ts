@@ -6,7 +6,7 @@
  * 彻底消除 string-dp-stage-evolution.ts 中 ~95 行手动行号常量。
  */
 
-import { createStageCodeRegistry, type StageCodeMap } from '../stage-code-registry';
+import { createStageCodeRegistry, type StageCodeMap, type ResolvedAnchorTarget } from '../stage-code-registry';
 import type { HighlightTarget } from './dark-code-terminal-presenter';
 import type { StringDpKind } from './string-dp-stage-evolution';
 
@@ -541,4 +541,4 @@ export const getStringDpAnchor: (
   stage: number,
   kind: StringDpKind,
   anchor: string,
-) => HighlightTarget = registry.getAnchor;
+) => ResolvedAnchorTarget = registry.getAnchor;

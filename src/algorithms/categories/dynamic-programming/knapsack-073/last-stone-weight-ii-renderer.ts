@@ -17,6 +17,8 @@ import {
   LAST_STONE_STAGE1_CODE_LANGUAGES,
   LAST_STONE_STAGE2_CODE_LANGUAGES,
   LAST_STONE_STAGE3_CODE_LANGUAGES,
+} from './knapsack-073-templates';
+import {
   buildLastStoneRecursionSteps,
   buildLastStoneMemoSteps,
   buildLastStone2DSteps,

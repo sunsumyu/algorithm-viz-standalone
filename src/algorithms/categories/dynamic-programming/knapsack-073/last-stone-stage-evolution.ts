@@ -7,8 +7,30 @@
  */
 
 import { HighlightTarget } from '../../../../core/code-panel';
+import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { LAST_STONE_STAGE1_CODE_LANGUAGES, LAST_STONE_STAGE2_CODE_LANGUAGES, LAST_STONE_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
+
+type LastStoneCallFrame = { i: number; rem: number; label: string };
+
+interface LastStoneRecursionStep extends RecursionStepBase<LastStoneCallFrame> {
+  i: number;
+  remCap: number;
+  n: number;
+  stones: number[];
+}
+
+interface LastStoneMemoStep extends MemoStepBase {
+  remCap: number;
+  memoHit: boolean;
+  memoGrid: (number | null)[][];
+  cachedVal?: number;
+}
+
+interface LastStone2DStep extends Dp2DStepBase {
+  dpTable: number[][];
+  depCells: Array<{ label: string; val: number; r: number; c: number }>;
+}
 
 
 
@@ -17,8 +39,8 @@ import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
 // 步骤推演生成器
 // ==========================================
 
-export function buildLastStoneRecursionSteps(stones: number[], maxSteps = 800) {
-  const steps: any[] = [];
+export function buildLastStoneRecursionSteps(stones: number[], maxSteps = 800): LastStoneRecursionStep[] {
+  const steps: LastStoneRecursionStep[] = [];
   const sum = stones.reduce((a, b) => a + b, 0);
   const t = Math.floor(sum / 2);
   const n = stones.length;
@@ -87,8 +109,8 @@ export function buildLastStoneRecursionSteps(stones: number[], maxSteps = 800) {
   return steps;
 }
 
-export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800) {
-  const steps: any[] = [];
+export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800): LastStoneMemoStep[] {
+  const steps: LastStoneMemoStep[] = [];
   const sum = stones.reduce((a, b) => a + b, 0);
   const t = Math.floor(sum / 2);
   const n = stones.length;
@@ -166,8 +188,8 @@ export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800) {
   return steps;
 }
 
-export function buildLastStone2DSteps(stones: number[]) {
-  const steps: any[] = [];
+export function buildLastStone2DSteps(stones: number[]): LastStone2DStep[] {
+  const steps: LastStone2DStep[] = [];
   const sum = stones.reduce((a, b) => a + b, 0);
   const t = Math.floor(sum / 2);
   const n = stones.length;

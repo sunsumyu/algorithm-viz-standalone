@@ -7,9 +7,30 @@
  */
 
 import { HighlightTarget } from '../../../../core/code-panel';
+import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { DEPENDENT_STAGE1_CODE_LANGUAGES, DEPENDENT_STAGE2_CODE_LANGUAGES, DEPENDENT_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
 import { DependentItem } from './dependent-knapsack-renderer';
+
+type DependentCallFrame = { g: number; rem: number; label: string };
+
+interface DependentRecursionStep extends RecursionStepBase<DependentCallFrame> {
+  i: number;
+  remCap: number;
+  n: number;
+}
+
+interface DependentMemoStep extends MemoStepBase {
+  remCap: number;
+  memoHit: boolean;
+  memoGrid: (number | null)[][];
+  cachedVal?: number;
+}
+
+interface Dependent2DStep extends Dp2DStepBase {
+  dpTable: number[][];
+  depCells: Array<{ label: string; val: number; r: number; c: number }>;
+}
 
 
 
@@ -57,9 +78,9 @@ export function parseDependentGroups(m: number, rawItems: (DependentItem | null)
   return groups;
 }
 
-export function buildDependentRecursionSteps(budget: number, m: number, rawItems: (DependentItem | null)[], maxSteps = 800) {
+export function buildDependentRecursionSteps(budget: number, m: number, rawItems: (DependentItem | null)[], maxSteps = 800): DependentRecursionStep[] {
   const groups = parseDependentGroups(m, rawItems);
-  const steps: any[] = [];
+  const steps: DependentRecursionStep[] = [];
   const G = groups.length;
   const callStack: Array<{ g: number; rem: number; label: string }> = [];
 
@@ -128,9 +149,9 @@ export function buildDependentRecursionSteps(budget: number, m: number, rawItems
   return steps;
 }
 
-export function buildDependentMemoSteps(budget: number, m: number, rawItems: (DependentItem | null)[], maxSteps = 800) {
+export function buildDependentMemoSteps(budget: number, m: number, rawItems: (DependentItem | null)[], maxSteps = 800): DependentMemoStep[] {
   const groups = parseDependentGroups(m, rawItems);
-  const steps: any[] = [];
+  const steps: DependentMemoStep[] = [];
   const G = groups.length;
   const memo: (number | null)[][] = Array.from({ length: G + 1 }, () => new Array(budget + 1).fill(null));
   let hitCount = 0;
@@ -209,9 +230,9 @@ export function buildDependentMemoSteps(budget: number, m: number, rawItems: (De
   return steps;
 }
 
-export function buildDependent2DSteps(budget: number, m: number, rawItems: (DependentItem | null)[]) {
+export function buildDependent2DSteps(budget: number, m: number, rawItems: (DependentItem | null)[]): Dependent2DStep[] {
   const groups = parseDependentGroups(m, rawItems);
-  const steps: any[] = [];
+  const steps: Dependent2DStep[] = [];
   const G = groups.length;
   const dp: number[][] = Array.from({ length: G + 1 }, () => new Array(budget + 1).fill(0));
 

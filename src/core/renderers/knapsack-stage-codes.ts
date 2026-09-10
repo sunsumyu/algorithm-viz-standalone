@@ -9,7 +9,7 @@
  * 确保 anchor 解析行号与原有手动常量 100% 一致。
  */
 
-import { createStageCodeRegistry, type StageCodeMap } from '../stage-code-registry';
+import { createStageCodeRegistry, type StageCodeMap, type ResolvedAnchorTarget } from '../stage-code-registry';
 import type { HighlightTarget } from './dark-code-terminal-presenter';
 import type { KnapsackKind } from './knapsack-stage-evolution';
 
@@ -723,4 +723,4 @@ export const getKnapsackAnchor: (
   stage: number,
   kind: KnapsackKind,
   anchor: string,
-) => HighlightTarget = registry.getAnchor;
+) => ResolvedAnchorTarget = registry.getAnchor;
