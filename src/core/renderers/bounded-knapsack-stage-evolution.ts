@@ -16,6 +16,7 @@ import {
   renderSpecial2DCard1,
   renderSpecial2DCard2,
 } from './knapsack-special-stage-evolution';
+import { getBoundedKnapsackAnchor, type BoundedKnapsackKind } from './bounded-knapsack-stage-codes';
 
 export {
   renderSpecialRecursionCard1,
@@ -92,15 +93,7 @@ export function buildBoundedNaiveRecursionSteps(
     children: [],
   };
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 5, cpp: 7, python: 1, javascript: 2 },
-    fnEnter: { java: 5, cpp: 7, python: 1, javascript: 2 },
-    baseCheck: { java: 6, cpp: 8, python: 3, javascript: 3 },
-    initMax: { java: 7, cpp: 9, python: 5, javascript: 4 },
-    loopK: { java: 9, cpp: 11, python: 8, javascript: 6 },
-    branchNext: { java: 10, cpp: 12, python: 9, javascript: 7 },
-    returnMax: { java: 13, cpp: 15, python: 12, javascript: 10 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(1, 'bounded-naive' as BoundedKnapsackKind, anchor);
 
   const pushStep = (
     action: string,
@@ -118,7 +111,7 @@ export function buildBoundedNaiveRecursionSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i,
       remCap,
       k,
@@ -315,15 +308,7 @@ export function buildBoundedNaiveMemoSteps(
   let hitCount = 0;
   let missCount = 0;
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 5, cpp: 7, python: 1, javascript: 2 },
-    fnEnter: { java: 5, cpp: 7, python: 1, javascript: 2 },
-    baseCheck: { java: 6, cpp: 8, python: 3, javascript: 3 },
-    memoCheck: { java: 7, cpp: 9, python: 5, javascript: 4 },
-    loopK: { java: 9, cpp: 11, python: 8, javascript: 6 },
-    branchNext: { java: 10, cpp: 12, python: 9, javascript: 7 },
-    memoStore: { java: 13, cpp: 15, python: 12, javascript: 10 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(2, 'bounded-naive' as BoundedKnapsackKind, anchor);
 
   const pushStep = (
     action: string,
@@ -341,7 +326,7 @@ export function buildBoundedNaiveMemoSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i,
       remCap,
       k,
@@ -519,15 +504,7 @@ export function buildBoundedNaive2DSteps(
   const n = Math.min(vList.length, wList.length, cList.length);
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(0));
 
-  const lineMap: Record<string, HighlightTarget> = {
-    initDp: { java: 7, cpp: 10, python: 4, javascript: 3 },
-    outerLoopI: { java: 8, cpp: 11, python: 5, javascript: 4 },
-    innerLoopJ: { java: 9, cpp: 12, python: 6, javascript: 5 },
-    inheritK0: { java: 10, cpp: 13, python: 7, javascript: 6 },
-    loopK: { java: 11, cpp: 14, python: 9, javascript: 7 },
-    updateDp: { java: 12, cpp: 15, python: 10, javascript: 8 },
-    returnAns: { java: 16, cpp: 19, python: 11, javascript: 12 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(3, 'bounded-naive' as BoundedKnapsackKind, anchor);
 
   const pushStep = (
     action: string,
@@ -543,7 +520,7 @@ export function buildBoundedNaive2DSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       curI,
       curJ,
       curK,
@@ -744,14 +721,7 @@ export function buildBinarySplitRecursionSteps(
     children: [],
   };
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 5, cpp: 6, python: 2, javascript: 2 },
-    fnEnter: { java: 5, cpp: 6, python: 2, javascript: 2 },
-    baseCheck: { java: 6, cpp: 7, python: 3, javascript: 3 },
-    branchNoPick: { java: 7, cpp: 8, python: 5, javascript: 4 },
-    branchPick: { java: 10, cpp: 11, python: 8, javascript: 7 },
-    returnMax: { java: 12, cpp: 13, python: 9, javascript: 9 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(1, 'binary-split' as BoundedKnapsackKind, anchor);
 
   const pushStep = (
     action: string,
@@ -768,7 +738,7 @@ export function buildBinarySplitRecursionSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i: idx,
       remCap,
       n: m,
@@ -867,15 +837,7 @@ export function buildBinarySplitMemoSteps(
   let hitCount = 0;
   let missCount = 0;
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 5, cpp: 6, python: 2, javascript: 2 },
-    fnEnter: { java: 5, cpp: 6, python: 2, javascript: 2 },
-    baseCheck: { java: 6, cpp: 7, python: 3, javascript: 3 },
-    memoCheck: { java: 7, cpp: 8, python: 5, javascript: 4 },
-    branchNoPick: { java: 8, cpp: 9, python: 7, javascript: 6 },
-    branchPick: { java: 11, cpp: 12, python: 10, javascript: 9 },
-    memoStore: { java: 13, cpp: 14, python: 11, javascript: 10 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(2, 'binary-split' as BoundedKnapsackKind, anchor);
 
   const pushStep = (action: string, codeKey: string, idx: number, remCap: number, memoHit: boolean, decision: string, message: string, cachedVal?: number) => {
     if (steps.length >= maxSteps) return;
@@ -883,7 +845,7 @@ export function buildBinarySplitMemoSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i: idx,
       remCap,
       memoHit,
@@ -963,21 +925,14 @@ export function buildBinarySplit2DSteps(
   const m = derivedItems.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(t + 1).fill(0));
 
-  const lineMap: Record<string, HighlightTarget> = {
-    initDp: { java: 7, cpp: 6, python: 3, javascript: 3 },
-    outerLoopI: { java: 8, cpp: 7, python: 4, javascript: 4 },
-    innerLoopJ: { java: 9, cpp: 8, python: 5, javascript: 5 },
-    inheritNoPick: { java: 10, cpp: 9, python: 6, javascript: 6 },
-    updatePick: { java: 12, cpp: 11, python: 8, javascript: 8 },
-    returnAns: { java: 16, cpp: 15, python: 10, javascript: 11 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(3, 'binary-split' as BoundedKnapsackKind, anchor);
 
   const pushStep = (action: string, codeKey: string, curI: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
     steps.push({
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       curI,
       curJ,
       dpTable: dp.map((row) => [...row]),
@@ -1038,15 +993,7 @@ export function buildCoinsChangeRecursionSteps(
   const n = Math.min(valList.length, cntList.length);
   const callStack: Array<{ i: number; remCap: number; label: string }> = [];
 
-  const lineMap: Record<string, HighlightTarget> = {
-    fnEnter: { java: 5, cpp: 5, python: 2, javascript: 2 },
-    baseZero: { java: 6, cpp: 6, python: 3, javascript: 3 },
-    baseBound: { java: 7, cpp: 7, python: 5, javascript: 4 },
-    loopK: { java: 8, cpp: 8, python: 7, javascript: 5 },
-    callNext: { java: 9, cpp: 9, python: 8, javascript: 6 },
-    returnTrue: { java: 9, cpp: 9, python: 8, javascript: 6 },
-    returnFalse: { java: 11, cpp: 11, python: 10, javascript: 8 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(1, 'coins-change' as BoundedKnapsackKind, anchor);
 
   const pushStep = (
     action: string,
@@ -1063,7 +1010,7 @@ export function buildCoinsChangeRecursionSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i,
       remCap: rem,
       k,
@@ -1137,16 +1084,7 @@ export function buildCoinsChangeMemoSteps(
   let hitCount = 0;
   let missCount = 0;
 
-  const lineMap: Record<string, HighlightTarget> = {
-    fnEnter: { java: 5, cpp: 5, python: 2, javascript: 2 },
-    baseZero: { java: 6, cpp: 6, python: 3, javascript: 3 },
-    baseBound: { java: 7, cpp: 7, python: 5, javascript: 4 },
-    checkMemo: { java: 8, cpp: 8, python: 7, javascript: 5 },
-    loopK: { java: 9, cpp: 9, python: 9, javascript: 6 },
-    callNext: { java: 10, cpp: 10, python: 10, javascript: 7 },
-    memoTrue: { java: 11, cpp: 11, python: 11, javascript: 8 },
-    memoFalse: { java: 15, cpp: 14, python: 13, javascript: 12 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(2, 'coins-change' as BoundedKnapsackKind, anchor);
 
   const pushStep = (
     action: string,
@@ -1163,7 +1101,7 @@ export function buildCoinsChangeMemoSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i,
       remCap: rem,
       memoHit,
@@ -1241,17 +1179,7 @@ export function buildCoinsChange2DSteps(
   const dp: boolean[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(false));
   dp[0][0] = true;
 
-  const lineMap: Record<string, HighlightTarget> = {
-    initDp: { java: 6, cpp: 6, python: 5, javascript: 5 },
-    initBase: { java: 7, cpp: 7, python: 6, javascript: 6 },
-    outerI: { java: 8, cpp: 8, python: 7, javascript: 7 },
-    innerJ: { java: 10, cpp: 10, python: 9, javascript: 9 },
-    inherit: { java: 11, cpp: 11, python: 10, javascript: 10 },
-    loopK: { java: 12, cpp: 12, python: 11, javascript: 11 },
-    updateTrue: { java: 14, cpp: 14, python: 12, javascript: 13 },
-    countKinds: { java: 20, cpp: 19, python: 14, javascript: 18 },
-    returnAns: { java: 22, cpp: 20, python: 14, javascript: 20 },
-  };
+  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(3, 'coins-change' as BoundedKnapsackKind, anchor);
 
   const pushStep = (
     action: string,
@@ -1266,7 +1194,7 @@ export function buildCoinsChange2DSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       curI,
       curJ,
       dpTable: dp.map((row) => row.map((v) => (v ? 1 : 0))),
