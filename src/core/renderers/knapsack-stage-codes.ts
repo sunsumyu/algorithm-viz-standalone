@@ -9,7 +9,8 @@
  * 确保 anchor 解析行号与原有手动常量 100% 一致。
  */
 
-import { codeStepIndexer } from '../code-step-indexer';
+import { createStageCodeRegistry, type StageCodeMap } from '../stage-code-registry';
+import type { HighlightTarget } from './dark-code-terminal-presenter';
 import type { KnapsackKind } from './knapsack-stage-evolution';
 
 // ==========================================
@@ -697,58 +698,29 @@ const S3_PARTITIONED: Record<string, string[]> = {
 // 4. 模板注册表与自动注册
 // ==========================================
 
-const STAGE_TEMPLATES: Record<string, Record<string, string[]>> = {
-  'knapsack:s1:unbounded': S1_UNBOUNDED,
-  'knapsack:s1:01': S1_01,
-  'knapsack:s1:partitioned': S1_PARTITIONED,
-  'knapsack:s2:unbounded': S2_UNBOUNDED,
-  'knapsack:s2:01': S2_01,
-  'knapsack:s2:partitioned': S2_PARTITIONED,
-  'knapsack:s3:unbounded': S3_UNBOUNDED,
-  'knapsack:s3:01': S3_01,
-  'knapsack:s3:partitioned': S3_PARTITIONED,
+const STAGE_TEMPLATES: StageCodeMap = {
+  'unbounded:s1': S1_UNBOUNDED,
+  '01:s1': S1_01,
+  'partitioned:s1': S1_PARTITIONED,
+  'unbounded:s2': S2_UNBOUNDED,
+  '01:s2': S2_01,
+  'partitioned:s2': S2_PARTITIONED,
+  'unbounded:s3': S3_UNBOUNDED,
+  '01:s3': S3_01,
+  'partitioned:s3': S3_PARTITIONED,
 };
 
-/** 自动注册所有背包模板到 CodeStepIndexer（模块加载时执行） */
-export function registerKnapsackTemplates(): void {
-  for (const [key, langs] of Object.entries(STAGE_TEMPLATES)) {
-    codeStepIndexer.register(key, langs);
-  }
-}
+const registry = createStageCodeRegistry<KnapsackKind>('knapsack', STAGE_TEMPLATES);
+registry.register();
 
-// 模块加载时自动注册
-registerKnapsackTemplates();
+export const registerKnapsackTemplates = registry.register;
 
 /**
  * 查询背包算法某阶段某 kind 的 anchor 在 4 语言中的物理行号
  * 替代原有的 STAGE1_LINE_MAPS[kind][action] 手动常量查找
  */
-export function getKnapsackAnchor(
+export const getKnapsackAnchor: (
   stage: number,
   kind: KnapsackKind,
-  anchor: string
-): Record<string, number> {
-  const key = `knapsack:s${stage}:${kind}`;
-  const fallback = { java: 1, cpp: 1, python: 1, javascript: 1 };
-
-  const java = codeStepIndexer.resolveHighlight(key, anchor, 'java');
-  const cpp = codeStepIndexer.resolveHighlight(key, anchor, 'cpp');
-  const python = codeStepIndexer.resolveHighlight(key, anchor, 'python');
-  const javascript = codeStepIndexer.resolveHighlight(key, anchor, 'javascript');
-
-  const toNum = (val: any, fb: number): number => {
-    if (Array.isArray(val)) return val[0] ?? fb;
-    if (typeof val === 'number') return val;
-    return fb;
-  };
-
-  if (java != null || cpp != null || python != null || javascript != null) {
-    return {
-      java: toNum(java, fallback.java),
-      cpp: toNum(cpp, fallback.cpp),
-      python: toNum(python, fallback.python),
-      javascript: toNum(javascript, fallback.javascript),
-    };
-  }
-  return fallback;
-}
+  anchor: string,
+) => HighlightTarget = registry.getAnchor;

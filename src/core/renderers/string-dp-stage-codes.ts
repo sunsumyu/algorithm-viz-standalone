@@ -6,7 +6,7 @@
  * 彻底消除 string-dp-stage-evolution.ts 中 ~95 行手动行号常量。
  */
 
-import { codeStepIndexer } from '../code-step-indexer';
+import { createStageCodeRegistry, type StageCodeMap } from '../stage-code-registry';
 import type { HighlightTarget } from './dark-code-terminal-presenter';
 import type { StringDpKind } from './string-dp-stage-evolution';
 
@@ -524,60 +524,21 @@ const WILDCARD_S3: Record<string, string[]> = {
 // 3. 模板注册与锚点查询
 // ==========================================
 
-const STAGE_TEMPLATES: Record<string, Record<string, string[]>> = {
-  'string-dp:regex:s1': REGEX_S1,
-  'string-dp:regex:s2': REGEX_S2,
-  'string-dp:regex:s3': REGEX_S3,
-  'string-dp:wildcard:s1': WILDCARD_S1,
-  'string-dp:wildcard:s2': WILDCARD_S2,
-  'string-dp:wildcard:s3': WILDCARD_S3,
+const STAGE_TEMPLATES: StageCodeMap = {
+  'regex:s1': REGEX_S1,
+  'regex:s2': REGEX_S2,
+  'regex:s3': REGEX_S3,
+  'wildcard:s1': WILDCARD_S1,
+  'wildcard:s2': WILDCARD_S2,
+  'wildcard:s3': WILDCARD_S3,
 };
 
-/** 自动注册所有字符串 DP 模板到 CodeStepIndexer */
-export function registerStringDpTemplates(): void {
-  for (const [key, langs] of Object.entries(STAGE_TEMPLATES)) {
-    codeStepIndexer.register(key, langs);
-  }
-}
+const registry = createStageCodeRegistry<StringDpKind>('string-dp', STAGE_TEMPLATES);
+registry.register();
 
-registerStringDpTemplates();
-
-export interface StringDpCodeMapping {
-  java: number;
-  cpp: number;
-  python: number;
-  javascript: number;
-}
-
-/**
- * 查询字符串 DP 某阶段某 kind 的 anchor 对应行号
- */
-export function getStringDpAnchor(
+export const registerStringDpTemplates = registry.register;
+export const getStringDpAnchor: (
   stage: number,
   kind: StringDpKind,
-  anchor: string
-): StringDpCodeMapping {
-  const key = `string-dp:${kind}:s${stage}`;
-  const fallback: StringDpCodeMapping = { java: 1, cpp: 1, python: 1, javascript: 1 };
-
-  const java = codeStepIndexer.resolveHighlight(key, anchor, 'java');
-  const cpp = codeStepIndexer.resolveHighlight(key, anchor, 'cpp');
-  const python = codeStepIndexer.resolveHighlight(key, anchor, 'python');
-  const javascript = codeStepIndexer.resolveHighlight(key, anchor, 'javascript');
-
-  const toNum = (val: any, fb: number): number => {
-    if (Array.isArray(val)) return val[0] ?? fb;
-    if (typeof val === 'number') return val;
-    return fb;
-  };
-
-  if (java != null || cpp != null || python != null || javascript != null) {
-    return {
-      java: toNum(java, fallback.java),
-      cpp: toNum(cpp, fallback.cpp),
-      python: toNum(python, fallback.python),
-      javascript: toNum(javascript, fallback.javascript),
-    };
-  }
-  return fallback;
-}
+  anchor: string,
+) => HighlightTarget = registry.getAnchor;

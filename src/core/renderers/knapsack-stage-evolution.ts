@@ -28,7 +28,7 @@ export interface StageLineMap {
  * 替代原有的 STAGE_LINE_MAPS 常量查找
  */
 function getLine(stage: number, kind: KnapsackKind, anchor: string): HighlightTarget {
-  return getKnapsackAnchor(stage, kind, anchor) as HighlightTarget;
+  return getKnapsackAnchor(stage, kind, anchor);
 }
 
 // ==========================================
