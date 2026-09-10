@@ -14,6 +14,7 @@
  */
 
 import { HighlightTarget } from './dark-code-terminal-presenter';
+import { getSpecialKnapsackAnchor } from './knapsack-special-stage-codes';
 
 // ==========================================
 // 1. 购买足量干草 (Buying Hay) 数据结构与步骤生成器
@@ -47,15 +48,7 @@ export function buildBuyingHayRecursionSteps(
   const INF = 1_000_000_000;
   const callStack: Array<{ i: number; remH: number; label: string }> = [];
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 6, cpp: 7, python: 13, javascript: 12 },
-    fnEnter: { java: 6, cpp: 7, python: 5, javascript: 5 },
-    baseCheckSatisfied: { java: 7, cpp: 8, python: 6, javascript: 6 },
-    baseCheckExhausted: { java: 8, cpp: 9, python: 8, javascript: 7 },
-    branchNoPick: { java: 9, cpp: 11, python: 10, javascript: 8 },
-    branchPick: { java: 10, cpp: 13, python: 11, javascript: 9 },
-    returnMin: { java: 11, cpp: 14, python: 12, javascript: 10 },
-  };
+  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(1, 'buying-hay', anchor);
 
   const pushStep = (
     action: string,
@@ -70,7 +63,7 @@ export function buildBuyingHayRecursionSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[lineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(lineKey),
       i,
       remH,
       h,
@@ -193,15 +186,7 @@ export function buildBuyingHayMemoSteps(
   let hitCount = 0;
   let missCount = 0;
 
-  const lineMap: Record<string, HighlightTarget> = {
-    memoInit: { java: 4, cpp: 6, python: 5, javascript: 5 },
-    callRoot: { java: 6, cpp: 7, python: 17, javascript: 14 },
-    fnEnter: { java: 6, cpp: 7, python: 6, javascript: 6 },
-    baseCheck: { java: 7, cpp: 8, python: 7, javascript: 7 },
-    memoCheck: { java: 9, cpp: 10, python: 11, javascript: 9 },
-    compute: { java: 10, cpp: 11, python: 13, javascript: 10 },
-    memoStore: { java: 12, cpp: 13, python: 15, javascript: 12 },
-  };
+  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(2, 'buying-hay', anchor);
 
   const pushStep = (
     action: string,
@@ -216,7 +201,7 @@ export function buildBuyingHayMemoSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[lineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(lineKey),
       i,
       remH,
       h,
@@ -316,14 +301,7 @@ export function buildBuyingHay2DSteps(
   const INF = 1_000_000_000;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(INF));
 
-  const lineMap: Record<string, HighlightTarget> = {
-    initDp: { java: 8, cpp: 8, python: 4, javascript: 4 },
-    baseZero: { java: 9, cpp: 9, python: 6, javascript: 5 },
-    outerLoop: { java: 10, cpp: 10, python: 7, javascript: 6 },
-    innerLoop: { java: 12, cpp: 12, python: 9, javascript: 8 },
-    transition: { java: 14, cpp: 14, python: 11, javascript: 10 },
-    returnAns: { java: 19, cpp: 19, python: 13, javascript: 14 },
-  };
+  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(3, 'buying-hay', anchor);
 
   const pushStep = (
     action: string,
@@ -338,7 +316,7 @@ export function buildBuyingHay2DSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[lineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(lineKey),
       i,
       j,
       h,
@@ -451,14 +429,7 @@ export function buildCoinsFromPilesRecursionSteps(
   const n = piles.length;
   const callStack: Array<{ i: number; remK: number; label: string }> = [];
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 7, cpp: 6, python: 1, javascript: 2 },
-    fnEnter: { java: 7, cpp: 6, python: 1, javascript: 2 },
-    baseCheck: { java: 8, cpp: 7, python: 3, javascript: 3 },
-    branch0: { java: 9, cpp: 9, python: 5, javascript: 4 },
-    loopCoins: { java: 12, cpp: 13, python: 8, javascript: 7 },
-    returnMax: { java: 16, cpp: 17, python: 11, javascript: 11 },
-  };
+  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(1, 'coins-from-piles', anchor);
 
   const pushStep = (
     action: string,
@@ -473,7 +444,7 @@ export function buildCoinsFromPilesRecursionSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[lineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(lineKey),
       i,
       remK,
       k,
@@ -565,14 +536,7 @@ export function buildCoinsFromPilesMemoSteps(
   let hitCount = 0;
   let missCount = 0;
 
-  const lineMap: Record<string, HighlightTarget> = {
-    memoInit: { java: 8, cpp: 8, python: 3, javascript: 3 },
-    fnEnter: { java: 11, cpp: 8, python: 5, javascript: 4 },
-    baseCheck: { java: 12, cpp: 9, python: 6, javascript: 5 },
-    memoCheck: { java: 13, cpp: 10, python: 8, javascript: 6 },
-    loopCoins: { java: 15, cpp: 13, python: 11, javascript: 9 },
-    memoStore: { java: 18, cpp: 16, python: 14, javascript: 12 },
-  };
+  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(2, 'coins-from-piles', anchor);
 
   const pushStep = (
     action: string,
@@ -587,7 +551,7 @@ export function buildCoinsFromPilesMemoSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[lineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(lineKey),
       i,
       remK,
       k,
@@ -668,13 +632,7 @@ export function buildCoinsFromPiles2DSteps(
   const n = piles.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(0));
 
-  const lineMap: Record<string, HighlightTarget> = {
-    initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
-    outerLoop: { java: 10, cpp: 10, python: 5, javascript: 5 },
-    innerCap: { java: 13, cpp: 13, python: 8, javascript: 8 },
-    transition: { java: 16, cpp: 16, python: 10, javascript: 10 },
-    returnAns: { java: 21, cpp: 21, python: 12, javascript: 13 },
-  };
+  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(3, 'coins-from-piles', anchor);
 
   const pushStep = (
     action: string,
@@ -690,7 +648,7 @@ export function buildCoinsFromPiles2DSteps(
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[lineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(lineKey),
       i,
       j,
       k,
