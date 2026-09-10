@@ -13,5 +13,8 @@ import './categories/sort/shell-sort-renderer';
 import './categories/sort/radix-sort-renderer';
 import './categories/sort/counting-sort-renderer';
 import './categories/sort/bucket-sort-renderer';
+import './categories/sort/sort-basics-004-renderer';
+import './categories/search/binary-search-005-renderer';
+import './categories/advanced-topics/hard-interview/trapping-rain-water-ii-renderer';
 
 export {};

@@ -10,22 +10,7 @@
 
 import { HighlightTarget } from './dark-code-terminal-presenter';
 import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../step-types';
-import {
-  renderSpecialRecursionCard1,
-  renderSpecialMemoCard1,
-  renderSpecialMemoCard2,
-  renderSpecial2DCard1,
-  renderSpecial2DCard2,
-} from './knapsack-special-stage-evolution';
 import { getBoundedKnapsackAnchor, type BoundedKnapsackKind } from './bounded-knapsack-stage-codes';
-
-export {
-  renderSpecialRecursionCard1,
-  renderSpecialMemoCard1,
-  renderSpecialMemoCard2,
-  renderSpecial2DCard1,
-  renderSpecial2DCard2,
-};
 
 // ==========================================
 // 1. 阶段 1：多重背包暴力递归步骤生成器

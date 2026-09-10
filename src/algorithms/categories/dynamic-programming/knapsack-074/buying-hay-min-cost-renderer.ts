@@ -19,12 +19,15 @@ import {
   buildBuyingHayRecursionSteps,
   buildBuyingHayMemoSteps,
   buildBuyingHay2DSteps,
+} from '../../../../core/renderers/knapsack-special-stage-evolution';
+import {
   renderSpecialRecursionCard1,
   renderSpecialMemoCard1,
   renderSpecialMemoCard2,
   renderSpecial2DCard1,
   renderSpecial2DCard2,
-} from '../../../../core/renderers/knapsack-special-stage-evolution';
+} from '../../../../core/renderers/special-stage-cards';
+
 
 export interface HayPurchaseItem {
   supplierIdx: number;
@@ -514,17 +517,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         `
           )
           .join('');
-        renderSpecialRecursionCard1(
-          container,
-          '供货商决策栈',
-          step.callStack,
-          `
+        renderSpecialRecursionCard1(container, {
+          title: '供货商决策栈',
+          callStack: step.callStack,
+          customInfoHtml: `
           <div style="display:flex; flex-direction:column; gap:6px;">
             <div style="font-size:11px; color:#94a3b8; font-weight:700;">供货商价目清单 (目标 H=${step.h} 磅):</div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">${suppliersHtml}</div>
           </div>
-        `
-        );
+        `,
+        });
       },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
@@ -563,25 +565,23 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         return buildBuyingHayMemoSteps(h, cost, val);
       },
       renderCanvas: (container, step) => {
-        renderSpecialMemoCard1(
-          container,
-          `dfsMemo(i=${step.i}, remH=${step.remH})`,
-          step.cacheHit,
-          step.decision,
-          step.message,
-          step.hitCount,
-          step.missCount
-        );
+        renderSpecialMemoCard1(container, {
+          stateStr: `dfsMemo(i=${step.i}, remH=${step.remH})`,
+          cacheHit: step.cacheHit,
+          decision: step.decision,
+          message: step.message,
+          hitCount: step.hitCount,
+          missCount: step.missCount,
+        });
       },
       renderCustomMetrics: (container, step) => {
-        renderSpecialMemoCard2(
-          container,
-          `备忘录矩阵 memo[${step.cost.length}][${step.h + 1}]`,
-          step.memo,
-          step.i,
-          step.remH,
-          step.cacheHit
-        );
+        renderSpecialMemoCard2(container, {
+          title: `备忘录矩阵 memo[${step.cost.length}][${step.h + 1}]`,
+          memo: step.memo,
+          curI: step.i,
+          curJ: step.remH,
+          isHit: step.cacheHit,
+        });
       },
     },
     {
@@ -603,28 +603,27 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         return buildBuyingHay2DSteps(h, cost, val);
       },
       renderCanvas: (container, step) => {
-        renderSpecial2DCard1(
-          container,
-          `dp[${step.i >= 0 ? step.i : '—'}][${step.j >= 0 ? step.j : '—'}]`,
-          step.i >= 0 && step.j >= 0
-            ? step.dp[step.i]?.[step.j] >= 1_000_000_000
-              ? 'INF'
-              : `${step.dp[step.i]?.[step.j]} 元`
-            : '—',
-          step.depCells,
-          step.decision,
-          step.message
-        );
+        renderSpecial2DCard1(container, {
+          cellName: `dp[${step.i >= 0 ? step.i : '—'}][${step.j >= 0 ? step.j : '—'}]`,
+          cellValStr:
+            step.i >= 0 && step.j >= 0
+              ? step.dp[step.i]?.[step.j] >= 1_000_000_000
+                ? 'INF'
+                : `${step.dp[step.i]?.[step.j]} 元`
+              : '—',
+          depCells: step.depCells,
+          decision: step.decision,
+          message: step.message,
+        });
       },
       renderCustomMetrics: (container, step) => {
-        renderSpecial2DCard2(
-          container,
-          `二维 DP 状态表 dp[0..${step.cost.length}][0..${step.m}]`,
-          step.dp,
-          step.i,
-          step.j,
-          step.depCells
-        );
+        renderSpecial2DCard2(container, {
+          title: `二维 DP 状态表 dp[0..${step.cost.length}][0..${step.m}]`,
+          dp: step.dp,
+          curI: step.i,
+          curJ: step.j,
+          depCells: step.depCells,
+        });
       },
     },
     {

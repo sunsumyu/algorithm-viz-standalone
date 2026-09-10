@@ -171,5 +171,8 @@ import './categories/graph/min-mean-cycle-renderer';
 import './categories/graph/tree-knapsack-dp-renderer';
 import './categories/graph/convex-hull-3d-renderer';
 import './categories/graph/swim-in-rising-water-renderer';
+import './categories/graph/mst-kruskal-prim-027-renderer';
+import './categories/advanced-topics/hard-interview/lfu-cache-renderer';
+import './categories/advanced-topics/hard-interview/sliding-window-median-renderer';
 
 export {};

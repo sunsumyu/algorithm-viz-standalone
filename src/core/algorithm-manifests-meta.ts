@@ -5596,6 +5596,116 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 144,
     "learningGoal": "掌握卢卡斯定理对大组合数进行 p 进制分解、快速幂与费马小定理求逆元，解决大数模小素数难题"
+  },
+  {
+    "id": "sort-basics-004",
+    "name": "经典基础排序 (Class 004)",
+    "viewId": "algo-sort-basics-004-view",
+    "category": "sort",
+    "description": "左程云算法通关课 Class 004：选择排序、冒泡排序与插入排序算法执行与时间复杂度",
+    "icon": "📊",
+    "difficulty": 1,
+    "levelOrder": 4,
+    "learningGoal": "理解选择、冒泡与插入排序的核心原理与指针边界控制"
+  },
+  {
+    "id": "binary-search-005",
+    "name": "二分搜索三板斧 (Class 005)",
+    "viewId": "algo-binary-search-005-view",
+    "category": "search",
+    "description": "左程云算法通关课 Class 005：精准查找、找 >= target 的最左位置与局部最小值二分查找",
+    "icon": "🔍",
+    "difficulty": 1,
+    "levelOrder": 5,
+    "learningGoal": "掌握二分查找标准模型、最左边界确定与非单调数组局部极小值二分下潜思想"
+  },
+  {
+    "id": "trie-tree-017",
+    "name": "前缀树结构与计数 (Class 017)",
+    "viewId": "algo-trie-tree-017-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 017：前缀树 (Trie) 的构建、插入、前缀查询与计数统计",
+    "icon": "🌲",
+    "difficulty": 1,
+    "levelOrder": 17,
+    "learningGoal": "掌握前缀树 pass 和 end 计数设计，实现高效字符串前缀与词频查询"
+  },
+  {
+    "id": "tree-traversal-iterative-020",
+    "name": "二叉树非递归遍历 (Class 020)",
+    "viewId": "algo-tree-traversal-iterative-020-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 020：二叉树先序、中序、后序遍历的非递归栈实现",
+    "icon": "🌳",
+    "difficulty": 2,
+    "levelOrder": 20,
+    "learningGoal": "掌握利用显式单栈与双栈模拟系统函数调用栈，实现二叉树非递归前中后序遍历"
+  },
+  {
+    "id": "mst-kruskal-prim-027",
+    "name": "最小生成树 Kruskal 算法 (Class 027)",
+    "viewId": "algo-mst-kruskal-prim-027-view",
+    "category": "graph",
+    "description": "左程云算法通关课 Class 027：基于并查集与贪心加边的 Kruskal 最小生成树算法",
+    "icon": "🕸️",
+    "difficulty": 2,
+    "levelOrder": 27,
+    "learningGoal": "掌握 Kruskal 贪心加边与并查集连通分量合并防环策略"
+  },
+  {
+    "id": "hanoi-recursion-029",
+    "name": "汉诺塔宏观递归三部曲 (Class 029)",
+    "viewId": "algo-hanoi-recursion-029-view",
+    "category": "backtracking",
+    "description": "左程云算法通关课 Class 029：汉诺塔问题的宏观分治与递归解法",
+    "icon": "🗼",
+    "difficulty": 1,
+    "levelOrder": 29,
+    "learningGoal": "掌握从宏观角度看待递归过程，理解 1~i-1 从 from 到 other、i 到 to、1~i-1 从 other 到 to 的汉诺塔三部曲"
+  },
+  {
+    "id": "trapping-rain-water-ii",
+    "name": "大厂高频真题: 3D 接雨水 (Trapping Rain Water II)",
+    "viewId": "algo-trapping-rain-water-ii-view",
+    "category": "search",
+    "description": "大厂高频压轴题：LeetCode 407 3D 接雨水，小根堆贪心木桶原理外围向内收缩注水",
+    "icon": "🌊",
+    "difficulty": 3,
+    "levelOrder": 407,
+    "learningGoal": "深刻理解 3D 木桶原理短板效应与小根堆边界收缩计算盛水体积"
+  },
+  {
+    "id": "lfu-cache",
+    "name": "大厂高频真题: LFU 缓存机制 (LFU Cache)",
+    "viewId": "algo-lfu-cache-view",
+    "category": "linked-list",
+    "description": "大厂高频压轴题：LeetCode 460 LFU 缓存机制，双哈希表 + 双向频次链表 O(1) 操作",
+    "icon": "🗄️",
+    "difficulty": 3,
+    "levelOrder": 460,
+    "learningGoal": "掌握双哈希表与频次链表联动，minFreq 维护与 O(1) 淘汰最旧节点"
+  },
+  {
+    "id": "basic-calculator-full",
+    "name": "大厂高频真题: 全功能表达式计算器 (Basic Calculator)",
+    "viewId": "algo-basic-calculator-full-view",
+    "category": "stack",
+    "description": "大厂高频压轴题：LeetCode 772 全功能表达式计算器，双栈法解析加减乘除与括号嵌套",
+    "icon": "🧮",
+    "difficulty": 3,
+    "levelOrder": 772,
+    "learningGoal": "掌握操作数栈与操作符栈协同处理运算符优先级、括号消除与一元负号"
+  },
+  {
+    "id": "sliding-window-median",
+    "name": "大厂高频真题: 滑动窗口中位数 (Sliding Window Median)",
+    "viewId": "algo-sliding-window-median-view",
+    "category": "array",
+    "description": "大厂高频压轴题：LeetCode 480 滑动窗口中位数，对顶堆动态平衡与延迟删除哈希表",
+    "icon": "⚖️",
+    "difficulty": 3,
+    "levelOrder": 480,
+    "learningGoal": "掌握大根堆与小根堆对顶平衡天平，配合延迟删除哈希表实现 O(log K) 动态滑窗求中位数"
   }
 ];
 

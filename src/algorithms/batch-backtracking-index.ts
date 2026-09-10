@@ -24,5 +24,6 @@ import './categories/backtracking/backtracking-dedup-alt-renderer';
 import './categories/backtracking/nqueen-renderer';
 import './categories/backtracking/sudoku-renderer';
 import './categories/backtracking/backtracking-final-summary-renderer';
+import './categories/backtracking/hanoi-recursion-029-renderer';
 
 export {};

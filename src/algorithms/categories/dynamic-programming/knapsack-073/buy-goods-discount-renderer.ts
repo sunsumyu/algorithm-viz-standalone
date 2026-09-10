@@ -29,7 +29,7 @@ import {
   renderSpecialMemoCard2,
   renderSpecial2DCard1,
   renderSpecial2DCard2,
-} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
+} from '../../../../core/renderers/special-stage-cards';
 
 export interface BuyGoodsStep {
   phase: 'init' | 'greedy-free' | 'knapsack-dp' | 'done';
@@ -346,14 +346,14 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
             <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
           </div>
         `;
-        renderSpecialRecursionCard1(
-          container,
-          step.i < step.n
-            ? `正在决策普通游戏 #${step.normalGames?.[step.i]?.id ?? '—'} (花费:${step.normalGames?.[step.i]?.cost ?? '—'}, 快乐:${step.normalGames?.[step.i]?.val ?? '—'})`
-            : '所有普通游戏决策完成',
-          step.callStack || [],
-          infoHtml
-        );
+        renderSpecialRecursionCard1(container, {
+          title:
+            step.i < step.n
+              ? `正在决策普通游戏 #${step.normalGames?.[step.i]?.id ?? '—'} (花费:${step.normalGames?.[step.i]?.cost ?? '—'}, 快乐:${step.normalGames?.[step.i]?.val ?? '—'})`
+              : '所有普通游戏决策完成',
+          callStack: step.callStack || [],
+          customInfoHtml: infoHtml,
+        });
       },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
@@ -395,24 +395,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         return buildBuyGoodsMemoSteps(initialBudget, a, b, w);
       },
       renderCanvas: (container, step) =>
-        renderSpecialMemoCard1(
-          container,
-          `dfs(i=${step.i}, rem=${step.remCap})`,
-          step.memoHit,
-          step.hitCount,
-          step.missCount,
-          step.decision,
-          step.message,
-          step.cachedVal
-        ),
+        renderSpecialMemoCard1(container, {
+          stateStr: `dfs(i=${step.i}, rem=${step.remCap})`,
+          cacheHit: step.memoHit,
+          hitCount: step.hitCount,
+          missCount: step.missCount,
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecialMemoCard2(
-          container,
-          '备忘录快乐值表 memo[i][rem]',
-          step.memoGrid,
-          step.i,
-          step.remCap
-        ),
+        renderSpecialMemoCard2(container, {
+          title: '备忘录快乐值表 memo[i][rem]',
+          memo: step.memoGrid,
+          curI: step.i,
+          curJ: step.remCap,
+        }),
     },
     {
       id: 'stage-3',
@@ -433,23 +430,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         return buildBuyGoods2DSteps(initialBudget, a, b, w);
       },
       renderCanvas: (container, step) =>
-        renderSpecial2DCard1(
-          container,
-          `dp[${step.curI}][${step.curJ}]`,
-          `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
-          step.depCells || [],
-          step.decision,
-          step.message
-        ),
+        renderSpecial2DCard1(container, {
+          cellName: `dp[${step.curI}][${step.curJ}]`,
+          cellValStr: `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
+          depCells: step.depCells || [],
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecial2DCard2(
-          container,
-          '严格二维状态表 dp[i][j]',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
-        ),
+        renderSpecial2DCard2(container, {
+          title: '严格二维状态表 dp[i][j]',
+          dp: step.dpTable,
+          curI: step.curI,
+          curJ: step.curJ,
+          depCells: (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c })),
+        }),
     },
     {
       id: 'stage-4',

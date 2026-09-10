@@ -29,7 +29,7 @@ import {
   renderSpecialMemoCard2,
   renderSpecial2DCard1,
   renderSpecial2DCard2,
-} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
+} from '../../../../core/renderers/special-stage-cards';
 
 export interface TargetSumStep {
   numIndex: number;
@@ -356,14 +356,14 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
             <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
           </div>
         `;
-        renderSpecialRecursionCard1(
-          container,
-          step.i < step.n
-            ? `正在决策 nums[${step.i}]=${step.nums?.[step.i] ?? '—'}`
-            : '所有元素决策完成',
-          step.callStack || [],
-          infoHtml
-        );
+        renderSpecialRecursionCard1(container, {
+          title:
+            step.i < step.n
+              ? `正在决策 nums[${step.i}]=${step.nums?.[step.i] ?? '—'}`
+              : '所有元素决策完成',
+          callStack: step.callStack || [],
+          customInfoHtml: infoHtml,
+        });
       },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
@@ -405,24 +405,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         return buildTargetSumMemoSteps(nums, target);
       },
       renderCanvas: (container, step) =>
-        renderSpecialMemoCard1(
-          container,
-          `dfs(i=${step.i}, rem=${step.remCap})`,
-          step.memoHit,
-          step.hitCount,
-          step.missCount,
-          step.decision,
-          step.message,
-          step.cachedVal
-        ),
+        renderSpecialMemoCard1(container, {
+          stateStr: `dfs(i=${step.i}, rem=${step.remCap})`,
+          cacheHit: step.memoHit,
+          hitCount: step.hitCount,
+          missCount: step.missCount,
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecialMemoCard2(
-          container,
-          '方案数备忘录 memo[i][rem]',
-          step.memoGrid,
-          step.i,
-          step.remCap
-        ),
+        renderSpecialMemoCard2(container, {
+          title: '方案数备忘录 memo[i][rem]',
+          memo: step.memoGrid,
+          curI: step.i,
+          curJ: step.remCap,
+        }),
     },
     {
       id: 'stage-3',
@@ -446,14 +443,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         renderTargetSumBoard(container, step);
       },
       renderCustomMetrics: (container, step) =>
-        renderSpecial2DCard2(
-          container,
-          '严格二维方案数表 dp[i][j]',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
-        ),
+        renderSpecial2DCard2(container, {
+          title: '严格二维方案数表 dp[i][j]',
+          dp: step.dpTable,
+          curI: step.curI,
+          curJ: step.curJ,
+          depCells: (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c })),
+        }),
     },
     {
       id: 'stage-4',

@@ -10,5 +10,6 @@ import './categories/stack/remove-adjacent-duplicates-renderer';
 import './categories/stack/eval-rpn-renderer';
 import './categories/stack/sliding-window-max-renderer';
 import './categories/stack/top-k-frequent-renderer';
+import './categories/advanced-topics/hard-interview/basic-calculator-full-renderer';
 
 export {};

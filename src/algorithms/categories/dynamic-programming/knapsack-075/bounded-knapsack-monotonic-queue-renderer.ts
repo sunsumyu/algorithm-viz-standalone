@@ -18,12 +18,15 @@ import {
   buildBoundedNaiveRecursionSteps,
   buildBoundedNaiveMemoSteps,
   buildBoundedNaive2DSteps,
+} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
+import {
   renderSpecialRecursionCard1,
   renderSpecialMemoCard1,
   renderSpecialMemoCard2,
   renderSpecial2DCard1,
   renderSpecial2DCard2,
-} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
+} from '../../../../core/renderers/special-stage-cards';
+
 
 export interface BoundedKnapsackMonoQueueStep {
   itemIndex: number;
