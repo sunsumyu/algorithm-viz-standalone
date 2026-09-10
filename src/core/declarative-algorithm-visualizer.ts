@@ -457,6 +457,18 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   }
 
   /**
+   * 生命周期管道固化 (Pipeline Hardening)
+   * start() 在基类管道 (buildSteps → render) 之上追加空步骤防御：
+   * 步骤序列为空时给出可见诊断，而不是静默白板。
+   */
+  protected async start(): Promise<void> {
+    await super.start();
+    if (this.steps.length === 0) {
+      this.renderEmptyStepsDiagnostic();
+    }
+  }
+
+  /**
    * 确保关键沙盘与指标容器引用始终有效且处于 DOM 连接状态 (防白板防御)
    */
   protected ensureContainers(): void {
@@ -476,6 +488,41 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   }
 
   /**
+   * 在指定容器内渲染可见的管道异常诊断卡片 (生命周期防御：渲染器崩溃不白屏)
+   */
+  protected renderPipelineError(container: HTMLElement, error: unknown, context: string): void {
+    console.error(`[DeclarativeVisualizer:${this.spec.id}] ${context} 渲染失败:`, error);
+    const detail = error instanceof Error ? `${error.message}` : String(error);
+    container.innerHTML = `
+      <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; padding: 24px; box-sizing: border-box; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;">
+        <div style="font-size: 14px; font-weight: 700; color: #b45309;">⚠️ ${context}渲染异常</div>
+        <div style="font-size: 11px; color: #92400e; line-height: 1.6; max-width: 420px; text-align: center; word-break: break-all;">${detail}</div>
+        <div style="font-size: 10px; color: #a16207;">算法 ${this.spec.id} · 阶段 ${this.currentStageId ?? '—'} · 步骤 #${this.currentIndex + 1}</div>
+      </div>
+    `;
+  }
+
+  /**
+   * 空步骤推演诊断 (生命周期防御：buildSteps 产出 0 步时给出可见反馈而非静默白板)
+   */
+  protected renderEmptyStepsDiagnostic(): void {
+    this.ensureContainers();
+    if (!this.sandboxContainer) return;
+    const stageLabel = this.currentStageId ? `阶段 ${this.currentStageId}` : '当前阶段';
+    this.sandboxContainer.innerHTML = `
+      <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 24px; box-sizing: border-box; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <div style="font-size: 14px; font-weight: 700; color: #475569;">📭 ${stageLabel}未生成任何推演步骤</div>
+        <div style="font-size: 11px; color: #64748b; line-height: 1.6; max-width: 380px; text-align: center;">
+          当前输入参数组合下 buildSteps 返回了空步骤序列。请调整顶部输入参数后重试；若参数合法仍为空，则该阶段的推导函数可能存在缺陷。
+        </div>
+      </div>
+    `;
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = `💡 ${stageLabel}步骤序列为空 — 请检查输入参数`;
+    }
+  }
+
+  /**
    * 渲染单步状态
    */
   protected renderStep(step: TStep): void {
@@ -485,18 +532,23 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     const stage = this.spec.stages?.find((s) => s.id === this.currentStageId);
 
     // 1. 调用 Spec / Stage 的 Card 1 主视觉沙盘渲染器 (优先 primaryVisual.render，兼容 renderCanvas)
+    //    生命周期防御：渲染器异常时渲染可见错误卡片，绝不让主沙盘停在残缺状态
     const primaryRender =
       stage?.primaryVisual?.render ||
       stage?.renderCanvas ||
       this.spec.primaryVisual?.render ||
       this.spec.renderCanvas;
     if (this.sandboxContainer && primaryRender) {
-      primaryRender(this.sandboxContainer, step, {
-        mode: this.currentMode,
-        currentIndex: this.currentIndex,
-        stageId: this.currentStageId,
-        is3DMode: this.is3DMode,
-      });
+      try {
+        primaryRender(this.sandboxContainer, step, {
+          mode: this.currentMode,
+          currentIndex: this.currentIndex,
+          stageId: this.currentStageId,
+          is3DMode: this.is3DMode,
+        });
+      } catch (err) {
+        this.renderPipelineError(this.sandboxContainer, err, '主视觉沙盘 (Card 1)');
+      }
     }
 
     // 1.5 调用 Spec / Stage 的 Card 2 辅助视觉/调用栈/决策树渲染器 (优先 auxiliaryVisual.render，兼容 renderCustomMetrics)
@@ -506,11 +558,15 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       this.spec.auxiliaryVisual?.render ||
       this.spec.renderCustomMetrics;
     if (this.customMetricsContainer && auxRender) {
-      auxRender(this.customMetricsContainer, step, {
-        mode: this.currentMode,
-        currentIndex: this.currentIndex,
-        stageId: this.currentStageId,
-      });
+      try {
+        auxRender(this.customMetricsContainer, step, {
+          mode: this.currentMode,
+          currentIndex: this.currentIndex,
+          stageId: this.currentStageId,
+        });
+      } catch (err) {
+        this.renderPipelineError(this.customMetricsContainer, err, '辅助视觉 (Card 2)');
+      }
     }
 
     // 2. 更新通用实时解说文本与指标卡片

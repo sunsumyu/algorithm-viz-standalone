@@ -400,7 +400,8 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   }
 
   protected async start(): Promise<void> {
-    this.steps = this.buildSteps();
+    // 生命周期防御：推导函数返回 null/undefined 时回退为空数组，避免 setTotalSteps(NaN)
+    this.steps = this.buildSteps() || [];
     this.playbackCoordinator.setTotalSteps(this.steps.length, true);
     this.render();
     this.updateButtons();
