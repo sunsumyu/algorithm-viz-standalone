@@ -5882,6 +5882,94 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 174,
     "learningGoal": "透彻理解正向 DP 的后效性死局，掌握从终点公主房向起点逆向推导最低初始健康值的经典建模技巧"
+  },
+  {
+    "id": "circular-deque-007",
+    "name": "Class 007: 循环双端队列设计 (Circular Deque)",
+    "viewId": "algo-circular-deque-007-view",
+    "category": "queue",
+    "description": "入门篇核心：静态连续数组实现环形双端队列，环形指针取模运算实现首尾 O(1) 存取",
+    "icon": "🔄",
+    "difficulty": 1,
+    "levelOrder": 7,
+    "learningGoal": "掌握静态连续数组构建环形双端队列 (Deque) 的环形指针取模与双端 O(1) 存取设计技巧"
+  },
+  {
+    "id": "merge-sort-small-sum-022",
+    "name": "Class 022: 归并排序与小和问题 (Small Sum)",
+    "viewId": "algo-merge-sort-small-sum-022-view",
+    "category": "sort",
+    "description": "入门篇核心：经典分治与小和问题，利用左右组有序单调性在 O(N log N) 内求出全局小和",
+    "icon": "➕",
+    "difficulty": 2,
+    "levelOrder": 22,
+    "learningGoal": "深刻理解归并排序 Merge 阶段跨组单调性在统计小和与逆序对中的降维加速威力"
+  },
+  {
+    "id": "heap-greater-026",
+    "name": "Class 026: 手写加强堆结构 (HeapGreater)",
+    "viewId": "algo-heap-greater-026-view",
+    "category": "heap",
+    "description": "入门篇核心：手写反向索引映射表 (indexMap)，打破原生堆无法 O(log N) 修改与删除对象的缺陷",
+    "icon": "🏗️",
+    "difficulty": 3,
+    "levelOrder": 26,
+    "learningGoal": "掌握手写加强堆结构与反向索引映射表 (indexMap)，克服原生堆结构无法 O(log N) 修改或删除指定元素的缺陷"
+  },
+  {
+    "id": "radix-sort-028",
+    "name": "Class 028: 基数排序深入与按位分桶 (Radix Sort)",
+    "viewId": "algo-radix-sort-028-view",
+    "category": "sort",
+    "description": "入门篇核心：非基于比较的线性时间排序，十进制各位提取与前缀累加和表划分技巧",
+    "icon": "🧮",
+    "difficulty": 2,
+    "levelOrder": 28,
+    "learningGoal": "透彻理解非基于比较的基数排序算法，掌握前缀累加和表划分与从右向左保持稳定性的数学设计"
+  },
+  {
+    "id": "the-skyline-problem",
+    "name": "大厂高频真题: 城市天际线问题 (The Skyline Problem)",
+    "viewId": "algo-the-skyline-problem-view",
+    "category": "heap",
+    "description": "大厂高频压轴题：LeetCode 218 建筑物边缘事件拆分，扫描线与最大堆维护最高轮廓关键拐点",
+    "icon": "🏙️",
+    "difficulty": 3,
+    "levelOrder": 218,
+    "learningGoal": "掌握扫描线算法与最大堆动态维护轮廓几何最高点的经典转化模型 (LeetCode 218)"
+  },
+  {
+    "id": "freedom-trail-ring-dp",
+    "name": "大厂高频真题: 自由之路环形 DP (Freedom Trail)",
+    "viewId": "algo-freedom-trail-ring-dp-view",
+    "category": "dynamic-programming",
+    "description": "大厂高频压轴题：LeetCode 514 环形密码盘双向旋转步数 min(|i - j|, n - |i - j|) 与记忆化搜索",
+    "icon": "🎡",
+    "difficulty": 3,
+    "levelOrder": 514,
+    "learningGoal": "掌握环形转盘双向旋转步数最短路径 min(|i - j|, n - |i - j|) 与多阶段动态规划状态建模 (LeetCode 514)"
+  },
+  {
+    "id": "substring-concatenation-words",
+    "name": "大厂高频真题: 串联所有单词的子串 (Substring with Concatenation of All Words)",
+    "viewId": "algo-substring-concatenation-words-view",
+    "category": "two-pointers",
+    "description": "大厂高频压轴题：LeetCode 30 定长单词步长分组滑动窗口，哈希欠账模型实现 O(N) 线性检索",
+    "icon": "🔍",
+    "difficulty": 3,
+    "levelOrder": 30,
+    "learningGoal": "透彻掌握按定长单词步长分组滑动窗口优化技巧，将指数级回溯匹配降维至严格 O(N) 线性哈希欠账模型"
+  },
+  {
+    "id": "expression-add-operators",
+    "name": "大厂高频真题: 表达式添加运算符 (Expression Add Operators)",
+    "viewId": "algo-expression-add-operators-view",
+    "category": "backtracking",
+    "description": "大厂高频压轴题：LeetCode 282 回溯生成算术表达式，prevNum 撤销补偿解决乘法结合律优先级",
+    "icon": "🔣",
+    "difficulty": 3,
+    "levelOrder": 282,
+    "learningGoal": "透彻掌握回溯搜索中利用 prevNum 结合律撤销机制搞定乘法运算优先级的高阶技巧 (LeetCode 282)"
   }
 ];
 

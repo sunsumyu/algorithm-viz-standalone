@@ -39,6 +39,7 @@ import './categories/dynamic-programming/dp-067/longest-increasing-path-renderer
 import './categories/advanced-topics/hard-interview/burst-balloons-renderer';
 import './categories/advanced-topics/hard-interview/stock-trading-state-machine-renderer';
 import './categories/advanced-topics/hard-interview/dungeon-game-renderer';
+import './categories/advanced-topics/hard-interview/freedom-trail-renderer';
 
 export {};
 

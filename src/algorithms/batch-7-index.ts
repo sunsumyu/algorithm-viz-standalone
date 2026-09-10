@@ -19,5 +19,6 @@ import './categories/advanced-topics/hard-interview/regex-matching-renderer';
 import './categories/advanced-topics/hard-interview/min-window-substring-renderer';
 import './categories/advanced-topics/hard-interview/longest-valid-parentheses-renderer';
 import './categories/advanced-topics/hard-interview/russian-doll-envelopes-renderer';
+import './categories/advanced-topics/hard-interview/substring-concatenation-renderer';
 
 export {};

@@ -19,5 +19,9 @@ import './categories/advanced-topics/hard-interview/trapping-rain-water-ii-rende
 import './categories/sort/netherlands-flag-024-renderer';
 import './categories/heap/heap-and-heapsort-025-renderer';
 import './categories/bit-manipulation/bitwise-arithmetic-032-renderer';
+import './categories/sort/merge-sort-small-sum-022-renderer';
+import './categories/heap/heap-greater-026-renderer';
+import './categories/sort/radix-sort-028-renderer';
+import './categories/advanced-topics/hard-interview/the-skyline-problem-renderer';
 
 export {};

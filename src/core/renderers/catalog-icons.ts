@@ -393,6 +393,14 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'longest-valid-parentheses': '🧶',
   'hard-russian-doll-envelopes': '🪆',
   'dungeon-game-reverse-dp': '🏰',
+  'circular-deque-007': '🔄',
+  'merge-sort-small-sum-022': '➕',
+  'heap-greater-026': '🏗️',
+  'radix-sort-028': '🧮',
+  'the-skyline-problem': '🏙️',
+  'freedom-trail-ring-dp': '🎡',
+  'substring-concatenation-words': '🔍',
+  'expression-add-operators': '🔣',
 };
 
 /**

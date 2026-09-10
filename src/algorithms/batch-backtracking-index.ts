@@ -26,5 +26,6 @@ import './categories/backtracking/sudoku-renderer';
 import './categories/backtracking/backtracking-final-summary-renderer';
 import './categories/backtracking/hanoi-recursion-029-renderer';
 import './categories/backtracking/permutations-subsequences-030-renderer';
+import './categories/advanced-topics/hard-interview/expression-add-operators-renderer';
 
 export {};
