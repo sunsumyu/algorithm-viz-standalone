@@ -17,5 +17,7 @@ import './categories/string/string-100-105/z-algorithm-renderer';
 import './categories/string/string-100-105/string-hash-renderer';
 import './categories/advanced-topics/hard-interview/regex-matching-renderer';
 import './categories/advanced-topics/hard-interview/min-window-substring-renderer';
+import './categories/advanced-topics/hard-interview/longest-valid-parentheses-renderer';
+import './categories/advanced-topics/hard-interview/russian-doll-envelopes-renderer';
 
 export {};

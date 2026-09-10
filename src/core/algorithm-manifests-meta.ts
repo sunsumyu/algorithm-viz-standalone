@@ -5794,6 +5794,94 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 76,
     "learningGoal": "深刻掌握滑动窗口欠账表模型，在 O(N) 线性时间内求解最小覆盖子串经典难题"
+  },
+  {
+    "id": "binary-search-logarithmic-004",
+    "name": "Class 004: 二分搜索与对数器 (Binary Search)",
+    "viewId": "algo-binary-search-logarithmic-004-view",
+    "category": "binary-search",
+    "description": "入门篇核心：二分搜索边界定位、无序数组局部极小值峰谷二分，与对数器大样本随机比对理念",
+    "icon": "🎯",
+    "difficulty": 1,
+    "levelOrder": 4,
+    "learningGoal": "掌握有序数组二分边界查找、无序数组局部最小值二分，以及对数器大样本随机对比验证思想"
+  },
+  {
+    "id": "tree-recursion-patterns-019",
+    "name": "Class 019: 二叉树高频递归套路 (Tree DP)",
+    "viewId": "algo-tree-recursion-patterns-019-view",
+    "category": "tree",
+    "description": "入门篇核心：二叉树递归套路与树形 DP，统一 Info 结构体解决平衡树、搜索二叉树与最大距离",
+    "icon": "🌲",
+    "difficulty": 2,
+    "levelOrder": 19,
+    "learningGoal": "彻底掌握树形 DP 递归套路，学会设计统一 Info 结构体解决平衡树、搜索二叉树与树最大距离等高频考题"
+  },
+  {
+    "id": "heap-and-heapsort-025",
+    "name": "Class 025: 大根堆与原地堆排序 (HeapSort)",
+    "viewId": "algo-heap-and-heapsort-025-view",
+    "category": "heap",
+    "description": "入门篇核心：完全二叉树连续数组映射、大根堆 heapify 下沉调整与 O(1) 额外空间原地堆排序",
+    "icon": "⛰️",
+    "difficulty": 2,
+    "levelOrder": 25,
+    "learningGoal": "透彻理解完全二叉树的连续数组映射、大根堆性质、heapify 下沉操作与 O(1) 额外空间的原地堆排序算法"
+  },
+  {
+    "id": "bitwise-arithmetic-032",
+    "name": "Class 032: 位运算实现加减乘除 (Bitwise Arithmetic)",
+    "viewId": "algo-bitwise-arithmetic-032-view",
+    "category": "bit-manipulation",
+    "description": "入门篇核心：计算机 CPU 算术逻辑单元原理，纯位运算实现算术加减乘除四则运算",
+    "icon": "⚡",
+    "difficulty": 2,
+    "levelOrder": 32,
+    "learningGoal": "不用任何算术运算符 (+, -, *, /)，纯粹利用位运算 (异或、与、非、移位) 实现算术四则运算"
+  },
+  {
+    "id": "stock-trading-state-machine",
+    "name": "大厂高频真题: 股票交易全系列状态机 DP (Stock Trading)",
+    "viewId": "algo-stock-trading-state-machine-view",
+    "category": "dynamic-programming",
+    "description": "大厂高频压轴题：LeetCode 188 / 309 / 714 统一股票买卖全系列，建立规范三状态机转移模型",
+    "icon": "📈",
+    "difficulty": 3,
+    "levelOrder": 188,
+    "learningGoal": "统一解构 LeetCode 股票买卖全部变种题，建立 Hold、Rest、Sold 规范三状态机转移模型"
+  },
+  {
+    "id": "longest-valid-parentheses",
+    "name": "大厂高频真题: 最长有效括号 (Longest Valid Parentheses)",
+    "viewId": "algo-longest-valid-parentheses-view",
+    "category": "stack",
+    "description": "大厂高频压轴题：LeetCode 32 最长有效括号，栈底参照哨兵法与动态规划状态转移技巧",
+    "icon": "🧶",
+    "difficulty": 3,
+    "levelOrder": 32,
+    "learningGoal": "掌握 LeetCode 32 最长有效连续括号的栈底基准哨兵法与动态规划状态转移技巧"
+  },
+  {
+    "id": "hard-russian-doll-envelopes",
+    "name": "大厂高频真题: 俄罗斯套娃信封问题 (Russian Doll Envelopes)",
+    "viewId": "algo-hard-russian-doll-envelopes-view",
+    "category": "dynamic-programming",
+    "description": "大厂高频压轴题：LeetCode 354 宽升序高降序二维排序，巧妙降维至高度序列 O(N log N) LIS 贪心二分",
+    "icon": "🪆",
+    "difficulty": 3,
+    "levelOrder": 354,
+    "learningGoal": "掌握二维偏序问题通过[宽升序+高降序]巧妙消解冲突并降维至一维 O(N log N) LIS 贪心二分的顶级算法思维"
+  },
+  {
+    "id": "dungeon-game-reverse-dp",
+    "name": "大厂高频真题: 地下城游戏反向 DP (Dungeon Game)",
+    "viewId": "algo-dungeon-game-reverse-dp-view",
+    "category": "dynamic-programming",
+    "description": "大厂高频压轴题：LeetCode 174 恶魔地下城救公主，解剖正向 DP 后效性，从终点逆向推导最低初始生命值",
+    "icon": "🏰",
+    "difficulty": 3,
+    "levelOrder": 174,
+    "learningGoal": "透彻理解正向 DP 的后效性死局，掌握从终点公主房向起点逆向推导最低初始健康值的经典建模技巧"
   }
 ];
 

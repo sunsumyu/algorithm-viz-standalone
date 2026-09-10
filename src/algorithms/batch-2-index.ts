@@ -176,5 +176,6 @@ import './categories/advanced-topics/hard-interview/lfu-cache-renderer';
 import './categories/advanced-topics/hard-interview/sliding-window-median-renderer';
 import './categories/linked-list/linked-list-basics-006-renderer';
 import './categories/advanced-topics/hard-interview/maximal-rectangle-renderer';
+import './categories/binary-search/binary-search-logarithmic-004-renderer';
 
 export {};

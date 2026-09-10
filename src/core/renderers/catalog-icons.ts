@@ -385,6 +385,14 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'circular-interval-dp-087': '📿',
   'tree-knapsack-dp-088': '🎒',
   'making-large-island-058': '🏝️',
+  'binary-search-logarithmic-004': '🎯',
+  'tree-recursion-patterns-019': '🌲',
+  'heap-and-heapsort-025': '⛰️',
+  'bitwise-arithmetic-032': '⚡',
+  'stock-trading-state-machine': '📈',
+  'longest-valid-parentheses': '🧶',
+  'hard-russian-doll-envelopes': '🪆',
+  'dungeon-game-reverse-dp': '🏰',
 };
 
 /**

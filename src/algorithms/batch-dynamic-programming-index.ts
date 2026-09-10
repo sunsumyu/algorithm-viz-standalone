@@ -37,6 +37,8 @@ import './categories/dynamic-programming/dp-067/longest-palindromic-subsequence-
 import './categories/dynamic-programming/dp-067/tree-count-height-m-renderer';
 import './categories/dynamic-programming/dp-067/longest-increasing-path-renderer';
 import './categories/advanced-topics/hard-interview/burst-balloons-renderer';
+import './categories/advanced-topics/hard-interview/stock-trading-state-machine-renderer';
+import './categories/advanced-topics/hard-interview/dungeon-game-renderer';
 
 export {};
 
