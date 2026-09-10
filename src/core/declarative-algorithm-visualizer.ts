@@ -392,9 +392,17 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     const curLang = this.codeTerminal?.getCurrentLanguage() || 'java';
     this.codeLanguages = targetCodeLangs;
     this.codeLines = targetCodeLangs[curLang] || Object.values(targetCodeLangs)[0] || [];
+
+    // 兼容 problemContent 字段（{ title, html } 结构）映射到 problemHtml
+    let resolvedProblemHtml = this.spec.problemHtml;
+    if (!resolvedProblemHtml && this.spec.problemContent) {
+      const pc = this.spec.problemContent;
+      resolvedProblemHtml = typeof pc === 'string' ? pc : (pc?.html || '');
+    }
+
     this.mountTerminal({
       codeLanguages: targetCodeLangs,
-      problemHtml: this.spec.problemHtml,
+      problemHtml: resolvedProblemHtml,
       analysisHtml: this.spec.analysisHtml,
       initialLang: curLang,
     });
