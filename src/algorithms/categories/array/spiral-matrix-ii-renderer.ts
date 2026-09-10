@@ -1,13 +1,19 @@
 /**
- * 螺旋矩阵 II 可视化器（模拟）
- * LeetCode 59
+ * 螺旋矩阵 II 可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * LeetCode 59：四边界收缩模拟
+ * 遵循 Zero-Subbox 规范，扁平 2D 网格沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './spiral-matrix-ii.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  SPIRAL_MATRIX_II_PROBLEM_HTML,
+  SPIRAL_MATRIX_II_ANALYSIS_HTML,
+  SPIRAL_MATRIX_II_CODE_LANGUAGES,
+} from './spiral-matrix-ii-problem-content';
 
-interface SpiralStep {
+export interface SpiralStep {
   n: number;
   matrix: number[][];
   currentRow: number;
@@ -21,239 +27,335 @@ interface SpiralStep {
   status: 'fill' | 'turn' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
-function buildSpiralSteps(n: number): SpiralStep[] {
-  const steps: SpiralStep[] = [];
-  const matrix: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
-  let top = 0, bottom = n - 1, left = 0, right = n - 1;
-  let num = 1;
-  const dirs: Array<[string, number, number]> = [
-    ['右', 0, 1], ['下', 1, 0], ['左', 0, -1], ['上', -1, 0],
-  ];
-
-  steps.push({
-    n, matrix: clone(matrix), currentRow: -1, currentCol: -1, num: 0, dir: '准备', top, bottom, left, right, status: 'fill',
-    message: `初始化边界 top=0, bottom=${bottom}, left=0, right=${right}，从 (0,0) 开始向右填充。`,
-    log: '初始化四边界。',
-    codeLine: [2],
-  });
-
-  while (num <= n * n) {
-    for (let d = 0; d < 4; d++) {
-      const [dirName, dr, dc] = dirs[d];
-      let r: number, c: number;
-      if (dirName === '右') { r = top; c = left; }
-      else if (dirName === '下') { r = top + 1; c = right; }
-      else if (dirName === '左') { r = bottom; c = right - 1; }
-      else { r = bottom - 1; c = left; }
-
-      while (true) {
-        if (r < top || r > bottom || c < left || c > right) break;
-        if (num > n * n) break;
-        matrix[r][c] = num;
-        steps.push({
-          n, matrix: clone(matrix), currentRow: r, currentCol: c, num, dir: dirName, top, bottom, left, right, status: 'fill',
-          message: `向${dirName}填入 ${num} 到位置 (${r},${c})。`,
-          log: `填 matrix[${r}][${c}] = ${num}。`,
-          codeLine: dirName === '右' ? [4, 5] : dirName === '下' ? [6, 7] : dirName === '左' ? [8, 9] : [10, 11],
-        });
-        num++;
-        r += dr;
-        c += dc;
-      }
-
-      // 收缩边界
-      if (dirName === '右') { top++; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '右', 'top++ -> ' + top, [12])); }
-      else if (dirName === '下') { right--; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '下', 'right-- -> ' + right, [13])); }
-      else if (dirName === '左') { bottom--; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '左', 'bottom-- -> ' + bottom, [14])); }
-      else { left++; steps.push(boundaryStep(n, matrix, top, bottom, left, right, '上', 'left++ -> ' + left, [15])); }
-      if (num > n * n) break;
-    }
-  }
-
-  steps.push({
-    n, matrix: clone(matrix), currentRow: -1, currentCol: -1, num: n * n, dir: '完成', top, bottom, left, right, status: 'done',
-    message: `填数完成，共填入 ${n * n} 个数。`,
-    log: '返回矩阵。',
-    codeLine: 17,
-  });
-  return steps;
+function clone(matrix: number[][]): number[][] {
+  return matrix.map((row) => [...row]);
 }
 
-function clone(m: number[][]): number[][] {
-  return m.map((row) => [...row]);
-}
-
-function boundaryStep(n: number, matrix: number[][], top: number, bottom: number, left: number, right: number, dir: string, log: string, codeLine: number[]): SpiralStep {
+function boundaryStep(
+  n: number,
+  matrix: number[][],
+  top: number,
+  bottom: number,
+  left: number,
+  right: number,
+  dir: string,
+  log: string,
+  codeLine: HighlightTarget
+): SpiralStep {
   return {
-    n, matrix: clone(matrix), currentRow: -1, currentCol: -1, num: 0, dir, top, bottom, left, right, status: 'turn',
-    message: `向${dir}填完一条边，收缩边界：${log}。`,
-    log: `收缩边界 ${log}。`,
+    n,
+    matrix: clone(matrix),
+    currentRow: -1,
+    currentCol: -1,
+    num: 0,
+    dir: '收缩边界',
+    top,
+    bottom,
+    left,
+    right,
+    status: 'turn',
+    message: `完成 ${dir} 方向填充，收缩边界：${log}。`,
+    log: `收缩边界: ${log}`,
     codeLine,
   };
 }
 
-export class SpiralMatrixIIVisualizer extends StepVisualizer<SpiralStep> {
-  protected codeLines = [
-    'public int[][] generateMatrix(int n) {',
-    '    int[][] matrix = new int[n][n];',
-    '    int top = 0, bottom = n - 1, left = 0, right = n - 1, num = 1;',
-    '    while (num <= n * n) {',
-    '        // 向右',
-    '        for (int c = left; c <= right; c++) matrix[top][c] = num++;',
-    '        top++;',
-    '        // 向下',
-    '        for (int r = top; r <= bottom; r++) matrix[r][right] = num++;',
-    '        right--;',
-    '        // 向左',
-    '        for (int c = right; c >= left; c--) matrix[bottom][c] = num++;',
-    '        bottom--;',
-    '        // 向上',
-    '        for (int r = bottom; r >= top; r--) matrix[r][left] = num++;',
-    '        left++;',
-    '    }',
-    '    return matrix;',
-    '}',
-  ];
-  protected codePanelTitle = '螺旋矩阵 Java 实现';
+export function buildSpiralSteps(n: number): SpiralStep[] {
+  const steps: SpiralStep[] = [];
+  const matrix: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  let top = 0,
+    bottom = n - 1,
+    left = 0,
+    right = n - 1;
+  let num = 1;
 
-  private nInput: HTMLInputElement | null = null;
-  private gridWrap: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private numEl: HTMLElement | null = null;
-  private dirEl: HTMLElement | null = null;
-  private rowbEl: HTMLElement | null = null;
-  private colbEl: HTMLElement | null = null;
-  private currentN = 4;
-  /** 持久化网格容器（复用，仅更新 gridTemplateColumns） */
-  private gridEl: HTMLElement | null = null;
-  /** 持久化 cell（一维，按 r*n + c） */
-  private cellGrid: HTMLElement[] = [];
-  /** 当前网格边长，用于检测变化重建 */
-  private renderedN = 0;
+  const lines = {
+    init: { java: [3, 4], cpp: [5, 6], python: [4, 5], javascript: [3, 4] },
+    rightFill: { java: 6, cpp: 8, python: [7, 8, 9], javascript: 6 },
+    shrinkTop: { java: 7, cpp: 9, python: 10, javascript: 7 },
+    downFill: { java: 8, cpp: 10, python: [11, 12, 13], javascript: 8 },
+    shrinkRight: { java: 9, cpp: 11, python: 14, javascript: 9 },
+    leftFill: { java: 10, cpp: 12, python: [15, 16, 17], javascript: 10 },
+    shrinkBottom: { java: 11, cpp: 13, python: 18, javascript: 11 },
+    upFill: { java: 12, cpp: 14, python: [19, 20, 21], javascript: 12 },
+    shrinkLeft: { java: 13, cpp: 15, python: 22, javascript: 13 },
+    done: { java: 15, cpp: 17, python: 23, javascript: 15 },
+  };
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.nInput = this.root.querySelector('#sp-n-input');
-    this.btnStart = this.root.querySelector('#sp-start');
-    this.gridWrap = this.root.querySelector('#sp-grid-wrap');
-    this.logEl = this.root.querySelector('#sp-log');
-    this.numEl = this.root.querySelector('#sp-num');
-    this.dirEl = this.root.querySelector('#sp-dir');
-    this.rowbEl = this.root.querySelector('#sp-rowb');
-    this.colbEl = this.root.querySelector('#sp-colb');
-    this.bindPlaybackControls({ message: 'step-message' });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-  }
+  steps.push({
+    n,
+    matrix: clone(matrix),
+    currentRow: -1,
+    currentCol: -1,
+    num: 0,
+    dir: '准备',
+    top,
+    bottom,
+    left,
+    right,
+    status: 'fill',
+    message: `初始化边界 top=0, bottom=${bottom}, left=0, right=${right}，准备从 (0,0) 开始顺时针填入 1 ~ ${n * n}。`,
+    log: `初始化四边界：top=0, bottom=${bottom}, left=0, right=${right}`,
+    codeLine: lines.init,
+  });
 
-  protected buildSteps(): SpiralStep[] {
-    let n = parseInt(this.nInput?.value || '4', 10);
-    if (!Number.isFinite(n)) n = 4;
-    n = Math.max(1, Math.min(8, n));
-    if (this.nInput) this.nInput.value = String(n);
-    this.currentN = n;
-    return buildSpiralSteps(n);
-  }
-
-  protected renderStep(step: SpiralStep): void {
-    if (this.numEl) this.numEl.textContent = String(step.num);
-    if (this.dirEl) this.dirEl.textContent = step.dir;
-    if (this.rowbEl) this.rowbEl.textContent = `${step.top}/${step.bottom}`;
-    if (this.colbEl) this.colbEl.textContent = `${step.left}/${step.right}`;
-
-    // 当前填充方向标记到 gridWrap，CSS 据此显示方向箭头
-    if (this.gridWrap) {
-      const dirMap: Record<string, string> = { '右': 'right', '下': 'down', '左': 'left', '上': 'up' };
-      this.gridWrap.dataset.dir = dirMap[step.dir] || (step.status === 'done' ? 'done' : 'idle');
+  while (num <= n * n) {
+    // 1. 向右填充 [top, left] -> [top, right]
+    for (let c = left; c <= right && num <= n * n; c++) {
+      matrix[top][c] = num;
+      steps.push({
+        n,
+        matrix: clone(matrix),
+        currentRow: top,
+        currentCol: c,
+        num,
+        dir: '👉 向右',
+        top,
+        bottom,
+        left,
+        right,
+        status: 'fill',
+        message: `向右填充：在 (${top}, ${c}) 写入 ${num}。`,
+        log: `👉 写入 (${top},${c}) = ${num}`,
+        codeLine: lines.rightFill,
+      });
+      num++;
+    }
+    top++;
+    if (top <= bottom) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向右', `top 下移至 ${top}`, lines.shrinkTop));
     }
 
-    if (this.gridWrap) {
-      this.ensureGrid(step.n);
-      for (let r = 0; r < step.n; r++) {
-        for (let c = 0; c < step.n; c++) {
-          const idx = r * step.n + c;
-          const cell = this.cellGrid[idx];
-          if (!cell) continue;
-          const val = step.matrix[r][c];
-          const isFilled = val !== 0;
-          const isCurrent = r === step.currentRow && c === step.currentCol;
-
-          cell.classList.toggle('filled', isFilled);
-          cell.classList.toggle('current', isCurrent);
-          // 螺旋轨迹：已填 cell 微弱发光，当前填的 cell 最亮
-          cell.classList.toggle('trail', isFilled && !isCurrent && step.status !== 'done');
-
-          // 新填入触发 filling 发光动画
-          if (isCurrent && step.status === 'fill' && isFilled) {
-            this.restartAnimation(cell, 'filling');
-          } else {
-            cell.classList.remove('filling');
-          }
-
-          cell.textContent = isFilled ? String(val) : '';
-        }
-      }
+    // 2. 向下填充 [top, right] -> [bottom, right]
+    for (let r = top; r <= bottom && num <= n * n; r++) {
+      matrix[r][right] = num;
+      steps.push({
+        n,
+        matrix: clone(matrix),
+        currentRow: r,
+        currentCol: right,
+        num,
+        dir: '👇 向下',
+        top,
+        bottom,
+        left,
+        right,
+        status: 'fill',
+        message: `向下填充：在 (${r}, ${right}) 写入 ${num}。`,
+        log: `👇 写入 (${r},${right}) = ${num}`,
+        codeLine: lines.downFill,
+      });
+      num++;
     }
-    this.renderLogLine(step);
-  }
-
-  /** 确保网格容器与 cell 数量匹配当前 n（n 变化时整体重建） */
-  private ensureGrid(n: number): void {
-    if (!this.gridWrap) return;
-    // n 变化时，清空并重建网格容器 + 全部 cell
-    if (this.renderedN !== n || !this.gridEl || this.gridEl.parentElement !== this.gridWrap) {
-      this.gridWrap.innerHTML = '';
-      this.cellGrid = [];
-      const grid = document.createElement('div');
-      grid.className = 'sp-grid';
-      grid.style.gridTemplateColumns = `repeat(${n}, 52px)`;
-      this.gridWrap.appendChild(grid);
-      this.gridEl = grid;
-      this.renderedN = n;
-      const total = n * n;
-      for (let i = 0; i < total; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'sp-cell';
-        this.cellGrid.push(cell);
-        grid.appendChild(cell);
-      }
-      return;
+    right--;
+    if (left <= right) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向下', `right 左移至 ${right}`, lines.shrinkRight));
     }
-    // n 不变：cell 已复用，无需操作
+
+    // 3. 向左填充 [bottom, right] -> [bottom, left]
+    for (let c = right; c >= left && num <= n * n; c--) {
+      matrix[bottom][c] = num;
+      steps.push({
+        n,
+        matrix: clone(matrix),
+        currentRow: bottom,
+        currentCol: c,
+        num,
+        dir: '👈 向左',
+        top,
+        bottom,
+        left,
+        right,
+        status: 'fill',
+        message: `向左填充：在 (${bottom}, ${c}) 写入 ${num}。`,
+        log: `👈 写入 (${bottom},${c}) = ${num}`,
+        codeLine: lines.leftFill,
+      });
+      num++;
+    }
+    bottom--;
+    if (top <= bottom) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向左', `bottom 上移至 ${bottom}`, lines.shrinkBottom));
+    }
+
+    // 4. 向上填充 [bottom, left] -> [top, left]
+    for (let r = bottom; r >= top && num <= n * n; r--) {
+      matrix[r][left] = num;
+      steps.push({
+        n,
+        matrix: clone(matrix),
+        currentRow: r,
+        currentCol: left,
+        num,
+        dir: '👆 向上',
+        top,
+        bottom,
+        left,
+        right,
+        status: 'fill',
+        message: `向上填充：在 (${r}, ${left}) 写入 ${num}。`,
+        log: `👆 写入 (${r},${left}) = ${num}`,
+        codeLine: lines.upFill,
+      });
+      num++;
+    }
+    left++;
+    if (left <= right) {
+      steps.push(boundaryStep(n, matrix, top, bottom, left, right, '向上', `left 右移至 ${left}`, lines.shrinkLeft));
+    }
   }
 
-  /** 重启 CSS 动画 class */
-  private restartAnimation(el: HTMLElement, cls: string): void {
-    el.classList.remove(cls);
-    void el.offsetWidth;
-    el.classList.add(cls);
-  }
+  steps.push({
+    n,
+    matrix: clone(matrix),
+    currentRow: -1,
+    currentCol: -1,
+    num: n * n,
+    dir: '完成',
+    top,
+    bottom,
+    left,
+    right,
+    status: 'done',
+    message: `🎉 螺旋矩阵 II 全部填满！已成功生成 ${n}×${n} 矩阵。`,
+    log: `✓ 完成：已生成 ${n}x${n} 螺旋矩阵`,
+    codeLine: lines.done,
+  });
 
-  private renderLogLine(step: SpiralStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
+  return steps;
 }
+
+const { template, Visualizer } = createDeclarativeVisualizer<SpiralStep>({
+  id: 'spiral-matrix-ii',
+  name: '螺旋矩阵 II',
+  category: 'array',
+  icon: '🌀',
+  badge: {
+    mode: '四边界收缩模拟',
+    complexity: 'O(n²) · O(1)',
+  },
+  card1Title: '📊 螺旋矩阵 2D 网格填充沙盘',
+  card2Title: '🧭 填充方向与四边界坐标监视器',
+  card2Desc: '当前填充坐标 (r, c)、前进方向与 [top, bottom, left, right] 边界',
+  legend: [
+    { label: '当前填充格', color: '#fbbf24' },
+    { label: '已填充数字', color: '#10b981' },
+    { label: '待填充空格', color: '#cbd5e1' },
+  ],
+  inputs: [
+    {
+      id: 'input-n',
+      label: '矩阵阶数 n',
+      type: 'number',
+      defaultValue: 3,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '3×3 标准矩阵', values: { 'input-n': 3 } },
+    { label: '4×4 偶数阶', values: { 'input-n': 4 } },
+    { label: '5×5 奇数阶', values: { 'input-n': 5 } },
+  ],
+  metrics: [
+    { id: 'cur-pos', label: '当前填充坐标 (r, c)', color: '#2563eb' },
+    { id: 'fill-dir', label: '当前填充方向', color: '#f59e0b' },
+    { id: 'fill-progress', label: '填充进度', color: '#16a34a' },
+  ],
+  codeLanguages: SPIRAL_MATRIX_II_CODE_LANGUAGES,
+  problemHtml: SPIRAL_MATRIX_II_PROBLEM_HTML,
+  analysisHtml: SPIRAL_MATRIX_II_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const n = Math.min(6, Math.max(1, parseInt(inputs['input-n'] || '3', 10)));
+    return buildSpiralSteps(n);
+  },
+  renderCanvas: (container, step) => {
+    const n = step.n;
+    const isDone = step.status === 'done';
+
+    const gridRowsHtml = step.matrix
+      .map((row, r) => {
+        const cellsHtml = row
+          .map((val, c) => {
+            const isCur = r === step.currentRow && c === step.currentCol && !isDone;
+            const isFilled = val > 0;
+
+            let bg = '#ffffff';
+            let border = '#e2e8f0';
+            let textColor = '#64748b';
+
+            if (isCur) {
+              bg = '#fffbeb';
+              border = '#f59e0b';
+              textColor = '#b45309';
+            } else if (isFilled) {
+              bg = '#f0fdf4';
+              border = '#86efac';
+              textColor = '#166534';
+            }
+
+            return `
+              <div style="width: 38px; height: 38px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: ${textColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                ${val > 0 ? val : '·'}
+              </div>
+            `;
+          })
+          .join('');
+
+        return `<div style="display: flex; gap: 4px;">${cellsHtml}</div>`;
+      })
+      .join('');
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px;">
+          ${gridRowsHtml}
+        </div>
+      </div>
+    `;
+
+    const root = container.closest('#algo-spiral-matrix-ii-view');
+    if (root) {
+      const posEl = root.querySelector('#metric-cur-pos');
+      const dirEl = root.querySelector('#metric-fill-dir');
+      const progEl = root.querySelector('#metric-fill-progress');
+
+      if (posEl) posEl.textContent = step.currentRow >= 0 ? `(${step.currentRow}, ${step.currentCol})` : '—';
+      if (dirEl) dirEl.textContent = step.dir;
+      if (progEl) progEl.textContent = `${step.num} / ${n * n}`;
+
+      // 在 Card 2 中展示四边界范围
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #475569; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>四边界坐标:</span>
+              <strong style="font-family: monospace; color: #2563eb;">T:${step.top}, B:${step.bottom}, L:${step.left}, R:${step.right}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前写入值:</span>
+              <strong style="font-family: monospace; color: #16a34a;">${step.num > 0 ? step.num : '准备就绪'}</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'spiral-matrix-ii',
-  name: '螺旋矩阵 II（模拟）',
+  name: '螺旋矩阵 II',
   viewId: 'algo-spiral-matrix-ii-view',
   category: 'array',
-  description: '顺时针螺旋填充 n×n 矩阵',
+  description: '四边界顺时针模拟：右下左上依次填充，每完成一条边立刻收缩对应边界',
   icon: '🌀',
   template,
-  Visualizer: SpiralMatrixIIVisualizer,
+  Visualizer,
   difficulty: 2,
-  levelOrder: 3,
-  learningGoal: '学会按方向模拟遍历矩阵的思维',
+  levelOrder: 5,
+  learningGoal: '掌握二维矩阵模拟中四边界收缩法的高效无差错边界控制思想',
 });

@@ -1,29 +1,36 @@
 /**
- * Bellman-Ford 判断负权回路可视化器
- * 运行 V-1 轮松弛，再检查第 V 轮是否仍能松弛
+ * Bellman-Ford 负权回路检测
+ * 4-Card 标准现代架构可视化器 (左程云 class061 / 洛谷 P3385)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V-1轮常规松弛外层、全边扫描、松弛条件更新、第V轮额外检测、负环捕获分支均发射独立Step）、四语言行号映射
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  NEGATIVE_CYCLE_PROBLEM_HTML,
+  NEGATIVE_CYCLE_ANALYSIS_HTML,
+  NEGATIVE_CYCLE_CODE_LANGUAGES,
+} from './negative-cycle-problem-content';
 import template from './negative-cycle.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
-interface NCStep {
+export interface NCStep extends StepBase {
   dist: number[];
-  prevDist: number[];
   round: number;
   maxRounds: number;
-  edgeIdx: number;
+  currentEdge: { u: number; v: number; w: number } | null;
+  relaxedEdge: boolean;
   relaxCount: number;
-  cycleFound: boolean;
-  cycleEdge: { u: number; v: number; w: number } | null;
-  edgeStatus: ('normal' | 'current' | 'cycle')[];
-  nodeHighlight: number[];
-  message: string;
+  hasCycle: boolean;
+  cycleEdges: { u: number; v: number; w: number }[];
+  action: 'init' | 'relax-success' | 'relax-skip' | 'round-done' | 'cycle-detected' | 'done';
+  statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
-const NC_EDGES = [
+export const NC_EDGES = [
   { u: 0, v: 1, w: 2 },
   { u: 1, v: 2, w: -3 },
   { u: 2, v: 3, w: 1 },
@@ -32,161 +39,169 @@ const NC_EDGES = [
   { u: 3, v: 4, w: 2 },
 ];
 
-const NC_NODES = [0, 1, 2, 3, 4];
-const NC_NODE_POS = [
-  { x: 60, y: 150 },
-  { x: 180, y: 80 },
-  { x: 320, y: 80 },
-  { x: 280, y: 220 },
-  { x: 420, y: 180 },
+export const NC_NODES = [0, 1, 2, 3, 4];
+export const NC_NODE_POS = [
+  { x: 60, y: 130 },
+  { x: 180, y: 60 },
+  { x: 320, y: 60 },
+  { x: 250, y: 190 },
+  { x: 400, y: 150 },
 ];
 
-function buildNCSteps(): NCStep[] {
+export function buildNCSteps(): NCStep[] {
   const steps: NCStep[] = [];
   const n = NC_NODES.length;
-  const INF = Infinity;
-  let dist = new Array(n).fill(INF);
-  dist[0] = 0;
+  const INF = 999999;
 
-  const edgeStatus: ('normal' | 'current' | 'cycle')[] = NC_EDGES.map(() => 'normal');
-
-  const snap = (round: number, edgeIdx: number, relaxCount: number, cycleFound: boolean,
-    cycleEdge: NCStep['cycleEdge'], nodeHL: number[], msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      dist: [...dist],
-      prevDist: [...dist],
-      round,
-      maxRounds: n,
-      edgeIdx,
-      relaxCount,
-      cycleFound,
-      cycleEdge,
-      edgeStatus: [...edgeStatus],
-      nodeHighlight: [...nodeHL],
-      message: msg,
-      log,
-      codeLine: code,
-    });
+  // 精准 13 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 3, java: 2, python: 2, javascript: 1 },
+    initDist: { cpp: 5, java: 4, python: 3, javascript: 3 },
+    setSrc: { cpp: 6, java: 5, python: 4, javascript: 4 },
+    forRound: { cpp: 7, java: 7, python: 5, javascript: 5 },
+    forEdge: { cpp: 8, java: 8, python: 6, javascript: 6 },
+    unpackEdge: { cpp: 9, java: 9, python: 6, javascript: 6 },
+    checkRelax: { cpp: 10, java: 10, python: 7, javascript: 7 },
+    updateDist: { cpp: 11, java: 11, python: 8, javascript: 8 },
+    forCheckRound: { cpp: 15, java: 14, python: 9, javascript: 12 },
+    unpackCheckEdge: { cpp: 16, java: 15, python: 9, javascript: 12 },
+    checkCycleRelax: { cpp: 17, java: 16, python: 10, javascript: 13 },
+    returnTrue: { cpp: 18, java: 17, python: 11, javascript: 14 },
+    returnFalse: { cpp: 21, java: 20, python: 12, javascript: 17 },
   };
 
-  snap(0, -1, 0, false, null, [0],
-    `初始化：V=${n} 个节点，${NC_EDGES.length} 条有向边。源点=0，dist[0]=0，其余=INF。`,
-    '初始化: dist[0]=0, 其余=INF', 0);
-
+  const dist = new Array(n).fill(INF);
+  dist[0] = 0;
   let totalRelax = 0;
 
-  // V-1 iterations
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'relax-success' | 'relax-skip' | 'round-done' | 'cycle-detected' | 'done',
+    statusText: string,
+    log: string,
+    round: number,
+    currentEdge: { u: number; v: number; w: number } | null = null,
+    relaxedEdge: boolean = false,
+    hasCycle: boolean = false,
+    cycleEdges: { u: number; v: number; w: number }[] = []
+  ): void {
+    const dStr = dist.map((d, idx) => `${idx}:${d >= INF ? '∞' : d}`).join(', ');
+
+    steps.push({
+      dist: [...dist],
+      round,
+      maxRounds: n,
+      currentEdge,
+      relaxedEdge,
+      relaxCount: totalRelax,
+      hasCycle,
+      cycleEdges,
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-nc-round': `${round} / ${n}`,
+        'metric-nc-edge': currentEdge ? `(${currentEdge.u}➔${currentEdge.v}, w=${currentEdge.w})` : '—',
+        'metric-nc-cycle': hasCycle ? '❌ 检测到负权回路' : '检测中...',
+        'metric-nc-dist': `[${dStr}]`,
+      },
+    });
+  }
+
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] hasNegativeCycle(n=5, edges, src=0)：启动负权回路检测算法。', 'hasNegativeCycle 入口', 0);
+  makeStep(lines.initDist, 'init', '📊 [初始化距离数组] int[] dist = new int[5]; Arrays.fill(dist, INF)。', 'Arrays.fill(dist, INF)', 0);
+
+  dist[0] = 0;
+  makeStep(lines.setSrc, 'init', '🌱 [设置源点距离] dist[0] = 0；从源点 0 开始展开最短路径。', 'dist[0] = 0', 0);
+
+  // 2. 前 n - 1 轮常规松弛
   for (let round = 1; round <= n - 1; round++) {
-    let relaxed = 0;
+    makeStep(lines.forRound, 'round-done', `🔁 [轮次循环] for (i = ${round}; i <= ${n - 1}; i++)：开始第 ${round} / ${n - 1} 轮全边遍历。`, `--- 第 ${round} 轮常规松弛 ---`, round);
 
     for (let ei = 0; ei < NC_EDGES.length; ei++) {
       const e = NC_EDGES[ei];
-      edgeStatus[ei] = 'current';
+      makeStep(lines.forEdge, 'relax-skip', `🔎 [考察边] 遍历边 (${e.u} ➔ ${e.v}, 权值 w=${e.w})。`, `edge (${e.u}->${e.v}, w=${e.w})`, round, e);
+      makeStep(lines.unpackEdge, 'relax-skip', `  ↳ [解构边元] u=${e.u}, v=${e.v}, w=${e.w}。`, `u=${e.u}, v=${e.v}, w=${e.w}`, round, e);
 
-      if (dist[e.u] !== INF && dist[e.u] + e.w < dist[e.v]) {
-        const oldDist = dist[e.v];
+      const canRelax = dist[e.u] !== INF && dist[e.u] + e.w < dist[e.v];
+      makeStep(lines.checkRelax, canRelax ? 'relax-success' : 'relax-skip', `  🔎 [松弛核验] if (dist[${e.u}](${dist[e.u] >= INF ? '∞' : dist[e.u]}) + ${e.w} < dist[${e.v}](${dist[e.v] >= INF ? '∞' : dist[e.v]})) -> (${canRelax})。`, `check (${e.u}->${e.v})`, round, e);
+
+      if (canRelax) {
+        const oldVal = dist[e.v];
         dist[e.v] = dist[e.u] + e.w;
-        relaxed++;
         totalRelax++;
-
-        snap(round, ei, totalRelax, false, null, [e.u, e.v],
-          `第 ${round} 轮，检查边 (${e.u})->(${e.v}) w=${e.w}: dist[${e.u}]=${dist[e.u] - e.w + e.w === dist[e.u] ? dist[e.u] : dist[e.u]}, dist[${e.u}]+${e.w}=${dist[e.v]} < 旧值${oldDist === INF ? 'INF' : oldDist}，松弛成功！`,
-          `R${round}: (${e.u})->(${e.v}) w=${e.w}, dist[${e.v}]=${dist[e.v]}`, [2, 3]);
+        makeStep(lines.updateDist, 'relax-success', `  ⚡ [更新距离] 成功松弛！dist[${e.v}] 从 ${oldVal >= INF ? '∞' : oldVal} 缩短为 ${dist[e.v]}！`, `dist[${e.v}]=${dist[e.v]}`, round, e, true);
       } else {
-        const reason = dist[e.u] === INF ? `dist[${e.u}]=INF，跳过` :
-          `dist[${e.u}]+${e.w}=${dist[e.u] + e.w} >= dist[${e.v}]=${dist[e.v]}`;
-        snap(round, ei, totalRelax, false, null, [],
-          `第 ${round} 轮，检查边 (${e.u})->(${e.v}) w=${e.w}: ${reason}，不松弛。`,
-          `R${round}: (${e.u})->(${e.v}) 不松弛`, [2]);
+        makeStep(lines.checkRelax, 'relax-skip', `  ⏭️ [跳过边] 边 (${e.u} ➔ ${e.v}) 不满足严格缩短条件。`, `skip (${e.u}->${e.v})`, round, e);
       }
-
-      edgeStatus[ei] = 'normal';
     }
 
-    if (relaxed === 0) {
-      snap(round, -1, totalRelax, false, null, [],
-        `第 ${round} 轮没有发生任何松弛，提前结束。不存在负权回路。`,
-        `R${round}: 无松弛，提前结束`, [5]);
-      snap(n, -1, totalRelax, false, null, [],
-        `结论：图中不存在负权回路。`,
-        '结果: 无负环', 6);
-      return steps;
-    }
+    makeStep(lines.forRound, 'round-done', `✓ [轮次完成] 完成第 ${round} 轮松弛迭代，累计松弛 ${totalRelax} 次。`, `round ${round} done`, round);
   }
 
-  // V-th iteration: check for negative cycle
+  // 3. 第 n 轮额外检测负权回路
+  makeStep(lines.forCheckRound, 'round-done', `🚨 [第 N 轮额外检测] 启动第 ${n} 轮额外扫描！若此时仍有边能被松弛，说明存在负权回路！`, `--- 第 ${n} 轮负环判定 ---`, n);
+
   let cycleFound = false;
-  let cycleEdge: NCStep['cycleEdge'] = null;
+  const cycleEdges: { u: number; v: number; w: number }[] = [];
+
   for (let ei = 0; ei < NC_EDGES.length; ei++) {
     const e = NC_EDGES[ei];
-    edgeStatus[ei] = 'current';
+    makeStep(lines.forCheckRound, 'relax-skip', `🔎 [核验边] 第 ${n} 轮复验边 (${e.u} ➔ ${e.v}, w=${e.w})。`, `check edge (${e.u}->${e.v})`, n, e);
+    makeStep(lines.unpackCheckEdge, 'relax-skip', `  ↳ [解构边元] u=${e.u}, v=${e.v}, w=${e.w}。`, `u=${e.u}, v=${e.v}, w=${e.w}`, n, e);
 
-    if (dist[e.u] !== INF && dist[e.u] + e.w < dist[e.v]) {
-      edgeStatus[ei] = 'cycle';
+    const stillCanRelax = dist[e.u] !== INF && dist[e.u] + e.w < dist[e.v];
+    makeStep(lines.checkCycleRelax, stillCanRelax ? 'cycle-detected' : 'relax-skip', `  🔎 [负环松弛核验] if (dist[${e.u}] + ${e.w} < dist[${e.v}]) -> (${stillCanRelax})。`, `cycle relax check (${e.u}->${e.v})`, n, e);
+
+    if (stillCanRelax) {
       cycleFound = true;
-      cycleEdge = e;
-
-      snap(n, ei, totalRelax, true, cycleEdge, [e.u, e.v],
-        `第 V=${n} 轮检查！边 (${e.u})->(${e.v}) w=${e.w}: dist[${e.u}]+${e.w}=${dist[e.u] + e.w} < dist[${e.v}]=${dist[e.v]}。还能松弛！说明存在负权回路！`,
-        `V轮: (${e.u})->(${e.v}) 仍可松弛 → 负环!`, [4]);
+      cycleEdges.push(e);
+      makeStep(lines.returnTrue, 'cycle-detected', `⚠️ [捕获负权回路] return true！第 ${n} 轮边 (${e.u} ➔ ${e.v}) 依然能被松弛！图中存在负权回路（环权和 < 0），最短路无下界！`, 'return true (负环成立)', n, e, true, true, [...cycleEdges]);
       break;
     }
-    edgeStatus[ei] = 'normal';
   }
 
   if (!cycleFound) {
-    snap(n, -1, totalRelax, false, null, [],
-      `第 V=${n} 轮检查完毕，没有边能再松弛。不存在负权回路。`,
-      'V轮: 无松弛 → 无负环', 6);
+    makeStep(lines.returnFalse, 'done', '🎉 [检测完成] return false！第 n 轮无任何边能继续松弛，图中无负权回路，最短路完全收敛！', 'return false (无负环)', n);
   }
-
-  snap(n, -1, totalRelax, cycleFound, cycleEdge, [],
-    cycleFound ? `结论：图中存在负权回路！路径 ${cycleEdge!.u}->${cycleEdge!.v}->...->${cycleEdge!.u} 的总权重为负。` : `结论：图中不存在负权回路。`,
-    cycleFound ? '结果: 存在负环!' : '结果: 无负环', cycleFound ? 4 : 6);
 
   return steps;
 }
 
 export class NegativeCycleVisualizer extends StepVisualizer<NCStep> {
-  protected codeLines = [
-    'boolean bellmanFordNegCycle(int V, int[][] edges) {',
-    '    int[] dist = new int[V]; Arrays.fill(dist, INF);',
-    '    dist[0] = 0;',
-    '    for (int round = 1; round <= V - 1; round++)',
-    '        for (int[] e : edges)',
-    '            if (dist[e[0]] + e[2] < dist[e[1]])',
-    '                dist[e[1]] = dist[e[0]] + e[2];',
-    '    for (int[] e : edges) // V-th round check',
-    '        if (dist[e[0]] + e[2] < dist[e[1]]) return true;',
-    '    return false; // no negative cycle',
-    '}',
-  ];
-  protected codePanelTitle = 'Bellman-Ford 判负环 (Java)';
+  protected codeLanguages = NEGATIVE_CYCLE_CODE_LANGUAGES;
+  protected codeLines = NEGATIVE_CYCLE_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '负权回路检测 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private distEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private roundEl: HTMLElement | null = null;
-  private relaxEl: HTMLElement | null = null;
-  private cycleEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private metricRoundEl: HTMLElement | null = null;
+  private metricCurEdgeEl: HTMLElement | null = null;
+  private metricRelaxCountEl: HTMLElement | null = null;
+  private metricHasCycleEl: HTMLElement | null = null;
+  private distArrayEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#nc-graph');
-    this.distEl = this.root.querySelector('#nc-dist');
-    this.logEl = this.root.querySelector('#nc-log');
-    this.roundEl = this.root.querySelector('#nc-round');
-    this.relaxEl = this.root.querySelector('#nc-relax-count');
-    this.cycleEl = this.root.querySelector('#nc-cycle-found');
-    this.resultEl = this.root.querySelector('#nc-result');
-    this.btnStart = this.root.querySelector('#nc-start');
-    this.bindPlaybackControls({
-      speed: 'nc-speed',
-      speedLabel: 'nc-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#nc-svg-canvas');
+    this.metricRoundEl = this.root.querySelector('#metric-round');
+    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
+    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
+    this.metricHasCycleEl = this.root.querySelector('#metric-has-cycle');
+    this.distArrayEl = this.root.querySelector('#nc-dist-array');
+    this.liveTextEl = this.root.querySelector('#nc-live-text');
+
+    this.bindPlaybackControls();
+
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: NEGATIVE_CYCLE_PROBLEM_HTML,
+      analysisHtml: NEGATIVE_CYCLE_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
   protected buildSteps(): NCStep[] {
@@ -194,235 +209,131 @@ export class NegativeCycleVisualizer extends StepVisualizer<NCStep> {
   }
 
   protected renderStep(step: NCStep): void {
-    if (this.roundEl) this.roundEl.textContent = String(step.round);
-    if (this.relaxEl) this.relaxEl.textContent = String(step.relaxCount);
-    if (this.cycleEl) {
-      if (step.cycleFound) {
-        this.cycleEl.textContent = '存在!';
-        (this.cycleEl as HTMLElement).style.color = '#ef4444';
-      } else if (step.round >= step.maxRounds) {
-        this.cycleEl.textContent = '不存在';
-        (this.cycleEl as HTMLElement).style.color = '#22c55e';
-      } else {
-        this.cycleEl.textContent = '检测中';
-        (this.cycleEl as HTMLElement).style.color = '#ef4444';
+    const { dist, round, maxRounds, currentEdge, relaxedEdge, relaxCount, hasCycle, cycleEdges, statusText, action } = step;
+
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
+        <defs>
+          <marker id="nc-arrow-gray" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8" />
+          </marker>
+          <marker id="nc-arrow-blue" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
+          </marker>
+          <marker id="nc-arrow-green" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#16a34a" />
+          </marker>
+          <marker id="nc-arrow-red" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#dc2626" />
+          </marker>
+        </defs>`;
+
+      for (const e of NC_EDGES) {
+        const p1 = NC_NODE_POS[e.u];
+        const p2 = NC_NODE_POS[e.v];
+        const isCurrent = currentEdge && currentEdge.u === e.u && currentEdge.v === e.v;
+        const isCycleEdge = cycleEdges.some((ce) => ce.u === e.u && ce.v === e.v);
+
+        let strokeColor = '#cbd5e1';
+        let strokeWidth = 2;
+        let marker = 'url(#nc-arrow-gray)';
+
+        if (isCycleEdge) {
+          strokeColor = '#dc2626';
+          strokeWidth = 3.5;
+          marker = 'url(#nc-arrow-red)';
+        } else if (isCurrent && relaxedEdge) {
+          strokeColor = '#16a34a';
+          strokeWidth = 3;
+          marker = 'url(#nc-arrow-green)';
+        } else if (isCurrent) {
+          strokeColor = '#2563eb';
+          strokeWidth = 3;
+          marker = 'url(#nc-arrow-blue)';
+        }
+
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2 + (e.u === 1 && e.v === 2 ? -10 : e.u === 3 && e.v === 1 ? 12 : 0);
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+        svgHtml += `<rect x="${midX - 12}" y="${midY - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${e.w < 0 ? '#dc2626' : '#0f172a'}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
       }
+
+      NC_NODES.forEach((node) => {
+        const p = NC_NODE_POS[node];
+        const dVal = dist[node];
+        const isCurrentTarget = currentEdge && currentEdge.v === node;
+        const inCycle = hasCycle && (node === 1 || node === 2 || node === 3);
+
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (inCycle) {
+          fill = '#fee2e2';
+          stroke = '#dc2626';
+        } else if (isCurrentTarget && relaxedEdge) {
+          fill = '#dcfce7';
+          stroke = '#16a34a';
+        } else if (isCurrentTarget) {
+          fill = '#dbeafe';
+          stroke = '#2563eb';
+        } else if (node === 0) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="${dVal >= 999999 ? '#94a3b8' : '#2563eb'}" font-size="10.5" font-family="monospace" font-weight="800" text-anchor="middle">${dVal >= 999999 ? 'INF' : dVal}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
 
-    if (this.resultEl) {
-      if (step.cycleFound) {
-        (this.resultEl as HTMLElement).style.display = '';
-        this.resultEl.className = 'nc-result found';
-        this.resultEl.textContent = `发现负权回路！边 (${step.cycleEdge!.u})->(${step.cycleEdge!.v}) 在第 V 轮仍可松弛。`;
-      } else if (step.round >= step.maxRounds) {
-        (this.resultEl as HTMLElement).style.display = '';
-        this.resultEl.className = 'nc-result none';
-        this.resultEl.textContent = '无负权回路，所有最短路径均存在。';
-      } else {
-        (this.resultEl as HTMLElement).style.display = 'none';
-      }
+    if (this.metricRoundEl) {
+      this.metricRoundEl.textContent = `${round} / ${maxRounds}`;
+    }
+    if (this.metricCurEdgeEl) {
+      this.metricCurEdgeEl.textContent = currentEdge ? `(${currentEdge.u})->(${currentEdge.v})` : '—';
+    }
+    if (this.metricRelaxCountEl) {
+      this.metricRelaxCountEl.textContent = `${relaxCount}`;
+    }
+    if (this.metricHasCycleEl) {
+      this.metricHasCycleEl.textContent = hasCycle ? '⚠️ 存在负环' : '未检测到';
+      this.metricHasCycleEl.className = `font-mono font-bold ${hasCycle ? 'text-red-600 animate-pulse' : 'text-slate-500'}`;
     }
 
-    this.renderGraph(step);
-    this.renderDist(step);
-    this.renderLogLine(step);
-  }
+    if (this.distArrayEl) {
+      this.distArrayEl.innerHTML = NC_NODES.map((node) => {
+        const dVal = dist[node];
+        const isTarget = currentEdge && currentEdge.v === node;
+        return `<div class="flex flex-col items-center p-1.5 rounded border ${
+          isTarget ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-slate-200'
+        }">
+          <span class="text-[10px] text-slate-500 font-mono">dist[${node}]</span>
+          <span class="text-xs font-mono font-bold ${dVal >= 999999 ? 'text-slate-400' : 'text-blue-600'}">${dVal >= 999999 ? 'INF' : dVal}</span>
+        </div>`;
+      }).join('');
+    }
 
-  private renderGraph(step: NCStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 480 280');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '480px';
-    svg.style.height = '280px';
-
-    // Defs for arrows
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-    marker.setAttribute('id', 'nc-arrow');
-    marker.setAttribute('viewBox', '0 0 10 10');
-    marker.setAttribute('refX', '34');
-    marker.setAttribute('refY', '5');
-    marker.setAttribute('markerWidth', '8');
-    marker.setAttribute('markerHeight', '8');
-    marker.setAttribute('orient', 'auto-start-reverse');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-    path.setAttribute('fill', 'rgba(156, 163, 175, 0.5)');
-    marker?.appendChild(path);
-    defs?.appendChild(marker);
-
-    const markerRed = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-    markerRed.setAttribute('id', 'nc-arrow-red');
-    markerRed.setAttribute('viewBox', '0 0 10 10');
-    markerRed.setAttribute('refX', '34');
-    markerRed.setAttribute('refY', '5');
-    markerRed.setAttribute('markerWidth', '8');
-    markerRed.setAttribute('markerHeight', '8');
-    markerRed.setAttribute('orient', 'auto-start-reverse');
-    const pathRed = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    pathRed.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-    pathRed.setAttribute('fill', '#ef4444');
-    markerRed?.appendChild(pathRed);
-    defs?.appendChild(markerRed);
-
-    const markerYellow = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-    markerYellow.setAttribute('id', 'nc-arrow-yellow');
-    markerYellow.setAttribute('viewBox', '0 0 10 10');
-    markerYellow.setAttribute('refX', '34');
-    markerYellow.setAttribute('refY', '5');
-    markerYellow.setAttribute('markerWidth', '8');
-    markerYellow.setAttribute('markerHeight', '8');
-    markerYellow.setAttribute('orient', 'auto-start-reverse');
-    const pathYellow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    pathYellow.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-    pathYellow.setAttribute('fill', '#f59e0b');
-    markerYellow?.appendChild(pathYellow);
-    defs?.appendChild(markerYellow);
-
-    svg?.appendChild(defs);
-
-    // Draw edges
-    NC_EDGES.forEach((edge, i) => {
-      const p1 = NC_NODE_POS[edge.u];
-      const p2 = NC_NODE_POS[edge.v];
-      const status = step.edgeStatus[i];
-
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-      line.classList.add('nc-edge');
-
-      if (status === 'cycle') {
-        line.setAttribute('stroke', '#ef4444');
-        line.setAttribute('stroke-width', '4');
-        line.setAttribute('marker-end', 'url(#nc-arrow-red)');
-        line.style.animation = 'cyclePulse 0.8s infinite';
-      } else if (status === 'current') {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '3');
-        line.setAttribute('marker-end', 'url(#nc-arrow-yellow)');
-      } else {
-        line.setAttribute('stroke', edge.w < 0 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.2)');
-        line.setAttribute('stroke-width', edge.w < 0 ? '2' : '1.5');
-        line.setAttribute('marker-end', 'url(#nc-arrow)');
-        if (edge.w < 0) line.setAttribute('stroke-dasharray', '6,3');
-      }
-      svg?.appendChild(line);
-
-      // Weight label
-      const mx = (p1.x + p2.x) / 2;
-      const my = (p1.y + p2.y) / 2;
-      const dx = p2.y - p1.y;
-      const dy = -(p2.x - p1.x);
-      const len = Math.sqrt(dx * dx + dy * dy) || 1;
-      const ox = (dx / len) * 12;
-      const oy = (dy / len) * 12;
-
-      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(mx + ox - 14));
-      bg.setAttribute('y', String(my + oy - 10));
-      bg.setAttribute('width', '28');
-      bg.setAttribute('height', '20');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('fill', status === 'current' ? 'rgba(245, 158, 11, 0.3)' : status === 'cycle' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(30, 30, 50, 0.8)');
-      bg.setAttribute('stroke', status === 'current' ? '#f59e0b' : edge.w < 0 ? 'rgba(239, 68, 68, 0.6)' : 'rgba(156, 163, 175, 0.4)');
-      bg.setAttribute('stroke-width', '1');
-      svg?.appendChild(bg);
-
-      const wt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      wt.setAttribute('x', String(mx + ox));
-      wt.setAttribute('y', String(my + oy + 5));
-      wt.setAttribute('text-anchor', 'middle');
-      wt.setAttribute('fill', edge.w < 0 ? '#ef4444' : status === 'current' ? '#f59e0b' : 'rgba(239, 68, 68, 0.7)');
-      wt.setAttribute('font-size', '12');
-      wt.setAttribute('font-weight', '700');
-      wt.setAttribute('font-family', 'ui-monospace, monospace');
-      wt.textContent = String(edge.w);
-      svg?.appendChild(wt);
-    });
-
-    // Draw nodes
-    const highlightSet = new Set(step.nodeHighlight);
-    NC_NODES.forEach((node, i) => {
-      const pos = NC_NODE_POS[i];
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('nc-node');
-
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '24');
-
-      if (highlightSet.has(node)) {
-        circle.setAttribute('fill', 'rgba(239, 68, 68, 0.4)');
-        circle.setAttribute('stroke', '#ef4444');
-        circle.setAttribute('stroke-width', '2.5');
-      } else {
-        circle.setAttribute('fill', 'rgba(239, 68, 68, 0.1)');
-        circle.setAttribute('stroke', 'rgba(239, 68, 68, 0.4)');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('fill', highlightSet.has(node) ? '#ef4444' : 'rgba(239, 68, 68, 0.7)');
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(node);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
-    });
-
-    this.graphEl?.appendChild(svg);
-  }
-
-  private renderDist(step: NCStep): void {
-    if (!this.distEl) return;
-    this.distEl.innerHTML = '';
-    step.dist.forEach((val, i) => {
-      const item = document.createElement('div');
-      item.className = 'nc-dist-item';
-      if (step.prevDist[i] !== val) item.classList.add('changed');
-      const display = val === Infinity ? 'INF' : String(val);
-      item.innerHTML = `<span class="nc-idx">${i}</span>${display}`;
-      this.distEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: NCStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
+    }
   }
 }
 
 registerAlgorithm({
   id: 'negative-cycle',
-  name: 'Bellman-Ford之判断负权回路',
+  name: '负权回路检测 (Negative Cycle)',
   viewId: 'algo-negative-cycle-view',
   category: 'graph',
-  description: '通过 V-1 轮松弛后检查第 V 轮是否仍能更新来判断负权环',
-  icon: '⚠️',
+  icon: '🔄',
+  difficulty: 3,
+  levelOrder: 26,
+  description: '左程云算法通关课 Class 061：基于 Bellman-Ford 的第 N 轮松弛判定准则，识别图中使得最短路无下界的负权环 (洛谷 P3385)',
+  learningGoal: '掌握负权回路判定定理、第 N 轮额外松弛扫描机制以及无限递减状态识别',
   template,
   Visualizer: NegativeCycleVisualizer,
-  difficulty: 3,
-  levelOrder: 25,
-  learningGoal: '理解 Bellman-Ford 算法检测负权回路的原理',
 });
-
-export {};

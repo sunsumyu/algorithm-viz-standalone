@@ -1,405 +1,1022 @@
 <style>
-  /* === 快乐数 · 玻璃感 + 哈希集合判环 + 平方和链 === */
+  /* === 快乐数 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-happy-number-view {
-    --accent-a: #f59e0b;
-    --accent-b: #d97706;
-    --accent-glow: rgba(245, 158, 11, .45);
-    --happy-color: #34d399;
-    --cycle-color: #f87171;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 8% 6%, rgba(245, 158, 11, .25), transparent 55%),
-      radial-gradient(ellipse at 92% 94%, rgba(217, 119, 6, .25), transparent 55%),
-      linear-gradient(135deg, #1a100a 0%, #1f1408 50%, #1a0f1a 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-happy-number-view .hn-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-happy-number-view * {
+    box-sizing: border-box;
   }
-  #algo-happy-number-view .hn-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-happy-number-view .hn-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-happy-number-view .hn-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-happy-number-view .hn-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a100a; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-happy-number-view .hn-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-happy-number-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-happy-number-view .hn-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-happy-number-view .hn-tip {
-    max-width: 540px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(245, 158, 11, .12), rgba(217, 119, 6, .08));
-    border: 1px solid rgba(245, 158, 11, .3);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-happy-number-view .hn-tip strong { color: #fcd34d; }
-  #algo-happy-number-view .hn-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-happy-number-view .hn-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-happy-number-view .hn-card {
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
-  }
-  #algo-happy-number-view .hn-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
-  }
-  #algo-happy-number-view .hn-tag {
-    font-size: 11px; color: #fcd34d; background: rgba(245, 158, 11, .14);
-    border: 1px solid rgba(245, 158, 11, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  #algo-happy-number-view .hn-input-row {
-    display: grid; grid-template-columns: 1fr auto auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-happy-number-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-happy-number-view input:focus { border-color: var(--accent-a); box-shadow: 0 0 0 3px rgba(245, 158, 11, .15); }
-  #algo-happy-number-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-happy-number-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #1a100a; transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--accent-glow);
-  }
-  #algo-happy-number-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-happy-number-view .hn-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-happy-number-view .hn-example-btn {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(217, 119, 6, .12); border: 1px solid rgba(217, 119, 6, .28);
-    color: #fbbf24; cursor: pointer; transition: all .2s;
-  }
-  #algo-happy-number-view .hn-example-btn:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a100a; border-color: transparent; transform: translateY(-1px);
-  }
-  /* 统计 */
-  #algo-happy-number-view .hn-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  #algo-happy-number-view .hn-stat {
-    position: relative; padding: 12px 14px 12px 18px;
-    background: rgba(20, 18, 38, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-happy-number-view .hn-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-  }
-  #algo-happy-number-view .hn-stat--n::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
-  #algo-happy-number-view .hn-stat--n .hn-stat-val { color: #fcd34d; }
-  #algo-happy-number-view .hn-stat--iter::before { background: linear-gradient(180deg, #fb923c, #ea580c); }
-  #algo-happy-number-view .hn-stat--iter .hn-stat-val { color: #fdba74; }
-  #algo-happy-number-view .hn-stat--seen::before { background: linear-gradient(180deg, #a78bfa, #7c3aed); }
-  #algo-happy-number-view .hn-stat--seen .hn-stat-val { color: #c4b5fd; }
-  #algo-happy-number-view .hn-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-happy-number-view .hn-stat-val {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 20px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* 可视化区域 */
-  #algo-happy-number-view .hn-visual { flex: 1; min-height: 240px; display: flex; flex-direction: column; }
-  #algo-happy-number-view .hn-area {
-    flex: 1; min-height: 0; padding: 18px; overflow: auto;
-    display: flex; flex-direction: column; gap: 16px;
-  }
-  /* 当前数字 */
-  #algo-happy-number-view .hn-current-number {
-    text-align: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 48px; font-weight: 900; color: #fcd34d;
-    text-shadow: 0 0 30px rgba(245, 158, 11, .5);
-    transition: all .3s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-happy-number-view .hn-current-number.hn-happy {
-    color: var(--happy-color);
-    text-shadow: 0 0 30px rgba(52, 211, 153, .6);
-    animation: hn-burst .6s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  #algo-happy-number-view .hn-current-number.hn-cycle {
-    color: var(--cycle-color);
-    text-shadow: 0 0 30px rgba(248, 113, 113, .6);
-    animation: hn-shake .5s ease-in-out;
-  }
-  @keyframes hn-burst {
-    0% { transform: scale(.6); }
-    50% { transform: scale(1.25); }
-    100% { transform: scale(1); }
-  }
-  @keyframes hn-shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-8px); }
-    40% { transform: translateX(8px); }
-    60% { transform: translateX(-5px); }
-    80% { transform: translateX(5px); }
-  }
-  /* 分解区域 */
-  #algo-happy-number-view .hn-decompose {
-    padding: 14px 16px; border-radius: 12px;
-    background: rgba(8, 8, 24, .45);
-    border: 1px solid rgba(255, 255, 255, .06);
-  }
-  #algo-happy-number-view .hn-decompose-label {
-    color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 10px;
-    text-transform: uppercase; letter-spacing: .04em;
-  }
-  #algo-happy-number-view .hn-digits { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  #algo-happy-number-view .hn-digit-box {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 8px 10px; border-radius: 10px;
-    border: 1.5px solid rgba(255, 255, 255, .1);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
-    font-family: 'JetBrains Mono', monospace;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
-    animation: hn-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  @keyframes hn-slide-in {
-    0% { transform: translateY(8px) scale(.85); opacity: 0; }
-    60% { transform: translateY(-2px) scale(1.08); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  #algo-happy-number-view .hn-digit-box .hn-digit { font-size: 22px; font-weight: 800; color: #fcd34d; }
-  #algo-happy-number-view .hn-digit-box .hn-op { font-size: 14px; color: #64748b; }
-  #algo-happy-number-view .hn-digit-box .hn-sq { font-size: 16px; font-weight: 700; color: #fdba74; }
-  #algo-happy-number-view .hn-digit-sep {
-    font-size: 20px; font-weight: 700; color: #64748b;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  /* 求和结果 */
-  #algo-happy-number-view .hn-sum-row {
-    display: flex; align-items: center; gap: 10px; justify-content: center;
-    padding: 10px 0;
-  }
-  #algo-happy-number-view .hn-sum-label { color: #94a3b8; font-size: 14px; font-weight: 600; }
-  #algo-happy-number-view .hn-sum-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 28px; font-weight: 900; color: #fb923c;
-    text-shadow: 0 0 20px rgba(251, 146, 60, .4);
-  }
-  /* 已见集合 */
-  #algo-happy-number-view .hn-seen-wrap {
-    padding: 12px 16px; border-radius: 12px;
-    background: rgba(8, 8, 24, .45);
-    border: 1px solid rgba(255, 255, 255, .06);
-  }
-  #algo-happy-number-view .hn-seen-title { color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
-  #algo-happy-number-view .hn-seen-items { display: flex; flex-wrap: wrap; gap: 8px; }
-  #algo-happy-number-view .hn-seen-chip {
-    padding: 4px 10px; border-radius: 999px;
-    background: rgba(167, 139, 250, .14); border: 1px solid rgba(167, 139, 250, .3);
-    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #c4b5fd;
-    animation: hn-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  #algo-happy-number-view .hn-seen-chip.hn-seen-hit {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    color: #1a0a0a; border-color: transparent;
-    animation: hn-hit-pop .5s cubic-bezier(.34, 1.56, .64, 1);
-    box-shadow: 0 0 18px rgba(248, 113, 113, .55);
-  }
-  @keyframes hn-hit-pop {
-    0% { transform: scale(.6); }
-    50% { transform: scale(1.3); }
-    100% { transform: scale(1); }
-  }
-  #algo-happy-number-view .hn-seen-chip.hn-seen-latest {
-    border-color: var(--accent-a);
-    background: rgba(245, 158, 11, .2);
-    color: #fcd34d;
-  }
-  /* 序列链 */
-  #algo-happy-number-view .hn-chain-wrap {
-    padding: 12px 16px; border-radius: 12px;
-    background: rgba(8, 8, 24, .45);
-    border: 1px solid rgba(255, 255, 255, .06);
-  }
-  #algo-happy-number-view .hn-chain-title { color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
-  #algo-happy-number-view .hn-chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  #algo-happy-number-view .hn-chain-node {
-    padding: 5px 10px; border-radius: 8px;
-    background: rgba(245, 158, 11, .1); border: 1px solid rgba(245, 158, 11, .25);
-    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
-    color: #fcd34d; transition: all .3s;
-    animation: hn-slide-in .35s cubic-bezier(.34, 1.56, .64, 1);
-  }
-  #algo-happy-number-view .hn-chain-node.hn-chain-current {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a100a; border-color: transparent;
-    box-shadow: 0 0 12px var(--accent-glow);
-  }
-  #algo-happy-number-view .hn-chain-node.hn-chain-happy {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    color: #0a1a12; border-color: transparent;
-    box-shadow: 0 0 12px rgba(52, 211, 153, .5);
-  }
-  #algo-happy-number-view .hn-chain-arrow { color: #64748b; font-size: 14px; font-weight: 700; }
-  /* 结果横幅 */
-  #algo-happy-number-view .hn-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(245, 158, 11, .12), rgba(217, 119, 6, .06));
-    border: 1px solid rgba(245, 158, 11, .28);
-    line-height: 1.55; font-size: 14px; color: #fcd34d;
-  }
-  #algo-happy-number-view .hn-result .hn-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a100a; box-shadow: 0 4px 14px var(--accent-glow);
+
+  #algo-happy-number-view .hn-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
-  #algo-happy-number-view .hn-result.hn-result--happy {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
-    animation: hn-burst-banner .6s cubic-bezier(.34, 1.56, .64, 1);
+
+  #algo-happy-number-view .hn-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
   }
-  #algo-happy-number-view .hn-result.hn-result--happy .hn-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-happy-number-view .hn-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  @keyframes hn-burst-banner {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(52, 211, 153, .2), 0 0 28px rgba(52, 211, 153, .5); }
-    100% { transform: scale(1); }
+  #algo-happy-number-view .hn-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-happy-number-view .hn-result.hn-result--cycle {
-    background: linear-gradient(135deg, rgba(248, 113, 113, .14), rgba(217, 119, 6, .06));
-    border-color: rgba(248, 113, 113, .35); color: #fecaca;
-    animation: hn-shake .5s ease-in-out;
+
+  #algo-happy-number-view .hn-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-happy-number-view .hn-result.hn-result--cycle .hn-emoji {
-    background: linear-gradient(135deg, #f87171, #ef4444);
-    box-shadow: 0 4px 14px rgba(248, 113, 113, .55);
+
+  #algo-happy-number-view .hn-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  /* 日志 */
-  #algo-happy-number-view .hn-log {
-    min-height: 80px; max-height: 120px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-happy-number-view .hn-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  #algo-happy-number-view .hn-log .active { color: #fcd34d; font-weight: 600; }
-  /* 代码 */
-  #algo-happy-number-view .hn-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-happy-number-view .hn-input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
   }
-  #algo-happy-number-view .hn-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* 控制栏 */
-  #algo-happy-number-view .hn-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-happy-number-view .hn-input-group input {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
   }
-  #algo-happy-number-view .hn-controls .hn-ctrl-btn { min-width: 64px; }
-  #algo-happy-number-view .hn-controls .hn-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #1a100a; border-color: transparent;
+
+  #algo-happy-number-view .hn-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-happy-number-view .hn-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+  #algo-happy-number-view .hn-btn-generate:hover {
+    background: #1d4ed8;
   }
-  #algo-happy-number-view .hn-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-happy-number-view .hn-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-happy-number-view #step-speed { width: 130px; accent-color: var(--accent-a); }
-  @media (max-width: 1100px) {
-    #algo-happy-number-view .hn-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-happy-number-view .hn-code { min-height: 360px; }
+  #algo-happy-number-view .hn-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-happy-number-view .hn-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-happy-number-view .hn-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-happy-number-view .hn-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-happy-number-view .hn-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-happy-number-view .hn-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-happy-number-view .hn-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-happy-number-view .hn-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-happy-number-view .hn-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 拆解与判环沙盘展示盒 */
+  #algo-happy-number-view .hn-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  #algo-happy-number-view .hn-decomp-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    border: none;
+    padding: 4px 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  #algo-happy-number-view .hn-number-node {
+    font-size: 20px;
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    padding: 2px 10px;
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
+  }
+
+  #algo-happy-number-view .hn-formula-display {
+    font-size: 14px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1e293b;
+  }
+
+  #algo-happy-number-view .hn-set-track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    min-height: 28px;
+  }
+
+  #algo-happy-number-view .hn-set-item {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #334155;
+    transition: all 0.15s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+  #algo-happy-number-view .hn-set-item.is-happy {
+    border-color: #10b981;
+    background: #ecfdf5;
+    color: #047857;
+  }
+  #algo-happy-number-view .hn-set-item.is-cycle {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+
+  /* 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 */
+  #algo-happy-number-view .hn-preset-bar {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  #algo-happy-number-view .hn-preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+
+  #algo-happy-number-view .hn-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #algo-happy-number-view .hn-chip {
+    padding: 2.5px 8px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 18px;
+  }
+  #algo-happy-number-view .hn-chip:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-happy-number-view .hn-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-happy-number-view .hn-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-happy-number-view .hn-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-happy-number-view .hn-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-happy-number-view .hn-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-happy-number-view .hn-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-happy-number-view .hn-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-happy-number-view .hn-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-happy-number-view .hn-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-happy-number-view .hn-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-happy-number-view .hn-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-happy-number-view .hn-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-happy-number-view .hn-formula-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-happy-number-view .hn-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-happy-number-view .hn-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-happy-number-view .hn-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-happy-number-view .hn-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-happy-number-view .hn-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-happy-number-view .hn-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-happy-number-view .hn-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-happy-number-view .hn-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-happy-number-view .hn-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-happy-number-view .hn-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-happy-number-view .hn-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-happy-number-view .hn-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-happy-number-view .hn-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-happy-number-view .hn-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-happy-number-view .hn-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-happy-number-view .hn-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-happy-number-view .hn-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-happy-number-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-happy-number-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-happy-number-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-happy-number-view .hn-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-happy-number-view .hn-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-happy-number-view .hn-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-happy-number-view .hn-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-happy-number-view .hn-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-happy-number-view .hn-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-happy-number-view .hn-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-happy-number-view .hn-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-happy-number-view .hn-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-happy-number-view .hn-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-happy-number-view .hn-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-happy-number-view .hn-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="hn-shell">
-  <div class="hn-hero">
-    <div class="hn-hero-left">
-      <span class="hn-icon">😊</span>
-      <div>
-        <h1>快乐数（哈希集合判环）</h1>
-        <div class="hn-sub">LeetCode 202 · 用哈希集合检测平方和循环</div>
-      </div>
+<div id="algo-happy-number-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="hn-header">
+    <div class="hn-header-left">
+      <div class="hn-icon-btn">✨</div>
+      <h1 class="hn-main-title">快乐数</h1>
+      <button id="btn-open-problem-modal" class="hn-btn-problem">📋 题目</button>
+      <span class="hn-badge-mode">各位平方和·HashSet 判环</span>
+      <span class="hn-badge-complexity">O(log n) · O(log n)</span>
     </div>
-    <div class="hn-tip"><strong>核心动画：</strong>当前数字<span style="color:#fcd34d">琥珀脉冲</span>；数字分解<span style="color:#fdba74">弹入</span>；平方求和<span style="color:#fb923c">高亮</span>；seen 集合<span style="color:#c4b5fd">滑入</span>；发现环时<span style="color:#fca5a5">红色 burst</span>，快乐数时<span style="color:#6ee7b7">绿色爆发</span>。</div>
-  </div>
-  <div class="hn-main">
-    <div class="hn-left">
-      <section class="hn-card">
-        <div class="hn-card-title">输入 <span class="hn-tag">正整数 n</span></div>
-        <div class="hn-input-row">
-          <input id="hn-number-input" value="19" placeholder="正整数 n">
-          <button id="hn-start">开始判断</button>
-        </div>
-        <div class="hn-examples">
-          <button class="hn-example-btn" data-num="19">19（快乐数）</button>
-          <button class="hn-example-btn" data-num="2">2（循环）</button>
-          <button class="hn-example-btn" data-num="7">7（快乐数）</button>
-          <button class="hn-example-btn" data-num="20">20（循环）</button>
-        </div>
-      </section>
 
-      <div class="hn-stats">
-        <div class="hn-stat hn-stat--n"><div class="hn-stat-label">当前数字</div><div class="hn-stat-val" id="hn-cur-num">-</div></div>
-        <div class="hn-stat hn-stat--iter"><div class="hn-stat-label">迭代次数</div><div class="hn-stat-val" id="hn-iteration">0</div></div>
-        <div class="hn-stat hn-stat--seen"><div class="hn-stat-label">已见集合</div><div class="hn-stat-val" id="hn-seen-size">0</div></div>
+    <div class="hn-header-right">
+      <div class="hn-input-group">
+        <label for="input-n">n:</label>
+        <input type="number" id="input-n" value="19" style="width: 50px;" placeholder="正整数 n" />
+      </div>
+      <button id="btn-generate" class="hn-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="hn-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="hn-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="hn-left-section">
+
+      <!-- 卡片 1: 拆解与 HashSet 演进沙盘 -->
+      <div class="hn-card">
+        <div class="hn-card-header">
+          <div class="hn-card-title">
+            <span>📊 平方和推导与哈希集合判环沙盘</span>
+          </div>
+          <div class="hn-legend-bar">
+            <div><span class="hn-legend-dot" style="background:#10b981;"></span> 1 (快乐数)</div>
+            <div><span class="hn-legend-dot" style="background:#ef4444;"></span> 重复出现 (死循环)</div>
+          </div>
+        </div>
+
+        <!-- 展示盒 -->
+        <div class="hn-sandbox-wrap">
+          <div class="hn-decomp-box" id="hn-decomp-box">
+            <span class="hn-number-node" id="hn-cur-num">19</span>
+            <span style="font-size: 14px; color: #64748b;">➔</span>
+            <span class="hn-formula-display" id="hn-formula-text">1² + 9² = 1 + 81 = 82</span>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; align-self: flex-start;">
+            已访问平方和集合 HashSet seen
+          </div>
+          <div class="hn-set-track" id="hn-set-track"></div>
+        </div>
+
+        <!-- 预设案例栏：单一外框统一包裹，左固定标签，右侧按钮换行完美左对齐 -->
+        <div class="hn-preset-bar">
+          <span class="hn-preset-label">预设案例:</span>
+          <div class="hn-preset-list">
+            <button class="hn-chip" data-n="19">示例 1: (n = 19 ➔ 快乐数)</button>
+            <button class="hn-chip" data-n="2">示例 2: (n = 2 ➔ 死循环)</button>
+            <button class="hn-chip" data-n="7">快乐数: (n = 7)</button>
+            <button class="hn-chip" data-n="11">死循环: (n = 11)</button>
+          </div>
+        </div>
       </div>
 
-      <section class="hn-card hn-visual">
-        <div class="hn-card-title">平方和分解与判环 <span class="hn-tag">Set 检测循环</span></div>
-        <div class="hn-area" id="hn-area"></div>
-        <div class="hn-result" id="step-message-banner">
-          <span class="hn-emoji">😊</span>
-          <div id="step-message">点击「开始判断」观看数字分解与集合判环动画</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="hn-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="hn-slider" />
+        <div class="hn-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
         </div>
-      </section>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="hn-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="hn-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="hn-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="600" selected>正常</option>
+            <option value="250">快速</option>
+          </select>
+        </div>
+      </div>
 
-      <section class="hn-card">
-        <div class="hn-card-title">执行日志</div>
-        <div class="hn-log" id="hn-log"></div>
-      </section>
-    </div>
-    <aside class="hn-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="hn-controls">
-    <button id="step-reset" class="hn-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="hn-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="hn-ctrl-btn hn-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="hn-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="hn-counter">步骤: 0 / 0</span>
-    <div class="hn-speed-wrap">
-      <span>速度</span>
-      <input id="step-speed" type="range" min="400" max="2500" step="100" value="900">
-      <span id="step-speed-label" style="min-width:42px;">0.9s</span>
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="hn-card">
+        <div class="hn-card-header">
+          <div>
+            <div class="hn-card-title">🧭 循环检测监视器</div>
+            <div class="hn-card-desc">当前数值、下一平方和、集合历史大小与判定结果</div>
+          </div>
+          <span id="badge-status" class="hn-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">初始化</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="hn-state-space-box">
+          <div class="hn-metrics-grid">
+            <div class="hn-metric-card">
+              <span class="hn-metric-label">当前数值 n</span>
+              <span class="hn-metric-val" id="metric-n" style="color: #2563eb;">19</span>
+            </div>
+            <div class="hn-metric-card">
+              <span class="hn-metric-label">下一平方和</span>
+              <span class="hn-metric-val" id="metric-next" style="color: #9333ea;">82</span>
+            </div>
+            <div class="hn-metric-card">
+              <span class="hn-metric-label">已记录数大小</span>
+              <span class="hn-metric-val" id="metric-set-size" style="color: #f59e0b;">0</span>
+            </div>
+            <div class="hn-metric-card">
+              <span class="hn-metric-label">判定结果</span>
+              <span class="hn-metric-val" id="metric-res" style="color: #10b981;">计算中...</span>
+            </div>
+          </div>
+
+          <div class="hn-formula-box" id="hn-formula-box">
+            <span>退出准则:</span> <strong style="color: #2563eb;">n == 1 (快乐) || seen.contains(n) (死循环)</strong>
+          </div>
+
+          <div class="hn-live-alert">
+            <span>💡</span> <span id="hn-live-text">准备就绪，点击运行开始快乐数计算。</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="hn-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="hn-dark-terminal">
+        <div class="hn-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="hn-tab-group">
+            <button id="btn-tab-code" class="hn-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="hn-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="hn-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="hn-lang-group" id="code-lang-tabs">
+            <button class="hn-lang-btn active" data-lang="java">Java</button>
+            <button class="hn-lang-btn" data-lang="cpp">C++</button>
+            <button class="hn-lang-btn" data-lang="python">Python</button>
+            <button class="hn-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="hn-font-tools">
+            <div class="hn-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="hn-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="hn-window-dots">
+              <span class="hn-dot" style="background:#ef4444;"></span>
+              <span class="hn-dot" style="background:#eab308;"></span>
+              <span class="hn-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="hn-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="hn-log-card">
+        <div class="hn-log-header">
+          <div class="hn-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="hn-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="hn-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="hn-modal-backdrop hidden">
+    <div class="hn-modal-content">
+      <div class="hn-modal-header">
+        <div class="hn-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="hn-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="hn-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

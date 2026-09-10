@@ -47,7 +47,7 @@ export const CoinChangeSpec: AlgorithmSpec = {
       javascript: { primary: 7, context: [5, 6] },
     },
     loopExit: { java: 6, cpp: 6, python: 5, javascript: 5 },
-    returnResult: { java: 11, cpp: 11, python: 9, javascript: 10 },
+    returnResult: { java: 11, cpp: 11, python: 8, javascript: 10 },
   },
   code: {
     languages: {

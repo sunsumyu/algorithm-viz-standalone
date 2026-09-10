@@ -37,7 +37,8 @@ export interface DpTraceStep {
   tree?: DpTreeNode | null;
   current?: { row?: number; col?: number; index?: number };
   dependencies?: Array<{ row?: number; col?: number; index?: number }>;
-  message: string;
+  message?: string;
+  description?: string;
   log?: string;
   formula?: string;
   formulaSubstituted?: string;
@@ -45,9 +46,11 @@ export interface DpTraceStep {
   storyMeta?: any;
   backtrackPath?: any[];
   thematicMeta?: any;
-  metrics?: Record<string, string | number>;
+  metrics?: Record<string, any>;
   vars?: DpVarItem[];
   codeLine?: HighlightTarget;
+  line?: number | number[];
+  phase?: string;
   source?: string[];
   target?: string[];
   staircase?: {
@@ -60,6 +63,7 @@ export interface DpTraceStep {
     characterPosition?: number;
     isGoal?: boolean;
   };
+  [key: string]: any;
 }
 
 export interface ProblemExample {
@@ -81,10 +85,19 @@ export interface ProblemDetail {
   constraints?: string[];
 }
 
+export interface DpKeyPointsStructure {
+  thinking?: string;
+  state?: string;
+  equation?: string;
+  initAndBounds?: string;
+  complexity?: string;
+  [key: string]: any;
+}
+
 export interface AlgorithmCodeDefinition {
   languages: Record<LanguageKey, string[]>;
-  lineExplanations: Record<LanguageKey, Record<number, string>>;
-  keyPoints?: KeyPointsData;
+  lineExplanations?: Record<LanguageKey, Record<number, string>>;
+  keyPoints?: KeyPointsData | DpKeyPointsStructure;
   faqList?: Array<{ tag: string; question: string; answer: string }>;
 }
 
@@ -94,7 +107,7 @@ export interface AlgorithmSpec {
   category: string;
   description: string;
   difficulty?: 'easy' | 'medium' | 'hard';
-  problem?: ProblemDetail;
+  problem: ProblemDetail;
   code: AlgorithmCodeDefinition;
   semanticLines: SemanticLineMap;
   generateSteps: (input: any) => DpTraceStep[];

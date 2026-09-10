@@ -1,393 +1,297 @@
 /**
- * 用队列实现栈（队列翻转）可视化器
- * LeetCode 225 - 每次 push 后翻转保持栈序
+ * 用队列实现栈可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * LeetCode 225：单队列循环旋转法，push 后将前面 size - 1 个元素出队再入队重新排到队尾，保持队头始终为栈顶
+ * 严格遵循 Zero-Subbox 规范，100% 扁平画板，杜绝多层白色卡片嵌套
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './implement-stack-using-queue.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { DualStructureVisualAdapter } from '../../../core/renderers/adapters/dual-structure-visual-adapter';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  IMPLEMENT_STACK_USING_QUEUE_PROBLEM_HTML,
+  IMPLEMENT_STACK_USING_QUEUE_ANALYSIS_HTML,
+  IMPLEMENT_STACK_USING_QUEUE_CODE_LANGUAGES,
+} from './implement-stack-using-queue-problem-content';
 
-interface MSStep {
+export interface MSStep {
   queue: number[];
-  results: number[];
-  opIndex: number;
-  op: string;
-  opValue: number | null;
-  rotateIndex: number;
-  status: 'init' | 'push' | 'rotate' | 'rotate-done' | 'pop' | 'top' | 'done';
+  outputs: Array<{ op: string; value: number | boolean }>;
+  currentOp: string;
+  rotatingItem: number | null;
+  rotateStep: number;
+  totalRotate: number;
+  action: 'init' | 'push_offer' | 'rotate_step' | 'pop' | 'top' | 'empty' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
-interface MSResult {
-  steps: MSStep[];
-  results: number[];
-}
-
-interface ParsedOp {
-  type: 'push' | 'pop' | 'top' | 'empty';
-  value: number | null;
-}
-
-/**
- * 解析用户输入的操作序列
- * 例如: "push 1,push 2,pop,top,push 3,pop"
- */
-function parseOperations(input: string): ParsedOp[] {
-  return input
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map((s) => {
-      const [type, val] = s.split(/\s+/);
-      const t = type.toLowerCase();
-      if (t === 'push') return { type: 'push' as const, value: parseInt(val, 10) };
-      if (t === 'pop') return { type: 'pop' as const, value: null };
-      if (t === 'top') return { type: 'top' as const, value: null };
-      if (t === 'empty') return { type: 'empty' as const, value: null };
-      return { type: 'top' as const, value: null };
-    });
-}
-
-/**
- * 纯 JavaScript 实现的队列翻转算法
- * 生成每一步的可视化数据，并绑定代码行号
- */
-function myStackSteps(opsInput: string): MSResult {
+export function buildImplementStackUsingQueueSteps(rawOpsInput: string): MSStep[] {
   const steps: MSStep[] = [];
-  const ops = parseOperations(opsInput);
   const queue: number[] = [];
-  const results: number[] = [];
+  const outputs: Array<{ op: string; value: number | boolean }> = [];
 
-  const pushStep = (partial: Omit<MSStep, 'log'>) => {
-    const log = `[步骤 ${steps.length + 1}] ${partial.message}`;
-    steps.push({ log, ...partial });
+  const lines = {
+    init:   { java: 4,  cpp: 4,  python: 4,  javascript: 1 },
+    push:   { java: 7,  cpp: 6,  python: 7,  javascript: 5 },
+    rotate: { java: 11, cpp: 9,  python: 9,  javascript: 7 },
+    pop:    { java: 15, cpp: 16, python: 11, javascript: 11 },
+    top:    { java: 18, cpp: 19, python: 13, javascript: 14 },
+    empty:  { java: 21, cpp: 22, python: 15, javascript: 17 },
+    done:   { java: 23, cpp: 24, python: 15, javascript: 18 },
   };
 
-  pushStep({
+  const rawOps = (rawOpsInput || 'push 1, push 2, top, pop, empty')
+    .split(/[,，;\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  steps.push({
     queue: [],
-    results: [],
-    opIndex: -1,
-    op: 'init',
-    opValue: null,
-    rotateIndex: -1,
-    status: 'init',
-    message: `准备执行 ${ops.length} 个操作`,
-    codeLine: 1,
+    outputs: [],
+    currentOp: 'init',
+    rotatingItem: null,
+    rotateStep: 0,
+    totalRotate: 0,
+    action: 'init',
+    message: '初始化：单队列为空，采用入队后循环旋转 (size - 1) 次策略',
+    codeLine: lines.init,
   });
 
-  for (let i = 0; i < ops.length; i++) {
-    const { type, value } = ops[i];
+  for (let i = 0; i < rawOps.length; i++) {
+    const opStr = rawOps[i];
+    const parts = opStr.split(/\s+/);
+    const op = parts[0].toLowerCase();
+    const val = parts.length > 1 ? parseInt(parts[1], 10) : NaN;
 
-    if (type === 'push') {
-      // 初始 push：元素进入队尾
-      queue.push(value!);
-      pushStep({
+    if (op === 'push') {
+      const num = isNaN(val) ? 1 : val;
+      const prevSize = queue.length;
+
+      queue.push(num);
+
+      steps.push({
         queue: [...queue],
-        results: [...results],
-        opIndex: i,
-        op: 'push',
-        opValue: value,
-        rotateIndex: -1,
-        status: 'push',
-        message: `push(${value})：入队到队尾，当前队列长度 ${queue.length}`,
-        codeLine: 5,
+        outputs: [...outputs],
+        currentOp: `push(${num})`,
+        rotatingItem: null,
+        rotateStep: 0,
+        totalRotate: prevSize,
+        action: 'push_offer',
+        message: `📥 执行 push(${num})：首先进入队尾，准备将前面的 ${prevSize} 个元素循环旋转排到其后`,
+        codeLine: lines.push,
       });
 
-      if (queue.length > 1) {
-        const rotateCount = queue.length - 1;
-        for (let j = 0; j < rotateCount; j++) {
-          queue.push(queue.shift()!);
-          pushStep({
-            queue: [...queue],
-            results: [...results],
-            opIndex: i,
-            op: 'push',
-            opValue: value,
-            rotateIndex: j,
-            status: 'rotate',
-            message: `翻转 ${j + 1}/${rotateCount}：队首出队并到队尾`,
-            codeLine: [8, 9, 10],
-          });
-        }
-        pushStep({
+      // 旋转前面 prevSize 个元素
+      for (let r = 0; r < prevSize; r++) {
+        const rot = queue.shift()!;
+        queue.push(rot);
+
+        steps.push({
           queue: [...queue],
-          results: [...results],
-          opIndex: i,
-          op: 'push',
-          opValue: value,
-          rotateIndex: rotateCount,
-          status: 'rotate-done',
-          message: `翻转完成，${value} 已位于队首（栈顶）`,
-          codeLine: 11,
+          outputs: [...outputs],
+          currentOp: `rotate(${r + 1}/${prevSize})`,
+          rotatingItem: rot,
+          rotateStep: r + 1,
+          totalRotate: prevSize,
+          action: 'rotate_step',
+          message: `🔄 旋转中 (${r + 1}/${prevSize})：将队头元素 ${rot} 出队并重新推到队尾，使最新元素 ${num} 逐步移向队头`,
+          codeLine: lines.rotate,
         });
       }
-    } else if (type === 'pop') {
-      if (queue.length === 0) {
-        pushStep({
+    } else if (op === 'pop') {
+      if (queue.length > 0) {
+        const popped = queue.shift()!;
+        outputs.push({ op: 'pop', value: popped });
+
+        steps.push({
           queue: [...queue],
-          results: [...results],
-          opIndex: i,
-          op: 'pop',
-          opValue: null,
-          rotateIndex: -1,
-          status: 'pop',
-          message: 'pop：队列为空，无法弹出',
-          codeLine: 13,
+          outputs: [...outputs],
+          currentOp: 'pop()',
+          rotatingItem: null,
+          rotateStep: 0,
+          totalRotate: 0,
+          action: 'pop',
+          message: `📤 执行 pop()：队头即当前栈顶元素 ${popped}，直接 O(1) 出队并返回`,
+          codeLine: lines.pop,
         });
       } else {
-        const topVal = queue[0];
-        pushStep({
+        steps.push({
           queue: [...queue],
-          results: [...results],
-          opIndex: i,
-          op: 'pop',
-          opValue: topVal,
-          rotateIndex: -1,
-          status: 'pop',
-          message: `pop：移除队首（栈顶）元素 ${topVal}`,
-          codeLine: [13, 14],
-        });
-        queue.shift();
-        results.push(topVal);
-        pushStep({
-          queue: [...queue],
-          results: [...results],
-          opIndex: i,
-          op: 'pop',
-          opValue: topVal,
-          rotateIndex: -1,
-          status: 'pop',
-          message: `pop 完成：${topVal} 已弹出`,
-          codeLine: 14,
+          outputs: [...outputs],
+          currentOp: 'pop()',
+          rotatingItem: null,
+          rotateStep: 0,
+          totalRotate: 0,
+          action: 'pop',
+          message: '⚠️ 队列为空，pop() 无元素可出栈',
+          codeLine: lines.pop,
         });
       }
-    } else if (type === 'top') {
-      if (queue.length === 0) {
-        pushStep({
+    } else if (op === 'top' || op === 'peek') {
+      if (queue.length > 0) {
+        const topVal = queue[0];
+        outputs.push({ op: 'top', value: topVal });
+
+        steps.push({
           queue: [...queue],
-          results: [...results],
-          opIndex: i,
-          op: 'top',
-          opValue: null,
-          rotateIndex: -1,
-          status: 'top',
-          message: 'top：队列为空，无栈顶元素',
-          codeLine: 16,
+          outputs: [...outputs],
+          currentOp: 'top()',
+          rotatingItem: null,
+          rotateStep: 0,
+          totalRotate: 0,
+          action: 'top',
+          message: `🔍 执行 top()：查看当前队头（即栈顶）元素为 ${topVal}（不弹出）`,
+          codeLine: lines.top,
         });
       } else {
-        const topVal = queue[0];
-        results.push(topVal);
-        pushStep({
+        steps.push({
           queue: [...queue],
-          results: [...results],
-          opIndex: i,
-          op: 'top',
-          opValue: topVal,
-          rotateIndex: -1,
-          status: 'top',
-          message: `top：队首（栈顶）元素为 ${topVal}`,
-          codeLine: [16, 17],
+          outputs: [...outputs],
+          currentOp: 'top()',
+          rotatingItem: null,
+          rotateStep: 0,
+          totalRotate: 0,
+          action: 'top',
+          message: '⚠️ 队列为空，top() 无栈顶元素',
+          codeLine: lines.top,
         });
       }
-    } else if (type === 'empty') {
+    } else if (op === 'empty') {
       const isEmpty = queue.length === 0;
-      pushStep({
+      outputs.push({ op: 'empty', value: isEmpty });
+
+      steps.push({
         queue: [...queue],
-        results: [...results],
-        opIndex: i,
-        op: 'empty',
-        opValue: null,
-        rotateIndex: -1,
-        status: 'top',
-        message: `empty：队列${isEmpty ? '为空' : '不为空'}，返回 ${isEmpty}`,
-        codeLine: 19,
+        outputs: [...outputs],
+        currentOp: 'empty()',
+        rotatingItem: null,
+        rotateStep: 0,
+        totalRotate: 0,
+        action: 'empty',
+        message: `⚖️ 执行 empty()：队列${isEmpty ? '为空，返回 true' : '非空，返回 false'}`,
+        codeLine: lines.empty,
       });
     }
   }
 
-  const resultsStr = results.length > 0 ? results.join(', ') : '无';
-  pushStep({
+  steps.push({
     queue: [...queue],
-    results: [...results],
-    opIndex: ops.length,
-    op: 'done',
-    opValue: null,
-    rotateIndex: -1,
-    status: 'done',
-    message: `执行完成！输出序列：[${resultsStr}]`,
-    codeLine: 21,
+    outputs: [...outputs],
+    currentOp: 'done',
+    rotatingItem: null,
+    rotateStep: 0,
+    totalRotate: 0,
+    action: 'done',
+    message: '🎉 操作序列执行完毕！',
+    codeLine: lines.done,
   });
 
-  return { steps, results };
+  return steps;
 }
 
-export class MyStackVisualizer extends StepVisualizer<MSStep> {
-  protected codeLines = [
-    'class MyStack {',
-    '    private Deque<Integer> q = new ArrayDeque<>();',
-    '',
-    '    public void push(int x) {',
-    '        q.offer(x);',
-    '        // 翻转：将新元素旋转到队首',
-    '        for (int i = 0; i < q.size() - 1; i++) {',
-    '            q.offer(q.poll());',
-    '        }',
-    '    }',
-    '',
-    '    public int pop() {',
-    '        return q.poll();',
-    '    }',
-    '',
-    '    public int top() {',
-    '        return q.peek();',
-    '    }',
-    '',
-    '    public boolean empty() {',
-    '        return q.isEmpty();',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '用队列实现栈代码 (Java)';
-
-  private inputField: HTMLInputElement | null = null;
-  private queueDisplay: HTMLElement | null = null;
-  private stateQueueSize: HTMLElement | null = null;
-  private stateOpIndex: HTMLElement | null = null;
-  private stateTop: HTMLElement | null = null;
-  private stateOp: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.inputField = this.root.querySelector('#ms-ops-input');
-    this.queueDisplay = this.root.querySelector('#ms-queue-display');
-    this.stateQueueSize = this.root.querySelector('#ms-state-queue-size');
-    this.stateOpIndex = this.root.querySelector('#ms-state-op-index');
-    this.stateTop = this.root.querySelector('#ms-state-top');
-    this.stateOp = this.root.querySelector('#ms-state-op');
-
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#ms-start')?.addEventListener('click', () => this.start());
-
-    // Bind example buttons
-    this.root.querySelectorAll<HTMLButtonElement>('.btn-example').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ops = btn.dataset.ops;
-        if (ops !== undefined && this.inputField) {
-          this.inputField.value = ops;
-          this.start();
-        }
-      });
-    });
-  }
-
-  protected buildSteps(): MSStep[] {
-    const input = this.inputField?.value.trim() || 'push 1,push 2,pop,top,push 3,pop';
-    return myStackSteps(input).steps;
-  }
-
-  protected renderStep(step: MSStep): void {
-    this.renderQueue(step);
-    this.updateStatePanel(step);
-  }
-
-  private renderQueue(step: MSStep): void {
-    if (!this.queueDisplay) return;
-    this.queueDisplay.innerHTML = '';
-
-    if (step.queue.length === 0) {
-      const emptyLabel = document.createElement('span');
-      emptyLabel.className = 'queue-empty';
-      emptyLabel.textContent = step.status === 'done' ? '执行完成' : '队列为空';
-      this.queueDisplay.appendChild(emptyLabel);
-      return;
-    }
-
-    step.queue.forEach((val, idx) => {
-      const item = document.createElement('div');
-      item.className = 'queue-item';
-      item.textContent = val.toString();
-
-      // Mark front element as stack top (with pulsing highlight)
-      if (idx === 0 && (step.status === 'top' || step.status === 'rotate-done' || step.status === 'done')) {
-        item.classList.add('top-element');
-      }
-
-      // Rotate animation: the element just moved from front to back
-      if (step.status === 'rotate' && idx === step.queue.length - 1) {
-        item.classList.add('rotating');
-      }
-
-      // Pop animation on the front element
-      if (step.status === 'pop' && idx === 0 && step.opValue !== null) {
-        item.classList.add('popping');
-      }
-
-      this.queueDisplay!.appendChild(item);
-    });
-
-    // Show rotation arrow indicator when rotating
-    if (step.status === 'rotate' && step.queue.length > 1) {
-      const arrow = document.createElement('div');
-      arrow.className = 'rotation-arrow';
-      arrow.textContent = '↻';
-      arrow.style.position = 'absolute';
-      arrow.style.bottom = '-1.2rem';
-      arrow.style.left = '50%';
-      arrow.style.transform = 'translateX(-50%)';
-      this.queueDisplay!.appendChild(arrow);
-    }
-  }
-
-  private updateStatePanel(step: MSStep): void {
-    if (this.stateQueueSize) this.stateQueueSize.textContent = step.queue.length.toString();
-    if (this.stateOpIndex) {
-      this.stateOpIndex.textContent = step.opIndex >= 0 ? (step.opIndex + 1).toString() : '-';
-    }
-    if (this.stateTop) {
-      if (step.queue.length > 0) {
-        this.stateTop.textContent = step.queue[0].toString();
-        this.stateTop.classList.add('highlight');
-      } else {
-        this.stateTop.textContent = '-';
-        this.stateTop.classList.remove('highlight');
-      }
-    }
-    if (this.stateOp) {
-      const opNameMap: Record<string, string> = {
-        init: '初始化',
-        push: `push(${step.opValue ?? ''})`,
-        pop: 'pop',
-        top: 'top',
-        empty: 'empty',
-        done: '完成',
-      };
-      const opName = step.status === 'rotate' || step.status === 'rotate-done'
-        ? `push(${step.opValue ?? ''})·翻转`
-        : (opNameMap[step.op] || '-');
-      this.stateOp.textContent = opName;
-      if (step.status !== 'init' && step.status !== 'done') {
-        this.stateOp.classList.add('highlight');
-      } else {
-        this.stateOp.classList.remove('highlight');
-      }
-    }
-  }
-}
-
-registerAlgorithm({
-  id: 'my-stack',
-  name: '用队列实现栈（队列翻转）',
-  viewId: 'algo-my-stack-view',
+const { template, Visualizer } = createDeclarativeVisualizer<MSStep>({
+  id: 'implement-stack-using-queue',
+  name: '用队列实现栈',
   category: 'stack',
-  description: '用队列模拟栈的 LIFO 行为',
-  icon: '🔃',
-  template,
-  Visualizer: MyStackVisualizer,
-  difficulty: 1,
-  levelOrder: 2,
-  learningGoal: '掌握入队翻转保持栈序的思路',
+  icon: '🥞',
+  badge: {
+    mode: '单队列自环旋转',
+    complexity: 'O(n) · O(n)',
+  },
+  card1Title: '🥞 队列内部循环旋转与栈顶对齐沙盘',
+  card2Title: '📦 栈状态与出栈输出监控',
+  card2Desc: '当前操作指令、单队列容量与出栈/栈顶记录序列',
+  legend: [
+    { label: '🥇 队头 (即栈顶 Top)', color: '#0d9488' },
+    { label: '🔄 旋转中元素', color: '#fbbf24' },
+    { label: '🚶 队内其它元素', color: '#94a3b8' },
+  ],
+  inputs: [
+    {
+      id: 'input-ops',
+      label: '操作序列',
+      type: 'text',
+      defaultValue: 'push 1, push 2, top, pop, empty',
+      width: '180px',
+      placeholder: 'push 1, push 2, top...',
+    },
+  ],
+  presets: [
+    {
+      label: '经典示例',
+      values: { 'input-ops': 'push 1, push 2, top, pop, empty' },
+    },
+    {
+      label: '三次压栈与连续出栈',
+      values: { 'input-ops': 'push 10, push 20, push 30, pop, top, pop' },
+    },
+  ],
+  metrics: [
+    { id: 'stack-size', label: '栈内元素总数', color: '#0d9488' },
+    { id: 'top-val', label: '当前栈顶 Top', color: '#0f766e' },
+    { id: 'rotate-progress', label: '旋转进度', color: '#b45309' },
+  ],
+  codeLanguages: IMPLEMENT_STACK_USING_QUEUE_CODE_LANGUAGES,
+  problemHtml: IMPLEMENT_STACK_USING_QUEUE_PROBLEM_HTML,
+  analysisHtml: IMPLEMENT_STACK_USING_QUEUE_ANALYSIS_HTML,
+  buildSteps: (inputs) => buildImplementStackUsingQueueSteps(inputs['input-ops']),
+  renderCanvas: (container, step) => {
+    // 渲染扁平单队列沙盘（绝无任何嵌套白色 card 边框）
+    DualStructureVisualAdapter.renderQueueRotation(container, step);
+
+    // 更新指标卡片
+    const root = container.closest('#algo-implement-stack-using-queue-view');
+    if (root) {
+      const sSizeEl = root.querySelector('#metric-stack-size');
+      const topValEl = root.querySelector('#metric-top-val');
+      const rotProgressEl = root.querySelector('#metric-rotate-progress');
+
+      if (sSizeEl) sSizeEl.textContent = `${step.queue.length}`;
+      if (topValEl) topValEl.textContent = step.queue.length > 0 ? `${step.queue[0]}` : '—';
+      if (rotProgressEl) {
+        rotProgressEl.textContent =
+          step.totalRotate > 0 ? `${step.rotateStep} / ${step.totalRotate}` : '无需旋转';
+      }
+
+      // 在 Card 2 中展示出栈与 top 记录流
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const outputsHtml =
+          step.outputs.length === 0
+            ? '<span style="color: #94a3b8; font-size: 11px; font-style: italic;">暂无出栈记录</span>'
+            : step.outputs
+                .map(
+                  (out, idx) => `
+                  <span style="display: inline-flex; align-items: center; gap: 3px; background: #ffffff; border: 1px solid #cbd5e1; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-family: monospace;">
+                    <span style="color: #64748b;">#${idx + 1}</span>
+                    <strong style="color: ${out.op === 'pop' ? '#dc2626' : '#0d9488'};">${out.op}</strong>: ${out.value}
+                  </span>
+                `
+                )
+                .join(' ');
+
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">出栈与栈顶查看记录:</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">${outputsHtml}</div>
+          </div>
+        `;
+      }
+    }
+  },
 });
 
-export {};
+registerAlgorithm({
+  id: 'implement-stack-using-queue',
+  name: '用队列实现栈',
+  viewId: 'algo-implement-stack-using-queue-view',
+  category: 'stack',
+  description: '单队列循环旋转法：push 入队后将前面 size - 1 个元素出队再入队，保持队头为栈顶',
+  icon: '🥞',
+  template,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 5,
+  learningGoal: '掌握单队列通过自环旋转实现 LIFO 栈的精简思想，实现真正的 O(1) Pop 与 Top 查询',
+});

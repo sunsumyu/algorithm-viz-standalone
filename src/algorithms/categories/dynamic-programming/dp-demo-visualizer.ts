@@ -21,16 +21,18 @@ import { renderLectureHUD } from './views/lecture-hud';
 import { setupHandbookModal } from './views/handbook-modal';
 import { renderDpTreeSVG } from './engine/visual-adapter';
 
-export type DpCell = string | number | null;
+export type DpCell = any;
 
 export interface DpTreeNode {
   id: number | string;
-  val: number | string;
+  val?: number | string;
+  value?: any;
   left?: DpTreeNode | null;
   right?: DpTreeNode | null;
   children?: DpTreeNode[];
   /** 边上的决策标注，如 "✓ A" 或 "✗ A" */
   edgeLabel?: string;
+  label?: string;
   /** 节点形状: 'circle' (默认) | 'rect' (矩形决策块 i/cap) */
   shape?: 'circle' | 'rect';
   /** 节点底部的辅助数值/价值 */
@@ -38,7 +40,8 @@ export interface DpTreeNode {
   /** 后序 DP 或状态推导计算出的文本 */
   tag?: string;
   /** 节点状态: 'current' | 'dependency' | 'visited' | 'selected' | 'normal' */
-  status?: 'current' | 'dependency' | 'visited' | 'selected' | 'normal';
+  status?: 'current' | 'dependency' | 'visited' | 'selected' | 'normal' | string;
+  [key: string]: any;
 }
 
 export interface DpDecisionBranch {
@@ -62,7 +65,7 @@ export interface DpDecisionBreakdown {
 export interface DpStaircaseStepInfo {
   totalSteps: number;
   costs?: number[];
-  dp?: (number | string | null)[];
+  dp?: DpCell[];
   currentStep: number;
   fromSteps?: number[];
   bestFromStep?: number;

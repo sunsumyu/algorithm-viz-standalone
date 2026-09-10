@@ -1,458 +1,314 @@
 /**
- * 逆波兰表达式求值可视化器
- * 用栈求解后缀表达式，支持代码联动高亮演示
+ * 逆波兰表达式求值可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * LeetCode 150：遇操作数入栈，遇运算符弹出右操作数 b 与左操作数 a，计算 a op b 并压回栈中
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './eval-rpn.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  EVAL_RPN_PROBLEM_HTML,
+  EVAL_RPN_ANALYSIS_HTML,
+  EVAL_RPN_CODE_LANGUAGES,
+} from './eval-rpn-problem-content';
 
-interface RPNStep {
+export interface RPNStep {
   tokens: string[];
+  currentIndex: number;
+  currentToken: string | null;
   stack: number[];
-  i: number;
-  token: string;
-  status: 'init' | 'push-number' | 'pop-op1' | 'pop-op2' | 'compute' | 'push-result' | 'done';
+  operandA: number | null;
+  operandB: number | null;
   operator: string | null;
-  op1: number | null;
-  op2: number | null;
-  result: number | null;
+  calcResult: number | null;
+  action: 'init' | 'push_number' | 'compute' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
-/**
- * 生成逆波兰表达式求值的每一步可视化数据
- */
-function evalRPNSteps(tokens: string[]): RPNStep[] {
+export function buildEvalRPNSteps(rawTokens: string[]): RPNStep[] {
   const steps: RPNStep[] = [];
-  const stack: number[] = [];
+  const tokens = rawTokens.map((t) => t.trim()).filter(Boolean);
+  const n = tokens.length;
 
-  const pushStep = (partial: RPNStep) => {
-    steps.push(partial);
+  const lines = {
+    init:       { java: 2,  cpp: 4,  python: 3,  javascript: 2 },
+    compute:    { java: 7,  cpp: 7,  python: 6,  javascript: 5 },
+    pushNumber: { java: 15, cpp: 14, python: 12, javascript: 12 },
+    done:       { java: 18, cpp: 17, python: 13, javascript: 15 },
   };
 
-  // Initial step
-  pushStep({
-    tokens,
+  if (n === 0) {
+    steps.push({
+      tokens: [],
+      currentIndex: -1,
+      currentToken: null,
+      stack: [],
+      operandA: null,
+      operandB: null,
+      operator: null,
+      calcResult: null,
+      action: 'done',
+      message: 'Token 列表为空，表达式值为 0',
+      codeLine: lines.done,
+    });
+    return steps;
+  }
+
+  const stack: number[] = [];
+
+  steps.push({
+    tokens: [...tokens],
+    currentIndex: -1,
+    currentToken: null,
     stack: [],
-    i: -1,
-    token: '',
-    status: 'init',
+    operandA: null,
+    operandB: null,
     operator: null,
-    op1: null,
-    op2: null,
-    result: null,
-    log: '',
-    codeLine: 1,
-    message: `表达式: [${tokens.join(', ')}]，准备求值`,
+    calcResult: null,
+    action: 'init',
+    message: `初始化：共 ${n} 个 Token 待处理，使用操作数栈自左向右依次求值`,
+    codeLine: lines.init,
   });
 
-  for (let i = 0; i < tokens.length; i++) {
+  for (let i = 0; i < n; i++) {
     const token = tokens[i];
-    const num = Number(token);
 
-    if (!isNaN(num)) {
-      // It's a number: push onto stack
-      stack.push(num);
-      pushStep({
-        tokens,
-        stack: [...stack],
-        i,
-        token,
-        status: 'push-number',
-        operator: null,
-        op1: null,
-        op2: null,
-        result: null,
-        log: `数字 ${num} 入栈`,
-        codeLine: 4,
-        message: `Token "${token}" 是数字，入栈 → 栈: [${stack.join(', ')}]`,
-      });
-    } else {
-      // It's an operator: pop two operands
+    if (token === '+' || token === '-' || token === '*' || token === '/') {
       const b = stack.pop()!;
       const a = stack.pop()!;
+      let res = 0;
 
-      // Step: pop op2 (b)
-      pushStep({
-        tokens,
-        stack: [...stack, b],
-        i,
-        token,
-        status: 'pop-op2',
-        operator: token,
-        op1: null,
-        op2: b,
-        result: null,
-        log: `弹出操作数 b = ${b}`,
-        codeLine: 6,
-        message: `遇到运算符 "${token}"，弹出第二个操作数 b = ${b}`,
-      });
+      if (token === '+') {
+        res = a + b;
+      } else if (token === '-') {
+        res = a - b;
+      } else if (token === '*') {
+        res = a * b;
+      } else if (token === '/') {
+        res = Math.trunc(a / b);
+      }
 
-      // Step: pop op1 (a)
-      pushStep({
-        tokens,
+      stack.push(res);
+
+      steps.push({
+        tokens: [...tokens],
+        currentIndex: i,
+        currentToken: token,
         stack: [...stack],
-        i,
-        token,
-        status: 'pop-op1',
+        operandA: a,
+        operandB: b,
         operator: token,
-        op1: a,
-        op2: b,
-        result: null,
-        log: `弹出操作数 a = ${a}`,
-        codeLine: 7,
-        message: `弹出第一个操作数 a = ${a}`,
+        calcResult: res,
+        action: 'compute',
+        message: `⚡ 遇运算符 '${token}'：弹出右操作数 ${b} 与左操作数 ${a}，计算 ${a} ${token} ${b} = ${res}，将 ${res} 压入栈顶`,
+        codeLine: lines.compute,
       });
+    } else {
+      const num = parseInt(token, 10);
+      stack.push(num);
 
-      // Compute
-      let r = 0;
-      const opSymbol =
-        token === '+' ? '+' : token === '-' ? '-' : token === '*' ? '×' : '÷';
-      if (token === '+') r = a + b;
-      else if (token === '-') r = a - b;
-      else if (token === '*') r = a * b;
-      else if (token === '/') r = Math.trunc(a / b);
-
-      pushStep({
-        tokens,
+      steps.push({
+        tokens: [...tokens],
+        currentIndex: i,
+        currentToken: token,
         stack: [...stack],
-        i,
-        token,
-        status: 'compute',
-        operator: token,
-        op1: a,
-        op2: b,
-        result: r,
-        log: `计算: ${a} ${opSymbol} ${b} = ${r}`,
-        codeLine: [9, 10, 11, 12],
-        message: `计算: ${a} ${opSymbol} ${b} = ${r}`,
-      });
-
-      // Push result
-      stack.push(r);
-      pushStep({
-        tokens,
-        stack: [...stack],
-        i,
-        token,
-        status: 'push-result',
-        operator: token,
-        op1: a,
-        op2: b,
-        result: r,
-        log: `结果 ${r} 入栈`,
-        codeLine: 13,
-        message: `结果 ${r} 入栈 → 栈: [${stack.join(', ')}]`,
+        operandA: null,
+        operandB: null,
+        operator: null,
+        calcResult: null,
+        action: 'push_number',
+        message: `📥 遇数字操作数 ${num}：直接压入数值栈顶。当前栈: [${stack.join(', ')}]`,
+        codeLine: lines.pushNumber,
       });
     }
   }
 
-  // Done
-  pushStep({
-    tokens,
-    stack: [stack[0]],
-    i: tokens.length,
-    token: '',
-    status: 'done',
+  const finalVal = stack.length > 0 ? stack[0] : 0;
+  steps.push({
+    tokens: [...tokens],
+    currentIndex: n,
+    currentToken: null,
+    stack: [...stack],
+    operandA: null,
+    operandB: null,
     operator: null,
-    op1: null,
-    op2: null,
-    result: stack[0],
-    log: `最终结果: ${stack[0]}`,
-    codeLine: 16,
-    message: `求值完成，最终结果 = ${stack[0]}`,
+    calcResult: finalVal,
+    action: 'done',
+    message: `🎉 逆波兰表达式求值完毕！栈顶剩余唯一最终结果为: ${finalVal}`,
+    codeLine: lines.done,
   });
 
   return steps;
 }
 
-export class EvalRPNVisualizer extends StepVisualizer<RPNStep> {
-  protected codeLines = [
-    'public int evalRPN(String[] tokens) {',
-    '    // 初始化栈',
-    '    Deque<Integer> stack = new ArrayDeque<>();',
-    '    for (String token : tokens) {',
-    '        if (isNumeric(token)) {',
-    '            stack.push(Integer.parseInt(token));',
-    '        } else {',
-    '            int b = stack.pop();',
-    '            int a = stack.pop();',
-    '            int r = 0;',
-    "            if (token.equals(\"+\")) r = a + b;",
-    "            else if (token.equals(\"-\")) r = a - b;",
-    "            else if (token.equals(\"*\")) r = a * b;",
-    "            else if (token.equals(\"/\")) r = a / b;",
-    '            stack.push(r);',
-    '        }',
-    '    }',
-    '    return stack.peek();',
-    '}',
-  ];
-  protected codePanelTitle = '逆波兰表达式求值代码 (Java)';
+const { template, Visualizer } = createDeclarativeVisualizer<RPNStep>({
+  id: 'eval-rpn',
+  name: '逆波兰表达式求值',
+  category: 'stack',
+  icon: '🧮',
+  badge: {
+    mode: '后缀表达式·操作数栈',
+    complexity: 'O(n) · O(n)',
+  },
+  card1Title: '🔤 Token 扫描与操作数栈沙盘',
+  card2Title: '🧭 算术求值与栈顶状态监视器',
+  card2Desc: '当前 Token、操作数 a/b 与计算结果',
+  legend: [
+    { label: '数字入栈', color: '#2563eb' },
+    { label: '算术求值', color: '#ea580c' },
+    { label: '已处理 Token', color: '#94a3b8' },
+  ],
+  inputs: [
+    {
+      id: 'input-tokens',
+      label: 'RPN 序列',
+      type: 'text',
+      defaultValue: '2, 1, +, 3, *',
+      width: '140px',
+      placeholder: '以逗号或空格分隔',
+    },
+  ],
+  presets: [
+    { label: '标准乘加', values: { 'input-tokens': '2, 1, +, 3, *' } },
+    { label: '带除法表达式', values: { 'input-tokens': '4, 13, 5, /, +' } },
+    { label: '复杂四则运算', values: { 'input-tokens': '10, 6, 9, 3, +, -11, *, /, *, 17, +, 5, +' } },
+  ],
+  metrics: [
+    { id: 'top-val', label: '当前栈顶值', color: '#ea580c' },
+    { id: 'processed-count', label: '已处理 Token', color: '#2563eb' },
+    { id: 'stack-size', label: '操作数栈深', color: '#059669' },
+  ],
+  codeLanguages: EVAL_RPN_CODE_LANGUAGES,
+  problemHtml: EVAL_RPN_PROBLEM_HTML,
+  analysisHtml: EVAL_RPN_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-tokens'] || '2, 1, +, 3, *';
+    const tokens = raw.split(/[,，\s]+/).filter(Boolean);
+    return buildEvalRPNSteps(tokens);
+  },
+  renderCanvas: (container, step) => {
+    const tokens = step.tokens;
+    const stack = step.stack;
+    const curIdx = step.currentIndex;
+    const isDone = step.action === 'done';
+    const isCompute = step.action === 'compute';
 
-  private inputField: HTMLInputElement | null = null;
-  private tokensDisplay: HTMLElement | null = null;
-  private stackContainer: HTMLElement | null = null;
-  private computationDisplay: HTMLElement | null = null;
-  private stateIndex: HTMLElement | null = null;
-  private stateToken: HTMLElement | null = null;
-  private stateStackSize: HTMLElement | null = null;
-  private stateValue: HTMLElement | null = null;
-  private resultBanner: HTMLElement | null = null;
-  private logArea: HTMLElement | null = null;
+    // Token 序列展示
+    const tokensHtml = tokens
+      .map((tok, idx) => {
+        const isCurrent = idx === curIdx && !isDone;
+        const isProcessed = idx < curIdx || (isDone && idx <= curIdx);
+        let bg = '#ffffff';
+        let border = '#e2e8f0';
+        let textColor = '#0f172a';
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.inputField = this.root.querySelector('#rpn-input');
-    this.tokensDisplay = this.root.querySelector('#rpn-tokens-display');
-    this.stackContainer = this.root.querySelector('#rpn-stack-container');
-    this.computationDisplay = this.root.querySelector('#rpn-computation');
-    this.stateIndex = this.root.querySelector('#rpn-state-index');
-    this.stateToken = this.root.querySelector('#rpn-state-token');
-    this.stateStackSize = this.root.querySelector('#rpn-state-stack-size');
-    this.stateValue = this.root.querySelector('#rpn-state-value');
-    this.resultBanner = this.root.querySelector('#rpn-result');
-    this.logArea = this.root.querySelector('#rpn-log');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#rpn-start')?.addEventListener('click', () => this.start());
-  }
-
-  protected setupEvents(): void {
-    this.bindPlaybackControls();
-    if (!this.root) return;
-
-    // Bind example buttons
-    this.root.querySelectorAll<HTMLButtonElement>('.btn-example').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const tokens = btn.dataset.tokens;
-        if (tokens && this.inputField) {
-          this.inputField.value = tokens;
-          this.start();
+        if (isCurrent) {
+          bg = isCompute ? '#fff7ed' : '#eff6ff';
+          border = isCompute ? '#ea580c' : '#2563eb';
+          textColor = isCompute ? '#c2410c' : '#1d4ed8';
+        } else if (isProcessed) {
+          bg = '#f8fafc';
+          border = '#cbd5e1';
+          textColor = '#64748b';
         }
-      });
-    });
-  }
 
-  protected buildSteps(): RPNStep[] {
-    const input = this.inputField?.value.trim() || '2,1,+,3,*';
-    const tokens = input
-      .split(/[,\s]+/)
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
-    return evalRPNSteps(tokens);
-  }
+        return `
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <span style="font-size: 8.5px; color: ${isCurrent ? '#ea580c' : '#94a3b8'}; font-weight: 700;">[${idx}]</span>
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              ${tok}
+            </div>
+          </div>
+        `;
+      })
+      .join('');
 
-  protected renderStep(step: RPNStep): void {
-    this.renderTokens(step);
-    this.renderStack(step);
-    this.renderComputation(step);
-    this.updateStatePanel(step);
-    this.renderLogLine(step);
-    this.renderResult(step);
-  }
+    // 操作数栈展示 (扁平直排)
+    const stackItemsHtml =
+      stack.length === 0
+        ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">栈空</span>'
+        : stack
+            .map(
+              (num) => `
+              <div style="padding: 2px 8px; border-radius: 4px; background: #ffffff; border: 1.5px solid #ea580c; color: #c2410c; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
+                ${num}
+              </div>
+            `
+            )
+            .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
 
-  private renderTokens(step: RPNStep): void {
-    if (!this.tokensDisplay) return;
-    this.tokensDisplay.innerHTML = '';
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 12px; box-sizing: border-box; padding: 4px;">
+        <!-- Token 序列 -->
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>🔤 逆波兰表达式 Tokens 流 (自左至右):</span>
+            <span style="color: #ea580c;">栈大小: ${stack.length}</span>
+          </div>
+          <div style="display: flex; gap: 4px; overflow-x: auto; padding: 2px 0;">
+            ${tokensHtml}
+          </div>
+        </div>
 
-    step.tokens.forEach((token, idx) => {
-      const box = document.createElement('div');
-      box.className = 'token-box';
+        <div style="border-top: 1px dashed #e2e8f0; margin: 1px 0;"></div>
 
-      const isOperator = isNaN(Number(token));
-      box.classList.add(isOperator ? 'token-operator' : 'token-number');
-      box.textContent = token;
+        <!-- 数值操作数栈 (扁平直排) -->
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 数值操作数栈 (栈底 → 栈顶):</span>
+            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ea580c;">栈深: ${stack.length}</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center; min-height: 28px; flex-wrap: wrap;">
+            ${stackItemsHtml}
+          </div>
+        </div>
+      </div>
+    `;
 
-      if (idx === step.i) {
-        box.classList.add(isOperator ? 'current-operator' : 'current');
-      } else if (idx < step.i) {
-        box.classList.add('processed');
-      }
+    // 更新指标卡片
+    const root = container.closest('#algo-eval-rpn-view');
+    if (root) {
+      const topVal = stack.length > 0 ? stack[stack.length - 1] : 0;
+      const topValEl = root.querySelector('#metric-top-val');
+      const countEl = root.querySelector('#metric-processed-count');
+      const stackSizeEl = root.querySelector('#metric-stack-size');
 
-      this.tokensDisplay!.appendChild(box);
-    });
+      if (topValEl) topValEl.textContent = `${topVal}`;
+      if (countEl) countEl.textContent = `${Math.min(curIdx + 1, tokens.length)} / ${tokens.length}`;
+      if (stackSizeEl) stackSizeEl.textContent = `${step.stack.length}`;
 
-    // Pointer below current token
-    if (step.i >= 0 && step.i < step.tokens.length) {
-      const pointer = document.createElement('div');
-      pointer.className = 'token-pointer';
-      pointer.textContent = '↑ i=' + step.i;
-      this.tokensDisplay!.appendChild(pointer);
-
-      // Position pointer under the current token
-      const boxes = this.tokensDisplay!.querySelectorAll('.token-box');
-      if (boxes[step.i]) {
-        const containerRect = this.tokensDisplay!.getBoundingClientRect();
-        const boxRect = boxes[step.i].getBoundingClientRect();
-        pointer.style.left = boxRect.left - containerRect.left + boxRect.width / 2 - 15 + 'px';
-      }
-    }
-  }
-
-  private renderStack(step: RPNStep): void {
-    if (!this.stackContainer) return;
-    this.stackContainer.innerHTML = '';
-
-    // For pop steps, we need to show the stack as it is at that point
-    // The step.stack reflects the state AFTER the operation
-    // For pop-op2: stack still has b at top (b was popped)
-    // For pop-op1: stack has both popped
-    // For push-result: stack has result at top
-
-    const displayStack = [...step.stack];
-
-    // For pop operations, show the items being popped visually
-    if (step.status === 'pop-op2' && step.op2 !== null) {
-      // The stack in pop-op2 step has b still "on top" (before full pop)
-      // Actually step.stack for pop-op2 is [...remaining, b]
-      displayStack.push(step.op2);
-    }
-
-    displayStack.forEach((val, idx) => {
-      const item = document.createElement('div');
-      item.className = 'stack-item';
-      item.textContent = val.toString();
-
-      // Highlight top item during pop operations
-      if (step.status === 'pop-op2' && idx === displayStack.length - 1) {
-        item.classList.add('popping');
-      }
-
-      // Highlight result push
-      if (step.status === 'push-result' && idx === displayStack.length - 1) {
-        item.classList.add('result-push');
-      }
-
-      this.stackContainer!.appendChild(item);
-    });
-  }
-
-  private renderComputation(step: RPNStep): void {
-    if (!this.computationDisplay) return;
-
-    if (step.status === 'compute' && step.op1 !== null && step.op2 !== null && step.result !== null) {
-      const opSymbol =
-        step.operator === '+' ? '+'
-          : step.operator === '-' ? '-'
-            : step.operator === '*' ? '×'
-              : '÷';
-
-      this.computationDisplay.innerHTML = '';
-      this.computationDisplay.classList.add('visible');
-
-      const op1El = document.createElement('span');
-      op1El.className = 'comp-num';
-      op1El.textContent = step.op1.toString();
-
-      const opEl = document.createElement('span');
-      opEl.className = 'comp-op';
-      opEl.textContent = opSymbol;
-
-      const op2El = document.createElement('span');
-      op2El.className = 'comp-num';
-      op2El.textContent = step.op2.toString();
-
-      const eqEl = document.createElement('span');
-      eqEl.className = 'comp-eq';
-      eqEl.textContent = '=';
-
-      const resEl = document.createElement('span');
-      resEl.className = 'comp-result';
-      resEl.textContent = step.result.toString();
-
-      this.computationDisplay.appendChild(op1El);
-      this.computationDisplay.appendChild(opEl);
-      this.computationDisplay.appendChild(op2El);
-      this.computationDisplay.appendChild(eqEl);
-      this.computationDisplay.appendChild(resEl);
-    } else if (step.status === 'push-result') {
-      // Keep computation visible during push
-      // (already shown from compute step)
-    } else {
-      this.computationDisplay.classList.remove('visible');
-      this.computationDisplay.innerHTML = '';
-    }
-  }
-
-  private updateStatePanel(step: RPNStep): void {
-    if (this.stateIndex) {
-      this.stateIndex.textContent = step.i >= 0 ? step.i.toString() : '-';
-    }
-    if (this.stateToken) {
-      this.stateToken.textContent = step.token || '-';
-      this.stateToken.className = 'state-value' +
-        (step.token && !isNaN(Number(step.token)) ? ' highlight' : '') +
-        (step.token && isNaN(Number(step.token)) && step.token !== '' ? ' operator-color' : '');
-    }
-    if (this.stateStackSize) {
-      this.stateStackSize.textContent = step.stack.length.toString();
-    }
-    if (this.stateValue) {
-      if (step.result !== null) {
-        this.stateValue.textContent = step.result.toString();
-        this.stateValue.className = 'state-value highlight';
-      } else if (step.stack.length > 0) {
-        this.stateValue.textContent = step.stack[step.stack.length - 1].toString();
-        this.stateValue.className = 'state-value';
-      } else {
-        this.stateValue.textContent = '-';
-        this.stateValue.className = 'state-value';
+      // 在 Card 2 中展示当前运算决策
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前 Token:</span>
+              <strong style="font-family: monospace; color: #ea580c; font-size: 12px;">${step.currentToken !== null ? `'${step.currentToken}'` : '（结束）'}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>操作数 a & b:</span>
+              <strong style="font-family: monospace; color: #0284c7; font-size: 12px;">${step.operandA !== null ? `a=${step.operandA}, b=${step.operandB}` : '无'}</strong>
+            </div>
+          </div>
+        `;
       }
     }
-  }
-
-  private renderLogLine(step: RPNStep): void {
-    if (!this.logArea) return;
-    this.logArea.innerHTML = '';
-
-    // Show all logs from start up to current step
-    for (let s = 0; s <= this.currentIndex; s++) {
-      const logStep = this.steps[s];
-      if (!logStep.log) continue;
-      const entry = document.createElement('div');
-      entry.className = 'log-entry';
-      if (logStep.status === 'push-number' || logStep.status === 'push-result') {
-        entry.classList.add('log-push');
-      } else if (logStep.status === 'pop-op1' || logStep.status === 'pop-op2') {
-        entry.classList.add('log-pop');
-      } else if (logStep.status === 'compute') {
-        entry.classList.add('log-compute');
-      }
-      entry.textContent = logStep.log;
-      this.logArea.appendChild(entry);
-    }
-
-    // Auto-scroll to bottom
-    this.logArea.scrollTop = this.logArea.scrollHeight;
-  }
-
-  private renderResult(step: RPNStep): void {
-    if (!this.resultBanner) return;
-    if (step.status === 'done') {
-      this.resultBanner.className = 'result-banner success';
-      this.resultBanner.textContent = `最终结果: ${step.result}`;
-    } else {
-      this.resultBanner.className = 'result-banner';
-      this.resultBanner.textContent = '等待求值';
-    }
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'eval-rpn',
   name: '逆波兰表达式求值',
   viewId: 'algo-eval-rpn-view',
   category: 'stack',
-  description: '用栈求解后缀（逆波兰）表达式',
+  description: '遇操作数入栈，遇运算符弹出右操作数 b 与左操作数 a，计算 a op b 并压回栈中',
   icon: '🧮',
   template,
-  Visualizer: EvalRPNVisualizer,
+  Visualizer,
   difficulty: 2,
-  levelOrder: 5,
-  learningGoal: '掌握用栈处理后缀表达式的思路',
+  levelOrder: 3,
+  learningGoal: '掌握后缀表达式在编译器与计算器中的天然无括号优先级求值算法，理解操作数栈的设计模式',
 });
-
-export {};

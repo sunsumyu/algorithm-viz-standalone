@@ -1,13 +1,20 @@
 /**
- * 移除元素可视化器（双指针）
- * LeetCode 27
+ * 移除元素可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * LeetCode 27：快慢双指针原地覆盖
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './remove-element.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  REMOVE_ELEMENT_PROBLEM_HTML,
+  REMOVE_ELEMENT_ANALYSIS_HTML,
+  REMOVE_ELEMENT_CODE_LANGUAGES,
+} from './remove-element-problem-content';
 
-interface RemoveStep {
+export interface RemoveStep {
   array: number[];
   fast: number;
   slow: number;
@@ -15,230 +22,224 @@ interface RemoveStep {
   status: 'check' | 'skip' | 'copy' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
-export class RemoveElementVisualizer extends StepVisualizer<RemoveStep> {
-  protected codeLines = [
-    'public int removeElement(int[] nums, int val) {',
-    '    int slow = 0;',
-    '    for (int fast = 0; fast < nums.length; fast++) {',
-    '        if (nums[fast] != val) {',
-    '            nums[slow] = nums[fast];',
-    '            slow++;',
-    '        }',
-    '    }',
-    '    return slow;',
-    '}',
-  ];
-  protected codePanelTitle = '移除元素 Java 实现';
+export function parseArray(input: string): number[] {
+  const arr = input
+    .split(/[,，\s]+/)
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  return arr.length > 0 ? arr : [3, 2, 2, 3];
+}
 
-  private arrayInput: HTMLInputElement | null = null;
-  private valInput: HTMLInputElement | null = null;
-  private exampleButtons: NodeListOf<HTMLButtonElement> | null = null;
-  private trackEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private fastEl: HTMLElement | null = null;
-  private slowEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private lenEl: HTMLElement | null = null;
-  private currentVal = 3;
-  private currentArray: number[] = [3, 2, 2, 3, 4, 3, 5];
-  /** 持久化的 cell DOM，按 index 复用，避免每步销毁重建 */
-  private cellGrid: HTMLElement[] = [];
-  /** 上一帧每个 index 对应的值，用于检测 overwriting */
-  private prevValues: number[] = [];
+export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[] {
+  const steps: RemoveStep[] = [];
+  let slow = 0;
+  const work = [...arr];
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.arrayInput = this.root.querySelector('#rm-array-input');
-    this.valInput = this.root.querySelector('#rm-val-input');
-    this.btnStart = this.root.querySelector('#rm-start');
-    this.exampleButtons = this.root.querySelectorAll('.rm-example-btn');
-    this.trackEl = this.root.querySelector('#rm-track');
-    this.logEl = this.root.querySelector('#rm-log');
-    this.fastEl = this.root.querySelector('#rm-fast');
-    this.slowEl = this.root.querySelector('#rm-slow');
-    this.curEl = this.root.querySelector('#rm-cur');
-    this.lenEl = this.root.querySelector('#rm-len');
-    this.bindPlaybackControls({ message: 'step-message' });
+  const lines = {
+    init: { java: 2, cpp: 4,  python: 3, javascript: 2 },
+    loop: { java: 3, cpp: 5,  python: 4, javascript: 3 },
+    copy: { java: 5, cpp: 7,  python: 6, javascript: 5 },
+    skip: { java: 3, cpp: 5,  python: 4, javascript: 3 },
+    done: { java: 9, cpp: 11, python: 8, javascript: 9 },
+  };
 
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
-    this.exampleButtons?.forEach((btn) => {
-      btn.onclick = () => {
-        if (this.arrayInput) this.arrayInput.value = btn.dataset.arr || '';
-        if (this.valInput) this.valInput.value = btn.dataset.val || '';
-        this.start();
-      };
+  steps.push({
+    array: [...work],
+    fast: 0,
+    slow: 0,
+    val,
+    status: 'check',
+    message: `初始化 slow = 0，fast 从 0 开始遍历，待移除的目标值 val = ${val}。`,
+    log: `初始化快慢指针：slow=0, fast=0, val=${val}`,
+    codeLine: lines.init,
+  });
+
+  for (let fast = 0; fast < work.length; fast++) {
+    steps.push({
+      array: [...work],
+      fast,
+      slow,
+      val,
+      status: 'check',
+      message: `快指针 fast=${fast}，检查 nums[${fast}]=${work[fast]} 是否等于 val=${val}。`,
+      log: `检查 nums[${fast}] = ${work[fast]}`,
+      codeLine: lines.loop,
     });
+
+    if (work[fast] !== val) {
+      const prevVal = work[slow];
+      work[slow] = work[fast];
+      steps.push({
+        array: [...work],
+        fast,
+        slow,
+        val,
+        status: 'copy',
+        message: `nums[fast]=${work[fast]} ≠ val，保留此元素：覆写到 nums[slow=${slow}]（原值 ${prevVal}），slow++ → ${slow + 1}。`,
+        log: `保留元素: nums[${slow}] = ${work[fast]}，slow 右移至 ${slow + 1}`,
+        codeLine: lines.copy,
+      });
+      slow++;
+    } else {
+      steps.push({
+        array: [...work],
+        fast,
+        slow,
+        val,
+        status: 'skip',
+        message: `nums[fast]=${work[fast]} == val，遇到待移除元素，跳过不复制，慢指针 slow 保持在 ${slow}。`,
+        log: `跳过目标值: nums[${fast}] == ${val}`,
+        codeLine: lines.skip,
+      });
+    }
   }
 
-  protected buildSteps(): RemoveStep[] {
-    const arr = this.parseArray(this.arrayInput?.value || '3,2,2,3,4,3,5');
-    const val = parseInt(this.valInput?.value || '3', 10);
-    this.currentArray = [...arr];
-    this.currentVal = Number.isFinite(val) ? val : 3;
+  steps.push({
+    array: [...work],
+    fast: work.length,
+    slow,
+    val,
+    status: 'done',
+    message: `🎉 遍历完成！新数组有效长度为 slow = ${slow}，前 ${slow} 个元素为最终保留结果 [${work.slice(0, slow).join(', ')}]。`,
+    log: `✓ 完成：有效长度 k = ${slow}`,
+    codeLine: lines.done,
+  });
 
-    const steps: RemoveStep[] = [];
-    let slow = 0;
-    const work = [...arr];
+  return steps;
+}
 
-    steps.push({
-      array: [...work], fast: 0, slow: 0, val: this.currentVal, status: 'check',
-      message: `初始化 slow=0，fast 从 0 开始遍历，要移除的值 val=${this.currentVal}。`,
-      log: '初始化快慢指针。',
-      codeLine: [1, 2],
-    });
+const { template, Visualizer } = createDeclarativeVisualizer<RemoveStep>({
+  id: 'remove-element',
+  name: '移除元素',
+  category: 'array',
+  icon: '✂️',
+  badge: {
+    mode: '快慢双指针原地覆写',
+    complexity: 'O(n) · O(1)',
+  },
+  card1Title: '📊 数组条带与快慢双指针沙盘',
+  card2Title: '🧭 指针状态与有效保留区间监视器',
+  card2Desc: '快慢指针索引、当前覆写动作与有效数组前缀',
+  legend: [
+    { label: '快指针 fast', color: '#2563eb' },
+    { label: '慢指针 slow', color: '#0d9488' },
+    { label: '待移除目标 val', color: '#ef4444' },
+  ],
+  inputs: [
+    {
+      id: 'input-array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '3, 2, 2, 3',
+      width: '140px',
+      placeholder: '3, 2, 2, 3',
+    },
+    {
+      id: 'input-val',
+      label: '移除值 val',
+      type: 'number',
+      defaultValue: 3,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '示例 1 (val=3)', values: { 'input-array': '3, 2, 2, 3', 'input-val': 3 } },
+    { label: '示例 2 (val=2)', values: { 'input-array': '0, 1, 2, 2, 3, 0, 4, 2', 'input-val': 2 } },
+    { label: '无匹配项 (val=5)', values: { 'input-array': '1, 2, 3, 4', 'input-val': 5 } },
+  ],
+  metrics: [
+    { id: 'fast-idx', label: '快指针 fast', color: '#2563eb' },
+    { id: 'slow-idx', label: '慢指针 slow (有效长)', color: '#0d9488' },
+    { id: 'action-state', label: '当前动作', color: '#16a34a' },
+  ],
+  codeLanguages: REMOVE_ELEMENT_CODE_LANGUAGES,
+  problemHtml: REMOVE_ELEMENT_PROBLEM_HTML,
+  analysisHtml: REMOVE_ELEMENT_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-array'] || '3, 2, 2, 3';
+    const arr = parseArray(raw);
+    const val = parseInt(inputs['input-val'] || '3', 10);
+    return buildRemoveElementSteps(arr, val);
+  },
+  renderCanvas: (container, step) => {
+    const isDone = step.status === 'done';
+    const highlights = new Map<number, { bg?: string; border?: string; color?: string }>();
 
-    for (let fast = 0; fast < work.length; fast++) {
-      steps.push({
-        array: [...work], fast, slow, val: this.currentVal, status: 'check',
-        message: `fast=${fast}，检查 nums[fast]=${work[fast]} 是否等于 val=${this.currentVal}。`,
-        log: `检查 nums[${fast}]=${work[fast]}。`,
-        codeLine: 3,
-      });
+    // 为有效前缀 [0..slow-1] 标记绿色
+    for (let i = 0; i < step.slow; i++) {
+      highlights.set(i, { bg: '#f0fdf4', border: '#86efac', color: '#166534' });
+    }
 
-      if (work[fast] !== this.currentVal) {
-        const prevVal = work[slow];
-        work[slow] = work[fast];
-        steps.push({
-          array: [...work], fast, slow, val: this.currentVal, status: 'copy',
-          message: `nums[fast]=${work[fast]} ≠ val，复制到 slow=${slow} 位置（原值 ${prevVal}），slow++ → ${slow + 1}。`,
-          log: `保留：nums[${slow}] = ${work[fast]}（原值 ${prevVal}），slow -> ${slow + 1}。`,
-          codeLine: [4, 5, 6],
-        });
-        slow++;
-      } else {
-        steps.push({
-          array: [...work], fast, slow, val: this.currentVal, status: 'skip',
-          message: `nums[fast]=${work[fast]} == val，跳过，不复制。`,
-          log: `等于 val，跳过。`,
-          codeLine: 3,
-        });
+    if (step.fast < step.array.length && !isDone) {
+      if (step.status === 'skip') {
+        highlights.set(step.fast, { bg: '#fef2f2', border: '#fca5a5', color: '#991b1b' });
       }
     }
 
-    steps.push({
-      array: [...work], fast: work.length, slow, val: this.currentVal, status: 'done',
-      message: `遍历结束，新长度 = slow = ${slow}（前 ${slow} 个元素为移除后的结果）。`,
-      log: `返回 slow = ${slow}。`,
-      codeLine: 8,
+    ArrayTrackAdapter.renderTrack(container, {
+      array: step.array,
+      pointers: isDone
+        ? [{ name: 'k', index: step.slow, color: '#16a34a', position: 'top' }]
+        : [
+            { name: 'fast', index: step.fast, color: '#2563eb', position: 'top' },
+            { name: 'slow', index: step.slow, color: '#0d9488', position: 'bottom' },
+          ],
+      itemHighlights: highlights,
+      primaryTitle: '📊 原地数组条带 (nums):',
     });
-    return steps;
-  }
 
-  private parseArray(input: string): number[] {
-    return input.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
-  }
+    const root = container.closest('#algo-remove-element-view');
+    if (root) {
+      const fastEl = root.querySelector('#metric-fast-idx');
+      const slowEl = root.querySelector('#metric-slow-idx');
+      const actEl = root.querySelector('#metric-action-state');
 
-  protected renderStep(step: RemoveStep): void {
-    if (this.fastEl) this.fastEl.textContent = String(step.fast);
-    if (this.slowEl) this.slowEl.textContent = String(step.slow);
-    if (this.curEl) this.curEl.textContent = step.fast < step.array.length ? String(step.array[step.fast]) : '-';
-    if (this.lenEl) this.lenEl.textContent = String(step.slow);
+      if (fastEl) fastEl.textContent = `${step.fast}`;
+      if (slowEl) slowEl.textContent = `${step.slow}`;
+      if (actEl) {
+        actEl.textContent =
+          step.status === 'copy'
+            ? `覆写 nums[${step.slow}] = ${step.array[step.slow]}`
+            : step.status === 'skip'
+            ? `跳过 val=${step.val}`
+            : step.status === 'done'
+            ? `完成 (有效长度 ${step.slow})`
+            : '检查中';
+      }
 
-    if (this.trackEl) {
-      this.ensureCells(step.array.length);
-      step.array.forEach((value, index) => {
-        const cell = this.cellGrid[index];
-        if (!cell) return;
-        // 计算各类状态
-        const isFast = index === step.fast && step.fast < step.array.length;
-        const isSlow = index === step.slow && step.status !== 'done';
-        const isTarget = value === step.val;
-        const isKept = index < step.slow;
-
-        // 检测 overwriting：slow 位置在新值覆盖旧值时
-        const prevVal = this.prevValues[index];
-        const isOverwriting =
-          step.status === 'copy' &&
-          index === step.slow &&
-          prevVal !== undefined &&
-          prevVal !== value;
-        const isRemoving =
-          step.status === 'skip' && index === step.fast && isTarget;
-
-        // 切换 class（复用 DOM，transition 生效）
-        cell.classList.toggle('fast', isFast);
-        cell.classList.toggle('slow', isSlow);
-        cell.classList.toggle('target', isTarget);
-        cell.classList.toggle('kept', isKept);
-        cell.classList.toggle('done', step.status === 'done' && index < step.slow);
-
-        // 重启 overwriting / removing 动画
-        if (isOverwriting) {
-          this.restartAnimation(cell, 'overwriting');
-        } else {
-          cell.classList.remove('overwriting');
-        }
-        if (isRemoving) {
-          this.restartAnimation(cell, 'removing');
-        } else {
-          cell.classList.remove('removing');
-        }
-
-        // 指针标签
-        let pointers = '';
-        if (isFast) pointers += '<span class="rm-ptr fast">fast</span>';
-        if (isSlow) pointers += '<span class="rm-ptr slow">slow</span>';
-        cell.innerHTML = `${pointers}<span class="idx">${index}</span><span class="val">${value}</span>`;
-        // 重启动画后需要重新附加 innerHTML，class 仍保留
-      });
-      this.prevValues = [...step.array];
+      // 在 Card 2 中展示当前有效数组前缀
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const validItems = step.array.slice(0, step.slow);
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">有效前缀 [0..${Math.max(0, step.slow - 1)}]:</span>
+              <span style="font-size: 10px; color: #16a34a; font-family: monospace;">长度 k = ${step.slow}</span>
+            </div>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #16a34a;">
+              [ ${validItems.join(', ')} ]
+            </div>
+          </div>
+        `;
+      }
     }
-    this.renderLogLine(step);
-  }
-
-  /** 按需创建/回收 cell，长度匹配时复用 */
-  private ensureCells(n: number): void {
-    if (!this.trackEl) return;
-    // 长度增加：追加新 cell
-    while (this.cellGrid.length < n) {
-      const cell = document.createElement('div');
-      cell.className = 'rm-cell';
-      this.cellGrid.push(cell);
-      this.trackEl.appendChild(cell);
-      this.prevValues.push(undefined as unknown as number);
-    }
-    // 长度减少：移除多余 cell
-    while (this.cellGrid.length > n) {
-      const cell = this.cellGrid.pop();
-      if (cell && cell.parentElement === this.trackEl) this.trackEl.removeChild(cell);
-      this.prevValues.pop();
-    }
-  }
-
-  /** 重启 CSS 动画 class：先移除，强制 reflow，再加回 */
-  private restartAnimation(el: HTMLElement, cls: string): void {
-    el.classList.remove(cls);
-    // 强制 reflow 以重启动画
-    void el.offsetWidth;
-    el.classList.add(cls);
-  }
-
-  private renderLogLine(step: RemoveStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'remove-element',
-  name: '移除元素（双指针）',
+  name: '移除元素',
   viewId: 'algo-remove-element-view',
   category: 'array',
-  description: '快慢指针原地移除指定值的元素',
-  icon: '🧹',
+  description: '快慢双指针原地覆写：快指针寻找新元素，慢指针指向新数组位置，O(1) 额外空间',
+  icon: '✂️',
   template,
-  Visualizer: RemoveElementVisualizer,
+  Visualizer,
   difficulty: 1,
-  levelOrder: 1,
-  learningGoal: '掌握快慢双指针原地修改数组的思路',
+  levelOrder: 2,
+  learningGoal: '掌握利用快慢双指针在单数组中原地覆写元素以消除特定目标的经典范式',
 });

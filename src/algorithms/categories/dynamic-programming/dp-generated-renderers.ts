@@ -24,6 +24,8 @@ import {
   DpTreeNode,
 } from './dp-demo-visualizer';
 
+import { ArticleDef, articleTemplate, dpArticles } from './dp-articles';
+
 export type DemoBuilder = (root: HTMLElement, mode?: import('../../../core/interfaces').ExecutionStepMode) => DpDemoStep[];
 
 export type DemoDef = {
@@ -51,20 +53,6 @@ export type DemoDef = {
   learningGoal?: string;
 };
 
-export type ArticleDef = {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  sections: Array<[string, string]>;
-  /** 难度：1=🟢入门 2=🟡进阶 3=🔴挑战 */
-  difficulty?: 1 | 2 | 3;
-  /** 同分类内的关卡顺序 */
-  levelOrder?: number;
-  /** 本关的学习目标（一句话） */
-  learningGoal?: string;
-};
-
 // ---------------------------------------------------------------------------
 // 步骤转换器与通用建造工厂 (Engine Step Converter & Builder Factory)
 // ---------------------------------------------------------------------------
@@ -82,7 +70,7 @@ export function convertTraceStep(rs: DpTraceStep): DpDemoStep {
   }
 
   return {
-    message: rs.message,
+    message: rs.message || rs.description || '',
     log: rs.log || '',
     vars: rs.vars,
     codeLine: rs.codeLine,
@@ -179,6 +167,17 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
       );
     }
 
+    // 树型DP root 输入解析（层序数组字符串 → number|null 数组）
+    const rootInput = root?.querySelector('#dp-input-root') as HTMLInputElement | null;
+    if (rootInput) {
+      inputObj.root = rootInput.value
+        .split(',')
+        .map((s: string) => {
+          const t = s.trim();
+          return t === 'null' || t === '' ? null : Number(t);
+        });
+    }
+
     const rawSteps = DpStepEngine.generateSteps(specId, inputObj, mode);
     return rawSteps.map(convertTraceStep);
   };
@@ -234,15 +233,9 @@ export const STOCK_DP_CODES: Record<string, any> = LINEAR_DP_CODES;
 // 注册与装配逻辑 (Algorithm Registration & Facades)
 // ---------------------------------------------------------------------------
 
+import { UniversalStageVisualizer } from './unique-paths-renderer';
+
 function registerDemo(def: DemoDef): void {
-  const spec = DpStepEngine.get(def.id);
-
-  const finalCodeLanguages = spec?.code?.languages ?? def.codeLanguages;
-  const finalCodeLines = spec?.code?.languages?.javascript ?? def.codeLines ?? [];
-  const finalLineExplanations = spec?.code?.lineExplanations ?? def.lineExplanations;
-  const finalKeyPoints = spec?.code?.keyPoints ?? def.keyPoints;
-  const finalProblemDetail = spec?.problem ?? def.problemDetail;
-
   registerAlgorithm({
     id: def.id,
     name: def.name,
@@ -253,39 +246,9 @@ function registerDemo(def: DemoDef): void {
     difficulty: def.difficulty ?? 1,
     levelOrder: def.levelOrder ?? 1,
     learningGoal: def.learningGoal,
-    template,
-    Visualizer: createDpDemoVisualizer({
-      title: def.title || def.name,
-      description: def.description,
-      inputs: def.inputs,
-      examples: def.examples,
-      metrics: def.metrics || [
-        { key: 'i', label: '当前 i' },
-        { key: 'j', label: '当前 j' },
-        { key: 'answer', label: '当前最优答案' },
-        { key: 'status', label: '计算状态' },
-      ],
-      codeLines: finalCodeLines,
-      codeLanguages: finalCodeLanguages,
-      codePanelTitle: def.codePanelTitle || `${def.name} 解题代码`,
-      lineExplanations: finalLineExplanations,
-      keyPoints: finalKeyPoints,
-      problemDetail: finalProblemDetail,
-      faqList: def.faqList,
-      parseParams: (root: HTMLElement) => root,
-      buildSteps: (root: HTMLElement, mode?: any) => def.build(root, mode),
-    }),
+    template: `<div id="${def.id}" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+    Visualizer: UniversalStageVisualizer,
   });
-}
-
-function articleTemplate(name: string, desc: string, sections: Array<[string, string]>): string {
-  const body = sections
-    .map(
-      ([title, html]) =>
-        `<div class="article-section"><h3>${title}</h3><div class="article-body">${html}</div></div>`
-    )
-    .join('');
-  return `<div class="article-viewer"><div class="article-header"><h2>${name}</h2><p class="article-desc">${desc}</p></div>${body}</div>`;
 }
 
 function registerArticle(def: ArticleDef): void {
@@ -299,7 +262,7 @@ function registerArticle(def: ArticleDef): void {
     difficulty: def.difficulty ?? 1,
     levelOrder: def.levelOrder ?? 1,
     learningGoal: def.learningGoal,
-    template: articleTemplate(def.name, def.description, def.sections),
+    template: articleTemplate(def),
     Visualizer: ArticleVisualizer,
   });
 }
@@ -396,41 +359,7 @@ function stockDef(id: string, name: string, description: string, icon: string, k
 // 文章专栏与知识库 (Article Columns)
 // ---------------------------------------------------------------------------
 
-const articleCommon: Record<string, Array<[string, string]>> = {
-  theory: [
-    ['动规五部曲', '<p><span class="tag">确定 dp 数组含义</span><span class="tag">确定递推公式</span><span class="tag">初始化</span><span class="tag">遍历顺序</span><span class="tag">打印 dp 数组</span></p>'],
-    ['核心模板', '<pre><code>const dp = 初始化;\nfor (遍历顺序) {\n  dp[当前状态] = 从历史状态转移而来;\n}\nreturn dp[目标状态];</code></pre>'],
-  ],
-  bag: [
-    ['背包问题分类', '<table><tr><th>类型</th><th>遍历方式</th><th>典型题</th></tr><tr><td>0/1 背包</td><td>容量倒序</td><td>分割等和子集、目标和</td></tr><tr><td>完全背包</td><td>容量正序</td><td>零钱兑换、完全平方数</td></tr><tr><td>多重背包</td><td>拆分数量或二进制优化</td><td>有限件物品</td></tr></table>'],
-    ['一维公式', '<pre><code>// 0/1 背包\nfor (j = bag; j >= weight; j--) dp[j] = max(dp[j], dp[j-weight] + value);\n// 完全背包\nfor (j = weight; j <= bag; j++) dp[j] = max(dp[j], dp[j-weight] + value);</code></pre>'],
-  ],
-  stock: [
-    ['股票状态机', '<p>股票题的关键是定义“持有/不持有”以及交易次数、冷冻期、手续费等附加状态。</p><pre><code>hold = max(hold, cash - price)\ncash = max(cash, hold + price - fee)</code></pre>'],
-  ],
-  edit: [
-    ['字符串 DP', '<p>编辑距离类问题通常使用二维表，横纵分别对应两个字符串前缀。左、上、左上分别代表插入、删除、替换/匹配。</p>'],
-  ],
-};
-
-const articles: ArticleDef[] = [
-  { id: 'dp-theory', name: '动态规划理论基础', description: '动态规划五部曲、状态定义、递推公式与遍历顺序。', icon: '📘', sections: articleCommon.theory },
-  { id: 'dp-week-summary-1', name: '动规周总结（一）', description: '一维基础 DP：斐波那契、爬楼梯、最小花费。', icon: '🧭', sections: articleCommon.theory },
-  { id: 'dp-week-summary-2', name: '动规周总结（二）', description: '路径问题、整数拆分、不同 BST 的阶段总结。', icon: '🧭', sections: articleCommon.theory },
-  { id: 'knapsack-01-theory-1', name: '0-1背包理论基础（一）', description: '二维 0/1 背包：物品和容量两维状态。', icon: '🎒', sections: articleCommon.bag },
-  { id: 'knapsack-01-theory-2', name: '0-1背包理论基础（二）', description: '一维滚动数组：容量倒序遍历避免重复使用物品。', icon: '🎒', sections: articleCommon.bag },
-  { id: 'dp-week-summary-3', name: '动规周总结（三）', description: '0/1 背包应用题总结。', icon: '🧭', sections: articleCommon.bag },
-  { id: 'complete-knapsack-theory', name: '完全背包理论基础', description: '完全背包：每件物品可以使用无限次，容量正序遍历。', icon: '🧺', sections: articleCommon.bag },
-  { id: 'dp-week-summary-4', name: '动规周总结（四）', description: '完全背包组合数问题总结。', icon: '🧭', sections: articleCommon.bag },
-  { id: 'dp-week-summary-5', name: '动规周总结（五）', description: '完全背包最值问题与单词拆分总结。', icon: '🧭', sections: articleCommon.bag },
-  { id: 'multiple-knapsack-theory', name: '多重背包理论基础', description: '有限件物品的背包问题，可展开为多个 0/1 物品。', icon: '📦', sections: articleCommon.bag },
-  { id: 'knapsack-summary', name: '背包问题总结篇', description: '0/1、完全、多重背包及组合/排列/最值类公式汇总。', icon: '🏁', sections: articleCommon.bag },
-  { id: 'dp-week-summary-6', name: '动规周总结（六）', description: '打家劫舍与股票入门状态机总结。', icon: '🧭', sections: articleCommon.stock },
-  { id: 'dp-week-summary-7', name: '动规周总结（七）', description: '多交易、冷冻期、手续费股票题总结。', icon: '🧭', sections: articleCommon.stock },
-  { id: 'stock-summary', name: '股票问题总结篇', description: '股票 DP 的持有/不持有、多次交易、冷冻期和手续费状态总结。', icon: '📈', sections: articleCommon.stock },
-  { id: 'edit-distance-summary', name: '编辑距离总结篇', description: '判断子序列、不同子序列、删除操作、编辑距离的状态转移对比。', icon: '✍️', sections: articleCommon.edit },
-  { id: 'dp-final-summary', name: '动态规划总结篇', description: '动态规划专题总复盘：状态、转移、遍历顺序和题型地图。', icon: '🏁', sections: [...articleCommon.theory, ...articleCommon.bag, ...articleCommon.stock, ...articleCommon.edit] },
-];
+const articles: ArticleDef[] = dpArticles;
 
 // ---------------------------------------------------------------------------
 // 交互式算法演示定义表 (Interactive Demos)
@@ -440,8 +369,6 @@ const demos: DemoDef[] = [
   oneDDef('fibonacci', '斐波那契数', 'dp[i] = dp[i-1] + dp[i-2]，动态规划经典入门。', '🔢', 'fibonacci', '8'),
   oneDDef('climb-stairs', '爬楼梯', '每次爬 1 或 2 阶，方案数来自前两阶。', '🪜', 'climb-stairs', '6'),
   numsDef('min-cost-climbing-stairs', '使用最小花费爬楼梯', '到达当前台阶的最小花费来自前一阶或前两阶。', '💰', 'min-cost', '10,15,20'),
-  gridDef('unique-paths', '不同路径', '网格路径数：只能从上方或左方到达当前格。', '🧭'),
-  gridDef('unique-paths-ii', '不同路径II', '带障碍网格路径数：障碍格路径数为 0。', '🚧', true),
   {
     id: 'decode-ways',
     name: '解码方法',
@@ -530,7 +457,6 @@ const demos: DemoDef[] = [
   numsDef('longest-increasing-subsequence', '最长递增子序列', 'dp[i] 表示以 nums[i] 结尾的最长严格递增子序列长度。', '📈', 'longest-increasing-subsequence', '10,9,2,5,3,7,101,18'),
   numsDef('longest-continuous-increasing-subsequence', '最长连续递增序列', '要求严格相邻连续：只需向前看一位 dp[i] = dp[i-1] + 1。', '📏', 'longest-continuous-increasing-subsequence', '1,3,5,4,7'),
   strDef('longest-repeated-subarray', '最长重复子数组', '两数组中连续公共子数组的最长长度：相等时仅从左上角对角线累加。', '🧩', 'longest-repeated-subarray', '1,2,3,2,1', '3,2,1,4,7'),
-  strDef('longest-common-subsequence', '最长公共子序列', '不要求连续的最长公共子序列：相等时对角线加1，不等时取左方和上方较大值。', '🧬', 'lcs', 'abcde', 'ace'),
   strDef('uncrossed-lines', '不相交的线', '连线不相交等价于两数组的最长公共子序列 (LCS)。', '🧶', 'uncrossed-lines', '1,4,2', '1,2,4'),
   numsDef('max-subarray-dp', '最大子数组和', '连续子数组最大和：dp[i] = max(nums[i], dp[i-1] + nums[i])。', '➕', 'max-subarray-dp', '-2,1,-3,4,-1,2,1,-5,4'),
   strDef('is-subsequence', '判断子序列', '双指针或 DP 判定 s 是否为 t 的子序列。', '🔍', 'is-subsequence', 'abc', 'ahbgdc'),
@@ -546,14 +472,212 @@ const demos: DemoDef[] = [
     examples: [{ label: 's="aaa"', values: { s: 'aaa' } }, { label: 's="abc"', values: { s: 'abc' } }],
     build: makeEngineBuilder('palindromic-substrings'),
   },
+
+  // 树型DP 演示 (Tree DP Demos — 第078讲)
+  // ---------------------------------------------------------------------------
   {
-    id: 'longest-palindromic-subsequence',
-    name: '最长回文子序列',
-    description: '找出字符串中最长的回文子序列长度（区间 DP 向内收缩）。',
-    icon: '👑',
-    inputs: [{ id: 's', label: '字符串 s', value: 'bbbab', width: 140 }],
-    examples: [{ label: 's="bbbab"', values: { s: 'bbbab' } }, { label: 's="cbbd"', values: { s: 'cbbd' } }],
-    build: makeEngineBuilder('longest-palindromic-subsequence'),
+    id: 'max-distance-in-tree',
+    name: '树的最大距离',
+    description: '树型DP二元组汇报：[maxDepth, maxDist]，穿越当前节点路径=左深度+右深度，子树内最大距离=三方向取max。',
+    icon: '📏',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
+    examples: [
+      { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
+      { label: '[1,2,3,4,null,null,null,5]', values: { root: '1,2,3,4,null,null,null,5' } },
+    ],
+    build: makeEngineBuilder('max-distance-in-tree'),
+  },
+  {
+    id: 'max-path-sum',
+    name: '二叉树最大路径和',
+    description: '树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和。',
+    icon: '🏔️',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '-10,9,20,null,null,15,7', width: 220 }],
+    examples: [
+      { label: '[-10,9,20,null,null,15,7]', values: { root: '-10,9,20,null,null,15,7' } },
+      { label: '[1,2,3]', values: { root: '1,2,3' } },
+      { label: '[-3]', values: { root: '-3' } },
+    ],
+    build: makeEngineBuilder('max-path-sum'),
+  },
+  {
+    id: 'largest-bst-subtree',
+    name: '最大BST子树',
+    description: '树型DP四元组汇报：[isBST, min, max, size]，后序遍历融合判断BST条件，找节点数最多的BST子树。',
+    icon: '🔍',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '10,5,15,1,8,null,7', width: 220 }],
+    examples: [
+      { label: '[10,5,15,1,8,null,7]', values: { root: '10,5,15,1,8,null,7' } },
+      { label: '[3,1,5,0,2,4,6]', values: { root: '3,1,5,0,2,4,6' } },
+    ],
+    build: makeEngineBuilder('largest-bst-subtree'),
+  },
+  {
+    id: 'tree-diameter',
+    name: '二叉树的直径',
+    description: '树型DP路径类经典：每个节点向父汇报最大深度，以当前节点为拐点的直径=左深度+右深度，全局取最大。',
+    icon: '📐',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
+    examples: [
+      { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
+      { label: '[1,2]', values: { root: '1,2' } },
+    ],
+    build: makeEngineBuilder('tree-diameter'),
+  },
+  {
+    id: 'binary-tree-cameras',
+    name: '监控二叉树',
+    description: '树型DP状态机：每个节点三种状态（不覆盖/被覆盖/安摄像头），后序遍历贪心最优化摄像头总数。',
+    icon: '📷',
+    inputs: [{ id: 'root', label: '树节点(层序)', value: '0,0,null,0,0', width: 200 }],
+    examples: [
+      { label: '[0,0,null,0,0]', values: { root: '0,0,null,0,0' } },
+      { label: '[0,0,null,0,null,0,null,null,0]', values: { root: '0,0,null,0,null,0,null,null,0' } },
+    ],
+    build: makeEngineBuilder('binary-tree-cameras'),
+  },
+  {
+    id: 'course-selection',
+    name: '选课（树上背包DP）',
+    description: '树上背包DP：以虚拟节点0为根，dp[u][j]表示以u为根选j门课的最大学分，分组背包合并子树。',
+    icon: '🎓',
+    inputs: [
+      { id: 'n', label: '课程数 n', value: '4', width: 80 },
+      { id: 'm', label: '最多选 m 门', value: '3', width: 80 },
+    ],
+    examples: [
+      { label: 'n=4, m=3', values: { n: '4', m: '3' } },
+      { label: 'n=6, m=4', values: { n: '6', m: '4' } },
+    ],
+    build: makeEngineBuilder('course-selection'),
+  },
+  {
+    id: 'minimum-fuel-cost',
+    name: '到达首都的最少油耗',
+    description: '树型DP子树人数汇聚：每条边所需车辆与油耗 = ⌈子树代表总人数 / 车辆座位数⌉ (LeetCode 2477)。',
+    icon: '⛽',
+    inputs: [
+      { id: 'seats', label: '车座 seats', value: '2', width: 80 },
+    ],
+    examples: [
+      { label: 'seats=2', values: { seats: '2' } },
+      { label: 'seats=5', values: { seats: '5' } },
+    ],
+    build: makeEngineBuilder('minimum-fuel-cost'),
+  },
+  {
+    id: 'longest-path-different-characters',
+    name: '相邻字符不同的最长路径',
+    description: '树型DP多叉树拐点模型：贪心维护最长与次长有效子链 max1/max2，拐点路径 = 1+max1+max2 (LeetCode 2246)。',
+    icon: '🔤',
+    inputs: [
+      { id: 's', label: '字符分配 s', value: 'abacbe', width: 140 },
+    ],
+    examples: [
+      { label: 's="abacbe"', values: { s: 'abacbe' } },
+      { label: 's="aabc"', values: { s: 'aabc' } },
+    ],
+    build: makeEngineBuilder('longest-path-different-characters'),
+  },
+  {
+    id: 'party-without-boss',
+    name: '没有上司的舞会',
+    description: '树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。',
+    icon: '🎭',
+    inputs: [
+      { id: 'n', label: '员工数 n', value: '7', width: 80 },
+    ],
+    examples: [
+      { label: 'n=7, 全乐4/1/2/3', values: { n: '7' } },
+    ],
+    build: makeEngineBuilder('party-without-boss'),
+  },
+  {
+    id: 'height-removal-queries',
+    name: '移除子树后的二叉树高度',
+    description: '树型DP与DFN序打平技巧：先序遍历映射连续区间，前后缀极值 O(1) 回答移除子树后的树高度 (LeetCode 2458)。',
+    icon: '✂️',
+    inputs: [
+      { id: 'queries', label: '查询节点 queries', value: '4', width: 120 },
+    ],
+    examples: [
+      { label: 'queries=[4]', values: { queries: '4' } },
+      { label: 'queries=[3,2]', values: { queries: '3,2' } },
+    ],
+    build: makeEngineBuilder('height-removal-queries'),
+  },
+  {
+    id: 'minimum-score-after-removals',
+    name: '从树中删除边的最小分数',
+    description: '树型DP与拓扑关系判定：DFN序区间包含判定，O(n^2) 枚举断边方案求3连通块最小异或差值 (LeetCode 2322)。',
+    icon: '🪓',
+    inputs: [
+      { id: 'nums', label: '节点权值 nums', value: '1,5,5,4,11', width: 140 },
+    ],
+    examples: [
+      { label: 'nums=[1,5,5,4,11]', values: { nums: '1,5,5,4,11' } },
+    ],
+    build: makeEngineBuilder('minimum-score-after-removals'),
+  },
+
+  // 状压DP 演示 (Bitmask DP Demos — 第080讲)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'can-i-win',
+    name: '我能赢吗',
+    description: '状压DP + 博弈论：用位掩码记录 1~n 哪些数字已被选取，记忆化搜索判断先手是否必胜 (LeetCode 464)。',
+    icon: '🎲',
+    inputs: [
+      { id: 'n', label: '可选上限 n', value: '4', width: 80 },
+      { id: 'm', label: '目标 m', value: '6', width: 80 },
+    ],
+    examples: [
+      { label: 'n=4, m=6', values: { n: '4', m: '6' } },
+      { label: 'n=10, m=11', values: { n: '10', m: '11' } },
+    ],
+    build: makeEngineBuilder('can-i-win'),
+  },
+  {
+    id: 'matchsticks-to-square',
+    name: '火柴拼正方形',
+    description: '状压DP / 回溯：判断一组火柴能否恰好拼成一个正方形。将火柴分入 4 条等长边 (LeetCode 473)。',
+    icon: '🔥',
+    inputs: [
+      { id: 'nums', label: '火柴长度', value: '1,1,2,2,2', width: 160 },
+    ],
+    examples: [
+      { label: '[1,1,2,2,2]', values: { nums: '1,1,2,2,2' } },
+      { label: '[3,3,3,3,4]', values: { nums: '3,3,3,3,4' } },
+    ],
+    build: makeEngineBuilder('matchsticks-to-square'),
+  },
+  {
+    id: 'partition-k-equal-subsets',
+    name: '划分为k个相等子集',
+    description: '状压DP / 回溯：将 n 个数划分为 k 个和相等的子集。回溯搜索 + 排序剪枝 (LeetCode 698)。',
+    icon: '📦',
+    inputs: [
+      { id: 'nums', label: '数组', value: '4,3,2,3,5,2,1', width: 180 },
+      { id: 'k', label: 'k', value: '4', width: 60 },
+    ],
+    examples: [
+      { label: '[4,3,2,3,5,2,1], k=4', values: { nums: '4,3,2,3,5,2,1', k: '4' } },
+      { label: '[1,2,3,4], k=3', values: { nums: '1,2,3,4', k: '3' } },
+    ],
+    build: makeEngineBuilder('partition-k-equal-subsets'),
+  },
+  {
+    id: 'tsp-bitmask-dp',
+    name: '旅行商问题 TSP',
+    description: '经典状压DP：dp[S][i] 表示经过集合 S 中所有城市且当前在 i 的最短路径，O(2^n·n^2) 求最短回路。',
+    icon: '🗺️',
+    inputs: [
+      { id: 'n', label: '城市数 n', value: '4', width: 80 },
+    ],
+    examples: [
+      { label: 'n=4', values: { n: '4' } },
+    ],
+    build: makeEngineBuilder('tsp-bitmask-dp'),
   },
 ];
 
@@ -613,7 +737,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'longest-increasing-subsequence' },
   { type: 'demo', id: 'longest-continuous-increasing-subsequence' },
   { type: 'demo', id: 'longest-repeated-subarray' },
-  { type: 'demo', id: 'longest-common-subsequence' },
   { type: 'demo', id: 'uncrossed-lines' },
   { type: 'demo', id: 'max-subarray-dp' },
   { type: 'demo', id: 'is-subsequence' },
@@ -622,7 +745,24 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'edit-distance' },
   { type: 'article', id: 'edit-distance-summary' },
   { type: 'demo', id: 'palindromic-substrings' },
-  { type: 'demo', id: 'longest-palindromic-subsequence' },
+  // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
+  { type: 'article', id: 'tree-dp-theory' },
+  { type: 'demo', id: 'max-distance-in-tree' },
+  { type: 'demo', id: 'max-path-sum' },
+  { type: 'demo', id: 'largest-bst-subtree' },
+  { type: 'demo', id: 'tree-diameter' },
+  { type: 'demo', id: 'binary-tree-cameras' },
+  { type: 'demo', id: 'course-selection' },
+  { type: 'demo', id: 'minimum-fuel-cost' },
+  { type: 'demo', id: 'longest-path-different-characters' },
+  { type: 'demo', id: 'party-without-boss' },
+  { type: 'demo', id: 'height-removal-queries' },
+  { type: 'demo', id: 'minimum-score-after-removals' },
+  // 状压DP 专题（第080讲：状压dp-上）
+  { type: 'demo', id: 'can-i-win' },
+  { type: 'demo', id: 'matchsticks-to-square' },
+  { type: 'demo', id: 'partition-k-equal-subsets' },
+  { type: 'demo', id: 'tsp-bitmask-dp' },
   { type: 'article', id: 'dp-final-summary' },
 ];
 

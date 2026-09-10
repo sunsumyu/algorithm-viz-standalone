@@ -1,596 +1,946 @@
 <style>
+  /* === 岛屿数量 (DFS) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-islands-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
-  }
-
-  #algo-islands-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 8% 6%, #2dd4bf55, transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #34d39955, transparent 55%),
-                linear-gradient(135deg, #022c22 0%, #064e3b 25%, #022c22 50%, #065f46 75%, #022c22 100%);
-    z-index: -2;
-  }
-
-  #algo-islands-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(2, 44, 34, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-islands-view .isl-page {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .isl-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
+  #algo-islands-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-islands-view .isl-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .isl-hero .isl-title-wrapper {
+  #algo-islands-view .isl-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .isl-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #2dd4bf, #34d399);
+  #algo-islands-view .isl-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .isl-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
+  #algo-islands-view .isl-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #2dd4bf, #34d399);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .isl-hero-text p {
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
     margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
   }
 
-  .isl-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(45, 212, 191, 0.08);
-    border: 1px solid rgba(45, 212, 191, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-islands-view .isl-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-islands-view .isl-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .isl-tip strong {
-    color: #2dd4bf;
+  #algo-islands-view .isl-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-islands-view .isl-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #16a34a;
+    background: #f0fdf4;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bbf7d0;
+    white-space: nowrap;
+  }
+
+  #algo-islands-view .isl-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-islands-view .isl-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-islands-view .isl-btn-generate:hover {
+    background: #15803d;
+  }
+
+  #algo-islands-view .isl-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
     font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-islands-view .isl-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  #algo-islands-view .isl-layout {
+  #algo-islands-view .isl-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-islands-view .isl-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-islands-view .isl-main-layout {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-islands-view .isl-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .isl-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .isl-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .isl-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .isl-input {
-    flex: 1;
-    min-width: 180px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(11, 10, 23, 0.8);
-    color: #cdd6f4;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .isl-input:focus {
-    border-color: #2dd4bf;
-    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
-  }
-
-  .isl-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #2dd4bf, #34d399);
-    color: #022c22;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
-  }
-
-  .isl-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4);
-  }
-
-  .isl-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .isl-example {
-    padding: 8px 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(110, 203, 192, 0.3);
-    background: rgba(45, 212, 191, 0.1);
-    color: #cdd6f4;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .isl-example:hover {
-    background: rgba(45, 212, 191, 0.2);
-    border-color: #2dd4bf;
-  }
-
-  .isl-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .isl-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+    margin-top: 8px;
     overflow: hidden;
   }
 
-  .isl-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #2dd4bf, #34d399);
-  }
-
-  .isl-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .isl-stat-val {
-    color: #2dd4bf;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .isl-grid {
-    display: grid;
-    gap: 3px;
-    background: rgba(11, 10, 23, 0.8);
-    border-radius: 12px;
-    padding: 12px;
-    justify-content: center;
-    align-content: center;
-    margin: 16px auto;
-  }
-
-  .isl-cell {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.25s ease;
-    position: relative;
-  }
-
-  .isl-cell.water {
-    background: rgba(28, 27, 50, 0.4);
-    color: rgba(255, 255, 255, 0.3);
-  }
-
-  .isl-cell.land {
-    background: rgba(45, 55, 72, 0.5);
-    color: #cdd6f4;
-  }
-
-  .isl-cell.current {
-    background: rgba(251, 146, 60, 0.7);
-    color: #0f172a;
-    transform: scale(1.1);
-    box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.3);
-    animation: pulse 1s infinite;
-  }
-
-  .isl-cell.visited {
-    background: rgba(45, 212, 191, 0.6);
-    color: #022c22;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .isl-cell.stack {
-    background: rgba(251, 191, 36, 0.6);
-    color: #0f172a;
-    animation: pulse 0.8s infinite;
-  }
-
-  .isl-cell.new {
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .isl-cell.done {
-    background: rgba(132, 204, 146, 0.6);
-    color: #022c22;
-    box-shadow: 0 0 0 3px rgba(132, 204, 146, 0.3);
-    animation: burst 0.4s ease;
-  }
-
-  .isl-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(45, 212, 191, 0.2);
-    background: rgba(45, 212, 191, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .isl-log {
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-islands-view .isl-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
     min-height: 0;
-    max-height: 130px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .isl-log div {
-    padding: 2px 0;
-  }
-
-  .isl-log div.active {
-    color: #2dd4bf;
-    font-weight: 600;
-  }
-
-  .isl-right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-  }
-
-  .isl-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .isl-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 
-  .isl-legend-item {
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-islands-view .isl-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-islands-view .isl-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-islands-view .isl-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-islands-view .isl-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-islands-view .isl-legend-bar {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-islands-view .isl-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
 
-  .isl-legend-box {
-    width: 16px;
-    height: 16px;
+  /* 网格沙盘展示盒 */
+  #algo-islands-view .isl-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  #algo-islands-view .isl-grid-matrix {
+    display: inline-grid;
+    gap: 6px;
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    user-select: none;
+  }
+
+  #algo-islands-view .isl-cell {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1.5px solid transparent;
+  }
+
+  #algo-islands-view .isl-cell.is-water {
+    background: #eff6ff;
+    color: #93c5fd;
+    border-color: #dbeafe;
+  }
+
+  #algo-islands-view .isl-cell.is-land {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #86efac;
+  }
+
+  #algo-islands-view .isl-cell.is-scanning {
+    background: #fef9c3;
+    border-color: #ca8a04;
+    color: #a16207;
+    transform: scale(1.06);
+    box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.35);
+    z-index: 2;
+  }
+
+  #algo-islands-view .isl-cell.is-current {
+    background: #dbeafe;
+    border-color: #2563eb;
+    color: #1d4ed8;
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+    z-index: 3;
+  }
+
+  #algo-islands-view .isl-cell.is-sunk {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-color: #cbd5e1;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-islands-view .isl-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-islands-view .isl-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #16a34a;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-islands-view .isl-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-islands-view .isl-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-islands-view .isl-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-islands-view .isl-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-islands-view .isl-play-circle-btn:hover {
+    background: #15803d;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-islands-view .isl-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-islands-view .isl-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-islands-view .isl-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-islands-view .isl-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-islands-view .isl-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-islands-view .isl-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-islands-view .isl-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-islands-view .isl-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-islands-view .isl-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-islands-view .isl-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-islands-view .isl-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-islands-view .isl-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-islands-view .isl-tab-item.active {
+    background: #16a34a;
+    color: #ffffff;
+  }
+
+  #algo-islands-view .isl-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-islands-view .isl-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-islands-view .isl-lang-btn.active {
+    background: #334155;
+    color: #86efac;
+  }
+
+  #algo-islands-view .isl-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-islands-view .isl-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-islands-view .isl-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-islands-view .isl-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #86efac;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-islands-view .isl-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-islands-view .isl-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-islands-view .isl-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-islands-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-islands-view .code-line.active {
+    background: rgba(22, 163, 74, 0.2);
+    border-left: 3px solid #16a34a;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-islands-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-islands-view .isl-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-islands-view .isl-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-islands-view .isl-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-islands-view .isl-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
     border-radius: 4px;
   }
 
-  .isl-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
+  #algo-islands-view .isl-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
+    font-size: 11.5px;
   }
 
-  .isl-pb-row {
+  /* 模态弹窗 */
+  #algo-islands-view .isl-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
-    gap: 10px;
     align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-islands-view .isl-modal-backdrop.hidden {
+    display: none;
   }
 
-  .isl-pb-btn {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(59, 130, 246, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
+  #algo-islands-view .isl-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-islands-view .isl-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-islands-view .isl-modal-title {
     font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-weight: 800;
+    color: #f8fafc;
   }
-
-  .isl-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .isl-pb-btn:not(:disabled):hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #3b82f6;
-    transform: translateY(-1px);
-  }
-
-  .isl-pb-btn.play {
-    background: linear-gradient(135deg, #2dd4bf, #34d399);
+  #algo-islands-view .isl-modal-close {
+    background: transparent;
     border: none;
-    color: #022c22;
-    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-
-  .isl-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4);
-  }
-
-  .isl-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .isl-speed-row input {
-    flex: 1;
-    accent-color: #2dd4bf;
-  }
-
-  .isl-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Animations */
-  @keyframes pulse {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.7);
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(45, 212, 191, 0);
-    }
-  }
-
-  @keyframes popIn {
-    0% {
-      transform: scale(0) rotate(-10deg);
-      opacity: 0;
-    }
-    100% {
-      transform: scale(1) rotate(0deg);
-      opacity: 1;
-    }
-  }
-
-  @keyframes burst {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.15);
-      opacity: 0.8;
-    }
-  }
-
-  @keyframes shake {
-    0%, 100% {
-      transform: translateX(0);
-    }
-    20%, 60% {
-      transform: translateX(-5px);
-    }
-    40%, 80% {
-      transform: translateX(5px);
-    }
-  }
-
-  @keyframes ripple {
-    0% {
-      transform: scale(0.8);
-      opacity: 1;
-      box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.7);
-    }
-    100% {
-      transform: scale(1.5);
-      opacity: 0;
-      box-shadow: 0 0 0 12px rgba(45, 212, 191, 0);
-    }
-  }
-
-  .isl-pb-btn.play {
-    animation: pulse 1.2s infinite;
-  }
-
-  .isl-cell.current {
-    animation: ripple 0.6s ease-out;
-  }
-
-  .isl-cell.visited {
-    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  @media (max-width: 1100px) {
-    .isl-main {
-      overflow: visible;
-    }
+  #algo-islands-view .isl-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="isl-page">
-  <div class="isl-hero">
-    <div class="isl-title-wrapper">
-      <div class="isl-hero-icon">🏝️</div>
-      <div class="isl-hero-text">
-        <h2>岛屿数量（DFS 网格搜索）</h2>
-        <p>LeetCode 200 · 遍历网格，遇到 '1' 即为岛屿起点，计数 +1 并用 DFS 将整个连通陆地标为已访问。</p>
-      </div>
+<div id="algo-islands-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="isl-header">
+    <div class="isl-header-left">
+      <div class="isl-icon-btn">🏝️</div>
+      <h1 class="isl-main-title">岛屿数量 (DFS)</h1>
+      <button id="btn-open-problem-modal" class="isl-btn-problem">📋 题目</button>
+      <span class="isl-badge-mode">网格深度优先沉岛染色</span>
+      <span class="isl-badge-complexity">O(M×N) · O(M×N)</span>
     </div>
-    <div class="isl-tip"><strong>DFS 递归：</strong>从'1'引导起，向上下左右四个方向递归探索，将连通的陆地全部标记为已访问。</div>
-  </div>
 
-  <div class="isl-layout">
-    <div class="isl-main">
+    <!-- 预设与操作工具组 -->
+    <div class="isl-header-right">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="isl-chip" data-case="classic">经典 3 岛屿 [4×5]</button>
+        <button class="isl-chip" data-case="single">单座大岛 [4×4]</button>
+        <button class="isl-chip" data-case="scattered">多散点 4 岛屿 [4×5]</button>
+      </div>
+
+      <button id="btn-generate" class="isl-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="isl-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="isl-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="isl-left-section">
+
+      <!-- 卡片 1: 网格矩阵沉岛沙盘 (Grid Canvas) -->
       <div class="isl-card">
-        <div class="isl-controls">
-          <input id="isl-input" class="isl-input" value="111;101;111" />
-          <button id="isl-start" class="isl-btn">开始搜索</button>
-          <button class="isl-example" data-val="111;101;111">示例1</button>
-          <button class="isl-example" data-val="11110;11010;11000;00000">示例2</button>
-          <button class="isl-example" data-val="11000;11000;00100;00011">示例3</button>
+        <div class="isl-card-header">
+          <div class="isl-card-title">
+            <span>📊 网格矩阵沉岛沙盘</span>
+          </div>
+          <div class="isl-legend-bar">
+            <div><span class="isl-legend-dot" style="background:#16a34a;"></span> 陆地 (1)</div>
+            <div><span class="isl-legend-dot" style="background:#60a5fa;"></span> 水域 (0)</div>
+            <div><span class="isl-legend-dot" style="background:#fbbf24;"></span> 访问中</div>
+            <div><span class="isl-legend-dot" style="background:#94a3b8;"></span> 沉没/已访问</div>
+          </div>
         </div>
 
-        <div class="isl-stats">
-          <div class="isl-stat"><div class="isl-stat-label">当前扫描</div><div class="isl-stat-val" id="isl-scan">-</div></div>
-          <div class="isl-stat"><div class="isl-stat-label">DFS 栈深度</div><div class="isl-stat-val" id="isl-depth">0</div></div>
-          <div class="isl-stat"><div class="isl-stat-label">已访问陆地</div><div class="isl-stat-val" id="isl-visited">0</div></div>
-          <div class="isl-stat"><div class="isl-stat-label">岛屿数</div><div class="isl-stat-val" id="isl-count">0</div></div>
+        <!-- 网格沙盘展示盒 -->
+        <div class="isl-sandbox-wrap">
+          <div class="isl-grid-matrix" id="isl-grid-container"></div>
         </div>
-
-        <div class="isl-grid" id="isl-grid"></div>
-
-        <div class="isl-message" id="step-message">点击「开始搜索」查看 DFS 标记岛屿的过程。</div>
-
-        <div class="isl-log" id="isl-log"></div>
       </div>
-    </div>
 
-    <div class="isl-right">
-      <div data-code-panel class="isl-code-card"></div>
-      <div class="isl-legend">
-        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(28,27,50,0.4)"></span>水（'0'）</div>
-        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(45,55,72,0.5)"></span>未访问陆地（'1'）</div>
-        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(251,191,36,0.6)"></span>DFS 栈中</div>
-        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(251,146,60,0.7)"></span>当前访问</div>
-        <div class="isl-legend-item"><span class="isl-legend-box" style="background:rgba(45,212,191,0.6)"></span>已访问</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="isl-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="isl-slider" />
+        <div class="isl-counter-badge">
+          <span id="step-cur" style="color: #16a34a;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="isl-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="isl-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="isl-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="400" selected>正常</option>
+            <option value="150">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="isl-playback">
-        <div class="isl-pb-row">
-          <button id="step-reset" class="isl-pb-btn">重置</button>
-          <button id="step-prev" class="isl-pb-btn">上一步</button>
-          <button id="step-play" class="isl-pb-btn play">播放</button>
-          <button id="step-next" class="isl-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 岛屿指标监视器与状态空间 -->
+      <div class="isl-card">
+        <div class="isl-card-header">
+          <div>
+            <div class="isl-card-title">🧭 岛屿指标监视器</div>
+            <div class="isl-card-desc">DFS 扫描坐标、已沉没陆地数与最终岛屿数量追踪</div>
+          </div>
+          <span id="badge-island-count" class="isl-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">已发现岛屿: 0</span>
         </div>
-        <div class="isl-speed-row">
-          <span>速度</span>
-          <input id="step-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="step-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="isl-state-space-box">
+          <div class="isl-metrics-grid">
+            <div class="isl-metric-card">
+              <span class="isl-metric-label">当前扫描格</span>
+              <span class="isl-metric-val" id="metric-scan" style="color: #3b82f6;">(0, 0)</span>
+            </div>
+            <div class="isl-metric-card">
+              <span class="isl-metric-label">当前 DFS 坐标</span>
+              <span class="isl-metric-val" id="metric-curr" style="color: #fbbf24;">(0, 0)</span>
+            </div>
+            <div class="isl-metric-card">
+              <span class="isl-metric-label">已沉没陆地数</span>
+              <span class="isl-metric-val" id="metric-visited-land" style="color: #a855f7;">0</span>
+            </div>
+            <div class="isl-metric-card">
+              <span class="isl-metric-label">已发现岛屿数 COUNT</span>
+              <span class="isl-metric-val" id="metric-island-count" style="color: #10b981;">0</span>
+            </div>
+          </div>
+
+          <div class="isl-formula-box">
+            <span style="color:#64748b;">当前递归动作:</span>
+            <strong id="formula-action" style="color: #16a34a;">dfs(grid, r, c) -> 四向沉岛</strong>
+          </div>
+
+          <div class="isl-live-alert">
+            <span>💡</span> <span id="isl-live-text">准备就绪，点击运行开始扫描网格岛屿。</span>
+          </div>
         </div>
-        <div id="step-counter" class="isl-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="isl-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="isl-dark-terminal">
+        <div class="isl-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="isl-tab-group">
+            <button id="btn-tab-code" class="isl-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="isl-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="isl-tab-item">💡 DFS 精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="isl-lang-group" id="code-lang-tabs">
+            <button class="isl-lang-btn active" data-lang="java">Java</button>
+            <button class="isl-lang-btn" data-lang="cpp">C++</button>
+            <button class="isl-lang-btn" data-lang="python">Python</button>
+            <button class="isl-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="isl-font-tools">
+            <div class="isl-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="isl-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="isl-window-dots">
+              <span class="isl-dot" style="background:#ef4444;"></span>
+              <span class="isl-dot" style="background:#eab308;"></span>
+              <span class="isl-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="isl-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="isl-log-card">
+        <div class="isl-log-header">
+          <div class="isl-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="isl-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="isl-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="isl-modal-backdrop hidden">
+    <div class="isl-modal-content">
+      <div class="isl-modal-header">
+        <div class="isl-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="isl-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="isl-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

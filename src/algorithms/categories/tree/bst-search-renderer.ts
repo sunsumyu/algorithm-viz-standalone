@@ -1,301 +1,275 @@
 /**
- * 二叉搜索树中的搜索可视化器
- * LeetCode 700
- * 利用 BST 性质（左小右大）进行高效查找
+ * 二叉搜索树中的搜索可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * 单向剪枝查找、路径与目标子树高亮、即时命中判定
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './bst-search.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
+import {
+  BST_SEARCH_PROBLEM_HTML,
+  BST_SEARCH_ANALYSIS_HTML,
+  BST_SEARCH_CODE_LANGUAGES,
+} from './bst-search-problem-content';
 
-interface TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-}
-
-interface BSSStep {
+export interface BSTSStep {
   tree: TreeNode | null;
   current: number | null;
-  target: number;
-  depth: number;
-  direction: string;
-  compared: number;
-  found: boolean | null;
-  action: 'compare' | 'go-left' | 'go-right' | 'found' | 'not-found';
+  val: number;
+  decision: string;
+  found: boolean;
+  path: number[];
+  targetSubtree: TreeNode | null;
+  action: 'enter' | 'left' | 'right' | 'found' | 'not-found' | 'done';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildTree(arr: (number | null)[]): TreeNode | null {
-  if (arr.length === 0 || arr[0] === null) return null;
-  const root: TreeNode = { val: arr[0]!, left: null, right: null };
-  const queue: TreeNode[] = [root];
-  let i = 1;
-  while (queue.length > 0 && i < arr.length) {
-    const node = queue.shift()!;
-    if (i < arr.length && arr[i] !== null) {
-      node.left = { val: arr[i]!, left: null, right: null };
-      queue.push(node.left);
-    }
-    i++;
-    if (i < arr.length && arr[i] !== null) {
-      node.right = { val: arr[i]!, left: null, right: null };
-      queue.push(node.right);
-    }
-    i++;
-  }
-  return root;
-}
-
-function buildBSSSteps(root: TreeNode | null, target: number): BSSStep[] {
-  const steps: BSSStep[] = [];
-  let compared = 0;
+export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): BSTSStep[] {
+  const steps: BSTSStep[] = [];
+  const path: number[] = [];
+  let found = false;
+  let targetSubtree: TreeNode | null = null;
 
   steps.push({
-    tree: root, current: null, target, depth: 0, direction: '-', compared: 0, found: null,
-    action: 'compare',
-    message: `开始搜索目标值 ${target}`,
-    log: `搜索目标 = ${target}`,
-    codeLine: [1, 2],
+    tree: root,
+    current: null,
+    val: targetVal,
+    decision: '准备搜索',
+    found: false,
+    path: [],
+    targetSubtree: null,
+    action: 'enter',
+    message: root ? `初始化 BST 搜索：目标值 val = ${targetVal}，从根节点 ${root.val} 开始定位。` : '空树，返回 null。',
+    log: root ? `开始搜索 val = ${targetVal}` : '空树 -> null',
+    codeLine: 2,
   });
 
   if (!root) {
     steps.push({
-      tree: null, current: null, target, depth: 0, direction: '-', compared: 0, found: false,
+      tree: null,
+      current: null,
+      val: targetVal,
+      decision: '未找到',
+      found: false,
+      path: [],
+      targetSubtree: null,
       action: 'not-found',
-      message: '空树，未找到',
-      log: '空树 → null',
+      message: '❌ 空树中无法找到目标值，返回 null。',
+      log: '✓ 未找到目标 (null)',
       codeLine: 3,
     });
     return steps;
   }
 
-  let current: TreeNode | null = root;
-  let depth = 0;
+  let curr: TreeNode | null = root;
 
-  while (current) {
-    compared++;
+  while (curr !== null) {
+    path.push(curr.val);
 
-    // 比较当前节点
-    steps.push({
-      tree: root, current: current.val, target, depth, direction: '-', compared, found: null,
-      action: 'compare',
-      message: `比较: 当前节点 ${current.val} vs 目标 ${target}`,
-      log: `${current.val} vs ${target}`,
-      codeLine: [4, 5],
-    });
+    if (curr.val === targetVal) {
+      found = true;
+      targetSubtree = curr;
 
-    // 找到目标
-    if (current.val === target) {
       steps.push({
-        tree: root, current: current.val, target, depth, direction: '✓', compared, found: true,
+        tree: root,
+        current: curr.val,
+        val: targetVal,
+        decision: '命中目标',
+        found: true,
+        path: [...path],
+        targetSubtree: curr,
         action: 'found',
-        message: `✅ 找到目标！节点 ${current.val} 在深度 ${depth}`,
-        log: `${current.val} == ${target} → 找到!`,
-        codeLine: [6, 7],
+        message: `🎯 命中目标！节点 ${curr.val} == ${targetVal}，返回以此节点为根的子树。`,
+        log: `✓ 命中目标: ${curr.val} == ${targetVal}`,
+        codeLine: 3,
       });
-      return steps;
-    }
-
-    // 目标小于当前值 → 去左子树
-    if (target < current.val) {
+      break;
+    } else if (targetVal < curr.val) {
       steps.push({
-        tree: root, current: current.val, target, depth, direction: '←', compared, found: null,
-        action: 'go-left',
-        message: `${target} < ${current.val}，去左子树搜索`,
-        log: `${target} < ${current.val} → 左`,
-        codeLine: [8, 9],
+        tree: root,
+        current: curr.val,
+        val: targetVal,
+        decision: '转向左子树',
+        found: false,
+        path: [...path],
+        targetSubtree: null,
+        action: 'left',
+        message: `目标值 ${targetVal} < 当前节点 ${curr.val}，根据 BST 有序性，目标只可能在左子树。`,
+        log: `${targetVal} < ${curr.val} -> 搜左子树`,
+        codeLine: 4,
       });
-      current = current.left;
+      curr = curr.left;
     } else {
-      // 目标大于当前值 → 去右子树
       steps.push({
-        tree: root, current: current.val, target, depth, direction: '→', compared, found: null,
-        action: 'go-right',
-        message: `${target} > ${current.val}，去右子树搜索`,
-        log: `${target} > ${current.val} → 右`,
-        codeLine: [10, 11],
+        tree: root,
+        current: curr.val,
+        val: targetVal,
+        decision: '转向右子树',
+        found: false,
+        path: [...path],
+        targetSubtree: null,
+        action: 'right',
+        message: `目标值 ${targetVal} > 当前节点 ${curr.val}，根据 BST 有序性，目标只可能在右子树。`,
+        log: `${targetVal} > ${curr.val} -> 搜右子树`,
+        codeLine: 5,
       });
-      current = current.right;
+      curr = curr.right;
     }
-    depth++;
   }
 
-  // 未找到
+  if (!found) {
+    steps.push({
+      tree: root,
+      current: null,
+      val: targetVal,
+      decision: '未找到',
+      found: false,
+      path: [...path],
+      targetSubtree: null,
+      action: 'not-found',
+      message: `❌ 遍历到达空指针 (null)，BST 中不存在值为 ${targetVal} 的节点，返回 null。`,
+      log: `✓ 未找到目标 ${targetVal} (null)`,
+      codeLine: 3,
+    });
+  }
+
   steps.push({
-    tree: root, current: null, target, depth, direction: '✗', compared, found: false,
-    action: 'not-found',
-    message: `❌ 未找到目标值 ${target}`,
-    log: '未找到 → null',
-    codeLine: [12, 13],
+    tree: root,
+    current: found ? targetSubtree!.val : null,
+    val: targetVal,
+    decision: found ? '搜索成功' : '搜索失败',
+    found,
+    path: [...path],
+    targetSubtree,
+    action: 'done',
+    message: found
+      ? `🎉 搜索完成！在路径 [${path.join(' -> ')}] 上成功定位到目标节点 ${targetVal}。`
+      : `❌ 搜索完成！未在树中检索到节点 ${targetVal}。`,
+    log: found ? `✓ 搜索完成: 命中 ${targetVal}` : `✓ 搜索完成: 未找到 ${targetVal}`,
+    codeLine: 6,
   });
 
   return steps;
 }
 
-export class BSTSearchVisualizer extends StepVisualizer<BSSStep> {
-  protected codeLines = [
-    'public TreeNode searchBST(TreeNode root, int val) {',
-    '    if (root == null) return null;',
-    '',
-    '    if (root.val == val) {',
-    '        return root;',
-    '    }',
-    '    // 找到目标，返回节点',
-    '',
-    '    if (val < root.val) {',
-    '        return searchBST(root.left, val);',
-    '    }',
-    '    // 目标小，搜左子树',
-    '',
-    '    return searchBST(root.right, val);',
-    '    // 目标大，搜右子树',
-    '}',
-  ];
-  protected codePanelTitle = 'BST 搜索代码 (Java)';
-
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private directionEl: HTMLElement | null = null;
-  private comparedEl: HTMLElement | null = null;
-  private targetInput: HTMLInputElement | null = null;
-
-  private treeData: (number | null)[] = [4, 2, 7, 1, 3];
-  private target: number = 9;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#bss-tree');
-    this.logEl = this.root.querySelector('#bss-log');
-    this.depthEl = this.root.querySelector('#bss-depth');
-    this.currentEl = this.root.querySelector('#bss-current');
-    this.directionEl = this.root.querySelector('#bss-direction');
-    this.comparedEl = this.root.querySelector('#bss-compared');
-    this.targetInput = this.root.querySelector('#bss-target') as HTMLInputElement;
-    this.bindPlaybackControls({ message: 'bss-message' });
-
-    this.root.querySelector('#bss-start')?.addEventListener('click', () => {
-      this.start();
-    });
-
-    this.root.querySelectorAll<HTMLButtonElement>('.bss-example-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const d = btn.dataset.id;
-        if (d === '1') { this.treeData = [4, 2, 7, 1, 3]; this.target = 9; }
-        else if (d === '2') { this.treeData = [4, 2, 7, 1, 3]; this.target = 2; }
-        else if (d === '3') { this.treeData = [4, 2, 7, 1, 3, 5, 10]; this.target = 5; }
-        if (this.targetInput) this.targetInput.value = String(this.target);
-        this.start();
-      });
-    });
-  }
-
-  protected buildSteps(): BSSStep[] {
-    const root = buildTree(this.treeData);
-    if (this.targetInput) this.target = parseInt(this.targetInput.value) || 0;
-    return buildBSSSteps(root, this.target);
-  }
-
-  protected renderStep(step: BSSStep): void {
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.currentEl) this.currentEl.textContent = step.current !== null ? String(step.current) : '-';
-    if (this.directionEl) this.directionEl.textContent = step.direction;
-    if (this.comparedEl) this.comparedEl.textContent = String(step.compared);
-
-    // Set message classes for styling (base class handles textContent)
-    const msgEl = this.root?.querySelector('#bss-message') as HTMLElement | null;
-    if (msgEl) {
-      msgEl.className = 'bss-message';
-      if (step.action === 'found') msgEl.classList.add('success');
-      if (step.action === 'not-found') msgEl.classList.add('error');
-    }
-
-    this.renderTree(step);
-    this.renderLogLine(step);
-  }
-
-  private renderTree(step: BSSStep): void {
-    if (!this.treeEl || !step.tree) {
-      if (this.treeEl) this.treeEl.innerHTML = '<span style="color:#6c7086">空树</span>';
-      return;
-    }
-    this.treeEl.innerHTML = '';
-    const levelHeight = 44;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '280');
-    svg.setAttribute('viewBox', '0 0 600 280');
-
-    const drawNode = (node: TreeNode, x: number, y: number, spread: number, depth: number) => {
-      const isCurrent = step.current === node.val;
-      const isTarget = node.val === step.target;
-
-      if (node.left) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.left, x - spread, y + levelHeight, spread / 2, depth + 1);
-      }
-      if (node.right) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.right, x + spread, y + levelHeight, spread / 2, depth + 1);
-      }
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(x)); circle.setAttribute('cy', String(y)); circle.setAttribute('r', '18');
-      let fill = '#45475a';
-      let stroke = '#6c7086';
-      if (isCurrent && isTarget) { fill = '#a6e3a1'; stroke = '#a6e3a1'; }
-      else if (isCurrent) { fill = '#cba6f7'; stroke = '#cba6f7'; }
-      else if (step.found === false) { fill = '#313244'; }
-      circle.setAttribute('fill', fill);
-      circle.setAttribute('stroke', stroke);
-      circle.setAttribute('stroke-width', '2');
-      svg.appendChild(circle);
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(x)); text.setAttribute('y', String(y + 5));
-      text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#1e1e2e');
-      text.setAttribute('font-size', '12'); text.setAttribute('font-weight', 'bold');
-      text.textContent = String(node.val);
-      svg.appendChild(text);
-    };
-    drawNode(step.tree, 300, 30, 120, 0);
-    this.treeEl.appendChild(svg);
-  }
-
-  private renderLogLine(step: BSSStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+function parseTreeInput(raw: string): (number | null)[] {
+  return (raw || '4, 2, 7, 1, 3')
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+    .filter((n) => n === null || !isNaN(n));
 }
+
+const { template, Visualizer } = createDeclarativeVisualizer<BSTSStep>({
+  id: 'bst-search',
+  name: '二叉搜索树中的搜索',
+  category: 'tree',
+  icon: '🔍',
+  badge: {
+    mode: 'BST二分剪枝查找',
+    complexity: 'O(log n) · O(1)',
+  },
+  card1Title: '📊 BST 拓扑结构与检索路径沙盘',
+  card2Title: '🧭 单向分支决策与查找状态监视器',
+  card2Desc: '当前检查节点、目标比对关系与已走过检索路径',
+  legend: [
+    { label: '命中目标节点', color: '#16a34a' },
+    { label: '搜索路径上的节点', color: '#fbbf24' },
+    { label: '当前比对节点', color: '#3b82f6' },
+  ],
+  inputs: [
+    {
+      id: 'input-tree',
+      label: 'BST 树层序',
+      type: 'text',
+      defaultValue: '4, 2, 7, 1, 3',
+      width: '140px',
+      placeholder: '4, 2, 7, 1, 3',
+    },
+    {
+      id: 'input-target',
+      label: '目标值 val',
+      type: 'number',
+      defaultValue: 2,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '命中示例 (val=2)', values: { 'input-tree': '4, 2, 7, 1, 3', 'input-target': 2 } },
+    { label: '不存在值 (val=5)', values: { 'input-tree': '4, 2, 7, 1, 3', 'input-target': 5 } },
+    { label: '更大多层树 (val=15)', values: { 'input-tree': '10, 5, 20, 3, 7, 15, 25', 'input-target': 15 } },
+  ],
+  metrics: [
+    { id: 'cur-node', label: '当前比对节点', color: '#3b82f6' },
+    { id: 'branch-decision', label: '分支转向决策', color: '#f59e0b' },
+    { id: 'found-status', label: '搜索命中状态', color: '#16a34a' },
+  ],
+  codeLanguages: BST_SEARCH_CODE_LANGUAGES,
+  problemHtml: BST_SEARCH_PROBLEM_HTML,
+  analysisHtml: BST_SEARCH_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-tree'] || '4, 2, 7, 1, 3';
+    const arr = parseTreeInput(raw);
+    const root = buildTree(arr);
+    const target = parseInt(inputs['input-target'] || '2', 10);
+    return buildBSTSearchSteps(root, target);
+  },
+  renderCanvas: (container, step) => {
+    TreeCanvasAdapter.renderTree(container, {
+      tree: step.tree,
+      current: step.found ? step.current : null,
+      secondaryHighlightedNodes: step.path,
+      primaryColor: '#16a34a',
+      secondaryColor: '#fbbf24',
+    });
+
+    const root = container.closest('#algo-bst-search-view');
+    if (root) {
+      const curEl = root.querySelector('#metric-cur-node');
+      const decEl = root.querySelector('#metric-branch-decision');
+      const foundEl = root.querySelector('#metric-found-status') as HTMLElement | null;
+
+      if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
+      if (decEl) decEl.textContent = step.decision;
+      if (foundEl) {
+        foundEl.textContent = step.found ? '已命中目标' : step.action === 'not-found' ? '未找到 (null)' : '检索中';
+        foundEl.style.color = step.found ? '#16a34a' : step.action === 'not-found' ? '#ef4444' : '#2563eb';
+      }
+
+      // 在 Card 2 中展示检索路径
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">已检索路径 (Path):</span>
+              <span style="font-size: 10px; color: #64748b; font-family: monospace;">目标: ${step.val}</span>
+            </div>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #2563eb;">
+              ${step.path.join(' -> ') || '未开始'}
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'bst-search',
   name: '二叉搜索树中的搜索',
   viewId: 'algo-bst-search-view',
   category: 'tree',
-  description: '利用 BST 性质在 O(log n) 时间内查找目标节点',
+  description: 'BST 单向剪枝查找：val < root.val 走左子树，val > root.val 走右子树',
   icon: '🔍',
   template,
-  Visualizer: BSTSearchVisualizer,
+  Visualizer,
   difficulty: 1,
-  levelOrder: 10,
-  learningGoal: '理解 BST 的左小右大性质及高效搜索方法',
+  levelOrder: 6,
+  learningGoal: '掌握二叉搜索树利用有序性实现单向分支高效剪枝查找的算法原理',
 });

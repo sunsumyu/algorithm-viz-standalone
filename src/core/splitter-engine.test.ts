@@ -241,4 +241,40 @@ describe('SplitterEngine', () => {
 
     engine.destroy();
   });
+
+  it('应该支持小窗口和大窗口独立控制变量，在大窗口调整不影响小窗口', () => {
+    // 1. 在小窗口模式下存储小窗口尺寸
+    SplitterStorage.set('grid-dp-split', 480, 'global', false, 'small');
+    // 2. 在大窗口模式下存储大窗口尺寸
+    SplitterStorage.set('grid-dp-split', 1050, 'global', false, 'large');
+
+    // 3. 验证分别读取不同断点时，互不干扰
+    expect(SplitterStorage.get('grid-dp-split', 'global', 500, 'small')).toBe(480);
+    expect(SplitterStorage.get('grid-dp-split', 'global', 500, 'large')).toBe(1050);
+
+    // 4. 验证中等窗口未配置时优雅降级
+    expect(SplitterStorage.get('grid-dp-split', 'global', 600, 'medium')).toBe(1050); // falls back to global base
+  });
+
+  it('应该支持基于 defaultRatio 动态计算大窗口与小窗口的自适应默认宽度', () => {
+    const parentLarge = new MockElement('div') as unknown as HTMLElement;
+    (parentLarge as any).clientWidth = 2048; // 大屏 2K
+    const target = new MockElement('div') as unknown as HTMLElement;
+    parentLarge.appendChild(target as any);
+
+    const engineLarge = new SplitterEngine({
+      id: 'grid-dp-split-test',
+      direction: 'horizontal',
+      targetElement: target,
+      containerElement: parentLarge,
+      defaultRatio: 0.5,
+      minSize: 320,
+      mode: 'flex',
+    });
+
+    expect(engineLarge.getCurrentBreakpoint()).toBe('large');
+    expect(engineLarge.getCurrentSize()).toBe(1024); // 2048 * 0.5
+
+    engineLarge.destroy();
+  });
 });

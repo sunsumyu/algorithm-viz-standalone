@@ -1,421 +1,342 @@
 /**
- * 数组专题总结篇 可视化器
- * 系统回顾数组专题所有核心技巧：双指针、二分、前缀和、二维数组等
+ * 数组专题总结篇 可视化器 — 4-Card 标准现代架构
+ * 系统回顾数组专题所有核心技巧：双指针、二分、滑动窗口、前缀和、模拟边界等
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  ARRAY_SUMMARY_PROBLEM_HTML,
+  ARRAY_SUMMARY_ANALYSIS_HTML,
+  ARRAY_SUMMARY_CODE_LANGUAGES,
+} from './array-summary-problem-content';
 import template from './array-summary.html?raw';
 
-/* ── Step interface ── */
-interface ASStep {
-  section: 'intro' | 'basics' | 'two-pointer' | 'binary-search' | 'prefix-sum' | 'matrix' | 'patterns' | 'matrix-table' | 'done';
+export interface ASStep {
+  section:
+    | 'intro'
+    | 'basics'
+    | 'two-pointer'
+    | 'binary-search'
+    | 'prefix-sum'
+    | 'matrix'
+    | 'patterns'
+    | 'done';
   index: number;
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   technique: string;
   problems: string[];
 }
 
-/* ── Practice questions ── */
-interface DemoQuestion {
+export interface DemoQuestion {
   problem: string;
   options: string[];
   correct: number;
   explanation: string;
 }
 
-const DEMO_QUESTIONS: DemoQuestion[] = [
+export const DEMO_QUESTIONS: DemoQuestion[] = [
   {
-    problem: '给定数组 nums=[3,2,2,3] 和目标值 val=3，要求原地移除所有等于 val 的元素。最适合使用哪种技巧？',
-    options: ['二分查找', '快慢指针', '前缀和', '二维前缀和'],
+    problem: '给定数组 nums=[3,2,2,3] 和目标值 val=3，原地移除所有等于 val 的元素。最适合使用？',
+    options: ['二分查找', '快慢双指针', '前缀和', '二维矩阵'],
     correct: 1,
-    explanation: '原地移除元素是经典的双指针问题。快指针遍历数组，慢指针记录保留位置，空间 O(1)。',
+    explanation: '原地移除元素是经典快慢双指针问题。快指针寻找新元素，慢指针记录写入位置，O(1) 辅助空间。',
   },
   {
-    problem: '给定一个升序排列的整数数组 nums，返回每个元素的平方组成的新数组（也要升序）。最佳做法？',
-    options: ['滑动窗口', '快慢指针', '首尾双指针', '模拟边界'],
+    problem: '给定升序整数数组 nums，返回各元素平方组成的新升序数组。最佳做法？',
+    options: ['滑动窗口', '快慢指针', '首尾对撞双指针', '螺旋模拟'],
     correct: 2,
-    explanation: '因为原数组有序，负数的平方可能很大。用首尾双指针从两端比较平方值，从后往前填入结果数组，时间 O(n)。',
+    explanation: '原数组有序，负数平方可能很大。用首尾双指针从两端向中间比对最大平方值倒序写入，时间 O(n)。',
   },
   {
-    problem: '给定正整数数组 nums 和目标值 target，找出和 >= target 的最短连续子数组长度。应该用？',
+    problem: '给定正整数数组 nums 和目标值 target，找出和 ≥ target 的最短连续子数组长度。应该用？',
     options: ['前缀和', '二分查找', '快慢指针', '滑动窗口'],
     correct: 3,
-    explanation: '连续子数组求最值，滑动窗口是最优策略。维护窗口和，和 >= target 时收缩左边界，时间 O(n)。',
+    explanation: '连续子数组求极值，滑动窗口最优。维护窗口和，和 ≥ target 时持续收缩左边界，时间 O(n)。',
   },
   {
-    problem: '需要频繁查询一个静态数组中任意区间 [l, r] 的元素之和。最佳预处理方式？',
-    options: ['排序后二分', '快慢指针', '前缀和', '模拟边界'],
+    problem: '需要频繁查询一个静态数组中任意区间 [L, R] 的元素之和。最佳预处理方式？',
+    options: ['排序后二分', '快慢指针', '一维前缀和', '模拟边界'],
     correct: 2,
-    explanation: '前缀和预处理 O(n)，之后每次区间和查询 O(1)，是静态区间求和的标准做法。',
+    explanation: '一维前缀和预处理 O(n)，之后每次区间和查询 O(1)，是静态区间求和的标准做法。',
   },
   {
-    problem: '给定一个 m x n 的矩阵，按照螺旋顺序输出所有元素。核心思路是？',
-    options: ['递归分治', '模拟边界', '双指针', '前缀和'],
+    problem: '生成一个 n×n 的顺时针螺旋矩阵。核心思路是？',
+    options: ['递归分治', '四边界收缩模拟', '双指针', '前缀和'],
     correct: 1,
-    explanation: '维护上下左右四个边界，依次按右→下→左→上遍历，每次遍历后收缩对应边界，直到边界交错。',
+    explanation: '维护上下左右 (top, bottom, left, right) 四个边界，顺时针填数并收缩对应边界，循环不变量保证无 bug。',
   },
 ];
 
-/* ── Build steps ── */
-function buildSteps(): ASStep[] {
+export function buildArraySummarySteps(): ASStep[] {
   const steps: ASStep[] = [];
+
+  const lines = {
+    intro: 1,
+    basics: 1,
+    twoPointer: [2, 3, 4],
+    binarySearch: 5,
+    prefixSum: [6, 7],
+    matrix: 8,
+    done: 1,
+  };
 
   // 0. Intro
   steps.push({
     section: 'intro',
     index: 0,
-    message: '欢迎来到数组专题总结篇！我们将系统回顾数组专题的 6 大核心技巧。',
+    message: '欢迎来到数组专题总结篇！我们将系统梳理数组 6 大核心解题范式。',
     log: '📝 数组专题回顾开始',
-    codeLine: 0,
-    technique: 'overview',
-    problems: [],
+    codeLine: lines.intro,
+    technique: '全景导读',
+    problems: ['数组理论基础', '移除元素', '有序数组平方', '最小子数组', '螺旋矩阵', '区间和'],
   });
 
   // 1. Basics
   steps.push({
     section: 'basics',
     index: 1,
-    message: '基础操作：数组通过下标访问元素的时间为 O(1)，但搜索、插入和删除需要 O(n)。理解这些基本复杂度是所有技巧的基础。',
+    message: '基础操作：数组连续内存物理地址直接寻址使得下标访问为 O(1)，但搜索、插入和删除需要 O(n)。',
     log: '📦 基础操作：访问 O(1)，搜索/插入/删除 O(n)',
-    codeLine: 1,
-    technique: 'basics',
-    problems: [],
+    codeLine: lines.basics,
+    technique: '连续内存寻址',
+    problems: ['数组理论基础'],
   });
 
   // 2. Two-pointer
   steps.push({
     section: 'two-pointer',
     index: 2,
-    message: '双指针法包含三种变体：①对撞指针（首尾向中间）适用于有序数组；②快慢指针适用于原地修改；③滑动窗口适用于连续子数组最值问题。',
-    log: '👆👆 双指针：对撞 / 快慢 / 滑动窗口',
-    codeLine: [2, 3],
-    technique: 'two-pointer',
-    problems: ['移除元素', '有序数组平方', '长度最小子数组'],
+    message: '双指针法分为：①快慢双指针（原地修改）；②首尾对撞双指针（有序两端归并）；③滑动窗口（连续子数组最值）。',
+    log: '👆👆 双指针三剑客：快慢 / 对撞 / 滑动窗口',
+    codeLine: lines.twoPointer,
+    technique: '双指针三剑客',
+    problems: ['LC 27 移除元素', 'LC 977 有序数组平方', 'LC 209 长度最小子数组'],
   });
 
   // 3. Binary search
   steps.push({
     section: 'binary-search',
     index: 3,
-    message: '二分查找：在有序数组上 O(log n) 查找目标值。关键是要明确搜索区间和循环不变量，注意左右边界的开闭。',
-    log: '🔍 二分查找：有序数组上 O(log n)',
-    codeLine: 4,
-    technique: 'binary-search',
-    problems: ['二分查找'],
+    message: '二分查找：有序数组的绝对检索利器，掌握左闭右闭 [left, right] 与左闭右开 [left, right) 的循环不变量。',
+    log: '🎯 二分查找：区间开闭与循环不变量',
+    codeLine: lines.binarySearch,
+    technique: '二分查找',
+    problems: ['LC 704 二分查找', 'LC 35 搜索插入位置'],
   });
 
   // 4. Prefix sum
   steps.push({
     section: 'prefix-sum',
     index: 4,
-    message: '前缀和：O(n) 预处理后，任意区间和查询只需 O(1)。公式：sum(l, r) = pre[r+1] - pre[l]。',
-    log: '📊 前缀和：O(n) 预处理，O(1) 查询',
-    codeLine: 5,
-    technique: 'prefix-sum',
-    problems: ['区间和'],
+    message: '前缀和：以空间换时间，O(n) 预处理 prefix 数组，O(1) 瞬时响应一维区间求和与二维子矩阵求和。',
+    log: '➕ 前缀和：一维差分与二维容斥原理',
+    codeLine: lines.prefixSum,
+    technique: '前缀和差分与容斥',
+    problems: ['Kama 58 区间和', 'Kama 44 购买土地'],
   });
 
-  // 5. Matrix (2D)
+  // 5. Matrix
   steps.push({
     section: 'matrix',
     index: 5,
-    message: '二维数组技巧：螺旋遍历通过维护四个边界逐步收缩；二维前缀和将前缀和扩展到二维，用于子矩阵求和。',
-    log: '🌀 二维数组：螺旋遍历 + 二维前缀和',
-    codeLine: 6,
-    technique: 'matrix',
-    problems: ['螺旋矩阵', '购买土地'],
+    message: '模拟行为：螺旋矩阵等几何模拟问题，核心在于牢牢守住转折点定义，四边界 (top, bottom, left, right) 顺时针收缩。',
+    log: '🌀 模拟行为：四边界顺时针收缩',
+    codeLine: lines.matrix,
+    technique: '四边界模拟',
+    problems: ['LC 59 螺旋矩阵 II', 'LC 54 螺旋矩阵'],
   });
 
-  // 6. Patterns
-  steps.push({
-    section: 'patterns',
-    index: 6,
-    message: '常用套路：原地修改（快慢指针覆盖）、分块处理（√n 分块）、平方后归并（首尾双指针）、模拟边界、差分数组、二分答案。',
-    log: '🛠️ 常用套路：原地修改 / 分块 / 归并 / 模拟 / 差分 / 二分答案',
-    codeLine: [1, 2, 3, 4, 5, 6],
-    technique: 'patterns',
-    problems: [],
-  });
-
-  // 7. Matrix-table – highlight each row in turn
-  const tableRows = [
-    { problem: '移除元素', technique: '快慢指针' },
-    { problem: '有序数组平方', technique: '首尾双指针' },
-    { problem: '长度最小子数组', technique: '滑动窗口' },
-    { problem: '二分查找', technique: '二分查找' },
-    { problem: '螺旋矩阵', technique: '模拟边界' },
-    { problem: '区间和', technique: '前缀和' },
-    { problem: '购买土地', technique: '二维前缀和' },
-  ];
-
-  tableRows.forEach((row, i) => {
-    steps.push({
-      section: 'matrix-table',
-      index: 7 + i,
-      message: `对照表 (${i + 1}/${tableRows.length})：「${row.problem}」→ 核心技巧是「${row.technique}」`,
-      log: `📋 ${row.problem} → ${row.technique}`,
-      codeLine: 0,
-      technique: row.technique,
-      problems: [row.problem],
-    });
-  });
-
-  // 8. Done
+  // 6. Done
   steps.push({
     section: 'done',
-    index: 7 + tableRows.length,
-    message: '🎉 数组专题回顾完成！你已复习了双指针、二分查找、前缀和、二维数组等核心技巧。尝试右侧的互动练习来检验掌握程度吧！',
-    log: '🎉 回顾完成！',
-    codeLine: [0, 1, 2, 3, 4, 5, 6],
-    technique: 'done',
-    problems: [],
+    index: 6,
+    message: '🎉 恭喜！数组专题 6 大核心解题范式已全部梳理完毕，你已具备扎实的数组解题功底！',
+    log: '🏆 数组专题总结完成',
+    codeLine: lines.done,
+    technique: '数组通关',
+    problems: ['全套数组经典题目'],
   });
 
   return steps;
 }
 
-/* ── Visualizer ── */
 export class ArraySummaryVisualizer extends StepVisualizer<ASStep> {
-  protected codeLines = [
-    '// 数组专题核心技巧 (Java)',
-    '// 1. 双指针（快慢/对撞）',
-    '// 2. 二分查找（有序数组）',
-    '// 3. 滑动窗口（子数组优化）',
-    '// 4. 前缀和（区间查询）',
-    '// 5. 二维前缀和（子矩阵）',
-    '// 6. 模拟（螺旋遍历）',
-  ];
-  protected codePanelTitle = '数组专题 Java 技巧速查';
+  protected codeLanguages = ARRAY_SUMMARY_CODE_LANGUAGES;
+  protected codeLines = ARRAY_SUMMARY_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '数组核心范式 速查速览';
 
-  // Section visibility mapping
-  private sectionMap: Record<string, string> = {
-    intro: 'as-section-basics',
-    basics: 'as-section-basics',
-    'two-pointer': 'as-section-two-pointer',
-    'binary-search': 'as-section-binary-search',
-    'prefix-sum': 'as-section-prefix-sum',
-    matrix: 'as-section-matrix',
-    patterns: 'as-section-patterns',
-    'matrix-table': 'as-section-matrix-table',
-    done: 'as-section-demo',
-  };
-
-  private allSections: HTMLElement[] = [];
-  private techItems: HTMLElement[] = [];
-  private tableRows: HTMLElement[] = [];
-  private logEl: HTMLElement | null = null;
-  private currentDemo: DemoQuestion | null = null;
-  private demoOptions: HTMLElement | null = null;
-  private demoResult: HTMLElement | null = null;
-  private demoQuestionEl: HTMLElement | null = null;
-  private shuffleBtn: HTMLElement | null = null;
-  private revealedSections = new Set<string>();
+  private currentQuizIdx = 0;
+  private quizScore = 0;
+  private paradigmCards: NodeListOf<HTMLElement> | null = null;
+  private metricTopicEl: HTMLElement | null = null;
+  private metricTrickEl: HTMLElement | null = null;
+  private metricProblemsEl: HTMLElement | null = null;
+  private metricScoreEl: HTMLElement | null = null;
+  private quizQuestionEl: HTMLElement | null = null;
+  private quizOptionsEl: HTMLElement | null = null;
+  private quizFeedbackEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.logEl = this.root.querySelector('#as-log');
-    this.demoOptions = this.root.querySelector('#as-demo-options');
-    this.demoResult = this.root.querySelector('#as-demo-result');
-    this.demoQuestionEl = this.root.querySelector('#as-demo-question');
-    this.shuffleBtn = this.root.querySelector('#as-shuffle-btn');
 
-    // Collect all section elements
-    this.allSections = [
-      'as-section-basics',
-      'as-section-two-pointer',
-      'as-section-binary-search',
-      'as-section-prefix-sum',
-      'as-section-matrix',
-      'as-section-patterns',
-      'as-section-matrix-table',
-      'as-section-demo',
-    ].map((id) => this.root!.querySelector(`#${id}`) as HTMLElement).filter(Boolean);
+    this.paradigmCards = this.root.querySelectorAll('.as-paradigm-card');
+    this.metricTopicEl = this.root.querySelector('#metric-topic');
+    this.metricTrickEl = this.root.querySelector('#metric-trick');
+    this.metricProblemsEl = this.root.querySelector('#metric-problems');
+    this.metricScoreEl = this.root.querySelector('#metric-score');
+    this.quizQuestionEl = this.root.querySelector('#quiz-question');
+    this.quizOptionsEl = this.root.querySelector('#quiz-options');
+    this.quizFeedbackEl = this.root.querySelector('#quiz-feedback');
+    this.liveTextEl = this.root.querySelector('#as-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    // Collect technique cards
-    this.techItems = [];
-    for (let i = 0; i < 6; i++) {
-      const el = this.root!.querySelector(`#as-tech-${i}`) as HTMLElement;
-      if (el) this.techItems.push(el);
-    }
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
+    this.bindPlaybackControls();
 
-    // Collect table rows
-    this.tableRows = [];
-    for (let i = 0; i < 7; i++) {
-      const el = this.root!.querySelector(`#as-row-${i}`) as HTMLElement;
-      if (el) this.tableRows.push(el);
-    }
+    // 范式卡片点击切换步进
+    this.paradigmCards?.forEach((card) => {
+      card.addEventListener('click', () => {
+        const idx = parseInt(card.dataset.idx || '0', 10);
+        const targetStep = Math.min(this.steps.length - 1, idx + 1);
+        this.goToStep(targetStep);
+      });
+    });
 
-    this.bindPlaybackControls({ message: 'step-message' });
+    // 渲染测验题目
+    this.renderQuiz(0);
 
-    if (this.shuffleBtn) {
-      this.shuffleBtn.onclick = () => this.showRandomDemo();
-    }
+    // 挂载暗色代码终端深模块
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: ARRAY_SUMMARY_PROBLEM_HTML,
+      analysisHtml: ARRAY_SUMMARY_ANALYSIS_HTML,
+      initialLang: 'java',
+    });
+  }
+
+  private renderQuiz(qIdx: number): void {
+    if (!this.quizQuestionEl || !this.quizOptionsEl || !this.quizFeedbackEl) return;
+    this.currentQuizIdx = qIdx % DEMO_QUESTIONS.length;
+    const q = DEMO_QUESTIONS[this.currentQuizIdx];
+
+    this.quizQuestionEl.textContent = `【自测题 ${this.currentQuizIdx + 1}/${DEMO_QUESTIONS.length}】${q.problem}`;
+    this.quizFeedbackEl.textContent = '';
+    this.quizOptionsEl.innerHTML = q.options
+      .map(
+        (opt, idx) => `
+      <button class="as-quiz-btn" data-opt="${idx}">${String.fromCharCode(65 + idx)}. ${opt}</button>
+    `
+      )
+      .join('');
+
+    this.quizOptionsEl.querySelectorAll<HTMLButtonElement>('.as-quiz-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const chosen = parseInt(btn.dataset.opt || '0', 10);
+        const isCorrect = chosen === q.correct;
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+
+        if (isCorrect) {
+          this.quizScore++;
+          if (this.metricScoreEl) this.metricScoreEl.textContent = `${this.quizScore} / ${DEMO_QUESTIONS.length}`;
+          if (this.quizFeedbackEl) {
+            this.quizFeedbackEl.innerHTML = `<span style="color:#15803d; font-weight:700;">✓ 回答正确！</span> ${q.explanation}`;
+          }
+        } else {
+          if (this.quizFeedbackEl) {
+            this.quizFeedbackEl.innerHTML = `<span style="color:#b91c1c; font-weight:700;">✗ 回答错误。</span> 正确答案为 ${String.fromCharCode(65 + q.correct)}。${q.explanation}`;
+          }
+        }
+
+        // 2.5秒后切到下一题
+        setTimeout(() => {
+          this.renderQuiz(this.currentQuizIdx + 1);
+        }, 2500);
+      });
+    });
   }
 
   protected buildSteps(): ASStep[] {
-    return buildSteps();
+    return buildArraySummarySteps();
   }
 
   protected renderStep(step: ASStep): void {
-    // 1. Reveal sections progressively
-    this.revealUpTo(step.section);
+    const { section, index, message, technique, problems } = step;
 
-    // 2. Technique card animations (patterns section)
-    if (step.section === 'patterns') {
-      this.animateTechItems();
-    }
-
-    // 3. Table row highlighting
-    this.highlightTableRow(step);
-
-    // 4. Interactive demo
-    if (step.section === 'done') {
-      this.showRandomDemo();
-    }
-
-    // 5. Log
-    this.renderLogLine(step);
-
-    // 6. Auto-scroll to latest revealed section
-    this.scrollToLatest(step.section);
-  }
-
-  /* ── Section reveal ── */
-  private revealUpTo(section: string): void {
-    const sectionOrder = [
-      'as-section-basics',
-      'as-section-two-pointer',
-      'as-section-binary-search',
-      'as-section-prefix-sum',
-      'as-section-matrix',
-      'as-section-patterns',
-      'as-section-matrix-table',
-      'as-section-demo',
-    ];
-
-    const targetId = this.sectionMap[section];
-    if (!targetId) return;
-
-    const targetIdx = sectionOrder.indexOf(targetId);
-    if (targetIdx === -1) return;
-
-    for (let i = 0; i <= targetIdx; i++) {
-      const el = this.allSections.find((s) => s.id === sectionOrder[i]);
-      if (el && !this.revealedSections.has(sectionOrder[i])) {
-        this.revealedSections.add(sectionOrder[i]);
-        el.classList.remove('as-section-hidden');
-        el.classList.add('as-section-visible');
-      }
-    }
-  }
-
-  /* ── Tech item staggered animation ── */
-  private animateTechItems(): void {
-    this.techItems.forEach((item, i) => {
-      setTimeout(() => {
-        item.classList.add('as-visible');
-      }, i * 120);
+    // 1. 高亮对应范式卡片
+    this.paradigmCards?.forEach((card) => {
+      const cardIdx = parseInt(card.dataset.idx || '0', 10);
+      if (cardIdx === index - 1) card.classList.add('active');
+      else card.classList.remove('active');
     });
-  }
 
-  /* ── Table row highlighting ── */
-  private highlightTableRow(step: ASStep): void {
-    if (step.section !== 'matrix-table') {
-      // Remove all highlights when not in matrix-table section
-      this.tableRows.forEach((row) => {
-        row.classList.remove('as-row-highlight');
-        row.classList.add('as-row-dim');
+    // 2. 更新状态监视器
+    if (this.metricTopicEl) {
+      const topicNames: Record<string, string> = {
+        intro: '全景导读',
+        basics: '基础理论',
+        'two-pointer': '双指针三剑客',
+        'binary-search': '二分查找',
+        'prefix-sum': '前缀和差分',
+        matrix: '螺旋模拟',
+        patterns: '总结升华',
+        done: '通关大吉',
+      };
+      this.metricTopicEl.textContent = topicNames[section] || section;
+    }
+    if (this.metricTrickEl) this.metricTrickEl.textContent = technique;
+    if (this.metricProblemsEl) {
+      this.metricProblemsEl.textContent = `${problems.length} 个经典例题`;
+    }
+
+    if (this.liveTextEl) this.liveTextEl.textContent = message;
+
+    // 3. 更新日志流
+    if (this.logContainer) {
+      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
+        let bg = st.section === 'done' ? '#f0fdf4' : '#eff6ff';
+        let color = st.section === 'done' ? '#15803d' : '#1d4ed8';
+        let border = st.section === 'done' ? '#bbf7d0' : '#bfdbfe';
+        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
+          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
+        </div>`;
       });
-      return;
-    }
+      this.logContainer.innerHTML = logs.join('');
+      this.logContainer.scrollTop = this.logContainer.scrollHeight;
 
-    const tableRowIndex = step.index - 7;
-    this.tableRows.forEach((row, i) => {
-      row.classList.remove('as-row-highlight', 'as-row-dim');
-      if (i === tableRowIndex) {
-        row.classList.add('as-row-highlight');
-      } else if (i < tableRowIndex) {
-        // Already discussed rows are normal
-      } else {
-        row.classList.add('as-row-dim');
+      if (this.logCountEl) {
+        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
       }
-    });
-  }
-
-  /* ── Interactive demo ── */
-  private showRandomDemo(): void {
-    const q = DEMO_QUESTIONS[Math.floor(Math.random() * DEMO_QUESTIONS.length)];
-    this.currentDemo = q;
-
-    if (this.demoQuestionEl) {
-      this.demoQuestionEl.textContent = q.problem;
     }
 
-    if (this.demoOptions) {
-      this.demoOptions.innerHTML = '';
-      q.options.forEach((opt, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'as-demo-opt';
-        btn.textContent = opt;
-        btn.onclick = () => this.checkAnswer(i, q);
-        this.demoOptions!.appendChild(btn);
-      });
-    }
-
-    if (this.demoResult) {
-      this.demoResult.className = 'as-demo-result';
-      this.demoResult.textContent = '';
+    const badgeTopic = this.root?.querySelector('#badge-topic');
+    if (badgeTopic) {
+      const topicNames: Record<string, string> = {
+        intro: '全景导读',
+        basics: '基础理论',
+        'two-pointer': '双指针三剑客',
+        'binary-search': '二分查找',
+        'prefix-sum': '前缀和差分',
+        matrix: '螺旋模拟',
+        patterns: '总结升华',
+        done: '通关大吉',
+      };
+      badgeTopic.textContent = topicNames[section] || section;
     }
   }
 
-  private checkAnswer(chosen: number, q: DemoQuestion): void {
-    const opts = this.demoOptions?.querySelectorAll('.as-demo-opt');
-    if (!opts) return;
-
-    const isCorrect = chosen === q.correct;
-
-    opts.forEach((btn, i) => {
-      const el = btn as HTMLElement;
-      el.onclick = null;
-      if (i === q.correct) {
-        el.classList.add('as-correct');
-      } else if (i === chosen && !isCorrect) {
-        el.classList.add('as-wrong');
-      }
-    });
-
-    if (this.demoResult) {
-      this.demoResult.className = 'as-demo-result as-show ' + (isCorrect ? 'as-ok' : 'as-fail');
-      this.demoResult.textContent = isCorrect
-        ? `✅ 正确！${q.explanation}`
-        : `❌ 不对哦。正确答案是「${q.options[q.correct]}」。${q.explanation}`;
-    }
-  }
-
-  /* ── Scroll helper ── */
-  private scrollToLatest(section: string): void {
-    const targetId = this.sectionMap[section];
-    if (!targetId) return;
-    const el = this.root?.querySelector(`#${targetId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }
-
-  /* ── Log rendering ── */
-  private renderLogLine(step: ASStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+  public reset(): void {
+    super.reset();
+    this.quizScore = 0;
+    if (this.metricScoreEl) this.metricScoreEl.textContent = `0 / ${DEMO_QUESTIONS.length}`;
+    this.renderQuiz(0);
   }
 }
 
@@ -426,11 +347,9 @@ registerAlgorithm({
   category: 'array',
   description: '回顾数组专题所有核心技巧',
   icon: '📝',
-  template,
-  Visualizer: ArraySummaryVisualizer,
   difficulty: 1,
   levelOrder: 8,
-  learningGoal: '系统梳理数组专题的核心思想与解题套路',
+  learningGoal: '系统回顾数组专题所有核心技巧',
+  template,
+  Visualizer: ArraySummaryVisualizer,
 });
-
-export {};

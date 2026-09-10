@@ -1,389 +1,352 @@
 /**
- * 拓扑排序 (Kahn 算法) 可视化器
- * 计算入度，反复移除入度为 0 的节点
+ * 拓扑排序 (Kahn 算法) 可视化器 — 4-Card 标准现代架构
+ * 入度统计、零入度队列进出、邻边剥离与 DAG 拓扑序列重构 (LeetCode 210 / 洛谷 B3644)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（建图、入度统计、0入度扫表入队、队列循环、出队记录、出边遍历、入度自减、新0入度入队、最终完备性校验均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  TOPOLOGICAL_SORT_PROBLEM_HTML,
+  TOPOLOGICAL_SORT_ANALYSIS_HTML,
+  TOPOLOGICAL_SORT_CODE_LANGUAGES,
+} from './topological-sort-problem-content';
 import template from './topological-sort.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
-interface TSStep extends StepBase {
+export interface TopoStep extends StepBase {
   nodes: number[];
   edges: { from: number; to: number }[];
   inDegree: number[];
-  prevInDegree: number[];
   queue: number[];
+  order: number[];
   currentNode: number | null;
-  sorted: number[];
-  removed: Set<number>;
-  action: 'init' | 'enqueue' | 'process' | 'reduce' | 'done';
+  activeEdge: { from: number; to: number } | null;
+  action: 'init' | 'poll' | 'reduce-degree' | 'enqueue' | 'done';
+  statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
-const TS_NODES = [0, 1, 2, 3, 4];
-const TS_EDGES = [
-  { from: 0, to: 1 },
-  { from: 0, to: 2 },
-  { from: 1, to: 3 },
+export const TOPO_NODES = [0, 1, 2, 3, 4, 5];
+export const TOPO_EDGES = [
+  { from: 5, to: 2 },
+  { from: 5, to: 0 },
+  { from: 4, to: 0 },
+  { from: 4, to: 1 },
   { from: 2, to: 3 },
-  { from: 3, to: 4 },
+  { from: 3, to: 1 },
 ];
 
-// Node positions for SVG layout
-const TS_NODE_POSITIONS: { x: number; y: number }[] = [
-  { x: 80, y: 140 },
-  { x: 220, y: 60 },
-  { x: 220, y: 220 },
-  { x: 360, y: 140 },
-  { x: 460, y: 140 },
+export const TOPO_NODE_POSITIONS: { x: number; y: number }[] = [
+  { x: 170, y: 190 },
+  { x: 330, y: 190 },
+  { x: 170, y: 70 },
+  { x: 330, y: 70 },
+  { x: 250, y: 225 },
+  { x: 90, y: 130 },
 ];
 
-function buildTSSteps(): TSStep[] {
-  const steps: TSStep[] = [];
-  const n = TS_NODES.length;
-
-  // Build adjacency list and compute in-degrees
-  const adj: number[][] = Array.from({ length: n }, () => []);
+export function buildTopoSteps(): TopoStep[] {
+  const steps: TopoStep[] = [];
+  const n = TOPO_NODES.length;
   const inDegree = new Array(n).fill(0);
+  const adj: number[][] = Array.from({ length: n }, () => []);
 
-  for (const edge of TS_EDGES) {
-    adj[edge.from].push(edge.to);
-    inDegree[edge.to]++;
-  }
-
-  const prevInDegree = [...inDegree];
-
-  const snap = (action: TSStep['action'], currentNode: number | null, queue: number[], sorted: number[], removed: Set<number>, msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      nodes: [...TS_NODES],
-      edges: TS_EDGES.map(e => ({ ...e })),
-      inDegree: [...inDegree],
-      prevInDegree: [...prevInDegree],
-      queue: [...queue],
-      currentNode,
-      sorted: [...sorted],
-      removed: new Set(removed),
-      action,
-      message: msg,
-      log,
-      codeLine: code,
-    });
+  // 精准 16 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 2, javascript: 1 },
+    initInDegree: { cpp: 2, java: 3, python: 3, javascript: 2 },
+    initAdj: { cpp: 3, java: 4, python: 4, javascript: 3 },
+    forPrereq: { cpp: 4, java: 6, python: 5, javascript: 4 },
+    addPrereqEdge: { cpp: 5, java: 7, python: 6, javascript: 5 },
+    incrementInDegree: { cpp: 6, java: 8, python: 7, javascript: 6 },
+    initQueue: { cpp: 8, java: 10, python: 8, javascript: 8 },
+    pushZeroInDegree: { cpp: 9, java: 11, python: 8, javascript: 9 },
+    initOrder: { cpp: 10, java: 12, python: 9, javascript: 10 },
+    whileQueue: { cpp: 11, java: 14, python: 10, javascript: 11 },
+    pollQueue: { cpp: 12, java: 15, python: 11, javascript: 12 },
+    appendOrder: { cpp: 13, java: 16, python: 12, javascript: 13 },
+    forAdj: { cpp: 14, java: 17, python: 13, javascript: 14 },
+    decrementInDegree: { cpp: 15, java: 18, python: 14, javascript: 15 },
+    pushNewZero: { cpp: 15, java: 18, python: 15, javascript: 15 },
+    returnOrder: { cpp: 18, java: 21, python: 16, javascript: 18 },
   };
 
-  // Init: compute in-degrees
   const queue: number[] = [];
+  const order: number[] = [];
+
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'poll' | 'reduce-degree' | 'enqueue' | 'done',
+    statusText: string,
+    log: string,
+    currentNode: number | null = null,
+    activeEdge: { from: number; to: number } | null = null
+  ): void {
+    const qStr = queue.length > 0 ? `[${queue.join(', ')}]` : '[]';
+    const ordStr = order.length > 0 ? order.join(' ➔ ') : '尚未产生';
+
+    steps.push({
+      nodes: TOPO_NODES,
+      edges: TOPO_EDGES,
+      inDegree: [...inDegree],
+      queue: [...queue],
+      order: [...order],
+      currentNode,
+      activeEdge,
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-cur-node': currentNode !== null ? `${currentNode}` : '—',
+        'metric-queue-elements': qStr,
+        'metric-topo-len': `${order.length} / ${n}`,
+        'metric-cycle-status': order.length === n ? '✅ 无环 (DAG)' : '检测中...',
+      },
+    });
+  }
+
+  // 1. 入口与初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] findOrder(numCourses=6, prerequisites)：初始化 Kahn 拓扑排序算法。', 'findOrder 入口');
+  makeStep(lines.initInDegree, 'init', '📊 [初始化入度表] int[] inDegree = new int[6]，记录每个节点被指向的入度数。', 'init inDegree[]');
+  makeStep(lines.initAdj, 'init', '📦 [构建邻接表] List<Integer>[] adj = new ArrayList[6]，初始化有向邻接链表。', 'init adj[]');
+
+  // 建图与统计入度
+  for (const e of TOPO_EDGES) {
+    adj[e.from].push(e.to);
+    inDegree[e.to]++;
+    makeStep(lines.forPrereq, 'init', `🔎 [处理前置依赖] 依赖边 ${e.from} ➔ ${e.to}。`, `edge ${e.from}->${e.to}`, null, e);
+    makeStep(lines.addPrereqEdge, 'init', `➕ [添加邻接边] adj[${e.from}].add(${e.to})。`, `adj[${e.from}].add(${e.to})`, null, e);
+    makeStep(lines.incrementInDegree, 'init', `📈 [入度累加] inDegree[${e.to}]++ = ${inDegree[e.to]}。`, `inDegree[${e.to}]++`, null, e);
+  }
+
+  // 初始化队列与 0 入度入队
+  makeStep(lines.initQueue, 'init', '📦 [初始化零入度队列] Queue<Integer> queue = new LinkedList<>()。', 'init queue');
   for (let i = 0; i < n; i++) {
     if (inDegree[i] === 0) {
       queue.push(i);
+      makeStep(lines.pushZeroInDegree, 'enqueue', `🌱 [0入度入队] 节点 ${i} 入度为 0，不受任何前置依赖约束，queue.offer(${i})！`, `offer 0-indegree node ${i}`, i);
     }
   }
-  snap('init', null, [...queue], [], new Set(),
-    `初始化: 计算 ${n} 个节点的入度。入度为 0 的节点: [${queue.join(', ')}] 入队。`,
-    `初始化: 计算入度，零入度节点入队`, [0, 1, 2]);
 
-  const removed = new Set<number>();
-  const sorted: number[] = [];
+  // 初始化拓扑序列容器
+  makeStep(lines.initOrder, 'init', '📝 [初始化结果数组] int[] order = new int[6]; int idx = 0。', 'init order[]');
 
-  // Process queue
-  let stepNum = 3;
+  // Kahn BFS 队列循环
   while (queue.length > 0) {
-    const node = queue.shift()!;
-    snap('process', node, [...queue], [...sorted], new Set(removed),
-      `取出节点 ${node}（入度为 0），加入拓扑序。`,
-      `取出节点 ${node}`, stepNum);
-    stepNum++;
+    makeStep(lines.whileQueue, 'init', `🔁 [Kahn 队列外层循环] while (!queue.isEmpty()) -> 当前就绪队列: [${queue.join(', ')}]。`, '!queue.isEmpty()');
 
-    sorted.push(node);
-    removed.add(node);
+    const cur = queue.shift()!;
+    makeStep(lines.pollQueue, 'poll', `📤 [出队推进] int cur = queue.poll() -> 弹出节点 ${cur}。`, `poll node ${cur}`, cur);
 
-    for (const neighbor of adj[node]) {
-      const prevDeg = inDegree[neighbor];
-      inDegree[neighbor]--;
-      snap('reduce', node, [...queue], [...sorted], new Set(removed),
-        `节点 ${node} -> ${neighbor}：入度从 ${prevDeg} 减为 ${inDegree[neighbor]}。`,
-        `减少邻接节点 ${neighbor} 入度: ${prevDeg}->${inDegree[neighbor]}`, stepNum);
-      stepNum++;
+    order.push(cur);
+    makeStep(lines.appendOrder, 'poll', `📝 [写入拓扑序列] order[idx++] = ${cur}；当前拓扑序列为: [${order.join(' ➔ ')}]。`, `order.add(${cur})`, cur);
 
-      if (inDegree[neighbor] === 0) {
-        queue.push(neighbor);
-        snap('enqueue', null, [...queue], [...sorted], new Set(removed),
-          `节点 ${neighbor} 入度变为 0，加入队列。`,
-          `节点 ${neighbor} 入度为0，入队`, stepNum);
-        stepNum++;
+    // 遍历出边消元
+    for (const next of adj[cur]) {
+      const edge = { from: cur, to: next };
+      makeStep(lines.forAdj, 'reduce-degree', `  ↳ [遍历邻居出边] 考察边 ${cur} ➔ ${next}。`, `edge ${cur}->${next}`, cur, edge);
+
+      inDegree[next]--;
+      const reducedToZero = inDegree[next] === 0;
+
+      makeStep(lines.decrementInDegree, 'reduce-degree', `  📉 [削减邻居入度] 消除依赖！--inDegree[${next}] = ${inDegree[next]}。`, `--inDegree[${next}]=${inDegree[next]}`, cur, edge);
+
+      if (reducedToZero) {
+        queue.push(next);
+        makeStep(lines.pushNewZero, 'enqueue', `  ✨ [新0入度入队] 节点 ${next} 的所有前置依赖均已消除，queue.offer(${next})！`, `offer ${next}`, cur, edge);
       }
     }
   }
 
-  // Done
-  snap('done', null, [], [...sorted], new Set(removed),
-    `拓扑排序完成！结果: [${sorted.join(', ')}]`,
-    `完成: 拓扑序 = [${sorted.join(', ')}]`, 7);
+  // 终局检测
+  makeStep(lines.whileQueue, 'init', '🔁 [检查队列] while (!queue.isEmpty()) -> (false，队列已清空)。', 'queue empty');
+
+  if (order.length === n) {
+    makeStep(lines.returnOrder, 'done', `🎉 [Kahn 拓扑排序完成] return order！全图 6 个顶点全部成功排序，不存在环状依赖！拓扑序列: [${order.join(' ➔ ')}]。`, 'return order', null);
+  } else {
+    makeStep(lines.returnOrder, 'done', '❌ [检测到环路依赖] order 长度小于 6，图中存在回路，返回空序列！', 'cycle detected', null);
+  }
 
   return steps;
 }
 
-export class TopologicalSortVisualizer extends StepVisualizer<TSStep> {
-  protected codeLines = [
-    'int[] topologicalSort(List<List<Integer>> adj, int V) {',
-    '    int[] inDegree = new int[V];',
-    '    for (int u = 0; u < V; u++)',
-    '        for (int v : adj.get(u)) inDegree[v]++;',
-    '    Queue<Integer> queue = new LinkedList<>();',
-    '    for (int i = 0; i < V; i++)',
-    '        if (inDegree[i] == 0) queue.add(i);',
-    '    List<Integer> sorted = new ArrayList<>();',
-    '    while (!queue.isEmpty()) {',
-    '        int node = queue.poll(); sorted.add(node);',
-    '        for (int nb : adj.get(node)) {',
-    '            if (--inDegree[nb] == 0) queue.add(nb);',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Kahn 拓扑排序代码 (Java)';
+export class TopologicalSortVisualizer extends StepVisualizer<TopoStep> {
+  protected codeLanguages = TOPOLOGICAL_SORT_CODE_LANGUAGES;
+  protected codeLines = TOPOLOGICAL_SORT_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '拓扑排序 (Kahn 算法) 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private inDegreeEl: HTMLElement | null = null;
-  private queueEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private sortedCountEl: HTMLElement | null = null;
-  private queueSizeEl: HTMLElement | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private degreePillsWrap: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private metricQueueSizeEl: HTMLElement | null = null;
+  private metricOrderCountEl: HTMLElement | null = null;
+  private metricCycleStatusEl: HTMLElement | null = null;
+  private queueElementsEl: HTMLElement | null = null;
+  private orderElementsEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#ts-graph');
-    this.inDegreeEl = this.root.querySelector('#ts-indegree');
-    this.queueEl = this.root.querySelector('#ts-queue');
-    this.resultEl = this.root.querySelector('#ts-result');
-    this.logEl = this.root.querySelector('#ts-log');
-    this.currentEl = this.root.querySelector('#ts-current');
-    this.sortedCountEl = this.root.querySelector('#ts-sorted-count');
-    this.queueSizeEl = this.root.querySelector('#ts-queue-size');
-    this.btnStart = this.root.querySelector('#ts-start');
-    this.bindPlaybackControls({
-      speed: 'ts-speed',
-      speedLabel: 'ts-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#topo-svg-canvas');
+    this.degreePillsWrap = this.root.querySelector('#indegree-pills-wrap');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.metricQueueSizeEl = this.root.querySelector('#metric-queue-elements');
+    this.metricOrderCountEl = this.root.querySelector('#metric-topo-len');
+    this.metricCycleStatusEl = this.root.querySelector('#metric-cycle-status');
+    this.queueElementsEl = this.root.querySelector('#metric-queue-elements');
+    this.orderElementsEl = this.root.querySelector('#topo-result-order');
+    this.liveTextEl = this.root.querySelector('#topo-live-text');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
+
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
+    this.bindPlaybackControls();
+
+    // 挂载暗色代码终端深模块
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: TOPOLOGICAL_SORT_PROBLEM_HTML,
+      analysisHtml: TOPOLOGICAL_SORT_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
-  protected buildSteps(): TSStep[] {
-    return buildTSSteps();
+  protected buildSteps(): TopoStep[] {
+    return buildTopoSteps();
   }
 
-  protected renderStep(step: TSStep): void {
-    if (this.currentEl) {
-      this.currentEl.textContent = step.currentNode !== null ? String(step.currentNode) : '-';
-    }
-    if (this.sortedCountEl) this.sortedCountEl.textContent = String(step.sorted.length);
-    if (this.queueSizeEl) this.queueSizeEl.textContent = String(step.queue.length);
+  protected renderStep(step: TopoStep): void {
+    const { inDegree, queue, order, currentNode, activeEdge, statusText, action } = step;
 
-    this.renderGraph(step);
-    this.renderInDegree(step);
-    this.renderQueue(step);
-    this.renderResult(step);
-    this.renderLogLine(step);
-  }
+    // 1. 绘制有向图 SVG 拓扑图
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 460 260" style="width:100%; height:100%; max-height:240px;">
+        <defs>
+          <marker id="arrow-topo" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+          </marker>
+          <marker id="arrow-topo-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+          </marker>
+        </defs>`;
 
-  private renderGraph(step: TSStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 540 280');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '540px';
-    svg.style.height = '280px';
+      // 边绘制
+      for (const e of TOPO_EDGES) {
+        const p1 = TOPO_NODE_POSITIONS[e.from];
+        const p2 = TOPO_NODE_POSITIONS[e.to];
+        const isActive = activeEdge && activeEdge.from === e.from && activeEdge.to === e.to;
 
-    // Draw edges
-    for (const edge of step.edges) {
-      const p1 = TS_NODE_POSITIONS[edge.from];
-      const p2 = TS_NODE_POSITIONS[edge.to];
-      const isRemoved = step.removed.has(edge.from) || step.removed.has(edge.to);
-      const isFromCurrent = step.currentNode === edge.from;
+        const strokeColor = isActive ? '#2563eb' : '#cbd5e1';
+        const strokeWidth = isActive ? 3.5 : 2;
+        const marker = isActive ? 'url(#arrow-topo-active)' : 'url(#arrow-topo)';
 
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('ts-edge');
-
-      // Line
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-
-      if (isFromCurrent) {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '3');
-        line.style.animation = 'pathPulse 1s infinite';
-      } else if (isRemoved) {
-        line.setAttribute('stroke', 'rgba(100, 116, 139, 0.3)');
-        line.setAttribute('stroke-width', '1.5');
-      } else {
-        line.setAttribute('stroke', 'rgba(245, 158, 11, 0.25)');
-        line.setAttribute('stroke-width', '2');
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
       }
-      g?.appendChild(line);
 
-      // Arrow head
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const ux = dx / len;
-      const uy = dy / len;
-      const nodeR = 22;
-      const ax = p2.x - ux * (nodeR + 4);
-      const ay = p2.y - uy * (nodeR + 4);
-      const arrowSize = 10;
-      const perpX = -uy;
-      const perpY = ux;
+      // 节点绘制
+      const orderSet = new Set(order);
+      const qSet = new Set(queue);
 
-      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      const strokeColor = isFromCurrent ? '#f59e0b' : isRemoved ? 'rgba(100, 116, 139, 0.3)' : 'rgba(245, 158, 11, 0.25)';
-      arrow.setAttribute('points',
-        `${ax},${ay} ${ax - ux * arrowSize + perpX * arrowSize * 0.4},${ay - uy * arrowSize + perpY * arrowSize * 0.4} ${ax - ux * arrowSize - perpX * arrowSize * 0.4},${ay - uy * arrowSize - perpY * arrowSize * 0.4}`
-      );
-      arrow.setAttribute('fill', strokeColor);
-      g?.appendChild(arrow);
+      TOPO_NODES.forEach((node) => {
+        const p = TOPO_NODE_POSITIONS[node];
+        const isCurrent = currentNode === node;
+        const isOrdered = orderSet.has(node);
+        const inQueue = qSet.has(node);
 
-      svg?.appendChild(g);
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrent) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        } else if (isOrdered) {
+          fill = '#dcfce7';
+          stroke = '#22c55e';
+        } else if (inQueue) {
+          fill = '#dbeafe';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isOrdered ? '#15803d' : '#64748b'}" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">in:${inDegree[node]}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = TS_NODE_POSITIONS[i];
-      const isRemoved = step.removed.has(i);
-      const isSorted = step.sorted.includes(i);
-      const isCurrent = step.currentNode === i;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('ts-node');
-
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
-
-      if (isCurrent) {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.5)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 1s infinite';
-      } else if (isRemoved) {
-        circle.setAttribute('fill', 'rgba(100, 116, 139, 0.15)');
-        circle.setAttribute('stroke', '#64748b');
-        circle.setAttribute('stroke-width', '1.5');
-        circle.setAttribute('stroke-dasharray', '4,4');
-      } else if (isSorted) {
-        circle.setAttribute('fill', 'rgba(34, 197, 94, 0.3)');
-        circle.setAttribute('stroke', '#22c55e');
-        circle.setAttribute('stroke-width', '2');
-      } else {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.12)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      const textColor = isCurrent ? '#fff' : isRemoved ? '#64748b' : isSorted ? '#22c55e' : '#f59e0b';
-      text.setAttribute('fill', textColor);
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
+    // 2. 渲染入度小胶囊栏
+    if (this.degreePillsWrap) {
+      this.degreePillsWrap.innerHTML = TOPO_NODES.map((node) => {
+        const deg = inDegree[node];
+        const isZero = deg === 0;
+        return `<div style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:${
+          isZero ? '#ecfdf5' : '#f8fafc'
+        }; border:1px solid ${isZero ? '#a7f3d0' : '#e2e8f0'}; font-size:11px;">
+          <span style="font-weight:700; color:#334155;">节点 ${node}:</span>
+          <span style="font-family:monospace; font-weight:800; color:${
+            isZero ? '#059669' : '#2563eb'
+          };">${deg}</span>
+        </div>`;
+      }).join('');
     }
 
-    this.graphEl?.appendChild(svg);
-  }
-
-  private renderInDegree(step: TSStep): void {
-    if (!this.inDegreeEl) return;
-    this.inDegreeEl.innerHTML = '';
-    step.nodes.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'ts-indegree-item';
-      const deg = step.inDegree[i];
-      if (deg === 0 && !step.removed.has(node)) item.classList.add('zero');
-      if (step.prevInDegree[i] !== step.inDegree[i]) item.classList.add('changed');
-      item.innerHTML = `<span class="ts-idx">节点${node}</span>${deg}`;
-      this.inDegreeEl?.appendChild(item);
-    });
-  }
-
-  private renderQueue(step: TSStep): void {
-    if (!this.queueEl) return;
-    this.queueEl.innerHTML = '';
-    if (step.queue.length === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（空队列）';
-      this.queueEl?.appendChild(empty);
-      return;
+    // 3. 监控指标
+    if (this.metricCurNodeEl) {
+      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
     }
-    step.queue.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'ts-queue-item';
-      if (i === 0 && step.action !== 'init') item.classList.add('current');
-      item.textContent = String(node);
-      this.queueEl?.appendChild(item);
-    });
-  }
-
-  private renderResult(step: TSStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.innerHTML = '';
-    if (step.sorted.length === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（等待排序...）';
-      this.resultEl?.appendChild(empty);
-      return;
+    if (this.metricQueueSizeEl) {
+      this.metricQueueSizeEl.textContent = queue.length > 0 ? `[ ${queue.join(', ')} ]` : '空队列';
     }
-    step.sorted.forEach((node) => {
-      const item = document.createElement('div');
-      item.className = 'ts-result-item';
-      item.textContent = String(node);
-      this.resultEl?.appendChild(item);
-    });
-  }
+    if (this.metricOrderCountEl) {
+      this.metricOrderCountEl.textContent = `${order.length} / ${TOPO_NODES.length}`;
+    }
+    if (this.metricCycleStatusEl) {
+      const hasCycle = action === 'done' && order.length < TOPO_NODES.length;
+      this.metricCycleStatusEl.textContent = hasCycle ? '有环 (无拓扑序)' : '无环 (DAG)';
+      this.metricCycleStatusEl.className = `font-mono font-bold ${
+        hasCycle ? 'text-red-600' : 'text-emerald-600'
+      }`;
+    }
 
-  private renderLogLine(step: TSStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+    // 4. 拓扑序列结果呈现
+    if (this.orderElementsEl) {
+      this.orderElementsEl.innerHTML =
+        order.length > 0
+          ? order
+              .map(
+                (v) =>
+                  `<span style="display:inline-block; padding:2px 7px; border-radius:4px; background:#dcfce7; color:#15803d; font-family:monospace; font-weight:800; border:1px solid #bbf7d0;">${v}</span>`
+              )
+              .join('<span style="color:#94a3b8; font-weight:bold; margin:0 4px;">➔</span>')
+          : '<span style="color:#94a3b8; font-size:12px;">尚未产生元素</span>';
+    }
+
+    // 5. 实时解说
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
+    }
   }
 }
 
 registerAlgorithm({
   id: 'topological-sort',
-  name: '拓扑排序',
+  name: '拓扑排序 (Topological Sort)',
   viewId: 'algo-topological-sort-view',
+  icon: '🔀',
   category: 'graph',
-  description: 'Kahn 算法：计算入度，反复移除入度为 0 的节点得到 DAG 拓扑序',
-  icon: '📐',
+  difficulty: 2,
+  levelOrder: 22,
+  description: '左程云算法通关课 Class 059 / 060：基于入度削减的 Kahn 算法，实现有向无环图（DAG）的线性拓扑序列求解与环路检测 (LeetCode 210)',
+  learningGoal: '深入理解入度统计、零入度队列进出、邻边消除与有向环判定原理',
   template,
   Visualizer: TopologicalSortVisualizer,
-  difficulty: 3,
-  levelOrder: 20,
-  learningGoal: '理解 Kahn 算法中入度计算和零入度节点队列的处理过程',
 });
-
-export {};

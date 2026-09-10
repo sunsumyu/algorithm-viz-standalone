@@ -33,16 +33,16 @@ export const StockIiiSpec: AlgorithmSpec = {
   semanticLines: {
     entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
     guard: { java: 3, cpp: 3, python: 3, javascript: 2 },
-    init: { java: [5, 8], cpp: [5, 8], python: [4, 7], javascript: [4, 7] },
-    loopCheck: { java: 9, cpp: 9, python: 8, javascript: 8 },
+    init: { java: [5, 8], cpp: [5, 8], python: [4, 5], javascript: [4, 7] },
+    loopCheck: { java: 9, cpp: 9, python: 6, javascript: 8 },
     stateTransfer: {
       java: { primary: [10, 13], context: [9] },
       cpp: { primary: [10, 13], context: [9] },
-      python: { primary: [9, 12], context: [8] },
+      python: { primary: [7, 10], context: [6] },
       javascript: { primary: [9, 12], context: [8] },
     },
-    loopExit: { java: 9, cpp: 9, python: 8, javascript: 8 },
-    returnResult: { java: 15, cpp: 15, python: 13, javascript: 14 },
+    loopExit: { java: 9, cpp: 9, python: 6, javascript: 8 },
+    returnResult: { java: 15, cpp: 15, python: 11, javascript: 14 },
   },
   code: {
     languages: {

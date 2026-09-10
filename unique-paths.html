@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeetCode 62. 不同路径 - 算法演化与空间优化交互可视化</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- js-yaml CDN for Declarative Model Loading -->
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            lc: {
+              amber: '#f59e0b',
+              blue: '#3b82f6',
+              purple: '#8b5cf6',
+              slate: '#0f172a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Shared Visualizer Theme CSS -->
+  <link rel="stylesheet" href="/src/styles/visualizer-theme.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-amber-100 selection:text-amber-900">
+
+  <!-- ================= 顶部导航与品牌栏 ================= -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/95">
+    <div class="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- 品牌信息与题号 -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20 flex-shrink-0">
+          <i class="fa-solid fa-route text-lg"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 truncate">LeetCode 62. 不同路径</h1>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200/60 flex items-center gap-1">
+              <i class="fa-solid fa-signal text-[10px]"></i> 中等
+            </span>
+            <span class="hidden sm:inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              动态规划 · 空间优化
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 truncate hidden sm:block">网格寻路模型 · 二维状态压缩至一维滚动数组</p>
+        </div>
+      </div>
+
+      <!-- 右侧辅助入口 -->
+      <div class="flex items-center gap-2">
+        <button id="btn-open-problem-modal" class="px-3 py-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition flex items-center gap-1.5 shadow-xs">
+          <i class="fa-regular fa-file-lines text-amber-600"></i>
+          <span>题目描述</span>
+        </button>
+        <button id="btn-switch-lite" class="px-3 py-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-bolt text-blue-600"></i>
+          <span>精简极速版</span>
+        </button>
+        <button id="btn-quick-faq" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-regular fa-lightbulb text-amber-500"></i>
+          <span>核心要点</span>
+        </button>
+        <a href="https://leetcode.cn/problems/unique-paths/" target="_blank" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span class="hidden sm:inline">力扣原题</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 主内容容器 ================= -->
+  <main class="w-full px-4 sm:px-6 lg:px-8 py-5 flex-1 flex flex-col gap-5 w-full">
+
+    <!-- 1. 算法演化 4 阶段选项卡 (Tab Navigator) -->
+    <section class="bg-white rounded-2xl p-2 sm:p-2.5 border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider pl-2 self-start md:self-center">
+        <i class="fa-solid fa-layer-group text-slate-400"></i>
+        <span>演化递进阶段</span>
+      </div>
+
+      <!-- 4 个演化版本药丸切换按钮 (由 YAML 动态驱动) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full md:w-auto" id="stage-tabs-container"></div>
+
+      <!-- 顺推 / 逆推 方向切换器 (由 YAML 动态驱动) -->
+      <div class="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200" id="dir-tabs-container"></div>
+    </section>
+
+    <!-- 2. 参数设置与演示控制器 (Control Bar) -->
+    <section class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      
+      <!-- 参数输入与预设 -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+          <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+            <i class="fa-solid fa-table-cells text-slate-400"></i> 网格尺寸:
+          </span>
+          <div class="flex items-center gap-1 font-mono-code text-xs">
+            <label for="input-m" class="text-slate-400">m=</label>
+            <input type="number" id="input-m" min="1" max="8" value="3" class="w-12 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-center font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+            <span class="text-slate-400 mx-0.5">×</span>
+            <label for="input-n" class="text-slate-400">n=</label>
+            <input type="number" id="input-n" min="1" max="8" value="4" class="w-12 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-center font-bold text-slate-800 focus:outline-none focus:border-amber-500" />
+          </div>
+          <button id="btn-apply-size" class="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition shadow-sm" title="应用参数并生成演示">
+            应用
+          </button>
+        </div>
+
+        <!-- 快速预设按钮 -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-slate-400">示例:</span>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="3" data-n="3">3 × 3 (推荐)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="3" data-n="7">3 × 7 (例1)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="3" data-n="2">3 × 2 (例2)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" data-m="4" data-n="4">4 × 4</button>
+        </div>
+      </div>
+
+      <!-- 播放控制台 -->
+      <div class="flex items-center flex-wrap gap-2.5 justify-end">
+        <!-- 速度调节 -->
+        <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-xs">
+          <i class="fa-solid fa-gauge-high text-slate-400"></i>
+          <span class="text-slate-500 font-medium">速度</span>
+          <select id="select-speed" class="bg-transparent font-medium text-slate-700 focus:outline-none cursor-pointer">
+            <option value="1500">0.5x 慢速</option>
+            <option value="900" selected>1.0x 标准</option>
+            <option value="500">1.5x 快速</option>
+            <option value="250">2.0x 极速</option>
+          </select>
+        </div>
+
+        <!-- 播放主按钮组 -->
+        <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+          <button id="btn-reset" title="重置回到起点" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-white transition">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+          <button id="btn-step-prev" title="上一步" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-white transition">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <button id="btn-play-pause" class="px-3.5 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm shadow-amber-500/20">
+            <i class="fa-solid fa-play" id="icon-play-state"></i>
+            <span id="text-play-state">自动播放</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-white transition">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <!-- 步数指示器 -->
+        <div class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono-code text-slate-600 font-semibold flex items-center gap-1">
+          <span>步数:</span>
+          <span id="current-step-num" class="text-amber-600 font-bold">1</span>
+          <span class="text-slate-400">/</span>
+          <span id="total-steps-num" class="text-slate-500">1</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 核心双栏看板：左侧可视化画布 + 右侧代码与变量追踪 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0">
+
+      <!-- ================= 左侧：算法主视觉画布 (7 栏) ================= -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        
+        <!-- 阶段 4 专属：一维空间压缩核心对比看板 -->
+        <div id="canvas-card" class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col gap-5 relative overflow-hidden flex-1">
+          
+          <!-- 阶段标题与副标题 -->
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <div id="stage-badge-icon" class="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-compress"></i>
+              </div>
+              <div>
+                <h2 id="stage-title-text" class="text-sm font-bold text-slate-900">阶段 4: 一维空间压缩优化 (Space-Optimized DP)</h2>
+                <p id="stage-desc-text" class="text-xs text-slate-500">基于 Java 经典实现，借助 memo[j] 滚动更新消灭二维矩阵空间</p>
+              </div>
+            </div>
+
+            <!-- 图例说明 -->
+            <div class="flex items-center gap-3 text-xs" id="legend-container">
+              <div class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded bg-blue-100 border border-blue-400"></span>
+                <span class="text-slate-600">down (上方旧值)</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded bg-amber-100 border border-amber-400"></span>
+                <span class="text-slate-600">right (左方新值)</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded bg-emerald-500"></span>
+                <span class="text-slate-600">当前更新格</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1D DP 物理数组核心展示栏 (只在阶段 4 重点突出) -->
+          <div id="one-d-array-section" class="bg-slate-50/80 rounded-xl p-4 border border-slate-200 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-microchip text-amber-500"></i> 一维物理滚动数组 <code class="font-mono-code text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">memo[0..n-1]</code>
+              </span>
+              <span class="text-[11px] font-mono-code text-slate-500" id="memo-formula-tip">
+                memo[j] = right + down
+              </span>
+            </div>
+
+            <!-- 1D 数组槽位容器 -->
+            <div class="overflow-x-auto pb-1 pt-2">
+              <div class="flex items-center justify-center gap-2 min-w-max mx-auto" id="one-d-array-slots">
+                <!-- 动态生成 1D 槽位 -->
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+              <span><i class="fa-solid fa-arrow-down text-blue-500 mr-1"></i><strong>down</strong> = memo[j] (读取上一行旧值)</span>
+              <span><i class="fa-solid fa-arrow-right text-amber-500 mr-1"></i><strong>right</strong> = memo[j-1] (读取当前行新值)</span>
+            </div>
+          </div>
+
+          <!-- 二维物理网格可视化区 (2D/3D Grid Canvas) -->
+          <div id="grid-stage-wrapper" class="flex-1 flex flex-col items-center justify-center min-h-[260px] bg-slate-50/40 rounded-xl p-4 border border-slate-200/60 relative">
+            
+            <div class="w-full text-xs font-semibold text-slate-400 mb-2 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot"></i> 网格坐标与机器人移动状态 (m × n)</span>
+              <button id="btn-toggle-3d" title="切换 3D 立体沙盘 / 2D 经典平面视角" class="px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
+                <i class="fa-solid fa-cube text-indigo-600"></i>
+                <span id="label-toggle-3d">3D立体</span>
+              </button>
+            </div>
+
+            <!-- 2D/3D 网格矩阵 -->
+            <div id="grid-board-wrapper" class="relative">
+              <div id="grid-container" class="grid gap-2 transition-all duration-300">
+                <!-- 动态生成网格格子 -->
+              </div>
+            </div>
+
+            <!-- 状态说明悬浮提示 -->
+            <div id="grid-status-badge" class="mt-4 px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-sm text-xs text-slate-700 flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-blue-500"></i>
+              <span id="grid-status-text">准备开始演化推导...</span>
+            </div>
+          </div>
+
+          <!-- 讲师教学要点与步骤深度解读卡片 (Step Explainer Card) -->
+          <div class="bg-gradient-to-r from-amber-50/80 to-orange-50/80 rounded-xl p-4 border border-amber-200/70 flex items-start gap-3.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center text-sm shadow-md shadow-amber-500/20 flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <h4 class="text-xs font-bold text-amber-950 uppercase tracking-wide flex items-center gap-1">
+                  <span>讲师精讲与执行解析</span>
+                </h4>
+                <span id="step-action-tag" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-white border border-amber-300 text-amber-800 shadow-xs">
+                  初始化
+                </span>
+              </div>
+              <p id="step-explainer-content" class="text-xs leading-relaxed text-slate-700">
+                点击上方【下一步】或【自动播放】，跟随动画理解如何将 $O(m \times n)$ 矩阵空间优雅压缩为单行一维数组！
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 右侧：代码联动面板与实时状态监控 (5 栏) ================= -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        
+        <!-- 1. 实时变量监控看板 (Variable Watcher) -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col gap-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <i class="fa-solid fa-terminal text-slate-400"></i> 运行时变量监控 (Live Watch)
+            </span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-500 font-mono-code font-semibold">Scope: uniquePaths()</span>
+          </div>
+
+          <!-- 变量气泡网格 -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono-code" id="live-vars-container">
+            <!-- 变量 i -->
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-slate-400 font-sans">行索引 (i)</span>
+              <span class="font-bold text-slate-800 text-sm" id="var-i">-</span>
+            </div>
+            <!-- 变量 j -->
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-slate-400 font-sans">列索引 (j)</span>
+              <span class="font-bold text-slate-800 text-sm" id="var-j">-</span>
+            </div>
+            <!-- 变量 down -->
+            <div class="p-2 rounded-xl bg-blue-50/70 border border-blue-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-blue-600 font-sans font-medium">down (memo[j])</span>
+              <span class="font-bold text-blue-700 text-sm" id="var-down">-</span>
+            </div>
+            <!-- 变量 right -->
+            <div class="p-2 rounded-xl bg-amber-50/70 border border-amber-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-amber-600 font-sans font-medium">right (memo[j-1])</span>
+              <span class="font-bold text-amber-700 text-sm" id="var-right">-</span>
+            </div>
+            <!-- 当前计算 memo[j] -->
+            <div class="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-emerald-600 font-sans font-medium">memo[j] 结果</span>
+              <span class="font-bold text-emerald-700 text-sm" id="var-memoj">-</span>
+            </div>
+            <!-- 最终返回值 -->
+            <div class="p-2 rounded-xl bg-purple-50/70 border border-purple-200 flex flex-col gap-0.5">
+              <span class="text-[10px] text-purple-600 font-sans font-medium">memo[n-1] 终点</span>
+              <span class="font-bold text-purple-700 text-sm" id="var-return">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 源码调试 / 题目描述 / 递推精讲 三 Tab 面板 -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
+          <!-- 面板顶栏 (Tab 切换区) -->
+          <div class="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center justify-between gap-2 flex-shrink-0">
+            <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+            <div class="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 flex-shrink-0">
+              <button id="btn-tab-code" class="tab-btn active px-2.5 py-1 rounded text-xs font-bold transition bg-blue-600 text-white shadow-2xs flex items-center gap-1.5">
+                <i class="fa-solid fa-code text-[11px]"></i> <span>代码调试</span>
+              </button>
+              <button id="btn-tab-problem" class="tab-btn px-2.5 py-1 rounded text-xs font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1.5">
+                <i class="fa-regular fa-file-lines text-[11px]"></i> <span>题目描述</span>
+              </button>
+              <button id="btn-tab-analysis" class="tab-btn px-2.5 py-1 rounded text-xs font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-lightbulb text-[11px]"></i> <span>递推精讲</span>
+              </button>
+            </div>
+
+            <!-- 2. 阶段 4 专属小变体版本切换器 (v1: 内嵌 if / v2: 外层 for) -->
+            <div id="code-variant-bar" class="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 flex-shrink-0 whitespace-nowrap">
+              <button id="btn-variant-if" data-variant="if" class="variant-btn whitespace-nowrap active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs">
+                内嵌 if 分支
+              </button>
+              <button id="btn-variant-for" data-variant="for" class="variant-btn whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+                外层 for 循环
+              </button>
+            </div>
+
+            <!-- 3. 文件名与视口标签 -->
+            <div id="code-font-container" class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-xs font-bold text-slate-300 font-mono-code hidden sm:inline" id="code-lang-title">Solution.java</span>
+              <span class="flex gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </span>
+            </div>
+          </div>
+
+          <!-- 容器 1: 代码展示区 (带行号高亮) -->
+          <div id="code-view-container" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div class="p-3 bg-slate-900 text-slate-200 overflow-x-auto text-[12px] font-mono-code leading-relaxed select-text flex-1 min-h-0 scroll-smooth" id="code-display-container">
+              <!-- 动态渲染代码行 -->
+            </div>
+          </div>
+
+          <!-- 容器 2: 题目完整描述视图 -->
+          <div id="problem-view-container" class="hidden flex-1 min-h-0 p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
+            <!-- 动态渲染题目描述、用例与约束 -->
+          </div>
+
+          <!-- 容器 3: 5 步递推与 FAQs 精讲视图 -->
+          <div id="analysis-view-container" class="hidden flex-1 min-h-0 p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
+            <!-- 动态渲染 5 步递推与 FAQs -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 4. 底部知识卡片：5 步法系统解析 & 空间优化原理解析 -->
+    <section class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+      <div class="flex items-center gap-2 text-sm font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+        <i class="fa-solid fa-graduation-cap text-amber-500"></i>
+        <span>动态规划系统精讲 · 为什么可以空间压缩？</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <!-- 卡片 1: 空间压缩的核心本质 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2">
+          <div class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center text-[10px]">1</span>
+            <span>为什么只需要一维数组？</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            观察状态转移方程 <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800 font-mono-code">dp[i][j] = dp[i-1][j] + dp[i][j-1]</code>。
+          计算第 <code class="font-mono-code">i</code> 行第 <code class="font-mono-code">j</code> 列时，只依赖<strong>上一行的同列值</strong>与<strong>本行的前一列值</strong>。更早的历史行（如第 <code class="font-mono-code">i-2</code> 行）已完全无用，因此单行数组足以滚动复用！
+          </p>
+        </div>
+
+        <!-- 卡片 2: down 与 right 变量名之美 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2">
+          <div class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="w-5 h-5 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center text-[10px]">2</span>
+            <span>down 与 right 的物理含义</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            • <code class="font-mono-code text-blue-700 bg-blue-50 px-1 py-0.5 rounded font-bold">down = memo[j]</code>：更新前，<code class="font-mono-code">memo[j]</code> 仍保留着<strong>上一行</strong>的值，代表从上方走下来的路径数。<br/>
+            • <code class="font-mono-code text-amber-700 bg-amber-50 px-1 py-0.5 rounded font-bold">right = memo[j-1]</code>：更新后，<code class="font-mono-code">memo[j-1]</code> 已经写入了<strong>当前行</strong>的新值，代表从左方走过来的路径数。
+          </p>
+        </div>
+
+        <!-- 卡片 3: 两种方向的对偶性 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2">
+          <div class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="w-5 h-5 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">3</span>
+            <span>顺推与逆推的对偶性</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            顺推从起点 <code class="font-mono-code">(0,0)</code> 向右下扩散，最终汇聚于 <code class="font-mono-code">memo[n-1]</code>；逆推从终点 <code class="font-mono-code">(m-1,n-1)</code> 倒序向左上回溯，最终汇聚于 <code class="font-mono-code">memo[0]</code>。数学上完全对称且严密对偶！
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 4. 力扣原题描述与用例轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div class="px-5 py-3.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-sm font-bold">
+            <i class="fa-regular fa-file-lines"></i>
+          </span>
+          <h3 class="text-sm font-bold text-white">力扣原题描述</h3>
+        </div>
+        <button id="btn-close-problem-modal" title="关闭 (Esc)" class="w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="modal-problem-body" class="p-5 overflow-y-auto text-xs leading-relaxed text-slate-300 space-y-4 scroll-smooth">
+        <!-- 动态装载题目内容 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 算法模型与交互控制脚本 (深度模块装配) -->
+  <script type="module">
+    import { VisualizerAppController } from '/src/core/visualizer-app-controller.ts';
+    
+    const app = new VisualizerAppController({ mode: 'full' });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => app.init());
+    } else {
+      app.init();
+    }
+  </script>
+</body>
+</html>

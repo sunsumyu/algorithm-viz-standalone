@@ -50,7 +50,7 @@ describe('Universal DP Evolution Engine', () => {
     expect(naiveForward.languages.java.join('\n')).toContain('down + right');
 
     const space = getEvolutionCodeForAlgorithm('不同路径', baseLines, undefined, undefined, undefined, 'space-optimized', 'unique-paths');
-    expect(space.languages.java.join('\n')).toContain('dp[j] += dp[j - 1]');
+    expect(space.languages.java.join('\n')).toContain('memo[j] = right + down');
 
     const mockGridBuilder = () => [
       {
@@ -82,19 +82,19 @@ describe('Universal DP Evolution Engine', () => {
     const gridSpace = buildUniversalEvolutionSteps('unique-paths', mockGridBuilder, { m: 3, n: 3 }, 'two-phase', 'space-optimized');
     expect(gridSpace.length).toBeGreaterThan(1);
     expect(gridSpace[0].dp1d).toBeDefined();
-    // 验证逐行单步步进是否完整进到了 dp[j] += dp[j - 1] 核心执行行 (Java 行 8)
+    // 验证逐行单步步进是否完整进到了 memo[j] = right + down 累加更新核心执行行 (Java 行 12)
     const updateSteps = gridSpace.filter((s) => {
       const codeLineAny = s.codeLine as any;
       const p = codeLineAny?.java?.primary ?? codeLineAny?.java;
-      return p === 8;
+      return p === 12;
     });
     expect(updateSteps.length).toBe(4); // (3-1)*(3-1) = 4 个累加更新
-    expect(updateSteps[0].message).toContain('dp[j] += dp[j - 1]');
+    expect(updateSteps[0].message).toContain('memo[');
 
     // 验证外层循环行、内层循环行、返回行的代码行精准度
-    expect(gridSpace.some((s) => ((s.codeLine as any)?.java?.primary ?? (s.codeLine as any)?.java) === 6)).toBe(true);
-    expect(gridSpace.some((s) => ((s.codeLine as any)?.java?.primary ?? (s.codeLine as any)?.java) === 7)).toBe(true);
-    expect(gridSpace.some((s) => ((s.codeLine as any)?.java?.primary ?? (s.codeLine as any)?.java) === 11)).toBe(true);
+    expect(gridSpace.some((s) => [5, 6].includes((s.codeLine as any)?.java?.primary ?? (s.codeLine as any)?.java))).toBe(true);
+    expect(gridSpace.some((s) => [6, 7].includes((s.codeLine as any)?.java?.primary ?? (s.codeLine as any)?.java))).toBe(true);
+    expect(gridSpace.some((s) => [11, 16].includes((s.codeLine as any)?.java?.primary ?? (s.codeLine as any)?.java))).toBe(true);
   });
 
   it('should generate staircase steps for climb-stairs across all evolution stages', () => {

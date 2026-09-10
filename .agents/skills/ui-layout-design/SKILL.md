@@ -1,26 +1,65 @@
 ---
 name: ui-layout-design
-description: Standard guidelines and design patterns for algorithm visualizer responsive layouts, maximizing visual canvas area and eliminating panel redundancy.
+description: Standard guidelines and design patterns for algorithm visualizer responsive layouts, maximizing visual canvas area, eliminating panel redundancy, and ensuring robust splitter resizing.
 ---
 
-# Algorithm Visualizer UI Layout Design Guidelines
+# 算法可视化 UI 布局与交互设计规范 (UI Layout & Interaction Design)
 
-## Core Principles
+本规范基于整个项目历次 UI 审查与踩坑教训制定，旨在保障算法沙盘的**视觉聚焦度、交互自洽性与极简高效性**。
 
-1. **Canvas Dominance (主画布优先)**
-   - The core visualization node (SVG trees, graphs, execution arrays) MUST take at least 60-70% of the visible vertical and horizontal viewport area.
-   - Never stack more than 2 high-cardinality panels vertically above the visualizer canvas.
+---
 
-2. **Zero Redundancy (消除数据冗余)**
-   - Consolidate stat displays: Merge "Current Processing Item", "Path", and "Available Options" into unified, single-source stat badges/chips.
-   - Do NOT duplicate state monitor panels across multiple cards.
+## 一、核心布局准则 (Layout Principles)
 
-3. **Integrated Control Top Bar (一体化控制顶栏)**
-   - Group Inputs, Dialer/Keypad Selectors, Action Buttons, and Live Stat Chips into a single horizontal glassmorphic control bar.
-   - Keep interactive selectors (e.g. phone dialer keys) compact (`40px` - `44px` height) with inline badges.
+### 1. 主画布黄金面积优先 (Canvas Dominance)
+- 核心算法可视化区域（网格、SVG 递归树、图拓扑、物理沙盘）必须占据可视视口 **60% ~ 70%** 的总面积。
+- 严禁出现“中间是小方块、上下是两条超长大边框”的失衡结构。
 
-4. **Floating Viewport Controls (悬浮画布控制)**
-   - SVG decision trees and graph nodes must feature standard interactive zoom (+/-), focus (📍), and reset (🎯) controls floating in the canvas corner.
+### 2. 彻底消灭“俄罗斯套娃”嵌套框 (Zero Nested Box Redundancy)
+- **外部单层大卡片法则**：一个主要功能区外部保留一层高质感容器（Card）即可。
+- **严禁过度包装**：坚决禁止在一个文字、一段日志或一个属性外层再套一层独立 Card / Border。
+- **去除冗余双语标签**：严禁出现如 `状态转移方程 (Transition Formula)` 的中英双语同时堆叠，一律保留语义最清晰简练的单一中文标签。
 
-5. **Responsive Code & Log Split (代码与日志并列)**
-   - Place Code Panel and Execution Logs side-by-side or in a collapsible sidebar so main visual space is unobstructed.
+### 3. 顶栏与侧边栏自适应（防挤出窗口）
+- 左侧悬浮目录或侧边面板展开时，右侧主内容区必须**弹性自适应缩小（Flex-1 / Auto-layout）**，绝不允许将右侧内容顶出视口或遮挡操作按钮。
+
+---
+
+## 二、控件与参数排布黄金顺序 (Control Order Standards)
+
+### 1. 输入控制栏与顶栏排布
+- **顶栏文字防遮挡与弹性伸缩**：
+  - 顶栏左侧容器（如 `.dsp-header-left`）必须弹性自适应（`flex-shrink: 0; min-width: 0;`），**严禁写死固定最大宽度（如 380px）与 overflow: hidden** 导致标题、模式与复杂度徽章被直接切断遮挡。
+  - 标题设置省略号与浮动原生 title，辅助徽章在视口小于阈值时响应式优雅隐藏，确保所有可见文本完整。
+- **重新生成/应用按钮使用明确语义文字**：
+  - 顶栏用于应用新输入参数并重新生成演示的按钮，**必须使用明确中文（统一为“应用”或“运行”）**，严禁单独放置一个播放三角图标 `▶` 造成用户与底部播放控制产生混淆。
+  - 按钮样式、高度（如 24px）、圆角和字号必须与紧邻的“重置”按钮保持严格对称。
+- **输入框与标签尾部标点防重**：
+  - 必须对输入项 `label` 进行尾部冒号过滤 `label.replace(/[:：]\s*$/, '')`，杜绝出现 `容量::` 等双冒号。
+- **输入框与重置按钮排布**：
+  - 输入框按从左至右自然流式排列。
+  - **“重置”按钮必须排在所有输入框和应用按钮的最末尾**，严禁将重置按钮夹在输入框中间。
+- 播放控制栏（播放/暂停/单步/滑块）优先居中或置于核心画布的右下角，避免遮挡画布核心内容。
+- 步进进度条必须横贯最底部，保证时间轴推演清晰。
+
+### 2. 状态变量与指标看板排布
+- **游标动态变量优先**：动态游标变量（如 $i, j, k$、当前暂存寄存器）排在最左侧或最上方显著位置。
+- **静态规模参数靠后**：静态参数（如规模 $m, n$、目标值 $target$）排在后面。
+- 算式面板必须展示**实际数值代入**，避免单纯展示抽象字母公式。
+
+### 3. 原题信息统一入口
+- 顶部导航栏必须提供题目原题入口。
+- 题目弹窗统一命名为：`📋 算法题目描述`。
+- 包含 LeetCode / 洛谷原题编号、完整题目条件与约束范围。
+
+---
+
+## 三、拖拽分割条与响应式安全边界 (Splitter & Resizer)
+
+1. **绝对安全最小尺寸 (Min-Bounds Protection)**：
+   - 水平分割条：两侧面板 `minWidth` 不得低于 `320px`。
+   - 垂直分割条：上下卡片 `minHeight` 不得低于 `200px`。
+   - 严禁让用户能把面板拉死，造成按钮遮盖或内容溢出。
+2. **尺寸持久化 (Dimension Persistence)**：
+   - 用户拖拽后的宽高数据必须自动持久化保存到 `localStorage` 中。
+   - 用户切换页面或刷新应用后必须自动恢复设定尺寸，杜绝每次重置回默认尺寸。

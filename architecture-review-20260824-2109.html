@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>「不同路径」与通用可视化架构深度演进审查报告 (Architecture Review)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .code-chip { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 md:p-12">
+  <div class="max-w-6xl mx-auto space-y-10">
+    
+    <!-- 顶部页头 -->
+    <header class="border-b border-slate-800 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="px-2.5 py-1 rounded bg-blue-500/20 text-blue-400 text-xs font-bold border border-blue-500/30 uppercase tracking-wide">
+            /improve-codebase-architecture
+          </span>
+          <span class="text-slate-400 text-sm">阶段：第二轮深度重构候选评审</span>
+        </div>
+        <h1 class="text-3xl font-extrabold text-white mt-2 tracking-tight">
+          「不同路径」与通用可视化体系 · 深度架构审查报告
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">
+          针对当前「不同路径」双端模板（精讲版 vs 极速版）及多模型生态，识别浅层模块摩擦，提供深度模块化演进候选方案。
+        </p>
+      </div>
+      <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-xs space-y-1">
+        <div class="text-slate-400">当前已解耦成果：</div>
+        <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1.5"></i>YAML 规范事实源 (6款模型)</div>
+        <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1.5"></i>通用推导引擎 (UniversalStageEngine)</div>
+        <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1.5"></i>无损状态路由 (VisualizerStateRouter)</div>
+      </div>
+    </header>
+
+    <!-- 总体评审洞察 -->
+    <section class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/60">
+      <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass-chart text-indigo-400"></i>
+        当前架构摩擦点诊断 (Architectural Friction Analysis)
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+          <div class="font-bold text-amber-400 mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-clone"></i> 1. 双端 UI 视觉渲染存在大量内联
+          </div>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            两端 HTML 内依然包含手写的 SVG 递归树自适应布局 (~240行) 与网格格点 DOM 拼接逻辑，视觉表现层缺乏通用适配器 (VisualAdapter)。
+          </p>
+        </div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+          <div class="font-bold text-sky-400 mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-play"></i> 2. 播放控制器与时间轴逻辑重复
+          </div>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            <code class="code-chip text-[11px] text-sky-300">unique-paths.html</code> 与 <code class="code-chip text-[11px] text-sky-300">lite.html</code> 各自重复维护了定时器管理、边界自动暂停、滑块拖拽及倍速调节机制。
+          </p>
+        </div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+          <div class="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-cube"></i> 3. 页面壳层可进一步收敛为通用容器
+          </div>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            目前页面已经能够通过 <code class="code-chip text-[11px] text-emerald-300">?model=...</code> 动态装配 6 种算法模型，可正式提升为单一标准通用探索容器，消除题目特化的 HTML 壳。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 候选方案列表 -->
+    <div class="space-y-8">
+      
+      <!-- 候选方案 1: 视觉适配器深模块 (Grid & Tree VisualAdapter) -->
+      <div class="bg-slate-800/90 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/40">候选方案 1</span>
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-xs font-semibold">推荐强度：Strong (最高收益)</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white mt-1">
+              提炼视觉适配器深模块 (Grid & RecursionTree VisualAdapter)
+            </h3>
+          </div>
+        </div>
+
+        <div class="text-sm text-slate-300 space-y-2">
+          <p><strong class="text-white">涉及文件：</strong> <code class="code-chip text-blue-300">src/core/renderers/grid-visual-adapter.ts</code>, <code class="code-chip text-blue-300">unique-paths.html</code>, <code class="code-chip text-blue-300">unique-paths-lite.html</code></p>
+          <p><strong class="text-white">问题 (Problem)：</strong> 极速版与精讲版中均内嵌了约 300 行 DOM/SVG 拼接代码（包括复杂递归树的动态节点跨度计算、高亮连线与网格格点物理状态徽章）。任何视觉样式修改需要跨两个 HTML 文件同步。</p>
+          <p><strong class="text-white">解决方案 (Solution)：</strong> 构建统一的 <code class="code-chip text-emerald-300">GridVisualAdapter</code> 与 <code class="code-chip text-emerald-300">RecursionTreeAdapter</code> 深度模块，对外暴露纯净接口 <code class="code-chip text-xs">adapter.render(container, stepSnapshot)</code>，内部封装坐标计算、SVG 节点连接、动画平滑过渡与自适应缩放。</p>
+          <p><strong class="text-white">收益 (Leverage & Locality)：</strong> 彻底剥离 HTML 视图中的绘图脏逻辑（减少 ~350 行内联代码）；使后续所有的网格 DP（如最小路径和、最大正方形等）获得即开即用的高品质视觉渲染。</p>
+        </div>
+
+        <!-- Before / After 对比图 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs font-bold text-rose-400 mb-2 uppercase tracking-wide">改造前：浅层散落的 DOM/SVG 绘制</div>
+            <div class="mermaid">
+graph TD
+    subgraph HTML_Lite ["unique-paths-lite.html"]
+      LiteGrid["内联二维网格 DOM 拼装"]
+      LiteTree["内联 240 行 SVG 树自适应算法"]
+    end
+    subgraph HTML_Full ["unique-paths.html"]
+      FullGrid["内联网格与高亮状态"]
+      Full1D["内联 1D 数组 Slot 拼装"]
+    end
+            </div>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs font-bold text-emerald-400 mb-2 uppercase tracking-wide">改造后：高内聚 VisualAdapter 深度模块</div>
+            <div class="mermaid">
+graph TD
+    subgraph CoreAdapter ["src/core/renderers/grid-visual-adapter.ts (深模块)"]
+      GridAdapter["GridVisualAdapter.render(el, step)"]
+      TreeAdapter["RecursionTreeAdapter.render(svgEl, step)"]
+    end
+    LiteView["unique-paths-lite.html"] -->|一行调用| GridAdapter
+    LiteView -->|一行调用| TreeAdapter
+    FullView["unique-paths.html"] -->|一行调用| GridAdapter
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 候选方案 2: 时间轴播放控制器深模块 (PlaybackTimelineController) -->
+      <div class="bg-slate-800/90 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-xs font-bold border border-sky-500/40">候选方案 2</span>
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-xs font-semibold">推荐强度：Strong</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white mt-1">
+              时间轴与自动播放控制器深模块 (PlaybackTimelineController)
+            </h3>
+          </div>
+        </div>
+
+        <div class="text-sm text-slate-300 space-y-2">
+          <p><strong class="text-white">涉及文件：</strong> <code class="code-chip text-blue-300">src/core/playback-timeline-controller.ts</code>, <code class="code-chip text-blue-300">unique-paths.html</code>, <code class="code-chip text-blue-300">unique-paths-lite.html</code></p>
+          <p><strong class="text-white">问题 (Problem)：</strong> 播放/暂停状态机、自动步进定时器 (`setInterval`)、倍速切换、滑块进度同步、步长溢出校验等在精讲版与极速版中各自实现，存在定时器泄露与速度同步不一致的潜在边界缺陷。</p>
+          <p><strong class="text-white">解决方案 (Solution)：</strong> 将播放控制提炼为单一职责的 <code class="code-chip text-sky-300">PlaybackTimelineController</code> 类，对外提供 <code class="code-chip text-xs">play() / pause() / toggle() / stepForward() / stepBackward() / seek(index) / setSpeed(ms)</code>，内置定时器生命周期管理与事件监听。</p>
+          <p><strong class="text-white">收益 (Locality & Leverage)：</strong> 保证所有算法画板具有 100% 一致的播放交互行为，支持在单元测试中对其进行精确的虚拟时间轴测试。</p>
+        </div>
+
+        <!-- Before / After 对比图 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs font-bold text-rose-400 mb-2 uppercase tracking-wide">改造前：分散的手写 setInterval 与变量</div>
+            <div class="mermaid">
+graph LR
+    subgraph HTML1 ["unique-paths.html"]
+      T1["let playTimer / isPlaying / playSpeed"]
+      P1["togglePlayPause() / stepForward()"]
+    end
+    subgraph HTML2 ["unique-paths-lite.html"]
+      T2["let playTimer / isPlaying / playSpeed"]
+      P2["togglePlayPause() / stepForward()"]
+    end
+            </div>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs font-bold text-emerald-400 mb-2 uppercase tracking-wide">改造后：自治受控时间轴深模块</div>
+            <div class="mermaid">
+graph LR
+    Controller["PlaybackTimelineController<br/>• 严格状态机<br/>• 自动防边界溢出<br/>• 零定时器泄漏"]
+    V1["unique-paths.html"] -->|委托| Controller
+    V2["unique-paths-lite.html"] -->|委托| Controller
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 候选方案 3: 泛化算法探索看板容器 (Universal Stage Explorer) -->
+      <div class="bg-slate-800/90 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs font-bold border border-purple-500/40">候选方案 3</span>
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-xs font-semibold">推荐强度：Worth exploring</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white mt-1">
+              通用算法演化探索画板 (Universal Stage Explorer Container)
+            </h3>
+          </div>
+        </div>
+
+        <div class="text-sm text-slate-300 space-y-2">
+          <p><strong class="text-white">涉及文件：</strong> <code class="code-chip text-blue-300">stage-explorer.html</code>, <code class="code-chip text-blue-300">stage-explorer-lite.html</code></p>
+          <p><strong class="text-white">问题 (Problem)：</strong> 页面虽然已实现通过 `?model=...` 动态装载 6 个模型，但文件名仍保留为特定题目的 `unique-paths.html`。新算法开发者可能会误以为需要为每道题复制一份 HTML 文件。</p>
+          <p><strong class="text-white">解决方案 (Solution)：</strong> 将主容器命名规范化为通用的 <code class="code-chip text-purple-300">stage-explorer.html</code> 与 <code class="code-chip text-purple-300">stage-explorer-lite.html</code>，在根目录下保留 <code class="code-chip text-xs">unique-paths.html</code> 作为平滑向后兼容别名。</p>
+          <p><strong class="text-white">收益 (Navigability)：</strong> 代码库概念更加清晰，彻底确立「编写一个 YAML 规范 = 自动获得全套精讲/极速双画板」的高效开发者体验。</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 评审总结与行动建议 -->
+    <section class="bg-gradient-to-r from-blue-950/80 to-indigo-950/80 rounded-2xl p-6 md:p-8 border border-blue-800/60 space-y-4">
+      <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-flag-checkered text-blue-400"></i>
+        首席架构师推荐行动序列 (Recommended Execution Order)
+      </h3>
+      <div class="space-y-3 text-sm text-slate-300">
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
+          <div>
+            <strong class="text-white">首选落地：提炼视觉适配器深模块 (Grid & RecursionTree VisualAdapter)</strong>
+            <p class="text-slate-400 text-xs mt-0.5">消除 HTML 内最后一大块内联逻辑（240行 SVG 树与网格 DOM 渲染），使网格与树形表现层完全独立于业务页面。</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-slate-700 text-slate-300 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
+          <div>
+            <strong class="text-white">次选落地：统一时间轴播放控制器 (PlaybackTimelineController)</strong>
+            <p class="text-slate-400 text-xs mt-0.5">封装自动播放、倍速调节与步进状态机，消灭双端重复定时器管理。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

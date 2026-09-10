@@ -32,16 +32,16 @@ export const StockWithCooldownSpec: AlgorithmSpec = {
   semanticLines: {
     entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
     guard: { java: 3, cpp: 3, python: 3, javascript: 2 },
-    init: { java: [5, 7], cpp: [5, 7], python: [4, 6], javascript: [4, 6] },
-    loopCheck: { java: 8, cpp: 8, python: 7, javascript: 7 },
+    init: { java: [5, 7], cpp: [5, 7], python: [4, 5], javascript: [4, 6] },
+    loopCheck: { java: 8, cpp: 8, python: 6, javascript: 7 },
     stateTransfer: {
       java: { primary: [9, 11], context: [8] },
       cpp: { primary: [9, 11], context: [8] },
-      python: { primary: [8, 10], context: [7] },
+      python: { primary: [7, 9], context: [6] },
       javascript: { primary: [8, 10], context: [7] },
     },
-    loopExit: { java: 8, cpp: 8, python: 7, javascript: 7 },
-    returnResult: { java: 13, cpp: 13, python: 11, javascript: 12 },
+    loopExit: { java: 8, cpp: 8, python: 6, javascript: 7 },
+    returnResult: { java: 13, cpp: 13, python: 10, javascript: 12 },
   },
   code: {
     languages: {

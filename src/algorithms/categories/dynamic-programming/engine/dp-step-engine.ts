@@ -52,6 +52,7 @@ export class DpStepEngine {
     'stock-cooldown': 'best-time-to-buy-and-sell-stock-with-cooldown',
     'stock-fee': 'best-time-to-buy-and-sell-stock-with-transaction-fee',
     'best-time-stock': 'best-time-to-buy-and-sell-stock',
+    'is-subsequence': 'is-subseq',
   };
 
   public static register(spec: AlgorithmSpec): void {

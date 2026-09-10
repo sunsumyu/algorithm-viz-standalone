@@ -4,7 +4,9 @@
  */
 
 import type { Plugin, PluginContext } from '../../core/types';
-import { algorithmManager, AlgorithmConfig } from '../../core/algorithm-manager';
+import { algorithmRegistry } from '../../core/algorithm-registry';
+import { viewMountEngine } from '../../core/view-mount-engine';
+import type { AlgorithmMetadata } from '../../core/registry';
 import { SplitterEngine } from '../../core/splitter-engine';
 import { getRecentAlgorithmIds } from '../../core/recent-algorithms';
 import {
@@ -13,156 +15,20 @@ import {
   removeSearchHistory,
   clearSearchHistory,
 } from './search-history';
-
-// 算法的 SVG 图标 (内联)
-const ALGORITHM_ICONS: Record<string, string> = {
-  bracket: '📚',
-  lca: '🌳',
-  'tree-invert': '🔄',
-  'insertion-sort': '📊',
-  'quick-sort': '⚡',
-  'binary-search': '🔍',
-  'jump-game': '🦘',
-  combination: '',
-  candy: '🍬',
-  'phone-letters': '📞',
-  lemonade: '🥤',
-  permutation: '🔀',
-  'gas-station': '⛽',
-  subset: '',
-  interval: '📏',
-  nqueen: '👑',
-  fibonacci: '🔢',
-  'merge-intervals': '🧩',
-  'climb-stairs': '🪜',
-  'palindrome-partition': '🪞',
-  'greedy-theory': '📘',
-  'greedy-week-summary': '🧭',
-  'greedy-week-summary-2': '🧭',
-  'greedy-week-summary-3': '🧭',
-  'greedy-week-summary-4': '🧭',
-  'greedy-final-summary': '🏁',
-  // 新增贪心算法
-  'assign-cookies': '🍪',
-  'wiggle-subsequence': '📈',
-  'max-subarray': '📊',
-  'best-time-stock': '📈',
-  'can-jump': '🏃',
-  'maximize-sum-k': '➖',
-  'reconstruct-queue': '👥',
-  'queue-vector-explained': '📚',
-  'min-arrows': '🏹',
-  'non-overlapping': '📐',
-  'partition-labels': '🔤',
-  'monotone-digits': '9️⃣',
-  'tree-cameras': '📹',
-  // 新增树算法
-  'tree-symmetric': '🪞',
-  'path-sum': '🛤️',
-  'build-tree': '🏗️',
-  'bst-search': '🔍',
-  'min-depth': '📏',
-  'balanced': '⚖️',
-  'left-leaves': '🍃',
-  'all-paths': '🛤️',
-  'count-nodes': '🔢',
-  'bottom-left': '🎯',
-  'max-tree': '🌲',
-  'merge-trees': '🤝',
-  'build-tree-2': '🔨',
-  'bst-lca': '🔗',
-  'bst-insert': '➕',
-  'bst-min-diff': '📏',
-  'bst-modes': '📊',
-  'bst-delete': '🗑️',
-  'bst-trim': '✂️',
-  'sorted-array-to-bst': '🔄',
-  'bst-to-gst': '💰',
-  'replace-digits': '🔢',
-  'four-sum': '🎯',
-  'hash-table-theory': '📖',
-  'intersection-arrays': '🔀',
-  'happy-number': '😊',
-  'four-sum-ii': '🧮',
-  'ransom-note': '📰',
-  'reverse-string-ii': '🔁',
-  'right-rotate-string': '🔄',
-  'str-str': '🔍',
-  'repeated-substring': '🔁',
-  'stack-queue-theory': '📖',
-  'my-queue': '🔄',
-  'my-stack': '🔃',
-  'remove-adjacent-duplicates': '🧹',
-  'eval-rpn': '🧮',
-  'sliding-window-max': '📊',
-  'top-k-frequent': '🏆',
-  'array-theory': '📖',
-  'sorted-squares': '²',
-  'range-sum': 'Σ',
-  'buy-land': '🏞️',
-  'array-summary': '📝',
-  'next-greater-element-i': '🔍',
-  'next-greater-element-ii': '🔄',
-  'largest-rectangle-histogram': '📊',
-  'graph-theory': '📖',
-  'dfs-theory': '🔍',
-  'bfs-theory': '🌊',
-  'reachable-paths': '🛤️',
-  'islands-bfs': '🏝️',
-  'max-island-area': '📐',
-  'total-island-area': 'Σ',
-  'sink-islands': '🌊',
-  'water-flow': '💧',
-  'make-largest-island': '🏗️',
-  'coastline': '🌊',
-  'string-migration': '🔄',
-  'strongly-connected': '🔗',
-  'union-find-theory': '🌲',
-  'find-route': '🗺️',
-  'redundant-edge': '✂️',
-  'redundant-edge-ii': '✂️',
-  'mst-prim': '🌿',
-  'mst-kruskal': '🔗',
-  'topological-sort': '📐',
-  'dijkstra-basic': '📏',
-  'dijkstra-heap': '🔮',
-  'bellman-ford': '🔄',
-  'spfa': '⚡',
-  'negative-cycle': '⚠️',
-  'floyd': '🧮',
-  'a-star': '⭐',
-  'limited-shortest-path': '🔢',
-  'shortest-path-summary': '📝',
-  'graph-summary': '🗺️',
-};
-
+import { CATEGORY_CONFIG } from '../../core/category-config';
+import { algoSearchCatalog } from '../../core/algo-search-catalog';
+import { catalogPresenter } from '../../core/renderers/catalog-presenter';
 import {
-  CATEGORY_CONFIG,
-  getDifficultyConfig,
-  type CategoryConfig,
-} from '../../core/category-config';
-
-const CATEGORY_ICON_CLASS: Record<string, string> = {
-  stack: 'stack',
-  tree: 'tree',
-  sort: 'sort',
-  search: 'search',
-  greedy: 'greedy',
-  backtracking: 'backtracking',
-  'dynamic-programming': 'dynamic-programming',
-  array: 'array',
-  'linked-list': 'linked-list',
-  'hash-table': 'hash-table',
-  string: 'string',
-  'two-pointers': 'two-pointers',
-  'monotonic-stack': 'monotonic-stack',
-  graph: 'graph',
-};
+  CourseType,
+  getCourseStats,
+  filterAlgorithmsByCourse,
+} from '../../core/curriculum-filter';
 
 // ========== State ==========
 let currentCategory: string = 'all';
+let currentCourse: CourseType = 'all';
 let searchQuery: string = '';
-let allAlgorithms: AlgorithmConfig[] = [];
+let allAlgorithms: AlgorithmMetadata[] = [];
 /** 展开的分类集合 */
 let expandedCategories: Set<string> = new Set();
 /** 搜索键盘快捷键处理器引用，用于 destroy 时移除 */
@@ -171,142 +37,82 @@ let _searchKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 // ========== DOM Helpers ==========
 const $ = (id: string) => document.getElementById(id);
 
-// ========== Group & Sort Algorithms ==========
-function groupByCategory(algorithms: AlgorithmConfig[]): Map<string, AlgorithmConfig[]> {
-  const groups = new Map<string, AlgorithmConfig[]>();
-  algorithms.forEach(algo => {
-    const category = algo.category || 'other';
-    if (!groups.has(category)) {
-      groups.set(category, []);
-    }
-    groups.get(category)!.push(algo);
-  });
-  // 按 levelOrder 排序
-  groups.forEach(list => list.sort((a, b) => (a.levelOrder ?? 999) - (b.levelOrder ?? 999)));
-  return groups;
+// ========== Course Filter UI ==========
+function renderCourseFilterUI(): void {
+  const contentTabs = $('content-course-tabs-container');
+  const sidebarFilter = $('sidebar-course-filter-container');
+  const stats = getCourseStats(allAlgorithms);
+
+  if (contentTabs) {
+    catalogPresenter.renderCourseFilterTabs(contentTabs, currentCourse, stats, (course) => {
+      setCourse(course);
+    });
+  }
+
+  if (sidebarFilter) {
+    catalogPresenter.renderSidebarCourseFilter(sidebarFilter, currentCourse, stats, (course) => {
+      setCourse(course);
+    });
+  }
 }
 
-// ========== Helpers ==========
-function escapeHtml(str: string): string {
-  const el = document.createElement('span');
-  el.textContent = str;
-  return el.innerHTML;
+function setCourse(course: CourseType): void {
+  if (currentCourse === course) return;
+  currentCourse = course;
+  renderCourseFilterUI();
+  updateContentHeader();
+  renderCards();
+  renderSidebarCategories();
 }
 
-// ========== Highlight Text ==========
-function highlightText(text: string, query: string): string {
-  if (!query.trim()) return escapeHtml(text);
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
-  return text
-    .split(regex)
-    .map((part, i) => {
-      const safe = escapeHtml(part);
-      return i % 2 === 1 ? `<span class="search-highlight">${safe}</span>` : safe;
-    })
-    .join('');
-}
-
-// ========== Render Sidebar Categories (关卡链版) ==========
+// ========== Render Sidebar Categories (委托给 CatalogPresenter 深模块) ==========
 function renderSidebarCategories(): void {
   const container = $('sidebar-categories');
   if (!container) return;
 
-  container.innerHTML = '';
-  const groups = groupByCategory(allAlgorithms);
-
-  // Sort categories
-  const sortedCategories = Array.from(groups.keys()).sort((a, b) => {
-    const orderA = CATEGORY_CONFIG[a]?.order ?? 999;
-    const orderB = CATEGORY_CONFIG[b]?.order ?? 999;
-    return orderA - orderB;
-  });
-
-  // "All" button
-  const allItem = document.createElement('div');
-  allItem.className = 'category-item' + (currentCategory === 'all' ? ' active' : '');
-  allItem.dataset.category = 'all';
-  allItem.innerHTML = `
-    <span class="cat-icon">📋</span>
-    <span class="cat-name">全部算法</span>
-    <span class="cat-count">${allAlgorithms.length} 个</span>
-  `;
-  allItem.addEventListener('click', () => selectCategory('all'));
-  container.appendChild(allItem);
-
-  // "Recent" button
   const recentIds = getRecentAlgorithmIds();
-  const recentItem = document.createElement('div');
-  recentItem.className = 'category-item' + (currentCategory === 'recent' ? ' active' : '');
-  recentItem.dataset.category = 'recent';
-  recentItem.innerHTML = `
-    <span class="cat-icon">🕒</span>
-    <span class="cat-name">最近访问</span>
-    <span class="cat-count">${recentIds.length} 个</span>
-  `;
-  recentItem.addEventListener('click', () => selectCategory('recent'));
-  container.appendChild(recentItem);
+  const filteredAlgos = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
 
-  // Each category as expandable group
-  sortedCategories.forEach(category => {
-    const algoList = groups.get(category)!;
-    const config = CATEGORY_CONFIG[category] || { name: category, icon: '📁', color: '#6c7086', colorRgb: '108, 112, 134', order: 999, theme: '#1e1e2e' };
-    const isExpanded = expandedCategories.has(category);
-
-    const group = document.createElement('div');
-    group.className = 'sidebar-category-group';
-    group.style.setProperty('--cat-color', config.color);
-
-    // Category header (clickable to expand/collapse)
-    const header = document.createElement('div');
-    header.className = 'sidebar-category-header' + (currentCategory === category ? ' active' : '') + (isExpanded ? ' expanded' : '');
-    header.innerHTML = `
-      <span class="cat-icon">${config.icon}</span>
-      <span class="cat-name">${config.name}</span>
-      <span class="cat-count">${algoList.length} 关</span>
-      <span class="category-chevron">${isExpanded ? '▾' : '▸'}</span>
-    `;
-    header.addEventListener('click', () => {
-      if (expandedCategories.has(category)) {
-        // 已展开：只折叠，不切换分类选中状态
-        expandedCategories.delete(category);
-        renderSidebarCategories();
-      } else {
-        // 未展开：展开，并选中该分类
+  catalogPresenter.renderCategoryNav(container, {
+    algorithms: filteredAlgos,
+    currentCategory,
+    expandedCategories,
+    recentCount: recentIds.length,
+    onSelectCategory: (category) => selectCategory(category),
+    onSelectAlgorithm: (algoId, category) => {
+      selectCategory(category);
+      viewMountEngine.showAlgorithm(algoId);
+    },
+    onToggleCategory: (category, expanded) => {
+      if (expanded) {
         expandedCategories.add(category);
         selectCategory(category);
+      } else {
+        expandedCategories.delete(category);
+        renderSidebarCategories();
       }
-    });
-    group.appendChild(header);
+    },
+  });
 
-    // Level list (shown when expanded or selected)
-    if (isExpanded) {
-      const levelList = document.createElement('div');
-      levelList.className = 'sidebar-levels';
+  renderSidebarRecentFooter();
+}
 
-      algoList.forEach((algo, index) => {
-        const diff = getDifficultyConfig(algo.difficulty);
-        const levelNum = index + 1;
-        const levelItem = document.createElement('div');
-        levelItem.className = 'sidebar-level-item';
-        levelItem.style.setProperty('--level-color', diff.color);
-        levelItem.innerHTML = `
-          <span class="level-dot" style="color: ${diff.color}">${diff.dot}</span>
-          <span class="level-number">${levelNum}</span>
-          <span class="level-name">${algo.name}</span>
-        `;
-        levelItem.addEventListener('click', () => {
-          selectCategory(category);
-          // Navigate to the algorithm
-          algorithmManager.showAlgorithm(algo.id);
-        });
-        levelList.appendChild(levelItem);
-      });
+// ========== Render Sidebar Recent Footer (最底部的最近访问 3 个算法) ==========
+function renderSidebarRecentFooter(): void {
+  const container = $('sidebar-recent-footer');
+  if (!container) return;
 
-      group.appendChild(levelList);
-    }
+  const recentIds = getRecentAlgorithmIds();
+  const top3Ids = recentIds.slice(0, 3);
+  const top3Algos = top3Ids
+    .map((id) => allAlgorithms.find((a) => a.id === id))
+    .filter((a): a is AlgorithmMetadata => Boolean(a));
 
-    container.appendChild(group);
+  catalogPresenter.renderSidebarRecentFooter(container, {
+    recentAlgorithms: top3Algos,
+    totalRecentCount: recentIds.length,
+    onSelectAlgorithm: (algoId) => viewMountEngine.showAlgorithm(algoId),
+    onViewAllRecent: () => selectCategory('recent'),
   });
 }
 
@@ -335,32 +141,43 @@ function updateContentHeader(): void {
   if (!titleEl || !countEl) return;
 
   const visibleCards = getVisibleCards();
+  const courseFiltered = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
 
   if (searchQuery.trim()) {
     titleEl.innerHTML = `搜索结果`;
     countEl.textContent = `(${visibleCards.length} 个匹配)`;
   } else if (currentCategory === 'all') {
-    titleEl.innerHTML = `全部算法`;
-    countEl.textContent = `(${allAlgorithms.length} 个)`;
+    if (currentCourse === 'zuo') {
+      titleEl.innerHTML = `🎓 算法通关课`;
+      countEl.textContent = `(${courseFiltered.length} 关)`;
+    } else if (currentCourse === 'standard') {
+      titleEl.innerHTML = `📘 经典题库`;
+      countEl.textContent = `(${courseFiltered.length} 关)`;
+    } else {
+      titleEl.innerHTML = `全部算法`;
+      countEl.textContent = `(${allAlgorithms.length} 个)`;
+    }
   } else if (currentCategory === 'recent') {
     const recentCount = getRecentAlgorithmIds().length;
     titleEl.innerHTML = `🕒 最近访问`;
     countEl.textContent = `(${recentCount} 个记录)`;
   } else {
     const config = CATEGORY_CONFIG[currentCategory] || { name: currentCategory, icon: '📁' };
-    const count = groupByCategory(allAlgorithms).get(currentCategory)?.length || 0;
+    const count = courseFiltered.filter((a) => a.category === currentCategory).length;
     titleEl.innerHTML = `${config.icon} ${config.name}`;
     countEl.textContent = `(${count} 关)`;
   }
 }
 
 // ========== Get Visible Cards ==========
-function getVisibleCards(): AlgorithmConfig[] {
+function getVisibleCards(): AlgorithmMetadata[] {
+  const courseFiltered = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
+
   if (currentCategory === 'recent') {
     const recentIds = getRecentAlgorithmIds();
     let recentAlgos = recentIds
-      .map(id => allAlgorithms.find(a => a.id === id))
-      .filter((a): a is AlgorithmConfig => Boolean(a));
+      .map(id => courseFiltered.find(a => a.id === id))
+      .filter((a): a is AlgorithmMetadata => Boolean(a));
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -373,7 +190,7 @@ function getVisibleCards(): AlgorithmConfig[] {
     return recentAlgos;
   }
 
-  let filtered = allAlgorithms;
+  let filtered = courseFiltered;
 
   // Filter by category
   if (currentCategory !== 'all') {
@@ -403,80 +220,22 @@ function getVisibleCards(): AlgorithmConfig[] {
   return filtered;
 }
 
-// ========== Render Cards ==========
+// ========== Render Cards (委托给 CatalogPresenter 深模块) ==========
 function renderCards(): void {
   const grid = $('cards-grid');
   if (!grid) return;
 
   const cards = getVisibleCards();
-
-  if (cards.length === 0) {
-    if (searchQuery.trim()) {
-      grid.innerHTML = `
-        <div class="no-results" style="grid-column: 1 / -1;">
-          <div class="no-results-icon">🔍</div>
-          <div class="no-results-text">没有找到匹配的算法</div>
-          <div class="no-results-hint">尝试更换关键词</div>
-        </div>
-      `;
-    } else if (currentCategory === 'recent') {
-      grid.innerHTML = `
-        <div class="empty-state" style="grid-column: 1 / -1;">
-          <div class="empty-icon">🕒</div>
-          <div class="empty-text">暂无最近访问记录</div>
-          <div class="empty-hint">点击任意算法开始演示后将自动记录在此</div>
-        </div>
-      `;
-    } else {
-      grid.innerHTML = `
-        <div class="empty-state" style="grid-column: 1 / -1;">
-          <div class="empty-icon"></div>
-          <div class="empty-text">此分类下暂无算法</div>
-        </div>
-      `;
-    }
-    return;
-  }
-
-  grid.innerHTML = '';
-
-  cards.forEach(algo => {
-    const card = document.createElement('div');
-    card.className = 'algo-card';
-    card.dataset.algoId = algo.id;
-
-    const icon = algo.icon || ALGORITHM_ICONS[algo.id] || '✨';
-    const iconClass = CATEGORY_ICON_CLASS[algo.category] || algo.category || '';
-    const catName = CATEGORY_CONFIG[algo.category]?.name || algo.category || '其他';
-    const diff = getDifficultyConfig(algo.difficulty);
-
-    const nameHtml = highlightText(algo.name, searchQuery);
-    const descHtml = highlightText(algo.description, searchQuery);
-    const goalHtml = algo.learningGoal
-      ? `<div class="card-learning-goal">💡 ${highlightText(algo.learningGoal, searchQuery)}</div>`
-      : '';
-
-    card.innerHTML = `
-      <div class="card-header">
-        <div class="card-icon ${iconClass}">${icon}</div>
-        <div class="card-name">${nameHtml}</div>
-      </div>
-      <div class="card-description">${descHtml}</div>
-      ${goalHtml}
-      <div class="card-footer">
-        <span class="difficulty-badge" style="color: ${diff.color}; background: ${diff.bg}">${diff.dot} ${diff.label}</span>
-        <span class="card-category">${catName}</span>
-      </div>
-    `;
-
-    card.addEventListener('click', () => {
+  catalogPresenter.renderCardGrid(grid, {
+    algorithms: cards,
+    searchQuery,
+    currentCategory,
+    onCardClick: (algo) => {
       if (searchQuery.trim()) {
         addSearchHistory(searchQuery.trim());
       }
-      algorithmManager.showAlgorithm(algo.id);
-    });
-
-    grid.appendChild(card);
+      viewMountEngine.showAlgorithm(algo.id);
+    },
   });
 }
 
@@ -519,7 +278,7 @@ function renderSearchHistoryDropdown(): void {
     itemEl.dataset.query = itemText;
     itemEl.innerHTML = `
       <span class="search-history-icon">🕒</span>
-      <span class="search-history-text">${escapeHtml(itemText)}</span>
+      <span class="search-history-text">${algoSearchCatalog.escapeHtml(itemText)}</span>
       <button class="search-history-delete" type="button" title="删除此记录" aria-label="删除">×</button>
     `;
 
@@ -710,6 +469,9 @@ function setupSidebarSplitter(): void {
   });
 }
 
+let _recentUpdatedHandler: (() => void) | null = null;
+let _selectorShownHandler: (() => void) | null = null;
+
 // ========== Plugin Export ==========
 export const algorithmVizPlugin: Plugin = {
   id: 'algorithm-viz',
@@ -725,10 +487,13 @@ export const algorithmVizPlugin: Plugin = {
     console.log('[AlgorithmVizPlugin] Initializing v2.1...');
 
     // 加载所有算法
-    allAlgorithms = algorithmManager.getAllAlgorithms();
+    allAlgorithms = algorithmRegistry.getAllMetadata();
     console.log(`[AlgorithmVizPlugin] Loaded ${allAlgorithms.length} algorithms`);
 
-    // 渲染侧边栏关卡链
+    // 渲染课程体系过滤栏
+    renderCourseFilterUI();
+
+    // 渲染侧边栏关卡链与底部最近访问
     renderSidebarCategories();
 
     // 渲染卡片
@@ -740,6 +505,20 @@ export const algorithmVizPlugin: Plugin = {
 
     // 设置侧边栏可拖拽分栏
     setupSidebarSplitter();
+
+    // 监听最近访问更新与返回选择器事件，即时同步刷新侧边栏
+    if (typeof window !== 'undefined') {
+      _recentUpdatedHandler = () => {
+        renderSidebarRecentFooter();
+      };
+      _selectorShownHandler = () => {
+        renderCourseFilterUI();
+        renderSidebarCategories();
+        renderSidebarRecentFooter();
+      };
+      window.addEventListener('algo:recent-updated', _recentUpdatedHandler);
+      window.addEventListener('algo:selector-shown', _selectorShownHandler);
+    }
 
     console.log('[AlgorithmVizPlugin] Initialized successfully');
   },
@@ -754,11 +533,20 @@ export const algorithmVizPlugin: Plugin = {
       document.removeEventListener('click', _searchDocClickHandler);
       _searchDocClickHandler = null;
     }
+    if (_recentUpdatedHandler && typeof window !== 'undefined') {
+      window.removeEventListener('algo:recent-updated', _recentUpdatedHandler);
+      _recentUpdatedHandler = null;
+    }
+    if (_selectorShownHandler && typeof window !== 'undefined') {
+      window.removeEventListener('algo:selector-shown', _selectorShownHandler);
+      _selectorShownHandler = null;
+    }
     if (_sidebarSplitter) {
       _sidebarSplitter.destroy();
       _sidebarSplitter = null;
     }
     currentCategory = 'all';
+    currentCourse = 'all';
     searchQuery = '';
     expandedCategories.clear();
     console.log('[AlgorithmVizPlugin] Destroyed');

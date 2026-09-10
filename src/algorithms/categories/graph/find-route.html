@@ -1,534 +1,856 @@
 <style>
+  /* === 寻找有效路径 (LC 1971) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-find-route-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
-  }
-
-  #algo-find-route-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #818cf855, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #6366f155, transparent 55%),
-                linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #1e1b4b 50%, #3730a3 75%, #1e1b4b 100%);
-    z-index: -2;
-  }
-
-  #algo-find-route-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(30, 27, 75, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-find-route-view .fr-page {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .fr-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
+  #algo-find-route-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-find-route-view .fr-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .fr-hero .fr-title-wrapper {
+  #algo-find-route-view .fr-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .fr-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #818cf8, #6366f1);
+  #algo-find-route-view .fr-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .fr-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
+  #algo-find-route-view .fr-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #818cf8, #6366f1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .fr-hero-text p {
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
     margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
   }
 
-  .fr-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-find-route-view .fr-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-find-route-view .fr-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .fr-tip strong {
-    color: #818cf8;
+  #algo-find-route-view .fr-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-find-route-view .fr-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-find-route-view .fr-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-find-route-view .fr-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-find-route-view .fr-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-find-route-view .fr-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
     font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-find-route-view .fr-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  #algo-find-route-view .fr-layout {
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-find-route-view .fr-main-layout {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-find-route-view .fr-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .fr-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .fr-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .fr-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-find-route-view .fr-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-find-route-view .fr-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-find-route-view .fr-card-header {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-find-route-view .fr-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-find-route-view .fr-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-find-route-view .fr-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
     flex-wrap: wrap;
   }
+  #algo-find-route-view .fr-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
 
-  .fr-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #818cf8, #6366f1);
-    color: #fff;
-    font-weight: 600;
+  /* 拓扑图 SVG 画布 */
+  #algo-find-route-view .fr-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-find-route-view .fr-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-find-route-view .fr-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
     cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    background: #e2e8f0;
+    border-radius: 999px;
   }
 
-  .fr-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  #algo-find-route-view .fr-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .fr-stats {
+  #algo-find-route-view .fr-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-find-route-view .fr-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-find-route-view .fr-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-find-route-view .fr-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-find-route-view .fr-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-find-route-view .fr-metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 6px;
   }
 
-  .fr-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
+  #algo-find-route-view .fr-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .fr-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #818cf8, #6366f1);
-  }
-
-  .fr-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .fr-stat-val {
-    color: #818cf8;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
+  #algo-find-route-view .fr-metric-label {
+    font-size: 10px;
     font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
 
-  .fr-graph-container {
-    padding: 20px;
+  #algo-find-route-view .fr-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-find-route-view .fr-path-box {
     display: flex;
-    justify-content: center;
     align-items: center;
-    min-height: 260px;
-  }
-
-  .fr-graph-container svg {
-    width: 100%;
-    max-width: 480px;
-    height: 260px;
-  }
-
-  .fr-queue-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .fr-queue-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .fr-queue {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .fr-queue-item {
-    padding: 6px 12px;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.2);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    color: #818cf8;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    overflow-x: auto;
   }
 
-  .fr-queue-item.front {
-    background: linear-gradient(135deg, #818cf8, #6366f1);
-    color: #fff;
-    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
-  }
-
-  .fr-path-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .fr-path-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .fr-path {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    min-height: 36px;
-    align-items: center;
-  }
-
-  .fr-path-item {
-    padding: 6px 12px;
+  #algo-find-route-view .fr-live-alert {
+    padding: 6px 10px;
     border-radius: 8px;
-    background: rgba(16, 185, 129, 0.2);
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    color: #10b981;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .fr-path-item.dest {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: #fff;
-    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
-  }
-
-  .fr-path-arrow {
-    color: rgba(204, 214, 244, 0.4);
-    font-size: 16px;
-  }
-
-  .fr-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    background: rgba(99, 102, 241, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .fr-log {
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-find-route-view .fr-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
     min-height: 0;
-    max-height: 120px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .fr-log div {
-    padding: 2px 0;
-  }
-
-  .fr-log div.active {
-    color: #818cf8;
-    font-weight: 600;
-  }
-
-  .fr-right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-  }
-
-  .fr-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .fr-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 
-  .fr-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .fr-legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-  }
-
-  .fr-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Card 3: 暗色代码终端面板 */
+  #algo-find-route-view .fr-dark-terminal {
+    background: #0f172a;
     border-radius: 16px;
-    padding: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    overflow: hidden;
   }
 
-  .fr-pb-row {
+  #algo-find-route-view .fr-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
     display: flex;
-    gap: 10px;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
 
-  .fr-pb-btn {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(99, 102, 241, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+  #algo-find-route-view .fr-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
-  .fr-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .fr-pb-btn:not(:disabled):hover {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: #818cf8;
-    transform: translateY(-1px);
-  }
-
-  .fr-pb-btn.play {
-    background: linear-gradient(135deg, #818cf8, #6366f1);
+  #algo-find-route-view .fr-tab-item {
+    background: transparent;
     border: none;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-find-route-view .fr-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
 
-  .fr-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-  }
-
-  .fr-speed-row {
+  #algo-find-route-view .fr-lang-group {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
   }
 
-  .fr-speed-row input {
-    flex: 1;
-    accent-color: #818cf8;
+  #algo-find-route-view .fr-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-find-route-view .fr-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
   }
 
-  .fr-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
+  #algo-find-route-view .fr-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-find-route-view .fr-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-find-route-view .fr-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-find-route-view .fr-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
     text-align: center;
   }
 
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
+  #algo-find-route-view .fr-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-find-route-view .fr-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
 
-  @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+  #algo-find-route-view .fr-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
 
-  @keyframes pathPulse {
-    0%, 100% { stroke-opacity: 1; }
-    50% { stroke-opacity: 0.4; }
+  #algo-find-route-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-find-route-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-find-route-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
 
-  .fr-node {
-    transition: all 0.3s ease;
+  /* Card 4: 执行日志卡片 */
+  #algo-find-route-view .fr-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  .fr-edge {
-    transition: all 0.3s ease;
+  #algo-find-route-view .fr-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-find-route-view .fr-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-find-route-view .fr-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-find-route-view .fr-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-find-route-view .fr-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-find-route-view .fr-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-find-route-view .fr-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-find-route-view .fr-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-find-route-view .fr-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-find-route-view .fr-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-find-route-view .fr-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="fr-page">
-  <div class="fr-hero">
-    <div class="fr-title-wrapper">
-      <div class="fr-hero-icon">🛤️</div>
-      <div class="fr-hero-text">
-        <h2>寻找存在的路线</h2>
-        <p>判断图中两个节点之间是否存在路径：BFS/DFS 搜索可视化</p>
-      </div>
+<div id="algo-find-route-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="fr-header">
+    <div class="fr-header-left">
+      <div class="fr-icon-btn">🧭</div>
+      <h1 class="fr-main-title">LeetCode 1971. 寻找图中是否存在有效路径</h1>
+      <button id="btn-open-problem-modal" class="fr-btn-problem">📋 题目</button>
+      <span class="fr-badge-mode">BFS 连通搜索·前驱回溯</span>
+      <span class="fr-badge-complexity">O(V + E) · O(V + E)</span>
     </div>
-    <div class="fr-tip"><strong>核心思路：</strong>从源节点开始 BFS/DFS 遍历，如果能到达目标节点则路线存在。使用 visited 集合避免重复访问。</div>
-  </div>
 
-  <div class="fr-layout">
-    <div class="fr-main">
+    <div class="fr-header-right">
+      <button id="btn-generate" class="fr-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="fr-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="fr-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="fr-left-section">
+
+      <!-- 卡片 1: 拓扑图 SVG 画布 -->
       <div class="fr-card">
-        <div class="fr-controls">
-          <button id="fr-start" class="fr-btn">开始寻路</button>
+        <div class="fr-card-header">
+          <div class="fr-card-title">
+            <span>📊 无向图连通拓扑沙盘 (Route Canvas)</span>
+          </div>
+          <div class="fr-legend-bar">
+            <div><span class="fr-legend-dot" style="background:#2563eb;"></span> 当前出队点 u</div>
+            <div><span class="fr-legend-dot" style="background:#16a34a;"></span> 已访问节点</div>
+            <div><span class="fr-legend-dot" style="background:#f59e0b;"></span> 最终路径边</div>
+          </div>
         </div>
 
-        <div class="fr-stats">
-          <div class="fr-stat"><span class="fr-stat-label">当前节点</span><span class="fr-stat-val" id="fr-current">-</span></div>
-          <div class="fr-stat"><span class="fr-stat-label">源→目标</span><span class="fr-stat-val" id="fr-range">0→4</span></div>
-          <div class="fr-stat"><span class="fr-stat-label">已访问</span><span class="fr-stat-val" id="fr-visited">0</span></div>
-          <div class="fr-stat"><span class="fr-stat-label">结果</span><span class="fr-stat-val" id="fr-result">-</span></div>
-        </div>
-
-        <div class="fr-graph-container" id="fr-graph"></div>
-
-        <div class="fr-queue-container">
-          <div class="fr-queue-title">队列 (Queue) - BFS 搜索</div>
-          <div class="fr-queue" id="fr-queue"></div>
-        </div>
-
-        <div class="fr-path-container">
-          <div class="fr-path-title">路径回溯</div>
-          <div class="fr-path" id="fr-path"></div>
-        </div>
-
-        <div class="fr-message" id="step-message">点击「开始寻路」查找从节点 0 到节点 4 是否存在路径。</div>
-
-        <div class="fr-log" id="fr-log"></div>
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="fr-sandbox-wrap" id="fr-svg-canvas"></div>
       </div>
-    </div>
 
-    <div class="fr-right">
-      <div data-code-panel class="fr-code-card"></div>
-      <div class="fr-legend">
-        <div class="fr-legend-item"><span class="fr-legend-box" style="background:rgba(99,102,241,0.2);border:2px solid #818cf8"></span>未访问</div>
-        <div class="fr-legend-item"><span class="fr-legend-box" style="background:#f59e0b"></span>当前探索</div>
-        <div class="fr-legend-item"><span class="fr-legend-box" style="background:#10b981"></span>已访问</div>
-        <div class="fr-legend-item"><span class="fr-legend-box" style="background:#ef4444;border:2px solid #ef4444"></span>源/目标</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="fr-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="fr-slider" />
+        <div class="fr-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="fr-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="fr-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="fr-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="fr-playback">
-        <div class="fr-pb-row">
-          <button id="step-reset" class="fr-pb-btn">重置</button>
-          <button id="step-prev" class="fr-pb-btn">上一步</button>
-          <button id="step-play" class="fr-pb-btn play">播放</button>
-          <button id="step-next" class="fr-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 状态空间与路径监视器 -->
+      <div class="fr-card">
+        <div class="fr-card-header">
+          <div>
+            <div class="fr-card-title">🧭 连通状态与重构路径监视器 (Path Monitor)</div>
+            <div class="fr-card-desc">当前访问节点、搜索队列、目标连通判定与重构路径输出</div>
+          </div>
+          <span id="badge-path-status" class="fr-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">目标状态: 搜索中</span>
         </div>
-        <div class="fr-speed-row">
-          <span>速度</span>
-          <input id="fr-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="fr-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="fr-state-space-box">
+          <div class="fr-metrics-grid">
+            <div class="fr-metric-card">
+              <span class="fr-metric-label">当前出队节点 u</span>
+              <span class="fr-metric-val" id="metric-cur-node" style="color: #2563eb;">—</span>
+            </div>
+            <div class="fr-metric-card">
+              <span class="fr-metric-label">BFS 遍历队列 queue</span>
+              <span class="fr-metric-val" id="metric-queue" style="color: #3b82f6;">[ ]</span>
+            </div>
+            <div class="fr-metric-card">
+              <span class="fr-metric-label">已访问节点数 visited</span>
+              <span class="fr-metric-val" id="metric-visited-count" style="color: #10b981;">0</span>
+            </div>
+            <div class="fr-metric-card">
+              <span class="fr-metric-label">路径是否存在 Found</span>
+              <span class="fr-metric-val" id="metric-found" style="color: #16a34a;">待定</span>
+            </div>
+          </div>
+
+          <div class="fr-path-box">
+            <span style="color:#64748b; font-weight:700;">重构路径 path:</span>
+            <span id="fr-result-path" style="color: #16a34a; font-weight: 800;">—</span>
+          </div>
+
+          <div class="fr-live-alert">
+            <span>💡</span> <span id="fr-live-text">准备就绪，点击运行开始有效路径搜索。</span>
+          </div>
         </div>
-        <div id="step-counter" class="fr-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="fr-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="fr-dark-terminal">
+        <div class="fr-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="fr-tab-group">
+            <button id="btn-tab-code" class="fr-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="fr-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="fr-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="fr-lang-group" id="code-lang-tabs">
+            <button class="fr-lang-btn active" data-lang="java">Java</button>
+            <button class="fr-lang-btn" data-lang="cpp">C++</button>
+            <button class="fr-lang-btn" data-lang="python">Python</button>
+            <button class="fr-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="fr-font-tools">
+            <div class="fr-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="fr-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="fr-window-dots">
+              <span class="fr-dot" style="background:#ef4444;"></span>
+              <span class="fr-dot" style="background:#eab308;"></span>
+              <span class="fr-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="fr-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="fr-log-card">
+        <div class="fr-log-header">
+          <div class="fr-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="fr-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="fr-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="fr-modal-backdrop hidden">
+    <div class="fr-modal-content">
+      <div class="fr-modal-header">
+        <div class="fr-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="fr-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="fr-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

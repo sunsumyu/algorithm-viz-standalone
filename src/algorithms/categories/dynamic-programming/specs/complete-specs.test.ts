@@ -126,4 +126,132 @@ describe('Complete DP Specs Comprehensive Test Suite', () => {
     const last = steps[steps.length - 1];
     expect(last.dp2d?.[0]?.[4]).toBe(4);
   });
+
+  it('KnightProbabilitySpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('knight-probability');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(688);
+
+    const steps = DpStepEngine.generateSteps('knight-probability', { n: 3, k: 2, row: 0, column: 0 });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.probability).toBeDefined();
+  });
+
+  it('OutOfBoundaryPathsSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('out-of-boundary-paths');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(576);
+
+    const steps = DpStepEngine.generateSteps('out-of-boundary-paths', { m: 2, n: 2, maxMove: 2, startRow: 0, startColumn: 0 });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.pathsCount).toBe(6);
+  });
+
+  it('ProfitableSchemesSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('profitable-schemes');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(879);
+
+    const steps = DpStepEngine.generateSteps('profitable-schemes', { n: 5, minProfit: 3, group: [2, 2], profit: [2, 3] });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.totalSchemes).toBe(2);
+  });
+
+  it('PathsDivisibleByKSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('paths-divisible-by-k');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(2435);
+
+    const steps = DpStepEngine.generateSteps('paths-divisible-by-k', {
+      grid: [
+        [5, 2, 4],
+        [3, 0, 5],
+        [0, 7, 2],
+      ],
+      k: 3,
+    });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.totalPathsModK).toBe(2);
+  });
+
+  it('ScrambleStringSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('scramble-string');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(87);
+
+    const steps = DpStepEngine.generateSteps('scramble-string', { s1: 'great', s2: 'rgeat' });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.isScramble).toBe(1);
+  });
+
+  it('CountDigitOneSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('count-digit-one');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(233);
+
+    const steps = DpStepEngine.generateSteps('count-digit-one', { n: 13 });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.totalOnes).toBe(6);
+  });
+
+  it('NonNegativeConsecutiveOnesSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('non-negative-consecutive-ones');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(600);
+
+    const steps = DpStepEngine.generateSteps('non-negative-consecutive-ones', { n: 5 });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.validCount).toBe(5);
+  });
+
+  it('MaxCircularSubarraySpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('max-circular-subarray');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(918);
+
+    const steps = DpStepEngine.generateSteps('max-circular-subarray', { nums: [1, -2, 3, -2] });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.maxSum).toBe(3);
+  });
+
+  it('MaxProductSubarraySpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('max-product-subarray');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(152);
+
+    const steps = DpStepEngine.generateSteps('max-product-subarray', { nums: [2, 3, -2, 4] });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.maxProduct).toBe(6);
+  });
+
+  it('RussianDollEnvelopesSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('russian-doll-envelopes');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(354);
+
+    const steps = DpStepEngine.generateSteps('russian-doll-envelopes', { envelopes: [[5, 4], [6, 4], [6, 7], [2, 3]] });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.maxEnvelopes).toBe(3);
+  });
+
+  it('SuperEggDropSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('super-egg-drop');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(887);
+
+    const steps = DpStepEngine.generateSteps('super-egg-drop', { k: 2, n: 6 });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.minMoves).toBe(3);
+  });
+
+  it('SlidingWindowDpSpec executes via DpStepEngine', () => {
+    const spec = DpStepEngine.get('sliding-window-dp');
+    expect(spec).toBeDefined();
+    expect(spec?.problem?.leetcodeId).toBe(1696);
+
+    const steps = DpStepEngine.generateSteps('sliding-window-dp', { nums: [1, -1, -2, 4, -7, 3], k: 2 });
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].metrics?.maxScore).toBe(7);
+  });
 });
+

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeetCode 62. 不同路径 - 算法可视化演示 (精简版)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- js-yaml CDN for Declarative Model Loading -->
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Google Fonts: JetBrains Mono & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Shared Visualizer Theme CSS -->
+  <link rel="stylesheet" href="/src/styles/visualizer-theme.css" />
+  <style>
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-100/90 text-slate-800 antialiased h-screen overflow-hidden p-2 sm:p-2.5 md:p-3 flex flex-col justify-start">
+
+  <div class="w-full h-full mx-auto flex flex-col gap-2 sm:gap-2.5 min-h-0 overflow-hidden px-1.5 sm:px-2.5">
+
+    <!-- 1. 顶栏标题与演化阶段选项卡卡片 (Header & Control Card) -->
+    <header class="bg-white rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 border border-slate-200 shadow-xs flex items-center justify-between gap-1.5 sm:gap-2 flex-shrink-0 w-full">
+      
+      <!-- 1. 左侧：品牌与题号信息 (精简紧凑) -->
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-0">
+        <button id="btn-open-selector-quick" title="切换算法" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 flex items-center justify-center text-xs sm:text-sm transition flex-shrink-0 shadow-xs">
+          <i class="fa-solid fa-table-cells-large"></i>
+        </button>
+        <div class="flex items-center gap-1 min-w-0">
+          <h1 id="header-algo-main-title" class="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight flex-shrink-0">62. 不同路径</h1>
+          <button id="btn-open-problem-modal" title="点击查看力扣原题描述、示例与约束" class="px-1.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-800 text-[10px] font-bold transition flex items-center gap-1 flex-shrink-0 shadow-2xs">
+            <i class="fa-regular fa-file-lines text-amber-600"></i>
+            <span>题目</span>
+          </button>
+          <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden 2xl:inline-block max-w-[140px]">阶段 1: 朴素递归</span>
+          <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold font-mono flex-shrink-0 hidden xl:inline-block">O(2ⁿ)</span>
+        </div>
+      </div>
+
+      <!-- 2. 中间：阶段演化选择器 (Stage Switcher - 动态生成) -->
+      <div class="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200 flex-shrink-0" id="stage-tabs-container"></div>
+
+      <!-- 3. 方向切换器 (Direction Switcher - 动态生成) -->
+      <div class="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200 flex-shrink-0" id="dir-tabs-container"></div>
+
+      <!-- 4. 右侧：网格尺寸与操作工具组 -->
+      <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 justify-end">
+        <div class="flex items-center gap-0.5 sm:gap-1 bg-slate-50 px-1.5 py-0.5 rounded-xl border border-slate-200 text-xs font-mono">
+          <span class="text-slate-500 font-semibold text-[11px]">m:</span>
+          <input type="number" id="input-m" min="1" max="8" value="3" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
+          <span class="text-slate-400 font-bold text-[10px]">×</span>
+          <span class="text-slate-500 font-semibold text-[11px]">n:</span>
+          <input type="number" id="input-n" min="1" max="8" value="4" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
+        </div>
+
+        <button id="btn-generate" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center justify-center flex-shrink-0" title="应用参数并生成演示">
+          应用
+        </button>
+
+        <button id="btn-reset" class="px-1.5 sm:px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200">
+          重置
+        </button>
+
+        <div id="theme-selector-container" class="inline-flex items-center"></div>
+      </div>
+    </header>
+
+    <!-- 2. 主演示区：左侧可视化画布 + 动态可拖拽 Splitter + 右侧代码与日志 (弹性全屏自适应) -->
+    <main id="main-content-layout" class="flex flex-col lg:flex-row gap-2 sm:gap-2.5 flex-1 min-h-0 overflow-hidden w-full relative">
+
+      <!-- ================= 左侧：双看板 + 底部进度条 (自适应宽度，支持拖拽) ================= -->
+      <section id="left-visual-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 320px; flex: 1 1 50%;">
+
+        <!-- 卡片 1: 二维网格 (虚拟地图 m×n, 比例紧凑, 播放控制器位于右下角) -->
+        <div id="card1-wrapper" class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden relative">
+          <div class="flex items-center justify-between flex-shrink-0 gap-2">
+            <div class="flex items-center gap-2">
+              <h2 id="card1-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 m×n)
+              </h2>
+              <button id="btn-toggle-3d" title="切换 3D 立体沙盘 / 2D 经典平面视角" class="px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
+                <i class="fa-solid fa-cube text-indigo-600"></i>
+                <span id="label-toggle-3d">3D立体</span>
+              </button>
+            </div>
+            <div id="grid-legend-bar" class="flex items-center gap-2 sm:gap-2.5 text-[11px] text-slate-500 font-medium overflow-x-auto">
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已走通</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-sky-100 border border-sky-400 border-dashed"></span> 👣 探索中</span>
+              <span class="flex items-center gap-1 hidden sm:inline-flex">🧗‍♂️ 当前探险</span>
+              <span id="legend-ref" class="flex items-center gap-1">🐱 参考上方/左方</span>
+            </div>
+          </div>
+
+          <!-- 网格居中展示盒 (WebGL 3D 与 2D 经典平面无缝切换) -->
+          <div id="grid-stage-wrapper" class="bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col items-center justify-start flex-1 min-h-0 overflow-auto relative scroll-smooth">
+            
+            <!-- Three.js 3D WebGL Canvas 容器 (3D 模式显示) -->
+            <div id="three-canvas-container" class="absolute inset-0 w-full h-full hidden z-10"></div>
+            
+            <!-- 3D 视角交互控制浮动栏 (位于左上方，彻底避免遮挡右下角播放器) -->
+            <div id="three-controls-bar" class="absolute top-2 left-2 z-20 hidden items-center gap-2 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-xl border border-slate-200/90 shadow-sm text-xs font-medium text-slate-700 select-none">
+              <span class="text-[11px] text-slate-500 font-sans hidden sm:inline">🖱️ 拖拽旋转 · 滚轮缩放</span>
+              <button id="btn-reset-3d-cam" title="重置等轴测 3D 视角" class="px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[10px] font-bold transition flex items-center gap-1 shadow-2xs">
+                <i class="fa-solid fa-arrows-rotate text-blue-600"></i>
+                <span>复位视角</span>
+              </button>
+            </div>
+
+            <!-- 2D 经典平面展示盒 (2D 模式显示) -->
+            <div id="grid-board-wrapper" class="relative inline-flex flex-col items-center m-auto pt-3 pb-8">
+              <div id="grid-container" class="inline-grid gap-1.5 p-2 bg-white rounded-xl border border-slate-200 shadow-sm relative z-0">
+                <!-- 动态构建单元格 -->
+              </div>
+              <!-- 连续箭头与转移连线 SVG 覆盖层 (SVG Arrow Overlay) -->
+              <svg id="grid-arrows-svg" class="absolute inset-0 w-full h-full pointer-events-none z-10" style="overflow: visible;">
+                <defs>
+                  <marker id="arrow-forward" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 9 5 L 0 9 z" fill="#0284c7" />
+                  </marker>
+                  <marker id="arrow-reverse" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 9 1 L 0 5 L 9 9 z" fill="#0284c7" />
+                  </marker>
+                  <marker id="arrow-top-down" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 1 L 9 5 L 0 9 z" fill="#9333ea" />
+                  </marker>
+                  <marker id="arrow-left-right" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 1 L 9 5 L 0 9 z" fill="#d97706" />
+                  </marker>
+                </defs>
+              </svg>
+
+              <!-- 底部物理边界深水河流 (紧凑轻量，绝不推挤画布) -->
+              <div id="grid-river-barrier" class="w-full max-w-[280px] mt-1.5 relative overflow-hidden rounded-lg border border-sky-400/80 bg-gradient-to-r from-sky-700 via-sky-600 to-sky-800 py-0.5 px-2.5 flex items-center justify-center shadow-xs flex-shrink-0">
+                <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40" preserveAspectRatio="none">
+                  <path class="dp-river-waves-1" d="M -60 6 Q -30 2, 0 6 T 60 6 T 120 6 T 180 6 T 240 6 T 300 6 T 360 6 T 420 6 T 480 6 T 540 6 T 600 6 T 660 6 T 720 6 T 780 6 T 840 6" fill="none" stroke="#ffffff" stroke-width="1.3" />
+                  <path class="dp-river-waves-2" d="M -60 14 Q -30 10, 0 14 T 60 14 T 120 14 T 180 14 T 240 14 T 300 14 T 360 14 T 420 14 T 480 14 T 540 14 T 600 14 T 660 14 T 720 14 T 780 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="6 4" />
+                </svg>
+                <span class="relative z-10 text-[10px] font-bold text-sky-100 flex items-center gap-1 drop-shadow select-none">
+                  🌊 边界深水河流 · 越界反弹 🚫
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 步数进度条与播放控制器 (紧贴二维网格下方，按钮靠右) -->
+        <div class="bg-white rounded-2xl px-2.5 sm:px-3 py-1.5 border border-slate-200 shadow-xs flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+          <div class="flex-1 flex items-center gap-2 min-w-0">
+            <input type="range" id="slider-progress" min="0" max="0" value="0" class="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none" />
+          </div>
+          <div class="text-xs font-mono-code font-bold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap flex-shrink-0">
+            <span id="step-cur" class="text-blue-600">0</span> / <span id="step-total">0</span>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button id="btn-step-prev" title="上一步" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+              <i class="fa-solid fa-backward-step text-[12px]"></i>
+            </button>
+            <button id="btn-play-pause" title="自动播放/暂停" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition shadow-sm">
+              <i class="fa-solid fa-play text-[12px]" id="play-icon"></i>
+            </button>
+            <button id="btn-step-next" title="下一步" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+              <i class="fa-solid fa-forward-step text-[12px]"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 卡片 2: 状态展示区 (针对当前演化阶段动态定制, 阶段1/2展示递归树, 与卡片1对等 flex-1 平分) -->
+        <div id="card2-wrapper" class="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden">
+          <div class="flex items-center justify-between flex-shrink-0">
+            <div>
+              <h2 id="card2-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-bars-staggered text-slate-500"></i> 一维状态数组 (int[] memo)
+              </h2>
+              <p id="card2-desc" class="text-[11px] text-slate-500 mt-0.5">空间优化: 只保存当前行的数据，不断滚动覆盖。</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <!-- 阶段 3 专用：DP 矩阵与依赖树切换 Tab -->
+              <div id="stage3-subview-bar" class="hidden items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
+                <button id="btn-subview-matrix" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1">
+                  <i class="fa-solid fa-table-cells"></i> <span>DP 状态表</span>
+                </button>
+                <button id="btn-subview-tree" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                  <i class="fa-solid fa-network-wired"></i> <span>状态依赖树</span>
+                </button>
+              </div>
+              <span id="badge-memo-len" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">长度: n</span>
+            </div>
+          </div>
+
+          <!-- 槽位 / 递归树 / 状态居中展示盒 -->
+          <div class="bg-slate-50/70 rounded-xl p-1.5 border border-slate-200/80 flex flex-col items-center justify-start flex-1 min-h-0 overflow-auto relative">
+            <div id="memo-slots-container" class="w-full h-full flex items-center justify-center m-auto">
+              <!-- 动态构建状态槽位或递归树 -->
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= 右侧：代码与日志 (自适应宽度，支持拖拽) ================= -->
+      <section id="right-code-section" class="flex flex-col gap-2 sm:gap-2.5 h-full min-h-0 overflow-hidden" style="min-width: 340px; flex: 1 1 50%;">
+
+        <!-- 卡片 3: 源码实现 / 题目描述 / 递推精讲 三 Tab 沉浸面板 -->
+        <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xs overflow-hidden flex flex-col flex-[1.1] min-h-0">
+          <div class="px-2.5 py-1.5 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0 gap-2">
+            <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+            <div class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 flex-shrink-0">
+              <button id="btn-tab-code" class="tab-btn active px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold transition bg-blue-600 text-white shadow-2xs flex items-center gap-1">
+                <i class="fa-solid fa-code text-[9px]"></i> <span>代码调试</span>
+              </button>
+              <button id="btn-tab-problem" class="tab-btn px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1">
+                <i class="fa-regular fa-file-lines text-[9px]"></i> <span>题目描述</span>
+              </button>
+              <button id="btn-tab-analysis" class="tab-btn px-2 sm:px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-1">
+                <i class="fa-solid fa-lightbulb text-[9px]"></i> <span>递推精讲</span>
+              </button>
+            </div>
+
+            <!-- 2. 阶段专属小变体版本切换器 (v1: 内嵌 if / v2: 外层 for) -->
+            <div id="code-variant-bar" class="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 flex-shrink-0 whitespace-nowrap">
+              <button id="btn-variant-if" data-variant="if" class="variant-btn whitespace-nowrap active px-2 py-0.5 rounded text-[10px] font-bold transition bg-blue-600 text-white shadow-2xs">
+                内嵌 if 分支
+              </button>
+              <button id="btn-variant-for" data-variant="for" class="variant-btn whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+                外层 for 循环
+              </button>
+            </div>
+
+            <!-- 3. 字号缩放器与窗口微控制 -->
+            <div id="code-font-container" class="flex items-center gap-1.5 flex-shrink-0">
+              <button id="btn-code-copy" title="复制当前完整代码" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer">
+                <i class="fa-regular fa-copy text-[10px]"></i>
+                <span class="copy-text">复制</span>
+              </button>
+              <div class="flex items-center bg-slate-800/90 rounded-md border border-slate-700/80 p-0.5 text-slate-300">
+                <button id="btn-code-font-dec" title="缩小代码字号 (A-)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1">A-</button>
+                <span id="code-font-indicator" class="px-1 text-[10px] font-mono text-slate-400">12</span>
+                <button id="btn-code-font-inc" title="放大代码字号 (A+)" class="w-4.5 h-4 flex items-center justify-center rounded text-[10px] font-bold hover:bg-slate-700 hover:text-white transition px-1">A+</button>
+              </div>
+
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <span class="w-2 h-2 rounded-full bg-red-500/80"></span>
+                <span class="w-2 h-2 rounded-full bg-yellow-500/80"></span>
+                <span class="w-2 h-2 rounded-full bg-green-500/80"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 容器 1: 源码高亮与单步追踪视图 -->
+          <div id="code-view-container" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div id="code-container-box" class="p-2.5 font-mono-code overflow-y-auto text-slate-300 flex-1 min-h-0 scroll-smooth">
+              <pre class="m-0 p-0 leading-tight"><code id="code-content">
+                <!-- 动态装载对应阶段的代码 -->
+              </code></pre>
+            </div>
+          </div>
+
+          <!-- 容器 2: 题目完整描述视图 -->
+          <div id="problem-view-container" class="hidden flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
+            <!-- 动态渲染题目描述、用例与约束 -->
+          </div>
+
+          <!-- 容器 3: 5 步递推与 FAQs 精讲视图 -->
+          <div id="analysis-view-container" class="hidden flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-900 text-slate-200 scroll-smooth">
+            <!-- 动态渲染 5 步递推与 FAQs -->
+          </div>
+        </div>
+
+        <!-- 卡片 4: 执行日志 (Execution Log, 占比 1 内部滚动，绝不膨胀) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col flex-1 min-h-0">
+          <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-list-ul text-slate-500 text-xs"></i>
+              <span class="text-xs font-bold text-slate-800">执行日志</span>
+            </div>
+            <span id="log-count" class="text-[11px] font-mono-code text-slate-400">0 条记录</span>
+          </div>
+
+          <div id="log-container" class="flex-1 min-h-0 p-2.5 overflow-y-auto font-mono-code text-xs space-y-1.5 text-slate-600 scroll-smooth">
+            <!-- 动态填充日志条目 -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- 4. 力扣原题描述与用例轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div class="px-4 py-3 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-bold">
+            <i class="fa-regular fa-file-lines"></i>
+          </span>
+          <h3 class="text-xs sm:text-sm font-bold text-white">力扣原题描述</h3>
+        </div>
+        <button id="btn-close-problem-modal" title="关闭 (Esc)" class="w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      <div id="modal-problem-body" class="p-4 sm:p-5 overflow-y-auto text-xs leading-relaxed text-slate-300 space-y-4 scroll-smooth">
+        <!-- 动态装载题目内容 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 算法引擎与交互控制脚本 (深度模块装配) -->
+  <script type="module">
+    import { VisualizerAppController } from '/src/core/visualizer-app-controller.ts';
+    
+    const app = new VisualizerAppController({ mode: 'lite' });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => app.init());
+    } else {
+      app.init();
+    }
+  </script>
+</body>
+</html>

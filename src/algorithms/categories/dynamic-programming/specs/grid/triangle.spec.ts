@@ -43,7 +43,7 @@ export const TriangleSpec: AlgorithmSpec = {
       javascript: { primary: 6, context: [4, 5] },
     },
     loopExit: { java: 5, cpp: 5, python: 4, javascript: 4 },
-    returnResult: { java: 10, cpp: 10, python: 8, javascript: 9 },
+    returnResult: { java: 10, cpp: 10, python: 7, javascript: 9 },
   },
   code: {
     languages: {

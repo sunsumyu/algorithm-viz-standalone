@@ -1,420 +1,309 @@
 /**
- * 用栈实现队列（双栈转移）可视化器
- * LeetCode 232 · 两个 LIFO 栈组合出 FIFO 队列
+ * 用栈实现队列可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * LeetCode 232：输入栈 inStack 处理 push，输出栈 outStack 处理 pop/peek，outStack 为空时一次性倾倒转移
+ * 严格遵循 Zero-Subbox 规范，100% 扁平画板，杜绝多层白色卡片嵌套
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './implement-queue-using-stack.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { DualStructureVisualAdapter } from '../../../core/renderers/adapters/dual-structure-visual-adapter';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  IMPLEMENT_QUEUE_USING_STACK_PROBLEM_HTML,
+  IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
+  IMPLEMENT_QUEUE_USING_STACK_CODE_LANGUAGES,
+} from './implement-queue-using-stack-problem-content';
 
-interface MQStep {
+export interface MQStep {
   inStack: number[];
   outStack: number[];
-  results: number[];
-  opIndex: number;
-  op: string;
-  opValue: number | null;
-  transfer: boolean;
-  status: 'init' | 'push' | 'pop-check' | 'transfer' | 'pop-result' | 'peek' | 'done';
+  outputs: Array<{ op: string; value: number | boolean }>;
+  currentOp: string;
+  transferHappened: boolean;
+  action: 'init' | 'push' | 'transfer' | 'pop' | 'peek' | 'empty' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
-/**
- * 解析操作序列字符串，生成可视化步骤
- */
-function myQueueSteps(opsInput: string): MQStep[] {
+export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[] {
   const steps: MQStep[] = [];
   const inStack: number[] = [];
   const outStack: number[] = [];
-  const results: number[] = [];
+  const outputs: Array<{ op: string; value: number | boolean }> = [];
 
-  // 解析操作
-  const ops = opsInput.split(',').map(s => s.trim()).filter(Boolean);
+  const lines = {
+    init:     { java: 4,  cpp: 5,  python: 2,  javascript: 1 },
+    push:     { java: 9,  cpp: 7,  python: 6,  javascript: 6 },
+    transfer: { java: 25, cpp: 12, python: 11, javascript: 11 },
+    pop:      { java: 13, cpp: 18, python: 12, javascript: 14 },
+    peek:     { java: 17, cpp: 23, python: 15, javascript: 19 },
+    empty:    { java: 20, cpp: 26, python: 18, javascript: 22 },
+    done:     { java: 28, cpp: 28, python: 18, javascript: 23 },
+  };
 
-  // 初始步骤
+  const rawOps = (rawOpsInput || 'push 1, push 2, peek, pop, empty')
+    .split(/[,，;\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   steps.push({
     inStack: [],
     outStack: [],
-    results: [],
-    opIndex: 0,
-    op: '-',
-    opValue: null,
-    transfer: false,
-    status: 'init',
-    message: '初始化：inStack 和 outStack 均为空',
-    log: '初始化队列',
-    codeLine: [0, 1],
+    outputs: [],
+    currentOp: 'init',
+    transferHappened: false,
+    action: 'init',
+    message: '初始化：inStack (输入栈) 与 outStack (输出栈) 均为空',
+    codeLine: lines.init,
   });
 
-  for (let i = 0; i < ops.length; i++) {
-    const opStr = ops[i];
-    const spaceIdx = opStr.indexOf(' ');
-    const opName = spaceIdx >= 0 ? opStr.substring(0, spaceIdx) : opStr;
-    const opVal = spaceIdx >= 0 ? parseInt(opStr.substring(spaceIdx + 1), 10) : null;
+  for (let i = 0; i < rawOps.length; i++) {
+    const opStr = rawOps[i];
+    const parts = opStr.split(/\s+/);
+    const op = parts[0].toLowerCase();
+    const val = parts.length > 1 ? parseInt(parts[1], 10) : NaN;
 
-    if (opName === 'push' && opVal !== null && !isNaN(opVal)) {
-      // push 操作：直接入 inStack
-      inStack.push(opVal);
+    if (op === 'push') {
+      const num = isNaN(val) ? 1 : val;
+      inStack.push(num);
+
       steps.push({
         inStack: [...inStack],
         outStack: [...outStack],
-        results: [...results],
-        opIndex: i + 1,
-        op: `push(${opVal})`,
-        opValue: opVal,
-        transfer: false,
-        status: 'push',
-        message: `push(${opVal})：将 ${opVal} 压入 inStack`,
-        log: `push ${opVal} → inStack`,
-        codeLine: 3,
+        outputs: [...outputs],
+        currentOp: `push(${num})`,
+        transferHappened: false,
+        action: 'push',
+        message: `📥 执行 push(${num})：直接压入 inStack 栈顶`,
+        codeLine: lines.push,
       });
-    } else if (opName === 'pop') {
-      // pop 操作
+    } else if (op === 'pop') {
+      let transfer = false;
       if (outStack.length === 0) {
-        // 需要转移
+        transfer = true;
+        while (inStack.length > 0) {
+          outStack.push(inStack.pop()!);
+        }
+
         steps.push({
           inStack: [...inStack],
           outStack: [...outStack],
-          results: [...results],
-          opIndex: i + 1,
-          op: 'pop',
-          opValue: null,
-          transfer: false,
-          status: 'pop-check',
-          message: `pop()：outStack 为空，需要转移 inStack 的元素`,
-          log: 'pop → outStack 为空',
-          codeLine: 6,
+          outputs: [...outputs],
+          currentOp: 'dumpStackIn()',
+          transferHappened: true,
+          action: 'transfer',
+          message: '🔀 outStack 为空！触发倾倒转移：将 inStack 全部元素依次弹出并压入 outStack，原顺序完全逆转为队头优先！',
+          codeLine: lines.transfer,
         });
-
-        // 逐个转移
-        while (inStack.length > 0) {
-          const val = inStack.pop()!;
-          outStack.push(val);
-          steps.push({
-            inStack: [...inStack],
-            outStack: [...outStack],
-            results: [...results],
-            opIndex: i + 1,
-            op: 'pop',
-            opValue: val,
-            transfer: true,
-            status: 'transfer',
-            message: `转移：inStack 弹出 ${val}，压入 outStack`,
-            log: `transfer ${val}: inStack → outStack`,
-            codeLine: [8, 9],
-          });
-        }
       }
 
-      // 弹出 outStack 栈顶
-      const result = outStack.pop()!;
-      results.push(result);
-      steps.push({
-        inStack: [...inStack],
-        outStack: [...outStack],
-        results: [...results],
-        opIndex: i + 1,
-        op: 'pop',
-        opValue: result,
-        transfer: false,
-        status: 'pop-result',
-        message: `pop()：从 outStack 弹出 ${result}（队列头部）`,
-        log: `pop → ${result}`,
-        codeLine: [11, 12],
-      });
-    } else if (opName === 'peek') {
-      // peek 操作
-      if (outStack.length === 0) {
+      if (outStack.length > 0) {
+        const popped = outStack.pop()!;
+        outputs.push({ op: 'pop', value: popped });
+
         steps.push({
           inStack: [...inStack],
           outStack: [...outStack],
-          results: [...results],
-          opIndex: i + 1,
-          op: 'peek',
-          opValue: null,
-          transfer: false,
-          status: 'pop-check',
-          message: `peek()：outStack 为空，需要转移`,
-          log: 'peek → outStack 为空',
-          codeLine: 15,
+          outputs: [...outputs],
+          currentOp: 'pop()',
+          transferHappened: transfer,
+          action: 'pop',
+          message: `📤 执行 pop()：从 outStack 弹出栈顶元素 ${popped}（即队列头部）并返回`,
+          codeLine: lines.pop,
         });
-
+      } else {
+        steps.push({
+          inStack: [...inStack],
+          outStack: [...outStack],
+          outputs: [...outputs],
+          currentOp: 'pop()',
+          transferHappened: false,
+          action: 'pop',
+          message: '⚠️ 队列为空，pop() 无元素可弹出',
+          codeLine: lines.pop,
+        });
+      }
+    } else if (op === 'peek' || op === 'top') {
+      let transfer = false;
+      if (outStack.length === 0) {
+        transfer = true;
         while (inStack.length > 0) {
-          const val = inStack.pop()!;
-          outStack.push(val);
-          steps.push({
-            inStack: [...inStack],
-            outStack: [...outStack],
-            results: [...results],
-            opIndex: i + 1,
-            op: 'peek',
-            opValue: val,
-            transfer: true,
-            status: 'transfer',
-            message: `转移：inStack 弹出 ${val}，压入 outStack`,
-            log: `transfer ${val}: inStack → outStack`,
-            codeLine: [17, 18],
-          });
+          outStack.push(inStack.pop()!);
         }
+
+        steps.push({
+          inStack: [...inStack],
+          outStack: [...outStack],
+          outputs: [...outputs],
+          currentOp: 'dumpStackIn()',
+          transferHappened: true,
+          action: 'transfer',
+          message: '🔀 peek 操作检测到 outStack 为空，先执行倾倒转移',
+          codeLine: lines.transfer,
+        });
       }
 
-      const peekVal = outStack[outStack.length - 1];
-      steps.push({
-        inStack: [...inStack],
-        outStack: [...outStack],
-        results: [...results],
-        opIndex: i + 1,
-        op: 'peek',
-        opValue: peekVal,
-        transfer: false,
-        status: 'peek',
-        message: `peek()：队列头部元素为 ${peekVal}`,
-        log: `peek → ${peekVal}`,
-        codeLine: 20,
-      });
-    } else if (opName === 'empty') {
+      if (outStack.length > 0) {
+        const peekVal = outStack[outStack.length - 1];
+        outputs.push({ op: 'peek', value: peekVal });
+
+        steps.push({
+          inStack: [...inStack],
+          outStack: [...outStack],
+          outputs: [...outputs],
+          currentOp: 'peek()',
+          transferHappened: transfer,
+          action: 'peek',
+          message: `🔍 执行 peek()：查看到当前队头元素为 ${peekVal}（不弹出）`,
+          codeLine: lines.peek,
+        });
+      } else {
+        steps.push({
+          inStack: [...inStack],
+          outStack: [...outStack],
+          outputs: [...outputs],
+          currentOp: 'peek()',
+          transferHappened: false,
+          action: 'peek',
+          message: '⚠️ 队列为空，peek() 无队头元素',
+          codeLine: lines.peek,
+        });
+      }
+    } else if (op === 'empty') {
       const isEmpty = inStack.length === 0 && outStack.length === 0;
+      outputs.push({ op: 'empty', value: isEmpty });
+
       steps.push({
         inStack: [...inStack],
         outStack: [...outStack],
-        results: [...results],
-        opIndex: i + 1,
-        op: 'empty',
-        opValue: null,
-        transfer: false,
-        status: 'done',
-        message: `empty()：队列${isEmpty ? '为空' : '不为空'}`,
-        log: `empty → ${isEmpty}`,
-        codeLine: 22,
+        outputs: [...outputs],
+        currentOp: 'empty()',
+        transferHappened: false,
+        action: 'empty',
+        message: `⚖️ 执行 empty()：inStack 与 outStack 均${isEmpty ? '为空，返回 true' : '不全为空，返回 false'}`,
+        codeLine: lines.empty,
       });
     }
   }
 
-  // 最终步骤
   steps.push({
     inStack: [...inStack],
     outStack: [...outStack],
-    results: [...results],
-    opIndex: ops.length,
-    op: '-',
-    opValue: null,
-    transfer: false,
-    status: 'done',
-    message: `操作完成！pop 结果序列：[${results.join(', ')}]`,
-    log: `完成: [${results.join(', ')}]`,
-    codeLine: 23,
+    outputs: [...outputs],
+    currentOp: 'done',
+    transferHappened: false,
+    action: 'done',
+    message: '🎉 操作序列执行完毕！',
+    codeLine: lines.done,
   });
 
   return steps;
 }
 
-export class MyQueueVisualizer extends StepVisualizer<MQStep> {
-  protected codeLines = [
-    'class MyQueue {',
-    '    private Deque<Integer> inStack = new ArrayDeque<>();  // push 端',
-    '    private Deque<Integer> outStack = new ArrayDeque<>(); // pop/peek 端',
-    '',
-    '    public void push(int x) {',
-    '        inStack.push(x);',
-    '    }',
-    '',
-    '    public int pop() {',
-    '        if (outStack.isEmpty()) {',
-    '            while (!inStack.isEmpty()) {',
-    '                outStack.push(inStack.pop());',
-    '            }',
-    '        }',
-    '        return outStack.pop();',
-    '    }',
-    '',
-    '    public int peek() {',
-    '        if (outStack.isEmpty()) {',
-    '            while (!inStack.isEmpty()) {',
-    '                outStack.push(inStack.pop());',
-    '            }',
-    '        }',
-    '        return outStack.peek();',
-    '    }',
-    '',
-    '    public boolean empty() {',
-    '        return inStack.isEmpty() && outStack.isEmpty();',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'MyQueue 代码 (Java)';
-
-  private opsInput: HTMLInputElement | null = null;
-  private inStackEl: HTMLElement | null = null;
-  private outStackEl: HTMLElement | null = null;
-  private transferArrow: HTMLElement | null = null;
-  private resultBanner: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private stateIn: HTMLElement | null = null;
-  private stateOut: HTMLElement | null = null;
-  private stateOpIndex: HTMLElement | null = null;
-  private stateOp: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.opsInput = this.root.querySelector('#mq-ops-input');
-    this.inStackEl = this.root.querySelector('#mq-in-stack');
-    this.outStackEl = this.root.querySelector('#mq-out-stack');
-    this.transferArrow = this.root.querySelector('#mq-transfer-arrow');
-    this.resultBanner = this.root.querySelector('#mq-result-banner');
-    this.logEl = this.root.querySelector('#mq-log');
-    this.stateIn = this.root.querySelector('#mq-state-in');
-    this.stateOut = this.root.querySelector('#mq-state-out');
-    this.stateOpIndex = this.root.querySelector('#mq-state-op-index');
-    this.stateOp = this.root.querySelector('#mq-state-op');
-
-    this.bindPlaybackControls({ message: 'step-message' });
-
-    // Start button
-    this.root.querySelector('#mq-start')?.addEventListener('click', () => this.start());
-
-    // Example buttons
-    this.root.querySelectorAll<HTMLButtonElement>('[data-ops]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (this.opsInput) {
-          this.opsInput.value = btn.dataset.ops || '';
-          this.start();
-        }
-      });
-    });
-  }
-
-  protected buildSteps(): MQStep[] {
-    const input = this.opsInput?.value.trim() || 'push 1,push 2,pop,push 3,pop,pop';
-    return myQueueSteps(input);
-  }
-
-  protected renderStep(step: MQStep): void {
-    this.renderStacks(step);
-    this.renderTransferArrow(step);
-    this.renderResultBanner(step);
-    this.renderLogLine(step);
-    this.updateStatePanel(step);
-  }
-
-  private renderStacks(step: MQStep): void {
-    // Render inStack
-    if (this.inStackEl) {
-      this.inStackEl.innerHTML = '';
-      if (step.inStack.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'stack-empty';
-        empty.textContent = '(empty)';
-        this.inStackEl.appendChild(empty);
-      } else {
-        step.inStack.forEach((val, idx) => {
-          const item = document.createElement('div');
-          item.className = 'stack-item in-item';
-          item.textContent = String(val);
-
-          // Animate the top element on push
-          if (step.status === 'push' && idx === step.inStack.length - 1) {
-            item.classList.add('pushing');
-          }
-
-          this.inStackEl!.appendChild(item);
-        });
-      }
-    }
-
-    // Render outStack
-    if (this.outStackEl) {
-      this.outStackEl.innerHTML = '';
-      if (step.outStack.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'stack-empty';
-        empty.textContent = '(empty)';
-        this.outStackEl.appendChild(empty);
-      } else {
-        step.outStack.forEach((val, idx) => {
-          const item = document.createElement('div');
-          item.className = 'stack-item out-item';
-          item.textContent = String(val);
-
-          // Animate transfer items
-          if (step.transfer && idx === step.outStack.length - 1) {
-            item.classList.add('transferring');
-          }
-
-          // Animate pop: the top item that was just popped is already removed,
-          // so no special animation needed here (it's gone from the array)
-
-          this.outStackEl!.appendChild(item);
-        });
-      }
-    }
-  }
-
-  private renderTransferArrow(step: MQStep): void {
-    if (!this.transferArrow) return;
-    if (step.transfer) {
-      this.transferArrow.classList.add('active');
-    } else {
-      this.transferArrow.classList.remove('active');
-    }
-  }
-
-  private renderResultBanner(step: MQStep): void {
-    if (!this.resultBanner) return;
-    if (step.status === 'done' && step.results.length > 0) {
-      this.resultBanner.style.display = 'flex';
-      this.resultBanner.className = 'result-banner success';
-      this.resultBanner.textContent = `Pop 结果序列：[${step.results.join(', ')}]`;
-    } else if (step.status === 'pop-result') {
-      this.resultBanner.style.display = 'flex';
-      this.resultBanner.className = 'result-banner';
-      this.resultBanner.textContent = `最近 pop → ${step.opValue}`;
-    } else if (step.status === 'peek') {
-      this.resultBanner.style.display = 'flex';
-      this.resultBanner.className = 'result-banner';
-      this.resultBanner.textContent = `peek → ${step.opValue}`;
-    } else {
-      this.resultBanner.style.display = 'none';
-    }
-  }
-
-  private renderLogLine(step: MQStep): void {
-    if (!this.logEl) return;
-    // Show all log entries up to current step
-    const allSteps = this.steps;
-    const currentIdx = allSteps.indexOf(step);
-    const entries = allSteps.slice(0, currentIdx + 1);
-    this.logEl.innerHTML = entries
-      .map((s, i) => `<div class="log-entry"><span class="log-op">[${i}]</span> ${s.log}</div>`)
-      .join('');
-    // Auto-scroll to bottom
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
-
-  private updateStatePanel(step: MQStep): void {
-    if (this.stateIn) this.stateIn.textContent = String(step.inStack.length);
-    if (this.stateOut) this.stateOut.textContent = String(step.outStack.length);
-    if (this.stateOpIndex) this.stateOpIndex.textContent = String(step.opIndex);
-    if (this.stateOp) {
-      this.stateOp.textContent = step.op;
-      this.stateOp.className = 'state-value' + (step.op !== '-' ? ' highlight' : '');
-    }
-  }
-}
-
-registerAlgorithm({
-  id: 'my-queue',
-  name: '用栈实现队列（双栈转移）',
-  viewId: 'algo-my-queue-view',
+const { template, Visualizer } = createDeclarativeVisualizer<MQStep>({
+  id: 'implement-queue-using-stack',
+  name: '用栈实现队列',
   category: 'stack',
-  description: '用两个栈模拟队列的 FIFO 行为',
   icon: '🔄',
-  template,
-  Visualizer: MyQueueVisualizer,
-  difficulty: 1,
-  levelOrder: 1,
-  learningGoal: '掌握用双栈实现队列的转移技巧',
+  badge: {
+    mode: '双栈架构·均摊 O(1)',
+    complexity: '均摊 O(1) · O(n)',
+  },
+  card1Title: '🔄 双栈交互与队列逻辑流沙盘',
+  card2Title: '📦 队列状态与指标监控',
+  card2Desc: '当前操作指令、双栈元素容量与出队输出记录',
+  legend: [
+    { label: '📥 输入栈 inStack', color: '#2563eb' },
+    { label: '📤 输出栈 outStack', color: '#10b981' },
+    { label: '🔀 倾倒倒置流', color: '#f59e0b' },
+  ],
+  inputs: [
+    {
+      id: 'input-ops',
+      label: '操作序列',
+      type: 'text',
+      defaultValue: 'push 1, push 2, peek, pop, empty',
+      width: '180px',
+      placeholder: 'push 1, push 2, peek...',
+    },
+  ],
+  presets: [
+    {
+      label: '经典示例',
+      values: { 'input-ops': 'push 1, push 2, peek, pop, empty' },
+    },
+    {
+      label: '交替出入队',
+      values: { 'input-ops': 'push 1, push 2, push 3, pop, push 4, pop, pop, pop' },
+    },
+    {
+      label: '连续窥探',
+      values: { 'input-ops': 'push 10, push 20, push 30, peek, pop, peek' },
+    },
+  ],
+  metrics: [
+    { id: 'queue-size', label: '队列总元素数', color: '#2563eb' },
+    { id: 'in-size', label: 'inStack 大小', color: '#3b82f6' },
+    { id: 'out-size', label: 'outStack 大小', color: '#10b981' },
+  ],
+  codeLanguages: IMPLEMENT_QUEUE_USING_STACK_CODE_LANGUAGES,
+  problemHtml: IMPLEMENT_QUEUE_USING_STACK_PROBLEM_HTML,
+  analysisHtml: IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
+  buildSteps: (inputs) => buildImplementQueueUsingStackSteps(inputs['input-ops']),
+  renderCanvas: (container, step) => {
+    // 渲染扁平双栈沙盘（绝无任何嵌套白色 card 边框）
+    DualStructureVisualAdapter.renderDualStack(container, step);
+
+    // 更新指标卡片
+    const root = container.closest('#algo-implement-queue-using-stack-view');
+    if (root) {
+      const qSizeEl = root.querySelector('#metric-queue-size');
+      const inSizeEl = root.querySelector('#metric-in-size');
+      const outSizeEl = root.querySelector('#metric-out-size');
+      const totalSize = step.inStack.length + step.outStack.length;
+
+      if (qSizeEl) qSizeEl.textContent = `${totalSize}`;
+      if (inSizeEl) inSizeEl.textContent = `${step.inStack.length}`;
+      if (outSizeEl) outSizeEl.textContent = `${step.outStack.length}`;
+
+      // 在 Card 2 中展示出队与窥探记录流
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const outputsHtml =
+          step.outputs.length === 0
+            ? '<span style="color: #94a3b8; font-size: 11px; font-style: italic;">暂无出队记录</span>'
+            : step.outputs
+                .map(
+                  (out, idx) => `
+                  <span style="display: inline-flex; align-items: center; gap: 3px; background: #ffffff; border: 1px solid #cbd5e1; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-family: monospace;">
+                    <span style="color: #64748b;">#${idx + 1}</span>
+                    <strong style="color: ${out.op === 'pop' ? '#dc2626' : '#2563eb'};">${out.op}</strong>: ${out.value}
+                  </span>
+                `
+                )
+                .join(' ');
+
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">出队与窥探输出记录:</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">${outputsHtml}</div>
+          </div>
+        `;
+      }
+    }
+  },
 });
 
-export {};
+registerAlgorithm({
+  id: 'implement-queue-using-stack',
+  name: '用栈实现队列',
+  viewId: 'algo-implement-queue-using-stack-view',
+  category: 'stack',
+  description: '双栈架构：输入栈 inStack 处理 push，输出栈 outStack 为空时一次性倾倒反转实现 FIFO',
+  icon: '🔄',
+  template,
+  Visualizer,
+  difficulty: 1,
+  levelOrder: 4,
+  learningGoal: '掌握双栈组合出 FIFO 队列的精妙架构，理解均摊时间复杂度 O(1) 的倒栈触发准则',
+});

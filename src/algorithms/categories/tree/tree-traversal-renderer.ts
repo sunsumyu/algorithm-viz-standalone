@@ -1,265 +1,257 @@
 /**
- * 二叉树前中后序遍历可视化器
- * LeetCode 144/94/145
+ * 二叉树前中后序遍历可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * 递归前序/中序/后序遍历、SVG 拓扑高亮、实时访问序列与代码同步
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './tree-traversal.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
+import {
+  TREE_TRAVERSAL_PROBLEM_HTML,
+  TREE_TRAVERSAL_ANALYSIS_HTML,
+  TREE_TRAVERSAL_CODE_LANGUAGES,
+} from './tree-traversal-problem-content';
 
-interface TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-}
+export type Mode = 'pre' | 'in' | 'post';
 
-type Mode = 'pre' | 'in' | 'post';
-
-interface TTStep {
+export interface TTStep {
   tree: TreeNode | null;
   mode: Mode;
   current: number | null;
   depth: number;
   visited: number;
-  result: number[];   // 已收集的访问序列
+  result: number[];
   action: 'enter' | 'visit' | 'leave';
   message: string;
   log: string;
   codeLine: number | number[];
 }
 
-function buildTree(arr: (number | null)[]): TreeNode | null {
-  if (arr.length === 0 || arr[0] === null) return null;
-  const root: TreeNode = { val: arr[0]!, left: null, right: null };
-  const queue: TreeNode[] = [root];
-  let i = 1;
-  while (queue.length > 0 && i < arr.length) {
-    const node = queue.shift()!;
-    if (i < arr.length && arr[i] !== null) {
-      node.left = { val: arr[i]!, left: null, right: null };
-      queue.push(node.left);
-    }
-    i++;
-    if (i < arr.length && arr[i] !== null) {
-      node.right = { val: arr[i]!, left: null, right: null };
-      queue.push(node.right);
-    }
-    i++;
-  }
-  return root;
-}
-
-function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
+export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
   const steps: TTStep[] = [];
   const result: number[] = [];
   let visited = 0;
 
   const modeName = mode === 'pre' ? '前序（根左右）' : mode === 'in' ? '中序（左根右）' : '后序（左右根）';
   steps.push({
-    tree: root, mode, current: null, depth: 0, visited: 0, result: [],
+    tree: root,
+    mode,
+    current: null,
+    depth: 0,
+    visited: 0,
+    result: [],
     action: 'enter',
-    message: `开始${modeName}遍历。`,
-    log: `开始${modeName}遍历。`,
+    message: root ? `开始${modeName}遍历：根节点为 ${root.val}。` : '空树，无需遍历。',
+    log: root ? `开始${modeName}遍历` : '空树',
     codeLine: 1,
   });
+
+  if (!root) {
+    steps.push({
+      tree: null,
+      mode,
+      current: null,
+      depth: 0,
+      visited: 0,
+      result: [],
+      action: 'leave',
+      message: '✅ 遍历完成，返回空序列 []。',
+      log: '遍历完成: []',
+      codeLine: 4,
+    });
+    return steps;
+  }
 
   const visit = (node: TreeNode, depth: number) => {
     visited++;
     result.push(node.val);
     steps.push({
-      tree: root, mode, current: node.val, depth, visited, result: [...result],
+      tree: root,
+      mode,
+      current: node.val,
+      depth,
+      visited,
+      result: [...result],
       action: 'visit',
-      message: `${modeName} 访问节点 ${node.val}（深度 ${depth}），加入结果。`,
-      log: `访问 ${node.val} → [${result.join(',')}]`,
-      codeLine: mode === 'pre' ? 2 : mode === 'in' ? 3 : 4,
+      message: `${modeName} 访问节点 ${node.val}（深度 ${depth}），加入结果序列。`,
+      log: `访问节点 ${node.val} -> [${result.join(', ')}]`,
+      codeLine: mode === 'pre' ? 5 : mode === 'in' ? 12 : 19,
     });
   };
 
   const traverse = (node: TreeNode | null, depth: number) => {
     if (!node) return;
     steps.push({
-      tree: root, mode, current: node.val, depth, visited, result: [...result],
+      tree: root,
+      mode,
+      current: node.val,
+      depth,
+      visited,
+      result: [...result],
       action: 'enter',
-      message: `进入节点 ${node.val}（深度 ${depth}）。`,
-      log: `进入 ${node.val}`,
-      codeLine: 1,
+      message: `进入节点 ${node.val}（当前栈深度 ${depth}）。`,
+      log: `进入 ${node.val} (depth ${depth})`,
+      codeLine: mode === 'pre' ? 4 : mode === 'in' ? 10 : 16,
     });
+
     if (mode === 'pre') visit(node, depth);
     traverse(node.left, depth + 1);
     if (mode === 'in') visit(node, depth);
     traverse(node.right, depth + 1);
     if (mode === 'post') visit(node, depth);
+
     steps.push({
-      tree: root, mode, current: node.val, depth, visited, result: [...result],
+      tree: root,
+      mode,
+      current: node.val,
+      depth,
+      visited,
+      result: [...result],
       action: 'leave',
-      message: `离开节点 ${node.val}（子树处理完毕）。`,
+      message: `离开节点 ${node.val}（该子树所有分支处理完毕，弹出栈帧）。`,
       log: `离开 ${node.val}`,
-      codeLine: 5,
+      codeLine: mode === 'pre' ? 7 : mode === 'in' ? 14 : 21,
     });
   };
 
   traverse(root, 0);
 
   steps.push({
-    tree: root, mode, current: null, depth: 0, visited, result: [...result],
+    tree: root,
+    mode,
+    current: null,
+    depth: 0,
+    visited,
+    result: [...result],
     action: 'leave',
-    message: `${modeName}遍历完成，结果：[${result.join(', ')}]。`,
-    log: `完成：[${result.join(', ')}]`,
-    codeLine: 6,
+    message: `🎉 ${modeName}遍历完成！最终收集序列：[${result.join(', ')}]。`,
+    log: `✓ 完成: [${result.join(', ')}]`,
+    codeLine: 1,
   });
+
   return steps;
 }
 
-export class TreeTraversalVisualizer extends StepVisualizer<TTStep> {
-  protected codeLines = [
-    'void traverse(TreeNode node) {',
-    '    if (node == null) return;',
-    '    // 前序：res.add(node.val);  ← 根',
-    '    traverse(node.left);          ← 左',
-    '    // 中序：res.add(node.val);  ← 根',
-    '    traverse(node.right);         ← 右',
-    '    // 后序：res.add(node.val);  ← 根',
-    '}',
-  ];
-  protected codePanelTitle = '遍历代码（前/中/后序）(Java)';
-
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private visitedEl: HTMLElement | null = null;
-  private lenEl: HTMLElement | null = null;
-
-  private mode: Mode = 'pre';
-  private treeData: (number | null)[] = [1, 2, 3, 4, 5, null, 6];
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#tt-tree');
-    this.logEl = this.root.querySelector('#tt-log');
-    this.resultEl = this.root.querySelector('#tt-result');
-    this.curEl = this.root.querySelector('#tt-cur');
-    this.depthEl = this.root.querySelector('#tt-depth');
-    this.visitedEl = this.root.querySelector('#tt-visited');
-    this.lenEl = this.root.querySelector('#tt-len');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#tt-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.tt-mode-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.root?.querySelectorAll<HTMLButtonElement>('.tt-mode-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.mode = btn.dataset.mode as Mode;
-        this.start();
-      });
-    });
-    this.root.querySelectorAll<HTMLButtonElement>('.tt-example').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const d = btn.dataset.id;
-        this.treeData = d === '1' ? [1, 2, 3, 4, 5, null, 6] : [5, 4, 6, 1, 2];
-        this.start();
-      });
-    });
-  }
-
-  protected buildSteps(): TTStep[] {
-    const root = buildTree(this.treeData);
-    return buildTTSteps(root, this.mode);
-  }
-
-  protected renderStep(step: TTStep): void {
-    if (this.curEl) this.curEl.textContent = step.current !== null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.visitedEl) this.visitedEl.textContent = String(step.visited);
-    if (this.lenEl) this.lenEl.textContent = String(step.result.length);
-    this.renderTree(step);
-    this.renderResult(step);
-    this.renderLogLine(step);
-  }
-
-  private renderTree(step: TTStep): void {
-    if (!this.treeEl || !step.tree) return;
-    this.treeEl.innerHTML = '';
-    const levelHeight = 42;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '240');
-    svg.setAttribute('viewBox', '0 0 600 240');
-    const drawNode = (node: TreeNode, x: number, y: number, spread: number) => {
-      const isCurrent = step.current === node.val;
-      if (node.left) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.left, x - spread, y + levelHeight, spread / 2);
-      }
-      if (node.right) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
-        line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + levelHeight));
-        line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
-        svg.appendChild(line);
-        drawNode(node.right, x + spread, y + levelHeight, spread / 2);
-      }
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(x)); circle.setAttribute('cy', String(y)); circle.setAttribute('r', '16');
-      circle.setAttribute('fill', isCurrent ? '#f38ba8' : '#45475a');
-      circle.setAttribute('stroke', isCurrent ? '#f38ba8' : '#6c7086');
-      circle.setAttribute('stroke-width', '2');
-      svg.appendChild(circle);
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(x)); text.setAttribute('y', String(y + 5));
-      text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#cdd6f4');
-      text.setAttribute('font-size', '12'); text.setAttribute('font-weight', 'bold');
-      text.textContent = String(node.val);
-      svg.appendChild(text);
-    };
-    drawNode(step.tree, 300, 30, 110);
-    this.treeEl.appendChild(svg);
-  }
-
-  private renderResult(step: TTStep): void {
-    if (!this.resultEl) return;
-    this.resultEl.innerHTML = '';
-    if (step.result.length === 0) {
-      this.resultEl.innerHTML = '<span style="color:#6c7086">（空）</span>';
-      return;
-    }
-    step.result.forEach((val) => {
-      const el = document.createElement('span');
-      el.className = 'tt-result-val';
-      if (val === step.current) el.classList.add('current');
-      el.textContent = String(val);
-      this.resultEl!.appendChild(el);
-    });
-  }
-
-  private renderLogLine(step: TTStep): void {
-    const logEl = this.logEl;
-    if (!logEl) return;
-    logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      logEl.appendChild(line);
-    });
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+function parseTreeInput(raw: string): (number | null)[] {
+  return (raw || '1, 2, 3, 4, 5, 6, 7')
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
+    .filter((n) => n === null || !isNaN(n));
 }
+
+const { template, Visualizer } = createDeclarativeVisualizer<TTStep>({
+  id: 'tree-traversal',
+  name: '二叉树遍历',
+  category: 'tree',
+  icon: '🌲',
+  badge: {
+    mode: '前序 / 中序 / 后序递归',
+    complexity: 'O(n) · O(h)',
+  },
+  card1Title: '📊 二叉树拓扑结构与遍历沙盘',
+  card2Title: '🧭 遍历指标与输出序列监视器',
+  card2Desc: '当前访问节点、递归调用栈深度与输出序列',
+  legend: [
+    { label: '当前访问节点', color: '#fbbf24' },
+    { label: '已输出节点', color: '#34d399' },
+  ],
+  inputs: [
+    {
+      id: 'input-tree',
+      label: '二叉树层序',
+      type: 'text',
+      defaultValue: '1, 2, 3, 4, 5, 6, 7',
+      width: '150px',
+      placeholder: '1, 2, 3, 4, 5...',
+    },
+  ],
+  modes: [
+    { id: 'pre', label: '前序遍历 (根-左-右)' },
+    { id: 'in', label: '中序遍历 (左-根-右)' },
+    { id: 'post', label: '后序遍历 (左-右-根)' },
+  ],
+  presets: [
+    {
+      label: '完美满二叉树',
+      values: { 'input-tree': '1, 2, 3, 4, 5, 6, 7' },
+    },
+    {
+      label: '单侧偏斜树',
+      values: { 'input-tree': '1, 2, null, 3, null, null, null' },
+    },
+    {
+      label: '不规则二叉树',
+      values: { 'input-tree': '1, 2, 3, null, 4, 5, null' },
+    },
+  ],
+  metrics: [
+    { id: 'cur-node', label: '当前访问节点', color: '#f59e0b' },
+    { id: 'depth', label: '调用栈深度 depth', color: '#2563eb' },
+    { id: 'visited-count', label: '已访问节点数', color: '#0f172a' },
+  ],
+  codeLanguages: TREE_TRAVERSAL_CODE_LANGUAGES,
+  problemHtml: TREE_TRAVERSAL_PROBLEM_HTML,
+  analysisHtml: TREE_TRAVERSAL_ANALYSIS_HTML,
+  buildSteps: (inputs, mode) => {
+    const raw = inputs['input-tree'] || '1, 2, 3, 4, 5, 6, 7';
+    const arr = parseTreeInput(raw);
+    const root = buildTree(arr);
+    return buildTTSteps(root, (mode as Mode) || 'pre');
+  },
+  renderCanvas: (container, step) => {
+    // 渲染纯净 SVG 树拓扑
+    TreeCanvasAdapter.renderTree(container, {
+      tree: step.tree,
+      current: step.current,
+      secondaryHighlightedNodes: step.result,
+      primaryColor: '#fbbf24',
+      secondaryColor: '#34d399',
+    });
+
+    // 更新指标卡片
+    const root = container.closest('#algo-tree-traversal-view');
+    if (root) {
+      const curEl = root.querySelector('#metric-cur-node');
+      const depthEl = root.querySelector('#metric-depth');
+      const visitedEl = root.querySelector('#metric-visited-count');
+
+      if (curEl) curEl.textContent = step.current != null ? `${step.current}` : '—';
+      if (depthEl) depthEl.textContent = `${step.depth}`;
+      if (visitedEl) visitedEl.textContent = `${step.visited}`;
+
+      // 在 Card 2 中展示输出序列
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">已输出序列:</span>
+              <span style="font-size: 10px; color: #64748b; font-family: monospace;">${step.result.length} 个节点</span>
+            </div>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #16a34a;">
+              [ ${step.result.join(', ')} ]
+            </div>
+          </div>
+        `;
+      }
+    }
+  },
+});
 
 registerAlgorithm({
   id: 'tree-traversal',
-  name: '二叉树前中后序遍历',
+  name: '二叉树遍历',
   viewId: 'algo-tree-traversal-view',
   category: 'tree',
-  description: '递归实现前序/中序/后序遍历，对比三种访问顺序',
-  icon: '🌳',
+  description: '前序（根左右）、中序（左根右）、后序（左右根）三大经典递归遍历算法',
+  icon: '🌲',
   template,
-  Visualizer: TreeTraversalVisualizer,
+  Visualizer,
   difficulty: 1,
   levelOrder: 1,
-  learningGoal: '掌握二叉树的前/中/后序遍历递归与非递归写法',
+  learningGoal: '彻底掌握二叉树前中后序递归遍历的访问时机、调用栈深度与输出时机',
 });

@@ -1,0 +1,1254 @@
+/**
+ * 可视化演示器统一主题样式 (Visualizer Theme System)
+ * 包含：
+ * 1. CSS 自定义属性（CSS Variables）与 4 套设计令牌声明
+ * 2. 语义化单元格样式体系 (.viz-cell, .viz-memo-slot 等)
+ * 3. 字体声明、全局滚动条
+ * 4. 代码高亮行自适应主题
+ * 5. 动物角色动效 (青蛙、猫咪) 与探险家小人动画
+ */
+
+/* ===== 全局 CSS 变量与默认 Light 主题 ===== */
+:root {
+  --viz-app-bg: #f8fafc;
+  --viz-card-bg: #ffffff;
+  --viz-card-border: #e2e8f0;
+  --viz-card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  --viz-text-main: #0f172a;
+  --viz-text-muted: #64748b;
+  --viz-primary: #3b82f6;
+  --viz-primary-light: #eff6ff;
+  --viz-cell-bg: #ffffff;
+  --viz-cell-border: #e2e8f0;
+  --viz-cell-text: #94a3b8;
+  --viz-cell-active-bg: #dbeafe;
+  --viz-cell-active-border: #3b82f6;
+  --viz-cell-active-text: #1e40af;
+  --viz-cell-active-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.25);
+  --viz-cell-top-bg: #f3e8ff;
+  --viz-cell-top-border: #c084fc;
+  --viz-cell-top-text: #6b21a8;
+  --viz-cell-left-bg: #fef3c7;
+  --viz-cell-left-border: #fbbf24;
+  --viz-cell-left-text: #92400e;
+  --viz-cell-done-bg: #ecfdf5;
+  --viz-cell-done-border: #6ee7b7;
+  --viz-cell-done-text: #047857;
+  --viz-cell-obstacle-bg: #e2e8f0;
+  --viz-cell-obstacle-border: #94a3b8;
+  --viz-code-bg: #0f172a;
+  --viz-code-text: #f8fafc;
+  --viz-code-active-line: rgba(59, 130, 246, 0.25);
+  --viz-code-active-border: #3b82f6;
+}
+
+.view-container {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: none;
+  overflow: hidden;
+  position: relative;
+}
+
+.view-container.active {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* ===== 滚动条主题 ===== */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.6);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ===== 语义化单元格样式体系 (Semantic Grid Cells) ===== */
+.viz-cell {
+  background-color: var(--viz-cell-bg, #ffffff);
+  border-color: var(--viz-cell-border, #e2e8f0);
+  color: var(--viz-cell-text, #94a3b8);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.viz-cell .cell-val {
+  color: var(--viz-text-main, #0f172a);
+}
+
+.viz-cell.is-cur {
+  background-color: var(--viz-cell-active-bg, #dbeafe) !important;
+  border-color: var(--viz-cell-active-border, #3b82f6) !important;
+  color: var(--viz-cell-active-text, #1e40af) !important;
+  box-shadow: var(--viz-cell-active-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.3)) !important;
+  transform: scale(1.06);
+  z-index: 20;
+}
+
+.viz-cell.is-cur .cell-indicator {
+  background-color: var(--viz-cell-active-border, #3b82f6) !important;
+  width: 2rem !important;
+}
+
+.viz-cell.is-top {
+  background-color: var(--viz-cell-top-bg, #f3e8ff) !important;
+  border-color: var(--viz-cell-top-border, #c084fc) !important;
+  color: var(--viz-cell-top-text, #6b21a8) !important;
+  z-index: 10;
+}
+
+.viz-cell.is-top .cell-indicator {
+  background-color: var(--viz-cell-top-border, #c084fc) !important;
+}
+
+.viz-cell.is-left {
+  background-color: var(--viz-cell-left-bg, #fef3c7) !important;
+  border-color: var(--viz-cell-left-border, #fbbf24) !important;
+  color: var(--viz-cell-left-text, #92400e) !important;
+  z-index: 10;
+}
+
+.viz-cell.is-left .cell-indicator {
+  background-color: var(--viz-cell-left-border, #fbbf24) !important;
+}
+
+.viz-cell.is-done {
+  background-color: var(--viz-cell-done-bg, #ecfdf5);
+  border-color: var(--viz-cell-done-border, #6ee7b7);
+  color: var(--viz-cell-done-text, #047857);
+}
+
+.viz-cell.is-done .cell-indicator {
+  background-color: var(--viz-cell-done-border, #6ee7b7);
+}
+
+.viz-cell.is-obstacle {
+  background-color: var(--viz-cell-obstacle-bg, #e2e8f0);
+  border-color: var(--viz-cell-obstacle-border, #94a3b8);
+  opacity: 0.85;
+}
+
+/* ===== 一维 Memo 槽位样式 ===== */
+.viz-memo-slot {
+  background-color: var(--viz-cell-bg, #ffffff);
+  border-color: var(--viz-cell-border, #e2e8f0);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.viz-memo-slot.is-updated {
+  background-color: var(--viz-cell-active-bg, #dbeafe) !important;
+  border-color: var(--viz-cell-active-border, #3b82f6) !important;
+  box-shadow: var(--viz-cell-active-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.3)) !important;
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.viz-memo-slot.is-ref-left {
+  background-color: var(--viz-cell-left-bg, #fef3c7) !important;
+  border-color: var(--viz-cell-left-border, #fbbf24) !important;
+  border-style: dashed !important;
+}
+
+/* ===== 代码字体与高亮行 ===== */
+:root {
+  --viz-code-font-size: 11.5px;
+}
+
+.font-mono-code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.code-line {
+  display: block;
+  padding: 1.5px 8px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  line-height: 1.48;
+  white-space: pre;
+  border-left: 3px solid transparent;
+  font-size: var(--viz-code-font-size, 11.5px);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: -0.01em;
+}
+.code-line.active-line {
+  background-color: var(--viz-code-active-line, rgba(59, 130, 246, 0.25));
+  border-left-color: var(--viz-code-active-border, #3b82f6);
+  color: #ffffff !important;
+  font-weight: 700;
+}
+.code-line.context-line {
+  background-color: rgba(248, 250, 252, 0.05);
+}
+
+/* ===== 动物动效 ===== */
+@keyframes frog-hop {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-8px) scale(1.08, 0.92); }
+  50% { transform: translateY(-12px) scale(0.95, 1.08); }
+  75% { transform: translateY(0) scale(1.1, 0.88); }
+}
+.animal-frog {
+  display: inline-block;
+  animation: frog-hop 0.85s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes cat-bounce-wave {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(-6deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-4px) rotate(6deg); }
+}
+.animal-cat {
+  display: inline-block;
+  animation: cat-bounce-wave 1s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* ===== 探险家小人基础状态 ===== */
+@keyframes adventurer-walk {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.02, 0.98); }
+}
+@keyframes adventurer-blocked {
+  0%, 100% { transform: scale(1); }
+  25% { transform: translate(-2px, 1px) rotate(-3deg); }
+  75% { transform: translate(2px, -1px) rotate(3deg); }
+}
+@keyframes adventurer-cheer {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1.1); }
+  25% { transform: translateY(-10px) rotate(-6deg) scale(1.2); }
+  75% { transform: translateY(-10px) rotate(6deg) scale(1.2); }
+}
+.adventurer-char.is-jumping,
+.adventurer-char.is-walking {
+  animation: adventurer-walk 0.75s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+.adventurer-char.is-blocked {
+  animation: adventurer-blocked 0.25s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+.adventurer-char.is-cheering {
+  animation: adventurer-cheer 0.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* 探险家角色容器规范 (Vanilla CSS 基础定义，确保始终立于单元格上方且置于最顶层，避免被坐标或数字遮挡) */
+.adventurer-char-holder {
+  position: absolute !important;
+  top: -24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  pointer-events: none !important;
+  z-index: 50 !important;
+}
+
+/* ===== 数字输入框样式 ===== */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ===== 河流波动与跳河落水反弹动效 (River Waves & Splash Recoil) ===== */
+@keyframes riverWaveFlow1 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-60px); }
+}
+@keyframes riverWaveFlow2 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(60px); }
+}
+.dp-river-waves-1 {
+  animation: riverWaveFlow1 3.5s linear infinite;
+}
+.dp-river-waves-2 {
+  animation: riverWaveFlow2 2.8s linear infinite;
+}
+
+@keyframes riverSplashDive {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.river-splash-dive {
+  display: inline-block;
+  animation: riverSplashDive 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes riverSplashRecoil {
+  0% {
+    /* 在安全格起点准备向下跳入河流 */
+    transform: translateY(0) scale(1);
+  }
+  32% {
+    /* 勇猛下跃，直接俯冲进入下方的深水河流 (下落 36px 深入河面) */
+    transform: translateY(36px) scale(0.92, 1.16);
+  }
+  50% {
+    /* 触碰河水！激起大片水花与冲击阻断，受水力反弹冲击压扁 */
+    transform: translateY(40px) scale(1.28, 0.72);
+  }
+  72% {
+    /* 边界反弹力瞬间将探险家向上弹回网格！ */
+    transform: translateY(-6px) scale(0.95, 1.05);
+  }
+  88% {
+    /* 稳稳落回安全网格 */
+    transform: translateY(2px) scale(1.02, 0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.river-splash-recoil {
+  display: inline-block;
+  animation: riverSplashRecoil 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes wallRecoilRight {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  32% {
+    /* 向右大步冲向右侧边界高墙 (+34px) */
+    transform: translateX(34px) scale(1.16, 0.92);
+  }
+  50% {
+    /* 撞上墙壁！冲击震颤 */
+    transform: translateX(38px) scale(0.72, 1.28);
+  }
+  72% {
+    /* 反弹迅速弹回安全网格 */
+    transform: translateX(-6px) scale(1.05, 0.95);
+  }
+  88% {
+    transform: translateX(2px) scale(0.98, 1.02);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+.wall-recoil-right {
+  display: inline-block;
+  animation: wallRecoilRight 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center right;
+}
+
+@keyframes obstacleRecoilDown {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入下方障碍物格子 (+38px 深入障碍格) */
+    transform: translateY(38px) scale(0.92, 1.18);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateY(42px) scale(1.32, 0.68);
+  }
+  68% {
+    /* 瞬间受阻弹回安全来源格！ */
+    transform: translateY(-8px) scale(0.92, 1.08);
+  }
+  85% {
+    transform: translateY(3px) scale(1.03, 0.97);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.obstacle-recoil-down {
+  display: inline-block;
+  animation: obstacleRecoilDown 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes obstacleRecoilRight {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入右侧障碍物格子 (+38px 深入障碍格) */
+    transform: translateX(38px) scale(1.18, 0.92);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateX(42px) scale(0.68, 1.32);
+  }
+  68% {
+    /* 瞬间受阻弹回安全来源格！ */
+    transform: translateX(-8px) scale(1.08, 0.92);
+  }
+  85% {
+    transform: translateX(3px) scale(0.97, 1.03);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+.obstacle-recoil-right {
+  display: inline-block;
+  animation: obstacleRecoilRight 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes obstacleRecoilLeft {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入左侧障碍物格子 (-38px 深入障碍格) */
+    transform: translateX(-38px) scale(1.18, 0.92);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateX(-42px) scale(0.68, 1.32);
+  }
+  68% {
+    /* 瞬间受阻弹回右侧安全来源格！ */
+    transform: translateX(8px) scale(1.08, 0.92);
+  }
+  85% {
+    transform: translateX(-3px) scale(0.97, 1.03);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+.obstacle-recoil-left {
+  display: inline-block;
+  animation: obstacleRecoilLeft 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes obstacleRecoilUp {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    /* 猛烈跳入上方障碍物格子 (-38px 深入障碍格) */
+    transform: translateY(-38px) scale(0.92, 1.18);
+  }
+  48% {
+    /* 💥 撞击坚硬障碍物！冲击压扁 */
+    transform: translateY(-42px) scale(1.32, 0.68);
+  }
+  68% {
+    /* 瞬间受阻弹回下方安全来源格！ */
+    transform: translateY(8px) scale(0.92, 1.08);
+  }
+  85% {
+    transform: translateY(-3px) scale(1.03, 0.97);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.obstacle-recoil-up {
+  display: inline-block;
+  animation: obstacleRecoilUp 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes obstacleBonkRecoil {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  26% {
+    /* 尝试起跳向前踏入障碍 */
+    transform: translate(0px, 12px) scale(0.9, 1.16);
+  }
+  46% {
+    /* 💥 触碰障碍物受到猛烈撞击阻挡！ */
+    transform: translate(0px, 16px) scale(1.3, 0.7);
+  }
+  66% {
+    /* 受到强大阻断力剧烈向后反弹弹回！ */
+    transform: translate(0px, -18px) scale(0.88, 1.14);
+  }
+  84% {
+    transform: translate(0px, 3px) scale(1.04, 0.96);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.obstacle-bonk-recoil {
+  display: inline-block;
+  animation: obstacleBonkRecoil 1.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes wallRecoilBump {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  32% {
+    transform: translate(16px, 6px) scale(1.1, 0.92);
+  }
+  50% {
+    transform: translate(20px, 8px) scale(0.8, 1.2);
+  }
+  72% {
+    transform: translate(-3px, -2px) scale(1.04, 0.96);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.wall-recoil-bump {
+  display: inline-block;
+  animation: wallRecoilBump 0.9s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  transform-origin: center center;
+}
+
+/* ===== 探索足迹与箭头流动动效 ===== */
+.viz-cell.is-trail {
+  background-color: var(--viz-cell-trail-bg, #f0f9ff) !important;
+  border-color: var(--viz-cell-trail-border, #38bdf8) !important;
+  border-style: dashed !important;
+  color: var(--viz-cell-trail-text, #0369a1) !important;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+  z-index: 5;
+}
+
+@keyframes trailDashMove {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.dp-trail-arrow {
+  animation: trailDashMove 0.8s linear infinite;
+}
+
+/* ===== 拖拽分隔条 (Splitter Styles) ===== */
+.algo-splitter {
+  position: relative;
+  user-select: none;
+  touch-action: none;
+  z-index: 25;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.algo-splitter-horizontal {
+  width: 8px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 -2px;
+}
+
+.algo-splitter-horizontal .algo-splitter-bar {
+  width: 3px;
+  height: 36px;
+  border-radius: 9999px;
+  background-color: var(--viz-card-border, #cbd5e1);
+  transition: all 0.2s ease;
+}
+
+.algo-splitter-horizontal:hover .algo-splitter-bar,
+.algo-splitter-horizontal.is-dragging .algo-splitter-bar {
+  background-color: var(--viz-primary, #3b82f6);
+  height: 48px;
+  width: 4px;
+}
+
+.algo-splitter-vertical {
+  height: 8px;
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -2px 0;
+  width: 100%;
+}
+
+.algo-splitter-vertical .algo-splitter-bar {
+  height: 3px;
+  width: 36px;
+  border-radius: 9999px;
+  background-color: var(--viz-card-border, #cbd5e1);
+  transition: all 0.2s ease;
+}
+
+.algo-splitter-vertical:hover .algo-splitter-bar,
+.algo-splitter-vertical.is-dragging .algo-splitter-bar {
+  background-color: var(--viz-primary, #3b82f6);
+  width: 48px;
+  height: 4px;
+}
+
+/* ===== 行内局部表达式发光聚焦 (Inline Token Focus) ===== */
+.inline-token-focus {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.25) !important;
+  border: 1.5px solid #f59e0b !important;
+  border-radius: 4px !important;
+  padding: 0 4px !important;
+  margin: 0 1px !important;
+  color: #fef08a !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.55) !important;
+  animation: tokenFocusPulse 1.2s ease-in-out infinite !important;
+}
+
+@keyframes tokenFocusPulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+    border-color: #f59e0b;
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.9);
+    border-color: #fbbf24;
+  }
+}
+
+/* ===== 3D 等轴立体网格系统 (3D Isometric Grid Visualizer) ===== */
+.grid-3d-scene {
+  perspective: 1200px;
+  perspective-origin: 50% 45%;
+  transform-style: preserve-3d;
+}
+
+.grid-3d-board {
+  transform: rotateX(55deg) rotateZ(-35deg) translateY(-10px);
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+  box-shadow: -14px 20px 30px -6px rgba(15, 23, 42, 0.22), -24px 36px 48px -12px rgba(15, 23, 42, 0.14) !important;
+}
+
+.grid-3d-board .viz-cell {
+  transform-style: preserve-3d;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background-color 0.2s ease;
+  box-shadow: 
+    -1px 1px 0 #cbd5e1,
+    -2px 2px 0 #94a3b8,
+    -3px 3px 0 #64748b,
+    -6px 8px 12px rgba(15, 23, 42, 0.15);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.grid-3d-board .viz-cell:hover {
+  transform: translateZ(8px);
+  box-shadow: 
+    -1px 1px 0 #94a3b8,
+    -2px 2px 0 #64748b,
+    -3px 3px 0 #475569,
+    -4px 4px 0 #334155,
+    -8px 12px 16px rgba(15, 23, 42, 0.25);
+}
+
+/* 3D 空单元格 */
+.grid-3d-board .viz-cell.is-empty {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+}
+
+/* 3D 已完成单元格 */
+.grid-3d-board .viz-cell.is-done {
+  background: #f8fafc;
+  box-shadow: 
+    -1px 1px 0 #cbd5e1,
+    -2px 2px 0 #94a3b8,
+    -3px 3px 0 #64748b,
+    -6px 8px 12px rgba(15, 23, 42, 0.12);
+}
+
+/* 3D 当前活动格 (隆起悬浮与发光底座) */
+.grid-3d-board .viz-cell.is-cur {
+  transform: translateZ(16px) scale(1.05) !important;
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 
+    -1px 1px 0 #60a5fa,
+    -2px 2px 0 #3b82f6,
+    -3px 3px 0 #2563eb,
+    -4px 4px 0 #1d4ed8,
+    -8px 16px 24px rgba(37, 99, 235, 0.4) !important;
+  z-index: 50 !important;
+}
+
+/* 3D 障碍物砖石方块 */
+.grid-3d-board .viz-cell.is-obstacle {
+  transform: translateZ(10px);
+  box-shadow: 
+    -1px 1px 0 #94a3b8,
+    -2px 2px 0 #64748b,
+    -3px 3px 0 #475569,
+    -4px 4px 0 #334155,
+    -8px 14px 18px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 3D 上方与左方参考格 */
+.grid-3d-board .viz-cell.is-top {
+  transform: translateZ(8px);
+  box-shadow: 
+    -1px 1px 0 #c084fc,
+    -2px 2px 0 #a855f7,
+    -3px 3px 0 #7e22ce,
+    -6px 10px 14px rgba(126, 34, 206, 0.3) !important;
+}
+
+.grid-3d-board .viz-cell.is-left {
+  transform: translateZ(8px);
+  box-shadow: 
+    -1px 1px 0 #fbbf24,
+    -2px 2px 0 #f59e0b,
+    -3px 3px 0 #b45309,
+    -6px 10px 14px rgba(180, 83, 9, 0.3) !important;
+}
+
+/* 3D 广告牌探险家角色 (直立朝向观察者) */
+.grid-3d-board .adventurer-char-holder {
+  transform: translateX(-50%) rotateZ(35deg) rotateX(-55deg) translateY(-14px) !important;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(-4px 8px 8px rgba(0, 0, 0, 0.35));
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 3D 障碍物猫咪/标识直立 */
+.grid-3d-board .animal-cat,
+.grid-3d-board .obstacle-3d-sprite {
+  display: inline-block;
+  transform: rotateZ(35deg) rotateX(-55deg) translateY(-4px);
+}
+
+/* 3D 边界河流水槽 */
+.grid-3d-board #grid-river-barrier {
+  transform: translateZ(2px);
+  box-shadow: -4px 8px 16px rgba(14, 116, 144, 0.35);
+}
+
+/* ===== 暗色代码终端 Token 语法高亮样式体系 ===== */
+.algo-code-token-keyword {
+  color: #c084fc !important;
+  font-weight: 600;
+}
+
+.algo-code-token-type {
+  color: #fde047 !important;
+}
+
+.algo-code-token-string {
+  color: #4ade80 !important;
+}
+
+.algo-code-token-comment {
+  color: #64748b !important;
+  font-style: italic;
+}
+
+.algo-code-token-number {
+  color: #fcd34d !important;
+  font-weight: 700;
+}
+
+.algo-code-token-annotation {
+  color: #fbbf24 !important;
+}
+
+.inline-token-focus {
+  background: rgba(59, 130, 246, 0.25);
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  padding: 0 3px;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+/* ===== 暗色代码终端 Universal Dark Code Terminal Header 统一样式 ===== */
+#btn-tab-code,
+#btn-tab-problem,
+#btn-tab-analysis,
+.sq-tab-item,
+[class*="-tab-item"] {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+#btn-tab-code.active,
+#btn-tab-problem.active,
+#btn-tab-analysis.active,
+.sq-tab-item.active,
+[class*="-tab-item"].active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+#btn-tab-code:hover:not(.active),
+#btn-tab-problem:hover:not(.active),
+#btn-tab-analysis:hover:not(.active),
+.sq-tab-item:hover:not(.active),
+[class*="-tab-item"]:hover:not(.active) {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sq-lang-btn,
+[class*="-lang-btn"] {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.sq-lang-btn.active,
+[class*="-lang-btn"].active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.sq-lang-btn:hover:not(.active),
+[class*="-lang-btn"]:hover:not(.active) {
+  color: #cbd5e1;
+}
+
+.sq-font-scaler,
+[class*="-font-scaler"] {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 1px 4px;
+}
+
+.sq-font-scaler button,
+[class*="-font-scaler"] button {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 3px;
+  transition: color 0.15s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.sq-font-scaler button:hover,
+[class*="-font-scaler"] button:hover {
+  color: #ffffff;
+}
+
+.sq-font-scaler span,
+[class*="-font-scaler"] span {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  color: #cbd5e1;
+  min-width: 14px;
+  text-align: center;
+}
+
+/* ===== 全局算法视图顶栏与控件组布局规范 ===== */
+[id^="algo-"] > header,
+.algo-view > header,
+header[class*="-header"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex-wrap: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* 左侧标题与核心信息区：紧凑靠左排布，严禁 space-between 扩散 */
+[id^="algo-"] > header > [class*="header-left"],
+header > [class*="header-left"],
+.header-left {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+[class*="-icon-btn"] {
+  flex-shrink: 0 !important;
+}
+
+[class*="-main-title"] {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+[class*="-btn-problem"] {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+[class*="-badge-mode"] {
+  max-width: 240px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  flex-shrink: 1 !important;
+}
+
+[class*="-badge-complexity"] {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* 右侧控制与操作区：靠右排列，元素间距适中且绝不重叠 */
+[id^="algo-"] > header > [class*="header-right"],
+header > [class*="header-right"],
+.header-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  width: auto !important;
+  flex-wrap: nowrap !important;
+}
+
+/* 预设用例大框与对齐系统 (全局统一单一大框包裹与对齐) */
+[class*="-preset-bar"],
+[class*="-preset-chips"] {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  margin-top: 4px !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+[class*="-preset-label"],
+[class*="-preset-bar"] > span:first-child,
+[class*="-preset-chips"] > span:first-child {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+  line-height: 24px !important;
+  flex-shrink: 0 !important;
+}
+
+[class*="-preset-list"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.header-preset-group button,
+button[class*="-chip"] {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  padding: 2.5px 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap !important;
+  line-height: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+.header-preset-group button:hover,
+button[class*="-chip"]:hover {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.12);
+}
+
+/* 输入框组：自然宽度，防重叠 */
+[class*="-input-group"],
+.input-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  width: auto !important;
+}
+
+[class*="-input-str"],
+[class*="-input-group"] input[type="text"],
+[class*="-input-group"] input:not([type="number"]) {
+  width: 90px;
+  max-width: 130px;
+  min-width: 45px;
+  flex-shrink: 1;
+  box-sizing: border-box;
+}
+
+[class*="-input-num"],
+[class*="-input-group"] input[type="number"],
+[class*="-input-k"] {
+  width: 40px;
+  min-width: 32px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* 按钮组强防收缩与防重叠 */
+[class*="-btn-generate"],
+[class*="-btn-reset"],
+#btn-generate,
+#btn-reset {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* ===== 响应式多级断点适配 ===== */
+@media (max-width: 1300px) {
+  [class*="-badge-mode"] {
+    max-width: 160px !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  [class*="-badge-mode"] {
+    display: none !important;
+  }
+  [class*="-badge-complexity"] {
+    display: none !important;
+  }
+}
+
+/* ===== 全局模态弹窗与遮罩层规范 ===== */
+.hidden,
+.modal-backdrop.hidden,
+[id^="modal-"].hidden,
+[id$="-modal"].hidden {
+  display: none !important;
+}
+
+.modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 99999 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-backdrop .modal-content {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  color: #f8fafc;
+}
+
+.modal-backdrop .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #334155;
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.modal-backdrop .modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.modal-backdrop button#btn-close-problem-modal,
+.modal-backdrop .btn-close-modal {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.modal-backdrop button#btn-close-problem-modal:hover,
+.modal-backdrop .btn-close-modal:hover {
+  color: #ffffff;
+}
+
+.modal-backdrop .modal-body,
+.modal-backdrop #modal-problem-body {
+  padding: 20px;
+  overflow-y: auto;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.6;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ===== Universal Collapsible Panels (双击标题行折叠/展开) ===== */
+.dsp-card-header,
+.terminal-auto-header,
+.ct-header,
+.dark-code-terminal-header,
+[class*="-card-header"],
+.card-header,
+.panel-header,
+.algo-panel-header {
+  user-select: none;
+}
+
+/* 折叠状态面板样式（原有面板视觉风格完全保留，仅高度紧凑自适应并隐藏内部主体） */
+.algo-panel-collapsed,
+.dsp-card.algo-panel-collapsed,
+.dsp-log-card.algo-panel-collapsed,
+.dsp-terminal-card.algo-panel-collapsed,
+.dark-terminal-auto-frame.algo-panel-collapsed,
+[class*="-card"].algo-panel-collapsed,
+.card.algo-panel-collapsed,
+.panel.algo-panel-collapsed {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.algo-panel-collapsed > :not(.dsp-card-header):not(.terminal-auto-header):not(.ct-header):not(.dark-code-terminal-header):not([class*="-card-header"]):not(.card-header):not(.panel-header):not([class*="-panel-header"]):not(.algo-panel-header) {
+  display: none !important;
+}
+
+.algo-panel-collapsed > .dsp-card-header,
+.algo-panel-collapsed > .terminal-auto-header,
+.algo-panel-collapsed > .ct-header,
+.algo-panel-collapsed > .dark-code-terminal-header,
+.algo-panel-collapsed > [class*="-card-header"],
+.algo-panel-collapsed > .card-header,
+.algo-panel-collapsed > .panel-header,
+.algo-panel-collapsed > .algo-panel-header {
+  margin-bottom: 0 !important;
+}
+
+/* 当同列上方卡片折叠时，下方卡片自动弹性撑满剩余全部垂直空间，杜绝底部大片空白 */
+.dsp-left-section > .dsp-card:first-child.algo-panel-collapsed ~ .dsp-card:last-child:not(.algo-panel-collapsed),
+.dsp-right-section > .dsp-terminal-card.algo-panel-collapsed ~ .dsp-log-card:not(.algo-panel-collapsed),
+.dsp-right-section > .code-terminal-card.algo-panel-collapsed ~ .dsp-log-card:not(.algo-panel-collapsed),
+.dsp-right-section > .dark-terminal-auto-frame.algo-panel-collapsed ~ .dsp-log-card:not(.algo-panel-collapsed),
+[class*="-left-section"] > [class*="-card"]:first-child.algo-panel-collapsed ~ [class*="-card"]:last-child:not(.algo-panel-collapsed),
+[class*="-right-section"] > [class*="-card"]:first-child.algo-panel-collapsed ~ [class*="-card"]:last-child:not(.algo-panel-collapsed),
+[class*="-left-section"] > .card:first-child.algo-panel-collapsed ~ .card:last-child:not(.algo-panel-collapsed),
+[class*="-right-section"] > .card:first-child.algo-panel-collapsed ~ .card:last-child:not(.algo-panel-collapsed) {
+  flex: 1 1 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* 当同列下方卡片折叠时，自动沉底收起贴紧容器底部，杜绝悬浮在半空中 */
+.dsp-left-section > .dsp-card:last-child.algo-panel-collapsed,
+.dsp-right-section > .dsp-log-card.algo-panel-collapsed,
+.dsp-right-section > [class*="-card"]:last-child.algo-panel-collapsed,
+[class*="-left-section"] > [class*="-card"]:last-child.algo-panel-collapsed,
+[class*="-right-section"] > [class*="-card"]:last-child.algo-panel-collapsed,
+[class*="-left-section"] > .card:last-child.algo-panel-collapsed,
+[class*="-right-section"] > .card:last-child.algo-panel-collapsed,
+.dsp-left-section > .panel:last-child.algo-panel-collapsed,
+.dsp-right-section > .panel:last-child.algo-panel-collapsed {
+  margin-top: auto !important;
+}
+
+
+
+
+
+
+

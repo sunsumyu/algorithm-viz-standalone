@@ -343,16 +343,21 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
     if (stage === 'space-optimized') {
       const java = [
         'class Solution {',
+        '    private int[] memo;',
         '    public int uniquePaths(int m, int n) { // @step:entry',
-        '        // 4. 空间压缩优化：O(n) 一维滚动数组',
-        '        int[] dp = new int[n]; // @step:alloc',
-        '        Arrays.fill(dp, 1); // @step:init 初始化第一行全为 1',
-        '        for (int i = 1; i < m; i++) { // @step:loop-outer',
-        '            for (int j = 1; j < n; j++) { // @step:loop-inner',
-        '                dp[j] += dp[j - 1]; // @step:update dp[j]旧值代表上方，dp[j-1]新值代表左方',
+        '        memo = new int[n]; // @step:alloc',
+        '        for (int i = 0; i < m ; i++) { // @step:loop-outer',
+        '            for (int j = 0; j < n ; j++) { // @step:loop-inner',
+        '                if (i == 0 || j == 0) { // @step:check-boundary',
+        '                    memo[j] = 1; // @step:set-boundary',
+        '                } else {',
+        '                    int down = memo[j]; // @step:read-down',
+        '                    int right = memo[j-1]; // @step:read-right',
+        '                    memo[j] = right + down; // @step:update',
+        '                }',
         '            }',
         '        }',
-        '        return dp[n - 1]; // @step:return',
+        '        return memo[n-1]; // @step:return',
         '    }',
         '}',
       ];
@@ -395,10 +400,14 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
         lines: java,
         languages: { java, python: py, cpp, javascript: js },
         lineExplanations: {
-          4: '🎬 <strong>一维数组初始化</strong>：创建长度为 n 的一维数组并全置 1。',
-          6: '🔄 <strong>逐行滚动遍历</strong>：外层遍历行 i，内层遍历列 j。',
-          8: '⚡ <strong>滚动状态累加</strong>：dp[j] += dp[j - 1]，左方新值加和上方旧值。',
-          11: '🏁 <strong>返回终点答案</strong>：dp[n - 1] 存储右下角累计路径总数。',
+          4: '🎬 <strong>一维滚动数组分配</strong>：创建长度为 n 的一维数组 memo = new int[n]。',
+          5: '🔄 <strong>逐行滚动遍历</strong>：外层遍历行 i (0 到 m-1)。',
+          6: '📍 <strong>逐列遍历</strong>：内层遍历列 j (0 到 n-1)。',
+          7: '🎬 <strong>边界判断与设值</strong>：首行或首列 (i==0 || j==0) 只有 1 种直达路径，设 memo[j] = 1。',
+          10: '📥 <strong>读取上方旧值 (down)</strong>：memo[j] 尚未被覆盖，存储的是上一行的路径数。',
+          11: '➡️ <strong>读取左侧新值 (right)</strong>：memo[j-1] 是刚更新的当前行前一列的值。',
+          12: '⚡ <strong>累加覆盖 (memo[j] = right + down)</strong>：原地累加覆盖更新当前列。',
+          16: '🏁 <strong>返回终点答案</strong>：return memo[n-1] 得到右下角终点累计路径总数。',
         },
         keyPoints: {
           title: '🎯 不同路径 · 一维空间压缩核心要点',
@@ -446,58 +455,41 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
 
     if (stage === 'space-optimized') {
       const steps: DpDemoStep[] = [];
-      const dpRow: number[] = new Array(n).fill(1);
+      const dpRow: number[] = new Array(n).fill(0);
 
-      // Step 1: 初始化一维滚动数组（遇到障碍物则后续全置 0）
-      for (let j = 0; j < n; j++) {
-        if (obstacles.some(([or, oc]) => or === 0 && oc === j)) {
-          for (let k = j; k < n; k++) dpRow[k] = 0;
-          break;
-        }
-        dpRow[j] = 1;
-      }
-
+      // Step 0: memo = new int[n]
       steps.push({
         thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: 0, curCol: 0, obstacles, status: 'init' } },
         current: { i: 0, j: 0 },
         dp1d: [...dpRow],
-        message: hasObstacles
-          ? `🚀 【初始化一维滚动数组】根据首行障碍物分布初始化 dp[0..${n - 1}] = [${dpRow.join(', ')}]。`
-          : `🚀 【初始化一维滚动数组】分配并填充 dp[0..${n - 1}] 全为 1（代表第一行初始路径数）。`,
-        log: `init: dp=[${dpRow.join(', ')}]`,
-        anchor: 'init',
-        codeLine: getAnchorHighlight(algoId, stage, 'init', {
-          java: { primary: [4, 5], context: [2, 3] },
+        message: `🚀 【分配一维滚动数组】执行 memo = new int[${n}]，创建长度为 ${n} 的一维滚动空间。`,
+        log: `alloc: memo = new int[${n}]`,
+        anchor: 'alloc',
+        codeLine: getAnchorHighlight(algoId, stage, 'alloc', {
+          java: { primary: 4, context: 3 },
           python: { primary: 4, context: 2 },
           cpp: { primary: 4, context: 3 },
           javascript: { primary: 2, context: 1 },
         }),
-        metrics: { '当前行 i': 0, '一维滚动空间': `O(${n})`, '计算状态': '初始化' },
+        metrics: { '一维滚动空间': `O(${n})`, '计算状态': '初始化' },
         vars: [
-          { name: 'i (当前行)', value: '0', type: 'number' },
-          { name: 'j (当前列)', value: '0', type: 'number' },
-          { name: '一维数组 dp', value: `[${dpRow.join(', ')}]`, type: 'array', changed: true },
           { name: 'm (网格行数)', value: String(m), type: 'number' },
           { name: 'n (网格列数)', value: String(n), type: 'number' },
+          { name: '滚动数组 memo', value: `[${dpRow.join(', ')}]`, type: 'array', changed: true },
         ],
       });
 
-      for (let i = 1; i < m; i++) {
-        // 首列单向受阻处理
-        if (obstacles.some(([or, oc]) => or === i && oc === 0)) {
-          dpRow[0] = 0;
-        }
-
-        // Step 2: 外层循环行推进
+      for (let i = 0; i < m; i++) {
+        // Step: 外层循环行推进
         steps.push({
           thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: 0, obstacles, status: 'enter' } },
           current: { i, j: 0 },
           dp1d: [...dpRow],
-          message: `🔄 【外层循环】行索引 i = ${i} (< ${m})，开始处理第 ${i} 行的滚动更新。`,
+          message: `🔄 【外层循环】行索引 i = ${i} (< ${m})，开始遍历第 ${i} 行各列。`,
           log: `for i = ${i}`,
           anchor: 'loop-outer',
           codeLine: getAnchorHighlight(algoId, stage, 'loop-outer', {
-            java: { primary: 6, context: [4, 5] },
+            java: { primary: 5, context: 4 },
             python: { primary: 5, context: 4 },
             cpp: { primary: 5, context: 4 },
             javascript: { primary: 3, context: 2 },
@@ -506,85 +498,155 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
           vars: [
             { name: 'i (当前行)', value: String(i), type: 'number', changed: true },
             { name: 'm (网格行数)', value: String(m), type: 'number' },
-            { name: '一维数组 dp', value: `[${dpRow.join(', ')}]`, type: 'array' },
+            { name: '一维数组 memo', value: `[${dpRow.join(', ')}]`, type: 'array' },
           ],
         });
 
-        for (let j = 1; j < n; j++) {
+        for (let j = 0; j < n; j++) {
           const isObs = obstacles.some(([or, oc]) => or === i && oc === j);
-          const oldVal = dpRow[j];
-          const leftVal = dpRow[j - 1];
-          const newVal = isObs ? 0 : oldVal + leftVal;
 
-          // Step 3: 内层循环判断/定位列单元
           steps.push({
-            thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: j, obstacles, status: isObs ? 'eval-obstacle' : 'enter' } },
+            thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: j, obstacles, status: 'enter' } },
             current: { i, j },
             dp1d: [...dpRow],
-            message: isObs
-              ? `🚧 【定位障碍物】进入坐标 (${i}, ${j})，检测到此处为障碍物 🚧，准备置 0。`
-              : `📍 【定位列单元】进入内层循环 j = ${j} (< ${n})，准备更新 dp[${j}]。上方旧值 dp[${j}] = ${oldVal}，左方新值 dp[${j - 1}] = ${leftVal}。`,
+            message: `📍 【内层循环】进入列索引 j = ${j} (< ${n})，准备更新 memo[${j}]。`,
             log: `for j = ${j}`,
             anchor: 'loop-inner',
             codeLine: getAnchorHighlight(algoId, stage, 'loop-inner', {
-              java: { primary: 7, context: 6 },
-              python: { primary: 6, context: 5 },
-              cpp: { primary: 6, context: 5 },
+              java: { primary: 6, context: 5 },
+              python: { primary: 5, context: 4 },
+              cpp: { primary: 5, context: 4 },
               javascript: { primary: 4, context: 3 },
             }),
-            metrics: { '当前行 i': i, '当前列 j': j, '上方旧值 (dp[j])': oldVal, '左方新值 (dp[j-1])': leftVal },
+            metrics: { '当前行 i': i, '当前列 j': j, '网格列数 n': n },
             vars: [
               { name: 'i (当前行)', value: String(i), type: 'number' },
               { name: 'j (当前列)', value: String(j), type: 'number', changed: true },
-              { name: '上方旧值 (原dp[j])', value: String(oldVal), type: 'number' },
-              { name: '左方新值 (dp[j-1])', value: String(leftVal), type: 'number' },
               { name: 'm (网格行数)', value: String(m), type: 'number' },
               { name: 'n (网格列数)', value: String(n), type: 'number' },
             ],
           });
+          
+          if (i === 0 || j === 0) {
+            const setVal = isObs ? 0 : 1;
+            dpRow[j] = setVal;
 
-          // Step 4: 真正执行核心累加行：dp[j] += dp[j - 1] (Line 8 in Java)
-          dpRow[j] = newVal;
+            steps.push({
+              thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: j, obstacles, status: isObs ? 'eval-obstacle' : 'eval-border' } },
+              current: { i, j },
+              dp1d: [...dpRow],
+              message: isObs
+                ? `🚧 【边界遇障碍】坐标 (${i}, ${j}) 遇障碍物，memo[${j}] = 0。`
+                : `🎬 【边界条件成立】i == 0 || j == 0 (第 ${i} 行, 第 ${j} 列)，单向直达路径只有 1 种，执行 memo[${j}] = 1。`,
+              log: `memo[${j}] = ${setVal}`,
+              anchor: 'set-boundary',
+              codeLine: getAnchorHighlight(algoId, stage, 'set-boundary', {
+                java: { primary: 8, context: [6, 7] },
+                python: { primary: 5, context: [3, 4] },
+                cpp: { primary: 5, context: [3, 4] },
+                javascript: { primary: 3, context: [1, 2] },
+              }),
+              metrics: { '当前行 i': i, '当前列 j': j, 'memo[j]': setVal, '边界类型': i === 0 ? '首行直行' : '首列直行' },
+              vars: [
+                { name: 'i (当前行)', value: String(i), type: 'number' },
+                { name: 'j (当前列)', value: String(j), type: 'number', changed: true },
+                { name: 'memo[j]', value: String(setVal), type: 'number', changed: true },
+                { name: 'm (网格行数)', value: String(m), type: 'number' },
+                { name: 'n (网格列数)', value: String(n), type: 'number' },
+              ],
+            });
+          } else {
+            const downVal = dpRow[j];
+            const rightVal = dpRow[j - 1];
 
-          steps.push({
-            thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: j, obstacles, status: isObs ? 'eval-obstacle' : 'update' } },
-            current: { i, j },
-            dp1d: [...dpRow],
-            message: isObs
-              ? `🚧 【障碍物置零】坐标 (${i}, ${j}) 遇障碍，执行 dp[${j}] = 0。`
-              : `⚡ 【执行累加状态转移】执行 dp[j] += dp[j - 1]：dp[${j}] = ${oldVal} + ${leftVal} = ${newVal}。`,
-            log: `execute: dp[${j}] = ${newVal}`,
-            anchor: 'update',
-            codeLine: getAnchorHighlight(algoId, stage, 'update', {
-              java: { primary: 8, context: [6, 7] },
-              python: { primary: 7, context: [5, 6] },
-              cpp: { primary: 7, context: [5, 6] },
-              javascript: { primary: 5, context: [3, 4] },
-            }),
-            metrics: { '当前行 i': i, '当前列 j': j, 'dp[j]': newVal, '空间复杂度': `O(${n})` },
-            vars: [
-              { name: 'i (当前行)', value: String(i), type: 'number' },
-              { name: 'j (当前列)', value: String(j), type: 'number' },
-              { name: '上方旧值 (原dp[j])', value: String(oldVal), type: 'number' },
-              { name: '左方新值 (dp[j-1])', value: String(leftVal), type: 'number' },
-              { name: '更新后 dp[j]', value: String(newVal), type: 'number', changed: true },
-              { name: 'm (网格行数)', value: String(m), type: 'number' },
-              { name: 'n (网格列数)', value: String(n), type: 'number' },
-            ],
-          });
+            // 1. 读取 down = memo[j]
+            steps.push({
+              thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: j, obstacles, status: 'enter' } },
+              current: { i, j },
+              dp1d: [...dpRow],
+              message: `📥 【读取上方旧值】执行 int down = memo[${j}] (${downVal})。此时 memo[${j}] 尚未被覆盖，存储的是上一行 (${i - 1}, ${j}) 的路径数（来自上方）。`,
+              log: `down = memo[${j}] (${downVal})`,
+              anchor: 'read-down',
+              codeLine: getAnchorHighlight(algoId, stage, 'read-down', {
+                java: { primary: 10, context: [6, 9] },
+                python: { primary: 6, context: 5 },
+                cpp: { primary: 6, context: 5 },
+                javascript: { primary: 4, context: 3 },
+              }),
+              metrics: { '当前行 i': i, '当前列 j': j, 'down (上方旧值)': downVal },
+              vars: [
+                { name: 'i (当前行)', value: String(i), type: 'number' },
+                { name: 'j (当前列)', value: String(j), type: 'number', changed: true },
+                { name: 'down (上方旧值)', value: String(downVal), type: 'number', changed: true },
+                { name: 'memo[j-1]', value: String(rightVal), type: 'number' },
+              ],
+            });
+
+            // 2. 读取 right = memo[j-1]
+            steps.push({
+              thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: j, obstacles, status: 'enter' } },
+              current: { i, j },
+              dp1d: [...dpRow],
+              message: `➡️ 【读取左侧新值】执行 int right = memo[${j - 1}] (${rightVal})。memo[${j - 1}] 是刚刚更新出的当前行 (${i}, ${j - 1}) 的最新路径数（来自左方）。`,
+              log: `right = memo[${j - 1}] (${rightVal})`,
+              anchor: 'read-right',
+              codeLine: getAnchorHighlight(algoId, stage, 'read-right', {
+                java: { primary: 11, context: [6, 10] },
+                python: { primary: 6, context: 5 },
+                cpp: { primary: 6, context: 5 },
+                javascript: { primary: 4, context: 3 },
+              }),
+              metrics: { '当前行 i': i, '当前列 j': j, 'down (上方旧值)': downVal, 'right (左方新值)': rightVal },
+              vars: [
+                { name: 'i (当前行)', value: String(i), type: 'number' },
+                { name: 'j (当前列)', value: String(j), type: 'number' },
+                { name: 'down (上方旧值)', value: String(downVal), type: 'number' },
+                { name: 'right (左方新值)', value: String(rightVal), type: 'number', changed: true },
+              ],
+            });
+
+            // 3. 累加覆盖 memo[j] = right + down
+            const newVal = isObs ? 0 : rightVal + downVal;
+            dpRow[j] = newVal;
+
+            steps.push({
+              thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: i, curCol: j, obstacles, status: isObs ? 'eval-obstacle' : 'update' } },
+              current: { i, j },
+              dp1d: [...dpRow],
+              message: isObs
+                ? `🚧 【障碍物置零】坐标 (${i}, ${j}) 遇障碍，执行 memo[${j}] = 0。`
+                : `⚡ 【执行累加覆盖】执行 memo[${j}] = right (${rightVal}) + down (${downVal}) = ${newVal}。`,
+              log: `memo[${j}] = ${newVal}`,
+              anchor: 'update',
+              codeLine: getAnchorHighlight(algoId, stage, 'update', {
+                java: { primary: 12, context: [10, 11] },
+                python: { primary: 7, context: [5, 6] },
+                cpp: { primary: 7, context: [5, 6] },
+                javascript: { primary: 5, context: [3, 4] },
+              }),
+              metrics: { '当前行 i': i, '当前列 j': j, 'memo[j]': newVal, '空间复杂度': `O(${n})` },
+              vars: [
+                { name: 'i (当前行)', value: String(i), type: 'number' },
+                { name: 'j (当前列)', value: String(j), type: 'number' },
+                { name: 'down (上方旧值)', value: String(downVal), type: 'number' },
+                { name: 'right (左方新值)', value: String(rightVal), type: 'number' },
+                { name: '更新后 memo[j]', value: String(newVal), type: 'number', changed: true },
+              ],
+            });
+          }
         }
       }
 
-      // Step 5: 返回语句 return dp[n - 1]
+      // Step: 返回语句 return memo[n - 1]
       steps.push({
         thematicMeta: { type: 'grid', grid: { rows: m, cols: n, curRow: m - 1, curCol: n - 1, obstacles, status: 'completed' } },
         current: { i: m - 1, j: n - 1 },
         dp1d: [...dpRow],
-        message: `🏁 【计算完毕返回】执行 return dp[n - 1]，到达右下角终点 (${m - 1}, ${n - 1}) 的不同路径总数为 dp[${n - 1}] = ${dpRow[n - 1]} 条。`,
-        log: `return: dp[${n - 1}] = ${dpRow[n - 1]}`,
+        message: `🏁 【计算完毕返回】执行 return memo[${n - 1}] = ${dpRow[n - 1]}，到达右下角终点 (${m - 1}, ${n - 1}) 的不同路径总数为 ${dpRow[n - 1]} 条。`,
+        log: `return: memo[${n - 1}] = ${dpRow[n - 1]}`,
         anchor: 'return',
         codeLine: getAnchorHighlight(algoId, stage, 'return', {
-          java: { primary: 11, context: 2 },
+          java: { primary: 16, context: 3 },
           python: { primary: 8, context: 2 },
           cpp: { primary: 10, context: 3 },
           javascript: { primary: 8, context: 1 },

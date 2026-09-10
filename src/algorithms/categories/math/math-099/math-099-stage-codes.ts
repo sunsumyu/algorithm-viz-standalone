@@ -1,0 +1,350 @@
+/**
+ * 左神算法通关课 第 099 课 - 逆元、容斥与组合数学代码与相对行号映射
+ */
+
+// 1. 乘法逆元单点求法
+export const INVERSE_SINGLE_CODES: Record<string, string[]> = {
+  java: [
+    'public class InverseSingle {',
+    '    public static long inverse(long a, long p) {',
+    '        return power(a, p - 2, p);',
+    '    }',
+    '}',
+  ],
+  cpp: [
+    'long long inverse(long long a, long long p) {',
+    '    return power(a, p - 2, p);',
+    '}',
+  ],
+  python: [
+    'def inverse(a: int, p: int) -> int:',
+    '    return pow(a, p - 2, p)',
+  ],
+  javascript: [
+    'function inverse(a, p) {',
+    '    return Number(powerBigInt(BigInt(a), BigInt(p) - 2n, BigInt(p)));',
+    '}',
+  ],
+};
+
+export const INVERSE_SINGLE_LINES = {
+  entry: { java: 2, cpp: 1, python: 1, javascript: 1 },
+  returnAns: { java: 3, cpp: 2, python: 2, javascript: 2 },
+};
+
+// 2. 线性递推求逆元
+export const INVERSE_SERIAL_CODES: Record<string, string[]> = {
+  java: [
+    'public class InverseSerial {',
+    '    public static int[] buildInverses(int n, int p) {',
+    '        int[] inv = new int[n + 1];',
+    '        inv[1] = 1;',
+    '        for (int i = 2; i <= n; i++) {',
+    '            inv[i] = (int)((long)(p - p / i) * inv[p % i] % p);',
+    '        }',
+    '        return inv;',
+    '    }',
+    '}',
+  ],
+  cpp: [
+    'vector<int> buildInverses(int n, int p) {',
+    '    vector<int> inv(n + 1);',
+    '    inv[1] = 1;',
+    '    for (int i = 2; i <= n; i++) {',
+    '        inv[i] = (long long)(p - p / i) * inv[p % i] % p;',
+    '    }',
+    '    return inv;',
+    '}',
+  ],
+  python: [
+    'def build_inverses(n: int, p: int) -> list[int]:',
+    '    inv = [0] * (n + 1)',
+    '    inv[1] = 1',
+    '    for i in range(2, n + 1):',
+    '        inv[i] = (p - p // i) * inv[p % i] % p',
+    '    return inv',
+  ],
+  javascript: [
+    'function buildInverses(n, p) {',
+    '    const inv = new Array(n + 1).fill(0);',
+    '    inv[1] = 1;',
+    '    for (let i = 2; i <= n; i++) {',
+    '        inv[i] = Number((BigInt(p - Math.floor(p / i)) * BigInt(inv[p % i])) % BigInt(p));',
+    '    }',
+    '    return inv;',
+    '}',
+  ],
+};
+
+export const INVERSE_SERIAL_LINES = {
+  entry: { java: 2, cpp: 1, python: 1, javascript: 1 },
+  initBase: { java: 4, cpp: 3, python: 3, javascript: 3 },
+  loopHeader: { java: 5, cpp: 4, python: 4, javascript: 4 },
+  computeInv: { java: 6, cpp: 5, python: 5, javascript: 5 },
+  returnAns: { java: 8, cpp: 7, python: 6, javascript: 7 },
+};
+
+// 3. 阶乘逆元与组合数
+export const INVERSE_FACTORIAL_CODES: Record<string, string[]> = {
+  java: [
+    'public class InverseFactorial {',
+    '    public static long c(int n, int m, long[] fact, long[] invFact, long p) {',
+    '        if (m < 0 || m > n) return 0;',
+    '        return fact[n] * invFact[m] % p * invFact[n - m] % p;',
+    '    }',
+    '}',
+  ],
+  cpp: [
+    'long long c(int n, int m, vector<long long>& fact, vector<long long>& invFact, long long p) {',
+    '    if (m < 0 || m > n) return 0;',
+    '    return fact[n] * invFact[m] % p * invFact[n - m] % p;',
+    '}',
+  ],
+  python: [
+    'def c(n: int, m: int, fact: list[int], inv_fact: list[int], p: int) -> int:',
+    '    if m < 0 or m > n: return 0',
+    '    return fact[n] * inv_fact[m] % p * inv_fact[n - m] % p',
+  ],
+  javascript: [
+    'function c(n, m, fact, invFact, p) {',
+    '    if (m < 0 || m > n) return 0;',
+    '    return Number((BigInt(fact[n]) * BigInt(invFact[m]) % BigInt(p) * BigInt(invFact[n - m])) % BigInt(p));',
+    '}',
+  ],
+};
+
+export const INVERSE_FACTORIAL_LINES = {
+  entry: { java: 2, cpp: 1, python: 1, javascript: 1 },
+  guard: { java: 3, cpp: 2, python: 2, javascript: 2 },
+  returnAns: { java: 4, cpp: 3, python: 3, javascript: 3 },
+};
+
+// 4. 子集 GCD 为 K 的方案数
+export const SUBSET_GCD_K_CODES: Record<string, string[]> = {
+  java: [
+    'public class SubsetGcdK {',
+    '    public static long countSubsetGcdK(int[] nums, int k) {',
+    '        int maxVal = Arrays.stream(nums).max().orElse(0);',
+    '        long[] dp = new long[maxVal + 1];',
+    '        for (int x = maxVal; x >= 1; x--) {',
+    '            long subsets = countSubsetsWithMultiple(nums, x);',
+    '            for (int mult = 2 * x; mult <= maxVal; mult += x) {',
+    '                subsets = (subsets - dp[mult] + MOD) % MOD;',
+    '            }',
+    '            dp[x] = subsets;',
+    '        }',
+    '        return dp[k];',
+    '    }',
+    '}',
+  ],
+  cpp: [
+    'long long countSubsetGcdK(vector<int>& nums, int k) {',
+    '    int maxVal = *max_element(nums.begin(), nums.end());',
+    '    vector<long long> dp(maxVal + 1, 0);',
+    '    for (int x = maxVal; x >= 1; x--) {',
+    '        long long subsets = countSubsetsWithMultiple(nums, x);',
+    '        for (int mult = 2 * x; mult <= maxVal; mult += x) {',
+    '            subsets = (subsets - dp[mult] + MOD) % MOD;',
+    '        }',
+    '        dp[x] = subsets;',
+    '    }',
+    '    return dp[k];',
+    '}',
+  ],
+  python: [
+    'def count_subset_gcd_k(nums: list[int], k: int) -> int:',
+    '    max_val = max(nums)',
+    '    dp = [0] * (max_val + 1)',
+    '    for x in range(max_val, 0, -1):',
+    '        subsets = count_subsets_with_multiple(nums, x)',
+    '        for mult in range(2 * x, max_val + 1, x):',
+    '            subsets = (subsets - dp[mult] + MOD) % MOD',
+    '        dp[x] = subsets',
+    '    return dp[k]',
+  ],
+  javascript: [
+    'function countSubsetGcdK(nums, k) {',
+    '    const maxVal = Math.max(...nums);',
+    '    const dp = new Array(maxVal + 1).fill(0);',
+    '    for (let x = maxVal; x >= 1; x--) {',
+    '        let subsets = countSubsetsWithMultiple(nums, x);',
+    '        for (let mult = 2 * x; mult <= maxVal; mult += x) {',
+    '            subsets = (subsets - dp[mult] + MOD) % MOD;',
+    '        }',
+    '        dp[x] = subsets;',
+    '    }',
+    '    return dp[k];',
+    '}',
+  ],
+};
+
+export const SUBSET_GCD_K_LINES = {
+  entry: { java: 2, cpp: 1, python: 1, javascript: 1 },
+  initDp: { java: 4, cpp: 3, python: 3, javascript: 3 },
+  outerLoop: { java: 5, cpp: 4, python: 4, javascript: 4 },
+  inclusionExclusion: { java: 8, cpp: 7, python: 7, javascript: 7 },
+  saveDp: { java: 10, cpp: 9, python: 8, javascript: 9 },
+  returnAns: { java: 12, cpp: 11, python: 9, javascript: 11 },
+};
+
+// 5. 硬币购物方案数
+export const COIN_BUY_WAYS_CODES: Record<string, string[]> = {
+  java: [
+    'public class CoinBuyWays {',
+    '    public static long buyWays(int[] c, int[] d, int s, long[] dp) {',
+    '        long ans = 0;',
+    '        for (int mask = 0; mask < 16; mask++) {',
+    '            long cost = 0;',
+    '            int bits = 0;',
+    '            for (int i = 0; i < 4; i++) {',
+    '                if (((mask >> i) & 1) == 1) {',
+    '                    bits++;',
+    '                    cost += (long)(d[i] + 1) * c[i];',
+    '                }',
+    '            }',
+    '            if (s >= cost) {',
+    '                if (bits % 2 == 1) ans -= dp[(int)(s - cost)];',
+    '                else ans += dp[(int)(s - cost)];',
+    '            }',
+    '        }',
+    '        return ans;',
+    '    }',
+    '}',
+  ],
+  cpp: [
+    'long long buyWays(vector<int>& c, vector<int>& d, int s, vector<long long>& dp) {',
+    '    long long ans = 0;',
+    '    for (int mask = 0; mask < 16; mask++) {',
+    '        long long cost = 0;',
+    '        int bits = 0;',
+    '        for (int i = 0; i < 4; i++) {',
+    '            if ((mask >> i) & 1) {',
+    '                bits++;',
+    '                cost += 1LL * (d[i] + 1) * c[i];',
+    '            }',
+    '        }',
+    '        if (s >= cost) {',
+    '            if (bits % 2 == 1) ans -= dp[s - cost];',
+    '            else ans += dp[s - cost];',
+    '        }',
+    '    }',
+    '    return ans;',
+    '}',
+  ],
+  python: [
+    'def buy_ways(c: list[int], d: list[int], s: int, dp: list[int]) -> int:',
+    '    ans = 0',
+    '    for mask in range(16):',
+    '        cost, bits = 0, 0',
+    '        for i in range(4):',
+    '            if (mask >> i) & 1:',
+    '                bits += 1',
+    '                cost += (d[i] + 1) * c[i]',
+    '        if s >= cost:',
+    '            if bits % 2 == 1:',
+    '                ans -= dp[s - cost]',
+    '            else:',
+    '                ans += dp[s - cost]',
+    '    return ans',
+  ],
+  javascript: [
+    'function buyWays(c, d, s, dp) {',
+    '    let ans = 0;',
+    '    for (let mask = 0; mask < 16; mask++) {',
+    '        let cost = 0;',
+    '        let bits = 0;',
+    '        for (let i = 0; i < 4; i++) {',
+    '            if ((mask >> i) & 1) {',
+    '                bits++;',
+    '                cost += (d[i] + 1) * c[i];',
+    '            }',
+    '        }',
+    '        if (s >= cost) {',
+    '            if (bits % 2 === 1) ans -= dp[s - cost];',
+    '            else ans += dp[s - cost];',
+    '        }',
+    '    }',
+    '    return ans;',
+    '}',
+  ],
+};
+
+export const COIN_BUY_WAYS_LINES = {
+  entry: { java: 2, cpp: 1, python: 1, javascript: 1 },
+  initAns: { java: 3, cpp: 2, python: 2, javascript: 2 },
+  maskLoop: { java: 4, cpp: 3, python: 3, javascript: 3 },
+  calcCost: { java: 10, cpp: 9, python: 8, javascript: 9 },
+  applyIE: { java: 14, cpp: 13, python: 12, javascript: 13 },
+  returnAns: { java: 17, cpp: 17, python: 14, javascript: 17 },
+};
+
+// 6. 音乐播放列表
+export const MUSIC_PLAYLISTS_CODES: Record<string, string[]> = {
+  java: [
+    'public class MusicPlaylists {',
+    '    public static int numMusicPlaylists(int n, int goal, int k) {',
+    '        long[][] dp = new long[goal + 1][n + 1];',
+    '        dp[0][0] = 1;',
+    '        for (int i = 1; i <= goal; i++) {',
+    '            for (int j = 1; j <= n; j++) {',
+    '                dp[i][j] = (dp[i - 1][j - 1] * (n - (j - 1))) % MOD;',
+    '                if (j > k) {',
+    '                    dp[i][j] = (dp[i][j] + dp[i - 1][j] * (j - k)) % MOD;',
+    '                }',
+    '            }',
+    '        }',
+    '        return (int) dp[goal][n];',
+    '    }',
+    '}',
+  ],
+  cpp: [
+    'int numMusicPlaylists(int n, int goal, int k) {',
+    '    vector<vector<long long>> dp(goal + 1, vector<long long>(n + 1, 0));',
+    '    dp[0][0] = 1;',
+    '    for (int i = 1; i <= goal; i++) {',
+    '        for (int j = 1; j <= n; j++) {',
+    '            dp[i][j] = (dp[i - 1][j - 1] * (n - (j - 1))) % MOD;',
+    '            if (j > k) {',
+    '                dp[i][j] = (dp[i][j] + dp[i - 1][j] * (j - k)) % MOD;',
+    '            }',
+    '        }',
+    '    }',
+    '    return dp[goal][n];',
+    '}',
+  ],
+  python: [
+    'def num_music_playlists(n: int, goal: int, k: int) -> int:',
+    '    dp = [[0] * (n + 1) for _ in range(goal + 1)]',
+    '    dp[0][0] = 1',
+    '    for i in range(1, goal + 1):',
+    '        for j in range(1, n + 1):',
+    '            dp[i][j] = (dp[i - 1][j - 1] * (n - (j - 1))) % MOD',
+    '            if j > k:',
+    '                dp[i][j] = (dp[i][j] + dp[i - 1][j] * (j - k)) % MOD',
+    '    return dp[goal][n]',
+  ],
+  javascript: [
+    'function numMusicPlaylists(n, goal, k) {',
+    '    const dp = Array.from({ length: goal + 1 }, () => new Array(n + 1).fill(0n));',
+    '    dp[0][0] = 1n;',
+    '    for (let i = 1; i <= goal; i++) {',
+    '        for (let j = 1; j <= n; j++) {',
+    '            dp[i][j] = (dp[i - 1][j - 1] * BigInt(n - (j - 1))) % MOD;',
+    '            if (j > k) {',
+    '                dp[i][j] = (dp[i][j] + dp[i - 1][j] * BigInt(j - k)) % MOD;',
+    '            }',
+    '        }',
+    '    }',
+    '    return Number(dp[goal][n]);',
+    '}',
+  ],
+};
+
+export const MUSIC_PLAYLISTS_LINES = {
+  entry: { java: 2, cpp: 1, python: 1, javascript: 1 },
+  initDp: { java: 4, cpp: 3, python: 3, javascript: 3 },
+  outerLoop: { java: 5, cpp: 4, python: 4, javascript: 4 },
+  newSong: { java: 7, cpp: 6, python: 6, javascript: 6 },
+  oldSong: { java: 9, cpp: 8, python: 8, javascript: 8 },
+  returnAns: { java: 13, cpp: 12, python: 9, javascript: 12 },
+};

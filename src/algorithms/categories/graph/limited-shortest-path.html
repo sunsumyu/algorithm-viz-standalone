@@ -1,491 +1,856 @@
 <style>
+  /* === 有限最短路 (LC 787) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-limited-shortest-path-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
     overflow: hidden;
-  }
-
-  #algo-limited-shortest-path-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #06b6d455, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #0891b255, transparent 55%),
-                linear-gradient(135deg, #041520 0%, #062230 25%, #041520 50%, #073040 75%, #041520 100%);
-    z-index: -2;
-  }
-
-  #algo-limited-shortest-path-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(4, 21, 32, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-limited-shortest-path-view .lsp-page {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .lsp-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
+  #algo-limited-shortest-path-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-limited-shortest-path-view .lsp-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .lsp-hero .lsp-title-wrapper {
+  #algo-limited-shortest-path-view .lsp-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .lsp-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+  #algo-limited-shortest-path-view .lsp-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
 
-  .lsp-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
+  #algo-limited-shortest-path-view .lsp-main-title {
+    font-size: 13.5px;
     font-weight: 800;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .lsp-hero-text p {
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
     margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
   }
 
-  .lsp-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(6, 182, 212, 0.08);
-    border: 1px solid rgba(6, 182, 212, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
+  #algo-limited-shortest-path-view .lsp-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-limited-shortest-path-view .lsp-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
 
-  .lsp-tip strong {
-    color: #06b6d4;
+  #algo-limited-shortest-path-view .lsp-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-limited-shortest-path-view .lsp-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-limited-shortest-path-view .lsp-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-limited-shortest-path-view .lsp-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-limited-shortest-path-view .lsp-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-limited-shortest-path-view .lsp-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
     font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-limited-shortest-path-view .lsp-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  #algo-limited-shortest-path-view .lsp-layout {
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-limited-shortest-path-view .lsp-main-layout {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-limited-shortest-path-view .lsp-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .lsp-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .lsp-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .lsp-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .lsp-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
-  }
-
-  .lsp-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
-  }
-
-  .lsp-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .lsp-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+    margin-top: 8px;
     overflow: hidden;
-    text-align: center;
   }
 
-  .lsp-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #06b6d4, #0891b2);
-  }
-
-  .lsp-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .lsp-stat-val {
-    color: #06b6d4;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-  }
-
-  .lsp-graph-container {
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 280px;
-  }
-
-  .lsp-graph-container svg {
-    width: 100%;
-    max-width: 500px;
-    height: 280px;
-  }
-
-  .lsp-dist-container {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .lsp-dist-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .lsp-dist-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-height: 40px;
-    align-items: center;
-  }
-
-  .lsp-dist-item {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(6, 182, 212, 0.12);
-    border: 1px solid rgba(6, 182, 212, 0.25);
-    color: #06b6d4;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    min-width: 44px;
-    text-align: center;
-    animation: lsp-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .lsp-dist-item .lsp-idx {
-    display: block;
-    font-size: 9px;
-    color: rgba(204, 214, 244, 0.5);
-    margin-bottom: 2px;
-  }
-
-  .lsp-dist-item.changed {
-    background: rgba(6, 182, 212, 0.35);
-    border-color: #06b6d4;
-    box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
-  }
-
-  .lsp-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(6, 182, 212, 0.2);
-    background: rgba(6, 182, 212, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .lsp-log {
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-limited-shortest-path-view .lsp-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
     min-height: 0;
-    max-height: 120px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .lsp-log div {
-    padding: 2px 0;
-  }
-
-  .lsp-log div.active {
-    color: #06b6d4;
-    font-weight: 600;
-  }
-
-  .lsp-right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-  }
-
-  .lsp-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .lsp-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 
-  .lsp-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .lsp-legend-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-  }
-
-  .lsp-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-limited-shortest-path-view .lsp-card {
+    background: #ffffff;
     border-radius: 16px;
-    padding: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .lsp-pb-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .lsp-pb-btn {
+    gap: 6px;
     flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(6, 182, 212, 0.1);
-    color: #cdd6f4;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-limited-shortest-path-view .lsp-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-limited-shortest-path-view .lsp-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 有向带权图 SVG 沙盘 */
+  #algo-limited-shortest-path-view .lsp-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-limited-shortest-path-view .lsp-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-limited-shortest-path-view .lsp-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    background: #e2e8f0;
+    border-radius: 999px;
   }
 
-  .lsp-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  #algo-limited-shortest-path-view .lsp-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
 
-  .lsp-pb-btn:not(:disabled):hover {
-    background: rgba(6, 182, 212, 0.2);
-    border-color: #06b6d4;
-    transform: translateY(-1px);
+  #algo-limited-shortest-path-view .lsp-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-limited-shortest-path-view .lsp-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
   }
 
-  .lsp-pb-btn.play {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+  #algo-limited-shortest-path-view .lsp-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
     border: none;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-limited-shortest-path-view .lsp-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
   }
 
-  .lsp-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  /* Card 2 状态空间 */
+  #algo-limited-shortest-path-view .lsp-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .lsp-speed-row {
+  #algo-limited-shortest-path-view .lsp-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-limited-shortest-path-view .lsp-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-limited-shortest-path-view .lsp-dist-table-wrap {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    overflow-x: auto;
   }
 
-  .lsp-speed-row input {
-    flex: 1;
-    accent-color: #06b6d4;
+  #algo-limited-shortest-path-view .lsp-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .lsp-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-limited-shortest-path-view .lsp-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-limited-shortest-path-view .lsp-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-limited-shortest-path-view .lsp-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-limited-shortest-path-view .lsp-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-limited-shortest-path-view .lsp-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-limited-shortest-path-view .lsp-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-limited-shortest-path-view .lsp-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-limited-shortest-path-view .lsp-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-limited-shortest-path-view .lsp-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-limited-shortest-path-view .lsp-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
     text-align: center;
   }
 
-  @keyframes lsp-popIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+  #algo-limited-shortest-path-view .lsp-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-limited-shortest-path-view .lsp-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
 
-  @keyframes lsp-pulse {
-    0%, 100% { stroke-opacity: 1; }
-    50% { stroke-opacity: 0.5; }
+  #algo-limited-shortest-path-view .lsp-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
 
-  .lsp-node {
-    transition: all 0.3s ease;
+  #algo-limited-shortest-path-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-limited-shortest-path-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-limited-shortest-path-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
 
-  .lsp-edge {
-    transition: all 0.3s ease;
+  /* Card 4: 执行日志卡片 */
+  #algo-limited-shortest-path-view .lsp-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-limited-shortest-path-view .lsp-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-limited-shortest-path-view .lsp-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-limited-shortest-path-view .lsp-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-limited-shortest-path-view .lsp-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-limited-shortest-path-view .lsp-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-limited-shortest-path-view .lsp-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-limited-shortest-path-view .lsp-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-limited-shortest-path-view .lsp-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-limited-shortest-path-view .lsp-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-limited-shortest-path-view .lsp-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="lsp-page">
-  <div class="lsp-hero">
-    <div class="lsp-title-wrapper">
-      <div class="lsp-hero-icon">🔗</div>
-      <div class="lsp-hero-text">
-        <h2>Bellman-Ford之单源有限最短路</h2>
-        <p>限制最多经过 k 条边的单源最短路径</p>
-      </div>
+<div id="algo-limited-shortest-path-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="lsp-header">
+    <div class="lsp-header-left">
+      <div class="lsp-icon-btn">✈️</div>
+      <h1 class="lsp-main-title">LeetCode 787. K 站中转内最便宜的航班</h1>
+      <button id="btn-open-problem-modal" class="lsp-btn-problem">📋 题目</button>
+      <span class="lsp-badge-mode">Bellman-Ford·状态备份松弛</span>
+      <span class="lsp-badge-complexity">O((K+1)·E) · O(V)</span>
     </div>
-    <div class="lsp-tip"><strong>核心思路：</strong>修改版 Bellman-Ford，只迭代 k 轮。第 i 轮结束后 dist[v] 表示从源点出发、最多经过 i 条边到达 v 的最短距离。每轮需要备份 dist 数组避免串联更新。</div>
-  </div>
 
-  <div class="lsp-layout">
-    <div class="lsp-main">
+    <div class="lsp-header-right">
+      <button id="btn-generate" class="lsp-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="lsp-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="lsp-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="lsp-left-section">
+
+      <!-- 卡片 1: 有向带权图 SVG 沙盘 -->
       <div class="lsp-card">
-        <div class="lsp-controls">
-          <button id="lsp-start" class="lsp-btn">开始寻路</button>
+        <div class="lsp-card-header">
+          <div class="lsp-card-title">
+            <span>✈️ 航班航线与价格拓扑沙盘 (Flights Canvas)</span>
+          </div>
+          <div class="lsp-legend-bar">
+            <div><span class="lsp-legend-dot" style="background:#2563eb;"></span> 正在松弛边</div>
+            <div><span class="lsp-legend-dot" style="background:#16a34a;"></span> 成功更新距离</div>
+            <div><span class="lsp-legend-dot" style="background:#94a3b8;"></span> 常规航线</div>
+          </div>
         </div>
 
-        <div class="lsp-stats">
-          <div class="lsp-stat"><span class="lsp-stat-label">节点数</span><span class="lsp-stat-val" id="lsp-nodes">5</span></div>
-          <div class="lsp-stat"><span class="lsp-stat-label">当前轮次</span><span class="lsp-stat-val" id="lsp-round">0</span></div>
-          <div class="lsp-stat"><span class="lsp-stat-label">最大边数 k</span><span class="lsp-stat-val" id="lsp-k">3</span></div>
-          <div class="lsp-stat"><span class="lsp-stat-label">到终点距离</span><span class="lsp-stat-val" id="lsp-target">INF</span></div>
-        </div>
-
-        <div class="lsp-graph-container" id="lsp-graph"></div>
-
-        <div class="lsp-dist-container">
-          <div class="lsp-dist-title">距离数组 dist[]（最多 i 条边到达）</div>
-          <div class="lsp-dist-row" id="lsp-dist"></div>
-        </div>
-
-        <div class="lsp-message" id="step-message">点击「开始寻路」运行 Bellman-Ford 有限边数最短路。</div>
-
-        <div class="lsp-log" id="lsp-log"></div>
+        <!-- 拓扑沙盘展示盒 -->
+        <div class="lsp-sandbox-wrap" id="lsp-svg-canvas"></div>
       </div>
-    </div>
 
-    <div class="lsp-right">
-      <div data-code-panel class="lsp-code-card"></div>
-      <div class="lsp-legend">
-        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:rgba(6,182,212,0.2);border:2px solid #06b6d4"></span>普通节点</div>
-        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:#f59e0b"></span>当前松弛边</div>
-        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:rgba(6,182,212,0.5);border:2px solid #06b6d4"></span>已更新的节点</div>
-        <div class="lsp-legend-item"><span class="lsp-legend-box" style="background:rgba(34,197,94,0.4);border:2px solid #22c55e"></span>源点 / 终点</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="lsp-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="lsp-slider" />
+        <div class="lsp-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="lsp-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="lsp-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="lsp-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="lsp-playback">
-        <div class="lsp-pb-row">
-          <button id="step-reset" class="lsp-pb-btn">重置</button>
-          <button id="step-prev" class="lsp-pb-btn">上一步</button>
-          <button id="step-play" class="lsp-pb-btn play">播放</button>
-          <button id="step-next" class="lsp-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 状态空间与距离监视器 -->
+      <div class="lsp-card">
+        <div class="lsp-card-header">
+          <div>
+            <div class="lsp-card-title">🧭 状态指标与距离监视器 (Price Monitor)</div>
+            <div class="lsp-card-desc">当前迭代轮次 (中转站数)、当前考察边、累计松弛次数与到达目的地最低价</div>
+          </div>
+          <span id="badge-dst-price" class="lsp-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">目标价格: INF</span>
         </div>
-        <div class="lsp-speed-row">
-          <span>速度</span>
-          <input id="lsp-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="lsp-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="lsp-state-space-box">
+          <div class="lsp-metrics-grid">
+            <div class="lsp-metric-card">
+              <span class="lsp-metric-label">当前轮次 Round (<=K+1)</span>
+              <span class="lsp-metric-val" id="metric-round" style="color: #2563eb;">0 / 3</span>
+            </div>
+            <div class="lsp-metric-card">
+              <span class="lsp-metric-label">当前检查边 (u -> v)</span>
+              <span class="lsp-metric-val" id="metric-cur-edge" style="color: #eab308;">—</span>
+            </div>
+            <div class="lsp-metric-card">
+              <span class="lsp-metric-label">成功松弛次数 Relax</span>
+              <span class="lsp-metric-val" id="metric-relax-count" style="color: #16a34a;">0</span>
+            </div>
+            <div class="lsp-metric-card">
+              <span class="lsp-metric-label">终点最低价 dist[dst]</span>
+              <span class="lsp-metric-val" id="metric-dst-dist" style="color: #10b981;">INF</span>
+            </div>
+          </div>
+
+          <div class="lsp-dist-table-wrap">
+            <span style="color:#64748b; font-weight:700;">价格表 dist:</span>
+            <span id="lsp-dist-array" style="color: #0f172a; font-weight: 800;">[0:0, 1:INF, 2:INF, 3:INF, 4:INF]</span>
+          </div>
+
+          <div class="lsp-live-alert">
+            <span>💡</span> <span id="lsp-live-text">准备就绪，点击运行开始有限中转最短路径分析。</span>
+          </div>
         </div>
-        <div id="step-counter" class="lsp-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="lsp-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="lsp-dark-terminal">
+        <div class="lsp-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="lsp-tab-group">
+            <button id="btn-tab-code" class="lsp-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="lsp-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="lsp-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="lsp-lang-group" id="code-lang-tabs">
+            <button class="lsp-lang-btn active" data-lang="java">Java</button>
+            <button class="lsp-lang-btn" data-lang="cpp">C++</button>
+            <button class="lsp-lang-btn" data-lang="python">Python</button>
+            <button class="lsp-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="lsp-font-tools">
+            <div class="lsp-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="lsp-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="lsp-window-dots">
+              <span class="lsp-dot" style="background:#ef4444;"></span>
+              <span class="lsp-dot" style="background:#eab308;"></span>
+              <span class="lsp-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="lsp-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="lsp-log-card">
+        <div class="lsp-log-header">
+          <div class="lsp-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="lsp-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="lsp-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="lsp-modal-backdrop hidden">
+    <div class="lsp-modal-content">
+      <div class="lsp-modal-header">
+        <div class="lsp-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="lsp-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="lsp-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

@@ -1,194 +1,203 @@
 /**
- * Dijkstra 堆优化版 (O((V+E)logV)) 可视化器
- * 使用最小堆优先队列
+ * 堆优化 Dijkstra (O(E log V)) 可视化器 — 4-Card 标准现代架构
+ * 优先队列动态提取、惰性丢弃、邻接边松弛与拓扑高亮 (左程云 class061)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（源点入堆、堆非空循环、堆顶出堆与解构、惰性丢弃判定、邻边松弛核验、距离缩短更新、新距离二元组入堆均发射独立Step）、四语言行号映射
  */
 
 import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  DIJKSTRA_HEAP_PROBLEM_HTML,
+  DIJKSTRA_HEAP_ANALYSIS_HTML,
+  DIJKSTRA_HEAP_CODE_LANGUAGES,
+} from './dijkstra-heap-problem-content';
+import { DJB_NODES, DJB_EDGES, DJB_NODE_POSITIONS } from './dijkstra-basic-renderer';
 import template from './dijkstra-heap.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
-interface DJHHeapItem {
-  node: number;
-  dist: number;
-}
-
-interface DJHStep extends StepBase {
+export interface DJHStep extends StepBase {
   nodes: number[];
   edges: { from: number; to: number; w: number }[];
   dist: number[];
-  prevDist: number[];
-  visited: Set<number>;
+  pq: { d: number; u: number }[];
   currentNode: number | null;
+  currentDist: number | null;
   relaxEdge: { from: number; to: number } | null;
-  heap: DJHHeapItem[];
-  action: 'init' | 'extract' | 'relax' | 'push' | 'skip' | 'stale' | 'done';
+  relaxCount: number;
+  action: 'init' | 'poll' | 'skip-lazy' | 'relax' | 'skip' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
-
-const DJH_NODES = [0, 1, 2, 3, 4];
-const DJH_EDGES = [
-  { from: 0, to: 1, w: 4 },
-  { from: 0, to: 2, w: 1 },
-  { from: 2, to: 1, w: 2 },
-  { from: 1, to: 3, w: 1 },
-  { from: 2, to: 3, w: 5 },
-  { from: 3, to: 4, w: 3 },
-];
-
-// Node positions for SVG layout
-const DJH_NODE_POSITIONS: { x: number; y: number }[] = [
-  { x: 80, y: 120 },
-  { x: 240, y: 50 },
-  { x: 240, y: 190 },
-  { x: 380, y: 120 },
-  { x: 460, y: 120 },
-];
 
 const INF = Infinity;
 
-function buildDJHSteps(): DJHStep[] {
+export function buildDJHSteps(): DJHStep[] {
   const steps: DJHStep[] = [];
-  const n = DJH_NODES.length;
+  const n = DJB_NODES.length;
   const source = 0;
+
+  // 精准 15 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 1, javascript: 1 },
+    initDist: { cpp: 2, java: 4, python: 2, javascript: 2 },
+    setSrc: { cpp: 3, java: 5, python: 3, javascript: 3 },
+    initPQ: { cpp: 4, java: 6, python: 4, javascript: 4 },
+    pushSrc: { cpp: 5, java: 7, python: 4, javascript: 4 },
+    whilePQ: { cpp: 6, java: 8, python: 5, javascript: 5 },
+    pollPQ: { cpp: 7, java: 9, python: 6, javascript: 7 },
+    unpackCur: { cpp: 7, java: 10, python: 6, javascript: 7 },
+    checkLazy: { cpp: 8, java: 11, python: 7, javascript: 8 },
+    forAdj: { cpp: 9, java: 12, python: 9, javascript: 9 },
+    unpackEdge: { cpp: 9, java: 13, python: 9, javascript: 9 },
+    checkRelax: { cpp: 10, java: 14, python: 10, javascript: 10 },
+    updateDist: { cpp: 11, java: 15, python: 11, javascript: 11 },
+    pushPQ: { cpp: 12, java: 16, python: 12, javascript: 12 },
+    returnDist: { cpp: 16, java: 20, python: 13, javascript: 16 },
+  };
 
   const dist = new Array(n).fill(INF);
   dist[source] = 0;
-  const visited = new Set<number>();
+  let relaxCount = 0;
 
   // Build adjacency list
   const adj: { to: number; w: number }[][] = Array.from({ length: n }, () => []);
-  for (const e of DJH_EDGES) {
+  for (const e of DJB_EDGES) {
     adj[e.from].push({ to: e.to, w: e.w });
   }
 
-  // Simple min-heap simulation
-  let heap: DJHHeapItem[] = [{ node: source, dist: 0 }];
-  let prevDistSnapshot = [...dist];
+  // Priority Queue: min-heap of {d, u}
+  const pq: { d: number; u: number }[] = [{ d: 0, u: source }];
 
-  const snap = (action: DJHStep['action'], currentNode: number | null, relaxEdge: DJHStep['relaxEdge'], heapSnapshot: DJHHeapItem[], statusText: string, msg: string, log: string, code: number | number[]) => {
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'poll' | 'skip-lazy' | 'relax' | 'skip' | 'done',
+    statusText: string,
+    log: string,
+    currentNode: number | null = null,
+    currentDist: number | null = null,
+    relaxEdge: { from: number; to: number } | null = null
+  ): void {
+    const pqStr = pq.length > 0 ? pq.map((item) => `(${item.d}, ${item.u})`).join(', ') : '空堆';
+    const dStr = dist.map((d, i) => `${i}:${d === INF ? '∞' : d}`).join(', ');
+
     steps.push({
-      nodes: [...DJH_NODES],
-      edges: DJH_EDGES.map(e => ({ ...e })),
+      nodes: DJB_NODES,
+      edges: DJB_EDGES,
       dist: [...dist],
-      prevDist: [...prevDistSnapshot],
-      visited: new Set(visited),
+      pq: pq.map((item) => ({ ...item })),
       currentNode,
+      currentDist,
       relaxEdge,
-      heap: heapSnapshot.map(h => ({ ...h })),
+      relaxCount,
       action,
       statusText,
-      message: msg,
       log,
-      codeLine: code,
+      codeLine,
+      metrics: {
+        'metric-cur-extract': currentNode !== null ? `(d=${currentDist}, u=${currentNode})` : '—',
+        'metric-pq-size': `${pq.length}`,
+        'metric-relax-count': `${relaxCount}`,
+        'metric-dist-info': `[${dStr}]`,
+      },
     });
-    prevDistSnapshot = [...dist];
-  };
+  }
 
-  // Init
-  snap('init', null, null, [...heap], '初始化',
-    `初始化: 源点=${source}, dist[${source}]=0, 将 (node=${source}, dist=0) 入堆。`,
-    `初始化: 源点入堆`, [0, 1]);
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] dijkstraHeap(n=5, adj, src=0)：启动堆优化 Dijkstra 算法。', 'dijkstraHeap 入口');
+  makeStep(lines.initDist, 'init', '📊 [初始化距离表] Arrays.fill(dist, INF)；除源点外全部设为正无穷。', 'init dist[]');
 
-  while (heap.length > 0) {
-    // Extract min from heap
-    heap.sort((a, b) => a.dist - b.dist);
-    const top = heap.shift()!;
-    const { node: u, dist: topDist } = top;
+  dist[source] = 0;
+  makeStep(lines.setSrc, 'init', '🌱 [设置源点距离] dist[0] = 0。', 'dist[0] = 0');
+  makeStep(lines.initPQ, 'init', '📦 [初始化小顶堆] PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0])。', 'init PriorityQueue');
+  makeStep(lines.pushSrc, 'init', '📥 [源点入堆] pq.offer(new int[]{0, 0})；初始二元组 (d=0, u=0) 进堆。', 'pq.offer({0, 0})');
 
-    // Check if stale
-    if (visited.has(u)) {
-      snap('stale', null, null, [...heap], '跳过旧记录',
-        `堆顶 (node=${u}, dist=${topDist}) 已访问，跳过。`,
-        `跳过: node${u}已访问`, [3, 4]);
+  // 2. 堆非空主循环
+  while (pq.length > 0) {
+    makeStep(lines.whilePQ, 'init', `🔁 [检查堆状态] while (!pq.isEmpty()) -> 当前堆大小: ${pq.length}。`, '!pq.isEmpty()');
+
+    // 小顶堆弹出最小值
+    pq.sort((a, b) => a.d - b.d);
+    const top = pq.shift()!;
+    const { d, u } = top;
+
+    makeStep(lines.pollPQ, 'poll', `📤 [弹出堆顶] int[] cur = pq.poll() -> 提取出当前距离最小的二元组 (d=${d}, u=${u})。`, `poll ({d:${d}, u:${u}})`, u, d);
+    makeStep(lines.unpackCur, 'poll', `  ↳ [解构二元组] 当前探索节点 u=${u}，出堆距离标号 d=${d}。`, `d=${d}, u=${u}`, u, d);
+
+    // 惰性删除检查
+    const isLazy = d > dist[u];
+    makeStep(lines.checkLazy, isLazy ? 'skip-lazy' : 'poll', `  🔎 [惰性删除检查] if (d > dist[u]) -> (${d} > ${dist[u]}) -> (${isLazy})。`, `lazy check ${d} > ${dist[u]}`, u, d);
+
+    if (isLazy) {
+      makeStep(lines.checkLazy, 'skip-lazy', `  🗑️ [惰性丢弃] 节点 ${u} 的该距离标号 (d=${d}) 大于全局最优 dist[${u}] (${dist[u]})，为历史过期冗余，直接丢弃！`, `lazy drop ${u}`, u, d);
       continue;
     }
 
-    snap('extract', u, null, [...heap], '出堆',
-      `从堆中取出 (node=${u}, dist=${topDist})，标记为已访问。堆剩余 ${heap.length} 个元素。`,
-      `出堆: node${u}(dist=${topDist})`, [2, 3]);
+    // 遍历邻接边
+    for (const edge of adj[u]) {
+      const v = edge.to;
+      const w = edge.w;
+      const canRelax = dist[u] + w < dist[v];
+      const curEdge = { from: u, to: v };
 
-    visited.add(u);
+      makeStep(lines.forAdj, canRelax ? 'relax' : 'skip', `  ↳ [遍历出边] 考察边 (${u} ➔ ${v}, 权重 w=${w})。`, `edge (${u}->${v}, w=${w})`, u, d, curEdge);
+      makeStep(lines.unpackEdge, canRelax ? 'relax' : 'skip', `    ↳ [解构目标] 目标邻居 v=${v}，边权 w=${w}。`, `v=${v}, w=${w}`, u, d, curEdge);
 
-    // Relax edges
-    for (const { to, w } of adj[u]) {
-      const newDist = dist[u] + w;
-      if (newDist < dist[to]) {
-        const oldDist = dist[to];
-        dist[to] = newDist;
-        heap.push({ node: to, dist: newDist });
-        snap('relax', u, { from: u, to }, [...heap], '松弛成功',
-          `松弛 ${u}->${to}: dist[${u}]+${w}=${newDist} < ${oldDist === INF ? 'INF' : oldDist}，更新 dist[${to}]=${newDist}，将 (node=${to}, dist=${newDist}) 入堆。`,
-          `松弛成功: ${u}->${to}, dist=${oldDist === INF ? 'INF' : oldDist}->${newDist}`, [5, 6]);
+      makeStep(lines.checkRelax, canRelax ? 'relax' : 'skip', `    🔎 [松弛核验] if (dist[${u}](${dist[u]}) + ${w} < dist[${v}](${dist[v] === INF ? '∞' : dist[v]})) -> (${canRelax})。`, `check relax ${u}->${v}`, u, d, curEdge);
+
+      if (canRelax) {
+        const oldVal = dist[v];
+        dist[v] = dist[u] + w;
+        relaxCount++;
+        makeStep(lines.updateDist, 'relax', `    ⚡ [更新距离] 成功松弛！dist[${v}] 从 ${oldVal === INF ? '∞' : oldVal} 缩短为 ${dist[v]}！`, `dist[${v}]=${dist[v]}`, u, d, curEdge);
+
+        pq.push({ d: dist[v], u: v });
+        makeStep(lines.pushPQ, 'relax', `    📥 [推入优先队列] pq.offer(new int[]{${dist[v]}, ${v}})；新最优距离入堆排队。`, `offer ({d:${dist[v]}, u:${v}})`, u, d, curEdge);
       } else {
-        snap('skip', u, { from: u, to }, [...heap], '无需更新',
-          `检查 ${u}->${to}: dist[${u}]+${w}=${newDist} >= dist[${to}]=${dist[to] === INF ? 'INF' : dist[to]}，无需更新。`,
-          `无需更新: ${u}->${to}`, [5, 7]);
+        makeStep(lines.checkRelax, 'skip', `    ⏭️ [跳过边] 边 (${u} ➔ ${v}) 不满足三角不等式缩短条件。`, `skip (${u}->${v})`, u, d, curEdge);
       }
     }
   }
 
-  // Done
-  snap('done', null, null, [], '完成',
-    `Dijkstra 堆优化版完成！最短距离: [${dist.map((d, i) => `${i}:${d === INF ? 'INF' : d}`).join(', ')}]`,
-    `完成: 最短路径已求出`, [8]);
+  makeStep(lines.whilePQ, 'init', '🔁 [检查堆状态] while (!pq.isEmpty()) -> (false，堆已清空)。', 'pq empty');
+  makeStep(lines.returnDist, 'done', `🎉 [堆优化 Dijkstra 算法达成] return dist！全图 ${n} 个顶点的单源最短路径全部求得！结果: [${dist.join(', ')}]。`, 'return dist');
 
   return steps;
 }
 
 export class DijkstraHeapVisualizer extends StepVisualizer<DJHStep> {
-  protected codeLines = [
-    'int[] dijkstraHeap(List<int[]>[] adj, int source) {',
-    '    int[] dist = new int[V]; Arrays.fill(dist, INF);',
-    '    dist[source] = 0;',
-    '    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);',
-    '    pq.add(new int[]{source, 0});',
-    '    boolean[] visited = new boolean[V];',
-    '    while (!pq.isEmpty()) {',
-    '        int[] top = pq.poll(); int u = top[0];',
-    '        if (visited[u]) continue;',
-    '        visited[u] = true;',
-    '        for (int[] edge : adj[u]) {',
-    '            int v = edge[0], w = edge[1];',
-    '            if (dist[u] + w < dist[v]) {',
-    '                dist[v] = dist[u] + w;',
-    '                pq.add(new int[]{v, dist[v]});',
-    '            }',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Dijkstra 堆优化版代码 (Java)';
+  protected codeLanguages = DIJKSTRA_HEAP_CODE_LANGUAGES;
+  protected codeLines = DIJKSTRA_HEAP_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '堆优化 Dijkstra 代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private heapEl: HTMLElement | null = null;
-  private distEl: HTMLElement | null = null;
-  private visitedEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private visitedCountEl: HTMLElement | null = null;
-  private heapSizeEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private distTableBody: HTMLElement | null = null;
+  private pqElementsEl: HTMLElement | null = null;
+  private metricCurExtractEl: HTMLElement | null = null;
+  private metricPqSizeEl: HTMLElement | null = null;
+  private metricRelaxCountEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#djh-graph');
-    this.heapEl = this.root.querySelector('#djh-heap');
-    this.distEl = this.root.querySelector('#djh-dist');
-    this.visitedEl = this.root.querySelector('#djh-visited');
-    this.logEl = this.root.querySelector('#djh-log');
-    this.currentEl = this.root.querySelector('#djh-current');
-    this.visitedCountEl = this.root.querySelector('#djh-visited-count');
-    this.heapSizeEl = this.root.querySelector('#djh-heap-size');
-    this.statusEl = this.root.querySelector('#djh-status');
-    this.btnStart = this.root.querySelector('#djh-start');
-    this.bindPlaybackControls({
-      speed: 'djh-speed',
-      speedLabel: 'djh-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#djh-svg-canvas');
+    this.distTableBody = this.root.querySelector('#djh-dist-table-body');
+    this.pqElementsEl = this.root.querySelector('#metric-pq-elements');
+    this.metricCurExtractEl = this.root.querySelector('#metric-cur-extract');
+    this.metricPqSizeEl = this.root.querySelector('#metric-pq-size');
+    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
+    this.liveTextEl = this.root.querySelector('#djh-live-text');
+
+    this.bindPlaybackControls();
+
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: DIJKSTRA_HEAP_PROBLEM_HTML,
+      analysisHtml: DIJKSTRA_HEAP_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
   protected buildSteps(): DJHStep[] {
@@ -196,253 +205,114 @@ export class DijkstraHeapVisualizer extends StepVisualizer<DJHStep> {
   }
 
   protected renderStep(step: DJHStep): void {
-    if (this.currentEl) {
-      this.currentEl.textContent = step.currentNode !== null ? String(step.currentNode) : '-';
-    }
-    if (this.visitedCountEl) this.visitedCountEl.textContent = String(step.visited.size);
-    if (this.heapSizeEl) this.heapSizeEl.textContent = String(step.heap.length);
-    if (this.statusEl) {
-      this.statusEl.textContent = step.statusText;
-      if (step.action === 'relax') {
-        (this.statusEl as HTMLElement).style.color = '#22c55e';
-      } else if (step.action === 'skip' || step.action === 'stale') {
-        (this.statusEl as HTMLElement).style.color = '#f59e0b';
-      } else {
-        (this.statusEl as HTMLElement).style.color = '#6366f1';
+    const { dist, pq, currentNode, currentDist, relaxEdge, relaxCount, action, statusText } = step;
+
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
+        <defs>
+          <marker id="arrow-djh" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+          </marker>
+          <marker id="arrow-djh-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+          </marker>
+          <marker id="arrow-djh-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+          </marker>
+        </defs>`;
+
+      for (const e of DJB_EDGES) {
+        const p1 = DJB_NODE_POSITIONS[e.from];
+        const p2 = DJB_NODE_POSITIONS[e.to];
+        const isCurrent = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
+        const isRelaxed = isCurrent && action === 'relax';
+
+        const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
+        const strokeWidth = isCurrent ? 3.5 : 1.8;
+        const marker = isRelaxed ? 'url(#arrow-djh-relax)' : isCurrent ? 'url(#arrow-djh-active)' : 'url(#arrow-djh)';
+
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2 + (e.from === 2 && e.to === 1 ? -12 : 8);
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+        svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
       }
+
+      DJB_NODES.forEach((node) => {
+        const p = DJB_NODE_POSITIONS[node];
+        const dVal = dist[node];
+        const isCur = currentNode === node;
+        const isTarget = relaxEdge && relaxEdge.to === node;
+        const inPQ = pq.some((item) => item.u === node);
+
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCur && action === 'skip-lazy') {
+          fill = '#fee2e2';
+          stroke = '#ef4444';
+        } else if (isCur) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        } else if (isTarget && action === 'relax') {
+          fill = '#dcfce7';
+          stroke = '#10b981';
+        } else if (inPQ) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
 
-    this.renderGraph(step);
-    this.renderHeap(step);
-    this.renderDist(step);
-    this.renderVisited(step);
-    this.renderLogLine(step);
-  }
-
-  private renderGraph(step: DJHStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 540 240');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '540px';
-    svg.style.height = '240px';
-
-    // Draw edges
-    for (const edge of step.edges) {
-      const p1 = DJH_NODE_POSITIONS[edge.from];
-      const p2 = DJH_NODE_POSITIONS[edge.to];
-      const isRelaxEdge = step.relaxEdge !== null &&
-        step.relaxEdge.from === edge.from && step.relaxEdge.to === edge.to;
-      const isFromCurrent = step.currentNode === edge.from;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('djh-edge');
-
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-
-      if (isRelaxEdge && step.action === 'relax') {
-        line.setAttribute('stroke', '#22c55e');
-        line.setAttribute('stroke-width', '3.5');
-        line.style.animation = 'pathPulse 0.8s infinite';
-      } else if (isRelaxEdge) {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '3');
-      } else if (isFromCurrent) {
-        line.setAttribute('stroke', 'rgba(99, 102, 241, 0.5)');
-        line.setAttribute('stroke-width', '2');
-      } else {
-        line.setAttribute('stroke', 'rgba(99, 102, 241, 0.2)');
-        line.setAttribute('stroke-width', '1.5');
-      }
-      g?.appendChild(line);
-
-      // Arrow head
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const ux = dx / len;
-      const uy = dy / len;
-      const nodeR = 22;
-      const ax = p2.x - ux * (nodeR + 4);
-      const ay = p2.y - uy * (nodeR + 4);
-      const arrowSize = 10;
-      const perpX = -uy;
-      const perpY = ux;
-
-      let strokeColor = 'rgba(99, 102, 241, 0.2)';
-      if (isRelaxEdge && step.action === 'relax') strokeColor = '#22c55e';
-      else if (isRelaxEdge) strokeColor = '#f59e0b';
-      else if (isFromCurrent) strokeColor = 'rgba(99, 102, 241, 0.5)';
-
-      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      arrow.setAttribute('points',
-        `${ax},${ay} ${ax - ux * arrowSize + perpX * arrowSize * 0.4},${ay - uy * arrowSize + perpY * arrowSize * 0.4} ${ax - ux * arrowSize - perpX * arrowSize * 0.4},${ay - uy * arrowSize - perpY * arrowSize * 0.4}`
-      );
-      arrow.setAttribute('fill', strokeColor);
-      g?.appendChild(arrow);
-
-      // Weight label
-      const mx = (p1.x + p2.x) / 2;
-      const my = (p1.y + p2.y) / 2;
-      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(mx - 12));
-      bg.setAttribute('y', String(my - 10));
-      bg.setAttribute('width', '24');
-      bg.setAttribute('height', '20');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('fill', isRelaxEdge && step.action === 'relax' ? 'rgba(34, 197, 94, 0.3)' : isRelaxEdge ? 'rgba(245, 158, 11, 0.3)' : 'rgba(30, 30, 50, 0.8)');
-      bg.setAttribute('stroke', isRelaxEdge && step.action === 'relax' ? '#22c55e' : isRelaxEdge ? '#f59e0b' : 'rgba(156, 163, 175, 0.4)');
-      bg.setAttribute('stroke-width', '1');
-      g?.appendChild(bg);
-
-      const wt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      wt.setAttribute('x', String(mx));
-      wt.setAttribute('y', String(my + 5));
-      wt.setAttribute('text-anchor', 'middle');
-      wt.setAttribute('fill', isRelaxEdge && step.action === 'relax' ? '#22c55e' : isRelaxEdge ? '#f59e0b' : 'rgba(156, 163, 175, 0.7)');
-      wt.setAttribute('font-size', '12');
-      wt.setAttribute('font-weight', '700');
-      wt.setAttribute('font-family', 'ui-monospace, monospace');
-      wt.textContent = String(edge.w);
-      g?.appendChild(wt);
-
-      svg?.appendChild(g);
+    if (this.distTableBody) {
+      this.distTableBody.innerHTML = DJB_NODES.map((node) => {
+        const dVal = dist[node];
+        const isCur = currentNode === node;
+        const inPQ = pq.some((item) => item.u === node);
+        return `<tr class="${isCur ? 'bg-yellow-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">${node}</td>
+          <td class="px-3 py-1.5 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
+          <td class="px-3 py-1.5 text-center font-mono font-bold ${inPQ ? 'text-blue-600' : 'text-slate-400'}">${inPQ ? '在堆中' : '—'}</td>
+        </tr>`;
+      }).join('');
     }
 
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = DJH_NODE_POSITIONS[i];
-      const isVisited = step.visited.has(i);
-      const isCurrent = step.currentNode === i;
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('djh-node');
-
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
-
-      if (isCurrent) {
-        circle.setAttribute('fill', 'rgba(245, 158, 11, 0.5)');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 1s infinite';
-      } else if (isVisited) {
-        circle.setAttribute('fill', 'rgba(34, 197, 94, 0.3)');
-        circle.setAttribute('stroke', '#22c55e');
-        circle.setAttribute('stroke-width', '2');
-      } else {
-        circle.setAttribute('fill', 'rgba(99, 102, 241, 0.12)');
-        circle.setAttribute('stroke', '#6366f1');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      const textColor = isCurrent ? '#fff' : isVisited ? '#22c55e' : '#6366f1';
-      text.setAttribute('fill', textColor);
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
+    if (this.metricCurExtractEl) {
+      this.metricCurExtractEl.textContent = currentNode !== null ? `(d=${currentDist}, u=${currentNode})` : '—';
+    }
+    if (this.metricPqSizeEl) {
+      this.metricPqSizeEl.textContent = `${pq.length}`;
+    }
+    if (this.metricRelaxCountEl) {
+      this.metricRelaxCountEl.textContent = `${relaxCount}`;
+    }
+    if (this.pqElementsEl) {
+      this.pqElementsEl.textContent = pq.length > 0 ? pq.map((item) => `(d=${item.d}, u=${item.u})`).join(', ') : '空堆';
     }
 
-    this.graphEl?.appendChild(svg);
-  }
-
-  private renderHeap(step: DJHStep): void {
-    if (!this.heapEl) return;
-    this.heapEl.innerHTML = '';
-    if (step.heap.length === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（空堆）';
-      this.heapEl?.appendChild(empty);
-      return;
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
     }
-    // Sort for display (min-heap order)
-    const sorted = [...step.heap].sort((a, b) => a.dist - b.dist);
-    sorted.forEach((item, i) => {
-      const el = document.createElement('div');
-      el.className = 'djh-heap-item';
-      if (i === 0) el.classList.add('top');
-      el.innerHTML = `<span class="djh-heap-node">node=${item.node}</span>d=${item.dist}`;
-      this.heapEl?.appendChild(el);
-    });
-  }
-
-  private renderDist(step: DJHStep): void {
-    if (!this.distEl) return;
-    this.distEl.innerHTML = '';
-    step.nodes.forEach((node, i) => {
-      const item = document.createElement('div');
-      item.className = 'djh-dist-item';
-      const d = step.dist[i];
-      const isUpdated = step.prevDist[i] !== step.dist[i];
-      if (isUpdated) item.classList.add('updated');
-      if (step.visited.has(node)) item.classList.add('visited-node');
-      item.innerHTML = `<span class="djh-idx">dist[${node}]</span>${d === INF ? 'INF' : d}`;
-      this.distEl?.appendChild(item);
-    });
-  }
-
-  private renderVisited(step: DJHStep): void {
-    if (!this.visitedEl) return;
-    this.visitedEl.innerHTML = '';
-    if (step.visited.size === 0) {
-      const empty = document.createElement('span');
-      empty.style.color = 'rgba(204, 214, 244, 0.4)';
-      empty.style.fontSize = '13px';
-      empty.textContent = '（空）';
-      this.visitedEl?.appendChild(empty);
-      return;
-    }
-    step.visited.forEach((node) => {
-      const item = document.createElement('div');
-      item.className = 'djh-visited-item';
-      item.textContent = String(node);
-      this.visitedEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: DJHStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
   }
 }
 
 registerAlgorithm({
   id: 'dijkstra-heap',
-  name: 'Dijkstra 堆优化版',
+  name: 'Dijkstra 堆优化最短路',
   viewId: 'algo-dijkstra-heap-view',
+  icon: '⚡',
   category: 'graph',
-  description: '优先队列 O((V+E)logV) 单源最短路径',
-  icon: '🔮',
+  difficulty: 3,
+  levelOrder: 28,
+  description: '左程云算法通关课 Class 061：基于优先队列（小顶堆）与惰性删除的单源最短路算法，时间复杂度 O(E log V)',
+  learningGoal: '深刻理解优先队列加速选点、惰性删除冗余标号与稀疏图性能优势',
   template,
   Visualizer: DijkstraHeapVisualizer,
-  difficulty: 3,
-  levelOrder: 22,
-  learningGoal: '理解堆优化如何将选最小节点的操作从 O(V) 降到 O(logV)',
 });
-
-export {};

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — algorithm-viz-standalone 不同路径模板优化</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+      <!-- Header -->
+      <header class="space-y-2">
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900">Architecture Review</h1>
+        <p class="text-sm text-slate-500">algorithm-viz-standalone · 不同路径模板优化 · 2026-08-24</p>
+        <div class="flex gap-6 text-xs text-slate-500 pt-2 border-t border-slate-200 mt-4">
+          <span class="flex items-center gap-1.5"><span class="w-4 h-4 rounded border-2 border-slate-400 inline-block"></span> module</span>
+          <span class="flex items-center gap-1.5"><span class="w-4 h-0 border-t-2 border-dashed border-slate-400 inline-block" style="width:24px"></span> seam</span>
+          <span class="flex items-center gap-1.5"><span class="w-4 h-0 border-t-2 border-red-500 inline-block" style="width:24px"></span> leakage</span>
+          <span class="flex items-center gap-1.5"><span class="w-4 h-4 rounded inline-block deep"></span> deep module</span>
+        </div>
+      </header>
+
+      <!-- Candidates -->
+      <section id="candidates" class="space-y-10">
+
+        <!-- ========== Candidate 1 ========== -->
+        <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-lg font-bold text-slate-900">Candidate 1: 提取 <code class="text-base">VisualizerAppController</code> 协调器深模块</h2>
+            <div class="flex gap-2 mt-2">
+              <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800">Strong</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">in-process</span>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 space-y-4">
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Files</h3>
+              <ul class="font-mono text-sm text-slate-700 space-y-0.5">
+                <li>unique-paths-lite.html <span class="text-slate-400">(~425 行内联脚本)</span></li>
+                <li>unique-paths.html <span class="text-slate-400">(~455 行内联脚本)</span></li>
+                <li>stage-explorer-lite.html <span class="text-slate-400">(字节级克隆 unique-paths-lite.html)</span></li>
+                <li>stage-explorer.html <span class="text-slate-400">(字节级克隆 unique-paths.html)</span></li>
+                <li class="text-emerald-700 font-semibold">[NEW] src/core/visualizer-app-controller.ts</li>
+              </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">Before</h4>
+                <div class="rounded-lg border border-slate-200 bg-white p-4">
+                  <pre class="mermaid">
+flowchart TD
+    subgraph LITE["unique-paths-lite.html"]
+      direction TB
+      A1["renderStep()"] --> B1["loadAndInit()"]
+      B1 --> C1["renderStageTabs()"]
+      B1 --> D1["renderDirectionTabs()"]
+      B1 --> E1["initLiteApp()"]
+    end
+    subgraph FULL["unique-paths.html"]
+      direction TB
+      A2["renderStep()"] --> B2["loadAndResetSteps()"]
+      B2 --> C2["renderStageTabs()"]
+      B2 --> D2["renderDirectionTabs()"]
+      B2 --> E2["initUniquePathsApp()"]
+    end
+    subgraph CLONE1["stage-explorer-lite.html"]
+      F1["100% 字节克隆 ↑"]
+    end
+    subgraph CLONE2["stage-explorer.html"]
+      F2["100% 字节克隆 ↑"]
+    end
+    LITE -.->|"复制"| CLONE1
+    FULL -.->|"复制"| CLONE2
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class CLONE1,CLONE2 leak
+                  </pre>
+                </div>
+              </div>
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">After</h4>
+                <div class="rounded-lg border border-slate-200 bg-white p-4">
+                  <pre class="mermaid">
+flowchart TD
+    subgraph DEEP["VisualizerAppController (deep module)"]
+      direction TB
+      RS["renderStep()"]
+      LI["loadAndInit()"]
+      ST["renderStageTabs()"]
+      DT["renderDirectionTabs()"]
+      INIT["init()"]
+      RS --> LI
+      LI --> ST
+      LI --> DT
+      INIT --> LI
+    end
+    V1["unique-paths-lite.html"] --> DEEP
+    V2["unique-paths.html"] --> DEEP
+    V3["stage-explorer-lite.html"] --> DEEP
+    V4["stage-explorer.html"] --> DEEP
+    classDef deep fill:#0f172a,color:#f8fafc,stroke:#334155;
+    class DEEP deep
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-700"><strong>Problem:</strong> 4 个 HTML 文件各自内联 400+ 行几乎相同的协调逻辑（<code>renderStep</code>、<code>loadAndInit</code>、<code>renderStageTabs</code>、<code>renderDirectionTabs</code>、事件绑定、状态恢复），其中 Lite 与 Full 各两个文件互为字节级克隆。共计 ~1750 行重复代码散布在 4 份 HTML 内联脚本中。</p>
+
+            <p class="text-sm text-slate-700"><strong>Solution:</strong> 将协调逻辑提取为单一 <code>VisualizerAppController</code> 深模块，HTML 仅声明 DOM 骨架与一行 <code>new VisualizerAppController({ mode: 'lite' | 'full', containerIds: {...} }).init()</code>。</p>
+
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Wins</h3>
+              <ul class="text-sm text-slate-700 space-y-1">
+                <li>• <strong>leverage:</strong> 1 interface，4 call sites</li>
+                <li>• <strong>locality:</strong> 渲染/步进/切换 bugs 集中于一个模块</li>
+                <li>• interface 缩至 1 行初始化调用；implementation 吸收 ~1750 行重复</li>
+                <li>• 删除 2 个字节级克隆文件（stage-explorer 变为符号链接或 1 行 redirect）</li>
+                <li>• 可单元测试：注入 Mock DOM ids 即可覆盖协调流程</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ========== Candidate 2 ========== -->
+        <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-lg font-bold text-slate-900">Candidate 2: <code class="text-base">renderStep</code> 内的 Stage-4 槽位渲染收编入 <code>GridVisualAdapter</code></h2>
+            <div class="flex gap-2 mt-2">
+              <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-800">Worth exploring</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">in-process</span>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 space-y-4">
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Files</h3>
+              <ul class="font-mono text-sm text-slate-700 space-y-0.5">
+                <li>unique-paths-lite.html <span class="text-slate-400">(renderStep → stage-4 分支, ~35 行)</span></li>
+                <li>unique-paths.html <span class="text-slate-400">(renderStep → stage-4 分支, ~40 行)</span></li>
+                <li class="text-emerald-700">[MODIFY] src/core/renderers/grid-visual-adapter.ts</li>
+              </ul>
+            </div>
+
+            <!-- Before / After: Mass Diagram -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">Before</h4>
+                <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-2">
+                  <!-- GridVisualAdapter shallow: interface tall, impl short -->
+                  <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold text-center mb-1">GridVisualAdapter</div>
+                  <div class="flex gap-3 items-end justify-center">
+                    <div class="flex flex-col items-center gap-1">
+                      <div class="w-20 h-16 rounded border-2 border-blue-400 bg-blue-50 flex items-center justify-center text-[10px] font-semibold text-blue-700">interface</div>
+                      <span class="text-[9px] text-slate-400">3 methods</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                      <div class="w-20 h-24 rounded border-2 border-slate-300 bg-slate-100 flex items-center justify-center text-[10px] font-semibold text-slate-600">impl</div>
+                      <span class="text-[9px] text-slate-400">grid only</span>
+                    </div>
+                  </div>
+                  <div class="text-xs text-center text-red-600 font-semibold mt-1">Stage-4 memo 槽位渲染泄漏在 HTML 内联脚本中</div>
+                </div>
+              </div>
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">After</h4>
+                <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-2">
+                  <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold text-center mb-1">GridVisualAdapter (deepened)</div>
+                  <div class="flex gap-3 items-end justify-center">
+                    <div class="flex flex-col items-center gap-1">
+                      <div class="w-20 h-12 rounded border-2 border-blue-400 bg-blue-50 flex items-center justify-center text-[10px] font-semibold text-blue-700">interface</div>
+                      <span class="text-[9px] text-slate-400">+2 methods</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                      <div class="w-20 h-40 rounded deep flex items-center justify-center text-[10px] font-semibold text-slate-200">impl</div>
+                      <span class="text-[9px] text-slate-400">grid + memo + transfer</span>
+                    </div>
+                  </div>
+                  <div class="text-xs text-center text-emerald-600 font-semibold mt-1">所有视觉渲染集中于一个深模块</div>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-700"><strong>Problem:</strong> <code>GridVisualAdapter</code> 提取了 2D 网格渲染，但 Stage-4 的一维 memo 槽位着色（~35 行 isCur/isRef/val 判定 + DOM 生成）和 Stage-3 的状态转移看板（~20 行）仍留在 HTML 内联 <code>renderStep</code> 中，横跨模块 seam 泄漏。</p>
+
+            <p class="text-sm text-slate-700"><strong>Solution:</strong> 在 <code>GridVisualAdapter</code> 中新增 <code>renderMemoSlots(container, step, n)</code> 和 <code>renderTransferEquation(container, step, direction)</code>，将全部视觉渲染逻辑收编至同一深模块。</p>
+
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Wins</h3>
+              <ul class="text-sm text-slate-700 space-y-1">
+                <li>• <strong>locality:</strong> 所有「步骤数据 → DOM」转换集中于一处</li>
+                <li>• interface 不变宽（+2 methods），implementation 吸收 ~70 行</li>
+                <li>• renderStep 从 ~130 行缩减至 ~50 行纯协调逻辑</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ========== Candidate 3 ========== -->
+        <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-lg font-bold text-slate-900">Candidate 3: CSS 动画与主题样式提取为共享 <code class="text-base">visualizer-theme.css</code></h2>
+            <div class="flex gap-2 mt-2">
+              <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-800">Worth exploring</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">in-process</span>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 space-y-4">
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Files</h3>
+              <ul class="font-mono text-sm text-slate-700 space-y-0.5">
+                <li>unique-paths-lite.html <span class="text-slate-400">(&lt;style&gt; 块, ~175 行)</span></li>
+                <li>unique-paths.html <span class="text-slate-400">(&lt;style&gt; 块, ~175 行)</span></li>
+                <li class="text-emerald-700 font-semibold">[NEW] src/styles/visualizer-theme.css</li>
+              </ul>
+            </div>
+
+            <!-- Before / After: Cross-section -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">Before</h4>
+                <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-1">
+                  <div class="h-6 border-l-4 border-red-400 bg-red-50 pl-2 flex items-center text-[10px] font-mono text-red-700">unique-paths-lite.html &lt;style&gt; — 175 行</div>
+                  <div class="h-6 border-l-4 border-red-400 bg-red-50 pl-2 flex items-center text-[10px] font-mono text-red-700">unique-paths.html &lt;style&gt; — 175 行</div>
+                  <div class="h-6 border-l-4 border-red-400 bg-red-50 pl-2 flex items-center text-[10px] font-mono text-red-700">stage-explorer-lite.html &lt;style&gt; — 175 行 (clone)</div>
+                  <div class="h-6 border-l-4 border-red-400 bg-red-50 pl-2 flex items-center text-[10px] font-mono text-red-700">stage-explorer.html &lt;style&gt; — 175 行 (clone)</div>
+                  <div class="text-[10px] text-red-600 font-semibold text-center pt-1">700 行 CSS 散布于 4 个 HTML &lt;style&gt; 块</div>
+                </div>
+              </div>
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">After</h4>
+                <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-1">
+                  <div class="h-16 border-l-4 border-emerald-500 bg-emerald-50 pl-2 flex items-center text-[10px] font-mono text-emerald-800 font-semibold">visualizer-theme.css — 175 行 (单一来源)</div>
+                  <div class="h-4 border-l-4 border-slate-300 bg-slate-50 pl-2 flex items-center text-[10px] font-mono text-slate-500">4× HTML: &lt;link href="visualizer-theme.css"&gt;</div>
+                  <div class="text-[10px] text-emerald-600 font-semibold text-center pt-1">1 份样式文件，4 个 HTML 引用</div>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-700"><strong>Problem:</strong> 4 个 HTML 文件各内联 ~175 行完全相同的 CSS（<code>@keyframes frog-hop</code>、<code>charHopJump</code>、<code>riverWaveMove</code>、代码高亮行样式、滚动条主题等），standalone 导出时 4 份 HTML 各自膨胀 ~5KB。</p>
+
+            <p class="text-sm text-slate-700"><strong>Solution:</strong> 提取为 <code>src/styles/visualizer-theme.css</code>，HTML 改为 <code>&lt;link&gt;</code> 引用。<code>export-standalone.mjs</code> 构建时自动内联。</p>
+
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Wins</h3>
+              <ul class="text-sm text-slate-700 space-y-1">
+                <li>• <strong>leverage:</strong> 1 样式文件，4+ 消费页面</li>
+                <li>• 删除 700 行重复 CSS</li>
+                <li>• 主题变更单点修改，自动传播</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ========== Candidate 4 ========== -->
+        <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-lg font-bold text-slate-900">Candidate 4: HTML 骨架模板化 — Lite / Full 降至纯 DOM 声明</h2>
+            <div class="flex gap-2 mt-2">
+              <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-200 text-slate-700">Speculative</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">ports & adapters</span>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 space-y-4">
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Files</h3>
+              <ul class="font-mono text-sm text-slate-700 space-y-0.5">
+                <li>unique-paths-lite.html <span class="text-slate-400">(~386 行 HTML 骨架)</span></li>
+                <li>unique-paths.html <span class="text-slate-400">(~480 行 HTML 骨架)</span></li>
+                <li class="text-emerald-700">[NEW] src/templates/lite-layout.html</li>
+                <li class="text-emerald-700">[NEW] src/templates/full-layout.html</li>
+              </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">Before</h4>
+                <div class="rounded-lg border border-slate-200 bg-white p-4">
+                  <pre class="mermaid">
+flowchart LR
+    subgraph FILES["4 个 HTML 文件"]
+      A["unique-paths-lite.html\n386 行 DOM + 425 行 JS"]
+      B["unique-paths.html\n480 行 DOM + 455 行 JS"]
+      C["stage-explorer-lite.html\n= A (clone)"]
+      D["stage-explorer.html\n= B (clone)"]
+    end
+    style FILES fill:#fef3c7,stroke:#d97706
+                  </pre>
+                </div>
+              </div>
+              <div>
+                <h4 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 text-center">After (若 Candidate 1+3 先完成)</h4>
+                <div class="rounded-lg border border-slate-200 bg-white p-4">
+                  <pre class="mermaid">
+flowchart LR
+    subgraph TEMPLATES["2 个布局模板"]
+      T1["lite-layout.html\n~200 行纯 DOM"]
+      T2["full-layout.html\n~280 行纯 DOM"]
+    end
+    subgraph ENTRIES["4 个入口 (各 ~5 行)"]
+      E1["unique-paths-lite.html"]
+      E2["unique-paths.html"]
+      E3["stage-explorer-lite.html"]
+      E4["stage-explorer.html"]
+    end
+    E1 --> T1
+    E3 --> T1
+    E2 --> T2
+    E4 --> T2
+    style TEMPLATES fill:#0f172a,color:#f8fafc,stroke:#334155
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-700"><strong>Problem:</strong> Lite 和 Full 各有独立的 HTML 骨架，但 stage-explorer 与 unique-paths 的骨架完全相同。若 Candidate 1 和 3 完成后，4 个 HTML 文件仍各自携带 200-280 行纯 DOM 模板。</p>
+
+            <p class="text-sm text-slate-700"><strong>Solution:</strong> 将 DOM 骨架提取为 2 个模板文件（lite-layout / full-layout），入口 HTML 仅做 <code>&lt;link&gt;</code> + <code>&lt;script&gt; import + init()</code>。这是 Candidate 1+3 的自然延伸，但需要先完成前两个。</p>
+
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Wins</h3>
+              <ul class="text-sm text-slate-700 space-y-1">
+                <li>• 入口文件从 800+ 行降至 ~5 行</li>
+                <li>• 新增 unique-paths-iii 或 edit-distance 可视化仅需 1 个新 URL 入口</li>
+                <li>• <strong>leverage:</strong> 2 个模板覆盖全部画板页面</li>
+              </ul>
+            </div>
+
+            <div class="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+              ⚠️ 依赖 Candidate 1 和 3 先完成。在此之前单独实施无净收益。
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- Top Recommendation -->
+      <section id="top-recommendation" class="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-6">
+        <h2 class="text-lg font-bold text-emerald-900 mb-2">🏆 Top recommendation: Candidate 1</h2>
+        <p class="text-sm text-emerald-800">
+          <strong>提取 <code>VisualizerAppController</code> 协调器深模块</strong>。这一步消除了 ~1750 行重复的内联脚本协调逻辑，是当前模板架构中最大的浅层摩擦来源。完成后 Candidate 2（渲染收编）和 Candidate 3（CSS 提取）成为自然的后续步骤，三者组合可将每个 HTML 入口从 800+ 行缩减到 ~200 行纯 DOM 声明 + 1 行初始化。
+        </p>
+        <a href="#candidates" class="text-xs text-emerald-700 underline mt-2 inline-block">↑ Back to candidates</a>
+      </section>
+
+    </main>
+  </body>
+</html>

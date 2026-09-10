@@ -1,318 +1,331 @@
 /**
- * 最小生成树 Prim 算法可视化器
- * 从起点开始贪心构建 MST
+ * Prim 最小生成树可视化器 — 4-Card 标准现代架构
+ * 加点法贪心扩充、minDist 切边维护与生成树高亮 (左程云 class058)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V轮外层加点循环、未入树最小点u挑选、纳入inMST标记、权值累加、出边扫描、更优切边更新均发射独立Step）、四语言行号映射
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  MST_PRIM_PROBLEM_HTML,
+  MST_PRIM_ANALYSIS_HTML,
+  MST_PRIM_CODE_LANGUAGES,
+} from './mst-prim-problem-content';
 import template from './mst-prim.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
-interface MSTPrimStep {
+export interface PrimStep extends StepBase {
   nodes: number[];
   edges: { u: number; v: number; w: number }[];
-  mstEdges: { u: number; v: number; w: number }[];
+  minDist: number[];
   inMST: boolean[];
-  dist: number[];
+  mstEdges: { u: number; v: number; w: number }[];
   currentNode: number | null;
+  activeEdge: { u: number; v: number; w: number } | null;
   totalWeight: number;
-  minEdgeLabel: string;
-  action: 'init' | 'select' | 'update' | 'done';
-  message: string;
+  action: 'init' | 'select' | 'update-edge' | 'skip' | 'done';
+  statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
-const MSTP_NODES = [0, 1, 2, 3];
-const MSTP_EDGES = [
-  { u: 0, v: 1, w: 4 },
-  { u: 0, v: 2, w: 3 },
-  { u: 1, v: 2, w: 1 },
-  { u: 1, v: 3, w: 2 },
-  { u: 2, v: 3, w: 4 },
-];
-const MSTP_NODE_POSITIONS = [
-  { x: 100, y: 80 },
-  { x: 350, y: 80 },
-  { x: 100, y: 220 },
-  { x: 350, y: 220 },
+export const PRIM_NODES = [0, 1, 2, 3, 4];
+export const PRIM_EDGES = [
+  { u: 0, v: 1, w: 2 },
+  { u: 0, v: 3, w: 6 },
+  { u: 1, v: 2, w: 3 },
+  { u: 1, v: 3, w: 8 },
+  { u: 1, v: 4, w: 5 },
+  { u: 2, v: 4, w: 7 },
+  { u: 3, v: 4, w: 9 },
 ];
 
-function buildMSTPrimSteps(): MSTPrimStep[] {
-  const steps: MSTPrimStep[] = [];
-  const n = MSTP_NODES.length;
-  const edges = MSTP_EDGES.map(e => ({ ...e }));
+export const PRIM_NODE_POSITIONS: { x: number; y: number }[] = [
+  { x: 70, y: 130 },
+  { x: 210, y: 55 },
+  { x: 370, y: 55 },
+  { x: 210, y: 205 },
+  { x: 370, y: 205 },
+];
 
-  let inMST = new Array(n).fill(false);
-  let dist = new Array(n).fill(Infinity);
+const INF = Infinity;
+
+export function buildPrimSteps(): PrimStep[] {
+  const steps: PrimStep[] = [];
+  const n = PRIM_NODES.length;
+  const minDist = new Array(n).fill(INF);
+  const parent = new Array(n).fill(-1);
+  const inMST = new Array(n).fill(false);
   const mstEdges: { u: number; v: number; w: number }[] = [];
-  let totalWeight = 0;
 
-  const snap = (action: MSTPrimStep['action'], current: number | null, minLabel: string, msg: string, log: string, code: number | number[]) => {
-    steps.push({
-      nodes: [...MSTP_NODES],
-      edges: edges.map(e => ({ ...e })),
-      mstEdges: mstEdges.map(e => ({ ...e })),
-      inMST: [...inMST],
-      dist: [...dist],
-      currentNode: current,
-      totalWeight,
-      minEdgeLabel: minLabel,
-      action,
-      message: msg,
-      log,
-      codeLine: code,
-    });
+  // 精准 14 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 1, javascript: 1 },
+    initMinDist: { cpp: 2, java: 4, python: 2, javascript: 2 },
+    setSrc: { cpp: 4, java: 5, python: 4, javascript: 4 },
+    initInMST: { cpp: 3, java: 6, python: 3, javascript: 3 },
+    initWeight: { cpp: 5, java: 7, python: 5, javascript: 5 },
+    forStep: { cpp: 6, java: 8, python: 6, javascript: 6 },
+    initU: { cpp: 7, java: 9, python: 7, javascript: 7 },
+    findMinU: { cpp: 8, java: 10, python: 8, javascript: 8 },
+    setInMST: { cpp: 11, java: 13, python: 11, javascript: 11 },
+    addWeight: { cpp: 12, java: 14, python: 12, javascript: 12 },
+    forAdj: { cpp: 13, java: 15, python: 13, javascript: 13 },
+    checkUpdate: { cpp: 14, java: 17, python: 14, javascript: 14 },
+    updateMinDist: { cpp: 15, java: 18, python: 15, javascript: 15 },
+    returnAns: { cpp: 20, java: 22, python: 16, javascript: 19 },
   };
 
-  // Init
-  snap('init', null, '-', `初始化 ${n} 个节点的加权图。从节点 0 开始构建 MST。dist 全部设为无穷大。`, '初始化: 从节点0开始', 0);
+  // Build adjacency list for undirected graph
+  const adj: { v: number; w: number }[][] = Array.from({ length: n }, () => []);
+  for (const e of PRIM_EDGES) {
+    adj[e.u].push({ v: e.v, w: e.w });
+    adj[e.v].push({ v: e.u, w: e.w });
+  }
 
-  // Start from node 0
-  dist[0] = 0;
-  snap('init', 0, '-', `将起点 0 加入 MST。更新邻居的 dist 值。`, '起点: 0, dist[0]=0', [1, 2]);
+  let totalWeight = 0;
 
-  // Process node 0: update neighbors
-  inMST[0] = true;
-  // Neighbors: 1(w=4), 2(w=3)
-  dist[1] = 4;
-  dist[2] = 3;
-  snap('update', 0, '-', `节点 0 加入 MST。更新邻居: dist[1]=4 (边0-1), dist[2]=3 (边0-2)。`, '加入0: dist[1]=4, dist[2]=3', [3, 4]);
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'select' | 'update-edge' | 'skip' | 'done',
+    statusText: string,
+    log: string,
+    currentNode: number | null = null,
+    activeEdge: { u: number; v: number; w: number } | null = null
+  ): void {
+    const dStr = minDist.map((d, i) => `${i}:${d === INF ? '∞' : d}`).join(', ');
+    const mstCnt = inMST.filter(Boolean).length;
 
-  // Select node 2 (min dist=3)
-  let minNode = 2;
-  snap('select', minNode, '边(0,2)w=3', `选择 dist 最小的非 MST 节点: 节点 2 (dist=3)。添加 MST 边 (0,2), 权重 3。`, '选节点2: MST边(0,2) w=3', [5, 6]);
-  mstEdges.push({ u: 0, v: 2, w: 3 });
-  totalWeight += 3;
-  inMST[2] = true;
-  // Update neighbors of 2: 0(already in MST), 1(w=1, 1<4 update), 3(w=4)
-  if (1 < dist[1]) dist[1] = 1;
-  dist[3] = 4;
-  snap('update', 2, '边(0,2)w=3', `节点 2 加入 MST, 总权重=${totalWeight}。更新邻居: dist[1]=min(4,1)=1 (经2), dist[3]=4。`, '加入2: dist[1]=1, dist[3]=4', [3, 4]);
+    steps.push({
+      nodes: PRIM_NODES,
+      edges: PRIM_EDGES,
+      minDist: [...minDist],
+      inMST: [...inMST],
+      mstEdges: [...mstEdges],
+      currentNode,
+      activeEdge,
+      totalWeight,
+      action,
+      statusText,
+      log,
+      codeLine,
+      metrics: {
+        'metric-prim-nodes': `${mstCnt} / ${n}`,
+        'metric-prim-weight': `${totalWeight}`,
+        'metric-prim-edge': activeEdge ? `(${activeEdge.u}➔${activeEdge.v}, w=${activeEdge.w})` : '—',
+        'metric-prim-dist': `[${dStr}]`,
+      },
+    });
+  }
 
-  // Select node 1 (min dist=1)
-  minNode = 1;
-  snap('select', minNode, '边(2,1)w=1', `选择 dist 最小的非 MST 节点: 节点 1 (dist=1)。添加 MST 边 (2,1), 权重 1。`, '选节点1: MST边(2,1) w=1', [5, 6]);
-  mstEdges.push({ u: 2, v: 1, w: 1 });
-  totalWeight += 1;
-  inMST[1] = true;
-  // Update neighbors of 1: 0(MST), 2(MST), 3(w=2, 2<4 update)
-  if (2 < dist[3]) dist[3] = 2;
-  snap('update', 1, '边(2,1)w=1', `节点 1 加入 MST, 总权重=${totalWeight}。更新邻居: dist[3]=min(4,2)=2 (经1)。`, '加入1: dist[3]=2', [3, 4]);
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] primMST(n=5, adj)：启动 Prim 最小生成树加点法。', 'primMST 入口');
+  makeStep(lines.initMinDist, 'init', '📊 [初始化切边距离] Arrays.fill(minDist, INF)；除根节点外初始切边距离全为正无穷。', 'init minDist[]');
 
-  // Select node 3 (min dist=2)
-  minNode = 3;
-  snap('select', minNode, '边(1,3)w=2', `选择 dist 最小的非 MST 节点: 节点 3 (dist=2)。添加 MST 边 (1,3), 权重 2。`, '选节点3: MST边(1,3) w=2', [5, 6]);
-  mstEdges.push({ u: 1, v: 3, w: 2 });
-  totalWeight += 2;
-  inMST[3] = true;
-  snap('update', 3, '边(1,3)w=2', `节点 3 加入 MST, 总权重=${totalWeight}。所有节点已加入 MST。`, '加入3: 全部完成', [3, 4]);
+  minDist[0] = 0;
+  makeStep(lines.setSrc, 'init', '🌱 [设置生长根节点] minDist[0] = 0；从节点 0 开始贪心生长最小生成树。', 'minDist[0] = 0');
+  makeStep(lines.initInMST, 'init', '🏷️ [初始化并入标记] boolean[] inMST = new boolean[5]；记录已纳入生成树的点集。', 'init inMST[]');
+  makeStep(lines.initWeight, 'init', '🌱 [初始化权重累加器] int totalWeight = 0。', 'totalWeight = 0');
 
-  // Done
-  snap('done', null, '-', `MST 构建完成！MST 边: (0,2)w=3, (2,1)w=1, (1,3)w=2。总权重 = ${totalWeight}。共 ${mstEdges.length} 条边。`, `完成: MST权重=${totalWeight}`, 7);
+  // 2. V 轮贪心加点
+  for (let i = 0; i < n; i++) {
+    makeStep(lines.forStep, 'select', `🔁 [加点主循环] for (i = ${i}; i < ${n}; i++)：开始挑选第 ${i + 1} 个加入生成树的顶点。`, `--- 第 ${i + 1} 次加点 ---`);
+
+    makeStep(lines.initU, 'select', '🔍 [重置选点指针] int u = -1；准备在未并入顶点中搜寻 minDist 最小者。', 'u = -1');
+
+    let u = -1;
+    for (let j = 0; j < n; j++) {
+      if (!inMST[j] && (u === -1 || minDist[j] < minDist[u])) {
+        u = j;
+      }
+    }
+
+    makeStep(lines.findMinU, 'select', `💡 [贪心确定最近点] 确定未并入顶点 u = ${u}，当前切边权值 minDist[${u}] = ${minDist[u]} 为全局最小！`, `选点: u = ${u}`);
+
+    inMST[u] = true;
+    makeStep(lines.setInMST, 'select', `🏷️ [纳入生成树集合] inMST[${u}] = true；顶点 ${u} 正式并入 MST 点集！`, `inMST[${u}] = true`, u);
+
+    totalWeight += minDist[u];
+    if (parent[u] !== -1) {
+      const edge = { u: parent[u], v: u, w: minDist[u] };
+      mstEdges.push(edge);
+      makeStep(lines.addWeight, 'select', `⚡ [固化生成树边] 边 (${parent[u]} ➔ ${u}, w=${minDist[u]}) 固化并入 MST，累计权值增加至 ${totalWeight}！`, `MST add edge (${parent[u]}->${u})`, u, edge);
+    } else {
+      makeStep(lines.addWeight, 'select', `⚡ [固化根节点] 顶点 0 为初始根，无前驱连接边，累计权值: ${totalWeight}。`, 'root node 0', u);
+    }
+
+    // 用 u 更新其余未并入节点的 minDist
+    for (const neighbor of adj[u]) {
+      const v = neighbor.v;
+      const w = neighbor.w;
+      const curEdge = { u, v, w };
+
+      makeStep(lines.forAdj, 'skip', `  ↳ [考察出边] 遍历与 ${u} 相连的边 (${u} ➔ ${v}, 权重 w=${w})。`, `edge (${u}->${v}, w=${w})`, u, curEdge);
+
+      const canUpdate = !inMST[v] && w < minDist[v];
+      makeStep(lines.checkUpdate, canUpdate ? 'update-edge' : 'skip', `  🔎 [更新切边条件] if (!inMST[${v}] && ${w} < minDist[${v}](${minDist[v] === INF ? '∞' : minDist[v]})) -> (${canUpdate})。`, `check cut edge (${u}->${v})`, u, curEdge);
+
+      if (canUpdate) {
+        const oldDist = minDist[v];
+        minDist[v] = w;
+        parent[v] = u;
+        makeStep(lines.updateMinDist, 'update-edge', `  ⚡ [更新切边权值] 发现更优连接边！minDist[${v}] 从 ${oldDist === INF ? '∞' : oldDist} 缩短为 ${w}，前驱 parent[${v}] 设为 ${u}。`, `minDist[${v}]=${w}`, u, curEdge);
+      } else {
+        makeStep(lines.checkUpdate, 'skip', `  ⏭️ [跳过边] 顶点 ${v} ${inMST[v] ? '已在生成树中' : `已有更优或相等切边 (minDist=${minDist[v]})`}，无需更新。`, `skip edge (${u}->${v})`, u, curEdge);
+      }
+    }
+  }
+
+  makeStep(lines.returnAns, 'done', `🎉 [Prim 算法达成] return totalWeight！全图所有 ${n} 个顶点全部并入生成树，总边数 ${mstEdges.length}，最小生成树总权值: ${totalWeight}！`, 'return totalWeight');
 
   return steps;
 }
 
-export class MSTPrimVisualizer extends StepVisualizer<MSTPrimStep> {
-  protected codeLines = [
-    'int prim(List<int[]>[] adj, int start) {',
-    '    int[] dist = new int[n]; Arrays.fill(dist, INF);',
-    '    dist[start] = 0; boolean[] inMST = new boolean[n];',
-    '    inMST[start] = true;',
-    '    for (int[] edge : adj[u]) dist[v] = Math.min(dist[v], w);',
-    '    int u = argmin(dist) where not inMST;',
-    '    mstEdges.add(edge); totalWeight += w;',
-    '}',
-  ];
-  protected codePanelTitle = 'Prim 算法代码 (Java)';
+export class PrimVisualizer extends StepVisualizer<PrimStep> {
+  protected codeLanguages = MST_PRIM_CODE_LANGUAGES;
+  protected codeLines = MST_PRIM_CODE_LANGUAGES['java'];
+  protected codePanelTitle = 'Prim 算法代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private distEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private edgesEl: HTMLElement | null = null;
-  private weightEl: HTMLElement | null = null;
-  private minedgeEl: HTMLElement | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private nodeTableBody: HTMLElement | null = null;
+  private metricMstNodesEl: HTMLElement | null = null;
+  private metricTotalWeightEl: HTMLElement | null = null;
+  private metricCurNodeEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#mstp-graph');
-    this.distEl = this.root.querySelector('#mstp-dist');
-    this.logEl = this.root.querySelector('#mstp-log');
-    this.currentEl = this.root.querySelector('#mstp-current');
-    this.edgesEl = this.root.querySelector('#mstp-edges');
-    this.weightEl = this.root.querySelector('#mstp-weight');
-    this.minedgeEl = this.root.querySelector('#mstp-minedge');
-    this.btnStart = this.root.querySelector('#mstp-start');
-    this.bindPlaybackControls({
-      speed: 'mstp-speed',
-      speedLabel: 'mstp-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#prim-svg-canvas');
+    this.nodeTableBody = this.root.querySelector('#prim-node-table-body');
+    this.metricMstNodesEl = this.root.querySelector('#metric-mst-nodes');
+    this.metricTotalWeightEl = this.root.querySelector('#metric-total-weight');
+    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
+    this.liveTextEl = this.root.querySelector('#prim-live-text');
+
+    this.bindPlaybackControls();
+
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: MST_PRIM_PROBLEM_HTML,
+      analysisHtml: MST_PRIM_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
-  protected buildSteps(): MSTPrimStep[] {
-    return buildMSTPrimSteps();
+  protected buildSteps(): PrimStep[] {
+    return buildPrimSteps();
   }
 
-  protected renderStep(step: MSTPrimStep): void {
-    if (this.currentEl) this.currentEl.textContent = step.currentNode !== null ? String(step.currentNode) : '-';
-    if (this.edgesEl) this.edgesEl.textContent = String(step.mstEdges.length);
-    if (this.weightEl) this.weightEl.textContent = String(step.totalWeight);
-    if (this.minedgeEl) this.minedgeEl.textContent = step.minEdgeLabel;
+  protected renderStep(step: PrimStep): void {
+    const { minDist, inMST, mstEdges, currentNode, activeEdge, totalWeight, action, statusText } = step;
 
-    this.renderGraph(step);
-    this.renderDist(step);
-    this.renderLogLine(step);
-  }
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">`;
 
-  private renderGraph(step: MSTPrimStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 450 300');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '450px';
-    svg.style.height = '280px';
+      for (const e of PRIM_EDGES) {
+        const p1 = PRIM_NODE_POSITIONS[e.u];
+        const p2 = PRIM_NODE_POSITIONS[e.v];
+        const isMst = mstEdges.some((me) => (me.u === e.u && me.v === e.v) || (me.u === e.v && me.v === e.u));
+        const isActive = activeEdge && ((activeEdge.u === e.u && activeEdge.v === e.v) || (activeEdge.u === e.v && activeEdge.v === e.u));
+        const isCut = (inMST[e.u] && !inMST[e.v]) || (!inMST[e.u] && inMST[e.v]);
 
-    const isMSTEdge = (u: number, v: number) =>
-      step.mstEdges.some(e => (e.u === u && e.v === v) || (e.u === v && e.v === u));
+        let strokeColor = '#cbd5e1';
+        let strokeWidth = 1.8;
+        let strokeDash = 'none';
 
-    // Draw edges
-    for (const edge of step.edges) {
-      const p1 = MSTP_NODE_POSITIONS[edge.u];
-      const p2 = MSTP_NODE_POSITIONS[edge.v];
-      const isMST = isMSTEdge(edge.u, edge.v);
-      const isCurrent = step.currentNode !== null &&
-        (edge.u === step.currentNode || edge.v === step.currentNode) && isMST;
+        if (isMst) {
+          strokeColor = '#10b981';
+          strokeWidth = 3.5;
+        } else if (isActive && action === 'update-edge') {
+          strokeColor = '#3b82f6';
+          strokeWidth = 3;
+        } else if (isActive) {
+          strokeColor = '#60a5fa';
+          strokeWidth = 2.5;
+        } else if (isCut) {
+          strokeColor = '#f59e0b';
+          strokeWidth = 2;
+          strokeDash = '4,4';
+        }
 
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2 - 8;
 
-      if (isMST) {
-        line.setAttribute('stroke', '#22c55e');
-        line.setAttribute('stroke-width', isCurrent ? '4' : '3');
-        if (isCurrent) line.style.animation = 'pathPulse 1.5s infinite';
-      } else {
-        line.setAttribute('stroke', 'rgba(156, 163, 175, 0.3)');
-        line.setAttribute('stroke-width', '2');
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
+        svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
       }
-      line.classList.add('mstp-edge');
-      svg?.appendChild(line);
 
-      // Weight label
-      const mx = (p1.x + p2.x) / 2;
-      const my = (p1.y + p2.y) / 2;
-      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(mx - 12));
-      bg.setAttribute('y', String(my - 10));
-      bg.setAttribute('width', '24');
-      bg.setAttribute('height', '20');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('fill', isMST ? 'rgba(34, 197, 94, 0.3)' : 'rgba(30, 30, 50, 0.8)');
-      bg.setAttribute('stroke', isMST ? '#22c55e' : 'rgba(156, 163, 175, 0.4)');
-      bg.setAttribute('stroke-width', '1');
-      svg?.appendChild(bg);
+      PRIM_NODES.forEach((node) => {
+        const p = PRIM_NODE_POSITIONS[node];
+        const isIn = inMST[node];
+        const isCur = currentNode === node;
+        const dVal = minDist[node];
 
-      const wt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      wt.setAttribute('x', String(mx));
-      wt.setAttribute('y', String(my + 5));
-      wt.setAttribute('text-anchor', 'middle');
-      wt.setAttribute('fill', isMST ? '#22c55e' : 'rgba(156, 163, 175, 0.7)');
-      wt.setAttribute('font-size', '12');
-      wt.setAttribute('font-weight', '700');
-      wt.setAttribute('font-family', 'ui-monospace, monospace');
-      wt.textContent = String(edge.w);
-      svg?.appendChild(wt);
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCur) {
+          fill = '#fef08a';
+          stroke = '#eab308';
+        } else if (isIn) {
+          fill = '#dcfce7';
+          stroke = '#10b981';
+        } else if (dVal !== INF) {
+          fill = '#eff6ff';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : isIn ? '#15803d' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = MSTP_NODE_POSITIONS[i];
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('mstp-node');
+    if (this.nodeTableBody) {
+      this.nodeTableBody.innerHTML = PRIM_NODES.map((node) => {
+        const dVal = minDist[node];
+        const isIn = inMST[node];
+        const isCur = currentNode === node;
 
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '24');
-
-      if (step.currentNode === i) {
-        circle.setAttribute('fill', '#f59e0b');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 0.8s infinite';
-      } else if (step.inMST[i]) {
-        circle.setAttribute('fill', 'rgba(34, 197, 94, 0.4)');
-        circle.setAttribute('stroke', '#16a34a');
-        circle.setAttribute('stroke-width', '2');
-      } else {
-        circle.setAttribute('fill', 'rgba(34, 197, 94, 0.1)');
-        circle.setAttribute('stroke', '#22c55e');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('fill', step.currentNode === i ? '#000' : step.inMST[i] ? '#16a34a' : '#22c55e');
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
+        return `<tr class="${isCur ? 'bg-yellow-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1 text-center font-mono font-bold text-slate-800">${node}</td>
+          <td class="px-3 py-1 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
+          <td class="px-3 py-1 text-center font-mono text-xs ${isIn ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isIn ? '已在生成树' : '等待切入'}</td>
+        </tr>`;
+      }).join('');
     }
 
-    this.graphEl?.appendChild(svg);
-  }
+    if (this.metricMstNodesEl) {
+      this.metricMstNodesEl.textContent = `${inMST.filter(Boolean).length} / ${PRIM_NODES.length}`;
+    }
+    if (this.metricTotalWeightEl) {
+      this.metricTotalWeightEl.textContent = `${totalWeight}`;
+    }
+    if (this.metricCurNodeEl) {
+      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
+    }
 
-  private renderDist(step: MSTPrimStep): void {
-    if (!this.distEl) return;
-    this.distEl.innerHTML = '';
-    const prevStep = this.currentIndex > 0 ? this.steps[this.currentIndex - 1] : null;
-    step.dist.forEach((d, i) => {
-      const item = document.createElement('div');
-      item.className = 'mstp-dist-item';
-      if (prevStep && prevStep.dist[i] !== d) item.classList.add('updated');
-      const label = d === Infinity ? 'inf' : String(d);
-      item.innerHTML = `<span class="mstp-idx">${i}</span>${label}`;
-      this.distEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: MSTPrimStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
+    }
   }
 }
 
 registerAlgorithm({
   id: 'mst-prim',
-  name: '最小生成树之 Prim 算法',
+  name: 'Prim 最小生成树',
   viewId: 'algo-mst-prim-view',
   category: 'graph',
-  description: 'Prim 贪心构建最小生成树可视化',
-  icon: '🌳',
-  template,
-  Visualizer: MSTPrimVisualizer,
+  icon: '🌲',
   difficulty: 3,
-  levelOrder: 18,
-  learningGoal: '理解 Prim 算法的贪心策略和 dist 数组的作用',
+  levelOrder: 30,
+  description: '左程云算法通关课 Class 058：加点法全局贪心生长最小生成树，维护切边最小距离数组 minDist',
+  learningGoal: '掌握加点法贪心生长思想、切割性质（Cut Property）与 minDist 切边维护机制',
+  template,
+  Visualizer: PrimVisualizer,
 });
-
-export {};

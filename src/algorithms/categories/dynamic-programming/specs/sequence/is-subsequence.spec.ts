@@ -43,7 +43,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
       javascript: { primary: [7, 9], context: [4, 5] },
     },
     loopExit: { java: 5, cpp: 5, python: 5, javascript: 4 },
-    returnResult: { java: 14, cpp: 14, python: 12, javascript: 13 },
+    returnResult: { java: 14, cpp: 14, python: 11, javascript: 13 },
   },
   code: {
     languages: {

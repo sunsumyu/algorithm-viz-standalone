@@ -1,305 +1,908 @@
 <style>
+  /* === 太平洋大西洋水流 (LC 417) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-water-flow-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-water-flow-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-water-flow-view .wf-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-water-flow-view .wf-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-water-flow-view .wf-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-water-flow-view .wf-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  #algo-water-flow-view .wf-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-water-flow-view .wf-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-water-flow-view .wf-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-water-flow-view .wf-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-water-flow-view .wf-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-water-flow-view .wf-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-water-flow-view .wf-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-water-flow-view .wf-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-water-flow-view .wf-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-water-flow-view .wf-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
 
-  #algo-water-flow-view::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 10% 5%, #3b82f655, transparent 55%),
-                radial-gradient(ellipse at 90% 95%, #6366f155, transparent 55%),
-                linear-gradient(135deg, #0a1628 0%, #1e3a5f 25%, #0a1628 50%, #1e1b4b 75%, #0a1628 100%);
-    z-index: -2;
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-water-flow-view .wf-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  #algo-water-flow-view::after {
-    content: '';
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-water-flow-view .wf-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-water-flow-view .wf-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-water-flow-view .wf-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-water-flow-view .wf-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-water-flow-view .wf-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-water-flow-view .wf-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
+  }
+
+  /* 2D 高度网格沙盘展示盒 */
+  #algo-water-flow-view .wf-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  #algo-water-flow-view .wf-grid-container {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  #algo-water-flow-view .wf-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+  }
+
+  #algo-water-flow-view .wf-cell.is-pacific {
+    background: #eff6ff;
+    border: 1.5px solid #93c5fd;
+    color: #1d4ed8;
+  }
+
+  #algo-water-flow-view .wf-cell.is-atlantic {
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    color: #b91c1c;
+  }
+
+  #algo-water-flow-view .wf-cell.is-both {
+    background: #fdf4ff;
+    border: 2px solid #c084fc;
+    color: #7e22ce;
+    font-weight: 900;
+    box-shadow: 0 2px 6px rgba(192, 132, 252, 0.25);
+  }
+
+  #algo-water-flow-view .wf-cell.is-current {
+    box-shadow: 0 0 0 3px #facc15;
+    transform: scale(1.06);
+    z-index: 10;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-water-flow-view .wf-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-water-flow-view .wf-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-water-flow-view .wf-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-water-flow-view .wf-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-water-flow-view .wf-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-water-flow-view .wf-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-water-flow-view .wf-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-water-flow-view .wf-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-water-flow-view .wf-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-water-flow-view .wf-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-water-flow-view .wf-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-water-flow-view .wf-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-water-flow-view .wf-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-water-flow-view .wf-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-water-flow-view .wf-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-water-flow-view .wf-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-water-flow-view .wf-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-water-flow-view .wf-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-water-flow-view .wf-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-water-flow-view .wf-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-water-flow-view .wf-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-water-flow-view .wf-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-water-flow-view .wf-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-water-flow-view .wf-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-water-flow-view .wf-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-water-flow-view .wf-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-water-flow-view .wf-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-water-flow-view .wf-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-water-flow-view .wf-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-water-flow-view .wf-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-water-flow-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-water-flow-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-water-flow-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-water-flow-view .wf-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-water-flow-view .wf-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-water-flow-view .wf-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-water-flow-view .wf-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-water-flow-view .wf-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-water-flow-view .wf-modal-backdrop {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(10, 22, 40, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  .wf-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-
-  .wf-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    border-radius: 0 0 16px 16px;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 24px;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-water-flow-view .wf-modal-backdrop.hidden {
+    display: none;
   }
 
-  .wf-hero .wf-title-wrapper { display: flex; align-items: center; gap: 12px; }
-
-  .wf-hero-icon {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+  #algo-water-flow-view .wf-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  .wf-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px; font-weight: 800;
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
+  #algo-water-flow-view .wf-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
   }
-
-  .wf-hero-text p { margin: 0; color: rgba(204,214,244,0.8); font-size: 13px; }
-
-  .wf-tip {
-    max-width: 480px; padding: 12px 16px; border-radius: 12px;
-    background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
-    color: rgba(204,214,244,0.9); font-size: 13px; line-height: 1.55;
+  #algo-water-flow-view .wf-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
   }
-
-  .wf-tip strong { color: #3b82f6; font-weight: 600; }
-
-  #algo-water-flow-view .wf-layout {
-    flex: 1; min-height: 0;
-    display: grid; grid-template-columns: 1fr 380px;
-    gap: 16px; padding: 16px; overflow: hidden;
+  #algo-water-flow-view .wf-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-
-  @media (max-width: 1100px) {
-    #algo-water-flow-view .wf-layout { grid-template-columns: 1fr; overflow: auto; }
+  #algo-water-flow-view .wf-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
-
-  .wf-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; }
-
-  .wf-card {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px; overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-  }
-
-  .wf-controls {
-    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-  }
-
-  .wf-input {
-    flex: 1; min-width: 140px;
-    padding: 10px 14px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(11,10,23,0.8); color: #cdd6f4;
-    font-family: ui-monospace, monospace; font-size: 13px;
-    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .wf-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-
-  .wf-btn {
-    padding: 10px 18px; border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
-    transition: all 0.2s; box-shadow: 0 4px 15px rgba(59,130,246,0.3);
-  }
-
-  .wf-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
-
-  .wf-example {
-    padding: 8px 14px; border-radius: 999px;
-    border: 1px solid rgba(59,130,246,0.3);
-    background: rgba(59,130,246,0.1); color: #cdd6f4;
-    font-size: 12px; cursor: pointer; transition: all 0.2s;
-  }
-
-  .wf-example:hover { background: rgba(59,130,246,0.2); border-color: #3b82f6; }
-
-  .wf-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 12px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .wf-stat {
-    padding: 14px 0; position: relative;
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden;
-  }
-
-  .wf-stat::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #6366f1);
-  }
-
-  .wf-stat-label { display: block; margin-bottom: 6px; color: rgba(204,214,244,0.7); font-size: 12px; }
-  .wf-stat-val { color: #3b82f6; font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; }
-
-  .wf-grid-container {
-    padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 260px;
-  }
-
-  .wf-grid {
-    display: grid; gap: 4px;
-  }
-
-  .wf-cell {
-    width: 56px; height: 56px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: ui-monospace, monospace; font-size: 16px; font-weight: 700;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-
-  .wf-message {
-    margin: 0 14px 14px; padding: 12px 16px; border-radius: 12px;
-    border: 1px solid rgba(59,130,246,0.2); background: rgba(59,130,246,0.08);
-    color: #cdd6f4; font-size: 13px; line-height: 1.5;
-  }
-
-  .wf-log {
-    min-height: 0; max-height: 130px; padding: 14px 16px; overflow: auto;
-    background: rgba(11,10,23,0.8); font-family: ui-monospace, monospace;
-    font-size: 12px; line-height: 1.7; color: rgba(204,214,244,0.8);
-  }
-
-  .wf-log div { padding: 2px 0; }
-  .wf-log div.active { color: #3b82f6; font-weight: 600; }
-
-  .wf-right { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
-
-  .wf-code-card {
-    background: rgba(11,10,23,0.8); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px; overflow: hidden; flex: 1;
-  }
-
-  .wf-legend {
-    background: rgba(20,18,38,0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
-  }
-
-  .wf-legend-item { display: flex; align-items: center; gap: 10px; }
-  .wf-legend-box { width: 16px; height: 16px; border-radius: 4px; }
-
-  .wf-playback {
-    background: rgba(20,18,38,0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 16px; display: flex; flex-direction: column; gap: 12px;
-  }
-
-  .wf-pb-row { display: flex; gap: 10px; align-items: center; }
-
-  .wf-pb-btn {
-    flex: 1; padding: 12px 16px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(59,130,246,0.1); color: #cdd6f4;
-    cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;
-  }
-
-  .wf-pb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .wf-pb-btn:not(:disabled):hover { background: rgba(59,130,246,0.2); border-color: #3b82f6; transform: translateY(-1px); }
-
-  .wf-pb-btn.play {
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    border: none; color: #fff; box-shadow: 0 4px 15px rgba(59,130,246,0.3);
-  }
-
-  .wf-pb-btn.play:not(:disabled):hover { box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
-
-  .wf-speed-row {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: rgba(204,214,244,0.7);
-  }
-
-  .wf-speed-row input { flex: 1; accent-color: #3b82f6; }
-
-  .wf-counter {
-    color: rgba(204,214,244,0.6); font-size: 13px;
-    font-family: ui-monospace, monospace; text-align: center;
-  }
-
-  @keyframes wf-ripple {
-    0% { transform: scale(0); opacity: 1; }
-    100% { transform: scale(2.5); opacity: 0; }
-  }
-
-  @keyframes wf-glow {
-    0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.4); }
-    50% { box-shadow: 0 0 18px rgba(99,102,241,0.7); }
-  }
-
-  .wf-cell.dual { animation: wf-glow 1.2s infinite; }
 </style>
 
-<div class="wf-page">
-  <div class="wf-hero">
-    <div class="wf-title-wrapper">
-      <div class="wf-hero-icon">💧</div>
-      <div class="wf-hero-text">
-        <h2>高山流水</h2>
-        <p>找出所有水流能同时到达左上和右下水域的格子</p>
-      </div>
+<div id="algo-water-flow-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="wf-header">
+    <div class="wf-header-left">
+      <div class="wf-icon-btn">🌊</div>
+      <h1 class="wf-main-title">LeetCode 417. 太平洋大西洋水流问题</h1>
+      <button id="btn-open-problem-modal" class="wf-btn-problem">📋 题目</button>
+      <span class="wf-badge-mode">双洋逆流搜索·交集判定</span>
+      <span class="wf-badge-complexity">O(M × N) · O(M × N)</span>
     </div>
-    <div class="wf-tip"><strong>算法要点：</strong>从边界反向 DFS/BFS：水从高往低流，等价于从边界向高处搜索。两个方向都能到达的格子即为所求。</div>
-  </div>
 
-  <div class="wf-layout">
-    <div class="wf-main">
+    <div class="wf-header-right">
+      <button id="btn-generate" class="wf-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="wf-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="wf-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="wf-left-section">
+
+      <!-- 卡片 1: 2D 高度网格沙盘 -->
       <div class="wf-card">
-        <div class="wf-controls">
-          <input id="wf-grid-input" class="wf-input" value="3,4,2,1;2,1,3,4;1,2,4,3;4,3,2,1" title="网格高度，行用分号分隔，列用逗号分隔" />
-          <button id="wf-start" class="wf-btn">开始搜索</button>
-          <button class="wf-example" data-grid="3,4,2,1;2,1,3,4;1,2,4,3;4,3,2,1">示例1</button>
-          <button class="wf-example" data-grid="1,2,2;2,3,2;2,1,1">示例2</button>
+        <div class="wf-card-header">
+          <div class="wf-card-title">
+            <span>⛰️ 高度网格与水流可达性沙盘 (Heights Canvas)</span>
+          </div>
+          <div class="wf-legend-bar">
+            <div><span class="wf-legend-dot" style="background:#93c5fd;"></span> 太平洋可达 (P)</div>
+            <div><span class="wf-legend-dot" style="background:#fca5a5;"></span> 大西洋可达 (A)</div>
+            <div><span class="wf-legend-dot" style="background:#c084fc;"></span> 双洋交集 (P & A)</div>
+          </div>
         </div>
 
-        <div class="wf-stats">
-          <div class="wf-stat"><span class="wf-stat-label">当前步骤</span><span class="wf-stat-val" id="wf-phase">-</span></div>
-          <div class="wf-stat"><span class="wf-stat-label">左上可达</span><span class="wf-stat-val" id="wf-tl-count">0</span></div>
-          <div class="wf-stat"><span class="wf-stat-label">右下可达</span><span class="wf-stat-val" id="wf-br-count">0</span></div>
-          <div class="wf-stat"><span class="wf-stat-label">双达格子</span><span class="wf-stat-val" id="wf-dual-count">0</span></div>
+        <!-- 网格沙盘展示盒 -->
+        <div class="wf-sandbox-wrap">
+          <div id="wf-grid-container" class="wf-grid-container"></div>
         </div>
-
-        <div class="wf-grid-container" id="wf-grid"></div>
-
-        <div class="wf-message" id="step-message">输入高度网格，点击「开始搜索」查看水流路径分析。</div>
-
-        <div class="wf-log" id="wf-log"></div>
       </div>
-    </div>
 
-    <div class="wf-right">
-      <div data-code-panel class="wf-code-card"></div>
-      <div class="wf-legend">
-        <div class="wf-legend-item"><span class="wf-legend-box" style="background:rgba(59,130,246,0.3)"></span>仅左上可达</div>
-        <div class="wf-legend-item"><span class="wf-legend-box" style="background:rgba(99,102,241,0.3)"></span>仅右下可达</div>
-        <div class="wf-legend-item"><span class="wf-legend-box" style="background:rgba(59,130,246,0.6);border:2px solid #6366f1"></span>双达（结果）</div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="wf-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="wf-slider" />
+        <div class="wf-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="wf-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="wf-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="wf-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
       </div>
-      <div class="wf-playback">
-        <div class="wf-pb-row">
-          <button id="step-reset" class="wf-pb-btn">重置</button>
-          <button id="step-prev" class="wf-pb-btn">上一步</button>
-          <button id="step-play" class="wf-pb-btn play">播放</button>
-          <button id="step-next" class="wf-pb-btn">下一步</button>
+
+      <!-- 卡片 2: 状态空间与双洋交集监视器 -->
+      <div class="wf-card">
+        <div class="wf-card-header">
+          <div>
+            <div class="wf-card-title">🧭 状态指标与双洋流向监视器 (Water Flow Monitor)</div>
+            <div class="wf-card-desc">当前搜索点、太平洋可达格数、大西洋可达格数与双洋交集数</div>
+          </div>
+          <span id="badge-both-count" class="wf-counter-badge" style="color:#7e22ce; background:#fdf4ff; border-color:#c084fc;">双洋交集: 0 处</span>
         </div>
-        <div class="wf-speed-row">
-          <span>速度</span>
-          <input id="wf-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="wf-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+
+        <!-- 状态空间展示盒 -->
+        <div class="wf-state-space-box">
+          <div class="wf-metrics-grid">
+            <div class="wf-metric-card">
+              <span class="wf-metric-label">当前逆流检查点</span>
+              <span class="wf-metric-val" id="metric-cur-cell" style="color: #eab308;">—</span>
+            </div>
+            <div class="wf-metric-card">
+              <span class="wf-metric-label">搜索阶段 Stage</span>
+              <span class="wf-metric-val" id="metric-stage" style="color: #2563eb;">太平洋搜索</span>
+            </div>
+            <div class="wf-metric-card">
+              <span class="wf-metric-label">太平洋可达 (P)</span>
+              <span class="wf-metric-val" id="metric-pac-count" style="color: #3b82f6;">0</span>
+            </div>
+            <div class="wf-metric-card">
+              <span class="wf-metric-label">大西洋可达 (A)</span>
+              <span class="wf-metric-val" id="metric-atl-count" style="color: #dc2626;">0</span>
+            </div>
+          </div>
+
+          <div class="wf-formula-box">
+            <span style="color:#64748b;">逆流登山规则:</span>
+            <strong id="formula-action" style="color: #2563eb;">若 heights[next] >= heights[curr]，则逆流可达</strong>
+          </div>
+
+          <div class="wf-live-alert">
+            <span>💡</span> <span id="wf-live-text">准备就绪，点击运行开始双洋水流分析。</span>
+          </div>
         </div>
-        <div id="step-counter" class="wf-counter">步骤: 1 / 1</div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="wf-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="wf-dark-terminal">
+        <div class="wf-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="wf-tab-group">
+            <button id="btn-tab-code" class="wf-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="wf-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="wf-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="wf-lang-group" id="code-lang-tabs">
+            <button class="wf-lang-btn active" data-lang="java">Java</button>
+            <button class="wf-lang-btn" data-lang="cpp">C++</button>
+            <button class="wf-lang-btn" data-lang="python">Python</button>
+            <button class="wf-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="wf-font-tools">
+            <div class="wf-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="wf-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="wf-window-dots">
+              <span class="wf-dot" style="background:#ef4444;"></span>
+              <span class="wf-dot" style="background:#eab308;"></span>
+              <span class="wf-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="wf-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="wf-log-card">
+        <div class="wf-log-header">
+          <div class="wf-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="wf-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="wf-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="wf-modal-backdrop hidden">
+    <div class="wf-modal-content">
+      <div class="wf-modal-header">
+        <div class="wf-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="wf-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="wf-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

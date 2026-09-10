@@ -1,24 +1,46 @@
 /**
- * 组合（优化）可视化器（回溯）- 回溯决策树版本
+ * 组合（优化）可视化器（回溯）- 100% 对齐 DP 标准模板版本
  * LeetCode 77：从 1..n 中选 k 个数的所有组合
- * 剪枝优化：i <= n - (k - path.length) + 1，剩余数量不足时直接 break
+ * 支持阶段演化：阶段 1 (完整决策树) vs 阶段 2 (剪枝优化决策树)
+ * 布局：
+ *   左侧：Card 1 (N-ary 决策树 SVG) + Scrubber 播放条 + Card 2 (状态空间：路径栈、剪枝监视器、解集箱)
+ *   右侧：Card 3 (暗色代码终端：多语言、Tab切换、字号控制) + Card 4 (执行日志流)
  */
 
 import { StepVisualizer } from '../../../core/step-visualizer';
+import type { HighlightTarget } from '../../../core/code-panel';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  BacktrackStateSpacePresenter,
+  BacktrackLogItem,
+} from '../../../core/renderers/backtrack-state-space-presenter';
+import {
+  DarkCodeTerminalPresenter,
+  DarkCodeTerminalInstance,
+} from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
   layoutTree,
   flattenTree,
   renderBacktrackTree,
-  renderBacktrackLog,
-  getBacktrackTreeCSS,
+  resetContainerViewState,
 } from './backtracking-tree-helper';
+import { buildCombinationTree, combinationSteps } from './combination-renderer';
+import {
+  COMBINATION_PROBLEM_HTML,
+  COMBINATION_ANALYSIS_HTML,
+} from './combination-problem-content';
 import template from './combination-optimized.html?raw';
 
-/* ── Build the full decision tree ─────────────────────────── */
-function buildTree(n: number, k: number): BacktrackTreeNode {
+function clampInt(val: string | number, def: number, min: number, max: number): number {
+  const n = typeof val === 'number' ? val : parseInt(val, 10);
+  if (isNaN(n)) return def;
+  return Math.max(min, Math.min(max, n));
+}
+
+/* ── Build the pruned decision tree ─────────────────────────── */
+export function buildOptimizedTree(n: number, k: number): BacktrackTreeNode {
   const root: BacktrackTreeNode = {
     id: 'root', value: '', path: [], children: [],
     isLeaf: false, isPruned: false, parentId: null, depth: 0,
@@ -56,136 +78,141 @@ function buildTree(n: number, k: number): BacktrackTreeNode {
 }
 
 /* ── Generate steps by traversing the tree ────────────────── */
-function buildSteps(n: number, k: number): BacktrackTreeStep[] {
-  const root = buildTree(n, k);
+export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
+  const root = buildOptimizedTree(n, k);
   layoutTree(root);
   const allNodes = flattenTree(root);
-  const prunedIds = allNodes.filter(nd => nd.isPruned).map(nd => nd.id);
 
   const steps: BacktrackTreeStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
+  const dynamicPrunedIds: string[] = [];
+
+  const makeVars = (currentPathLen: number) => {
+    const need = Math.max(0, k - currentPathLen);
+    const upper = n - need + 1;
+    return [
+      { name: 'n', value: String(n), type: 'number' as const },
+      { name: 'k', value: String(k), type: 'number' as const },
+      { name: 'path.size()', value: String(currentPathLen), type: 'number' as const },
+      { name: '需补元素', value: String(need), type: 'number' as const },
+      { name: '遍历上界', value: String(upper), type: 'number' as const },
+    ];
+  };
 
   steps.push({
     nodes: allNodes, currentNodeId: 'root', visitedNodeIds: ['root'],
-    foundPathIds: [], prunedNodeIds: [...prunedIds],
+    foundPathIds: [], prunedNodeIds: [],
     path: [],
     message: `开始：从 1..${n} 中选 ${k} 个数，剪枝上界 i <= ${n - k + 1}（首层）`,
     codeLine: 3,
     stats: { depth: 0, count: 0, need: k, remain: 0 },
+    vars: makeVars(0),
   });
 
   function traverse(node: BacktrackTreeNode): void {
     if (node.isLeaf) {
-      // 递归进入：先执行 if (path.size() == k) 判断 —— 成立
       steps.push({
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
         message: `递归进入：path.size() == ${k} ✓ 满足终止条件`,
         codeLine: 9,
         stats: { depth: node.depth, count: foundIds.length, need: 0, remain: node.path.length },
+        vars: makeVars(node.path.length),
       });
-      // 进入 if 块：收集结果并 return
       foundIds.push(node.id);
       steps.push({
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
         message: `找到组合：[${node.path.join(', ')}]，收集并返回`,
         codeLine: { from: 10, to: 11 },
         stats: { depth: node.depth, count: foundIds.length, need: 0, remain: node.path.length },
+        vars: makeVars(node.path.length),
       });
       return;
     }
 
-    // 递归进入非叶子：每次 backtrack 调用都先执行 if 判断 —— 不成立
     steps.push({
       nodes: allNodes, currentNodeId: node.id,
       visitedNodeIds: [...visitedIds],
       foundPathIds: [...foundIds],
-      prunedNodeIds: [...prunedIds],
+      prunedNodeIds: [...dynamicPrunedIds],
       path: [...node.path],
       message: `递归进入：path.size() = ${node.path.length} < ${k}，进入 for 循环`,
       codeLine: 9,
       stats: { depth: node.depth, count: foundIds.length, need: k - node.path.length, remain: node.path.length },
+      vars: makeVars(node.path.length),
     });
 
     for (const child of node.children) {
       if (child.isPruned) {
         if (child.isDirectPrune) {
-          visitedIds.push(child.id);
-          const need = k - node.path.length;
-          const available = n - Number(child.value) + 1;
-          const upper = n - need + 1;
+          const upper = n - (k - node.path.length) + 1;
+          if (!dynamicPrunedIds.includes(child.id)) {
+            dynamicPrunedIds.push(child.id);
+          }
           steps.push({
             nodes: allNodes, currentNodeId: node.id,
             visitedNodeIds: [...visitedIds],
             foundPathIds: [...foundIds],
-            prunedNodeIds: [...prunedIds],
+            prunedNodeIds: [...dynamicPrunedIds],
             path: [...node.path],
-            message: `剪枝（上界限制）：候选 i = ${child.value} 超出剪枝上界 (${upper})，仅剩 ${available} 个候选，还需 ${need} 个（跳过，未下潜）`,
-            codeLine: 14,
-            stats: { depth: node.depth, count: foundIds.length, need, remain: node.path.length },
+            message: `剪枝：i = ${child.value} > ${upper}（剩余元素不够凑满 ${k} 个），截断循环`,
+            codeLine: 13,
+            stats: { depth: node.depth, count: foundIds.length, need: k - node.path.length, remain: node.path.length },
+            vars: makeVars(node.path.length),
           });
         }
         continue;
       }
 
-      // iterate: for 循环取到候选值 i，高亮循环头（含剪枝上界）
+      visitedIds.push(child.id);
+
+      // Push path
       steps.push({
-        nodes: allNodes, currentNodeId: node.id,
+        nodes: allNodes, currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...node.path],
-        message: `for 循环：i = ${child.value}，检查剪枝上界后尝试`,
+        prunedNodeIds: [...dynamicPrunedIds],
+        path: [...child.path],
+        message: `处理节点：path.add(${child.value}) → [${child.path.join(', ')}]`,
         codeLine: 14,
-        stats: { depth: node.depth, count: foundIds.length, need: k - node.path.length, remain: node.path.length },
+        stats: { depth: child.depth, count: foundIds.length, need: k - child.path.length, remain: child.path.length },
+        vars: makeVars(child.path.length),
       });
 
-      // Step A: path.add(i)
-      visitedIds.push(child.id);
-      const need = k - child.path.length;
+      // Recurse
       steps.push({
         nodes: allNodes, currentNodeId: child.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...child.path],
-        message: `path.add(${child.value})：当前路径变为 [${child.path.join(', ')}]`,
+        message: `向下递归：backtrack(${Number(child.value) + 1}, path)`,
         codeLine: 15,
-        stats: { depth: child.depth, count: foundIds.length, need, remain: child.path.length },
-      });
-      // Step B: backtrack(i + 1, ...)
-      const childStart = parseInt(child.value, 10) + 1;
-      steps.push({
-        nodes: allNodes, currentNodeId: child.id,
-        visitedNodeIds: [...visitedIds],
-        foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
-        path: [...child.path],
-        message: `backtrack(${childStart}, ...)：start = i + 1，递归深入`,
-        codeLine: 16,
-        stats: { depth: child.depth, count: foundIds.length, need, remain: child.path.length },
+        stats: { depth: child.depth, count: foundIds.length, need: k - child.path.length, remain: child.path.length },
+        vars: makeVars(child.path.length),
       });
 
       traverse(child);
 
-      // pop: backtrack
+      // Backtrack
       steps.push({
         nodes: allNodes, currentNodeId: node.id,
         visitedNodeIds: [...visitedIds],
         foundPathIds: [...foundIds],
-        prunedNodeIds: [...prunedIds],
+        prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
-        message: `撤销 ${child.value}，回溯到：[${node.path.join(', ') || '空'}]`,
-        codeLine: 17,
+        message: `回溯撤销：path.remove()，弹出 ${child.value}，恢复路径为 [${node.path.join(', ')}]`,
+        codeLine: 16,
         stats: { depth: node.depth, count: foundIds.length, need: k - node.path.length, remain: node.path.length },
+        vars: makeVars(node.path.length),
       });
     }
   }
@@ -196,25 +223,19 @@ function buildSteps(n: number, k: number): BacktrackTreeStep[] {
     nodes: allNodes, currentNodeId: 'root',
     visitedNodeIds: [...visitedIds],
     foundPathIds: [...foundIds],
-    prunedNodeIds: [...prunedIds],
+    prunedNodeIds: [...dynamicPrunedIds],
     path: [],
-    message: `完成！共找到 ${foundIds.length} 个组合`,
+    message: `搜索完成：共找到 ${foundIds.length} 个合法组合（剪枝减少了无效递归分支）`,
     codeLine: 4,
     stats: { depth: 0, count: foundIds.length, need: 0, remain: 0 },
+    vars: makeVars(0),
   });
 
   return steps;
 }
 
-function clampInt(raw: string, def: number, lo: number, hi: number): number {
-  const v = parseInt(raw, 10);
-  if (!Number.isFinite(v)) return def;
-  return Math.max(lo, Math.min(hi, v));
-}
-
-/* ── Visualizer class ─────────────────────────────────────── */
 export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLines = [
+  protected codeLines: string[] = [
     'public List<List<Integer>> combine(int n, int k) {',
     '    List<List<Integer>> res = new ArrayList<>();',
     '    backtrack(1, new ArrayList<>(), res, n, k);',
@@ -235,55 +256,187 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
     '    }',
     '}',
   ];
-  protected codePanelTitle = '组合（优化）Java 代码';
+  protected codeLanguages: Record<string, string[]> = {
+    java: [
+      'public List<List<Integer>> combine(int n, int k) {',
+      '    List<List<Integer>> res = new ArrayList<>();',
+      '    backtrack(1, new ArrayList<>(), res, n, k);',
+      '    return res;',
+      '}',
+      '',
+      'void backtrack(int start, List<Integer> path,',
+      '               List<List<Integer>> res, int n, int k) {',
+      '    if (path.size() == k) {',
+      '        res.add(new ArrayList<>(path));',
+      '        return;',
+      '    }',
+      '    // 剪枝：i <= n - (k - path.size()) + 1',
+      '    for (int i = start; i <= n - (k - path.size()) + 1; i++) {',
+      '        path.add(i);',
+      '        backtrack(i + 1, path, res, n, k);',
+      '        path.remove(path.size() - 1);',
+      '    }',
+      '}',
+    ],
+    cpp: [
+      'vector<vector<int>> combine(int n, int k) {',
+      '    vector<vector<int>> res;',
+      '    vector<int> path;',
+      '    backtrack(1, path, res, n, k);',
+      '    return res;',
+      '}',
+      '',
+      'void backtrack(int start, vector<int>& path,',
+      '               vector<vector<int>>& res, int n, int k) {',
+      '    if (path.size() == k) {',
+      '        res.push_back(path);',
+      '        return;',
+      '    }',
+      '    // 剪枝：i <= n - (k - path.size()) + 1',
+      '    for (int i = start; i <= n - (k - path.size()) + 1; i++) {',
+      '        path.push_back(i);',
+      '        backtrack(i + 1, path, res, n, k);',
+      '        path.pop_back();',
+      '    }',
+      '}',
+    ],
+    python: [
+      'def combine(n: int, k: int) -> List[List[int]]:',
+      '    res = []',
+      '    def backtrack(start: int, path: List[int]):',
+      '        if len(path) == k:',
+      '            res.append(list(path))',
+      '            return',
+      '        # 剪枝：i <= n - (k - len(path)) + 1',
+      '        upper = n - (k - len(path)) + 1',
+      '        for i in range(start, upper + 1):',
+      '            path.append(i)',
+      '            backtrack(i + 1, path)',
+      '            path.pop()',
+      '    backtrack(1, [])',
+      '    return res',
+    ],
+    javascript: [
+      'function combine(n, k) {',
+      '    const res = [];',
+      '    const path = [];',
+      '    function backtrack(start) {',
+      '        if (path.length === k) {',
+      '            res.push([...path]);',
+      '            return;',
+      '        }',
+      '        // 剪枝：i <= n - (k - path.length) + 1',
+      '        const upper = n - (k - path.length) + 1;',
+      '        for (let i = start; i <= upper; i++) {',
+      '            path.push(i);',
+      '            backtrack(i + 1);',
+      '            path.pop();',
+      '        }',
+      '    }',
+      '    backtrack(1);',
+      '    return res;',
+      '}',
+    ],
+  };
 
+  private currentStage: 'naive' | 'pruned' = 'pruned';
+  private terminalInstance: DarkCodeTerminalInstance | null = null;
   private treeDisplay: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
+  private pathStackContainer: HTMLElement | null = null;
+  private pruningMonitorContainer: HTMLElement | null = null;
+  private resultCollectionContainer: HTMLElement | null = null;
+  private logContainer: HTMLElement | null = null;
+  private logCountEl: HTMLElement | null = null;
+  private cachedLogs: BacktrackLogItem[] = [];
 
   protected initDOMElements(): void {
     if (!this.root) return;
     this.treeDisplay = this.root.querySelector('#combination-optimized-tree-display');
-    this.logEl = this.root.querySelector('#co-log');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#co-start')?.addEventListener('click', () => this.start());
+    this.pathStackContainer = this.root.querySelector('#co-path-stack-container');
+    this.pruningMonitorContainer = this.root.querySelector('#co-pruning-monitor-container');
+    this.resultCollectionContainer = this.root.querySelector('#co-result-collection-container');
+    this.logContainer = this.root.querySelector('#log-container');
+    this.logCountEl = this.root.querySelector('#log-count');
 
-    // Example chips
+    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
+    this.bindPlaybackControls();
+
+    // 阶段切换 Tab
+    const stage1Tab = this.root.querySelector('#co-tab-stage1');
+    const stage2Tab = this.root.querySelector('#co-tab-stage2');
+    const modeTag = this.root.querySelector('#header-algo-title');
+
+    stage1Tab?.addEventListener('click', () => {
+      this.currentStage = 'naive';
+      stage1Tab.classList.add('active');
+      stage2Tab?.classList.remove('active');
+      if (modeTag) modeTag.textContent = '完整决策树 (未剪枝)';
+      this.start();
+    });
+
+    stage2Tab?.addEventListener('click', () => {
+      this.currentStage = 'pruned';
+      stage2Tab.classList.add('active');
+      stage1Tab?.classList.remove('active');
+      if (modeTag) modeTag.textContent = '剪枝优化模式';
+      this.start();
+    });
+
+    // 示例 Chips
     this.root.querySelectorAll<HTMLButtonElement>('.co-chip').forEach(btn => {
       btn.addEventListener('click', () => {
-        const nEl = this.root?.querySelector('#co-n') as HTMLInputElement | null;
-        const kEl = this.root?.querySelector('#co-k') as HTMLInputElement | null;
+        const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
+        const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
         if (nEl) nEl.value = btn.dataset.n || '';
         if (kEl) kEl.value = btn.dataset.k || '';
         this.start();
       });
     });
 
-    // Clear log
-    this.root.querySelector('#co-log-clear')?.addEventListener('click', () => {
-      if (this.logEl) this.logEl.innerHTML = '';
+    // 挂载暗色代码终端深模块
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: COMBINATION_PROBLEM_HTML,
+      analysisHtml: COMBINATION_ANALYSIS_HTML,
+      initialLang: 'java',
     });
   }
 
   protected buildSteps(): BacktrackTreeStep[] {
-    const nEl = this.root?.querySelector('#co-n') as HTMLInputElement | null;
-    const kEl = this.root?.querySelector('#co-k') as HTMLInputElement | null;
-    const n = clampInt(nEl?.value || '5', 5, 1, 9);
-    const k = clampInt(kEl?.value || '3', 3, 1, 9);
-    return buildSteps(n, k);
+    const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
+    const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
+    const n = clampInt(nEl?.value || '4', 4, 1, 9);
+    const k = clampInt(kEl?.value || '2', 2, 1, 9);
+
+    const steps = this.currentStage === 'naive'
+      ? combinationSteps(n, k)
+      : buildOptimizedSteps(n, k);
+
+    // 预计算日志缓存
+    this.cachedLogs = steps.map((s, idx) => {
+      let type: BacktrackLogItem['type'] = 'info';
+      if (s.message.includes('add') || s.message.includes('做选择')) type = 'push';
+      else if (s.message.includes('remove') || s.message.includes('撤销') || s.message.includes('回溯')) type = 'pop';
+      else if (s.message.includes('找到') || s.message.includes('收集')) type = 'collect';
+      else if (s.message.includes('剪枝')) type = 'prune';
+
+      return {
+        type,
+        text: s.message,
+        stepNumber: idx + 1,
+      };
+    });
+
+    return steps;
   }
 
   protected renderStep(step: BacktrackTreeStep): void {
-    // Stats
-    const depthEl = this.root?.querySelector('#co-depth');
-    if (depthEl) depthEl.textContent = String(step.stats?.depth ?? 0);
-    const countEl = this.root?.querySelector('#co-count');
-    if (countEl) countEl.textContent = String(step.stats?.count ?? 0);
-    const remainEl = this.root?.querySelector('#co-remain');
-    if (remainEl) remainEl.textContent = String(step.path.length);
-    const needEl = this.root?.querySelector('#co-need');
-    if (needEl) needEl.textContent = String(step.stats?.need ?? 0);
+    const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
+    const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
+    const n = clampInt(nEl?.value || '4', 4, 1, 9);
+    const k = clampInt(kEl?.value || '2', 2, 1, 9);
 
-    // Tree
+    // 1. Render Tree SVG
     if (this.treeDisplay) {
       renderBacktrackTree({
         container: this.treeDisplay,
@@ -292,12 +445,88 @@ export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTree
       });
     }
 
-    // Log
-    renderBacktrackLog(this.logEl, this.steps, this.currentIndex, 'co');
+    // 2. Render Path Stack in Card 2
+    if (this.pathStackContainer) {
+      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path, {
+        capacity: k,
+        label: '当前组合 path',
+      });
+    }
+
+    // 3. Render Pruning Monitor (Upper Bound Analysis) in Card 2 Center
+    if (this.pruningMonitorContainer) {
+      const curLen = step.path.length;
+      const needed = k - curLen;
+      const upperBound = n - needed + 1;
+      const isPruned = step.message.includes('剪枝');
+
+      this.pruningMonitorContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; text-align: center;">
+              <span style="font-size: 10px; color: #64748b;">还需元素数 (k - len)</span>
+              <div style="font-size: 13px; font-weight: 800; color: #2563eb; font-family: monospace;">${needed}</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; text-align: center;">
+              <span style="font-size: 10px; color: #64748b;">起始上界 (n - needed + 1)</span>
+              <div style="font-size: 13px; font-weight: 800; color: #059669; font-family: monospace;">i &le; ${upperBound}</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: ${isPruned ? '#fef2f2' : '#eff6ff'}; border: 1px solid ${isPruned ? '#fecaca' : '#bfdbfe'};">
+            <span style="font-weight: 700; color: ${isPruned ? '#dc2626' : '#1d4ed8'};">
+              ${isPruned ? '✂️ 触发剪枝' : '🔍 正常遍历'}
+            </span>
+            <span style="font-family: monospace; font-size: 10.5px; color: ${isPruned ? '#b91c1c' : '#1e40af'};">
+              ${this.currentStage === 'pruned' ? `for (int i = start; i <= ${upperBound}; i++)` : '未开启剪枝上界'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. Render Realtime Result Collection
+    const results: Array<Array<number | string>> = [];
+    const foundIds = step.foundPathIds || [];
+    const nodeMap = new Map<string, BacktrackTreeNode>();
+    step.nodes.forEach(nd => nodeMap.set(nd.id, nd));
+    
+    foundIds.forEach(id => {
+      const nd = nodeMap.get(id);
+      if (nd && nd.path.length === k) {
+        results.push([...nd.path] as number[]);
+      }
+    });
+
+    if (this.resultCollectionContainer) {
+      BacktrackStateSpacePresenter.renderResultCollection(
+        this.resultCollectionContainer,
+        results,
+        results.length - 1
+      );
+    }
+
+    const badgeResult = this.root?.querySelector('#badge-result-count');
+    if (badgeResult) {
+      badgeResult.textContent = `解集: ${results.length}`;
+    }
+
+
+    // 7. Render Execution Log Stream (Card 4)
+    if (this.logContainer) {
+      BacktrackStateSpacePresenter.renderBacktrackLogStream(
+        this.logContainer,
+        this.cachedLogs.slice(0, this.currentIndex + 1),
+        this.currentIndex
+      );
+    }
+    if (this.logCountEl) {
+      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+    }
   }
 
   public reset(): void {
     super.reset();
+    resetContainerViewState(this.treeDisplay);
     if (this.treeDisplay) this.treeDisplay.innerHTML = '';
   }
 }

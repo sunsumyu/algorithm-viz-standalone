@@ -1,406 +1,402 @@
 /**
- * 滑动窗口最大值可视化器
- * LeetCode 239 - 用单调队列求每个滑动窗口的最大值
+ * 滑动窗口最大值可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * LeetCode 239：单调队列（队头到队尾单调递减），队头恒为当前窗口最大值，O(1) 读取
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './sliding-window-max.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  SLIDING_WINDOW_MAX_PROBLEM_HTML,
+  SLIDING_WINDOW_MAX_ANALYSIS_HTML,
+  SLIDING_WINDOW_MAX_CODE_LANGUAGES,
+} from './sliding-window-max-problem-content';
 
-interface SWMStep {
+export interface SWMStep {
   nums: number[];
   k: number;
-  i: number;
-  deque: number[];
+  currentIndex: number;
   windowLeft: number;
   windowRight: number;
+  deque: number[];
   result: number[];
-  status: 'init' | 'remove-out-of-window' | 'remove-smaller' | 'add-current' | 'record-max' | 'advance' | 'done';
+  outVal: number | null;
+  inVal: number | null;
+  poppedBackVals: number[];
+  action: 'init' | 'init_window' | 'slide_out' | 'slide_in' | 'record_max' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
-interface SWMResult {
-  steps: SWMStep[];
-  finalResult: number[];
-}
-
-/**
- * 解析逗号分隔的数组字符串
- */
-function parseArray(str: string): number[] {
-  return str
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map(Number)
-    .filter((n) => !isNaN(n));
-}
-
-/**
- * 生成滑动窗口最大值的每一步可视化数据
- */
-function slidingWindowMaxSteps(nums: number[], k: number): SWMResult {
+export function buildSlidingWindowMaxSteps(rawNums: number[], k: number): SWMStep[] {
   const steps: SWMStep[] = [];
+  const nums = [...rawNums];
+  const n = nums.length;
 
-  if (nums.length === 0 || k <= 0 || k > nums.length) {
+  const lines = {
+    init:       { java: 21, cpp: 16, python: 18, javascript: 15 },
+    initWindow: { java: 23, cpp: 18, python: 20, javascript: 17 },
+    recordMax:  { java: 24, cpp: 19, python: 21, javascript: 18 },
+    slideOut:   { java: 26, cpp: 21, python: 23, javascript: 20 },
+    slideIn:    { java: 27, cpp: 22, python: 24, javascript: 21 },
+    recordMax2: { java: 28, cpp: 23, python: 25, javascript: 22 },
+    done:       { java: 30, cpp: 25, python: 26, javascript: 24 },
+  };
+
+  if (n === 0 || k <= 0 || k > n) {
     steps.push({
-      nums,
+      nums: [],
       k,
-      i: -1,
-      deque: [],
+      currentIndex: -1,
       windowLeft: 0,
       windowRight: -1,
+      deque: [],
       result: [],
-      status: 'done',
-      message: '输入无效或数组为空',
-      log: '[步骤 1] 输入无效',
-      codeLine: 0,
+      outVal: null,
+      inVal: null,
+      poppedBackVals: [],
+      action: 'done',
+      message: '输入无效或窗口大小超出数组长度',
+      codeLine: lines.done,
     });
-    return { steps, finalResult: [] };
+    return steps;
   }
 
   const deque: number[] = [];
   const result: number[] = [];
 
-  const pushStep = (partial: Omit<SWMStep, 'nums' | 'k' | 'log'>) => {
-    const log = `[步骤 ${steps.length + 1}] ${partial.message}`;
-    steps.push({ nums, k, log, ...partial });
+  const dequeAdd = (val: number): number[] => {
+    const popped: number[] = [];
+    while (deque.length > 0 && val > deque[deque.length - 1]) {
+      popped.push(deque.pop()!);
+    }
+    deque.push(val);
+    return popped;
   };
 
-  pushStep({
-    i: -1,
-    deque: [],
+  const dequePoll = (val: number): boolean => {
+    if (deque.length > 0 && val === deque[0]) {
+      deque.shift();
+      return true;
+    }
+    return false;
+  };
+
+  steps.push({
+    nums: [...nums],
+    k,
+    currentIndex: -1,
     windowLeft: 0,
     windowRight: -1,
+    deque: [],
     result: [],
-    status: 'init',
-    message: `初始化: nums=[${nums}], k=${k}`,
-    codeLine: [1, 2, 3],
+    outVal: null,
+    inVal: null,
+    poppedBackVals: [],
+    action: 'init',
+    message: `初始化：数组长度 ${n}，窗口大小 k = ${k}。准备使用单调队列维护窗口最大值`,
+    codeLine: lines.init,
   });
 
-  for (let i = 0; i < nums.length; i++) {
-    const wLeft = i - k + 1;
+  // 1. 初始化前 k 个元素
+  for (let i = 0; i < k; i++) {
+    const num = nums[i];
+    const popped = dequeAdd(num);
 
-    // Step: advance to element
-    pushStep({
-      i,
-      deque: [...deque],
-      windowLeft: Math.max(0, wLeft),
+    steps.push({
+      nums: [...nums],
+      k,
+      currentIndex: i,
+      windowLeft: 0,
       windowRight: i,
-      result: [...result],
-      status: 'advance',
-      message: `处理元素 nums[${i}] = ${nums[i]}`,
-      codeLine: 4,
-    });
-
-    // Step: remove out-of-window elements from front
-    while (deque.length > 0 && deque[0] < i - k + 1) {
-      const removed = deque.shift()!;
-      pushStep({
-        i,
-        deque: [...deque],
-        windowLeft: Math.max(0, wLeft),
-        windowRight: i,
-        result: [...result],
-        status: 'remove-out-of-window',
-        message: `队列前端索引 ${removed} 已超出窗口范围 [${Math.max(0, wLeft)}, ${i}]，移除`,
-        codeLine: 5,
-      });
-    }
-
-    // Step: remove smaller elements from back
-    while (deque.length > 0 && nums[deque[deque.length - 1]] < nums[i]) {
-      const removed = deque.pop()!;
-      pushStep({
-        i,
-        deque: [...deque],
-        windowLeft: Math.max(0, wLeft),
-        windowRight: i,
-        result: [...result],
-        status: 'remove-smaller',
-        message: `队列尾部索引 ${removed} 对应值 ${nums[removed]} < ${nums[i]}，移除以保持单调递减`,
-        codeLine: 6,
-      });
-    }
-
-    // Step: add current index to deque
-    deque.push(i);
-    pushStep({
-      i,
       deque: [...deque],
-      windowLeft: Math.max(0, wLeft),
-      windowRight: i,
       result: [...result],
-      status: 'add-current',
-      message: `将索引 ${i} 加入队列尾部`,
-      codeLine: 7,
+      outVal: null,
+      inVal: num,
+      poppedBackVals: popped,
+      action: 'init_window',
+      message:
+        popped.length > 0
+          ? `📥 压入元素 nums[${i}]=${num}，单调性维护：淘汰队尾较小元素 [${popped.join(', ')}]`
+          : `📥 压入元素 nums[${i}]=${num} 到单调队列`,
+      codeLine: lines.initWindow,
     });
-
-    // Step: record max if window is complete
-    if (i >= k - 1) {
-      const maxVal = nums[deque[0]];
-      result.push(maxVal);
-      pushStep({
-        i,
-        deque: [...deque],
-        windowLeft: Math.max(0, wLeft),
-        windowRight: i,
-        result: [...result],
-        status: 'record-max',
-        message: `窗口 [${wLeft}, ${i}] 完整，最大值 = nums[${deque[0]}] = ${maxVal}，记录到结果`,
-        codeLine: 8,
-      });
-    }
   }
 
-  pushStep({
-    i: nums.length,
+  result.push(deque[0]);
+  steps.push({
+    nums: [...nums],
+    k,
+    currentIndex: k - 1,
+    windowLeft: 0,
+    windowRight: k - 1,
     deque: [...deque],
-    windowLeft: nums.length - k,
-    windowRight: nums.length - 1,
     result: [...result],
-    status: 'done',
-    message: `完成！结果: [${result.join(', ')}]`,
-    codeLine: 10,
+    outVal: null,
+    inVal: null,
+    poppedBackVals: [],
+    action: 'record_max',
+    message: `🥇 初始窗口 [0..${k - 1}] 构建完毕，队头元素 ${deque[0]} 即为窗口最大值，加入结果列表`,
+    codeLine: lines.recordMax,
   });
 
-  return { steps, finalResult: result };
-}
+  // 2. 窗口向右滑动
+  for (let i = k; i < n; i++) {
+    const removeVal = nums[i - k];
+    const addVal = nums[i];
 
-export class SlidingWindowMaxVisualizer extends StepVisualizer<SWMStep> {
-  protected codeLines = [
-    'public int[] maxSlidingWindow(int[] nums, int k) {',
-    '    // 单调队列（存索引），递减排列',
-    '    Deque<Integer> deque = new ArrayDeque<>();',
-    '    int[] result = new int[nums.length - k + 1];',
-    '    for (int i = 0; i < nums.length; i++) {',
-    '        while (!deque.isEmpty() && deque.peekFirst() < i - k + 1) deque.pollFirst();',
-    '        while (!deque.isEmpty() && nums[deque.peekLast()] < nums[i]) deque.pollLast();',
-    '        deque.offerLast(i);',
-    '        if (i >= k - 1) result[i - k + 1] = nums[deque.peekFirst()];',
-    '    }',
-    '    return result;',
-    '}',
-  ];
-  protected codePanelTitle = '滑动窗口最大值代码 (Java)';
+    // 移出窗口左侧
+    const polled = dequePoll(removeVal);
+    steps.push({
+      nums: [...nums],
+      k,
+      currentIndex: i,
+      windowLeft: i - k + 1,
+      windowRight: i - 1,
+      deque: [...deque],
+      result: [...result],
+      outVal: removeVal,
+      inVal: null,
+      poppedBackVals: [],
+      action: 'slide_out',
+      message: polled
+        ? `🚪 窗口右移：移出左边界元素 nums[${i - k}]=${removeVal}，恰为当前队头，从队列弹出`
+        : `🚪 窗口右移：移出左边界元素 nums[${i - k}]=${removeVal}，早已被淘汰不在队列中，无需操作`,
+      codeLine: lines.slideOut,
+    });
 
-  private arrInput: HTMLInputElement | null = null;
-  private kInput: HTMLInputElement | null = null;
-  private arrayDisplay: HTMLElement | null = null;
-  private dequeContainer: HTMLElement | null = null;
-  private resultDisplay: HTMLElement | null = null;
-  private resultBanner: HTMLElement | null = null;
-  private stateI: HTMLElement | null = null;
-  private stateWL: HTMLElement | null = null;
-  private stateWR: HTMLElement | null = null;
-  private stateDQSize: HTMLElement | null = null;
-  private stateMax: HTMLElement | null = null;
-  private stateResCount: HTMLElement | null = null;
+    // 移入窗口右侧
+    const popped = dequeAdd(addVal);
+    steps.push({
+      nums: [...nums],
+      k,
+      currentIndex: i,
+      windowLeft: i - k + 1,
+      windowRight: i,
+      deque: [...deque],
+      result: [...result],
+      outVal: null,
+      inVal: addVal,
+      poppedBackVals: popped,
+      action: 'slide_in',
+      message:
+        popped.length > 0
+          ? `📥 移入右边界元素 nums[${i}]=${addVal}，淘汰队尾较小元素 [${popped.join(', ')}]，维持递减`
+          : `📥 移入右边界元素 nums[${i}]=${addVal} 到单调队列`,
+      codeLine: lines.slideIn,
+    });
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.arrInput = this.root.querySelector('#swm-arr-input');
-    this.kInput = this.root.querySelector('#swm-k-input');
-    this.arrayDisplay = this.root.querySelector('#swm-array-display');
-    this.dequeContainer = this.root.querySelector('#swm-deque-container');
-    this.resultDisplay = this.root.querySelector('#swm-result-display');
-    this.resultBanner = this.root.querySelector('#swm-result-banner');
-    this.stateI = this.root.querySelector('#swm-state-i');
-    this.stateWL = this.root.querySelector('#swm-state-wl');
-    this.stateWR = this.root.querySelector('#swm-state-wr');
-    this.stateDQSize = this.root.querySelector('#swm-state-dq-size');
-    this.stateMax = this.root.querySelector('#swm-state-max');
-    this.stateResCount = this.root.querySelector('#swm-state-res-count');
-
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#swm-start')?.addEventListener('click', () => this.start());
-
-    // Bind example buttons
-    this.root.querySelectorAll('.swm-example').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arr = (btn as HTMLElement).dataset.arr;
-        const k = (btn as HTMLElement).dataset.k;
-        if (arr !== undefined && this.arrInput) this.arrInput.value = arr;
-        if (k !== undefined && this.kInput) this.kInput.value = k;
-        this.start();
-      });
+    // 记录最大值
+    result.push(deque[0]);
+    steps.push({
+      nums: [...nums],
+      k,
+      currentIndex: i,
+      windowLeft: i - k + 1,
+      windowRight: i,
+      deque: [...deque],
+      result: [...result],
+      outVal: null,
+      inVal: null,
+      poppedBackVals: [],
+      action: 'record_max',
+      message: `🥇 窗口 [${i - k + 1}..${i}] 最大值为队头 ${deque[0]}，加入结果列表: [${result.join(', ')}]`,
+      codeLine: lines.recordMax2,
     });
   }
 
-  protected buildSteps(): SWMStep[] {
-    const nums = parseArray(this.arrInput?.value || '1,3,-1,-3,5,3,6,7');
-    const k = parseInt(this.kInput?.value || '3', 10);
-    return slidingWindowMaxSteps(nums, k).steps;
-  }
+  steps.push({
+    nums: [...nums],
+    k,
+    currentIndex: n,
+    windowLeft: n - k,
+    windowRight: n - 1,
+    deque: [...deque],
+    result: [...result],
+    outVal: null,
+    inVal: null,
+    poppedBackVals: [],
+    action: 'done',
+    message: `🎉 滑动窗口最大值计算完成！最终收集数组: [${result.join(', ')}]`,
+    codeLine: lines.done,
+  });
 
-  protected renderStep(step: SWMStep): void {
-    this.renderArray(step);
-    this.renderDeque(step);
-    this.renderResult(step);
-    this.updateStatePanel(step);
-    this.updateResultBanner(step);
-  }
+  return steps;
+}
 
-  private renderArray(step: SWMStep): void {
-    if (!this.arrayDisplay) return;
-    this.arrayDisplay.innerHTML = '';
+const { template, Visualizer } = createDeclarativeVisualizer<SWMStep>({
+  id: 'sliding-window-max',
+  name: '滑动窗口最大值',
+  category: 'stack',
+  icon: '🪟',
+  badge: {
+    mode: '单调队列·O(n)',
+    complexity: 'O(n) · O(k)',
+  },
+  card1Title: '🪟 数组窗口与单调队列沙盘',
+  card2Title: '🧭 窗口指标与最大值序列监视器',
+  card2Desc: '当前窗口范围、单调队列递减序列与输出列表',
+  legend: [
+    { label: '窗口最大值', color: '#10b981' },
+    { label: '窗口内元素', color: '#ef4444' },
+    { label: '单调队列元素', color: '#f59e0b' },
+  ],
+  inputs: [
+    {
+      id: 'input-nums',
+      label: '数组 nums',
+      type: 'text',
+      defaultValue: '1, 3, -1, -3, 5, 3, 6, 7',
+      width: '170px',
+      placeholder: '以逗号分隔',
+    },
+    {
+      id: 'input-k',
+      label: '窗口 k',
+      type: 'number',
+      defaultValue: 3,
+      width: '45px',
+    },
+  ],
+  presets: [
+    { label: '经典示例', values: { 'input-nums': '1, 3, -1, -3, 5, 3, 6, 7', 'input-k': 3 } },
+    { label: '单调递减', values: { 'input-nums': '9, 8, 7, 6, 5, 4, 3, 2, 1', 'input-k': 3 } },
+    { label: '单调递增', values: { 'input-nums': '1, 2, 3, 4, 5, 6, 7, 8', 'input-k': 4 } },
+  ],
+  metrics: [
+    { id: 'window-max', label: '当前窗口最大值', color: '#10b981' },
+    { id: 'window-range', label: '窗口范围 [L..R]', color: '#ef4444' },
+    { id: 'deque-size', label: '单调队列大小', color: '#f59e0b' },
+  ],
+  codeLanguages: SLIDING_WINDOW_MAX_CODE_LANGUAGES,
+  problemHtml: SLIDING_WINDOW_MAX_PROBLEM_HTML,
+  analysisHtml: SLIDING_WINDOW_MAX_ANALYSIS_HTML,
+  buildSteps: (inputs) => {
+    const raw = inputs['input-nums'] || '1, 3, -1, -3, 5, 3, 6, 7';
+    const nums = raw.split(/[,，\s]+/).map((s: string) => parseInt(s.trim(), 10)).filter((n: number) => !isNaN(n));
+    const k = parseInt(inputs['input-k'] || '3', 10);
+    return buildSlidingWindowMaxSteps(nums, k);
+  },
+  renderCanvas: (container, step) => {
+    const nums = step.nums;
+    const deque = step.deque;
+    const isDone = step.action === 'done';
+    const wL = step.windowLeft;
+    const wR = step.windowRight;
 
-    const wLeft = step.windowLeft;
-    const wRight = step.windowRight;
-    const frontIdx = step.deque.length > 0 ? step.deque[0] : -1;
+    // 数组与窗口元素展示
+    const numsHtml = nums
+      .map((num, idx) => {
+        const inWindow = idx >= wL && idx <= wR && !isDone;
+        const isMax = inWindow && deque.length > 0 && num === deque[0];
+        let bg = '#ffffff';
+        let border = '#e2e8f0';
+        let textColor = '#0f172a';
 
-    for (let idx = 0; idx < step.nums.length; idx++) {
-      const cell = document.createElement('div');
-      cell.className = 'arr-cell';
-      cell.textContent = String(step.nums[idx]);
-
-      // Index label
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'arr-index';
-      idxLabel.textContent = String(idx);
-      cell.appendChild(idxLabel);
-
-      if (step.status === 'init') {
-        // No window yet
-      } else if (step.status === 'done') {
-        cell.classList.add('processed');
-      } else if (idx === step.i && step.status === 'advance') {
-        cell.classList.add('current');
-      } else if (idx >= wLeft && idx <= wRight) {
-        cell.classList.add('in-window');
-        // Highlight the max element in gold
-        if (idx === frontIdx) {
-          cell.classList.remove('in-window');
-          cell.classList.add('is-max');
+        if (inWindow) {
+          if (isMax) {
+            bg = '#ecfdf5';
+            border = '#10b981';
+            textColor = '#047857';
+          } else {
+            bg = '#fef2f2';
+            border = '#f87171';
+            textColor = '#ef4444';
+          }
         }
-      } else if (step.i >= 0 && idx < step.i) {
-        cell.classList.add('processed');
-      }
 
-      // Status-specific animations
-      if (step.status === 'remove-out-of-window' && idx === step.i) {
-        cell.classList.add('current');
-      }
+        return `
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <span style="font-size: 8.5px; color: ${inWindow ? '#ef4444' : '#94a3b8'}; font-weight: 700;">[${idx}]</span>
+            <div style="min-width: 34px; height: 34px; padding: 0 4px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              ${num}
+            </div>
+          </div>
+        `;
+      })
+      .join('');
 
-      this.arrayDisplay.appendChild(cell);
-    }
-  }
+    // 单调队列元素展示 (扁平直排)
+    const dequeHtml =
+      deque.length === 0
+        ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">空队列</span>'
+        : deque
+            .map((val, idx) => {
+              const isFront = idx === 0;
+              return `
+              <div style="padding: 2px 8px; border-radius: 4px; background: ${isFront ? '#ecfdf5' : '#ffffff'}; border: 1.5px solid ${isFront ? '#10b981' : '#f59e0b'}; color: ${isFront ? '#047857' : '#b45309'}; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
+                ${val}${isFront ? ' (最大)' : ''}
+              </div>
+            `;
+            })
+            .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
 
-  private renderDeque(step: SWMStep): void {
-    if (!this.dequeContainer) return;
-    this.dequeContainer.innerHTML = '';
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 12px; box-sizing: border-box; padding: 4px;">
+        <!-- 数组与滑动窗口条带 -->
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>🪟 数组条带 (当前活动窗口 [${wL}..${wR}]):</span>
+            <span style="color: #ef4444;">k = ${step.k}</span>
+          </div>
+          <div style="display: flex; gap: 4px; overflow-x: auto; padding: 2px 0;">
+            ${numsHtml}
+          </div>
+        </div>
 
-    if (step.deque.length === 0) {
-      const emptyLabel = document.createElement('span');
-      emptyLabel.className = 'deque-empty';
-      emptyLabel.textContent = step.status === 'init' ? '队列为空' : '队列为空';
-      this.dequeContainer.appendChild(emptyLabel);
-      return;
-    }
+        <div style="border-top: 1px dashed #e2e8f0; margin: 1px 0;"></div>
 
-    step.deque.forEach((dequeIdx, pos) => {
-      const item = document.createElement('div');
-      item.className = 'deque-item';
+        <!-- 单调队列容器 (扁平直排) -->
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 单调队列 (队头最大 → 队尾):</span>
+            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #059669;">队列长度: ${deque.length}</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center; min-height: 28px; flex-wrap: wrap;">
+            ${dequeHtml}
+          </div>
+        </div>
+      </div>
+    `;
 
-      // First element is the front (max)
-      if (pos === 0) {
-        item.classList.add('is-front');
-      }
+    // 更新指标卡片
+    const root = container.closest('#algo-sliding-window-max-view');
+    if (root) {
+      const maxEl = root.querySelector('#metric-window-max');
+      const rangeEl = root.querySelector('#metric-window-range');
+      const dequeSizeEl = root.querySelector('#metric-deque-size');
 
-      // Show index as primary text, value as secondary
-      const idxSpan = document.createElement('span');
-      idxSpan.textContent = String(dequeIdx);
-      item.appendChild(idxSpan);
+      if (maxEl) maxEl.textContent = deque.length > 0 ? `${deque[0]}` : '—';
+      if (rangeEl) rangeEl.textContent = step.windowRight >= 0 ? `[${step.windowLeft}..${step.windowRight}]` : '—';
+      if (dequeSizeEl) dequeSizeEl.textContent = `${step.deque.length}`;
 
-      const valSpan = document.createElement('span');
-      valSpan.className = 'deque-val';
-      valSpan.textContent = `=${step.nums[dequeIdx]}`;
-      item.appendChild(valSpan);
-
-      this.dequeContainer!.appendChild(item);
-    });
-  }
-
-  private renderResult(step: SWMStep): void {
-    if (!this.resultDisplay) return;
-    this.resultDisplay.innerHTML = '';
-
-    if (step.result.length === 0) {
-      const emptyLabel = document.createElement('span');
-      emptyLabel.className = 'result-empty';
-      emptyLabel.textContent = '尚未记录结果';
-      this.resultDisplay.appendChild(emptyLabel);
-      return;
-    }
-
-    step.result.forEach((val, idx) => {
-      const cell = document.createElement('div');
-      cell.className = 'result-cell';
-      cell.textContent = String(val);
-
-      // Highlight the latest added element
-      if (idx === step.result.length - 1 && step.status === 'record-max') {
-        cell.classList.add('latest');
-      }
-
-      this.resultDisplay!.appendChild(cell);
-    });
-  }
-
-  private updateStatePanel(step: SWMStep): void {
-    if (this.stateI) {
-      this.stateI.textContent = step.i >= 0 && step.i < step.nums.length ? String(step.i) : '-';
-    }
-    if (this.stateWL) {
-      this.stateWL.textContent =
-        step.status === 'init' || step.status === 'done' ? '-' : String(step.windowLeft);
-    }
-    if (this.stateWR) {
-      this.stateWR.textContent =
-        step.status === 'init' || step.status === 'done' ? '-' : String(step.windowRight);
-    }
-    if (this.stateDQSize) {
-      this.stateDQSize.textContent = String(step.deque.length);
-    }
-    if (this.stateMax) {
-      if (step.deque.length > 0 && step.status !== 'init') {
-        this.stateMax.textContent = String(step.nums[step.deque[0]]);
-      } else {
-        this.stateMax.textContent = '-';
+      // 在 Card 2 中展示收集的最大值答案
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">收集的最大值答案数组:</span>
+            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #059669;">
+              [ ${step.result.join(', ')} ]
+            </div>
+          </div>
+        `;
       }
     }
-    if (this.stateResCount) {
-      this.stateResCount.textContent = String(step.result.length);
-    }
-  }
-
-  private updateResultBanner(step: SWMStep): void {
-    if (!this.resultBanner) return;
-
-    if (step.status === 'done') {
-      this.resultBanner.textContent = `最终结果: [${step.result.join(', ')}]`;
-      this.resultBanner.className = 'result-banner success';
-      this.resultBanner.style.display = 'flex';
-    } else {
-      this.resultBanner.style.display = 'none';
-    }
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'sliding-window-max',
-  name: '滑动窗口最大值（单调队列）',
+  name: '滑动窗口最大值',
   viewId: 'algo-sliding-window-max-view',
   category: 'stack',
-  description: '用单调队列求每个滑动窗口的最大值',
-  icon: '📊',
+  description: '单调队列经典应用：维护队头到队尾单调递减，O(1) 获取当前滑动窗口内的最大元素',
+  icon: '🪟',
   template,
-  Visualizer: SlidingWindowMaxVisualizer,
-  difficulty: 2,
+  Visualizer,
+  difficulty: 3,
   levelOrder: 6,
-  learningGoal: '掌握用单调队列维护滑动窗口最大值',
+  learningGoal: '掌握单调队列在滑动窗口最值问题中的精妙设计，理解 push 淘汰较小元素与 pop 仅移出匹配队头的核心准则',
 });
-
-export {};

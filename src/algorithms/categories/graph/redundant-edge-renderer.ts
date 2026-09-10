@@ -1,339 +1,287 @@
 /**
- * 多余的边可视化器 (LeetCode 684)
- * 使用并查集检测环，找到多余的边
+ * 冗余连接 (LC 684) 可视化器 — 4-Card 标准现代架构
+ * 并查集根节点追踪、动态加边合并与冗余环路截断 (左程云 class056)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（并查集初始化、逐边遍历、边元解构、find寻根、根相等判环、根不等union合并、冗余边截获返回均发射独立Step）、四语言行号映射
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  REDUNDANT_EDGE_PROBLEM_HTML,
+  REDUNDANT_EDGE_ANALYSIS_HTML,
+  REDUNDANT_EDGE_CODE_LANGUAGES,
+} from './redundant-edge-problem-content';
 import template from './redundant-edge.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
-interface REStep {
+export interface RedundantStep extends StepBase {
   nodes: number[];
-  allEdges: [number, number][];
-  acceptedEdges: [number, number][];
-  currentEdgeIdx: number;
+  edges: [number, number][];
+  currentEdge: [number, number] | null;
+  rootU: number | null;
+  rootV: number | null;
+  treeEdges: [number, number][];
   redundantEdge: [number, number] | null;
   parent: number[];
-  rank: number[];
-  findU: number;
-  findV: number;
-  action: 'init' | 'check' | 'union' | 'redundant' | 'done';
-  statusLabel: string;
-  edgeLog: { edge: [number, number]; status: 'accepted' | 'redundant' | 'pending' }[];
-  message: string;
+  action: 'init' | 'check' | 'union' | 'found-redundant' | 'done';
+  statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
-const RE_NODE_POSITIONS = [
-  { x: 100, y: 60 },
-  { x: 240, y: 40 },
-  { x: 380, y: 60 },
-  { x: 310, y: 170 },
-  { x: 160, y: 170 },
+export const RE_NODES = [1, 2, 3, 4, 5];
+export const RE_EDGES: [number, number][] = [
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [1, 4],
+  [1, 5],
 ];
 
-function buildRESteps(): REStep[] {
-  const steps: REStep[] = [];
-  const allEdges: [number, number][] = [[1, 2], [1, 3], [2, 3], [3, 4], [1, 5]];
-  const n = 5;
-  const nodes = Array.from({ length: n }, (_, i) => i + 1);
+export const RE_NODE_POSITIONS: { x: number; y: number }[] = [
+  { x: 120, y: 70 },
+  { x: 280, y: 70 },
+  { x: 280, y: 200 },
+  { x: 120, y: 200 },
+  { x: 380, y: 135 },
+];
 
-  let parent = Array.from({ length: n + 1 }, (_, i) => i);
-  let rank = new Array(n + 1).fill(0);
-  const acceptedEdges: [number, number][] = [];
-  const edgeLog: { edge: [number, number]; status: 'accepted' | 'redundant' | 'pending' }[] = allEdges.map(e => ({ edge: [...e] as [number, number], status: 'pending' as const }));
+export function buildRedundantSteps(): RedundantStep[] {
+  const steps: RedundantStep[] = [];
+  const n = RE_NODES.length;
+  const parent = Array.from({ length: n + 1 }, (_, i) => i);
 
-  const find = (x: number, p: number[]): number => {
-    while (p[x] !== x) x = p[x];
-    return x;
+  // 精准 8 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 3, java: 2, python: 2, javascript: 1 },
+    initParent: { cpp: 5, java: 4, python: 3, javascript: 2 },
+    forEdge: { cpp: 6, java: 5, python: 7, javascript: 4 },
+    unpackEdge: { cpp: 7, java: 6, python: 7, javascript: 4 },
+    findRoots: { cpp: 7, java: 7, python: 8, javascript: 5 },
+    checkRoots: { cpp: 8, java: 8, python: 9, javascript: 6 },
+    unionRoots: { cpp: 9, java: 9, python: 10, javascript: 7 },
+    returnEmpty: { cpp: 11, java: 11, python: 11, javascript: 9 },
   };
 
-  const snap = (action: REStep['action'], edgeIdx: number, findU: number, findV: number, redundant: [number, number] | null, statusLabel: string, msg: string, log: string, code: number | number[]) => {
+  const find = (i: number): number => {
+    let root = i;
+    while (root !== parent[root]) {
+      root = parent[root];
+    }
+    return root;
+  };
+
+  const treeEdges: [number, number][] = [];
+  let foundRedundant: [number, number] | null = null;
+
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'check' | 'union' | 'found-redundant' | 'done',
+    statusText: string,
+    log: string,
+    currentEdge: [number, number] | null = null,
+    rootU: number | null = null,
+    rootV: number | null = null
+  ): void {
+    const pStr = parent.slice(1).map((p, i) => `${i + 1}:${p}`).join(', ');
+
     steps.push({
-      nodes: [...nodes],
-      allEdges: allEdges.map(e => [...e] as [number, number]),
-      acceptedEdges: acceptedEdges.map(e => [...e] as [number, number]),
-      currentEdgeIdx: edgeIdx,
-      redundantEdge: redundant,
+      nodes: RE_NODES,
+      edges: RE_EDGES,
+      currentEdge,
+      rootU,
+      rootV,
+      treeEdges: [...treeEdges],
+      redundantEdge: foundRedundant,
       parent: [...parent],
-      rank: [...rank],
-      findU,
-      findV,
       action,
-      statusLabel,
-      edgeLog: edgeLog.map(e => ({ ...e })),
-      message: msg,
+      statusText,
       log,
-      codeLine: code,
+      codeLine,
+      metrics: {
+        'metric-re-cur-edge': currentEdge ? `[${currentEdge[0]}, ${currentEdge[1]}]` : '—',
+        'metric-re-redundant': foundRedundant ? `[${foundRedundant[0]}, ${foundRedundant[1]}]` : '未发现',
+        'metric-re-tree-edges': `${treeEdges.length}`,
+        'metric-re-parent': `[${pStr}]`,
+      },
     });
-  };
-
-  snap('init', -1, -1, -1, null, '初始化', `图有 ${nodes.length} 个节点和 ${allEdges.length} 条边。一棵树有 n-1=${n - 1} 条边，多了 1 条边形成环。用并查集逐条检测。`, '初始化: 5节点5边', 0);
-
-  // Process edges: [1,2], [1,3], [2,3], [3,4], [1,5]
-  // Edge [1,2]: find(1)=1, find(2)=2, different -> union
-  {
-    const u = 1, v = 2;
-    const ru = find(u, parent), rv = find(v, parent);
-    snap('check', 0, ru, rv, null, '检查', `处理边 [${u},${v}]：find(${u})=${ru}，find(${v})=${rv}。根不同，不会形成环。`, `检查边[1,2]: find(1)=1, find(2)=2`, [1, 2]);
-    // union
-    parent[ru] = rv;
-    rank[rv] = Math.max(rank[rv], rank[ru] + 1);
-    acceptedEdges.push([u, v]);
-    edgeLog[0].status = 'accepted';
-    snap('union', 0, ru, rv, null, '合并', `合并集合 ${ru} 和 ${rv}。parent[${ru}]=${rv}。边 [${u},${v}] 被接受。`, `union(1,2): 接受`, [3, 4]);
   }
 
-  // Edge [1,3]: find(1)=2, find(3)=3, different -> union
-  {
-    const u = 1, v = 3;
-    const ru = find(u, parent), rv = find(v, parent);
-    snap('check', 1, ru, rv, null, '检查', `处理边 [${u},${v}]：find(${u})=${ru}，find(${v})=${rv}。根不同，不会形成环。`, `检查边[1,3]: find(1)=2, find(3)=3`, [1, 2]);
-    parent[ru] = rv;
-    rank[rv] = Math.max(rank[rv], rank[ru] + 1);
-    acceptedEdges.push([u, v]);
-    edgeLog[1].status = 'accepted';
-    snap('union', 1, ru, rv, null, '合并', `合并集合 ${ru} 和 ${rv}。parent[${ru}]=${rv}。边 [${u},${v}] 被接受。`, `union(1,3): 接受`, [3, 4]);
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] findRedundantConnection(edges)：启动并查集冗余连接判环。', 'findRedundantConnection 入口');
+  makeStep(lines.initParent, 'init', `📊 [初始化并查集] parent[i] = i；节点 1~${n} 各自独立为一个集合。`, 'init parent[]');
+
+  // 2. 逐边遍历
+  for (const edge of RE_EDGES) {
+    const [u, v] = edge;
+
+    makeStep(lines.forEdge, 'check', `🔁 [遍历边] 考察边 [${u}, ${v}]。`, `for edge [${u}, ${v}]`, edge);
+    makeStep(lines.unpackEdge, 'check', `  ↳ [解构边两端] u = ${u}, v = ${v}。`, `u=${u}, v=${v}`, edge);
+
+    const rU = find(u);
+    const rV = find(v);
+    makeStep(lines.findRoots, 'check', `  🔍 [查找根节点] find(${u}) = ${rU}, find(${v}) = ${rV}。`, `rootU=${rU}, rootV=${rV}`, edge, rU, rV);
+
+    const isCycle = rU === rV;
+    makeStep(lines.checkRoots, isCycle ? 'found-redundant' : 'check', `  🔎 [判环核验] if (rootU == rootV) -> (${rU} == ${rV}) -> (${isCycle})。`, `check rootU == rootV`, edge, rU, rV);
+
+    if (isCycle) {
+      foundRedundant = edge;
+      makeStep(lines.checkRoots, 'found-redundant', `⚠️ [捕获冗余边] return edge！边 [${u}, ${v}] 两端已在同一连通集合中 (根为 ${rU})，加入该边导致环路形成，此边即为冗余边！`, `found redundant [${u}, ${v}]`, edge, rU, rV);
+      break;
+    } else {
+      parent[rU] = rV;
+      treeEdges.push(edge);
+      makeStep(lines.unionRoots, 'union', `  🔗 [合并集合] parent[${rU}] = ${rV}；边 [${u}, ${v}] 为树边，将两连通块合并！`, `union: parent[${rU}] = ${rV}`, edge, rU, rV);
+    }
   }
 
-  // Edge [2,3]: find(2)=3, find(3)=3, SAME -> REDUNDANT!
-  {
-    const u = 2, v = 3;
-    const ru = find(u, parent), rv = find(v, parent);
-    snap('check', 2, ru, rv, null, '检查', `处理边 [${u},${v}]：find(${u})=${ru}，find(${v})=${rv}。`, `检查边[2,3]: find(2)=3, find(3)=3`, [1, 2]);
-    edgeLog[2].status = 'redundant';
-    snap('redundant', 2, ru, rv, [u, v], '多余!', `find(${u}) = find(${v}) = ${ru}！两端属于同一集合！边 [${u},${v}] 构成环，为多余边！`, `发现多余边: [2,3]!`, [5, 6]);
-  }
-
-  snap('done', 4, -1, -1, [2, 3], '完成', `多余边为 [2, 3]。移除该边后图变为一棵树（无环）。算法使用并查集，时间复杂度接近 O(n)。`, `完成: 多余边=[2,3]`, 7);
+  makeStep(lines.checkRoots, 'done', `🎉 [冗余连接定位完毕] 检测出最终成环冗余边: [${foundRedundant?.[0]}, ${foundRedundant?.[1]}]，移除后恢复为树结构！`, 'done', foundRedundant);
 
   return steps;
 }
 
-export class RedundantEdgeVisualizer extends StepVisualizer<REStep> {
-  protected codeLines = [
-    'int[] findRedundantEdge(int[][] edges) {',
-    '    int[] parent = {0,1,2,3,4,5};',
-    '    for (int[] edge : edges) {',
-    '        int ru = find(edge[0]), rv = find(edge[1]);',
-    '        if (ru != rv) union(ru, rv);',
-    '        else return edge; // cycle!',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = '多余边检测代码 (Java)';
+export class RedundantEdgeVisualizer extends StepVisualizer<RedundantStep> {
+  protected codeLanguages = REDUNDANT_EDGE_CODE_LANGUAGES;
+  protected codeLines = REDUNDANT_EDGE_CODE_LANGUAGES['java'];
+  protected codePanelTitle = '冗余连接 算法代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private edgeListEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private edgeEl: HTMLElement | null = null;
-  private findUEl: HTMLElement | null = null;
-  private findVEl: HTMLElement | null = null;
-  private statusEl: HTMLElement | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private edgeListBody: HTMLElement | null = null;
+  private metricCurEdgeEl: HTMLElement | null = null;
+  private metricRedundantEl: HTMLElement | null = null;
+  private metricTreeEdgesEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#re-graph');
-    this.edgeListEl = this.root.querySelector('#re-edge-list');
-    this.logEl = this.root.querySelector('#re-log');
-    this.edgeEl = this.root.querySelector('#re-edge');
-    this.findUEl = this.root.querySelector('#re-findu');
-    this.findVEl = this.root.querySelector('#re-findv');
-    this.statusEl = this.root.querySelector('#re-status');
-    this.btnStart = this.root.querySelector('#re-start');
-    this.bindPlaybackControls({
-      speed: 're-speed',
-      speedLabel: 're-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#re-svg-canvas');
+    this.edgeListBody = this.root.querySelector('#re-edge-list-body');
+    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
+    this.metricRedundantEl = this.root.querySelector('#metric-redundant-edge');
+    this.metricTreeEdgesEl = this.root.querySelector('#metric-tree-edges');
+    this.liveTextEl = this.root.querySelector('#re-live-text');
+
+    this.bindPlaybackControls();
+
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: REDUNDANT_EDGE_PROBLEM_HTML,
+      analysisHtml: REDUNDANT_EDGE_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
-  protected buildSteps(): REStep[] {
-    return buildRESteps();
+  protected buildSteps(): RedundantStep[] {
+    return buildRedundantSteps();
   }
 
-  protected renderStep(step: REStep): void {
-    if (this.edgeEl) this.edgeEl.textContent = step.currentEdgeIdx >= 0 ? `[${step.allEdges[step.currentEdgeIdx].join(',')}]` : '-';
-    if (this.findUEl) this.findUEl.textContent = step.findU >= 0 ? String(step.findU) : '-';
-    if (this.findVEl) this.findVEl.textContent = step.findV >= 0 ? String(step.findV) : '-';
-    if (this.statusEl) {
-      this.statusEl.textContent = step.statusLabel;
-      if (step.action === 'redundant') {
-        (this.statusEl as HTMLElement).style.color = '#ef4444';
-      } else if (step.action === 'done') {
-        (this.statusEl as HTMLElement).style.color = '#10b981';
-      } else {
-        (this.statusEl as HTMLElement).style.color = '#f43f5e';
-      }
-    }
+  protected renderStep(step: RedundantStep): void {
+    const { currentEdge, treeEdges, redundantEdge, parent, action, statusText } = step;
 
-    this.renderGraph(step);
-    this.renderEdgeLog(step);
-    this.renderLogLine(step);
-  }
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">`;
 
-  private renderGraph(step: REStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 460 240');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '460px';
-    svg.style.height = '240px';
+      for (const e of RE_EDGES) {
+        const p1 = RE_NODE_POSITIONS[e[0] - 1];
+        const p2 = RE_NODE_POSITIONS[e[1] - 1];
+        const isCurrent = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
+        const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
+        const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
 
-    const nodeIdx = (n: number) => n - 1;
+        let strokeColor = '#cbd5e1';
+        let strokeWidth = 2;
+        let strokeDash = 'none';
 
-    // Draw accepted edges
-    for (const [u, v] of step.acceptedEdges) {
-      const p1 = RE_NODE_POSITIONS[nodeIdx(u)];
-      const p2 = RE_NODE_POSITIONS[nodeIdx(v)];
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-      line.setAttribute('stroke', '#10b981');
-      line.setAttribute('stroke-width', '3');
-      line.classList.add('re-edge');
-      svg?.appendChild(line);
-    }
-
-    // Draw current or redundant edge
-    if (step.currentEdgeIdx >= 0) {
-      const [u, v] = step.allEdges[step.currentEdgeIdx];
-      const p1 = RE_NODE_POSITIONS[nodeIdx(u)];
-      const p2 = RE_NODE_POSITIONS[nodeIdx(v)];
-      const isAccepted = step.acceptedEdges.some(e => (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u));
-      if (!isAccepted) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(p1.x));
-        line.setAttribute('y1', String(p1.y));
-        line.setAttribute('x2', String(p2.x));
-        line.setAttribute('y2', String(p2.y));
-        if (step.redundantEdge && step.redundantEdge[0] === u && step.redundantEdge[1] === v) {
-          line.setAttribute('stroke', '#ef4444');
-          line.setAttribute('stroke-width', '4');
-          line.setAttribute('stroke-dasharray', '8,4');
-          line.style.animation = 'pathPulse 1s infinite';
-        } else {
-          line.setAttribute('stroke', '#f43f5e');
-          line.setAttribute('stroke-width', '2');
-          line.setAttribute('stroke-dasharray', '6,3');
+        if (isRedundant) {
+          strokeColor = '#ef4444';
+          strokeWidth = 4;
+          strokeDash = '5,5';
+        } else if (isCurrent && action === 'found-redundant') {
+          strokeColor = '#ef4444';
+          strokeWidth = 4;
+          strokeDash = '5,5';
+        } else if (isTree) {
+          strokeColor = '#10b981';
+          strokeWidth = 3.5;
+        } else if (isCurrent) {
+          strokeColor = '#3b82f6';
+          strokeWidth = 3;
         }
-        line.classList.add('re-edge');
-        svg?.appendChild(line);
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
       }
+
+      RE_NODES.forEach((node) => {
+        const p = RE_NODE_POSITIONS[node - 1];
+        const isCurrentNode = currentEdge && (currentEdge[0] === node || currentEdge[1] === node);
+
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrentNode && (action === 'found-redundant' || action === 'done')) {
+          fill = '#fee2e2';
+          stroke = '#ef4444';
+        } else if (isCurrentNode) {
+          fill = '#dbeafe';
+          stroke = '#3b82f6';
+        }
+
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">p:${parent[node]}</text>`;
+      });
+
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // Draw pending edges (dimmed)
-    for (let i = 0; i < step.allEdges.length; i++) {
-      const [u, v] = step.allEdges[i];
-      const isProcessed = i <= step.currentEdgeIdx || step.acceptedEdges.some(e => (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u));
-      if (!isProcessed) {
-        const p1 = RE_NODE_POSITIONS[nodeIdx(u)];
-        const p2 = RE_NODE_POSITIONS[nodeIdx(v)];
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', String(p1.x));
-        line.setAttribute('y1', String(p1.y));
-        line.setAttribute('x2', String(p2.x));
-        line.setAttribute('y2', String(p2.y));
-        line.setAttribute('stroke', 'rgba(244, 63, 94, 0.15)');
-        line.setAttribute('stroke-width', '1.5');
-        line.classList.add('re-edge');
-        svg?.appendChild(line);
-      }
+    if (this.edgeListBody) {
+      this.edgeListBody.innerHTML = RE_EDGES.map((e) => {
+        const isCur = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
+        const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
+        const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
+
+        let statusBadge = '<span class="text-slate-400">待检查</span>';
+        if (isRedundant) statusBadge = '<span class="text-red-500 font-bold">⚠️ 冗余成环边</span>';
+        else if (isTree) statusBadge = '<span class="text-emerald-600 font-bold">✔ 树边 (已合并)</span>';
+        else if (isCur) statusBadge = '<span class="text-blue-600 font-bold">检查中</span>';
+
+        return `<tr class="${isCur ? 'bg-blue-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">[${e[0]}, ${e[1]}]</td>
+          <td class="px-3 py-1.5 text-center font-mono text-xs">${statusBadge}</td>
+        </tr>`;
+      }).join('');
     }
 
-    // Draw nodes
-    for (let i = 0; i < step.nodes.length; i++) {
-      const node = step.nodes[i];
-      const pos = RE_NODE_POSITIONS[i];
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('re-node');
-
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '22');
-
-      const isRedundantNode = step.redundantEdge && (step.redundantEdge[0] === node || step.redundantEdge[1] === node);
-      const isCurrentEdge = step.currentEdgeIdx >= 0 && !step.redundantEdge &&
-        (step.allEdges[step.currentEdgeIdx][0] === node || step.allEdges[step.currentEdgeIdx][1] === node);
-
-      if (isRedundantNode && step.action === 'redundant') {
-        circle.setAttribute('fill', 'rgba(239, 68, 68, 0.3)');
-        circle.setAttribute('stroke', '#ef4444');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 0.8s infinite';
-      } else if (isCurrentEdge) {
-        circle.setAttribute('fill', '#f59e0b');
-        circle.setAttribute('stroke', '#f59e0b');
-        circle.setAttribute('stroke-width', '3');
-        circle.style.animation = 'pulse 0.8s infinite';
-      } else {
-        circle.setAttribute('fill', 'rgba(244, 63, 94, 0.2)');
-        circle.setAttribute('stroke', '#f43f5e');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('fill', isRedundantNode && step.action === 'redundant' ? '#ef4444' : isCurrentEdge ? '#000' : '#f43f5e');
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(node);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
+    if (this.metricCurEdgeEl) {
+      this.metricCurEdgeEl.textContent = currentEdge ? `[${currentEdge[0]}, ${currentEdge[1]}]` : '—';
+    }
+    if (this.metricRedundantEl) {
+      this.metricRedundantEl.textContent = redundantEdge ? `[${redundantEdge[0]}, ${redundantEdge[1]}]` : '暂未发现';
+      this.metricRedundantEl.className = `font-mono font-bold ${redundantEdge ? 'text-red-600 animate-pulse' : 'text-slate-500'}`;
+    }
+    if (this.metricTreeEdgesEl) {
+      this.metricTreeEdgesEl.textContent = `${treeEdges.length} / ${RE_NODES.length - 1}`;
     }
 
-    this.graphEl?.appendChild(svg);
-  }
-
-  private renderEdgeLog(step: REStep): void {
-    if (!this.edgeListEl) return;
-    this.edgeListEl.innerHTML = '';
-    step.edgeLog.forEach(({ edge, status }) => {
-      const item = document.createElement('div');
-      item.className = 're-edge-item';
-      if (status === 'accepted') item.classList.add('accepted');
-      if (status === 'redundant') item.classList.add('redundant');
-      item.textContent = `[${edge.join(',')}]`;
-      this.edgeListEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: REStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
+    }
   }
 }
 
 registerAlgorithm({
   id: 'redundant-edge',
-  name: '多余的边',
+  name: '冗余连接 (Redundant Connection)',
   viewId: 'algo-redundant-edge-view',
+  icon: '🔗',
   category: 'graph',
-  description: 'LeetCode 684: 用并查集检测环，找到多余的边',
-  icon: '✂️',
+  difficulty: 2,
+  levelOrder: 31,
+  description: '左程云算法通关课 Class 056：并查集经典实战，无向图动态加边判环，快速识别导致多余回路的冗余边 (LeetCode 684)',
+  learningGoal: '掌握并查集连通性判环机制、动态合并原则与树的环路消除策略',
   template,
   Visualizer: RedundantEdgeVisualizer,
-  difficulty: 2,
-  levelOrder: 16,
-  learningGoal: '掌握用并查集检测图中的环',
 });
-
-export {};

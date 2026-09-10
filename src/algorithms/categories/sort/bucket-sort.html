@@ -1,440 +1,953 @@
 <style>
-  /* === 桶排序 · 玫瑰/粉色系玻璃拟态 === */
+  /* === 桶排序 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-bucket-sort-view {
-    --accent-a: #e11d48;
-    --accent-b: #f472b6;
-    --accent-glow: rgba(244, 114, 182, .45);
-    --bucket-a: #fb7185;
-    --bucket-b: #e11d48;
-    --active-bucket: #fbbf24;
-    --sorted-a: #34d399;
-    --sorted-b: #10b981;
-    --key-color: #fcd34d;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 15% 10%, rgba(225, 29, 72, .28), transparent 55%),
-      radial-gradient(ellipse at 85% 90%, rgba(244, 114, 182, .24), transparent 55%),
-      linear-gradient(135deg, #1a0a14 0%, #2d1020 50%, #1f0e1a 100%);
+    background: #f1f5f9;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
-  #algo-bucket-sort-view .bs-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  #algo-bucket-sort-view * {
+    box-sizing: border-box;
   }
-  /* hero */
-  #algo-bucket-sort-view .bs-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 8, 24, .35);
-    backdrop-filter: blur(14px) saturate(150%);
+
+  /* 1. 顶栏 Header */
+  #algo-bucket-sort-view .bks-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
-  #algo-bucket-sort-view .bs-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-bucket-sort-view .bs-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf2f8; box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-bucket-sort-view .bks-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
   }
-  #algo-bucket-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-bucket-sort-view .bs-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-bucket-sort-view .bs-tip {
-    max-width: 500px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(225, 29, 72, .12), rgba(244, 114, 182, .08));
-    border: 1px solid rgba(244, 114, 182, .28);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
+
+  #algo-bucket-sort-view .bks-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-bucket-sort-view .bs-tip strong { color: #fda4af; }
-  /* main grid */
-  #algo-bucket-sort-view .bs-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
+
+  #algo-bucket-sort-view .bks-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
   }
-  #algo-bucket-sort-view .bs-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  #algo-bucket-sort-view .bs-card {
-    background: rgba(20, 18, 28, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-    overflow: hidden;
+
+  #algo-bucket-sort-view .bks-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #algo-bucket-sort-view .bs-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+  #algo-bucket-sort-view .bks-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
   }
-  #algo-bucket-sort-view .bs-tag {
-    font-size: 11px; color: #fda4af; background: rgba(244, 114, 182, .14);
-    border: 1px solid rgba(244, 114, 182, .3); padding: 2px 8px; border-radius: 999px;
-  }
-  /* input */
-  #algo-bucket-sort-view .bs-input-row {
-    display: grid; grid-template-columns: 1fr auto auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
-  }
-  #algo-bucket-sort-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
-  }
-  #algo-bucket-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(244, 114, 182, .15); }
-  #algo-bucket-sort-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-bucket-sort-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #fdf2f8; transform: translateY(-1px);
-    box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-bucket-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-bucket-sort-view .bs-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-bucket-sort-view .bs-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(244, 114, 182, .12); border: 1px solid rgba(244, 114, 182, .28);
-    color: #fda4af; cursor: pointer; transition: all .2s;
-  }
-  #algo-bucket-sort-view .bs-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf2f8; border-color: transparent; transform: translateY(-1px);
-  }
-  /* stats */
-  #algo-bucket-sort-view .bs-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-  }
-  #algo-bucket-sort-view .bs-stat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(20, 18, 28, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
-  }
-  #algo-bucket-sort-view .bs-stat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
-  }
-  #algo-bucket-sort-view .bs-stat.bs-stat--bucket::before { background: linear-gradient(180deg, var(--bucket-a), var(--bucket-b)); }
-  #algo-bucket-sort-view .bs-stat.bs-stat--active::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
-  #algo-bucket-sort-view .bs-stat.bs-stat--done::before { background: linear-gradient(180deg, var(--sorted-a), var(--sorted-b)); }
-  #algo-bucket-sort-view .bs-stat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-bucket-sort-view .bs-stat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  #algo-bucket-sort-view .bs-stat--bucket .bs-stat-val { color: #fb7185; }
-  #algo-bucket-sort-view .bs-stat--active .bs-stat-val { color: #fcd34d; }
-  #algo-bucket-sort-view .bs-stat--done .bs-stat-val { color: #6ee7b7; }
-  /* visual area */
-  #algo-bucket-sort-view .bs-visual { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-  #algo-bucket-sort-view .bs-visual-inner {
-    flex: 1; min-height: 0; padding: 16px 18px;
-    display: flex; flex-direction: column; gap: 12px; overflow: hidden;
-  }
-  /* original array bars */
-  #algo-bucket-sort-view .bs-bars-section { min-height: 120px; }
-  #algo-bucket-sort-view .bs-bars-section .bs-section-label {
-    color: #94a3b8; font-size: 11.5px; font-weight: 700; letter-spacing: .05em;
-    text-transform: uppercase; margin-bottom: 8px;
-  }
-  #algo-bucket-sort-view .bs-bars {
-    display: flex; align-items: flex-end; gap: 5px; height: 90px; padding-bottom: 22px;
-    position: relative;
-  }
-  #algo-bucket-sort-view .bs-bar-wrap {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    width: 40px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
-  }
-  #algo-bucket-sort-view .bs-bar {
-    width: 100%; border-radius: 8px 8px 3px 3px;
-    background: linear-gradient(180deg, rgba(244, 114, 182, .25), rgba(244, 114, 182, .08));
-    border: 1.5px solid rgba(244, 114, 182, .3);
-    display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 4px; color: #e2e8f0;
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; font-weight: 800;
-    transition: height .4s cubic-bezier(.4, 0, .2, 1),
-                background .3s, border-color .3s, box-shadow .3s, transform .3s;
-  }
-  #algo-bucket-sort-view .bs-bar.bs-bar-active {
-    background: linear-gradient(180deg, rgba(252, 211, 77, .55), rgba(251, 191, 36, .25));
-    border-color: var(--key-color);
-    box-shadow: 0 0 12px rgba(252, 211, 77, .4);
-  }
-  #algo-bucket-sort-view .bs-bar.bs-bar-distributed {
-    background: linear-gradient(180deg, rgba(251, 113, 133, .5), rgba(225, 29, 72, .2));
-    border-color: rgba(251, 113, 133, .7);
-    opacity: .55;
-  }
-  #algo-bucket-sort-view .bs-bar.bs-bar-done {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
-    border-color: var(--sorted-a);
-    box-shadow: 0 0 0 2px rgba(52, 211, 153, .3);
-  }
-  #algo-bucket-sort-view .bs-bar.bs-bar-min,
-  #algo-bucket-sort-view .bs-bar.bs-bar-max {
-    border-color: #fbbf24;
-    box-shadow: 0 0 8px rgba(251, 191, 36, .35);
-  }
-  #algo-bucket-sort-view .bs-idx {
-    position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
-    color: #64748b; font-size: 10px; font-weight: 600;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-  }
-  #algo-bucket-sort-view .bs-bar-marker {
-    position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-    font-size: 10px; font-weight: 800;
-    padding: 1px 6px; border-radius: 5px;
+
+  #algo-bucket-sort-view .bks-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
     white-space: nowrap;
   }
-  #algo-bucket-sort-view .bs-bar-marker.bs-marker-min {
-    color: #38bdf8; background: rgba(56, 189, 248, .15); border: 1px solid rgba(56, 189, 248, .5);
+
+  #algo-bucket-sort-view .bks-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
   }
-  #algo-bucket-sort-view .bs-bar-marker.bs-marker-max {
-    color: #fb923c; background: rgba(251, 146, 60, .15); border: 1px solid rgba(251, 146, 60, .5);
+
+  #algo-bucket-sort-view .bks-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
-  /* buckets area */
-  #algo-bucket-sort-view .bs-buckets-section { flex: 1; min-height: 80px; overflow: hidden; }
-  #algo-bucket-sort-view .bs-buckets-section .bs-section-label {
-    color: #94a3b8; font-size: 11.5px; font-weight: 700; letter-spacing: .05em;
-    text-transform: uppercase; margin-bottom: 8px;
+
+  #algo-bucket-sort-view .bks-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
   }
-  #algo-bucket-sort-view .bs-buckets {
-    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-    max-height: 200px; overflow-y: auto; padding-bottom: 4px;
+  #algo-bucket-sort-view .bks-btn-generate:hover {
+    background: #1d4ed8;
   }
-  #algo-bucket-sort-view .bs-bucket {
-    min-width: 80px; max-width: 120px; flex: 0 0 auto;
-    background: rgba(20, 18, 28, .6);
-    border: 1.5px solid rgba(244, 114, 182, .18);
-    border-radius: 12px; padding: 8px 10px;
-    display: flex; flex-direction: column; gap: 4px;
-    transition: all .35s cubic-bezier(.4, 0, .2, 1);
+
+  #algo-bucket-sort-view .bks-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-bucket-sort-view .bs-bucket.bs-bucket-active {
-    border-color: var(--active-bucket);
-    box-shadow: 0 0 18px rgba(251, 191, 36, .25), inset 0 0 12px rgba(251, 191, 36, .06);
-    background: rgba(251, 191, 36, .06);
+  #algo-bucket-sort-view .bks-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
-  #algo-bucket-sort-view .bs-bucket.bs-bucket-sorting {
-    border-color: #c084fc;
-    box-shadow: 0 0 14px rgba(192, 132, 252, .2);
-    background: rgba(192, 132, 252, .05);
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-bucket-sort-view .bks-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
   }
-  #algo-bucket-sort-view .bs-bucket.bs-bucket-sorted {
-    border-color: var(--sorted-a);
-    box-shadow: 0 0 12px rgba(52, 211, 153, .18);
-    background: rgba(52, 211, 153, .05);
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-bucket-sort-view .bks-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-bucket-sort-view .bs-bucket-header {
-    font-size: 10px; font-weight: 700; color: #94a3b8;
-    text-align: center; letter-spacing: .02em;
-    font-family: 'JetBrains Mono', Consolas, monospace;
+
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-bucket-sort-view .bks-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
   }
-  #algo-bucket-sort-view .bs-bucket-active .bs-bucket-header { color: #fcd34d; }
-  #algo-bucket-sort-view .bs-bucket-sorting .bs-bucket-header { color: #c084fc; }
-  #algo-bucket-sort-view .bs-bucket-sorted .bs-bucket-header { color: #6ee7b7; }
-  #algo-bucket-sort-view .bs-bucket-items {
-    display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
-    min-height: 24px;
+
+  #algo-bucket-sort-view .bks-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
   }
-  #algo-bucket-sort-view .bs-bucket-item {
-    padding: 2px 7px; border-radius: 6px; font-size: 12px; font-weight: 700;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    background: rgba(244, 114, 182, .15); border: 1px solid rgba(244, 114, 182, .3);
-    color: #fda4af;
-    transition: all .3s;
+
+  #algo-bucket-sort-view .bks-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-bucket-sort-view .bs-bucket-item.bs-item-active {
-    background: rgba(252, 211, 77, .3); border-color: var(--key-color);
-    color: #fef3c7; box-shadow: 0 0 8px rgba(252, 211, 77, .4);
+
+  #algo-bucket-sort-view .bks-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
-  #algo-bucket-sort-view .bs-bucket-item.bs-item-sorted {
-    background: rgba(52, 211, 153, .18); border-color: rgba(52, 211, 153, .5);
-    color: #a7f3d0;
+
+  #algo-bucket-sort-view .bks-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
   }
-  #algo-bucket-sort-view .bs-bucket-item.bs-item-compare {
-    background: rgba(239, 68, 68, .25); border-color: #f87171;
-    color: #fecaca;
-    animation: bs-pulse .4s ease-in-out;
+  #algo-bucket-sort-view .bks-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
-  @keyframes bs-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
+
+  /* 桶沙盘展示盒 */
+  #algo-bucket-sort-view .bks-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 12px;
   }
-  /* result area */
-  #algo-bucket-sort-view .bs-result-section { min-height: 50px; }
-  #algo-bucket-sort-view .bs-result-section .bs-section-label {
-    color: #94a3b8; font-size: 11.5px; font-weight: 700; letter-spacing: .05em;
-    text-transform: uppercase; margin-bottom: 8px;
+
+  #algo-bucket-sort-view .bks-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
   }
-  #algo-bucket-sort-view .bs-result-items {
-    display: flex; gap: 5px; flex-wrap: wrap; align-items: center;
-    min-height: 30px;
+
+  #algo-bucket-sort-view .bks-buckets-row {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
   }
-  #algo-bucket-sort-view .bs-result-item {
-    padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 700;
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    background: rgba(52, 211, 153, .15); border: 1px solid rgba(52, 211, 153, .35);
-    color: #6ee7b7;
-    animation: bs-collect .4s cubic-bezier(.34, 1.56, .64, 1);
+
+  #algo-bucket-sort-view .bks-bucket-item {
+    flex: 1;
+    min-height: 56px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    gap: 4px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  @keyframes bs-collect {
-    0% { transform: translateY(-15px) scale(.8); opacity: .3; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
+
+  #algo-bucket-sort-view .bks-bucket-item.is-active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
   }
-  /* result banner */
-  #algo-bucket-sort-view .bs-result-banner {
-    margin: 0 16px 12px; padding: 12px 16px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(225, 29, 72, .12), rgba(244, 114, 182, .06));
-    border: 1px solid rgba(244, 114, 182, .28);
-    line-height: 1.55; font-size: 14px; color: #fce7f3;
+
+  #algo-bucket-sort-view .bks-bucket-header {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #64748b;
+    text-align: center;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 2px;
   }
-  #algo-bucket-sort-view .bs-result-banner .bs-emoji {
-    width: 34px; height: 34px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf2f8; box-shadow: 0 4px 14px var(--accent-glow);
+
+  #algo-bucket-sort-view .bks-bucket-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
   }
-  #algo-bucket-sort-view .bs-result-banner.bs-done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+
+  #algo-bucket-sort-view .bks-track-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    flex-wrap: wrap;
   }
-  #algo-bucket-sort-view .bs-result-banner.bs-done .bs-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  #algo-bucket-sort-view .bks-cell-box {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 4px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* log */
-  #algo-bucket-sort-view .bs-log {
-    min-height: 80px; max-height: 130px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-bucket-sort-view .bks-cell-box.is-current {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+    transform: scale(1.05);
   }
-  #algo-bucket-sort-view .bs-log-line { display: flex; gap: 8px; }
-  #algo-bucket-sort-view .bs-log-line .bs-log-num { color: #475569; flex-shrink: 0; }
-  #algo-bucket-sort-view .bs-log-line.bs-log-active { color: #fda4af; font-weight: 600; }
-  #algo-bucket-sort-view .bs-log-line.bs-log-active .bs-log-num { color: var(--accent-b); }
-  /* code panel */
-  #algo-bucket-sort-view .bs-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-bucket-sort-view .bks-cell-box.is-gathered {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
   }
-  #algo-bucket-sort-view .bs-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-bucket-sort-view .bs-controls {
-    padding: 14px 18px;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-bucket-sort-view .bks-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
-  #algo-bucket-sort-view .bs-controls .bs-ctrl-btn { min-width: 64px; }
-  #algo-bucket-sort-view .bs-controls .bs-ctrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fdf2f8; border-color: transparent;
+
+  #algo-bucket-sort-view .bks-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
   }
-  #algo-bucket-sort-view .bs-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  #algo-bucket-sort-view .bks-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
   }
-  #algo-bucket-sort-view .bs-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+
+  #algo-bucket-sort-view .bks-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-bucket-sort-view #bs-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-bucket-sort-view .bs-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-bucket-sort-view .bs-code { min-height: 360px; }
+  #algo-bucket-sort-view .bks-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-bucket-sort-view .bks-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-bucket-sort-view .bks-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-bucket-sort-view .bks-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-bucket-sort-view .bks-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-bucket-sort-view .bks-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-bucket-sort-view .bks-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-bucket-sort-view .bks-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-bucket-sort-view .bks-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-bucket-sort-view .bks-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-bucket-sort-view .bks-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-bucket-sort-view .bks-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-bucket-sort-view .bks-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-bucket-sort-view .bks-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-bucket-sort-view .bks-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-bucket-sort-view .bks-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  #algo-bucket-sort-view .bks-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-bucket-sort-view .bks-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-bucket-sort-view .bks-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
+  }
+
+  #algo-bucket-sort-view .bks-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-bucket-sort-view .bks-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-bucket-sort-view .bks-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-bucket-sort-view .bks-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-bucket-sort-view .bks-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-bucket-sort-view .bks-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-bucket-sort-view .bks-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-bucket-sort-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-bucket-sort-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-bucket-sort-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-bucket-sort-view .bks-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-bucket-sort-view .bks-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-bucket-sort-view .bks-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-bucket-sort-view .bks-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #algo-bucket-sort-view .bks-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  /* 模态弹窗 */
+  #algo-bucket-sort-view .bks-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-bucket-sort-view .bks-modal-backdrop.hidden {
+    display: none;
+  }
+
+  #algo-bucket-sort-view .bks-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-bucket-sort-view .bks-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-bucket-sort-view .bks-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-bucket-sort-view .bks-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-bucket-sort-view .bks-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="bs-shell">
-  <div class="bs-hero">
-    <div class="bs-hero-left">
-      <span class="bs-icon">🪣</span>
-      <div>
-        <h1>桶排序</h1>
-        <div class="bs-sub">将元素分配到多个桶中，桶内排序后合并 · 稳定 · O(n+k)</div>
-      </div>
+<div id="algo-bucket-sort-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="bks-header">
+    <div class="bks-header-left">
+      <div class="bks-icon-btn">🪣</div>
+      <h1 class="bks-main-title">桶排序</h1>
+      <button id="btn-open-problem-modal" class="bks-btn-problem">📋 题目</button>
+      <span class="bks-badge-mode">值域映射分发·桶内局部排序·按序归拢</span>
+      <span class="bks-badge-complexity">O(n + k) · O(n + k)</span>
     </div>
-    <div class="bs-tip"><strong>核心思路：</strong>先找最大最小值确定桶范围 → 将元素分配到对应桶 → 每个桶内部用插入排序 → 依次收集各桶元素得到有序序列。</div>
-  </div>
-  <div class="bs-main">
-    <div class="bs-left">
-      <section class="bs-card">
-        <div class="bs-card-title">输入 <span class="bs-tag">数组</span></div>
-        <div class="bs-input-row">
-          <input id="bs-array" value="42,32,33,52,37,47,51,77,23,63">
-          <input id="bs-bucket-count" value="5" style="width:80px;text-align:center;" title="桶数量">
-          <button id="bs-start">开始排序</button>
-        </div>
-        <div class="bs-examples">
-          <button class="bs-chip" data-arr="42,32,33,52,37,47,51,77,23,63" data-buckets="5">默认 10 元素</button>
-          <button class="bs-chip" data-arr="3,1,4,1,5,9,2,6" data-buckets="4">8 元素</button>
-          <button class="bs-chip" data-arr="20,30,10,60,50,40" data-buckets="3">6 元素</button>
-          <button class="bs-chip" data-arr="5,4,3,2,1,9,8,7" data-buckets="4">逆序+乱序</button>
-          <button class="bs-chip" data-arr="11,11,22,22,33" data-buckets="3">含重复</button>
-        </div>
-      </section>
 
-      <div class="bs-stats">
-        <div class="bs-stat bs-stat--bucket"><div class="bs-stat-label">桶数量</div><div class="bs-stat-val" id="bs-stat-buckets">-</div></div>
-        <div class="bs-stat bs-stat--active"><div class="bs-stat-label">当前桶</div><div class="bs-stat-val" id="bs-stat-cur">-</div></div>
-        <div class="bs-stat"><div class="bs-stat-label">已分配</div><div class="bs-stat-val" id="bs-stat-dist">0</div></div>
-        <div class="bs-stat bs-stat--done"><div class="bs-stat-label">已排序桶</div><div class="bs-stat-val" id="bs-stat-sorted">0</div></div>
+    <div class="bks-header-right">
+      <button id="btn-generate" class="bks-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="bks-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="bks-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="bks-left-section">
+
+      <!-- 卡片 1: 桶分组沙盘 -->
+      <div class="bks-card">
+        <div class="bks-card-header">
+          <div class="bks-card-title">
+            <span>📊 桶映射分布与归拢沙盘</span>
+          </div>
+          <div class="bks-legend-bar">
+            <div><span class="bks-legend-dot" style="background:#3b82f6;"></span> 当前分发</div>
+            <div><span class="bks-legend-dot" style="background:#22c55e;"></span> 已归拢回填</div>
+          </div>
+        </div>
+
+        <!-- 桶沙盘展示盒 -->
+        <div class="bks-sandbox-wrap">
+          <div class="bks-section-label">5 个桶容器 (Buckets [0..4]):</div>
+          <div id="bks-buckets-row" class="bks-buckets-row"></div>
+          <div class="bks-section-label">主输出数组 arr:</div>
+          <div id="bks-main-track" class="bks-track-row"></div>
+        </div>
       </div>
 
-      <section class="bs-card bs-visual">
-        <div class="bs-card-title">排序过程</div>
-        <div class="bs-visual-inner">
-          <div class="bs-bars-section">
-            <div class="bs-section-label">原数组</div>
-            <div class="bs-bars" id="bs-bars"></div>
-          </div>
-          <div class="bs-buckets-section">
-            <div class="bs-section-label">桶</div>
-            <div class="bs-buckets" id="bs-buckets"></div>
-          </div>
-          <div class="bs-result-section">
-            <div class="bs-section-label">结果</div>
-            <div class="bs-result-items" id="bs-result-items"></div>
-          </div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="bks-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="bks-slider" />
+        <div class="bks-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
         </div>
-        <div class="bs-result-banner" id="bs-result-banner">
-          <span class="bs-emoji">🪣</span>
-          <div id="step-message">点击「开始排序」查看桶排序逐步过程</div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="bks-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="bks-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="bks-ctrl-btn">▶</button>
         </div>
-      </section>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
+      </div>
 
-      <section class="bs-card">
-        <div class="bs-card-title">执行日志 <button id="bs-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="bs-log" id="bs-log"></div>
-      </section>
-    </div>
-    <aside class="bs-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="bs-controls">
-    <button id="step-reset" class="bs-ctrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="bs-ctrl-btn">◀ 上一步</button>
-    <button id="step-play" class="bs-ctrl-btn bs-ctrl-primary">▶ 播放</button>
-    <button id="step-next" class="bs-ctrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="bs-counter">步骤: 0 / 0</span>
-    <div class="bs-speed-wrap">
-      <span>速度</span>
-      <input id="bs-speed" type="range" min="200" max="2500" step="100" value="700">
-      <span id="bs-speed-label" style="min-width:42px;">0.7s</span>
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="bks-card">
+        <div class="bks-card-header">
+          <div>
+            <div class="bks-card-title">🧭 桶映射状态与指标监视器</div>
+            <div class="bks-card-desc">极值范围 [min, max]、桶数量 buckets、当前处理元素与归拢进度</div>
+          </div>
+          <span id="badge-range" class="bks-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">值域: [3..49]</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="bks-state-space-box">
+          <div class="bks-metrics-grid">
+            <div class="bks-metric-card">
+              <span class="bks-metric-label">极值范围 [min, max]</span>
+              <span class="bks-metric-val" id="metric-range" style="color: #2563eb;">[3, 49]</span>
+            </div>
+            <div class="bks-metric-card">
+              <span class="bks-metric-label">桶数量 buckets</span>
+              <span class="bks-metric-val" id="metric-bucket-count" style="color: #0f172a;">5</span>
+            </div>
+            <div class="bks-metric-card">
+              <span class="bks-metric-label">当前处理元素</span>
+              <span class="bks-metric-val" id="metric-cur-elem" style="color: #3b82f6;">29</span>
+            </div>
+            <div class="bks-metric-card">
+              <span class="bks-metric-label">归拢进度 Gathered</span>
+              <span class="bks-metric-val" id="metric-gather-count" style="color: #10b981;">0 / 8</span>
+            </div>
+          </div>
+
+          <div class="bks-formula-box">
+            <span style="color:#64748b;">分桶公式:</span>
+            <strong id="formula-action" style="color: #2563eb;">bIdx = (val - min) * (k - 1) / (max - min)</strong>
+          </div>
+
+          <div class="bks-live-alert">
+            <span>💡</span> <span id="bks-live-text">准备就绪，点击运行开始桶排序。</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="bks-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="bks-dark-terminal">
+        <div class="bks-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="bks-tab-group">
+            <button id="btn-tab-code" class="bks-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="bks-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="bks-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="bks-lang-group" id="code-lang-tabs">
+            <button class="bks-lang-btn active" data-lang="java">Java</button>
+            <button class="bks-lang-btn" data-lang="cpp">C++</button>
+            <button class="bks-lang-btn" data-lang="python">Python</button>
+            <button class="bks-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="bks-font-tools">
+            <div class="bks-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="bks-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="bks-window-dots">
+              <span class="bks-dot" style="background:#ef4444;"></span>
+              <span class="bks-dot" style="background:#eab308;"></span>
+              <span class="bks-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="bks-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="bks-log-card">
+        <div class="bks-log-header">
+          <div class="bks-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="bks-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="bks-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="bks-modal-backdrop hidden">
+    <div class="bks-modal-content">
+      <div class="bks-modal-header">
+        <div class="bks-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="bks-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="bks-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

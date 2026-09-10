@@ -43,7 +43,7 @@ export const OnesAndZeroesSpec: AlgorithmSpec = {
       javascript: { primary: 11, context: [9, 10] },
     },
     loopExit: { java: 5, cpp: 5, python: 4, javascript: 3 },
-    returnResult: { java: 18, cpp: 18, python: 10, javascript: 16 },
+    returnResult: { java: 18, cpp: 18, python: 9, javascript: 16 },
   },
   code: {
     languages: {

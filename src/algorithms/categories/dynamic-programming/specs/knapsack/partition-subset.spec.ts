@@ -42,7 +42,7 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
       javascript: { primary: 9, context: [7, 8] },
     },
     loopExit: { java: 8, cpp: 8, python: 7, javascript: 7 },
-    returnResult: { java: 13, cpp: 13, python: 11, javascript: 12 },
+    returnResult: { java: 13, cpp: 13, python: 10, javascript: 12 },
   },
   code: {
     languages: {

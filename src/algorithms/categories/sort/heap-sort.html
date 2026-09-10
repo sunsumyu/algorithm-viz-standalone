@@ -1,402 +1,930 @@
 <style>
-  /* === 堆排序 · 玻璃感红色系 === */
+  /* === 堆排序 · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-heap-sort-view {
-    --accent-a: #dc2626;
-    --accent-b: #f87171;
-    --accent-glow: rgba(248, 113, 113, .45);
-    --sorted-a: #06b6d4;
-    --sorted-b: #3b82f6;
-    --heap-color: #ef4444;
-    --heap-glow: rgba(239, 68, 68, .35);
-    --key-color: #fbbf24;
-    --success: #34d399;
-    width: 100%; height: 100%;
-    color: #e2e8f0;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background:
-      radial-gradient(ellipse at 10% 5%, rgba(220, 38, 38, .32), transparent 55%),
-      radial-gradient(ellipse at 90% 95%, rgba(248, 113, 113, .28), transparent 55%),
-      linear-gradient(135deg, #1a0808 0%, #2d0f0f 50%, #3d1515 100%);
+    background: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
+  }
+
+  #algo-heap-sort-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-heap-sort-view .hs-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  #algo-heap-sort-view .hs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-heap-sort-view .hs-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-heap-sort-view .hs-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  #algo-heap-sort-view .hs-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-heap-sort-view .hs-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-heap-sort-view .hs-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-heap-sort-view .hs-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+
+  #algo-heap-sort-view .hs-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-heap-sort-view .hs-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-heap-sort-view .hs-btn-generate:hover {
+    background: #1d4ed8;
+  }
+
+  #algo-heap-sort-view .hs-btn-reset {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-heap-sort-view .hs-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-heap-sort-view .hs-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
     overflow: hidden;
   }
-  #algo-heap-sort-view .hs-shell {
-    width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-heap-sort-view .hs-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  /* hero */
-  #algo-heap-sort-view .hs-hero {
-    padding: 18px 24px 12px;
-    display: flex; gap: 18px; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(24, 8, 8, .35);
-    backdrop-filter: blur(14px) saturate(150%);
-  }
-  #algo-heap-sort-view .hs-hero-left { display: flex; align-items: center; gap: 14px; }
-  #algo-heap-sort-view .hs-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fef2f2; box-shadow: 0 6px 20px var(--accent-glow);
-  }
-  #algo-heap-sort-view h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
-  #algo-heap-sort-view .hs-sub { color: #94a3b8; font-size: 12.5px; margin-top: 4px; }
-  #algo-heap-sort-view .hs-tip {
-    max-width: 480px; padding: 10px 14px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(220, 38, 38, .12), rgba(248, 113, 113, .08));
-    border: 1px solid rgba(248, 113, 113, .28);
-    color: #cbd5e1; font-size: 12.5px; line-height: 1.65;
-  }
-  #algo-heap-sort-view .hs-tip strong { color: #fca5a5; }
-  /* main grid */
-  #algo-heap-sort-view .hs-main {
-    min-height: 0; display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; overflow: hidden;
-  }
-  #algo-heap-sort-view .hs-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+
+  /* 白色统一卡片 Card 1 & Card 2 */
   #algo-heap-sort-view .hs-card {
-    background: rgba(38, 18, 18, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
+    position: relative;
   }
+
+  #algo-heap-sort-view .hs-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
   #algo-heap-sort-view .hs-card-title {
-    padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    display: flex; justify-content: space-between; align-items: center;
-    color: #cbd5e1; font-weight: 700; font-size: 13px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  #algo-heap-sort-view .hsTag {
-    font-size: 11px; color: #fca5a5; background: rgba(248, 113, 113, .14);
-    border: 1px solid rgba(248, 113, 113, .3); padding: 2px 8px; border-radius: 999px;
+
+  #algo-heap-sort-view .hs-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
   }
-  /* input */
-  #algo-heap-sort-view .hs-input-row {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 10px; align-items: center; padding: 14px 16px;
+
+  #algo-heap-sort-view .hs-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
   }
-  #algo-heap-sort-view input {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(8, 8, 24, .6);
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 13px; outline: none; transition: all .2s;
+  #algo-heap-sort-view .hs-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
-  #algo-heap-sort-view input:focus { border-color: var(--accent-b); box-shadow: 0 0 0 3px rgba(248, 113, 113, .15); }
-  #algo-heap-sort-view button {
-    padding: 8px 16px; border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 10px; background: rgba(255, 255, 255, .04);
-    color: #e2e8f0; cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+
+  /* 柱状图沙盘展示盒 */
+  #algo-heap-sort-view .hs-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 16px 12px 10px;
   }
-  #algo-heap-sort-view button:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent; color: #fef2f2; transform: translateY(-1px);
-    box-shadow: 0 6px 20px var(--accent-glow);
+
+  #algo-heap-sort-view .hs-bars-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 10px;
+    height: 100%;
+    width: 100%;
   }
-  #algo-heap-sort-view button:disabled { opacity: .4; cursor: not-allowed; }
-  #algo-heap-sort-view .hs-examples { padding: 0 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  #algo-heap-sort-view .hs-chip {
-    padding: 5px 12px; border-radius: 999px; font-size: 12px;
-    background: rgba(248, 113, 113, .12); border: 1px solid rgba(248, 113, 113, .28);
-    color: #fca5a5; cursor: pointer; transition: all .2s;
+
+  #algo-heap-sort-view .hs-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    max-width: 44px;
+    height: 100%;
+    justify-content: flex-end;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  #algo-heap-sort-view .hs-chip:hover {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fef2f2; border-color: transparent; transform: translateY(-1px);
+
+  #algo-heap-sort-view .hs-bar-pillar {
+    width: 100%;
+    border-radius: 6px 6px 2px 2px;
+    background: #cbd5e1;
+    border: 1.5px solid #94a3b8;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 12px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
   }
-  /* stats */
-  #algo-heap-sort-view .hs-stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+
+  #algo-heap-sort-view .hs-bar-pillar.is-root {
+    background: #fef9c3;
+    border-color: #eab308;
+    color: #854d0e;
+    transform: scale(1.06);
   }
-  #algo-heap-sort-view .hsStat {
-    position: relative; padding: 12px 14px 12px 16px;
-    background: rgba(38, 18, 18, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 14px; overflow: hidden;
+
+  #algo-heap-sort-view .hs-bar-pillar.is-child {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
   }
-  #algo-heap-sort-view .hsStat::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 4px;
-    background: linear-gradient(180deg, var(--accent-a), var(--accent-b));
+
+  #algo-heap-sort-view .hs-bar-pillar.is-swapping {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+    transform: scale(1.06);
   }
-  #algo-heap-sort-view .hsStat.hsStat--sorted::before { background: linear-gradient(180deg, var(--sorted-a), var(--sorted-b)); }
-  #algo-heap-sort-view .hsStat.hsStat--heap::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
-  #algo-heap-sort-view .hsStat-label { color: #94a3b8; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  #algo-heap-sort-view .hsStat-val {
-    color: #e2e8f0; font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 22px; font-weight: 800; margin-top: 4px;
-    font-variant-numeric: tabular-nums;
+
+  #algo-heap-sort-view .hs-bar-pillar.is-sorted {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
   }
-  #algo-heap-sort-view .hsStat--sorted .hsStat-val { color: #67e8f9; }
-  #algo-heap-sort-view .hsStat--heap .hsStat-val { color: #fca5a5; }
-  /* visual: dual view */
-  #algo-heap-sort-view .hs-visual { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-  #algo-heap-sort-view .hs-dual-view {
-    flex: 1; min-height: 0; display: grid;
-    grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px;
+
+  #algo-heap-sort-view .hs-bar-idx {
+    font-size: 9.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #94a3b8;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-heap-sort-view .hs-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-heap-sort-view .hs-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-heap-sort-view .hs-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-heap-sort-view .hs-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-heap-sort-view .hs-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-heap-sort-view .hs-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-heap-sort-view .hs-play-circle-btn:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-heap-sort-view .hs-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     overflow: hidden;
   }
-  #algo-heap-sort-view .hs-view-panel {
-    position: relative; overflow: hidden;
-    background: rgba(8, 8, 24, .35);
-    border: 1px solid rgba(255, 255, 255, .06);
-    border-radius: 12px;
-    display: flex; flex-direction: column;
+
+  #algo-heap-sort-view .hs-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
   }
-  #algo-heap-sort-view .hs-view-label {
-    padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-    font-size: 12px; font-weight: 700; color: #cbd5e1;
-    display: flex; align-items: center; gap: 6px;
+
+  #algo-heap-sort-view .hs-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  #algo-heap-sort-view .hs-view-label .hs-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent-b);
-    box-shadow: 0 0 8px var(--accent-glow);
+
+  #algo-heap-sort-view .hs-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
   }
-  /* bar chart view */
-  #algo-heap-sort-view .hs-bars-container {
-    flex: 1; min-height: 0;
-    display: flex; align-items: flex-end; justify-content: center;
-    padding: 16px 12px 24px; position: relative;
+
+  #algo-heap-sort-view .hs-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
   }
-  #algo-heap-sort-view .hs-bars-container::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle at 50% 100%, rgba(248, 113, 113, .10), transparent 60%);
-    pointer-events: none;
+
+  #algo-heap-sort-view .hs-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
   }
-  #algo-heap-sort-view .hs-bars {
-    position: relative; display: flex; align-items: flex-end;
-    gap: 4px; height: 180px; padding-bottom: 22px;
+
+  #algo-heap-sort-view .hs-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
   }
-  #algo-heap-sort-view .hsBar-wrap {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    width: 36px; transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-heap-sort-view .hs-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
   }
-  #algo-heap-sort-view .hsBar {
-    width: 100%; border-radius: 8px 8px 4px 4px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
-    border: 1.5px solid rgba(255, 255, 255, .14);
-    display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 4px; color: #e2e8f0;
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px; font-weight: 800;
-    transition: height .45s cubic-bezier(.4, 0, .2, 1),
-                background .35s, border-color .35s, box-shadow .35s, color .35s, transform .35s;
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-heap-sort-view .hs-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  #algo-heap-sort-view .hsBar.hsBar--heap {
-    background: linear-gradient(180deg, rgba(239, 68, 68, .5), rgba(220, 38, 38, .25));
-    border-color: rgba(239, 68, 68, .8);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(239, 68, 68, .25);
+
+  #algo-heap-sort-view .hs-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
   }
-  #algo-heap-sort-view .hsBar.hsBar--sorted {
-    background: linear-gradient(180deg, rgba(6, 182, 212, .5), rgba(59, 130, 246, .25));
-    border-color: rgba(6, 182, 212, .8);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(6, 182, 212, .25);
+
+  #algo-heap-sort-view .hs-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-heap-sort-view .hsBar.hsBar--compare {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .55), rgba(245, 158, 11, .25));
-    border-color: #fbbf24;
-    color: #fff7ed;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, .25);
-    animation: hs-pulse .4s ease-in-out;
+
+  #algo-heap-sort-view .hs-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  #algo-heap-sort-view .hsBar.hsBar--swap {
-    background: linear-gradient(180deg, rgba(168, 85, 247, .5), rgba(124, 58, 237, .25));
-    border-color: #a855f7;
-    color: #fff;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, .3);
-    animation: hs-swap .4s ease-in-out;
+  #algo-heap-sort-view .hs-tab-item.active {
+    background: #2563eb;
+    color: #ffffff;
   }
-  #algo-heap-sort-view .hsBar.hsBar--max {
-    background: linear-gradient(180deg, rgba(251, 191, 36, .7), rgba(245, 158, 11, .4));
-    border-color: #fbbf24;
-    color: #fff;
-    box-shadow: 0 0 20px rgba(251, 191, 36, .5);
+
+  #algo-heap-sort-view .hs-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
   }
-  #algo-heap-sort-view .hsBar.hsBar--done {
-    background: linear-gradient(180deg, rgba(52, 211, 153, .55), rgba(16, 185, 129, .25));
-    border-color: var(--success);
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, .3);
+
+  #algo-heap-sort-view .hs-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  @keyframes hs-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
+  #algo-heap-sort-view .hs-lang-btn.active {
+    background: #334155;
+    color: #93c5fd;
   }
-  @keyframes hs-swap {
-    0%, 100% { transform: translateY(0); }
-    25% { transform: translateY(-6px); }
-    75% { transform: translateY(6px); }
+
+  #algo-heap-sort-view .hs-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  #algo-heap-sort-view .hsBar-idx {
-    position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
-    color: #64748b; font-size: 10px; font-weight: 600;
-    font-family: 'JetBrains Mono', Consolas, monospace;
+
+  #algo-heap-sort-view .hs-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
   }
-  /* tree view */
-  #algo-heap-sort-view .hs-tree-container {
-    flex: 1; min-height: 0; overflow: auto; padding: 12px;
-    display: flex; align-items: flex-start; justify-content: center;
+  #algo-heap-sort-view .hs-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
   }
-  #algo-heap-sort-view .hs-tree-container svg {
-    max-width: 100%; max-height: 100%;
+  #algo-heap-sort-view .hs-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #93c5fd;
+    min-width: 14px;
+    text-align: center;
   }
-  #algo-heap-sort-view .hs-tree-node {
-    transition: all .35s ease;
+
+  #algo-heap-sort-view .hs-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-heap-sort-view .hs-tree-edge {
-    stroke: rgba(255, 255, 255, .2); stroke-width: 2;
-    transition: stroke .35s, stroke-width .35s;
+  #algo-heap-sort-view .hs-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
-  #algo-heap-sort-view .hs-tree-edge.hsEdge--highlight {
-    stroke: var(--accent-b); stroke-width: 3;
-    filter: drop-shadow(0 0 4px var(--accent-glow));
+
+  #algo-heap-sort-view .hs-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
-  /* result banner */
-  #algo-heap-sort-view .hs-result {
-    margin: 0 16px 16px; padding: 14px 18px; border-radius: 12px;
-    display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, rgba(220, 38, 38, .12), rgba(248, 113, 113, .06));
-    border: 1px solid rgba(248, 113, 113, .28);
-    line-height: 1.55; font-size: 14px; color: #fecaca;
+
+  #algo-heap-sort-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
   }
-  #algo-heap-sort-view .hs-result .hs-emoji {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fef2f2; box-shadow: 0 4px 14px var(--accent-glow);
+  #algo-heap-sort-view .code-line.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-left: 3px solid #2563eb;
+    color: #ffffff;
+    font-weight: 700;
   }
-  #algo-heap-sort-view .hs-result.hsResult--done {
-    background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(16, 185, 129, .08));
-    border-color: rgba(52, 211, 153, .4); color: #d1fae5;
+  #algo-heap-sort-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
   }
-  #algo-heap-sort-view .hs-result.hsResult--done .hs-emoji {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 4px 14px rgba(52, 211, 153, .55);
+
+  /* Card 4: 执行日志卡片 */
+  #algo-heap-sort-view .hs-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  /* log */
-  #algo-heap-sort-view .hs-log {
-    min-height: 90px; max-height: 140px; padding: 10px 14px;
-    overflow: auto; background: rgba(8, 8, 24, .55);
-    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px;
-    line-height: 1.7; color: #94a3b8;
+
+  #algo-heap-sort-view .hs-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  #algo-heap-sort-view .hs-log-line { display: flex; gap: 8px; }
-  #algo-heap-sort-view .hs-log-line .hs-log-num { color: #475569; flex-shrink: 0; }
-  #algo-heap-sort-view .hs-log-line.hs-log-active { color: #fca5a5; font-weight: 600; }
-  #algo-heap-sort-view .hs-log-line.hs-log-active .hs-log-num { color: var(--accent-b); }
-  /* code panel */
-  #algo-heap-sort-view .hs-code {
-    min-height: 0; display: flex;
-    background: rgba(8, 8, 24, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 16px; overflow: hidden;
+
+  #algo-heap-sort-view .hs-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  #algo-heap-sort-view .hs-code [data-code-panel] { flex: 1; min-width: 0; }
-  /* controls */
-  #algo-heap-sort-view .hs-controls {
-    padding: 14px 18px;
-    background: rgba(24, 8, 8, .55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+
+  #algo-heap-sort-view .hs-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
-  #algo-heap-sort-view .hs-controls .hsCtrl-btn { min-width: 64px; }
-  #algo-heap-sort-view .hs-controls .hsCtrl-primary {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #fef2f2; border-color: transparent;
+
+  #algo-heap-sort-view .hs-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
   }
-  #algo-heap-sort-view .hs-counter {
-    color: #94a3b8; font-size: 13px; font-weight: 600;
-    min-width: 110px; text-align: center;
-    font-variant-numeric: tabular-nums;
+
+  /* 模态弹窗 */
+  #algo-heap-sort-view .hs-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
   }
-  #algo-heap-sort-view .hs-speed-wrap {
-    display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;
+  #algo-heap-sort-view .hs-modal-backdrop.hidden {
+    display: none;
   }
-  #algo-heap-sort-view #hs-speed { width: 130px; accent-color: var(--accent-b); }
-  @media (max-width: 1100px) {
-    #algo-heap-sort-view .hs-main { grid-template-columns: 1fr; overflow: auto; }
-    #algo-heap-sort-view .hs-code { min-height: 360px; }
+
+  #algo-heap-sort-view .hs-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-heap-sort-view .hs-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-heap-sort-view .hs-modal-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+  }
+  #algo-heap-sort-view .hs-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #algo-heap-sort-view .hs-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="hs-shell">
-  <div class="hs-hero">
-    <div class="hs-hero-left">
-      <span class="hs-icon">🌲</span>
-      <div>
-        <h1>堆排序</h1>
-        <div class="hs-sub">利用最大堆性质反复提取最大值 · 不稳定 · O(n log n)</div>
-      </div>
+<div id="algo-heap-sort-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="hs-header">
+    <div class="hs-header-left">
+      <div class="hs-icon-btn">🌲</div>
+      <h1 class="hs-main-title">堆排序</h1>
+      <button id="btn-open-problem-modal" class="hs-btn-problem">📋 题目</button>
+      <span class="hs-badge-mode">大顶堆构建·堆顶与末尾交换下沉</span>
+      <span class="hs-badge-complexity">O(n log n) · O(1)</span>
     </div>
-    <div class="hs-tip"><strong>核心动画：</strong>左栏柱状图展示数组当前状态，右栏树形图展示堆结构。堆化时比较父子节点，大值上浮；排序阶段不断将堆顶最大值交换到末尾并缩小堆。</div>
-  </div>
-  <div class="hs-main">
-    <div class="hs-left">
-      <section class="hsCard">
-        <div class="hsCard-title">输入 <span class="hsTag">数组</span></div>
-        <div class="hs-input-row">
-          <input id="hs-array" value="4,10,3,5,1,8,7,2">
-          <button id="hs-start">开始排序</button>
-        </div>
-        <div class="hs-examples">
-          <button class="hs-chip" data-arr="4,10,3,5,1,8,7,2">默认 8 元素</button>
-          <button class="hs-chip" data-arr="12,5,7,3,1,9,2,8,6">9 元素</button>
-          <button class="hs-chip" data-arr="1,2,3,4,5,6">已排序</button>
-          <button class="hs-chip" data-arr="6,5,4,3,2,1">逆序</button>
-          <button class="hs-chip" data-arr="3,3,3,1,1,2">含重复</button>
-        </div>
-      </section>
 
-      <div class="hsStats">
-        <div class="hsStat hsStat--heap"><div class="hsStat-label">堆大小</div><div class="hsStat-val" id="hs-stat-size">-</div></div>
-        <div class="hsStat hsStat--sorted"><div class="hsStat-label">已排序</div><div class="hsStat-val" id="hs-stat-sorted">0</div></div>
-        <div class="hsStat"><div class="hsStat-label">堆化次数</div><div class="hsStat-val" id="hs-stat-heapify">0</div></div>
-        <div class="hsStat"><div class="hsStat-label">比较次数</div><div class="hsStat-val" id="hs-stat-cmp">0</div></div>
-        <div class="hsStat"><div class="hsStat-label">交换次数</div><div class="hsStat-val" id="hs-stat-swap">0</div></div>
+    <div class="hs-header-right">
+      <button id="btn-generate" class="hs-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+      <button id="btn-reset" class="hs-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="hs-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="hs-left-section">
+
+      <!-- 卡片 1: 柱状图沙盘 -->
+      <div class="hs-card">
+        <div class="hs-card-header">
+          <div class="hs-card-title">
+            <span>📊 堆数组元素高度柱状沙盘</span>
+          </div>
+          <div class="hs-legend-bar">
+            <div><span class="hs-legend-dot" style="background:#eab308;"></span> 根节点 root</div>
+            <div><span class="hs-legend-dot" style="background:#3b82f6;"></span> 较大子节点</div>
+            <div><span class="hs-legend-dot" style="background:#ef4444;"></span> 下沉交换</div>
+            <div><span class="hs-legend-dot" style="background:#22c55e;"></span> 末尾已就位</div>
+          </div>
+        </div>
+
+        <!-- 柱状沙盘展示盒 -->
+        <div class="hs-sandbox-wrap">
+          <div id="hs-bars-container" class="hs-bars-container"></div>
+        </div>
       </div>
 
-      <section class="hsCard hs-visual">
-        <div class="hsCard-title">排序过程</div>
-        <div class="hs-dual-view">
-          <div class="hs-view-panel">
-            <div class="hs-view-label"><span class="hs-dot"></span>柱状图</div>
-            <div class="hs-bars-container">
-              <div class="hs-bars" id="hs-bars"></div>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="hs-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="hs-slider" />
+        <div class="hs-counter-badge">
+          <span id="step-cur" style="color: #2563eb;">0</span> / <span id="step-total">0</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="hs-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="hs-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="hs-ctrl-btn">▶</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="500" selected>正常</option>
+            <option value="200">快速</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 状态空间与指标监视器 -->
+      <div class="hs-card">
+        <div class="hs-card-header">
+          <div>
+            <div class="hs-card-title">🧭 堆状态与指标监视器</div>
+            <div class="hs-card-desc">当前堆容量 heapSize、当前根节点 root、较大子节点 largest 与比较/交换统计</div>
+          </div>
+          <span id="badge-heap-size" class="hs-counter-badge" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe;">堆容量: 5</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="hs-state-space-box">
+          <div class="hs-metrics-grid">
+            <div class="hs-metric-card">
+              <span class="hs-metric-label">当前堆容量 heapSize</span>
+              <span class="hs-metric-val" id="metric-heap-size" style="color: #2563eb;">5</span>
+            </div>
+            <div class="hs-metric-card">
+              <span class="hs-metric-label">当前根节点 root</span>
+              <span class="hs-metric-val" id="metric-root" style="color: #eab308;">0</span>
+            </div>
+            <div class="hs-metric-card">
+              <span class="hs-metric-label">较大子节点 largest</span>
+              <span class="hs-metric-val" id="metric-largest" style="color: #3b82f6;">1</span>
+            </div>
+            <div class="hs-metric-card">
+              <span class="hs-metric-label">比较 / 交换 Comp/Swap</span>
+              <span class="hs-metric-val" id="metric-comp-swap" style="color: #f59e0b;">0 / 0</span>
             </div>
           </div>
-          <div class="hs-view-panel">
-            <div class="hs-view-label"><span class="hs-dot"></span>堆结构</div>
-            <div class="hs-tree-container" id="hs-tree"></div>
+
+          <div class="hs-formula-box">
+            <span style="color:#64748b;">堆操作:</span>
+            <strong id="formula-action" style="color: #2563eb;">buildMaxHeap(arr, n)</strong>
+          </div>
+
+          <div class="hs-live-alert">
+            <span>💡</span> <span id="hs-live-text">准备就绪，点击运行开始堆排序。</span>
           </div>
         </div>
-        <div class="hs-result" id="hs-result">
-          <span class="hs-emoji">🌲</span>
-          <div id="step-message">点击「开始排序」查看堆排序逐步过程</div>
-        </div>
-      </section>
+      </div>
 
-      <section class="hsCard">
-        <div class="hsCard-title">执行日志 <button id="hs-log-clear" style="padding:4px 10px;font-size:11px;border-radius:999px;">清空</button></div>
-        <div class="hs-log" id="hs-log"></div>
-      </section>
-    </div>
-    <aside class="hs-code"><div data-code-panel></div></aside>
-  </div>
-  <div class="hs-controls">
-    <button id="step-reset" class="hsCtrl-btn">⏮ 重置</button>
-    <button id="step-prev" class="hsCtrl-btn">◀ 上一步</button>
-    <button id="step-play" class="hsCtrl-btn hsCtrl-primary">▶ 播放</button>
-    <button id="step-next" class="hsCtrl-btn">下一步 ▶</button>
-    <span id="step-counter" class="hs-counter">步骤: 0 / 0</span>
-    <div class="hs-speed-wrap">
-      <span>速度</span>
-      <input id="hs-speed" type="range" min="200" max="2500" step="100" value="700">
-      <span id="hs-speed-label" style="min-width:42px;">0.7s</span>
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="hs-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="hs-dark-terminal">
+        <div class="hs-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="hs-tab-group">
+            <button id="btn-tab-code" class="hs-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="hs-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="hs-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="hs-lang-group" id="code-lang-tabs">
+            <button class="hs-lang-btn active" data-lang="java">Java</button>
+            <button class="hs-lang-btn" data-lang="cpp">C++</button>
+            <button class="hs-lang-btn" data-lang="python">Python</button>
+            <button class="hs-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="hs-font-tools">
+            <div class="hs-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="hs-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="hs-window-dots">
+              <span class="hs-dot" style="background:#ef4444;"></span>
+              <span class="hs-dot" style="background:#eab308;"></span>
+              <span class="hs-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="hs-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="hs-log-card">
+        <div class="hs-log-header">
+          <div class="hs-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="hs-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="hs-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="hs-modal-backdrop hidden">
+    <div class="hs-modal-content">
+      <div class="hs-modal-header">
+        <div class="hs-modal-title">
+          <span>📋 算法原理与题目说明</span>
+        </div>
+        <button id="btn-close-problem-modal" class="hs-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="hs-modal-body">
+        <!-- 动态装载题目内容 -->
+      </div>
     </div>
   </div>
 </div>

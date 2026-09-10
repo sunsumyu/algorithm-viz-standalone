@@ -1,582 +1,946 @@
 <style>
+  /* === 岛屿的最大面积 (LC 695) · 100% 独立纯粹 Vanilla CSS 完美复刻标准 4-Card 架构 === */
   #algo-max-island-area-view {
     width: 100%;
     height: 100%;
-    color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
-    overflow: hidden;
-  }
-
-  #algo-max-island-area-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 8% 6%, #10b98155, transparent 55%),
-                radial-gradient(ellipse at 92% 94%, #05966955, transparent 55%),
-                linear-gradient(135deg, #022c22 0%, #064e3b 25%, #022c22 50%, #065f46 75%, #022c22 100%);
-    z-index: -2;
-  }
-
-  #algo-max-island-area-view::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(2, 44, 34, 0.4), transparent 70%);
-    z-index: -1;
-  }
-
-  #algo-max-island-area-view .mia-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .mia-hero {
-    padding: 16px 24px;
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 0 16px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .mia-hero .mia-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .mia-hero-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-  }
-
-  .mia-hero-text h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #10b981, #059669);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .mia-hero-text p {
-    margin: 0;
-    color: rgba(204, 214, 244, 0.8);
-    font-size: 13px;
-  }
-
-  .mia-tip {
-    max-width: 480px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    color: rgba(204, 214, 244, 0.9);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-
-  .mia-tip strong {
-    color: #10b981;
-    font-weight: 600;
-  }
-
-  #algo-max-island-area-view .mia-layout {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 16px;
-    padding: 16px;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1100px) {
-    #algo-max-island-area-view .mia-layout {
-      grid-template-columns: 1fr;
-      overflow: auto;
-    }
-  }
-
-  .mia-main {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .mia-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  }
-
-  .mia-controls {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .mia-input {
-    flex: 1;
-    min-width: 180px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(11, 10, 23, 0.8);
-    color: #cdd6f4;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .mia-input:focus {
-    border-color: #10b981;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-  }
-
-  .mia-btn {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: #022c22;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-  }
-
-  .mia-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-  }
-
-  .mia-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .mia-example {
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    background: rgba(16, 185, 129, 0.1);
-    color: #cdd6f4;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .mia-example:hover {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: #10b981;
-  }
-
-  .mia-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .mia-stat {
-    padding: 14px 0;
-    position: relative;
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .mia-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #10b981, #059669);
-  }
-
-  .mia-stat-label {
-    display: block;
-    margin-bottom: 6px;
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-  }
-
-  .mia-stat-val {
-    color: #10b981;
-    font-family: ui-monospace, monospace;
-    font-size: 19px;
-    font-weight: 700;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .mia-grid {
-    display: grid;
-    gap: 3px;
-    background: rgba(11, 10, 23, 0.8);
-    border-radius: 12px;
-    padding: 12px;
-    justify-content: center;
-    align-content: center;
-    margin: 16px auto;
-  }
-
-  .mia-cell {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.25s ease;
-    position: relative;
-  }
-
-  .mia-cell.water {
-    background: rgba(28, 27, 50, 0.4);
-    color: rgba(255, 255, 255, 0.3);
-  }
-
-  .mia-cell.land {
-    background: rgba(45, 55, 72, 0.5);
-    color: #cdd6f4;
-  }
-
-  .mia-cell.current {
-    background: rgba(16, 185, 129, 0.7);
-    color: #022c22;
-    transform: scale(1.1);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
-    animation: mia-ripple 0.6s ease-out;
-  }
-
-  .mia-cell.visited {
-    background: rgba(16, 185, 129, 0.35);
-    color: #cdd6f4;
-    animation: mia-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .mia-cell.stack {
-    background: rgba(251, 191, 36, 0.6);
-    color: #0f172a;
-    animation: mia-pulse 0.8s infinite;
-  }
-
-  .mia-cell.max-island {
-    background: rgba(16, 185, 129, 0.6);
-    color: #022c22;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
-  }
-
-  .mia-cell.prev-island {
-    background: rgba(132, 204, 146, 0.35);
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .mia-message {
-    margin: 0 14px 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    background: rgba(16, 185, 129, 0.08);
-    color: #cdd6f4;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .mia-log {
     min-height: 0;
-    max-height: 130px;
-    padding: 14px 16px;
-    overflow: auto;
-    background: rgba(11, 10, 23, 0.8);
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    color: rgba(204, 214, 244, 0.8);
-  }
-
-  .mia-log div {
-    padding: 2px 0;
-  }
-
-  .mia-log div.active {
-    color: #10b981;
-    font-weight: 600;
-  }
-
-  .mia-right {
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f1f5f9;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
+    padding: 8px 12px 10px;
+    box-sizing: border-box;
   }
 
-  .mia-code-card {
-    background: rgba(11, 10, 23, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  #algo-max-island-area-view * {
+    box-sizing: border-box;
+  }
+
+  /* 1. 顶栏 Header */
+  #algo-max-island-area-view .mia-header {
+    background: #ffffff;
     border-radius: 16px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .mia-stack-card {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    overflow: hidden;
-  }
-
-  .mia-stack-title {
-    color: rgba(204, 214, 244, 0.7);
-    font-size: 12px;
-    margin-bottom: 8px;
-  }
-
-  .mia-stack-items {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    min-height: 30px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
   }
 
-  .mia-stack-item {
+  #algo-max-island-area-view .mia-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  #algo-max-island-area-view .mia-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #algo-max-island-area-view .mia-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  #algo-max-island-area-view .mia-btn-problem {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #algo-max-island-area-view .mia-btn-problem:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  #algo-max-island-area-view .mia-badge-mode {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-max-island-area-view .mia-badge-complexity {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #a7f3d0;
+    white-space: nowrap;
+  }
+
+  #algo-max-island-area-view .mia-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #algo-max-island-area-view .mia-btn-generate {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #059669;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  #algo-max-island-area-view .mia-btn-generate:hover {
+    background: #047857;
+  }
+
+  #algo-max-island-area-view .mia-btn-reset {
     padding: 4px 10px;
     border-radius: 8px;
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10b981;
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    animation: mia-popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: #ffffff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-island-area-view .mia-btn-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
-  .mia-legend {
-    background: rgba(20, 18, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 12px;
+  #algo-max-island-area-view .mia-chip {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-island-area-view .mia-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* 2. 主演示区 4-Card 布局 (左 54% 右 46%) */
+  #algo-max-island-area-view .mia-main-layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  /* 左侧区域：Card 1 + Playback Bar + Card 2 */
+  #algo-max-island-area-view .mia-left-section {
+    flex: 1 1 54%;
+    min-width: 320px;
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 
-  .mia-legend-item {
+  /* 白色统一卡片 Card 1 & Card 2 */
+  #algo-max-island-area-view .mia-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #algo-max-island-area-view .mia-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #algo-max-island-area-view .mia-card-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #algo-max-island-area-view .mia-card-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  #algo-max-island-area-view .mia-legend-bar {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+  #algo-max-island-area-view .mia-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    margin-right: 3px;
   }
 
-  .mia-legend-box {
-    width: 16px;
-    height: 16px;
+  /* 网格沙盘展示盒 */
+  #algo-max-island-area-view .mia-sandbox-wrap {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  #algo-max-island-area-view .mia-grid-matrix {
+    display: inline-grid;
+    gap: 6px;
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    user-select: none;
+  }
+
+  #algo-max-island-area-view .mia-cell {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1.5px solid transparent;
+  }
+
+  #algo-max-island-area-view .mia-cell.is-water {
+    background: #eff6ff;
+    color: #93c5fd;
+    border-color: #dbeafe;
+  }
+
+  #algo-max-island-area-view .mia-cell.is-land {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+  }
+
+  #algo-max-island-area-view .mia-cell.is-scanning {
+    background: #fef9c3;
+    border-color: #ca8a04;
+    color: #a16207;
+    transform: scale(1.06);
+    box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.35);
+    z-index: 2;
+  }
+
+  #algo-max-island-area-view .mia-cell.is-current {
+    background: #d1fae5;
+    border-color: #10b981;
+    color: #047857;
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+    z-index: 3;
+  }
+
+  #algo-max-island-area-view .mia-cell.is-sunk {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-color: #cbd5e1;
+  }
+
+  /* 贯穿式 Scrubber 播放控制条 */
+  #algo-max-island-area-view .mia-playback-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #algo-max-island-area-view .mia-slider {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    accent-color: #059669;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  #algo-max-island-area-view .mia-counter-badge {
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  #algo-max-island-area-view .mia-ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-island-area-view .mia-ctrl-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  #algo-max-island-area-view .mia-play-circle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #059669;
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+    transition: all 0.15s;
+  }
+  #algo-max-island-area-view .mia-play-circle-btn:hover {
+    background: #047857;
+    transform: scale(1.05);
+  }
+
+  /* Card 2 状态空间 */
+  #algo-max-island-area-view .mia-state-space-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  #algo-max-island-area-view .mia-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  #algo-max-island-area-view .mia-metric-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #algo-max-island-area-view .mia-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  #algo-max-island-area-view .mia-metric-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  #algo-max-island-area-view .mia-formula-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+
+  #algo-max-island-area-view .mia-live-alert {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 11.5px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 右侧区域：Card 3 + Card 4 */
+  #algo-max-island-area-view .mia-right-section {
+    flex: 1 1 46%;
+    min-width: 300px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Card 3: 暗色代码终端面板 */
+  #algo-max-island-area-view .mia-dark-terminal {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex: 1.25;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-max-island-area-view .mia-terminal-header {
+    background: #1e293b;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+  }
+
+  #algo-max-island-area-view .mia-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-max-island-area-view .mia-tab-item {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-island-area-view .mia-tab-item.active {
+    background: #059669;
+    color: #ffffff;
+  }
+
+  #algo-max-island-area-view .mia-lang-group {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  #algo-max-island-area-view .mia-lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #algo-max-island-area-view .mia-lang-btn.active {
+    background: #334155;
+    color: #a7f3d0;
+  }
+
+  #algo-max-island-area-view .mia-font-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #algo-max-island-area-view .mia-font-scaler {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 1px 4px;
+  }
+  #algo-max-island-area-view .mia-font-scaler button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 1px 3px;
+  }
+  #algo-max-island-area-view .mia-font-indicator {
+    font-size: 9.5px;
+    font-family: monospace;
+    color: #a7f3d0;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  #algo-max-island-area-view .mia-window-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #algo-max-island-area-view .mia-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  #algo-max-island-area-view .mia-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  #algo-max-island-area-view .code-line {
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    white-space: pre;
+  }
+  #algo-max-island-area-view .code-line.active {
+    background: rgba(5, 150, 105, 0.2);
+    border-left: 3px solid #059669;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  #algo-max-island-area-view .code-line-num {
+    color: #475569;
+    font-size: 10.5px;
+    min-width: 20px;
+    text-align: right;
+    user-select: none;
+  }
+
+  /* Card 4: 执行日志卡片 */
+  #algo-max-island-area-view .mia-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex: 0.75;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-max-island-area-view .mia-log-header {
+    background: #ffffff;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  #algo-max-island-area-view .mia-log-header-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #algo-max-island-area-view .mia-log-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 1px 6px;
     border-radius: 4px;
   }
 
-  .mia-playback {
-    background: rgba(20, 18, 38, 0.5);
-    backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
+  #algo-max-island-area-view .mia-log-body {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
+    font-size: 11.5px;
   }
 
-  .mia-pb-row {
+  /* 模态弹窗 */
+  #algo-max-island-area-view .mia-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
-    gap: 10px;
     align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #algo-max-island-area-view .mia-modal-backdrop.hidden {
+    display: none;
   }
 
-  .mia-pb-btn {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(16, 185, 129, 0.1);
-    color: #cdd6f4;
-    cursor: pointer;
+  #algo-max-island-area-view .mia-modal-content {
+    background: #0f172a;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 580px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #algo-max-island-area-view .mia-modal-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  #algo-max-island-area-view .mia-modal-title {
     font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-weight: 800;
+    color: #f8fafc;
   }
-
-  .mia-pb-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .mia-pb-btn:not(:disabled):hover {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: #10b981;
-    transform: translateY(-1px);
-  }
-
-  .mia-pb-btn.play {
-    background: linear-gradient(135deg, #10b981, #059669);
+  #algo-max-island-area-view .mia-modal-close {
+    background: transparent;
     border: none;
-    color: #022c22;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
   }
-
-  .mia-pb-btn.play:not(:disabled):hover {
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-  }
-
-  .mia-speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: rgba(204, 214, 244, 0.7);
-  }
-
-  .mia-speed-row input {
-    flex: 1;
-    accent-color: #10b981;
-  }
-
-  .mia-counter {
-    color: rgba(204, 214, 244, 0.6);
-    font-size: 13px;
-    font-family: ui-monospace, monospace;
-    text-align: center;
-    -webkit-font-variant-numeric: tabular-nums;
-    font-variant-numeric: tabular-nums;
-  }
-
-  @keyframes mia-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-  }
-
-  @keyframes mia-popIn {
-    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-  }
-
-  @keyframes mia-ripple {
-    0% { transform: scale(0.8); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    100% { transform: scale(1.5); opacity: 0; box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
-  }
-
-  .mia-cell.current { animation: mia-ripple 0.6s ease-out; }
-  .mia-cell.visited { animation: mia-popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-  @media (max-width: 1100px) {
-    .mia-main { overflow: visible; }
+  #algo-max-island-area-view .mia-modal-body {
+    padding: 16px;
+    overflow-y: auto;
   }
 </style>
 
-<div class="mia-page">
-  <div class="mia-hero">
-    <div class="mia-title-wrapper">
-      <div class="mia-hero-icon">📐</div>
-      <div class="mia-hero-text">
-        <h2>最大岛屿面积（DFS）</h2>
-        <p>LeetCode 695 · DFS 计算每座岛屿面积，追踪并展示最大面积。</p>
-      </div>
+<div id="algo-max-island-area-view">
+  <!-- 1. 顶栏 Header -->
+  <header class="mia-header">
+    <div class="mia-header-left">
+      <div class="mia-icon-btn">🏔️</div>
+      <h1 class="mia-main-title">LeetCode 695. 岛屿的最大面积</h1>
+      <button id="btn-open-problem-modal" class="mia-btn-problem">📋 题目</button>
+      <span class="mia-badge-mode">DFS 递归累加最大面积</span>
+      <span class="mia-badge-complexity">O(M×N) · O(M×N)</span>
     </div>
-    <div class="mia-tip"><strong>DFS 面积：</strong>每遇到未访问陆地，用 DFS 递归计算该岛屿面积，与当前最大值比较并更新。</div>
-  </div>
 
-  <div class="mia-layout">
-    <div class="mia-main">
+    <!-- 预设与操作工具组 -->
+    <div class="mia-header-right">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">预设案例:</span>
+        <button class="mia-chip" data-case="classic">经典 5 格大岛 [4×5]</button>
+        <button class="mia-chip" data-case="single">单块 8 格岛 [4×4]</button>
+        <button class="mia-chip" data-case="scattered">散落孤岛 [4×5]</button>
+      </div>
+
+      <button id="btn-generate" class="mia-btn-generate">
+        <span>▶ 运行</span>
+      </button>
+
+      <button id="btn-reset" class="mia-btn-reset">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 主演示区 4-Card 布局 -->
+  <main class="mia-main-layout">
+
+    <!-- ================= 左侧：双看板 + 底部进度条 ================= -->
+    <section class="mia-left-section">
+
+      <!-- 卡片 1: 网格矩阵沉岛沙盘 (Grid Canvas) -->
       <div class="mia-card">
-        <div class="mia-controls">
-          <input id="mia-input" class="mia-input" value="0,0,1,0;1,1,1,0;0,1,0,0;1,1,0,0" />
-          <button id="mia-start" class="mia-btn">计算面积</button>
-          <button class="mia-example" data-val="0,0,1,0;1,1,1,0;0,1,0,0;1,1,0,0">示例1</button>
-          <button class="mia-example" data-val="0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0">示例2</button>
-          <button class="mia-example" data-val="1,1,0,1;1,0,0,1;0,0,1,1;1,1,1,0">示例3</button>
+        <div class="mia-card-header">
+          <div class="mia-card-title">
+            <span>📊 网格矩阵面积探查沙盘 (Grid Canvas)</span>
+          </div>
+          <div class="mia-legend-bar">
+            <div><span class="mia-legend-dot" style="background:#059669;"></span> 陆地 (1)</div>
+            <div><span class="mia-legend-dot" style="background:#60a5fa;"></span> 水域 (0)</div>
+            <div><span class="mia-legend-dot" style="background:#fbbf24;"></span> DFS 探查中</div>
+            <div><span class="mia-legend-dot" style="background:#94a3b8;"></span> 已沉没计数</div>
+          </div>
         </div>
 
-        <div class="mia-stats">
-          <div class="mia-stat"><span class="mia-stat-label">当前岛屿面积</span><span class="mia-stat-val" id="mia-current-area">0</span></div>
-          <div class="mia-stat"><span class="mia-stat-label">最大面积</span><span class="mia-stat-val" id="mia-max-area">0</span></div>
-          <div class="mia-stat"><span class="mia-stat-label">已探索岛屿</span><span class="mia-stat-val" id="mia-island-count">0</span></div>
-          <div class="mia-stat"><span class="mia-stat-label">DFS 栈深度</span><span class="mia-stat-val" id="mia-depth">0</span></div>
+        <!-- 网格沙盘展示盒 -->
+        <div class="mia-sandbox-wrap">
+          <div class="mia-grid-matrix" id="mia-grid-container"></div>
         </div>
-
-        <div class="mia-grid" id="mia-grid"></div>
-
-        <div class="mia-message" id="step-message">点击「计算面积」查看 DFS 计算各岛屿面积并找出最大值。</div>
-
-        <div class="mia-log" id="mia-log"></div>
       </div>
-    </div>
 
-    <div class="mia-right">
-      <div data-code-panel class="mia-code-card"></div>
-      <div class="mia-stack-card">
-        <div class="mia-stack-title">DFS 栈</div>
-        <div class="mia-stack-items" id="mia-stack-vis"></div>
-      </div>
-      <div class="mia-legend">
-        <div class="mia-legend-item"><span class="mia-legend-box" style="background:rgba(28,27,50,0.4)"></span>水（'0'）</div>
-        <div class="mia-legend-item"><span class="mia-legend-box" style="background:rgba(45,55,72,0.5)"></span>未访问陆地（'1'）</div>
-        <div class="mia-legend-item"><span class="mia-legend-box" style="background:rgba(251,191,36,0.6)"></span>DFS 栈中</div>
-        <div class="mia-legend-item"><span class="mia-legend-box" style="background:rgba(16,185,129,0.7)"></span>当前访问</div>
-        <div class="mia-legend-item"><span class="mia-legend-box" style="background:rgba(16,185,129,0.35)"></span>当前岛屿已访问</div>
-        <div class="mia-legend-item"><span class="mia-legend-box" style="background:rgba(16,185,129,0.6)"></span>最大岛屿</div>
-        <div class="mia-legend-item"><span class="mia-legend-box" style="background:rgba(132,204,146,0.35)"></span>已探索岛屿</div>
-      </div>
-      <div class="mia-playback">
-        <div class="mia-pb-row">
-          <button id="step-reset" class="mia-pb-btn">重置</button>
-          <button id="step-prev" class="mia-pb-btn">上一步</button>
-          <button id="step-play" class="mia-pb-btn play">播放</button>
-          <button id="step-next" class="mia-pb-btn">下一步</button>
+      <!-- 贯穿式 Scrubber 步数进度条与播放控制器 -->
+      <div class="mia-playback-bar">
+        <input type="range" id="slider-progress" min="0" max="0" value="0" class="mia-slider" />
+        <div class="mia-counter-badge">
+          <span id="step-cur" style="color: #059669;">0</span> / <span id="step-total">0</span>
         </div>
-        <div class="mia-speed-row">
-          <span>速度</span>
-          <input id="mia-speed" type="range" min="150" max="1500" step="100" value="700" />
-          <span id="mia-speed-label" style="font-family:ui-monospace,monospace;font-size:13px;color:rgba(204,214,244,0.7);margin-left:4px;">0.7s</span>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <button id="btn-step-prev" title="上一步" class="mia-ctrl-btn">◀</button>
+          <button id="btn-play-pause" title="自动播放/暂停" class="mia-play-circle-btn">
+            <span id="play-icon">▶</span>
+          </button>
+          <button id="btn-step-next" title="下一步" class="mia-ctrl-btn">▶</button>
         </div>
-        <div id="step-counter" class="mia-counter">步骤: 1 / 1</div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+          <select id="select-speed" style="padding: 2px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11px; background: #ffffff;">
+            <option value="1200">慢速</option>
+            <option value="400" selected>正常</option>
+            <option value="150">快速</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 面积指标监视器与状态空间 -->
+      <div class="mia-card">
+        <div class="mia-card-header">
+          <div>
+            <div class="mia-card-title">🧭 面积指标监视器 (Area Metrics Monitor)</div>
+            <div class="mia-card-desc">当前岛屿面积累加、历史最大面积与决策判定</div>
+          </div>
+          <span id="badge-max-area" class="mia-counter-badge" style="color:#059669; background:#ecfdf5; border-color:#a7f3d0;">最大面积: 0</span>
+        </div>
+
+        <!-- 状态空间展示盒 -->
+        <div class="mia-state-space-box">
+          <div class="mia-metrics-grid">
+            <div class="mia-metric-card">
+              <span class="mia-metric-label">当前扫描格</span>
+              <span class="mia-metric-val" id="metric-scan" style="color: #3b82f6;">(0, 0)</span>
+            </div>
+            <div class="mia-metric-card">
+              <span class="mia-metric-label">当前 DFS 坐标</span>
+              <span class="mia-metric-val" id="metric-curr" style="color: #fbbf24;">(0, 0)</span>
+            </div>
+            <div class="mia-metric-card">
+              <span class="mia-metric-label">当前岛屿面积 curArea</span>
+              <span class="mia-metric-val" id="metric-cur-area" style="color: #059669;">0</span>
+            </div>
+            <div class="mia-metric-card">
+              <span class="mia-metric-label">最大面积 MAX AREA</span>
+              <span class="mia-metric-val" id="metric-max-area" style="color: #10b981;">0</span>
+            </div>
+          </div>
+
+          <div class="mia-formula-box">
+            <span style="color:#64748b;">面积递推:</span>
+            <strong id="formula-action" style="color: #059669;">area = 1 + dfs(上)+dfs(下)+dfs(左)+dfs(右)</strong>
+          </div>
+
+          <div class="mia-live-alert">
+            <span>💡</span> <span id="mia-live-text">准备就绪，点击运行开始计算最大连通岛屿面积。</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 右侧：代码终端 + 执行日志 ================= -->
+    <section class="mia-right-section">
+
+      <!-- 卡片 3: 暗色代码终端面板 -->
+      <div class="mia-dark-terminal">
+        <div class="mia-terminal-header">
+          <!-- 1. 主 Tab 切换器 (源码 / 题目 / 精讲) -->
+          <div class="mia-tab-group">
+            <button id="btn-tab-code" class="mia-tab-item active">💻 代码调试</button>
+            <button id="btn-tab-problem" class="mia-tab-item">📋 题目描述</button>
+            <button id="btn-tab-analysis" class="mia-tab-item">💡 算法精讲</button>
+          </div>
+
+          <!-- 2. 多语言切换器 -->
+          <div class="mia-lang-group" id="code-lang-tabs">
+            <button class="mia-lang-btn active" data-lang="java">Java</button>
+            <button class="mia-lang-btn" data-lang="cpp">C++</button>
+            <button class="mia-lang-btn" data-lang="python">Python</button>
+            <button class="mia-lang-btn" data-lang="javascript">JS</button>
+          </div>
+
+          <!-- 3. 字号缩放器与 macOS 窗口微控制 -->
+          <div class="mia-font-tools">
+            <div class="mia-font-scaler">
+              <button id="btn-code-font-dec" title="缩小代码字号">A-</button>
+              <span id="code-font-indicator" class="mia-font-indicator">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号">A+</button>
+            </div>
+
+            <div class="mia-window-dots">
+              <span class="mia-dot" style="background:#ef4444;"></span>
+              <span class="mia-dot" style="background:#eab308;"></span>
+              <span class="mia-dot" style="background:#22c55e;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 1: 源码高亮与单步追踪视图 -->
+        <div id="code-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+          <div class="mia-terminal-body">
+            <div id="code-lines-wrapper">
+              <!-- 动态装载代码行 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 容器 2: 题目完整描述视图 -->
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载题目内容 -->
+        </div>
+
+        <!-- 容器 3: 算法精讲视图 -->
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1;">
+          <!-- 动态装载精讲内容 -->
+        </div>
+      </div>
+
+      <!-- 卡片 4: 独立执行日志卡片 -->
+      <div class="mia-log-card">
+        <div class="mia-log-header">
+          <div class="mia-log-header-title">
+            <span>📜 执行日志</span>
+          </div>
+          <span id="log-count" class="mia-log-count">0 条记录</span>
+        </div>
+
+        <div id="log-container" class="mia-log-body">
+          <!-- 动态填充日志条目 -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 4. 力扣原题描述轻量模态弹窗 (Modal) -->
+  <div id="modal-problem" class="mia-modal-backdrop hidden">
+    <div class="mia-modal-content">
+      <div class="mia-modal-header">
+        <div class="mia-modal-title">
+          <span>📋 力扣原题描述</span>
+        </div>
+        <button id="btn-close-problem-modal" class="mia-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div id="modal-problem-body" class="mia-modal-body">
+        <!-- 动态装载题目内容 -->
       </div>
     </div>
   </div>

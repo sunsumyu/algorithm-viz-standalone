@@ -1,0 +1,1358 @@
+/**
+ * 统一暗色代码终端表现器深模块 (DarkCodeTerminalPresenter)
+ * 遵循深模块 (Deep Module) 与外观模式 (Facade Pattern) 原则：
+ * 对外暴露极简高杠杆接口，彻底封装内部状态：
+ *   1. Tab 切换 (代码调试 / 题目描述 / 递推精讲)
+ *   2. 4 语种切换 (Java / C++ / Python / JS)
+ *   3. 字号缩放器 (A- / A+) 与 macOS 红黄绿窗口圆点
+ *   4. 单步代码行高亮与平滑滚动
+ *   5. 语义锚点 (@step:anchor) 跨语种自动映射与纯净源码展示
+ *   6. 力扣原题模态弹窗打开与关闭
+ */
+
+import type { StepVar } from '../interfaces';
+import { highlightTokens, escapeHtml } from '../code-highlighter';
+import { VariableContextResolver, type ResolvedVariable } from '../variable-context-resolver';
+import {
+  CodePresentationModel,
+  type KeyPointsData,
+  type ProblemDetail,
+} from '../code-presentation-model';
+import { ProblemAnalysisViewer } from '../problem-analysis-viewer';
+
+export type SingleLangHighlightTarget =
+  | number
+  | number[]
+  | { from: number; to: number }
+  | { primary: number | number[]; context?: number | number[] }
+  | { anchor: string };
+
+export type HighlightTarget =
+  | string
+  | SingleLangHighlightTarget
+  | Record<string, SingleLangHighlightTarget>
+  | object
+  | { anchor: string };
+
+export interface DarkCodeTerminalConfig {
+  /** 4 语种源码映射表，如 { java: string[], cpp: string[], python: string[], javascript: string[] } */
+  codeLanguages?: Record<string, string[]>;
+  /** 单一语言源码行数组（未提供 codeLanguages 时的简写） */
+  codeLines?: string[];
+  /** 面板标题（可选） */
+  title?: string;
+  /** 题目完整描述 HTML 内容（支持示例、约束） */
+  problemHtml?: string;
+  /** 算法核心要点/回溯五部曲精讲 HTML 内容 */
+  analysisHtml?: string;
+  /** 题目结构化模型数据（可选，自动生成 HTML） */
+  problemDetail?: ProblemDetail;
+  /** 核心要点结构化数据（可选，自动生成 HTML） */
+  keyPoints?: KeyPointsData | string;
+  /** 默认语言（默认 'java'） */
+  initialLang?: string;
+  /** 默认字号（默认 12） */
+  fontSize?: number;
+  /** 算法唯一标识键（用于 CodeStepIndexer 索引查找） */
+  algoKey?: string;
+  /** 逐行详细讲解 */
+  lineExplanations?: Record<number, string> | Record<string, Record<number, string>>;
+  /** 语言切换回调（可选） */
+  onLanguageChange?: (lang: string) => void;
+}
+
+export interface DarkCodeTerminalInstance {
+  /** 高亮指定物理行或多行目标 */
+  highlightLine(target: HighlightTarget | null | undefined): void;
+  /** 同步更新变量监视面板与实时调试上下文 */
+  updateVars(vars?: StepVar[], stepContext?: unknown): void;
+  /** 手动切换编程语言 */
+  switchLanguage(lang: string): void;
+  /** 手动切换看板 Tab */
+  switchTab(tab: 'code' | 'problem' | 'analysis'): void;
+  /** 获取当前编程语言 */
+  getCurrentLanguage(): string;
+  /** 获取当前字号 */
+  getFontSize(): number;
+  /** 复制代码到系统剪贴板 */
+  copyCode(): Promise<boolean>;
+  /** 语义与代码多语言模型 */
+  codeModel?: CodePresentationModel;
+  /** 销毁实例并解绑事件 */
+  destroy(): void;
+}
+
+export interface NormalizedHighlight {
+  lines: number[];
+  focusLine?: number;
+}
+
+const TAB_CODE_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
+const TAB_PROBLEM_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>';
+const TAB_ANALYSIS_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"></path></svg>';
+
+export class DarkCodeTerminalPresenter {
+  /**
+   * 纯函数：将多态高亮目标（数字、字符串、数组、区间、多语言字典）统一归一化为物理行号数组
+   */
+  public static normalizeHighlightTarget(
+    target: HighlightTarget | null | undefined,
+    currentLang: string = 'java',
+    codeModel?: CodePresentationModel
+  ): NormalizedHighlight {
+    if (target == null) return { lines: [] };
+
+    if (typeof target === 'number') {
+      return { lines: [target], focusLine: target };
+    }
+    if (typeof target === 'string') {
+      const parsed = parseInt(target, 10);
+      if (!isNaN(parsed)) {
+        return { lines: [parsed], focusLine: parsed };
+      }
+      if (codeModel) {
+        const anchorLine = codeModel.resolveAnchorLine(target, currentLang);
+        if (anchorLine != null) {
+          return this.normalizeHighlightTarget(anchorLine, currentLang, codeModel);
+        }
+      }
+      return { lines: [] };
+    }
+    if (Array.isArray(target)) {
+      const valid = target
+        .map((t) => (typeof t === 'number' ? t : parseInt(t, 10)))
+        .filter((n) => !isNaN(n));
+      return { lines: valid, focusLine: valid[0] };
+    }
+    if (typeof target === 'object') {
+      if ('anchor' in target && typeof (target as any).anchor === 'string') {
+        if (codeModel) {
+          const anchorLine = codeModel.resolveAnchorLine((target as any).anchor, currentLang);
+          if (anchorLine != null) {
+            return this.normalizeHighlightTarget(anchorLine, currentLang, codeModel);
+          }
+        }
+      }
+      if ('from' in target && 'to' in target && typeof target.from === 'number' && typeof target.to === 'number') {
+        const range: number[] = [];
+        for (let i = target.from; i <= target.to; i++) range.push(i);
+        return { lines: range, focusLine: target.from };
+      }
+      if ('primary' in target) {
+        const p = (target as any).primary;
+        return this.normalizeHighlightTarget(p, currentLang, codeModel);
+      }
+      // 多语言字典解包
+      const dict = target as Record<string, any>;
+      let resolved = dict[currentLang];
+      if (resolved == null && (currentLang === 'js' || currentLang === 'javascript')) {
+        resolved = dict['javascript'] ?? dict['js'];
+      }
+      if (resolved == null && (currentLang === 'python' || currentLang === 'py')) {
+        resolved = dict['python'] ?? dict['py'];
+      }
+      if (resolved == null && currentLang.includes('cpp')) {
+        resolved = dict['cpp'] ?? dict['c++'];
+      }
+      if (resolved == null) {
+        resolved = dict['java'] ?? Object.values(dict)[0];
+      }
+      return this.normalizeHighlightTarget(resolved, currentLang, codeModel);
+    }
+    return { lines: [] };
+  }
+
+  /**
+   * 将暗色终端挂载到指定容器并绑定所有交互行为
+   */
+  public static mount(
+    root: HTMLElement | null,
+    config: DarkCodeTerminalConfig
+  ): DarkCodeTerminalInstance {
+    if (!root) {
+      return {
+        highlightLine: () => {},
+        updateVars: () => {},
+        switchLanguage: () => {},
+        switchTab: () => {},
+        getCurrentLanguage: () => config.initialLang || 'java',
+        getFontSize: () => config.fontSize || 12,
+        copyCode: async () => false,
+        destroy: () => {},
+      };
+    }
+
+    let currentLang = config.initialLang || 'java';
+    let codeFontSize = config.fontSize || 12;
+    let activeLineTarget: HighlightTarget | null | undefined = null;
+    let currentVarsMap = new Map<string, ResolvedVariable>();
+
+    // 0. 规范化多语言代码与语义模型
+    const initialLangs =
+      config.codeLanguages && Object.keys(config.codeLanguages).length > 0
+        ? config.codeLanguages
+        : config.codeLines
+        ? { [currentLang]: config.codeLines }
+        : { java: [] };
+
+    const codeModel = new CodePresentationModel({
+      languages: initialLangs,
+      language: currentLang,
+      algoKey: config.algoKey,
+      lineExplanations: config.lineExplanations,
+      problemDetail: config.problemDetail,
+      keyPoints: typeof config.keyPoints === 'object' ? config.keyPoints : undefined,
+    });
+
+    // 1. 自动检测并注入暗色终端骨架（若模板未预置 DOM）
+    this.ensureTerminalSkeleton(root);
+
+    // 2. DOM 节点查询 (支持多种命名空间和统一样式)
+    const btnTabCode = root.querySelector('#btn-tab-code') as HTMLElement | null;
+    const btnTabProblem = root.querySelector('#btn-tab-problem') as HTMLElement | null;
+    const btnTabAnalysis = root.querySelector('#btn-tab-analysis') as HTMLElement | null;
+
+    // 强制同步 Tab 按钮的模板标准（对齐不同路径，包含矢量图标与内嵌底槽）
+    if (btnTabCode) {
+      if (!btnTabCode.querySelector('svg') && !btnTabCode.querySelector('i')) {
+        btnTabCode.innerHTML = `${TAB_CODE_ICON}<span>代码调试</span>`;
+      }
+      btnTabCode.style.cssText =
+        'background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.25);';
+    }
+    if (btnTabProblem) {
+      if (!btnTabProblem.querySelector('svg') && !btnTabProblem.querySelector('i')) {
+        btnTabProblem.innerHTML = `${TAB_PROBLEM_ICON}<span>题目描述</span>`;
+      }
+      btnTabProblem.style.cssText =
+        'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+    }
+    if (btnTabAnalysis) {
+      if (!btnTabAnalysis.querySelector('svg') && !btnTabAnalysis.querySelector('i')) {
+        btnTabAnalysis.innerHTML = `${TAB_ANALYSIS_ICON}<span>递推精讲</span>`;
+      }
+      btnTabAnalysis.style.cssText =
+        'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+    }
+    const tabGroupEl = btnTabCode?.parentElement;
+    if (tabGroupEl) {
+      tabGroupEl.style.cssText =
+        'display: flex; align-items: center; gap: 2px; background: #020617; padding: 2px; border-radius: 8px; border: 1px solid #1e293b; flex-shrink: 0;';
+    }
+
+    const viewCode = root.querySelector('#code-view-container') as HTMLElement | null;
+    const viewProblem = root.querySelector('#problem-view-container') as HTMLElement | null;
+    const viewAnalysis = root.querySelector('#analysis-view-container') as HTMLElement | null;
+
+    const codeWrapper = root.querySelector('#code-lines-wrapper') as HTMLElement | null;
+    const langBtns = root.querySelectorAll<HTMLButtonElement>(
+      '#code-lang-tabs .co-lang-btn, #code-lang-tabs .cs-lang-btn, #code-lang-tabs .lang-btn, #code-lang-tabs .fr-lang-btn, #code-lang-tabs [data-lang]'
+    );
+
+    const btnFontDec = root.querySelector('#btn-code-font-dec') as HTMLElement | null;
+    const btnFontInc = root.querySelector('#btn-code-font-inc') as HTMLElement | null;
+    const fontIndicator = root.querySelector('#code-font-indicator') as HTMLElement | null;
+
+    let btnCopy = root.querySelector('#btn-code-copy') as HTMLElement | null;
+    if (!btnCopy) {
+      const fontContainer = (root.querySelector('#code-font-container') || root.querySelector('.font-tools')) as HTMLElement | null;
+      if (fontContainer && typeof fontContainer.appendChild === 'function') {
+        const createdBtn = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-copy') as HTMLElement;
+        createdBtn.className = 'btn-code-copy';
+        createdBtn.title = '复制当前完整代码';
+        createdBtn.style.cssText =
+          'background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px 7px; color: #94a3b8; font-size: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease; white-space: nowrap; user-select: none;';
+        createdBtn.innerHTML = `
+          <span class="copy-icon" style="display: inline-flex; align-items: center;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </span>
+          <span class="copy-text">复制</span>
+        `;
+        if (typeof fontContainer.insertBefore === 'function' && fontContainer.firstChild) {
+          fontContainer.insertBefore(createdBtn, fontContainer.firstChild);
+        } else {
+          fontContainer.appendChild(createdBtn);
+        }
+        btnCopy = createdBtn;
+      }
+    }
+
+    const modalProblem = root.querySelector('#modal-problem') as HTMLElement | null;
+    if (modalProblem) {
+      modalProblem.style.display = 'none';
+      if (!modalProblem.classList.contains('hidden')) {
+        modalProblem.classList.add('hidden');
+      }
+    }
+    const modalBody = root.querySelector('#modal-problem-body') as HTMLElement | null;
+    const modalTitle = root.querySelector(
+      '#modal-problem [class*="modal-title"], [class*="-modal-title"]'
+    ) as HTMLElement | null;
+    if (modalTitle) {
+      modalTitle.innerHTML = '<span>📋 算法原理与题目说明</span>';
+    }
+    const btnOpenModals = root.querySelectorAll<HTMLElement>(
+      '#btn-open-problem-modal, #btn-problem-info, .btn-problem, [class*="-btn-problem"]'
+    );
+    const btnCloseModal = root.querySelector('#btn-close-problem-modal') as HTMLElement | null;
+
+    // 3. 静态与结构化内容注入
+    if (viewProblem) {
+      if (config.problemHtml) {
+        viewProblem.innerHTML = config.problemHtml;
+      } else if (config.problemDetail) {
+        ProblemAnalysisViewer.renderProblemDetail(viewProblem, config.problemDetail);
+      }
+    }
+    if (modalBody) {
+      const hasProblem = Boolean(config.problemHtml || config.problemDetail);
+      const hasAnalysis = Boolean(config.analysisHtml || config.keyPoints);
+
+      if (hasProblem && hasAnalysis) {
+        let probHtml = '';
+        if (config.problemHtml) {
+          probHtml = config.problemHtml;
+        } else if (config.problemDetail) {
+          const temp = DarkCodeTerminalPresenter.createSafeElement('div');
+          ProblemAnalysisViewer.renderProblemDetail(temp, config.problemDetail);
+          probHtml = temp.innerHTML;
+        }
+
+        let analysisHtml = '';
+        if (config.analysisHtml) {
+          analysisHtml = config.analysisHtml;
+        } else if (config.keyPoints) {
+          const temp = DarkCodeTerminalPresenter.createSafeElement('div');
+          ProblemAnalysisViewer.renderKeyPoints(temp, config.keyPoints);
+          analysisHtml = temp.innerHTML;
+        }
+
+        modalBody.innerHTML = `
+          <div class="modal-combined-container" style="display: flex; flex-direction: column; gap: 20px;">
+            <section class="modal-section-problem" style="background: rgba(15, 23, 42, 0.65); border: 1px solid #334155; border-radius: 10px; padding: 18px 20px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 14px;">
+                <span style="font-weight: 700; font-size: 15px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                  📖 题目规格与说明
+                </span>
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                  Problem Spec
+                </span>
+              </div>
+              <div class="modal-section-body" style="font-size: 13px; line-height: 1.7; color: #cbd5e1;">
+                ${probHtml}
+              </div>
+            </section>
+
+            <section class="modal-section-analysis" style="background: rgba(15, 23, 42, 0.65); border: 1px solid #334155; border-radius: 10px; padding: 18px 20px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 14px;">
+                <span style="font-weight: 700; font-size: 15px; color: #34d399; display: flex; align-items: center; gap: 6px;">
+                  💡 核心算法原理与状态推导
+                </span>
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);">
+                  Algorithm Principles
+                </span>
+              </div>
+              <div class="modal-section-body" style="font-size: 13px; line-height: 1.7; color: #cbd5e1;">
+                ${analysisHtml}
+              </div>
+            </section>
+          </div>
+        `;
+      } else if (hasProblem) {
+        if (config.problemHtml) {
+          modalBody.innerHTML = config.problemHtml;
+        } else if (config.problemDetail) {
+          ProblemAnalysisViewer.renderProblemDetail(modalBody, config.problemDetail);
+        }
+      } else if (hasAnalysis) {
+        if (config.analysisHtml) {
+          modalBody.innerHTML = config.analysisHtml;
+        } else if (config.keyPoints) {
+          ProblemAnalysisViewer.renderKeyPoints(modalBody, config.keyPoints);
+        }
+      }
+    }
+    if (viewAnalysis) {
+      if (config.analysisHtml) {
+        viewAnalysis.innerHTML = config.analysisHtml;
+      } else if (config.keyPoints) {
+        ProblemAnalysisViewer.renderKeyPoints(viewAnalysis, config.keyPoints);
+      }
+    }
+
+    // 4. 渲染代码行 (结合单趟词法扫描进行 Token 级语法高亮)
+    const updateInlineHint = (activeLineEl: HTMLElement | null) => {
+      if (!codeWrapper) return;
+      codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
+        if (typeof el.remove === 'function') el.remove();
+        else if (el.parentElement) el.parentElement.removeChild(el);
+      });
+
+      if (!activeLineEl || currentVarsMap.size === 0) return;
+      const rawLine = activeLineEl.dataset?.raw || activeLineEl.getAttribute?.('data-raw') || '';
+      if (!rawLine) return;
+
+      const hintSummary = VariableContextResolver.formatInlineSummary(currentVarsMap, rawLine);
+      if (!hintSummary) return;
+
+      const hintEl = DarkCodeTerminalPresenter.createSafeElement('span');
+      hintEl.className = 'algo-code-inline-hint';
+      hintEl.style.cssText =
+        'color: #38bdf8; opacity: 0.85; font-style: italic; font-size: 10.5px; margin-left: 14px; user-select: none; font-weight: 500; display: inline-flex; align-items: center;';
+      hintEl.textContent = hintSummary;
+
+      const textEl = activeLineEl.querySelector?.('.algo-code-line-text') || activeLineEl;
+      if (typeof textEl.appendChild === 'function') {
+        textEl.appendChild(hintEl);
+      }
+    };
+
+    const renderCodeLines = () => {
+      if (!codeWrapper) return;
+      const lines = codeModel.getLines(currentLang);
+      const linesHtml = lines
+        .map((line, idx) => {
+          const lineNum = idx + 1;
+          const highlightedCode = highlightTokens(line, currentLang);
+          return `
+            <div class="code-line algo-code-line" data-line="${lineNum}" data-raw="${escapeHtml(line)}" style="font-size: ${codeFontSize}px; padding: 1px 6px; border-radius: 4px; display: flex; align-items: flex-start; gap: 12px; white-space: pre; border-left: 3px solid transparent; transition: background-color 0.15s ease, border-color 0.15s ease;">
+              <span class="code-line-num algo-code-line-number" style="color: #475569; font-size: 10.5px; min-width: 20px; text-align: right; user-select: none;">${lineNum}</span>
+              <span class="code-line-text algo-code-line-text">${highlightedCode}</span>
+            </div>
+          `;
+        })
+        .join('');
+
+      codeWrapper.innerHTML = linesHtml;
+
+      // 若处于 Mock DOM 环境（children 为普通 Array），同步重构子节点供 querySelectorAll 查询
+      if (Array.isArray((codeWrapper as any).children)) {
+        (codeWrapper as any).children = [];
+        lines.forEach((line, idx) => {
+          const lineNum = idx + 1;
+          const lineEl = DarkCodeTerminalPresenter.createSafeElement('div');
+          lineEl.className = 'code-line algo-code-line';
+          lineEl.dataset.line = String(lineNum);
+          lineEl.dataset.raw = line;
+          lineEl.style.fontSize = `${codeFontSize}px`;
+          lineEl.style.padding = '1px 6px';
+          lineEl.style.borderRadius = '4px';
+          lineEl.style.display = 'flex';
+          lineEl.style.alignItems = 'flex-start';
+          lineEl.style.gap = '12px';
+          lineEl.style.whiteSpace = 'pre';
+          lineEl.style.borderLeft = '3px solid transparent';
+
+          const numEl = DarkCodeTerminalPresenter.createSafeElement('span');
+          numEl.className = 'code-line-num algo-code-line-number';
+          numEl.textContent = String(lineNum);
+          lineEl.appendChild(numEl);
+
+          const textEl = DarkCodeTerminalPresenter.createSafeElement('span');
+          textEl.className = 'code-line-text algo-code-line-text';
+          textEl.innerHTML = highlightTokens(line, currentLang);
+          textEl.textContent = line;
+          lineEl.appendChild(textEl);
+
+          if (typeof codeWrapper.appendChild === 'function') {
+            codeWrapper.appendChild(lineEl);
+          } else {
+            (codeWrapper as any).children.push(lineEl);
+          }
+        });
+      }
+
+      if (activeLineTarget != null) {
+        highlightLineInternal(activeLineTarget);
+      }
+    };
+
+    // 5. 高亮代码行逻辑
+    const highlightLineInternal = (target: HighlightTarget | null | undefined) => {
+      activeLineTarget = target;
+      if (!codeWrapper) return;
+
+      codeWrapper.querySelectorAll<HTMLElement>('.code-line').forEach((el) => {
+        el.classList.remove('active', 'active-line', 'is-active', 'is-context');
+        el.style.backgroundColor = 'transparent';
+        el.style.borderLeftColor = 'transparent';
+        el.style.color = '#cbd5e1';
+        el.style.fontWeight = 'normal';
+      });
+
+      codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
+        if (typeof el.remove === 'function') el.remove();
+        else if (el.parentElement) el.parentElement.removeChild(el);
+      });
+
+      if (target == null) return;
+
+      const markLine = (lineEl: HTMLElement | null) => {
+        if (!lineEl) return;
+        lineEl.classList.add('active', 'active-line', 'is-active');
+        lineEl.style.backgroundColor = 'rgba(37, 99, 235, 0.25)';
+        lineEl.style.borderLeftColor = '#2563eb';
+        lineEl.style.color = '#ffffff';
+        lineEl.style.fontWeight = '700';
+        updateInlineHint(lineEl);
+      };
+
+      const markContext = (lineEl: HTMLElement | null) => {
+        if (!lineEl) return;
+        lineEl.classList.add('is-context');
+        lineEl.style.backgroundColor = 'rgba(51, 65, 85, 0.25)';
+        lineEl.style.borderLeftColor = '#64748b';
+      };
+
+      const applyTarget = (t: HighlightTarget | null | undefined) => {
+        if (t == null) return;
+        if (typeof t === 'number') {
+          const lineEl = codeWrapper.querySelector(`[data-line="${t}"]`) as HTMLElement | null;
+          if (lineEl) {
+            markLine(lineEl);
+            if (typeof lineEl.scrollIntoView === 'function') {
+              lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          }
+        } else if (typeof t === 'string') {
+          const num = parseInt(t, 10);
+          if (!isNaN(num)) {
+            const lineEl = codeWrapper.querySelector(`[data-line="${num}"]`) as HTMLElement | null;
+            if (lineEl) {
+              markLine(lineEl);
+              if (typeof lineEl.scrollIntoView === 'function') {
+                lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              }
+            }
+          } else {
+            const anchorLine = codeModel.resolveAnchorLine(t, currentLang);
+            if (anchorLine != null) {
+              applyTarget(anchorLine);
+            }
+          }
+        } else if (Array.isArray(t)) {
+          t.forEach((l) => {
+            const lineEl = codeWrapper.querySelector(`[data-line="${l}"]`) as HTMLElement | null;
+            markLine(lineEl);
+          });
+          if (t.length > 0) {
+            const firstEl = codeWrapper.querySelector(`[data-line="${t[0]}"]`) as HTMLElement | null;
+            if (firstEl && typeof firstEl.scrollIntoView === 'function') {
+              firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          }
+        } else if (typeof t === 'object') {
+          if ('anchor' in t && typeof (t as any).anchor === 'string') {
+            const anchorLine = codeModel.resolveAnchorLine((t as any).anchor, currentLang);
+            if (anchorLine != null) {
+              applyTarget(anchorLine);
+            }
+          } else if ('from' in t && 'to' in t && typeof t.from === 'number' && typeof t.to === 'number') {
+            for (let l = t.from; l <= t.to; l++) {
+              const lineEl = codeWrapper.querySelector(`[data-line="${l}"]`) as HTMLElement | null;
+              markLine(lineEl);
+            }
+            const firstEl = codeWrapper.querySelector(`[data-line="${t.from}"]`) as HTMLElement | null;
+            if (firstEl && typeof firstEl.scrollIntoView === 'function') {
+              firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          } else if ('primary' in t) {
+            const p = (t as any).primary;
+            const c = (t as any).context;
+            if (p != null) applyTarget(p);
+            if (c != null) {
+              const ctxList = Array.isArray(c) ? c : [c];
+              ctxList.forEach((cl) => {
+                const clEl = codeWrapper.querySelector(`[data-line="${cl}"]`) as HTMLElement | null;
+                markContext(clEl);
+              });
+            }
+          } else {
+            // 多语言字典解包：根据当前激活语言优先匹配
+            const dict = t as Record<string, any>;
+            let resolved = dict[currentLang];
+            if (resolved == null && (currentLang === 'js' || currentLang === 'javascript')) {
+              resolved = dict['javascript'] ?? dict['js'];
+            }
+            if (resolved == null && (currentLang === 'python' || currentLang === 'py')) {
+              resolved = dict['python'] ?? dict['py'];
+            }
+            if (resolved == null && currentLang.includes('cpp')) {
+              resolved = dict['cpp'] ?? dict['c++'];
+            }
+            if (resolved == null) {
+              resolved = dict['java'] ?? Object.values(dict)[0];
+            }
+            if (resolved != null) {
+              applyTarget(resolved);
+            }
+          }
+        }
+      };
+
+      applyTarget(target);
+    };
+
+    // 6. 切换语言
+    const switchLanguageInternal = (lang: string) => {
+      currentLang = lang;
+      codeModel.setCurrentLanguage(lang);
+      langBtns.forEach((btn) => {
+        const bLang = btn.dataset.lang;
+        const isActive = bLang === currentLang || (currentLang === 'javascript' && bLang === 'js');
+        if (isActive) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+        btn.style.background = isActive ? '#334155' : 'transparent';
+        btn.style.color = isActive ? '#93c5fd' : '#64748b';
+      });
+      renderCodeLines();
+      if (config.onLanguageChange) {
+        config.onLanguageChange(currentLang);
+      }
+    };
+
+    // 7. 切换 Tab 看板
+    const switchTabInternal = (tab: 'code' | 'problem' | 'analysis') => {
+      const setTabStyle = (btn: HTMLElement | null, isActive: boolean) => {
+        if (!btn) return;
+        if (isActive) {
+          btn.classList.add('active');
+          btn.style.background = '#2563eb';
+          btn.style.color = '#ffffff';
+          btn.style.fontWeight = '700';
+          btn.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.25)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'transparent';
+          btn.style.color = '#94a3b8';
+          btn.style.fontWeight = '500';
+          btn.style.boxShadow = 'none';
+        }
+      };
+
+      setTabStyle(btnTabCode, tab === 'code');
+      setTabStyle(btnTabProblem, tab === 'problem');
+      setTabStyle(btnTabAnalysis, tab === 'analysis');
+
+      if (viewCode) viewCode.style.display = tab === 'code' ? 'flex' : 'none';
+      if (viewProblem) viewProblem.style.display = tab === 'problem' ? 'flex' : 'none';
+      if (viewAnalysis) viewAnalysis.style.display = tab === 'analysis' ? 'flex' : 'none';
+    };
+
+    // 8. 调整代码字号
+    const updateFontSize = (delta: number) => {
+      codeFontSize = Math.max(9, Math.min(20, codeFontSize + delta));
+      if (fontIndicator) fontIndicator.textContent = String(codeFontSize);
+      renderCodeLines();
+    };
+
+    // 事件绑定
+    const onTabCodeClick = () => switchTabInternal('code');
+    const onTabProblemClick = () => switchTabInternal('problem');
+    const onTabAnalysisClick = () => switchTabInternal('analysis');
+
+    btnTabCode?.addEventListener('click', onTabCodeClick);
+    btnTabProblem?.addEventListener('click', onTabProblemClick);
+    btnTabAnalysis?.addEventListener('click', onTabAnalysisClick);
+
+    const onLangClick = (e: Event) => {
+      const btn = (e.currentTarget || e.target) as HTMLElement;
+      const lang = btn?.dataset?.lang;
+      if (lang) switchLanguageInternal(lang);
+    };
+    langBtns.forEach((btn) => btn.addEventListener('click', onLangClick));
+
+    const onFontDecClick = () => updateFontSize(-1);
+    const onFontIncClick = () => updateFontSize(1);
+
+    btnFontDec?.addEventListener('click', onFontDecClick);
+    btnFontInc?.addEventListener('click', onFontIncClick);
+
+    // 代码复制到剪贴板功能
+    let copyResetTimer: any = null;
+    const copyCodeInternal = async (): Promise<boolean> => {
+      const lines = codeModel.getLines(currentLang);
+      const fullText = lines.join('\n');
+      let success = false;
+
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(fullText);
+          success = true;
+        } else if (typeof document !== 'undefined') {
+          const ta = document.createElement('textarea');
+          ta.value = fullText;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          success = document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+      } catch (e) {
+        console.warn('[DarkCodeTerminalPresenter] Clipboard write failed, falling back to execCommand:', e);
+        try {
+          if (typeof document !== 'undefined') {
+            const ta = document.createElement('textarea');
+            ta.value = fullText;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            success = document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+        } catch {}
+      }
+
+      if (btnCopy) {
+        const copyText = btnCopy.querySelector('.copy-text') || btnCopy;
+        const copyIcon = btnCopy.querySelector('.copy-icon');
+
+        btnCopy.classList.add('copied');
+        btnCopy.style.borderColor = 'rgba(52, 211, 153, 0.5)';
+        btnCopy.style.color = '#34d399';
+        btnCopy.style.background = 'rgba(6, 78, 59, 0.4)';
+        if (copyText) copyText.textContent = '已复制';
+        if (copyIcon) {
+          copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        }
+
+        const targetBtn = btnCopy;
+        if (copyResetTimer) clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(() => {
+          targetBtn.classList.remove('copied');
+          targetBtn.style.borderColor = '#334155';
+          targetBtn.style.color = '#94a3b8';
+          targetBtn.style.background = '#0f172a';
+          if (copyText) copyText.textContent = '复制';
+          if (copyIcon) {
+            copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+          }
+        }, 1800);
+      }
+
+      return success;
+    };
+
+    const onCopyClick = () => {
+      void copyCodeInternal();
+    };
+
+    btnCopy?.addEventListener('click', onCopyClick);
+
+    // 模态弹窗打开与关闭
+    const onOpenModalClick = () => {
+      if (modalProblem) {
+        modalProblem.classList.remove('hidden');
+        modalProblem.style.display = 'flex';
+      }
+    };
+    const onCloseModalClick = () => {
+      if (modalProblem) {
+        modalProblem.classList.add('hidden');
+        modalProblem.style.display = 'none';
+      }
+    };
+
+    btnOpenModals.forEach((btn) => btn.addEventListener('click', onOpenModalClick));
+    btnCloseModal?.addEventListener('click', onCloseModalClick);
+    modalProblem?.addEventListener('click', (e) => {
+      if (e.target === modalProblem) {
+        onCloseModalClick();
+      }
+    });
+    const onModalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && modalProblem && modalProblem.style.display !== 'none') {
+        onCloseModalClick();
+      }
+    };
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+      document.addEventListener('keydown', onModalKeyDown);
+    }
+
+    // 智能创建/获取全局单例调试悬停气泡 (Debug Hover Tooltip)
+    let hoverTooltip: HTMLElement | null = null;
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof document.getElementById === 'function') {
+      hoverTooltip = document.getElementById('algo-debug-hover-tooltip');
+      if (!hoverTooltip && document.body) {
+        hoverTooltip = document.createElement('div');
+        hoverTooltip.id = 'algo-debug-hover-tooltip';
+        hoverTooltip.className = 'algo-debug-hover-tooltip';
+        hoverTooltip.style.cssText =
+          'display: none; position: fixed; z-index: 99999; pointer-events: none; background: rgba(15, 23, 42, 0.96); border: 1px solid #38bdf8; box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6); border-radius: 6px; padding: 5px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; backdrop-filter: blur(8px); transition: opacity 0.12s ease; opacity: 0; color: #cbd5e1; line-height: 1.4; max-width: 360px; word-break: break-all;';
+        document.body.appendChild(hoverTooltip);
+      }
+    }
+
+    let hoverDebounceTimer: any = null;
+    let activeHoveredSpan: HTMLElement | null = null;
+
+    const hideHoverTooltip = () => {
+      if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
+      if (activeHoveredSpan) {
+        activeHoveredSpan.style.backgroundColor = '';
+        activeHoveredSpan.style.boxShadow = '';
+        activeHoveredSpan = null;
+      }
+      if (hoverTooltip) {
+        hoverTooltip.style.opacity = '0';
+        hoverTooltip.style.display = 'none';
+      }
+    };
+
+    const onCodeWrapperMouseMove = (e: any) => {
+      if (!hoverTooltip) return;
+      const target = (e.target?.closest?.('.algo-code-ident') || (e.target?.classList?.contains?.('algo-code-ident') ? e.target : null)) as HTMLElement | null;
+
+      if (!target || !codeWrapper || (typeof codeWrapper.contains === 'function' && !codeWrapper.contains(target))) {
+        hideHoverTooltip();
+        return;
+      }
+
+      if (target === activeHoveredSpan) return;
+
+      if (activeHoveredSpan) {
+        activeHoveredSpan.style.backgroundColor = '';
+        activeHoveredSpan.style.boxShadow = '';
+      }
+      activeHoveredSpan = target;
+      target.style.backgroundColor = 'rgba(56, 189, 248, 0.2)';
+      target.style.borderRadius = '2px';
+      target.style.boxShadow = '0 0 0 1px rgba(56, 189, 248, 0.35)';
+
+      if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
+      hoverDebounceTimer = setTimeout(() => {
+        if (!hoverTooltip || activeHoveredSpan !== target) return;
+        const varName = target.dataset?.var || target.textContent?.trim() || '';
+        if (!varName) {
+          hideHoverTooltip();
+          return;
+        }
+
+        const resolved = VariableContextResolver.getVariable(currentVarsMap, varName);
+        if (resolved) {
+          hoverTooltip.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #94a3b8; font-size: 10px;">${resolved.type || 'var'}</span>
+              <span style="color: #f8fafc; font-weight: 700;">${escapeHtml(resolved.name)}</span>
+              <span style="color: #64748b;">=</span>
+              <span style="color: #38bdf8; font-weight: 700;">${escapeHtml(resolved.value)}</span>
+            </div>
+          `;
+        } else {
+          hoverTooltip.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #94a3b8; font-size: 10px;">var</span>
+              <span style="color: #cbd5e1; font-weight: 600;">${escapeHtml(varName)}</span>
+              <span style="color: #64748b; font-style: italic; font-size: 10px;">(当前步骤未捕获)</span>
+            </div>
+          `;
+        }
+
+        if (typeof target.getBoundingClientRect === 'function') {
+          const rect = target.getBoundingClientRect();
+          hoverTooltip.style.display = 'block';
+          hoverTooltip.style.opacity = '1';
+
+          let top = rect.top - (hoverTooltip.offsetHeight || 28) - 6;
+          let left = rect.left;
+          if (top < 10) {
+            top = rect.bottom + 6;
+          }
+          if (typeof window !== 'undefined') {
+            if (left + (hoverTooltip.offsetWidth || 150) > window.innerWidth - 10) {
+              left = window.innerWidth - (hoverTooltip.offsetWidth || 150) - 10;
+            }
+          }
+          if (left < 10) left = 10;
+
+          hoverTooltip.style.top = `${top}px`;
+          hoverTooltip.style.left = `${left}px`;
+        }
+      }, 100);
+    };
+
+    const onCodeWrapperMouseLeave = () => {
+      hideHoverTooltip();
+    };
+
+    if (codeWrapper && typeof codeWrapper.addEventListener === 'function') {
+      codeWrapper.addEventListener('mousemove', onCodeWrapperMouseMove);
+      codeWrapper.addEventListener('mouseleave', onCodeWrapperMouseLeave);
+    }
+
+    // 首次渲染代码
+    renderCodeLines();
+
+    return {
+      codeModel,
+      highlightLine: (target) => highlightLineInternal(target),
+      updateVars: (vars?: StepVar[], stepContext?: unknown) => {
+        currentVarsMap = VariableContextResolver.resolve(stepContext || { vars }, currentLang);
+
+        if (codeWrapper) {
+          const activeLineEl = (codeWrapper.querySelector?.('.code-line.active') ||
+            codeWrapper.querySelector?.('.code-line.is-active')) as HTMLElement | null;
+          if (activeLineEl) {
+            updateInlineHint(activeLineEl);
+          }
+        }
+
+        let varsWatch = root.querySelector('#code-vars-watch') as any;
+        if (!varsWatch) {
+          const body = (root.querySelector('.terminal-body') || root.querySelector('#code-view-container')) as any;
+          if (body) {
+            varsWatch = DarkCodeTerminalPresenter.createSafeElement('div');
+            varsWatch.id = 'code-vars-watch';
+            varsWatch.className = 'code-vars-watch-container';
+            varsWatch.style.cssText =
+              'border-top: 1px solid #1e293b; padding: 6px 12px; background: rgba(15, 23, 42, 0.95); display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; flex-shrink: 0; min-height: 28px; align-items: center;';
+            body.appendChild(varsWatch);
+          }
+        }
+        if (!varsWatch) return;
+
+        if (!vars || vars.length === 0) {
+          varsWatch.style.display = 'none';
+          varsWatch.innerHTML = '<span style="color: #475569; font-style: italic;">暂无活动变量</span>';
+          return;
+        }
+
+        varsWatch.style.display = 'flex';
+        varsWatch.innerHTML = vars
+          .map((v) => {
+            return `
+              <div class="var-badge" style="display: inline-flex; align-items: center; gap: 4px; background: #1e293b; border: 1px solid #334155; padding: 1px 6px; border-radius: 4px;">
+                <span class="var-name" style="color: #94a3b8; font-family: monospace;">${v.name}:</span>
+                <span class="var-val" style="color: #38bdf8; font-weight: 700; font-family: monospace;">${v.value}</span>
+              </div>
+            `;
+          })
+          .join('');
+      },
+      switchLanguage: (lang) => switchLanguageInternal(lang),
+      switchTab: (tab) => switchTabInternal(tab),
+      getCurrentLanguage: () => currentLang,
+      getFontSize: () => codeFontSize,
+      copyCode: () => copyCodeInternal(),
+      destroy: () => {
+        if (copyResetTimer) clearTimeout(copyResetTimer);
+        if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
+        hideHoverTooltip();
+        if (codeWrapper && typeof codeWrapper.removeEventListener === 'function') {
+          codeWrapper.removeEventListener('mousemove', onCodeWrapperMouseMove);
+          codeWrapper.removeEventListener('mouseleave', onCodeWrapperMouseLeave);
+        }
+        btnCopy?.removeEventListener('click', onCopyClick);
+        btnTabCode?.removeEventListener('click', onTabCodeClick);
+        btnTabProblem?.removeEventListener('click', onTabProblemClick);
+        btnTabAnalysis?.removeEventListener('click', onTabAnalysisClick);
+        langBtns.forEach((btn) => btn.removeEventListener('click', onLangClick));
+        btnFontDec?.removeEventListener('click', onFontDecClick);
+        btnFontInc?.removeEventListener('click', onFontIncClick);
+        btnOpenModals.forEach((btn) => btn.removeEventListener('click', onOpenModalClick));
+        btnCloseModal?.removeEventListener('click', onCloseModalClick);
+      },
+    };
+  }
+
+  /**
+   * 安全创建 DOM 元素，兼容无全局 document 的 Node.js 内存测试环境与真实浏览器 DOM
+   */
+  public static createSafeElement(tag: string, id: string = ''): any {
+    const d = typeof document !== 'undefined' ? document : (globalThis as any).document;
+    if (d && typeof d.createElement === 'function') {
+      const el = d.createElement(tag);
+      if (id) el.id = id;
+      return el;
+    }
+    const el: any = {
+      id,
+      tagName: tag.toUpperCase(),
+      className: '',
+      textContent: '',
+      _innerHTML: '',
+      dataset: {},
+      style: {},
+      children: [],
+      listeners: {},
+      classList: {
+        _classes: new Set<string>(),
+        _sync: function () {
+          if (el.className) {
+            el.className.split(/\s+/).forEach((c: string) => {
+              if (c) this._classes.add(c);
+            });
+          }
+        },
+        add: function (...cls: string[]) {
+          this._sync();
+          cls.forEach((c) => this._classes.add(c));
+          el.className = Array.from(this._classes).join(' ');
+        },
+        remove: function (...cls: string[]) {
+          this._sync();
+          cls.forEach((c) => this._classes.delete(c));
+          el.className = Array.from(this._classes).join(' ');
+        },
+        contains: function (c: string) {
+          this._sync();
+          return this._classes.has(c);
+        },
+        toggle: function (c: string, force?: boolean) {
+          this._sync();
+          const has = this._classes.has(c);
+          const shouldAdd = force !== undefined ? force : !has;
+          if (shouldAdd) this._classes.add(c);
+          else this._classes.delete(c);
+          el.className = Array.from(this._classes).join(' ');
+          return shouldAdd;
+        },
+      },
+      get innerHTML() {
+        return this._innerHTML;
+      },
+      set innerHTML(val: string) {
+        this._innerHTML = val;
+        if (val === '') this.children = [];
+      },
+      appendChild: function (child: any) {
+        child.parentElement = this;
+        this.children.push(child);
+        return child;
+      },
+      removeChild: function (child: any) {
+        const i = this.children.indexOf(child);
+        if (i !== -1) this.children.splice(i, 1);
+        return child;
+      },
+      addEventListener: function (ev: string, fn: any) {
+        if (!this.listeners[ev]) this.listeners[ev] = [];
+        this.listeners[ev].push(fn);
+      },
+      removeEventListener: function (ev: string, fn: any) {
+        if (!this.listeners[ev]) return;
+        this.listeners[ev] = this.listeners[ev].filter((f: any) => f !== fn);
+      },
+      querySelector: function (sel: string) {
+        if (sel.startsWith('#') && this.id === sel.slice(1)) return this;
+        if (sel.startsWith('.')) {
+          const classes = sel.split('.').filter(Boolean);
+          if (classes.length > 0 && classes.every((c: string) => this.classList.contains(c))) return this;
+        }
+        if (sel.startsWith('[')) {
+          const match = sel.match(/\[([a-zA-Z0-9_-]+)(?:=["']?([^"']*)["']?)?\]/);
+          if (match) {
+            const attr = match[1];
+            const val = match[2];
+            if (attr.startsWith('data-')) {
+              const key = attr.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+              if (val === undefined && this.dataset[key] !== undefined) return this;
+              if (this.dataset[key] === val) return this;
+            }
+          }
+        }
+        for (const child of this.children) {
+          const found = child.querySelector ? child.querySelector(sel) : null;
+          if (found) return found;
+        }
+        return null;
+      },
+      querySelectorAll: function (sel: string) {
+        const res: any[] = [];
+        if (sel.startsWith('#') && this.id === sel.slice(1)) res.push(this);
+        if (sel.startsWith('.')) {
+          const classes = sel.split('.').filter(Boolean);
+          if (classes.length > 0 && classes.every((c: string) => this.classList.contains(c))) res.push(this);
+        }
+        if (sel.startsWith('[')) {
+          const match = sel.match(/\[([a-zA-Z0-9_-]+)(?:=["']?([^"']*)["']?)?\]/);
+          if (match) {
+            const attr = match[1];
+            const val = match[2];
+            if (attr.startsWith('data-')) {
+              const key = attr.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+              if (val === undefined && this.dataset[key] !== undefined) res.push(this);
+              if (this.dataset[key] === val) res.push(this);
+            }
+          }
+        }
+        for (const child of this.children) {
+          if (child.querySelectorAll) res.push(...child.querySelectorAll(sel));
+        }
+        return res;
+      },
+      scrollIntoView: function () {},
+    };
+    return el;
+  }
+
+  /**
+   * 自动检测并注入暗色代码终端完整 DOM 骨架
+   */
+  private static ensureTerminalSkeleton(root: HTMLElement): void {
+    if (!root) return;
+
+    // 如果已经存在代码行容器，说明已在 HTML 模板中手写预置，无需再次注入
+    if (root.querySelector('#code-lines-wrapper')) {
+      return;
+    }
+
+    // 查找目标挂载容器（按优先级匹配常见占位符）
+    let targetContainer: any = root.querySelector(
+      '#dsp-terminal-container, #code-terminal-card, .dark-code-terminal-container, [data-code-terminal], [data-code-panel], [id$="-terminal-mount"], [id*="terminal-mount"], [id*="terminal-container"]'
+    );
+
+    if (!targetContainer) {
+      const rootId = root.id || '';
+      if (
+        rootId === 'dsp-terminal-container' ||
+        rootId === 'code-terminal-card' ||
+        rootId.includes('terminal-mount') ||
+        rootId.includes('terminal-container') ||
+        root.classList?.contains?.('dark-code-terminal-container') ||
+        (typeof root.hasAttribute === 'function' &&
+          (root.hasAttribute('data-code-terminal') || root.hasAttribute('data-code-panel')))
+      ) {
+        targetContainer = root;
+      }
+    }
+
+    // 如果仍未找到，尝试在右侧布局区域开头自动创建并插入
+    if (!targetContainer) {
+      const rightSection = root.querySelector(
+        '.mz-right-section, .fr-right-section, [class*="-right-section"], [class*="right-column"]'
+      ) as any;
+      if (rightSection) {
+        targetContainer = DarkCodeTerminalPresenter.createSafeElement('div', 'code-terminal-card');
+        targetContainer.style.flex = '1 1 62%';
+        targetContainer.style.minHeight = '0';
+        targetContainer.style.display = 'flex';
+        targetContainer.style.flexDirection = 'column';
+        rightSection.insertBefore(targetContainer, rightSection.firstChild);
+      }
+    }
+
+    // 兜底：如果 root 自身无子节点或为独立容器，直接注入 root
+    if (!targetContainer) {
+      targetContainer = root;
+    }
+
+    // 注入标准暗色终端 DOM (采用原生 DOM API 构建，无缝兼容真实 DOM 与轻量单元测试环境)
+    const autoFrame = DarkCodeTerminalPresenter.createSafeElement('div');
+    autoFrame.className = 'dark-terminal-auto-frame';
+
+    const header = DarkCodeTerminalPresenter.createSafeElement('div');
+    header.className = 'terminal-auto-header';
+
+    const tabGroup = DarkCodeTerminalPresenter.createSafeElement('div');
+    tabGroup.className = 'tab-group';
+    tabGroup.style.cssText =
+      'display: flex; align-items: center; gap: 2px; background: #020617; padding: 2px; border-radius: 8px; border: 1px solid #1e293b; flex-shrink: 0;';
+
+    const btnTabCode = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-code');
+    btnTabCode.className = 'tab-item active';
+    btnTabCode.innerHTML = `${TAB_CODE_ICON}<span>代码调试</span>`;
+    btnTabCode.style.cssText =
+      'background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.25);';
+
+    const btnTabProblem = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-problem');
+    btnTabProblem.className = 'tab-item';
+    btnTabProblem.innerHTML = `${TAB_PROBLEM_ICON}<span>题目描述</span>`;
+    btnTabProblem.style.cssText =
+      'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+
+    const btnTabAnalysis = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-tab-analysis');
+    btnTabAnalysis.className = 'tab-item';
+    btnTabAnalysis.innerHTML = `${TAB_ANALYSIS_ICON}<span>递推精讲</span>`;
+    btnTabAnalysis.style.cssText =
+      'background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;';
+
+    tabGroup.appendChild(btnTabCode);
+    tabGroup.appendChild(btnTabProblem);
+    tabGroup.appendChild(btnTabAnalysis);
+    header.appendChild(tabGroup);
+
+    const langGroup = DarkCodeTerminalPresenter.createSafeElement('div', 'code-lang-tabs');
+    langGroup.className = 'lang-group';
+    const langs = [
+      { id: 'java', label: 'Java' },
+      { id: 'cpp', label: 'C++' },
+      { id: 'python', label: 'Python' },
+      { id: 'javascript', label: 'JS' },
+    ];
+    langs.forEach((l, idx) => {
+      const btn = DarkCodeTerminalPresenter.createSafeElement('button');
+      btn.className = `lang-btn ${idx === 0 ? 'active' : ''}`;
+      btn.dataset.lang = l.id;
+      btn.textContent = l.label;
+      langGroup.appendChild(btn);
+    });
+    header.appendChild(langGroup);
+
+    const fontTools = DarkCodeTerminalPresenter.createSafeElement('div');
+    fontTools.className = 'font-tools';
+    fontTools.style.display = 'flex';
+    fontTools.style.alignItems = 'center';
+    fontTools.style.gap = '6px';
+    fontTools.style.flexShrink = '0';
+
+    const btnCopy = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-copy');
+    btnCopy.className = 'btn-code-copy';
+    btnCopy.title = '复制当前完整代码';
+    btnCopy.textContent = '复制';
+    fontTools.appendChild(btnCopy);
+
+    const fontScaler = DarkCodeTerminalPresenter.createSafeElement('div');
+    fontScaler.className = 'font-scaler';
+    const btnFontDec = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-font-dec');
+    btnFontDec.textContent = 'A-';
+    const fontIndicator = DarkCodeTerminalPresenter.createSafeElement('span', 'code-font-indicator');
+    fontIndicator.className = 'font-indicator';
+    fontIndicator.textContent = '12';
+    const btnFontInc = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-font-inc');
+    btnFontInc.textContent = 'A+';
+    fontScaler.appendChild(btnFontDec);
+    fontScaler.appendChild(fontIndicator);
+    fontScaler.appendChild(btnFontInc);
+    fontTools.appendChild(fontScaler);
+
+    const macDots = DarkCodeTerminalPresenter.createSafeElement('div');
+    macDots.className = 'mac-dots';
+    macDots.style.display = 'flex';
+    macDots.style.alignItems = 'center';
+    macDots.style.gap = '4px';
+    ['#ef4444', '#eab308', '#22c55e'].forEach((col) => {
+      const dot = DarkCodeTerminalPresenter.createSafeElement('span');
+      dot.style.width = '7px';
+      dot.style.height = '7px';
+      dot.style.borderRadius = '999px';
+      dot.style.background = col;
+      dot.style.display = 'inline-block';
+      macDots.appendChild(dot);
+    });
+    fontTools.appendChild(macDots);
+    header.appendChild(fontTools);
+
+    autoFrame.appendChild(header);
+
+    const codeView = DarkCodeTerminalPresenter.createSafeElement('div', 'code-view-container');
+    const terminalBody = DarkCodeTerminalPresenter.createSafeElement('div');
+    terminalBody.className = 'terminal-body';
+    const codeLinesWrapper = DarkCodeTerminalPresenter.createSafeElement('div', 'code-lines-wrapper');
+    terminalBody.appendChild(codeLinesWrapper);
+    codeView.appendChild(terminalBody);
+    autoFrame.appendChild(codeView);
+
+    const problemView = DarkCodeTerminalPresenter.createSafeElement('div', 'problem-view-container');
+    problemView.style.display = 'none';
+    autoFrame.appendChild(problemView);
+
+    const analysisView = DarkCodeTerminalPresenter.createSafeElement('div', 'analysis-view-container');
+    analysisView.style.display = 'none';
+    autoFrame.appendChild(analysisView);
+
+    const varsWatch = DarkCodeTerminalPresenter.createSafeElement('div', 'vars-watch');
+    varsWatch.style.display = 'none';
+    autoFrame.appendChild(varsWatch);
+
+    const skeletonHtml = `
+      <div class="dark-terminal-auto-frame" style="background: #0f172a; border-radius: 16px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%; min-height: 0; flex: 1;">
+        <div class="terminal-auto-header" style="background: #1e293b; padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid #334155; flex-shrink: 0; min-width: 0; overflow-x: auto; width: 100%; box-sizing: border-box;">
+          <div class="tab-group" style="display: flex; align-items: center; gap: 2px; background: #020617; padding: 2px; border-radius: 8px; border: 1px solid #1e293b; flex-shrink: 0;">
+            <button id="btn-tab-code" class="tab-item active" style="background: #2563eb; border: none; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);">${TAB_CODE_ICON}<span>代码调试</span></button>
+            <button id="btn-tab-problem" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">${TAB_PROBLEM_ICON}<span>题目描述</span></button>
+            <button id="btn-tab-analysis" class="tab-item" style="background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">${TAB_ANALYSIS_ICON}<span>递推精讲</span></button>
+          </div>
+          <div class="lang-group" id="code-lang-tabs" style="display: flex; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px; flex-shrink: 0;">
+            <button class="lang-btn active" data-lang="java" style="background: #334155; border: none; color: #93c5fd; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">Java</button>
+            <button class="lang-btn" data-lang="cpp" style="background: transparent; border: none; color: #64748b; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">C++</button>
+            <button class="lang-btn" data-lang="python" style="background: transparent; border: none; color: #64748b; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">Python</button>
+            <button class="lang-btn" data-lang="javascript" style="background: transparent; border: none; color: #64748b; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; cursor: pointer;">JS</button>
+          </div>
+          <div class="font-tools" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <button id="btn-code-copy" title="复制当前完整代码" style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px 7px; color: #94a3b8; font-size: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease; white-space: nowrap; user-select: none;">
+              <span class="copy-icon" style="display: inline-flex; align-items: center;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </span>
+              <span class="copy-text">复制</span>
+            </button>
+            <div class="font-scaler" style="display: flex; align-items: center; gap: 2px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 1px 4px;">
+              <button id="btn-code-font-dec" title="缩小代码字号" style="background: transparent; border: none; color: #94a3b8; font-size: 9px; font-weight: 700; cursor: pointer; padding: 1px 3px;">A-</button>
+              <span id="code-font-indicator" class="font-indicator" style="font-size: 9.5px; font-family: monospace; color: #93c5fd; min-width: 14px; text-align: center;">12</span>
+              <button id="btn-code-font-inc" title="放大代码字号" style="background: transparent; border: none; color: #94a3b8; font-size: 9px; font-weight: 700; cursor: pointer; padding: 1px 3px;">A+</button>
+            </div>
+            <div class="window-dots" style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 7px; height: 7px; border-radius: 999px; background: #ef4444; display: inline-block;"></span>
+              <span style="width: 7px; height: 7px; border-radius: 999px; background: #eab308; display: inline-block;"></span>
+              <span style="width: 7px; height: 7px; border-radius: 999px; background: #22c55e; display: inline-block;"></span>
+            </div>
+          </div>
+        </div>
+        <div id="code-view-container" style="display: flex; flex-direction: column; overflow: hidden; width: 100%; flex: 1; min-height: 0; box-sizing: border-box;">
+          <div class="terminal-body" style="flex: 1; min-height: 0; width: 100%; padding: 10px 10px 4px 10px; overflow-y: auto; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; color: #cbd5e1; box-sizing: border-box;">
+            <div id="code-lines-wrapper" style="min-width: 0; width: 100%;"></div>
+          </div>
+          <div id="code-vars-watch" class="code-vars-watch-container" style="display: none; border-top: 1px solid rgba(51, 65, 85, 0.5); padding: 5px 12px; background: rgba(15, 23, 42, 0.95); flex-wrap: wrap; gap: 6px; font-size: 11px; flex-shrink: 0; min-height: 28px; align-items: center;"></div>
+        </div>
+        <div id="problem-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1; font-size: 12px; line-height: 1.6;"></div>
+        <div id="analysis-view-container" style="display: none; flex: 1; min-height: 0; padding: 14px; overflow-y: auto; background: #0f172a; color: #cbd5e1; font-size: 12px; line-height: 1.6;"></div>
+        <div id="vars-watch" style="display: none;"></div>
+      </div>
+    `;
+    targetContainer.innerHTML = skeletonHtml;
+
+    if (typeof targetContainer.appendChild === 'function') {
+      const testWrapper = targetContainer.querySelector ? targetContainer.querySelector('#code-lines-wrapper') : null;
+      if (!testWrapper) {
+        targetContainer.appendChild(autoFrame);
+      }
+    }
+
+    if (!root.querySelector('#modal-problem')) {
+      const modalEl = DarkCodeTerminalPresenter.createSafeElement('div', 'modal-problem');
+      modalEl.className = 'modal-backdrop hidden';
+      modalEl.style.cssText =
+        'position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 99999; display: none; align-items: center; justify-content: center; box-sizing: border-box; padding: 20px;';
+
+      const modalContent = DarkCodeTerminalPresenter.createSafeElement('div');
+      modalContent.className = 'modal-content';
+      modalContent.style.cssText =
+        'background: #1e293b; border: 1px solid #334155; border-radius: 12px; max-width: 800px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); overflow: hidden; color: #f8fafc;';
+
+      const modalHeader = DarkCodeTerminalPresenter.createSafeElement('div');
+      modalHeader.className = 'modal-header';
+      modalHeader.style.cssText =
+        'display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #334155; color: #f8fafc; font-weight: 600; font-size: 15px; flex-shrink: 0;';
+
+      const modalTitle = DarkCodeTerminalPresenter.createSafeElement('div');
+      modalTitle.className = 'modal-title';
+      modalTitle.textContent = '📋 算法原理与题目说明';
+
+      const btnClose = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-close-problem-modal');
+      btnClose.textContent = '✕';
+      btnClose.style.cssText =
+        'background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 4px; line-height: 1; transition: color 0.15s;';
+      btnClose.onmouseenter = () => (btnClose.style.color = '#ffffff');
+      btnClose.onmouseleave = () => (btnClose.style.color = '#94a3b8');
+
+      modalHeader.appendChild(modalTitle);
+      modalHeader.appendChild(btnClose);
+      modalContent.appendChild(modalHeader);
+
+      const modalBody = DarkCodeTerminalPresenter.createSafeElement('div', 'modal-problem-body');
+      modalBody.style.cssText =
+        'padding: 20px; overflow-y: auto; color: #cbd5e1; font-size: 13px; line-height: 1.6; flex: 1; min-height: 0;';
+
+      modalContent.appendChild(modalBody);
+      modalEl.appendChild(modalContent);
+      if (typeof root.appendChild === 'function') {
+        root.appendChild(modalEl);
+      }
+    }
+  }
+}

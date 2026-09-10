@@ -1,308 +1,293 @@
 /**
- * 删除字符串中的所有相邻重复项可视化器
- * LeetCode 1047 - 用栈消除相邻重复字符
+ * 删除字符串中的所有相邻重复项可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * LeetCode 1047：栈顶即当前前驱，遇到相同字符直接出栈消除，形成自然连锁反应
+ * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
-import template from './remove-adjacent-duplicates.html?raw';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import {
+  REMOVE_ADJACENT_DUPLICATES_PROBLEM_HTML,
+  REMOVE_ADJACENT_DUPLICATES_ANALYSIS_HTML,
+  REMOVE_ADJACENT_DUPLICATES_CODE_LANGUAGES,
+} from './remove-adjacent-duplicates-problem-content';
 
-interface RDStep {
-  s: string;
+export interface RADStep {
+  rawString: string;
+  currentIndex: number;
+  currentChar: string | null;
   stack: string[];
-  i: number;
-  removedCount: number;
-  status: 'init' | 'push' | 'match' | 'pop' | 'advance' | 'done';
+  eliminatedPairs: number;
+  eliminatedChar: string | null;
+  currentString: string;
+  action: 'init' | 'scan' | 'eliminate' | 'push' | 'done';
   message: string;
-  log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
 }
 
-interface RDResult {
-  steps: RDStep[];
-  finalString: string;
-}
+export function buildRemoveAdjacentDuplicatesSteps(rawInput: string): RADStep[] {
+  const steps: RADStep[] = [];
+  const s = (rawInput || 'abbaca').trim();
+  const n = s.length;
 
-/**
- * 纯 JavaScript 实现的删除相邻重复项算法
- * 生成每一步的可视化数据，并绑定代码行号
- */
-function removeDuplicatesSteps(input: string): RDResult {
-  const steps: RDStep[] = [];
-  const stack: string[] = [];
-  let removedCount = 0;
-
-  const pushStep = (partial: Omit<RDStep, 'log'>) => {
-    const log = `[步骤 ${steps.length + 1}] ${partial.message}`;
-    steps.push({ log, ...partial });
+  const lines = {
+    init:      { java: 2,  cpp: 4,  python: 3, javascript: 2 },
+    eliminate: { java: 5,  cpp: 7,  python: 6, javascript: 5 },
+    push:      { java: 7,  cpp: 9,  python: 8, javascript: 7 },
+    done:      { java: 10, cpp: 12, python: 9, javascript: 10 },
   };
 
-  pushStep({
-    s: input,
+  if (n === 0) {
+    steps.push({
+      rawString: '',
+      currentIndex: -1,
+      currentChar: null,
+      stack: [],
+      eliminatedPairs: 0,
+      eliminatedChar: null,
+      currentString: '',
+      action: 'done',
+      message: '输入为空字符串，化简结果为空',
+      codeLine: lines.done,
+    });
+    return steps;
+  }
+
+  const stack: string[] = [];
+  let eliminatedPairs = 0;
+
+  steps.push({
+    rawString: s,
+    currentIndex: -1,
+    currentChar: null,
     stack: [],
-    i: -1,
-    removedCount: 0,
-    status: 'init',
-    message: `开始处理字符串 "${input}"`,
-    codeLine: 2,
+    eliminatedPairs: 0,
+    eliminatedChar: null,
+    currentString: '',
+    action: 'init',
+    message: `初始化：输入字符串 "${s}" (长度 ${n})，准备从左向右扫描，利用栈顶作为相邻前驱对消重复项`,
+    codeLine: lines.init,
   });
 
-  for (let i = 0; i < input.length; i++) {
-    const ch = input[i];
-
-    pushStep({
-      s: input,
-      stack: [...stack],
-      i,
-      removedCount,
-      status: 'advance',
-    message: `读取字符 '${ch}' (索引 ${i})`,
-    codeLine: 5,
-    });
+  for (let i = 0; i < n; i++) {
+    const ch = s[i];
 
     if (stack.length > 0 && stack[stack.length - 1] === ch) {
-      // 匹配：出栈
       const popped = stack.pop()!;
-      removedCount += 2;
+      eliminatedPairs++;
 
-      pushStep({
-        s: input,
+      steps.push({
+        rawString: s,
+        currentIndex: i,
+        currentChar: ch,
         stack: [...stack],
-        i,
-        removedCount,
-        status: 'match',
-        message: `字符 '${ch}' 与栈顶 '${popped}' 匹配，准备消除`,
-        codeLine: [6, 7],
-      });
-
-      pushStep({
-        s: input,
-        stack: [...stack],
-        i,
-        removedCount,
-        status: 'pop',
-        message: `消除成功！'${popped}' 出栈，已消除 ${removedCount} 个字符`,
-        codeLine: 8,
+        eliminatedPairs,
+        eliminatedChar: ch,
+        currentString: stack.join(''),
+        action: 'eliminate',
+        message: `💥 触发相邻对消！当前字符 '${ch}' 与栈顶 '${popped}' 相同，双双抵消！已消除 ${eliminatedPairs} 对，当前结果: "${stack.join('')}"`,
+        codeLine: lines.eliminate,
       });
     } else {
-      // 不匹配：入栈
       stack.push(ch);
 
-      pushStep({
-        s: input,
+      steps.push({
+        rawString: s,
+        currentIndex: i,
+        currentChar: ch,
         stack: [...stack],
-        i,
-        removedCount,
-        status: 'push',
-        message: `字符 '${ch}' 与栈顶不同，入栈`,
-        codeLine: [9, 11],
+        eliminatedPairs,
+        eliminatedChar: null,
+        currentString: stack.join(''),
+        action: 'push',
+        message: `📥 字符 '${ch}' 与栈顶不重复，压入栈顶暂存。当前栈: "${stack.join('')}"`,
+        codeLine: lines.push,
       });
     }
   }
 
-  const finalString = stack.join('');
-
-  pushStep({
-    s: input,
+  const resStr = stack.join('');
+  steps.push({
+    rawString: s,
+    currentIndex: n,
+    currentChar: null,
     stack: [...stack],
-    i: input.length,
-    removedCount,
-    status: 'done',
-    message: finalString
-      ? `处理完成！结果: "${finalString}"`
-      : `处理完成！所有字符均已消除，结果为空字符串`,
-    codeLine: 16,
+    eliminatedPairs,
+    eliminatedChar: null,
+    currentString: resStr,
+    action: 'done',
+    message: `🎉 字符串扫描完毕！共对消 ${eliminatedPairs} 对相邻重复项，最终化简结果为: "${resStr || '(空)'}"`,
+    codeLine: lines.done,
   });
 
-  return { steps, finalString };
+  return steps;
 }
 
-export class RemoveAdjacentDuplicatesVisualizer extends StepVisualizer<RDStep> {
-  protected codeLines = [
-    'public String removeDuplicates(String s) {',
-    '    // 初始化栈',
-    '    Deque<Character> stack = new ArrayDeque<>();',
-    '    ',
-    '    // 遍历每个字符',
-    '    for (int i = 0; i < s.length(); i++) {',
-    '        char ch = s.charAt(i);',
-    '        // 栈顶与当前字符相同则出栈',
-    '        if (!stack.isEmpty() && stack.peek() == ch) {',
-    '            stack.pop();',
-    '        } else {',
-    '            // 否则入栈',
-    '            stack.push(ch);',
-    '        }',
-    '    }',
-    '    ',
-    '    // 栈中剩余字符即为结果',
-    '    StringBuilder sb = new StringBuilder();',
-    '    while (!stack.isEmpty()) sb.append(stack.pop());',
-    '    return sb.reverse().toString();',
-    '}',
-  ];
-  protected codePanelTitle = '删除相邻重复项代码 (Java)';
+const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
+  id: 'remove-adjacent-duplicates',
+  name: '删除相邻重复项',
+  category: 'stack',
+  icon: '✨',
+  badge: {
+    mode: '栈消消乐·相邻对消',
+    complexity: 'O(n) · O(n)',
+  },
+  card1Title: '🔤 字符串扫描与相邻对消栈沙盘',
+  card2Title: '🧭 对消决策与化简状态监视器',
+  card2Desc: '当前扫描字符、栈顶前驱与实时化简结果',
+  legend: [
+    { label: '正在扫描', color: '#9333ea' },
+    { label: '对消消除', color: '#ef4444' },
+    { label: '入栈暂存', color: '#3b82f6' },
+  ],
+  inputs: [
+    {
+      id: 'input-str',
+      label: '输入字符串',
+      type: 'text',
+      defaultValue: 'abbaca',
+      width: '130px',
+      placeholder: '如 abbaca',
+    },
+  ],
+  presets: [
+    { label: '经典示例', values: { 'input-str': 'abbaca' } },
+    { label: '连续连锁消除', values: { 'input-str': 'azxxzy' } },
+    { label: '全消除对称串', values: { 'input-str': 'abba' } },
+    { label: '无重复串', values: { 'input-str': 'abcdef' } },
+  ],
+  metrics: [
+    { id: 'cur-result', label: '当前化简结果', color: '#9333ea' },
+    { id: 'eliminated-pairs', label: '已消除对数', color: '#ef4444' },
+    { id: 'stack-size', label: '栈内保留字符', color: '#3b82f6' },
+  ],
+  codeLanguages: REMOVE_ADJACENT_DUPLICATES_CODE_LANGUAGES,
+  problemHtml: REMOVE_ADJACENT_DUPLICATES_PROBLEM_HTML,
+  analysisHtml: REMOVE_ADJACENT_DUPLICATES_ANALYSIS_HTML,
+  buildSteps: (inputs) => buildRemoveAdjacentDuplicatesSteps(inputs['input-str']),
+  renderCanvas: (container, step) => {
+    const s = step.rawString;
+    const stack = step.stack;
+    const curIdx = step.currentIndex;
+    const isDone = step.action === 'done';
+    const isEliminate = step.action === 'eliminate';
 
-  private inputField: HTMLInputElement | null = null;
-  private stringDisplay: HTMLElement | null = null;
-  private stackContainer: HTMLElement | null = null;
-  private stateIndex: HTMLElement | null = null;
-  private stateChar: HTMLElement | null = null;
-  private stateStackSize: HTMLElement | null = null;
-  private stateRemoved: HTMLElement | null = null;
-  private resultBanner: HTMLElement | null = null;
+    // 字符串序列展示
+    const charsHtml = s
+      .split('')
+      .map((ch, idx) => {
+        const isCurrent = idx === curIdx && !isDone;
+        const isProcessed = idx < curIdx || (isDone && idx <= curIdx);
+        let bg = '#ffffff';
+        let border = '#e2e8f0';
+        let textColor = '#0f172a';
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.inputField = this.root.querySelector('#rd-input');
-    this.stringDisplay = this.root.querySelector('#rd-string-display');
-    this.stackContainer = this.root.querySelector('#rd-stack-container');
-    this.stateIndex = this.root.querySelector('#rd-state-index');
-    this.stateChar = this.root.querySelector('#rd-state-char');
-    this.stateStackSize = this.root.querySelector('#rd-state-stack-size');
-    this.stateRemoved = this.root.querySelector('#rd-state-removed');
-    this.resultBanner = this.root.querySelector('#rd-result-banner');
-    this.bindPlaybackControls({ message: 'step-message' });
-    this.root.querySelector('#rd-start')?.addEventListener('click', () => this.start());
-
-    // Bind example buttons
-    this.root.querySelectorAll('.btn-example').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const s = (btn as HTMLElement).dataset.s;
-        if (s !== undefined && this.inputField) {
-          this.inputField.value = s;
-          this.start();
+        if (isCurrent) {
+          bg = isEliminate ? '#fef2f2' : '#faf5ff';
+          border = isEliminate ? '#ef4444' : '#9333ea';
+          textColor = isEliminate ? '#ef4444' : '#7e22ce';
+        } else if (isProcessed) {
+          bg = '#f8fafc';
+          border = '#cbd5e1';
+          textColor = '#64748b';
         }
-      });
-    });
-  }
 
-  protected buildSteps(): RDStep[] {
-    const input = this.inputField?.value.trim() || 'abbaca';
-    return removeDuplicatesSteps(input).steps;
-  }
+        return `
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <span style="font-size: 8.5px; color: ${isCurrent ? '#9333ea' : '#94a3b8'}; font-weight: 700;">[${idx}]</span>
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              ${ch}
+            </div>
+          </div>
+        `;
+      })
+      .join('');
 
-  protected renderStep(step: RDStep): void {
-    this.renderString(step);
-    this.renderStack(step);
-    this.updateStatePanel(step);
-    this.updateResultBanner(step);
-  }
+    // 栈内展示 (扁平排布)
+    const stackItemsHtml =
+      stack.length === 0
+        ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">栈空</span>'
+        : stack
+            .map(
+              (ch) => `
+              <div style="padding: 2px 8px; border-radius: 4px; background: #ffffff; border: 1.5px solid #9333ea; color: #7e22ce; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
+                ${ch}
+              </div>
+            `
+            )
+            .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
 
-  private renderString(step: RDStep): void {
-    if (!this.inputField || !this.stringDisplay) return;
-    const input = this.inputField.value;
-    this.stringDisplay.innerHTML = '';
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 12px; box-sizing: border-box; padding: 4px;">
+        <!-- 待处理字符串序列 -->
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>🔤 待处理字符串序列 (从左至右扫描):</span>
+            <span style="color: #ef4444;">已对消: ${step.eliminatedPairs} 对</span>
+          </div>
+          <div style="display: flex; gap: 4px; overflow-x: auto; padding: 2px 0;">
+            ${charsHtml}
+          </div>
+        </div>
 
-    for (let idx = 0; idx < input.length; idx++) {
-      const charBox = document.createElement('div');
-      charBox.className = 'char-box';
-      charBox.textContent = input[idx];
+        <div style="border-top: 1px dashed #e2e8f0; margin: 1px 0;"></div>
 
-      // Add index label below
-      const idxLabel = document.createElement('span');
-      idxLabel.className = 'char-index';
-      idxLabel.textContent = idx.toString();
-      charBox.appendChild(idxLabel);
+        <!-- 栈内保留字符 (扁平直排) -->
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 栈内保留字符 (栈底 → 栈顶):</span>
+            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #9333ea;">当前长度: ${stack.length}</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center; min-height: 28px; flex-wrap: wrap;">
+            ${stackItemsHtml}
+          </div>
+        </div>
+      </div>
+    `;
 
-      if (step.status === 'done' && input.length > 0) {
-        // All processed in done state
-        charBox.classList.add('processed');
-      } else if (idx === step.i) {
-        if (step.status === 'match' || step.status === 'pop') {
-          charBox.classList.add('match');
-        } else {
-          charBox.classList.add('current');
-        }
-      } else if (idx < step.i && step.i >= 0) {
-        charBox.classList.add('processed');
-      }
+    // 更新指标卡片
+    const root = container.closest('#algo-remove-adjacent-duplicates-view');
+    if (root) {
+      const resultEl = root.querySelector('#metric-cur-result');
+      const pairsEl = root.querySelector('#metric-eliminated-pairs');
+      const stackSizeEl = root.querySelector('#metric-stack-size');
 
-      // Pointer arrow on current index
-      if (idx === step.i && step.status !== 'done') {
-        charBox.classList.add('pointer');
-      }
+      if (resultEl) resultEl.textContent = step.currentString ? `"${step.currentString}"` : '(空)';
+      if (pairsEl) pairsEl.textContent = `${step.eliminatedPairs} 对`;
+      if (stackSizeEl) stackSizeEl.textContent = `${step.stack.length}`;
 
-      this.stringDisplay.appendChild(charBox);
-    }
-  }
-
-  private renderStack(step: RDStep): void {
-    if (!this.stackContainer) return;
-    this.stackContainer.innerHTML = '';
-
-    if (step.stack.length === 0) {
-      const emptyLabel = document.createElement('span');
-      emptyLabel.className = 'stack-empty';
-      emptyLabel.textContent = step.status === 'done' ? '栈为空（结果为空字符串）' : '栈为空';
-      this.stackContainer.appendChild(emptyLabel);
-      return;
-    }
-
-    step.stack.forEach((char, idx) => {
-      const stackItem = document.createElement('div');
-      stackItem.className = 'stack-item';
-
-      // Highlight the top element (last in array) when comparing
-      if (idx === step.stack.length - 1 && (step.status === 'match' || step.status === 'pop')) {
-        stackItem.classList.add('comparing');
-      }
-
-      // Pop animation for the top element during pop status
-      if (idx === step.stack.length - 1 && step.status === 'pop') {
-        stackItem.classList.add('popping');
-      }
-
-      stackItem.textContent = char;
-      this.stackContainer!.appendChild(stackItem);
-    });
-  }
-
-  private updateStatePanel(step: RDStep): void {
-    if (this.stateIndex) this.stateIndex.textContent = step.i >= 0 ? step.i.toString() : '-';
-    if (this.stateChar) {
-      const input = this.inputField?.value || '';
-      this.stateChar.textContent = step.i >= 0 && step.i < input.length ? input[step.i] : '-';
-    }
-    if (this.stateStackSize) this.stateStackSize.textContent = step.stack.length.toString();
-    if (this.stateRemoved) {
-      this.stateRemoved.textContent = step.removedCount.toString();
-      if (step.removedCount > 0) {
-        this.stateRemoved.classList.add('highlight');
-      } else {
-        this.stateRemoved.classList.remove('highlight');
+      // 在 Card 2 中展示当前扫描与栈顶前驱
+      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+      if (customMetricsContainer) {
+        const topCh = stack.length > 0 ? stack[stack.length - 1] : null;
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155; padding: 4px 0;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前扫描字符:</span>
+              <strong style="font-family: monospace; color: #9333ea; font-size: 12px;">${step.currentChar !== null ? `'${step.currentChar}'` : '（结束）'}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>当前栈顶前驱:</span>
+              <strong style="font-family: monospace; color: #d97706; font-size: 12px;">${topCh !== null ? `'${topCh}'` : '（栈空）'}</strong>
+            </div>
+          </div>
+        `;
       }
     }
-  }
-
-  private updateResultBanner(step: RDStep): void {
-    if (!this.resultBanner) return;
-
-    if (step.status === 'done') {
-      const finalStr = step.stack.join('');
-      this.resultBanner.textContent = finalStr
-        ? `最终结果: "${finalStr}"`
-        : '最终结果: "" (空字符串)';
-      this.resultBanner.className = 'result-banner success';
-      this.resultBanner.style.display = 'flex';
-    } else {
-      this.resultBanner.style.display = 'none';
-    }
-  }
-}
+  },
+});
 
 registerAlgorithm({
   id: 'remove-adjacent-duplicates',
-  name: '删除字符串中的相邻重复项',
-  viewId: 'algo-remove-duplicates-view',
+  name: '删除相邻重复项',
+  viewId: 'algo-remove-adjacent-duplicates-view',
   category: 'stack',
-  description: '用栈消除字符串中的相邻重复字符',
-  icon: '🧹',
+  description: '栈消消乐模型：栈顶即当前前驱，遇到相同字符直接出栈对消，形成连锁反应',
+  icon: '✨',
   template,
-  Visualizer: RemoveAdjacentDuplicatesVisualizer,
+  Visualizer,
   difficulty: 1,
-  levelOrder: 4,
-  learningGoal: '掌握用栈处理相邻元素消除问题',
+  levelOrder: 2,
+  learningGoal: '理解栈在消除相邻元素中的经典应用，掌握利用栈顶作为动态前驱消除递归连锁重复项的设计范式',
 });
-
-export {};

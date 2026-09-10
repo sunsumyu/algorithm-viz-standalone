@@ -1,394 +1,307 @@
 /**
- * 最小生成树 Kruskal 算法可视化器
- * 按权重排序边，使用并查集避免环
+ * Kruskal 最小生成树可视化器 — 4-Card 标准现代架构
+ * 边权升序排序、并查集回路检测与加边法贪心合并 (左程云 class058)
+ * 深度架构重构：严格解释器级全流程逐行高亮执行（边权排序、并查集初始化、按序遍历边、解构边元、并查集回路检验、合并操作、权值累加、达到V-1条边提前早停均发射独立Step）、四语言行号映射
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
+import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import {
+  MST_KRUSKAL_PROBLEM_HTML,
+  MST_KRUSKAL_ANALYSIS_HTML,
+  MST_KRUSKAL_CODE_LANGUAGES,
+} from './mst-kruskal-problem-content';
+import { PRIM_NODES, PRIM_EDGES, PRIM_NODE_POSITIONS } from './mst-prim-renderer';
 import template from './mst-kruskal.html?raw';
+import { HighlightTarget } from '../../../core/code-panel';
 
-interface MSTKStep {
+export interface KruskalStep extends StepBase {
   nodes: number[];
-  edges: { u: number; v: number; w: number }[];
-  sortedEdges: { u: number; v: number; w: number }[];
+  allEdges: { u: number; v: number; w: number }[];
+  currentEdge: { u: number; v: number; w: number } | null;
+  currentEdgeIndex: number;
+  rootU: number | null;
+  rootV: number | null;
   mstEdges: { u: number; v: number; w: number }[];
-  currentEdgeIdx: number;
+  rejectedEdges: { u: number; v: number; w: number }[];
   totalWeight: number;
   parent: number[];
-  rank: number[];
-  decision: string;
-  edgeStatus: ('pending' | 'current' | 'accepted' | 'rejected')[];
   action: 'init' | 'check' | 'accept' | 'reject' | 'done';
-  message: string;
+  statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
-const MSTK_NODES = [0, 1, 2, 3, 4];
-const MSTK_EDGES = [
-  { u: 0, v: 1, w: 4 },
-  { u: 0, v: 2, w: 3 },
-  { u: 1, v: 2, w: 1 },
-  { u: 1, v: 3, w: 2 },
-  { u: 2, v: 3, w: 4 },
-  { u: 2, v: 4, w: 5 },
-  { u: 3, v: 4, w: 2 },
-];
-const MSTK_NODE_POSITIONS = [
-  { x: 100, y: 80 },
-  { x: 350, y: 80 },
-  { x: 100, y: 220 },
-  { x: 350, y: 220 },
-  { x: 225, y: 300 },
-];
+export function buildKruskalSteps(): KruskalStep[] {
+  const steps: KruskalStep[] = [];
+  const n = PRIM_NODES.length;
+  const parent = Array.from({ length: n }, (_, i) => i);
 
-function buildMSTKruskalSteps(): MSTKStep[] {
-  const steps: MSTKStep[] = [];
-  const n = MSTK_NODES.length;
+  // 精准 11 处四语言映射行号字典 (cpp / java / python / javascript 数组 1-based 索引)
+  const lines = {
+    entry: { cpp: 1, java: 2, python: 1, javascript: 1 },
+    sortEdges: { cpp: 2, java: 3, python: 2, javascript: 2 },
+    initUF: { cpp: 5, java: 4, python: 3, javascript: 3 },
+    initVars: { cpp: 6, java: 5, python: 4, javascript: 4 },
+    forEdge: { cpp: 7, java: 6, python: 6, javascript: 5 },
+    unpackEdge: { cpp: 8, java: 7, python: 6, javascript: 5 },
+    checkUnion: { cpp: 9, java: 8, python: 7, javascript: 6 },
+    doUnion: { cpp: 10, java: 9, python: 8, javascript: 7 },
+    addWeight: { cpp: 11, java: 10, python: 9, javascript: 8 },
+    checkBreak: { cpp: 12, java: 11, python: 11, javascript: 9 },
+    returnAns: { cpp: 15, java: 14, python: 12, javascript: 12 },
+  };
 
-  // Sort edges by weight
-  const sortedEdges = [...MSTK_EDGES].sort((a, b) => a.w - b.w);
-  const edges = MSTK_EDGES.map(e => ({ ...e }));
+  const find = (i: number): number => {
+    let root = i;
+    while (root !== parent[root]) {
+      root = parent[root];
+    }
+    return root;
+  };
 
-  let parent = Array.from({ length: n }, (_, i) => i);
-  let rank = new Array(n).fill(0);
+  const union = (i: number, j: number): void => {
+    const rootI = find(i);
+    const rootJ = find(j);
+    if (rootI !== rootJ) {
+      parent[rootI] = rootJ;
+    }
+  };
+
+  // 升序排序边
+  const sortedEdges = [...PRIM_EDGES].sort((a, b) => a.w - b.w);
   const mstEdges: { u: number; v: number; w: number }[] = [];
+  const rejectedEdges: { u: number; v: number; w: number }[] = [];
   let totalWeight = 0;
 
-  const edgeStatus: ('pending' | 'current' | 'accepted' | 'rejected')[] = sortedEdges.map(() => 'pending');
-
-  const find = (x: number, p: number[]): number => {
-    while (p[x] !== x) x = p[x];
-    return x;
-  };
-
-  const snap = (action: MSTKStep['action'], edgeIdx: number, decision: string, msg: string, log: string, code: number | number[]) => {
+  function makeStep(
+    codeLine: HighlightTarget,
+    action: 'init' | 'check' | 'accept' | 'reject' | 'done',
+    statusText: string,
+    log: string,
+    currentEdge: { u: number; v: number; w: number } | null = null,
+    currentEdgeIndex: number = -1,
+    rootU: number | null = null,
+    rootV: number | null = null
+  ): void {
     steps.push({
-      nodes: [...MSTK_NODES],
-      edges: edges.map(e => ({ ...e })),
-      sortedEdges: sortedEdges.map(e => ({ ...e })),
-      mstEdges: mstEdges.map(e => ({ ...e })),
-      currentEdgeIdx: edgeIdx,
+      nodes: PRIM_NODES,
+      allEdges: sortedEdges,
+      currentEdge,
+      currentEdgeIndex,
+      rootU,
+      rootV,
+      mstEdges: [...mstEdges],
+      rejectedEdges: [...rejectedEdges],
       totalWeight,
       parent: [...parent],
-      rank: [...rank],
-      decision,
-      edgeStatus: [...edgeStatus],
       action,
-      message: msg,
+      statusText,
       log,
-      codeLine: code,
+      codeLine,
+      metrics: {
+        'metric-kruskal-edges': `${mstEdges.length} / ${n - 1}`,
+        'metric-kruskal-weight': `${totalWeight}`,
+        'metric-kruskal-edge': currentEdge ? `(${currentEdge.u}➔${currentEdge.v}, w=${currentEdge.w})` : '—',
+        'metric-kruskal-uf': `[${parent.join(', ')}]`,
+      },
     });
-  };
+  }
 
-  // Init
-  snap('init', -1, '-', `初始化 ${n} 个节点的加权图，共 ${sortedEdges.length} 条边。按权重排序后依次检查。`, '初始化: 排序边列表', 0);
+  // 1. 初始化
+  makeStep(lines.entry, 'init', '🚀 [算法启动] kruskalMST(n=5, edges)：启动 Kruskal 最小生成树算法。', 'kruskalMST 入口');
+  makeStep(lines.sortEdges, 'init', `📊 [边权升序排序] Arrays.sort(edges)；将全图 ${PRIM_EDGES.length} 条边按权值从小到大排序。`, 'sort edges by weight');
+  makeStep(lines.initUF, 'init', `🏷️ [初始化并查集] UnionFind uf = new UnionFind(${n})；每个节点初始为独立连通块。`, 'init UnionFind');
+  makeStep(lines.initVars, 'init', '🌱 [初始化统计变量] int totalWeight = 0, count = 0。', 'totalWeight = 0, count = 0');
 
-  // Process each edge in sorted order
-  for (let i = 0; i < sortedEdges.length; i++) {
-    const edge = sortedEdges[i];
-    edgeStatus[i] = 'current';
+  // 2. 依次遍历贪心加边
+  for (let idx = 0; idx < sortedEdges.length; idx++) {
+    const edge = sortedEdges[idx];
+    const { u, v, w } = edge;
 
-    const ru = find(edge.u, parent);
-    const rv = find(edge.v, parent);
+    makeStep(lines.forEdge, 'check', `🔎 [遍历候选边] 考察第 ${idx + 1} 条边 (${u} ➔ ${v}, 权重 w=${w})。`, `for edge (${u}->${v}, w=${w})`, edge, idx);
+    makeStep(lines.unpackEdge, 'check', `  ↳ [解构边元] u=${u}, v=${v}, w=${w}。`, `u=${u}, v=${v}, w=${w}`, edge, idx);
 
-    if (ru !== rv) {
-      // Accept edge
-      snap('check', i, '检查', `检查边 (${edge.u},${edge.v}) w=${edge.w}: find(${edge.u})=${ru}, find(${edge.v})=${rv}。根不同，不会成环。`, `检查边[${edge.u},${edge.v}]w=${edge.w}: 根不同`, [1, 2]);
+    const rU = find(u);
+    const rV = find(v);
+    const isCycle = rU === rV;
 
-      // Union
-      if (rank[ru] < rank[rv]) {
-        parent[ru] = rv;
-      } else if (rank[ru] > rank[rv]) {
-        parent[rv] = ru;
-      } else {
-        parent[ru] = rv;
-        rank[rv]++;
-      }
+    makeStep(lines.checkUnion, isCycle ? 'reject' : 'check', `  🔎 [并查集判环] find(${u})=${rU}, find(${v})=${rV} -> (${rU} ${isCycle ? '==' : '!='} ${rV})。`, `check find(${u}) vs find(${v})`, edge, idx, rU, rV);
+
+    if (!isCycle) {
+      union(u, v);
+      makeStep(lines.doUnion, 'accept', `  🔗 [合并连通分量] uf.union(${u}, ${v})；将节点 ${u} 与节点 ${v} 所在集合合并！`, `union(${u}, ${v})`, edge, idx, rU, rV);
 
       mstEdges.push(edge);
-      totalWeight += edge.w;
-      edgeStatus[i] = 'accepted';
-      snap('accept', i, '接受', `接受边 (${edge.u},${edge.v}) w=${edge.w}，加入 MST。合并集合 ${ru} 和 ${rv}。当前 MST 权重=${totalWeight}。`, `接受[${edge.u},${edge.v}]w=${edge.w}, MST权重=${totalWeight}`, [3, 4]);
+      totalWeight += w;
+      makeStep(lines.addWeight, 'accept', `  ⚡ [加入生成树] 边 (${u} ➔ ${v}) 成功纳入 MST！累计权值 totalWeight = ${totalWeight}。`, `add edge to MST (total=${totalWeight})`, edge, idx, rU, rV);
+
+      const reachedMST = mstEdges.length === n - 1;
+      makeStep(lines.checkBreak, 'accept', `  🔎 [检查边数满足] if (++count == ${n - 1}) -> 当前已选 ${mstEdges.length} 条边 (${reachedMST ? '已满 V-1，提前终止！' : '未满，继续选边'})。`, `check count == n - 1`, edge, idx, rU, rV);
+
+      if (reachedMST) {
+        break;
+      }
     } else {
-      // Reject edge (would form cycle)
-      snap('check', i, '检查', `检查边 (${edge.u},${edge.v}) w=${edge.w}: find(${edge.u})=${ru}, find(${edge.v})=${rv}。根相同，会形成环！`, `检查边[${edge.u},${edge.v}]w=${edge.w}: 根相同`, [1, 2]);
-      edgeStatus[i] = 'rejected';
-      snap('reject', i, '拒绝', `拒绝边 (${edge.u},${edge.v}) w=${edge.w}，因为两端在同一集合，加入会形成环。`, `拒绝[${edge.u},${edge.v}]w=${edge.w}: 成环`, [5, 6]);
+      rejectedEdges.push(edge);
+      makeStep(lines.checkUnion, 'reject', `  ❌ [形成回路舍弃] 节点 ${u} 与 ${v} 已在同一集合 (根均为 ${rU})，加入将构成回路，必须舍弃！`, `reject cycle edge (${u}->${v})`, edge, idx, rU, rV);
     }
   }
 
-  // Done
-  snap('done', -1, '完成', `Kruskal 算法完成！MST 包含 ${mstEdges.length} 条边，总权重=${totalWeight}。`, `完成: MST权重=${totalWeight}`, 7);
+  makeStep(lines.returnAns, 'done', `🎉 [Kruskal 算法达成] return totalWeight！成功选满 ${mstEdges.length} 条边，构建出全局最小生成树，总权值: ${totalWeight}！`, 'return totalWeight');
 
   return steps;
 }
 
-export class MSTKruskalVisualizer extends StepVisualizer<MSTKStep> {
-  protected codeLines = [
-    'int kruskal(int[][] edges, int n) {',
-    '    Arrays.sort(edges, (a, b) -> a[2] - b[2]);',
-    '    int[] parent = new int[n]; // init: parent[i]=i',
-    '    for (int[] edge : edges) {',
-    '        if (find(u) != find(v)) {',
-    '            union(u, v); mstEdges.add(edge);',
-    '        } else {',
-    '            continue; // would form cycle',
-    '        }',
-    '    }',
-    '}',
-  ];
-  protected codePanelTitle = 'Kruskal 算法代码 (Java)';
+export class KruskalVisualizer extends StepVisualizer<KruskalStep> {
+  protected codeLanguages = MST_KRUSKAL_CODE_LANGUAGES;
+  protected codeLines = MST_KRUSKAL_CODE_LANGUAGES['java'];
+  protected codePanelTitle = 'Kruskal 算法代码调试';
 
-  private graphEl: HTMLElement | null = null;
-  private edgeListEl: HTMLElement | null = null;
-  private parentEl: HTMLElement | null = null;
-  private rankEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private currentEl: HTMLElement | null = null;
-  private edgesEl: HTMLElement | null = null;
-  private weightEl: HTMLElement | null = null;
-  private decisionEl: HTMLElement | null = null;
+  private svgCanvas: HTMLElement | null = null;
+  private edgeListBody: HTMLElement | null = null;
+  private metricMstEdgesEl: HTMLElement | null = null;
+  private metricTotalWeightEl: HTMLElement | null = null;
+  private metricCurEdgeEl: HTMLElement | null = null;
+  private liveTextEl: HTMLElement | null = null;
 
   protected initDOMElements(): void {
     if (!this.root) return;
-    this.graphEl = this.root.querySelector('#mstk-graph');
-    this.edgeListEl = this.root.querySelector('#mstk-edge-list');
-    this.parentEl = this.root.querySelector('#mstk-parent');
-    this.rankEl = this.root.querySelector('#mstk-rank');
-    this.logEl = this.root.querySelector('#mstk-log');
-    this.currentEl = this.root.querySelector('#mstk-current');
-    this.edgesEl = this.root.querySelector('#mstk-edges');
-    this.weightEl = this.root.querySelector('#mstk-weight');
-    this.decisionEl = this.root.querySelector('#mstk-decision');
-    this.btnStart = this.root.querySelector('#mstk-start');
-    this.bindPlaybackControls({
-      speed: 'mstk-speed',
-      speedLabel: 'mstk-speed-label',
-      message: 'step-message',
+
+    this.svgCanvas = this.root.querySelector('#kruskal-svg-canvas');
+    this.edgeListBody = this.root.querySelector('#kruskal-edge-list-body');
+    this.metricMstEdgesEl = this.root.querySelector('#metric-mst-edges');
+    this.metricTotalWeightEl = this.root.querySelector('#metric-total-weight');
+    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
+    this.liveTextEl = this.root.querySelector('#kruskal-live-text');
+
+    this.bindPlaybackControls();
+
+    this.mountTerminal({
+      codeLanguages: this.codeLanguages,
+      problemHtml: MST_KRUSKAL_PROBLEM_HTML,
+      analysisHtml: MST_KRUSKAL_ANALYSIS_HTML,
+      initialLang: 'java',
     });
-    if (this.btnStart) this.btnStart.onclick = () => this.start();
   }
 
-  protected buildSteps(): MSTKStep[] {
-    return buildMSTKruskalSteps();
+  protected buildSteps(): KruskalStep[] {
+    return buildKruskalSteps();
   }
 
-  protected renderStep(step: MSTKStep): void {
-    if (this.currentEl) {
-      if (step.currentEdgeIdx >= 0) {
-        const e = step.sortedEdges[step.currentEdgeIdx];
-        this.currentEl.textContent = `(${e.u},${e.v})w=${e.w}`;
-      } else {
-        this.currentEl.textContent = '-';
+  protected renderStep(step: KruskalStep): void {
+    const { allEdges, currentEdge, currentEdgeIndex, mstEdges, rejectedEdges, totalWeight, parent, action, statusText } = step;
+
+    if (this.svgCanvas) {
+      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">`;
+
+      for (const e of PRIM_EDGES) {
+        const p1 = PRIM_NODE_POSITIONS[e.u];
+        const p2 = PRIM_NODE_POSITIONS[e.v];
+        const isMst = mstEdges.some((me) => (me.u === e.u && me.v === e.v) || (me.u === e.v && me.v === e.u));
+        const isRejected = rejectedEdges.some((re) => (re.u === e.u && re.v === e.v) || (re.u === e.v && re.v === e.u));
+        const isCurrent = currentEdge && ((currentEdge.u === e.u && currentEdge.v === e.v) || (currentEdge.u === e.v && currentEdge.v === e.u));
+
+        let strokeColor = '#cbd5e1';
+        let strokeWidth = 1.8;
+        let strokeDash = 'none';
+
+        if (isMst) {
+          strokeColor = '#10b981';
+          strokeWidth = 3.5;
+        } else if (isCurrent && action === 'accept') {
+          strokeColor = '#10b981';
+          strokeWidth = 4;
+        } else if (isCurrent && action === 'reject') {
+          strokeColor = '#ef4444';
+          strokeWidth = 3;
+          strokeDash = '4,4';
+        } else if (isCurrent) {
+          strokeColor = '#3b82f6';
+          strokeWidth = 3.5;
+        } else if (isRejected) {
+          strokeColor = '#fca5a5';
+          strokeWidth = 1.5;
+          strokeDash = '3,3';
+        }
+
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2 - 8;
+
+        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
+        svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
       }
-    }
-    if (this.edgesEl) this.edgesEl.textContent = String(step.mstEdges.length);
-    if (this.weightEl) this.weightEl.textContent = String(step.totalWeight);
-    if (this.decisionEl) {
-      this.decisionEl.textContent = step.decision;
-      if (step.action === 'accept') {
-        (this.decisionEl as HTMLElement).style.color = '#22c55e';
-      } else if (step.action === 'reject') {
-        (this.decisionEl as HTMLElement).style.color = '#ef4444';
-      } else {
-        (this.decisionEl as HTMLElement).style.color = '#14b8a6';
-      }
-    }
 
-    this.renderGraph(step);
-    this.renderEdgeList(step);
-    this.renderUF(step);
-    this.renderLogLine(step);
-  }
+      PRIM_NODES.forEach((node) => {
+        const p = PRIM_NODE_POSITIONS[node];
+        const isCurrentNode = currentEdge && (currentEdge.u === node || currentEdge.v === node);
 
-  private renderGraph(step: MSTKStep): void {
-    if (!this.graphEl) return;
-    this.graphEl.innerHTML = '';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 450 340');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '450px';
-    svg.style.height = '320px';
+        let fill = '#ffffff';
+        let stroke = '#cbd5e1';
+        if (isCurrentNode && action === 'accept') {
+          fill = '#dcfce7';
+          stroke = '#10b981';
+        } else if (isCurrentNode) {
+          fill = '#dbeafe';
+          stroke = '#3b82f6';
+        }
 
-    const isMSTEdge = (u: number, v: number) =>
-      step.mstEdges.some(e => (e.u === u && e.v === v) || (e.u === v && e.v === u));
+        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="#64748b" font-size="10.5" font-family="monospace" text-anchor="middle">p:${parent[node]}</text>`;
+      });
 
-    const isCurrentEdge = (u: number, v: number) =>
-      step.currentEdgeIdx >= 0 &&
-      step.sortedEdges[step.currentEdgeIdx].u === u &&
-      step.sortedEdges[step.currentEdgeIdx].v === v;
-
-    // Draw edges
-    for (const edge of step.edges) {
-      const p1 = MSTK_NODE_POSITIONS[edge.u];
-      const p2 = MSTK_NODE_POSITIONS[edge.v];
-      const isMST = isMSTEdge(edge.u, edge.v);
-      const isCurrent = isCurrentEdge(edge.u, edge.v);
-      const isRejected = step.edgeStatus.some((s, i) =>
-        s === 'rejected' &&
-        step.sortedEdges[i].u === edge.u &&
-        step.sortedEdges[i].v === edge.v
-      );
-
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', String(p1.x));
-      line.setAttribute('y1', String(p1.y));
-      line.setAttribute('x2', String(p2.x));
-      line.setAttribute('y2', String(p2.y));
-
-      if (isCurrent) {
-        line.setAttribute('stroke', '#f59e0b');
-        line.setAttribute('stroke-width', '4');
-        line.style.animation = 'pathPulse 1s infinite';
-      } else if (isMST) {
-        line.setAttribute('stroke', '#22c55e');
-        line.setAttribute('stroke-width', '3');
-      } else if (isRejected) {
-        line.setAttribute('stroke', 'rgba(239, 68, 68, 0.3)');
-        line.setAttribute('stroke-width', '2');
-        line.setAttribute('stroke-dasharray', '4,4');
-      } else {
-        line.setAttribute('stroke', 'rgba(20, 184, 166, 0.2)');
-        line.setAttribute('stroke-width', '1.5');
-      }
-      line.classList.add('mstk-edge');
-      svg?.appendChild(line);
-
-      // Weight label
-      const mx = (p1.x + p2.x) / 2;
-      const my = (p1.y + p2.y) / 2;
-      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(mx - 12));
-      bg.setAttribute('y', String(my - 10));
-      bg.setAttribute('width', '24');
-      bg.setAttribute('height', '20');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('fill', isCurrent ? 'rgba(245, 158, 11, 0.3)' : isMST ? 'rgba(34, 197, 94, 0.3)' : 'rgba(30, 30, 50, 0.8)');
-      bg.setAttribute('stroke', isCurrent ? '#f59e0b' : isMST ? '#22c55e' : 'rgba(156, 163, 175, 0.4)');
-      bg.setAttribute('stroke-width', '1');
-      svg?.appendChild(bg);
-
-      const wt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      wt.setAttribute('x', String(mx));
-      wt.setAttribute('y', String(my + 5));
-      wt.setAttribute('text-anchor', 'middle');
-      wt.setAttribute('fill', isCurrent ? '#f59e0b' : isMST ? '#22c55e' : 'rgba(156, 163, 175, 0.7)');
-      wt.setAttribute('font-size', '12');
-      wt.setAttribute('font-weight', '700');
-      wt.setAttribute('font-family', 'ui-monospace, monospace');
-      wt.textContent = String(edge.w);
-      svg?.appendChild(wt);
+      svgHtml += `</svg>`;
+      this.svgCanvas.innerHTML = svgHtml;
     }
 
-    // Draw nodes
-    const mstNodes = new Set<number>();
-    step.mstEdges.forEach(e => {
-      mstNodes.add(e.u);
-      mstNodes.add(e.v);
-    });
+    if (this.edgeListBody) {
+      this.edgeListBody.innerHTML = allEdges.map((e, idx) => {
+        const isMst = mstEdges.some((me) => (me.u === e.u && me.v === e.v) || (me.u === e.v && me.v === e.u));
+        const isRejected = rejectedEdges.some((re) => (re.u === e.u && re.v === e.v) || (re.u === e.v && re.v === e.u));
+        const isCur = currentEdgeIndex === idx;
 
-    for (let i = 0; i < step.nodes.length; i++) {
-      const pos = MSTK_NODE_POSITIONS[i];
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.classList.add('mstk-node');
+        let statusBadge = '<span class="text-slate-400">待处理</span>';
+        if (isMst) statusBadge = '<span class="text-emerald-600 font-bold">已加入 MST</span>';
+        else if (isRejected) statusBadge = '<span class="text-red-500 font-bold">环路舍弃</span>';
+        else if (isCur) statusBadge = '<span class="text-blue-600 font-bold">考察中</span>';
 
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', String(pos.x));
-      circle.setAttribute('cy', String(pos.y));
-      circle.setAttribute('r', '24');
-
-      if (mstNodes.has(i)) {
-        circle.setAttribute('fill', 'rgba(34, 197, 94, 0.4)');
-        circle.setAttribute('stroke', '#22c55e');
-        circle.setAttribute('stroke-width', '2');
-      } else {
-        circle.setAttribute('fill', 'rgba(20, 184, 166, 0.15)');
-        circle.setAttribute('stroke', '#14b8a6');
-        circle.setAttribute('stroke-width', '2');
-      }
-      g?.appendChild(circle);
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(pos.x));
-      text.setAttribute('y', String(pos.y + 6));
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('fill', mstNodes.has(i) ? '#22c55e' : '#14b8a6');
-      text.setAttribute('font-size', '15');
-      text.setAttribute('font-weight', '700');
-      text.setAttribute('font-family', 'ui-monospace, monospace');
-      text.textContent = String(i);
-      g?.appendChild(text);
-
-      svg?.appendChild(g);
+        return `<tr class="${isCur ? 'bg-blue-50/70 font-semibold' : ''}">
+          <td class="px-3 py-1 text-center font-mono font-bold text-slate-800">(${e.u}, ${e.v})</td>
+          <td class="px-3 py-1 text-center font-mono font-extrabold text-blue-600">${e.w}</td>
+          <td class="px-3 py-1 text-center font-mono text-xs">${statusBadge}</td>
+        </tr>`;
+      }).join('');
     }
 
-    this.graphEl?.appendChild(svg);
-  }
+    if (this.metricMstEdgesEl) {
+      this.metricMstEdgesEl.textContent = `${mstEdges.length} / ${PRIM_NODES.length - 1}`;
+    }
+    if (this.metricTotalWeightEl) {
+      this.metricTotalWeightEl.textContent = `${totalWeight}`;
+    }
+    if (this.metricCurEdgeEl) {
+      this.metricCurEdgeEl.textContent = currentEdge ? `(${currentEdge.u}, ${currentEdge.v}) [w=${currentEdge.w}]` : '—';
+    }
 
-  private renderEdgeList(step: MSTKStep): void {
-    if (!this.edgeListEl) return;
-    this.edgeListEl.innerHTML = '';
-    step.sortedEdges.forEach((edge, i) => {
-      const item = document.createElement('div');
-      item.className = 'mstk-edge-item';
-      const status = step.edgeStatus[i];
-      if (status === 'current') item.classList.add('current');
-      else if (status === 'accepted') item.classList.add('accepted');
-      else if (status === 'rejected') item.classList.add('rejected');
-      item.textContent = `(${edge.u},${edge.v})w=${edge.w}`;
-      this.edgeListEl?.appendChild(item);
-    });
-  }
-
-  private renderUF(step: MSTKStep): void {
-    if (!this.parentEl) return;
-    this.parentEl.innerHTML = '';
-    const prevStep = this.currentIndex > 0 ? this.steps[this.currentIndex - 1] : null;
-    step.parent.forEach((val, i) => {
-      const item = document.createElement('div');
-      item.className = 'mstk-uf-item';
-      if (prevStep && prevStep.parent[i] !== val) item.classList.add('changed');
-      item.innerHTML = `<span class="mstk-idx">${i}</span>${val}`;
-      this.parentEl?.appendChild(item);
-    });
-
-    if (!this.rankEl) return;
-    this.rankEl.innerHTML = '';
-    step.rank.forEach((val, i) => {
-      const item = document.createElement('div');
-      item.className = 'mstk-uf-item';
-      if (prevStep && prevStep.rank[i] !== val) item.classList.add('changed');
-      item.innerHTML = `<span class="mstk-idx">${i}</span>${val}`;
-      this.rankEl?.appendChild(item);
-    });
-  }
-
-  private renderLogLine(step: MSTKStep): void {
-    if (!this.logEl) return;
-    this.logEl.innerHTML = '';
-    this.steps.slice(0, this.currentIndex + 1).forEach((s, i) => {
-      const line = document.createElement('div');
-      if (i === this.currentIndex) line.className = 'active';
-      line.textContent = `${String(i + 1).padStart(2, '0')}. ${s.log}`;
-      this.logEl?.appendChild(line);
-    });
-    this.logEl.scrollTop = this.logEl.scrollHeight;
+    if (this.liveTextEl) {
+      this.liveTextEl.textContent = statusText;
+    }
   }
 }
 
 registerAlgorithm({
   id: 'mst-kruskal',
-  name: '最小生成树之 Kruskal 算法',
+  name: 'Kruskal 最小生成树',
   viewId: 'algo-mst-kruskal-view',
-  category: 'graph',
-  description: 'Kruskal 贪心构建最小生成树，使用并查集判环',
   icon: '🌲',
-  template,
-  Visualizer: MSTKruskalVisualizer,
+  category: 'graph',
   difficulty: 3,
-  levelOrder: 19,
-  learningGoal: '理解 Kruskal 算法的贪心策略和并查集在判环中的应用',
+  levelOrder: 29,
+  description: '左程云算法通关课 Class 058：加边法全局贪心求解最小生成树，边权升序排列配合并查集判环',
+  learningGoal: '掌握加边法全局贪心思想、并查集回路检测与连通分量合并机制',
+  template,
+  Visualizer: KruskalVisualizer,
 });
-
-export {};
