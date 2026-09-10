@@ -7,214 +7,12 @@
  */
 
 import { HighlightTarget } from '../../../../core/code-panel';
+import { DEPENDENT_STAGE1_CODE_LANGUAGES, DEPENDENT_STAGE2_CODE_LANGUAGES, DEPENDENT_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
+import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
 import { DependentItem } from './dependent-knapsack-renderer';
 
-export const DEPENDENT_STAGE1_CODE_LANGUAGES: Record<string, string[]> = {
-  java: [
-    'package class073;',
-    '',
-    '// 阶段 1: 暴力递归 (主附组合互斥展开为分组背包分治)',
-    'public class Code05_DependentKnapsackRecursion {',
-    '    public static int dfs(int[][] cost, int[][] val, int[] size, int g, int rem) {',
-    '        if (g == size.length || rem <= 0) return 0;',
-    '        int ans = dfs(cost, val, size, g + 1, rem);',
-    '        for (int k = 0; k < size[g]; k++) {',
-    '            if (rem >= cost[g][k]) {',
-    '                ans = Math.max(ans, dfs(cost, val, size, g + 1, rem - cost[g][k]) + val[g][k]);',
-    '            }',
-    '        }',
-    '        return ans;',
-    '    }',
-    '}',
-  ],
-  cpp: [
-    '#include <vector>',
-    '#include <algorithm>',
-    'using namespace std;',
-    '',
-    '// 阶段 1: 暴力递归',
-    'int dfs(const vector<vector<int>>& cost, const vector<vector<int>>& val, int g, int rem) {',
-    '    if (g == (int)cost.size() || rem <= 0) return 0;',
-    '    int ans = dfs(cost, val, g + 1, rem);',
-    '    for (size_t k = 0; k < cost[g].size(); ++k) {',
-    '        if (rem >= cost[g][k]) {',
-    '            ans = max(ans, dfs(cost, val, g + 1, rem - cost[g][k]) + val[g][k]);',
-    '        }',
-    '    }',
-    '    return ans;',
-    '}',
-  ],
-  python: [
-    '# 阶段 1: 暴力递归',
-    'def dfs(cost: list[list[int]], val: list[list[int]], g: int, rem: int) -> int:',
-    '    if g == len(cost) or rem <= 0:',
-    '        return 0',
-    '    ans = dfs(cost, val, g + 1, rem)',
-    '    for c, v in zip(cost[g], val[g]):',
-    '        if rem >= c:',
-    '            ans = max(ans, dfs(cost, val, g + 1, rem - c) + v)',
-    '    return ans',
-  ],
-  javascript: [
-    '// 阶段 1: 暴力递归',
-    'export function dfs(cost, val, g, rem) {',
-    '  if (g === cost.length || rem <= 0) return 0;',
-    '  let ans = dfs(cost, val, g + 1, rem);',
-    '  for (let k = 0; k < cost[g].length; k++) {',
-    '    if (rem >= cost[g][k]) {',
-    '      ans = Math.max(ans, dfs(cost, val, g + 1, rem - cost[g][k]) + val[g][k]);',
-    '    }',
-    '  }',
-    '  return ans;',
-    '}',
-  ],
-};
 
-export const DEPENDENT_STAGE2_CODE_LANGUAGES: Record<string, string[]> = {
-  java: [
-    'package class073;',
-    'import java.util.Arrays;',
-    '',
-    '// 阶段 2: 记忆化搜索',
-    'public class Code05_DependentKnapsackMemo {',
-    '    public static int dfs(int[][] cost, int[][] val, int[] size, int g, int rem, int[][] memo) {',
-    '        if (g == size.length || rem <= 0) return 0;',
-    '        if (memo[g][rem] != -1) return memo[g][rem];',
-    '        int ans = dfs(cost, val, size, g + 1, rem, memo);',
-    '        for (int k = 0; k < size[g]; k++) {',
-    '            if (rem >= cost[g][k]) {',
-    '                ans = Math.max(ans, dfs(cost, val, size, g + 1, rem - cost[g][k], memo) + val[g][k]);',
-    '            }',
-    '        }',
-    '        return memo[g][rem] = ans;',
-    '    }',
-    '}',
-  ],
-  cpp: [
-    '#include <vector>',
-    '#include <algorithm>',
-    'using namespace std;',
-    '',
-    '// 阶段 2: 记忆化搜索',
-    'int dfs(const vector<vector<int>>& cost, const vector<vector<int>>& val, int g, int rem, vector<vector<int>>& memo) {',
-    '    if (g == (int)cost.size() || rem <= 0) return 0;',
-    '    if (memo[g][rem] != -1) return memo[g][rem];',
-    '    int ans = dfs(cost, val, g + 1, rem, memo);',
-    '    for (size_t k = 0; k < cost[g].size(); ++k) {',
-    '        if (rem >= cost[g][k]) {',
-    '            ans = max(ans, dfs(cost, val, g + 1, rem - cost[g][k], memo) + val[g][k]);',
-    '        }',
-    '    }',
-    '    return memo[g][rem] = ans;',
-    '}',
-  ],
-  python: [
-    '# 阶段 2: 记忆化搜索',
-    'def dfs(cost: list[list[int]], val: list[list[int]], g: int, rem: int, memo: list[list[int]]) -> int:',
-    '    if g == len(cost) or rem <= 0:',
-    '        return 0',
-    '    if memo[g][rem] != -1:',
-    '        return memo[g][rem]',
-    '    ans = dfs(cost, val, g + 1, rem, memo)',
-    '    for c, v in zip(cost[g], val[g]):',
-    '        if rem >= c:',
-    '            ans = max(ans, dfs(cost, val, g + 1, rem - c, memo) + v)',
-    '    memo[g][rem] = ans',
-    '    return ans',
-  ],
-  javascript: [
-    '// 阶段 2: 记忆化搜索',
-    'export function dfs(cost, val, g, rem, memo) {',
-    '  if (g === cost.length || rem <= 0) return 0;',
-    '  if (memo[g][rem] !== -1) return memo[g][rem];',
-    '  let ans = dfs(cost, val, g + 1, rem, memo);',
-    '  for (let k = 0; k < cost[g].length; k++) {',
-    '    if (rem >= cost[g][k]) {',
-    '      ans = Math.max(ans, dfs(cost, val, g + 1, rem - cost[g][k], memo) + val[g][k]);',
-    '    }',
-    '  }',
-    '  return (memo[g][rem] = ans);',
-    '}',
-  ],
-};
 
-export const DEPENDENT_STAGE3_CODE_LANGUAGES: Record<string, string[]> = {
-  java: [
-    'package class073;',
-    '',
-    '// 阶段 3: 严格二维位置依赖动态规划',
-    'public class Code05_DependentKnapsack2D {',
-    '    public static int compute2D(int[][] cost, int[][] val, int[] size, int groupCount, int budget) {',
-    '        int[][] dp = new int[groupCount + 1][budget + 1];',
-    '        for (int g = 1; g <= groupCount; g++) {',
-    '            int kCount = size[g - 1];',
-    '            for (int j = 0; j <= budget; j++) {',
-    '                dp[g][j] = dp[g - 1][j];',
-    '                for (int k = 0; k < kCount; k++) {',
-    '                    int c = cost[g - 1][k];',
-    '                    int v = val[g - 1][k];',
-    '                    if (j >= c) {',
-    '                        dp[g][j] = Math.max(dp[g][j], dp[g - 1][j - c] + v);',
-    '                    }',
-    '                }',
-    '            }',
-    '        }',
-    '        return dp[groupCount][budget];',
-    '    }',
-    '}',
-  ],
-  cpp: [
-    '#include <vector>',
-    '#include <algorithm>',
-    'using namespace std;',
-    '',
-    '// 阶段 3: 严格二维动态规划',
-    'int compute2D(const vector<vector<int>>& cost, const vector<vector<int>>& val, int budget) {',
-    '    int G = cost.size();',
-    '    vector<vector<int>> dp(G + 1, vector<int>(budget + 1, 0));',
-    '    for (int g = 1; g <= G; ++g) {',
-    '        for (int j = 0; j <= budget; ++j) {',
-    '            dp[g][j] = dp[g - 1][j];',
-    '            for (size_t k = 0; k < cost[g - 1].size(); ++k) {',
-    '                int c = cost[g - 1][k], v = val[g - 1][k];',
-    '                if (j >= c) dp[g][j] = max(dp[g][j], dp[g - 1][j - c] + v);',
-    '            }',
-    '        }',
-    '    }',
-    '    return dp[G][budget];',
-    '}',
-  ],
-  python: [
-    '# 阶段 3: 严格二维动态规划',
-    'def compute_2d(cost: list[list[int]], val: list[list[int]], budget: int) -> int:',
-    '    G = len(cost)',
-    '    dp = [[0] * (budget + 1) for _ in range(G + 1)]',
-    '    for g in range(1, G + 1):',
-    '        for j in range(budget + 1):',
-    '            dp[g][j] = dp[g - 1][j]',
-    '            for c, v in zip(cost[g - 1], val[g - 1]):',
-    '                if j >= c:',
-    '                    dp[g][j] = max(dp[g][j], dp[g - 1][j - c] + v)',
-    '    return dp[G][budget]',
-  ],
-  javascript: [
-    '// 阶段 3: 严格二维动态规划',
-    'export function compute2D(cost, val, budget) {',
-    '  const G = cost.length;',
-    '  const dp = Array.from({ length: G + 1 }, () => new Array(budget + 1).fill(0));',
-    '  for (let g = 1; g <= G; g++) {',
-    '    for (let j = 0; j <= budget; j++) {',
-    '      dp[g][j] = dp[g - 1][j];',
-    '      for (let k = 0; k < cost[g - 1].length; k++) {',
-    '        const c = cost[g - 1][k], v = val[g - 1][k];',
-    '        if (j >= c) dp[g][j] = Math.max(dp[g][j], dp[g - 1][j - c] + v);',
-    '      }',
-    '    }',
-    '  }',
-    '  return dp[G][budget];',
-    '}',
-  ],
-};
 
 // ==========================================
 // 步骤推演生成器
@@ -265,15 +63,7 @@ export function buildDependentRecursionSteps(budget: number, m: number, rawItems
   const G = groups.length;
   const callStack: Array<{ g: number; rem: number; label: string }> = [];
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 6, cpp: 6, python: 3, javascript: 2 },
-    fnEnter: { java: 6, cpp: 6, python: 3, javascript: 2 },
-    baseCheck: { java: 6, cpp: 6, python: 3, javascript: 2 },
-    branchNoPick: { java: 7, cpp: 7, python: 5, javascript: 3 },
-    loopCombo: { java: 8, cpp: 8, python: 6, javascript: 4 },
-    branchPick: { java: 10, cpp: 10, python: 8, javascript: 6 },
-    returnMax: { java: 13, cpp: 14, python: 9, javascript: 9 },
-  };
+  const resolveLine = (anchor: string) => getKnapsack073Anchor(1, 'dependent', anchor);
 
   const pushStep = (action: string, codeKey: string, g: number, rem: number, decision: string, message: string, retVal?: number) => {
     if (steps.length >= maxSteps) return;
@@ -281,7 +71,7 @@ export function buildDependentRecursionSteps(budget: number, m: number, rawItems
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i: g,
       remCap: rem,
       n: G,
@@ -346,16 +136,7 @@ export function buildDependentMemoSteps(budget: number, m: number, rawItems: (De
   let hitCount = 0;
   let missCount = 0;
 
-  const lineMap: Record<string, HighlightTarget> = {
-    callRoot: { java: 6, cpp: 6, python: 3, javascript: 2 },
-    fnEnter: { java: 6, cpp: 6, python: 3, javascript: 2 },
-    baseCheck: { java: 6, cpp: 6, python: 3, javascript: 2 },
-    memoCheck: { java: 7, cpp: 7, python: 5, javascript: 3 },
-    branchNoPick: { java: 8, cpp: 8, python: 7, javascript: 4 },
-    loopCombo: { java: 9, cpp: 9, python: 8, javascript: 5 },
-    branchPick: { java: 11, cpp: 11, python: 10, javascript: 7 },
-    memoStore: { java: 14, cpp: 15, python: 12, javascript: 11 },
-  };
+  const resolveLine = (anchor: string) => getKnapsack073Anchor(2, 'dependent', anchor);
 
   const pushStep = (action: string, codeKey: string, g: number, rem: number, memoHit: boolean, decision: string, message: string, cachedVal?: number) => {
     if (steps.length >= maxSteps) return;
@@ -363,7 +144,7 @@ export function buildDependentMemoSteps(budget: number, m: number, rawItems: (De
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       i: g,
       remCap: rem,
       memoHit,
@@ -434,22 +215,14 @@ export function buildDependent2DSteps(budget: number, m: number, rawItems: (Depe
   const G = groups.length;
   const dp: number[][] = Array.from({ length: G + 1 }, () => new Array(budget + 1).fill(0));
 
-  const lineMap: Record<string, HighlightTarget> = {
-    initDp: { java: 6, cpp: 6, python: 3, javascript: 3 },
-    outerLoopG: { java: 7, cpp: 7, python: 4, javascript: 4 },
-    innerLoopJ: { java: 9, cpp: 9, python: 5, javascript: 5 },
-    inheritNoPick: { java: 10, cpp: 10, python: 6, javascript: 6 },
-    loopCombo: { java: 11, cpp: 11, python: 7, javascript: 7 },
-    updatePick: { java: 15, cpp: 14, python: 9, javascript: 9 },
-    returnAns: { java: 20, cpp: 18, python: 11, javascript: 12 },
-  };
+  const resolveLine = (anchor: string) => getKnapsack073Anchor(3, 'dependent', anchor);
 
   const pushStep = (action: string, codeKey: string, curG: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
     steps.push({
       stepIndex: steps.length + 1,
       totalSteps: 0,
       action,
-      codeLine: lineMap[codeKey] || { java: 1 },
+      codeLine: resolveLine(codeKey),
       curI: curG,
       curJ,
       dpTable: dp.map((row) => [...row]),
