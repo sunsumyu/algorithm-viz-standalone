@@ -54,17 +54,32 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       if (curStage.modeCodeLanguages && this.currentMode && curStage.modeCodeLanguages[this.currentMode]) {
         targetCodeLangs = curStage.modeCodeLanguages[this.currentMode];
       }
-      this.codeLanguages = targetCodeLangs;
-      this.codeLines = targetCodeLangs['java'] || Object.values(targetCodeLangs)[0] || [];
+
+      const normalizeCodeLangs = (input?: Record<string, string[] | string>): Record<string, string[]> => {
+        const res: Record<string, string[]> = {};
+        if (!input) return res;
+        for (const [k, v] of Object.entries(input)) {
+          res[k] = Array.isArray(v) ? v : (typeof v === 'string' ? v.split('\n') : []);
+        }
+        return res;
+      };
+
+      const normalized = normalizeCodeLangs(targetCodeLangs);
+      this.codeLanguages = normalized;
+      this.codeLines = normalized['java'] || Object.values(normalized)[0] || [];
     } else {
       if (spec.modes && spec.modes.length > 0) {
         this.currentMode = spec.modes[0].id;
       }
-      const langs = spec.codeLanguages || spec.sourceCodes || {};
-      this.codeLanguages = langs;
-      this.codeLines = langs['java'] || Object.values(langs)[0] || [];
+      const rawLangs = spec.codeLanguages || spec.sourceCodes || {};
+      const normalized: Record<string, string[]> = {};
+      for (const [k, v] of Object.entries(rawLangs)) {
+        normalized[k] = Array.isArray(v) ? v : (typeof v === 'string' ? (v as string).split('\n') : []);
+      }
+      this.codeLanguages = normalized;
+      this.codeLines = normalized['java'] || Object.values(normalized)[0] || [];
     }
-    this.codePanelTitle = `${spec.name} 代码调试`;
+    this.codePanelTitle = `${spec.name || spec.title || spec.id} 代码调试`;
   }
 
   protected initDOMElements(): void {

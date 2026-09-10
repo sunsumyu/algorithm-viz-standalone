@@ -11,6 +11,7 @@
 
 import './categories/advanced-topics/advanced-142-148/diff-constraints-system-renderer';
 import './categories/advanced-topics/advanced-142-148/congruence-shortest-path-renderer';
+import './categories/advanced-topics/advanced-142-148/lucas-theorem-144-renderer';
 import './categories/advanced-topics/advanced-142-148/binomial-inversion-renderer';
 import './categories/advanced-topics/advanced-142-148/cantor-expansion-renderer';
 import './categories/advanced-topics/advanced-142-148/catalan-number-renderer';

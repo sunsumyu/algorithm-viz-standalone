@@ -15,5 +15,6 @@ import './categories/advanced-topics/advanced-134-140/linear-basis-kth-renderer'
 import './categories/advanced-topics/advanced-134-140/fractional-programming-renderer';
 import './categories/advanced-topics/advanced-134-140/exgcd-renderer';
 import './categories/advanced-topics/advanced-134-140/diophantine-equation-renderer';
+import './categories/advanced-topics/advanced-134-140/crt-141-renderer';
 
 export {};

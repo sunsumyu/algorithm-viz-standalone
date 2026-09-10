@@ -14,5 +14,6 @@ import './categories/tree/build-tree-renderer';
 import './categories/tree/bst-search-renderer';
 import './categories/tree/tree-batch-7-renderer';
 import './categories/tree/tree-batch-8-renderer';
+import './categories/tree/trie-xor-max-107-renderer';
 
 export {};

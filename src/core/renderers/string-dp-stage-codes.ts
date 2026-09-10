@@ -542,6 +542,13 @@ export function registerStringDpTemplates(): void {
 
 registerStringDpTemplates();
 
+export interface StringDpCodeMapping {
+  java: number;
+  cpp: number;
+  python: number;
+  javascript: number;
+}
+
 /**
  * 查询字符串 DP 某阶段某 kind 的 anchor 对应行号
  */
@@ -549,21 +556,27 @@ export function getStringDpAnchor(
   stage: number,
   kind: StringDpKind,
   anchor: string
-): HighlightTarget {
+): StringDpCodeMapping {
   const key = `string-dp:${kind}:s${stage}`;
-  const fallback: HighlightTarget = { java: 1, cpp: 1, python: 1, javascript: 1 };
+  const fallback: StringDpCodeMapping = { java: 1, cpp: 1, python: 1, javascript: 1 };
 
   const java = codeStepIndexer.resolveHighlight(key, anchor, 'java');
   const cpp = codeStepIndexer.resolveHighlight(key, anchor, 'cpp');
   const python = codeStepIndexer.resolveHighlight(key, anchor, 'python');
   const javascript = codeStepIndexer.resolveHighlight(key, anchor, 'javascript');
 
+  const toNum = (val: any, fb: number): number => {
+    if (Array.isArray(val)) return val[0] ?? fb;
+    if (typeof val === 'number') return val;
+    return fb;
+  };
+
   if (java != null || cpp != null || python != null || javascript != null) {
     return {
-      java: java ?? (fallback as any).java,
-      cpp: cpp ?? (fallback as any).cpp,
-      python: python ?? (fallback as any).python,
-      javascript: javascript ?? (fallback as any).javascript,
+      java: toNum(java, fallback.java),
+      cpp: toNum(cpp, fallback.cpp),
+      python: toNum(python, fallback.python),
+      javascript: toNum(javascript, fallback.javascript),
     };
   }
   return fallback;

@@ -736,12 +736,18 @@ export function getKnapsackAnchor(
   const python = codeStepIndexer.resolveHighlight(key, anchor, 'python');
   const javascript = codeStepIndexer.resolveHighlight(key, anchor, 'javascript');
 
+  const toNum = (val: any, fb: number): number => {
+    if (Array.isArray(val)) return val[0] ?? fb;
+    if (typeof val === 'number') return val;
+    return fb;
+  };
+
   if (java != null || cpp != null || python != null || javascript != null) {
     return {
-      java: java ?? fallback.java,
-      cpp: cpp ?? fallback.cpp,
-      python: python ?? fallback.python,
-      javascript: javascript ?? fallback.javascript,
+      java: toNum(java, fallback.java),
+      cpp: toNum(cpp, fallback.cpp),
+      python: toNum(python, fallback.python),
+      javascript: toNum(javascript, fallback.javascript),
     };
   }
   return fallback;

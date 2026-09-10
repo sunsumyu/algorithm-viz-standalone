@@ -76,7 +76,7 @@ export interface DeclarativeStageSpec<TStep = any> {
   legend?: LegendItemDef[];
   metrics?: MetricCardDef[];
   has3D?: boolean;
-  codeLanguages: Record<string, string[]>;
+  codeLanguages?: Record<string, string[] | string>;
   modeCodeLanguages?: Record<string, Record<string, string[]>>;
   buildSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
   generateSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
@@ -120,7 +120,7 @@ export interface DeclarativeAlgorithmSpec<TStep = any> {
   presets?: PresetCaseDef[];
   modes?: ModeOptionDef[];
   metrics?: MetricCardDef[];
-  codeLanguages?: Record<string, string[]>;
+  codeLanguages?: Record<string, string[] | string>;
   sourceCodes?: any;
   problemHtml?: string;
   analysisHtml?: string;

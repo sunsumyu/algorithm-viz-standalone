@@ -14,6 +14,7 @@ import './categories/advanced-topics/advanced-124-134/profile-dp-renderer';
 import './categories/advanced-topics/advanced-124-134/ternary-dp-renderer';
 import './categories/advanced-topics/advanced-124-134/binary-lifting-dp-renderer';
 import './categories/advanced-topics/advanced-124-134/monotonic-queue-dp-renderer';
+import './categories/advanced-topics/advanced-124-134/linear-basis-132-renderer';
 import './categories/advanced-topics/advanced-124-134/gaussian-elimination-renderer';
 
 export {};

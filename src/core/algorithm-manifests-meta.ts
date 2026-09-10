@@ -5541,6 +5541,61 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 2,
     "levelOrder": 94,
     "learningGoal": "掌握事件时间排序转化的贪心思想，学会将多维物理运动规约为一维时间序列上的有序处理"
+  },
+  {
+    "id": "trie-xor-max-107",
+    "name": "01-Trie 与异或最大值 (Class 107)",
+    "viewId": "algo-trie-xor-max-107-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 107：01-Trie 字典树前缀高位至低位贪心走对偶分支求两数最大异或和 (LeetCode 421 / 洛谷 P4551)",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 107,
+    "learningGoal": "掌握 01-Trie 字典树对二进制数逐位构建、高位贪心走对偶分支达到 O(N * 32) 极速求最大异或和"
+  },
+  {
+    "id": "value-segment-tree-112",
+    "name": "权值线段树与单点更新 (Class 112)",
+    "viewId": "algo-value-segment-tree-112-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 112：权值线段树单点计数与第 K 小查询，二分下潜实现 O(log V) 动态集合极值定位 (洛谷 P1138 / P3369)",
+    "icon": "⚖️",
+    "difficulty": 3,
+    "levelOrder": 112,
+    "learningGoal": "深入掌握权值线段树对值域进行二分建树与单点插入，实现 O(log V) 查找动态集合中第 K 小元素"
+  },
+  {
+    "id": "linear-basis-132",
+    "name": "线性基与异或空间基底 (Class 132)",
+    "viewId": "algo-linear-basis-132-view",
+    "category": "math",
+    "description": "左程云算法通关课 Class 132：线性基向量张成空间与高位消元插入，贪心求解集合最大异或和 (洛谷 P3812)",
+    "icon": "🧮",
+    "difficulty": 3,
+    "levelOrder": 132,
+    "learningGoal": "深刻理解线性基向量张成空间、高位消元插入机制与贪心异或最大值推导"
+  },
+  {
+    "id": "crt-141",
+    "name": "中国剩余定理 (Class 141)",
+    "viewId": "algo-crt-141-view",
+    "category": "math",
+    "description": "左程云算法通关课 Class 141：中国剩余定理 (CRT) 求解模数两两互质的一元线性同余方程组与孙子算经物不知数 (洛谷 P1495)",
+    "icon": "📜",
+    "difficulty": 3,
+    "levelOrder": 141,
+    "learningGoal": "掌握中国剩余定理 (CRT) 的构造性证明与逆元求解，秒杀孙子算经经典物不知数线性同余方程组"
+  },
+  {
+    "id": "lucas-theorem-144",
+    "name": "卢卡斯定理 (Class 144)",
+    "viewId": "algo-lucas-theorem-144-view",
+    "category": "math",
+    "description": "左程云算法通关课 Class 144：卢卡斯定理 (Lucas Theorem) 求解大组合数对小素数取模 C(n, m) mod p 与 p 进制分解 (洛谷 P3807)",
+    "icon": "⚛️",
+    "difficulty": 3,
+    "levelOrder": 144,
+    "learningGoal": "掌握卢卡斯定理对大组合数进行 p 进制分解、快速幂与费马小定理求逆元，解决大数模小素数难题"
   }
 ];
 

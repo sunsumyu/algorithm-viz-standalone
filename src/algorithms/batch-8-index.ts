@@ -14,6 +14,7 @@ import './categories/tree/tree-108-116/fenwick-inversion-renderer';
 import './categories/tree/tree-108-116/segment-tree-renderer';
 import './categories/tree/tree-108-116/dynamic-segment-tree-renderer';
 import './categories/tree/tree-108-116/interval-merge-segment-tree-renderer';
+import './categories/tree/tree-108-116/value-segment-tree-112-renderer';
 import './categories/tree/tree-108-116/sweep-line-renderer';
 
 export {};
