@@ -40,8 +40,10 @@ import './categories/advanced-topics/hard-interview/burst-balloons-renderer';
 import './categories/advanced-topics/hard-interview/stock-trading-state-machine-renderer';
 import './categories/advanced-topics/hard-interview/dungeon-game-renderer';
 import './categories/advanced-topics/hard-interview/freedom-trail-renderer';
+import './categories/dynamic-programming/recursion-to-dp-038-renderer';
 
 export {};
+
 
 
 

@@ -401,6 +401,14 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'freedom-trail-ring-dp': '🎡',
   'substring-concatenation-words': '🔍',
   'expression-add-operators': '🔣',
+  'recursion-order-031': '🌳',
+  'bitmap-design-033': '🧮',
+  'random-generator-035': '🎲',
+  'recursion-to-dp-038': '📈',
+  'hard-largest-rectangle-histogram': '📊',
+  'merge-k-sorted-lists': '🔗',
+  'n-queens-bitwise-speed': '👑',
+  'median-two-sorted-arrays': '⚖️',
 };
 
 /**

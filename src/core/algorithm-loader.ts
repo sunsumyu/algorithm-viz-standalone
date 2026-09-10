@@ -9,7 +9,7 @@ const BATCH_LOADERS: Record<string, () => Promise<unknown>> = {
   'linked-list': () => Promise.all([import('../algorithms/batch-2-index'), import('../algorithms/batch-22-index')]),
   'hash-table': () => import('../algorithms/batch-2-index'),
   string: () => Promise.all([import('../algorithms/batch-2-index'), import('../algorithms/batch-7-index')]),
-  'monotonic-stack': () => Promise.all([import('../algorithms/batch-2-index'), import('../algorithms/batch-25-index')]),
+  'monotonic-stack': () => Promise.all([import('../algorithms/batch-2-index'), import('../algorithms/batch-4-index'), import('../algorithms/batch-25-index')]),
   graph: () => Promise.all([import('../algorithms/batch-2-index'), import('../algorithms/batch-12-index'), import('../algorithms/batch-17-index'), import('../algorithms/batch-19-index'), import('../algorithms/batch-20-index'), import('../algorithms/batch-21-index')]),
   game: () => Promise.all([import('../algorithms/batch-2-index'), import('../algorithms/batch-6-index')]),
   tree: () => Promise.all([import('../algorithms/batch-3-index'), import('../algorithms/batch-8-index'), import('../algorithms/batch-9-index'), import('../algorithms/batch-10-index'), import('../algorithms/batch-12-index'), import('../algorithms/batch-13-index'), import('../algorithms/batch-14-index'), import('../algorithms/batch-18-index'), import('../algorithms/batch-19-index'), import('../algorithms/batch-21-index'), import('../algorithms/batch-23-index')]),
@@ -18,8 +18,12 @@ const BATCH_LOADERS: Record<string, () => Promise<unknown>> = {
   greedy: () => Promise.all([import('../algorithms/batch-5-index'), import('../algorithms/batch-11-index')]),
   backtracking: () => import('../algorithms/batch-backtracking-index'),
   'dynamic-programming': () => Promise.all([import('../algorithms/batch-dynamic-programming-index'), import('../algorithms/batch-10-index'), import('../algorithms/batch-26-index'), import('../algorithms/batch-27-index')]),
-  math: () => Promise.all([import('../algorithms/batch-6-index'), import('../algorithms/batch-10-index'), import('../algorithms/batch-11-index'), import('../algorithms/batch-12-index'), import('../algorithms/batch-14-index'), import('../algorithms/batch-15-index'), import('../algorithms/batch-16-index')]),
-  bit: () => import('../algorithms/batch-6-index'),
+  math: () => Promise.all([import('../algorithms/batch-4-index'), import('../algorithms/batch-6-index'), import('../algorithms/batch-10-index'), import('../algorithms/batch-11-index'), import('../algorithms/batch-12-index'), import('../algorithms/batch-14-index'), import('../algorithms/batch-15-index'), import('../algorithms/batch-16-index')]),
+  bit: () => Promise.all([import('../algorithms/batch-4-index'), import('../algorithms/batch-6-index')]),
+  'bit-manipulation': () => import('../algorithms/batch-4-index'),
+  heap: () => import('../algorithms/batch-4-index'),
+  queue: () => import('../algorithms/batch-2-index'),
+  'two-pointers': () => import('../algorithms/batch-7-index'),
 };
 
 const loadedBatches = new Set<string>();

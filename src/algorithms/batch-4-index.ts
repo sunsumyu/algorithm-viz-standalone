@@ -23,5 +23,12 @@ import './categories/sort/merge-sort-small-sum-022-renderer';
 import './categories/heap/heap-greater-026-renderer';
 import './categories/sort/radix-sort-028-renderer';
 import './categories/advanced-topics/hard-interview/the-skyline-problem-renderer';
+import './categories/bit-manipulation/bitmap-design-033-renderer';
+import './categories/math/random-generator-035-renderer';
+import './categories/advanced-topics/hard-interview/hard-largest-rectangle-histogram-renderer';
+import './categories/advanced-topics/hard-interview/merge-k-sorted-lists-renderer';
+import './categories/advanced-topics/hard-interview/median-two-sorted-arrays-renderer';
 
 export {};
+
+

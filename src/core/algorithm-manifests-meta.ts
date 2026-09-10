@@ -5970,6 +5970,94 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 282,
     "learningGoal": "透彻掌握回溯搜索中利用 prevNum 结合律撤销机制搞定乘法运算优先级的高阶技巧 (LeetCode 282)"
+  },
+  {
+    "id": "recursion-order-031",
+    "name": "Class 031: 递归序与经典递归过程解构 (Recursion Order)",
+    "viewId": "algo-recursion-order-031-view",
+    "category": "backtracking",
+    "description": "入门篇核心：二叉树递归遍历每个节点三次到达的递归序第一性原理，系统调用栈压栈与弹栈深度解构",
+    "icon": "🌳",
+    "difficulty": 2,
+    "levelOrder": 31,
+    "learningGoal": "深刻理解二叉树每个节点到达三次的递归序第一性原理，掌握先序、中序、后序遍历的统一底层本质"
+  },
+  {
+    "id": "bitmap-design-033",
+    "name": "Class 033: 位图 BitMap 的实现与海量数据去重 (BitMap Design)",
+    "viewId": "algo-bitmap-design-033-view",
+    "category": "bit-manipulation",
+    "description": "入门篇核心：经典位图 BitMap 的底层位运算设计与桶偏移定位原理，海量数据 32 倍空间极大压缩去重",
+    "icon": "🧮",
+    "difficulty": 2,
+    "levelOrder": 33,
+    "learningGoal": "掌握经典位图 (BitMap) 的底层位运算设计与桶偏移定位原理，理解海量数据去重的空间压缩本质"
+  },
+  {
+    "id": "random-generator-035",
+    "name": "Class 035: 不均匀随机发生器向等概率转化模型 (Random Transformer)",
+    "viewId": "algo-random-generator-035-view",
+    "category": "math",
+    "description": "入门篇核心：冯·诺依曼偏置消除法数学原理，独立双掷对称消除与二进制位流水线拼装任意区间随机数",
+    "icon": "🎲",
+    "difficulty": 2,
+    "levelOrder": 35,
+    "learningGoal": "理解冯·诺依曼偏置消除法数学原理，掌握由偏置随机发生器向等概率发生器及任意范围随机数的转化模型"
+  },
+  {
+    "id": "recursion-to-dp-038",
+    "name": "Class 038: 经典递归向记忆化搜索与动态规划初步转换 (Recursion to DP)",
+    "viewId": "algo-recursion-to-dp-038-view",
+    "category": "dynamic-programming",
+    "description": "入门篇核心：经典递归向记忆化搜索、严格状态依赖表与空间压缩的四段式蜕变全流程与设计思维",
+    "icon": "📈",
+    "difficulty": 2,
+    "levelOrder": 38,
+    "learningGoal": "掌握经典暴力递归向记忆化搜索、严格表依赖与空间压缩的四段式蜕变全流程与设计思维"
+  },
+  {
+    "id": "hard-largest-rectangle-histogram",
+    "name": "Hard 17: 柱状图中最大的矩形 (Largest Rectangle in Histogram)",
+    "viewId": "algo-hard-largest-rectangle-histogram-view",
+    "category": "monotonic-stack",
+    "description": "大厂高频压轴题：LeetCode 84 单调递增栈母题，首尾哨兵技巧与出栈同时锁定左右最小边界",
+    "icon": "📊",
+    "difficulty": 3,
+    "levelOrder": 84,
+    "learningGoal": "彻底掌握单调递增栈的母题模型与首尾哨兵技巧，体会左右边界 O(1) 同时确定的精妙逻辑"
+  },
+  {
+    "id": "merge-k-sorted-lists",
+    "name": "Hard 18: 合并 K 个升序链表 (Merge k Sorted Lists)",
+    "viewId": "algo-merge-k-sorted-lists-view",
+    "category": "heap",
+    "description": "大厂高频压轴题：LeetCode 23 小根堆 (PriorityQueue) 维护 K 条链表头部最小值，O(N log K) 极致合并",
+    "icon": "🔗",
+    "difficulty": 3,
+    "levelOrder": 23,
+    "learningGoal": "掌握小根堆多路归并算法模型，理解 O(N log K) 复杂度证明与多路数据流并发合并思想"
+  },
+  {
+    "id": "n-queens-bitwise-speed",
+    "name": "Hard 19: N 皇后极速位运算解法 (N-Queens Bitwise Acceleration)",
+    "viewId": "algo-n-queens-bitwise-speed-view",
+    "category": "backtracking",
+    "description": "大厂高频压轴题：LeetCode 51/52 极速位运算，三整数位掩码 (col, leftDiag, rightDiag) 与最右 1 提取秒杀传统回溯",
+    "icon": "👑",
+    "difficulty": 3,
+    "levelOrder": 51,
+    "learningGoal": "掌握经典 N 皇后问题的列与双向对角线位掩码表达技巧，理解最右 1 提取与位移推导模型"
+  },
+  {
+    "id": "median-two-sorted-arrays",
+    "name": "Hard 20: 寻找两个正序数组的中位数 (Median of Two Sorted Arrays)",
+    "viewId": "algo-median-two-sorted-arrays-view",
+    "category": "search",
+    "description": "大厂高频压轴题：LeetCode 4 短数组二分虚拟切分，交叉不等式检验 (L1 <= R2 && L2 <= R1)，O(log(min(M, N))) 极速定位",
+    "icon": "⚖️",
+    "difficulty": 3,
+    "levelOrder": 4,
+    "learningGoal": "掌握双数组虚拟二分切分与交叉不等式收敛原理，体会 O(log(min(M, N))) 极速分治模型"
   }
 ];
 
