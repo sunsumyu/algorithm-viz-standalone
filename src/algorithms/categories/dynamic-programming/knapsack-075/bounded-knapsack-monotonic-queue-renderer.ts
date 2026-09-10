@@ -291,17 +291,22 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackMono
         const { t, vList, wList, cList } = parseMonoQueueInputs(inputs);
         return buildBoundedNaiveRecursionSteps(t, vList, wList, cList);
       },
-      renderCanvas: (container, step) =>
+      renderCanvas: (container, step) => {
+        const infoHtml = `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px;">
+            <div style="font-size:12px; font-weight:700; color:#1e293b; margin-bottom:4px;">${step.decision}</div>
+            <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
+          </div>
+        `;
         renderSpecialRecursionCard1(
           container,
-          step.callStack,
           step.i < step.n
             ? `正在决策宝物 #${step.i + 1} (重:${step.wList[step.i]}, 价:${step.vList[step.i]}, 上限:${step.cList[step.i]})`
             : '所有宝物决策完成',
-          step.remCap,
-          step.decision,
-          step.returnValue
-        ),
+          step.callStack || [],
+          infoHtml
+        );
+      },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
           <div style="display:flex; flex-direction:column; gap:10px; height:100%; width:100%; justify-content:center; align-items:center; background:rgba(241, 245, 249, 0.9); border:1px solid #e2e8f0; border-radius:8px; padding:16px; box-sizing:border-box;">
@@ -512,7 +517,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackMono
   renderCanvas: (container, step) => {
     const queueHtml = step.queue.length > 0
       ? step.queue
-          .map((pos, idx) => {
+          .map((pos: number, idx: number) => {
             const isHead = idx === 0;
             const mVal = step.queueMetrics[idx];
             return `
@@ -528,7 +533,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackMono
       : '<span style="color:#64748b; font-size:11px;">(队列为空)</span>';
 
     const itemsHtml = step.vList
-      .map((val, idx) => {
+      .map((val: number, idx: number) => {
         const isCur = idx === step.itemIndex;
         const w = step.wList[idx];
         const c = step.cList[idx];
@@ -576,7 +581,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackMono
     `;
   },
   renderCustomMetrics: (container, step) => {
-    const cells = step.dp.map((val, j) => {
+    const cells = step.dp.map((val: number, j: number) => {
       const isTarget = j === step.j;
       const inQueue = step.queue.includes(j);
       const bg = isTarget ? '#0284c7' : inQueue ? '#065f46' : '#1e293b';

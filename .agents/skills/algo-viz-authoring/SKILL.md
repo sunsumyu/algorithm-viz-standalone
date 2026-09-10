@@ -60,6 +60,9 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 11. **树组件重复造轮子与几何遮挡穿模（Redundant Tree Visualizers & Collision Overlap）**：
     - *故障现象*：连线分支标签（Edge Label 如 `↑上`、`\ 'e'`）与父节点返回值徽章（Tag）、当前活跃游标（🐸 青蛙）及子节点边框发生严重重叠穿模，文字混在一起不可读；多个算法各自实现一份树渲染，参数与体验割裂。
     - *根本原因*：未贯彻“能用模板的一律用模板”的深度模块复用原则，各个业务模块私自编写树渲染；且层间距写死过小（如 46px），缺少垂直净空安全避让（Safe Vertical Clearance）机制。
+12. **序列/指针状态瞬态蒸发与越界丢失（Transient Highlight & Boundary Vanishing）**：
+    - *故障现象*：双字符串/双指针对比中，匹配过的字符在步骤深入后高亮瞬间退为白色；指针一移到边界基底（如越界空串）所有高亮彻底消失，甚至界面抛出 `s1[5] ('undefined')` 脏数据。
+    - *根本原因*：仅使用单一瞬态点判断（`idx === curI`），缺乏“待访/已扫/当前焦点/路径锁定”的三态状态机；且未设置末尾 `EOF / Ø` 边界哨兵格子承接越界焦点。
 
 ---
 
@@ -209,6 +212,23 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
     并且 X 坐标沿贝塞尔 S 弯曲线动态取值，确保边标签四周保留至少 $\ge 8\text{px}$ 的安全净空，绝不能与父节点的返回值徽章（Tag）或子节点头顶的当前活跃游标（🐸 青蛙）发生像素级重叠。
   - **图层分层与不透明底衬 (Layering & Opaque Shields)**：
     SVG 图元必须分层输出：`底图连线层 (lines) ➔ 中间分支标签层 (edgeLabels) ➔ 顶层状态节点层 (nodes)`。分支标签必须自带不透明 `#ffffff` 填充底衬与边框阴影，杜绝连线穿透文字。
+
+### 4.5 序列比对与双指针跟踪交互规范 (Sequence Alignment & Dual-Pointer Tracking Invariants)
+- **坚决杜绝单点瞬态高亮（No Ephemeral Point-in-Time Highlighting）**：
+  - 凡涉及字符串比对、双指针滑动、序列模式匹配（LCS、编辑距离、通配符、回文串）等推演，**严禁仅使用 `idx === curI` 这种单点瞬态判断**。
+  - 必须实现四态视觉连续性状态机：
+    1. **待考察（Unvisited/Pending）**：默认中性底色。
+    2. **已考察/历史轨迹（Visited/Explored）**：弱化半透明灰，展现扫描前进历史。
+    3. **当前活跃焦点（Active Focus）**：高亮亮蓝/琥珀金脉冲，指示当前正在比对的字符。
+    4. **路径有效锁定（Matched/Committed）**：当前调用链上已匹配采纳的字符，必须常驻翡翠绿高亮与标识，直至该分支回溯退栈。
+- **末尾边界哨兵不变量（EOF / Boundary Sentinel Invariant）**：
+  - 所有双序列/双指针算法，当 `i >= s.length` 或 `j >= s.length` 达到基底终止条件时，字符容器末尾必须常驻包含一个 **`EOF` 或 `Ø` 哨兵单元格**。
+  - 越界推演步的活跃光标必须精准落在该 `EOF` 哨兵格上，**严禁光标从 DOM 中凭空消失**。
+- **零 Undefined 脏渲染铁律（Zero Undefined Rendering Invariant）**：
+  - 渲染层取字符值前必须做防御性校验：`(idx >= 0 && idx < s.length) ? s[idx] : 'Ø/空'`。
+  - 严禁在任何卡片、Tooltip、日志或徽章中出现 `'undefined'`。
+- **统一复用核心深度模块**：
+  - 所有序列比对与指针跟踪必须优先调用 `SequenceAlignmentPresenter`，杜绝各个业务模块私自手写 `split('').map(...)`。
 
 ---
 
@@ -378,5 +398,6 @@ export function buildStandardAlgorithmSteps(inputs: Record<string, any>): AlgoSt
 - [ ] **顶栏按钮语义明确**：重新生成/应用按钮使用“应用”等明确汉字，禁止单独放播放三角图标 `▶`，与“重置”按钮对称。
 - [ ] **排版自洽**：“重置”按钮在输入框最后，变化变量 $i, j$ 优先显式展示，输入 label 无重复双冒号。
 - [ ] **代码一键复制**：代码面板右上角提供常驻复制按钮（#btn-code-copy），点击即时反馈「已复制」，兼容 4 语言源码提取。
+- [ ] **序列连续性与哨兵**：双序列比对具备 EOF 哨兵，焦点越界不消失，路径锁定字符常驻高亮，页面绝对无 `undefined` 脏字符。
 - [ ] **重置幂等**：点击重置回到 Step 0 初始状态，无白板、无死锁。
 - [ ] **全量测试通过**：执行全量 Vitest 测试套件，100% 绿色通过方可提交。

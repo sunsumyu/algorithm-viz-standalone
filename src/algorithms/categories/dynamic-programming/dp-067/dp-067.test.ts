@@ -587,7 +587,7 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       // 轻量 DOM 容器 Mock
       const mockContainer = {
         innerHTML: '',
-        querySelector: function (selector: string) {
+        querySelector: function (this: any, selector: string) {
           if (selector === '.lcs-sandbox-outer' && this.innerHTML.includes('lcs-sandbox-outer')) {
             return {
               querySelector: (s: string) => this.querySelector(s),
@@ -676,7 +676,7 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       let activeSubView = '';
       const mockCard2 = {
         innerHTML: '',
-        querySelector: function (selector: string) {
+        querySelector: function (this: any, selector: string) {
           if (selector === '.lcs-card2-compound' && this.innerHTML.includes('lcs-card2-compound')) {
             return {
               querySelector: (s: string) => this.querySelector(s),
@@ -720,5 +720,42 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       expect(mockCard2.innerHTML).toContain('lcs-tab-strings');
       expect(activeSubView).toBe('tree');
     });
+
+    it('双序列比对在全量步骤推演中绝对不含 undefined，且越界基底具备 EOF 哨兵', async () => {
+      const { SequenceAlignmentPresenter } = await import('../../../../core/renderers/sequence-alignment-adapter');
+      const forwardSteps = buildLcsStage1Steps({ 'input-s1': 'abcde', 'input-s2': 'ace' }, 'forward');
+      expect(forwardSteps.length).toBeGreaterThan(0);
+
+      const mockBox = { innerHTML: '' } as unknown as HTMLElement;
+
+      for (let idx = 0; idx < forwardSteps.length; idx++) {
+        const step = forwardSteps[idx];
+        SequenceAlignmentPresenter.render(mockBox, {
+          s1: step.s1,
+          s2: step.s2,
+          curI: step.i,
+          curJ: step.j,
+          matchedIndices1: step.matchedIndices1,
+          matchedIndices2: step.matchedIndices2,
+        });
+
+        // 1. 零 undefined 铁律
+        expect(
+          mockBox.innerHTML,
+          `第 ${idx} 步 (i=${step.i}, j=${step.j}) 渲染内容包含了 undefined 脏字符！`
+        ).not.toContain('undefined');
+
+        // 2. 越界时 EOF 哨兵激活
+        if (step.i >= step.s1.length || step.j >= step.s2.length) {
+          expect(mockBox.innerHTML).toContain('末尾空串基底 (EOF / Ø)');
+          expect(mockBox.innerHTML).toContain('#fee2e2');
+        }
+      }
+
+      // 验证至少有若干步骤成功记录了匹配路径字符 (matchedIndices)
+      const matchedSteps = forwardSteps.filter((s) => (s.matchedIndices1?.length || 0) > 0);
+      expect(matchedSteps.length, '递归深入时必须正确累积并传递路径匹配字符集').toBeGreaterThan(0);
+    });
   });
 });
+

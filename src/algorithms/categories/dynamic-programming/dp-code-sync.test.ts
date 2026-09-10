@@ -437,7 +437,7 @@ describe('DP Code Sync & Multi-Language Loop Execution Alignment', () => {
     const minCostSteps = arrayLinearSteps(root, 'min-cost');
     for (const step of minCostSteps) {
       expect(step.vars).toBeDefined();
-      const varNames = step.vars!.map((v) => v.name);
+      const varNames = step.vars!.map((v: any) => v.name);
       expect(varNames).toContain('cost (台阶花费)');
       expect(varNames).toContain('n (楼顶台阶)');
       expect(varNames).toContain('dp (花费数组)');
@@ -453,7 +453,7 @@ describe('DP Code Sync & Multi-Language Loop Execution Alignment', () => {
     const climbSteps = linearSteps(root, 'climb');
     for (const step of climbSteps) {
       expect(step.vars).toBeDefined();
-      const varNames = step.vars!.map((v) => v.name);
+      const varNames = step.vars!.map((v: any) => v.name);
       expect(varNames).toContain('n (目标台阶)');
       expect(varNames).toContain('dp (方案总数数组)');
       expect(varNames).toContain('i (当前计算台阶)');
@@ -462,7 +462,7 @@ describe('DP Code Sync & Multi-Language Loop Execution Alignment', () => {
     const fibSteps = linearSteps(root, 'fibonacci');
     for (const step of fibSteps) {
       expect(step.vars).toBeDefined();
-      const varNames = step.vars!.map((v) => v.name);
+      const varNames = step.vars!.map((v: any) => v.name);
       expect(varNames).toContain('n (目标项)');
       expect(varNames).toContain('dp (斐波那契数组)');
       expect(varNames).toContain('i (当前计算项)');

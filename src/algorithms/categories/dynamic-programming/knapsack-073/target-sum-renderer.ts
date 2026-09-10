@@ -347,17 +347,22 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         const { target, nums } = parseTargetSumInputs(inputs);
         return buildTargetSumRecursionSteps(nums, target);
       },
-      renderCanvas: (container, step) =>
+      renderCanvas: (container, step) => {
+        const infoHtml = `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px;">
+            <div style="font-size:12px; font-weight:700; color:#1e293b; margin-bottom:4px;">${step.decision}</div>
+            <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
+          </div>
+        `;
         renderSpecialRecursionCard1(
           container,
-          step.callStack,
           step.i < step.n
             ? `正在决策 nums[${step.i}]=${step.nums?.[step.i] ?? '—'}`
             : '所有元素决策完成',
-          step.remCap,
-          step.decision,
-          step.returnValue
-        ),
+          step.callStack || [],
+          infoHtml
+        );
+      },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
           <div style="display:flex; flex-direction:column; gap:10px; height:100%; width:100%; justify-content:center; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; box-sizing:border-box;">

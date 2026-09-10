@@ -97,4 +97,42 @@ describe('RecursionTreeAdapter (Deep Module) Lifecycle & Layout Guard', () => {
     RecursionTreeAdapter.renderRecursionTree(container as any, mockTree, 'deep-active');
     expect(container.innerHTML).toContain('deep(5,5)');
   });
+
+  it('4. 正确生成悬浮平移缩放工具栏与 SVG 视口变换容器', () => {
+    const mockTree = {
+      id: 'root-1',
+      val: 'f(0,0)',
+      status: 'current',
+      children: []
+    };
+
+    RecursionTreeAdapter.renderRecursionTree(container as any, mockTree, 'root-1');
+    expect(container.innerHTML).toContain('tree-zoom-toolbar');
+    expect(container.innerHTML).toContain('data-tree-act="zoom-in"');
+    expect(container.innerHTML).toContain('data-tree-act="zoom-out"');
+    expect(container.innerHTML).toContain('data-tree-act="reset"');
+    expect(container.innerHTML).toContain('data-tree-act="focus"');
+    expect(container.innerHTML).toContain('tree-viewport-g');
+    expect(container.innerHTML).toContain('滚轮缩放 · 拖拽平移');
+  });
+
+  it('5. 视口状态管理与 resetViewState 重置视角能力', () => {
+    const mockHtmlDiv = { tagName: 'DIV' } as any;
+    const st = RecursionTreeAdapter.getViewState(mockHtmlDiv);
+    expect(st.scale).toBe(1);
+    expect(st.tx).toBe(0);
+    expect(st.ty).toBe(0);
+
+    st.scale = 1.5;
+    st.tx = 120;
+    st.ty = -80;
+    st.userTouched = true;
+
+    RecursionTreeAdapter.resetViewState(mockHtmlDiv);
+    expect(st.scale).toBe(1);
+    expect(st.tx).toBe(0);
+    expect(st.ty).toBe(0);
+    expect(st.userTouched).toBe(false);
+  });
 });
+

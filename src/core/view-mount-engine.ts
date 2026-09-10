@@ -10,6 +10,7 @@
 
 import { IVisualizer, VisualizerContext } from './interfaces';
 import { visualizerHeaderLayoutCoordinator } from './controllers/visualizer-header-layout-coordinator';
+import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinator';
 import { algorithmRegistry } from './algorithm-registry';
 
 import { addRecentAlgorithm } from './recent-algorithms';
@@ -137,6 +138,7 @@ export class ViewMountEngine {
     }
 
     if (this.activeContainer) {
+      panelCollapseCoordinator.unbind(this.activeContainer);
       this.activeContainer.innerHTML = '';
       this.activeContainer.classList.remove('active');
       this.activeContainer = null;
@@ -195,6 +197,7 @@ export class ViewMountEngine {
       container.innerHTML = templateContent;
       this.ensureBackButton(container, req.navigateBack);
       visualizerHeaderLayoutCoordinator.normalizeHeaderControls(container);
+      panelCollapseCoordinator.bind(container);
     }
 
     // 4. 实例化并挂载 Visualizer
@@ -213,6 +216,10 @@ export class ViewMountEngine {
       if (this.mountSeq !== seq) {
         if (typeof visualizer.destroy === 'function') visualizer.destroy();
         return null;
+      }
+
+      if (container) {
+        panelCollapseCoordinator.bind(container);
       }
 
       this.currentVisualizer = visualizer;

@@ -13,6 +13,7 @@ import {
 import { PresetCasePresenter } from './renderers/preset-case-presenter';
 import { ThreeViewControlsAdapter } from './renderers/three-view-controls-adapter';
 import { SplitterEngine, SplitterStorage } from './splitter-engine';
+import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinator';
 import { registerAlgorithm } from './registry';
 
 export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extends StepVisualizer<TStep> {
@@ -44,18 +45,26 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           }
         } catch {}
       }
+      if (spec.modes && spec.modes.length > 0) {
+        this.currentMode = spec.modes[0].id;
+      }
       this.currentStageId = initialStage;
       const curStage = spec.stages.find((s) => s.id === this.currentStageId) || spec.stages[0];
-      this.codeLanguages = curStage.codeLanguages;
-      this.codeLines = curStage.codeLanguages['java'] || Object.values(curStage.codeLanguages)[0] || [];
+      let targetCodeLangs = curStage.codeLanguages;
+      if (curStage.modeCodeLanguages && this.currentMode && curStage.modeCodeLanguages[this.currentMode]) {
+        targetCodeLangs = curStage.modeCodeLanguages[this.currentMode];
+      }
+      this.codeLanguages = targetCodeLangs;
+      this.codeLines = targetCodeLangs['java'] || Object.values(targetCodeLangs)[0] || [];
     } else {
-      this.codeLanguages = spec.codeLanguages;
-      this.codeLines = spec.codeLanguages['java'] || Object.values(spec.codeLanguages)[0] || [];
+      if (spec.modes && spec.modes.length > 0) {
+        this.currentMode = spec.modes[0].id;
+      }
+      const langs = spec.codeLanguages || spec.sourceCodes || {};
+      this.codeLanguages = langs;
+      this.codeLines = langs['java'] || Object.values(langs)[0] || [];
     }
     this.codePanelTitle = `${spec.name} 代码调试`;
-    if (spec.modes && spec.modes.length > 0) {
-      this.currentMode = spec.modes[0].id;
-    }
   }
 
   protected initDOMElements(): void {
@@ -117,7 +126,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           this.start();
         });
         el.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
+          if ((e as KeyboardEvent).key === 'Enter') {
             this.start();
           }
         });
@@ -159,13 +168,8 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       this.applyStageUI(this.currentStageId);
     }
 
-    // 挂载暗色代码终端
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: this.spec.problemHtml,
-      analysisHtml: this.spec.analysisHtml,
-      initialLang: 'java',
-    });
+    // 挂载暗色代码终端 (精准对齐当前阶段与顺推/逆推 modeCodeLanguages)
+    this.syncTerminalCode();
 
     // 挂载左右拖拽分栏与右侧上下高度分栏 (Splitter)
     const mainLayout = this.root.querySelector('.dsp-main-layout') as HTMLElement | null;
@@ -281,6 +285,9 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         console.warn('[DeclarativeVisualizer] Failed to setup right splitter:', e);
       }
     }
+
+    // 绑定所有面板双击标题折叠/展开
+    panelCollapseCoordinator.bind(this.root);
   }
 
   /**
@@ -378,7 +385,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
    */
   protected syncTerminalCode(): void {
     const curStage = this.spec.stages?.find((s) => s.id === this.currentStageId);
-    let targetCodeLangs = curStage?.codeLanguages || this.spec.codeLanguages;
+    let targetCodeLangs = curStage?.codeLanguages || this.spec.codeLanguages || this.spec.sourceCodes || {};
     if (curStage?.modeCodeLanguages && this.currentMode && curStage.modeCodeLanguages[this.currentMode]) {
       targetCodeLangs = curStage.modeCodeLanguages[this.currentMode];
     }
@@ -413,12 +420,17 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
 
     if (this.spec.stages && this.spec.stages.length > 0 && this.currentStageId) {
       const stage = this.spec.stages.find((s) => s.id === this.currentStageId);
-      if (stage && typeof stage.buildSteps === 'function') {
-        return stage.buildSteps(inputs, this.currentMode);
+      const stageFn = stage?.buildSteps || stage?.generateSteps;
+      if (typeof stageFn === 'function') {
+        return stageFn(inputs, this.currentMode);
       }
     }
 
-    return this.spec.buildSteps(inputs, this.currentMode);
+    const stepFn = this.spec.buildSteps || this.spec.generateSteps;
+    if (typeof stepFn === 'function') {
+      return stepFn(inputs, this.currentMode);
+    }
+    return [];
   }
 
   /**
@@ -587,7 +599,7 @@ export function createDeclarativeVisualizer<TStep extends StepBase = any>(
   spec: DeclarativeAlgorithmSpec<TStep>
 ): {
   template: string;
-  Visualizer: new () => StepVisualizer<TStep>;
+  Visualizer: new () => DeclarativeAlgorithmVisualizer<TStep>;
 } {
   const template = DeclarativeStagePresenter.generateTemplate(spec);
 
@@ -612,17 +624,17 @@ export function registerDeclarativeAlgorithm<TStep extends StepBase = any>(
   spec: DeclarativeAlgorithmSpec<TStep>
 ): {
   template: string;
-  Visualizer: new () => StepVisualizer<TStep>;
+  Visualizer: new () => DeclarativeAlgorithmVisualizer<TStep>;
 } {
   const result = createDeclarativeVisualizer(spec);
   registerAlgorithm({
     id: spec.id,
-    name: spec.name,
+    name: spec.name || spec.title || spec.id,
     viewId: spec.viewId || `algo-${spec.id}-view`,
     category: spec.category,
-    description: spec.description || spec.name,
+    description: spec.description || spec.name || spec.title || spec.id,
     icon: spec.icon || '📊',
-    difficulty: spec.difficulty || 2,
+    difficulty: (typeof spec.difficulty === 'number' ? spec.difficulty : (spec.difficulty === 'easy' ? 1 : spec.difficulty === 'hard' ? 3 : 2)) as 1 | 2 | 3,
     levelOrder: spec.levelOrder || 99,
     learningGoal: spec.learningGoal || '',
     template: result.template,

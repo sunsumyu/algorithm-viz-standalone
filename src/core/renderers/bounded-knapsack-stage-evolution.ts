@@ -656,11 +656,60 @@ export function buildBoundedNaive2DSteps(
 // 4. 二进制拆分转化为 01 背包演化推演生成器
 // ==========================================
 
+export interface DerivedItem {
+  origIndex: number;
+  multiplier: number;
+  val: number;
+  weight: number;
+}
+
+export function splitItemsBinary(
+  vList: number[],
+  wList: number[],
+  cList: number[]
+): DerivedItem[] {
+  const derived: DerivedItem[] = [];
+  const n = Math.min(vList.length, wList.length, cList.length);
+  for (let i = 0; i < n; i++) {
+    let count = cList[i];
+    let k = 1;
+    while (count >= k) {
+      derived.push({
+        origIndex: i + 1,
+        multiplier: k,
+        val: vList[i] * k,
+        weight: wList[i] * k,
+      });
+      count -= k;
+      k <<= 1;
+    }
+    if (count > 0) {
+      derived.push({
+        origIndex: i + 1,
+        multiplier: count,
+        val: vList[i] * count,
+        weight: wList[i] * count,
+      });
+    }
+  }
+  return derived;
+}
+
 export function buildBinarySplitRecursionSteps(
   t: number,
-  derivedItems: Array<{ origIndex: number; multiplier: number; val: number; weight: number }>,
-  maxSteps = 800
+  derivedItemsOrVList: DerivedItem[] | number[],
+  maxStepsOrWList: number | number[] = 800,
+  cList?: number[]
 ) {
+  let derivedItems: DerivedItem[];
+  let maxSteps = 800;
+  if (Array.isArray(maxStepsOrWList) && Array.isArray(cList)) {
+    derivedItems = splitItemsBinary(derivedItemsOrVList as number[], maxStepsOrWList, cList);
+  } else {
+    derivedItems = derivedItemsOrVList as DerivedItem[];
+    if (typeof maxStepsOrWList === 'number') maxSteps = maxStepsOrWList;
+  }
+
   const steps: any[] = [];
   const m = derivedItems.length;
   const callStack: Array<{ idx: number; remCap: number; label: string }> = [];
@@ -799,9 +848,19 @@ export function buildBinarySplitRecursionSteps(
 
 export function buildBinarySplitMemoSteps(
   t: number,
-  derivedItems: Array<{ origIndex: number; multiplier: number; val: number; weight: number }>,
-  maxSteps = 800
+  derivedItemsOrVList: DerivedItem[] | number[],
+  maxStepsOrWList: number | number[] = 800,
+  cList?: number[]
 ) {
+  let derivedItems: DerivedItem[];
+  let maxSteps = 800;
+  if (Array.isArray(maxStepsOrWList) && Array.isArray(cList)) {
+    derivedItems = splitItemsBinary(derivedItemsOrVList as number[], maxStepsOrWList, cList);
+  } else {
+    derivedItems = derivedItemsOrVList as DerivedItem[];
+    if (typeof maxStepsOrWList === 'number') maxSteps = maxStepsOrWList;
+  }
+
   const steps: any[] = [];
   const m = derivedItems.length;
   const memo: (number | null)[][] = Array.from({ length: m + 1 }, () => new Array(t + 1).fill(null));
@@ -889,8 +948,17 @@ export function buildBinarySplitMemoSteps(
 
 export function buildBinarySplit2DSteps(
   t: number,
-  derivedItems: Array<{ origIndex: number; multiplier: number; val: number; weight: number }>
+  derivedItemsOrVList: DerivedItem[] | number[],
+  wListOrIgnored?: number[],
+  cList?: number[]
 ) {
+  let derivedItems: DerivedItem[];
+  if (Array.isArray(wListOrIgnored) && Array.isArray(cList)) {
+    derivedItems = splitItemsBinary(derivedItemsOrVList as number[], wListOrIgnored, cList);
+  } else {
+    derivedItems = derivedItemsOrVList as DerivedItem[];
+  }
+
   const steps: any[] = [];
   const m = derivedItems.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(t + 1).fill(0));

@@ -14,6 +14,11 @@ import { CATEGORY_CONFIG, getDifficultyConfig } from '../category-config';
 import { algoSearchCatalog, type CategoryGroup } from '../algo-search-catalog';
 import type { AlgorithmMetadata } from '../registry';
 import { resolveAlgorithmIcon } from './catalog-icons';
+import {
+  type CourseType,
+  type CourseFilterStats,
+  extractZuoCourseTag,
+} from '../curriculum-filter';
 
 export { resolveAlgorithmIcon } from './catalog-icons';
 
@@ -270,6 +275,11 @@ export class CatalogPresenter {
           )}</div>`
         : '';
 
+      const zuoTag = extractZuoCourseTag(algo);
+      const zuoBadgeHtml = zuoTag
+        ? `<span class="zuo-course-badge" title="左程云《算法通关课》系列：${zuoTag}">🎓 ${zuoTag}</span>`
+        : '';
+
       card.innerHTML = `
         <div class="card-header">
           <div class="card-icon ${iconClass}">${icon}</div>
@@ -278,7 +288,10 @@ export class CatalogPresenter {
         <div class="card-description">${descHtml}</div>
         ${goalHtml}
         <div class="card-footer">
-          <span class="difficulty-badge" style="color: ${diff.color}; background: ${diff.bg}">${diff.dot} ${diff.label}</span>
+          <div class="card-footer-badges">
+            <span class="difficulty-badge" style="color: ${diff.color}; background: ${diff.bg}">${diff.dot} ${diff.label}</span>
+            ${zuoBadgeHtml}
+          </div>
           <span class="card-category">${catName}</span>
         </div>
       `;
@@ -289,6 +302,81 @@ export class CatalogPresenter {
 
       container.appendChild(card);
     });
+  }
+
+  /**
+   * 渲染主视口顶栏课程筛选切换器
+   */
+  public renderCourseFilterTabs(
+    container: HTMLElement,
+    currentCourse: CourseType,
+    stats: CourseFilterStats,
+    onSelectCourse: (course: CourseType) => void
+  ): void {
+    container.innerHTML = '';
+
+    const tabsDef: { id: CourseType; icon: string; label: string; count: number }[] = [
+      { id: 'all', icon: '🌐', label: '全部题库', count: stats.total },
+      { id: 'zuo', icon: '🎓', label: '算法通关课', count: stats.zuo },
+      { id: 'standard', icon: '📘', label: '经典随想录', count: stats.standard },
+    ];
+
+    const tabsWrapper = document.createElement('div');
+    tabsWrapper.className = 'content-course-tabs';
+
+    tabsDef.forEach((tab) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `course-tab-btn ${tab.id === currentCourse ? 'active' : ''}`;
+      btn.dataset.course = tab.id;
+      btn.title = `筛选：${tab.label} (共 ${tab.count} 个算法)`;
+      btn.innerHTML = `
+        <span class="tab-icon">${tab.icon}</span>
+        <span class="tab-label">${tab.label}</span>
+        <span class="tab-badge">${tab.count}</span>
+      `;
+      btn.addEventListener('click', () => {
+        onSelectCourse(tab.id);
+      });
+      tabsWrapper.appendChild(btn);
+    });
+
+    container.appendChild(tabsWrapper);
+  }
+
+  /**
+   * 渲染侧边栏紧凑型课程筛选切换器
+   */
+  public renderSidebarCourseFilter(
+    container: HTMLElement,
+    currentCourse: CourseType,
+    stats: CourseFilterStats,
+    onSelectCourse: (course: CourseType) => void
+  ): void {
+    container.innerHTML = '';
+
+    const filterWrapper = document.createElement('div');
+    filterWrapper.className = 'sidebar-course-filter';
+
+    const items: { id: CourseType; label: string; count: number }[] = [
+      { id: 'all', label: '全部题库', count: stats.total },
+      { id: 'zuo', label: '🎓 通关课', count: stats.zuo },
+    ];
+
+    items.forEach((item) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `sidebar-course-btn ${item.id === currentCourse ? 'active' : ''}`;
+      btn.dataset.course = item.id;
+      btn.title = `${item.label} (${item.count} 关)`;
+      btn.innerHTML = `<span>${item.label}</span><span class="sidebar-course-count">${item.count}</span>`;
+      btn.addEventListener('click', () => {
+        onSelectCourse(item.id);
+      });
+      filterWrapper.appendChild(btn);
+    });
+
+    container.appendChild(filterWrapper);
   }
 
   /**

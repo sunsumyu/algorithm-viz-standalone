@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 多重背包朴素枚举 (洛谷 P1776 宝物筛选) - 声明式 4-Card 沙盘渲染器
  * 核心：三重循环枚举每种物品件数 k，空间压缩倒序枚举容量 j
  * 架构重构：支持 4 语言全真代码高亮流转、动态装载方案回溯与双层交互沙盘
@@ -561,8 +561,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
   ],
   renderCanvas: (container, step) => {
     const selected = step.selectedTakes || [];
-    const usedWeight = selected.reduce((s, it) => s + it.takeCount * it.unitWeight, 0);
-    const totalVal = selected.reduce((s, it) => s + it.takeCount * it.unitVal, 0);
+    const usedWeight = selected.reduce((s: number, it: any) => s + it.takeCount * it.unitWeight, 0);
+    const totalVal = selected.reduce((s: number, it: any) => s + it.takeCount * it.unitVal, 0);
     const ratio = Math.min(100, Math.round((usedWeight / Math.max(1, step.totalCapacity)) * 100));
 
     const itemsListHtml = step.vList

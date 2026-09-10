@@ -18,9 +18,15 @@ import {
 import { CATEGORY_CONFIG } from '../../core/category-config';
 import { algoSearchCatalog } from '../../core/algo-search-catalog';
 import { catalogPresenter } from '../../core/renderers/catalog-presenter';
+import {
+  CourseType,
+  getCourseStats,
+  filterAlgorithmsByCourse,
+} from '../../core/curriculum-filter';
 
 // ========== State ==========
 let currentCategory: string = 'all';
+let currentCourse: CourseType = 'all';
 let searchQuery: string = '';
 let allAlgorithms: AlgorithmMetadata[] = [];
 /** 展开的分类集合 */
@@ -31,14 +37,44 @@ let _searchKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 // ========== DOM Helpers ==========
 const $ = (id: string) => document.getElementById(id);
 
+// ========== Course Filter UI ==========
+function renderCourseFilterUI(): void {
+  const contentTabs = $('content-course-tabs-container');
+  const sidebarFilter = $('sidebar-course-filter-container');
+  const stats = getCourseStats(allAlgorithms);
+
+  if (contentTabs) {
+    catalogPresenter.renderCourseFilterTabs(contentTabs, currentCourse, stats, (course) => {
+      setCourse(course);
+    });
+  }
+
+  if (sidebarFilter) {
+    catalogPresenter.renderSidebarCourseFilter(sidebarFilter, currentCourse, stats, (course) => {
+      setCourse(course);
+    });
+  }
+}
+
+function setCourse(course: CourseType): void {
+  if (currentCourse === course) return;
+  currentCourse = course;
+  renderCourseFilterUI();
+  updateContentHeader();
+  renderCards();
+  renderSidebarCategories();
+}
+
 // ========== Render Sidebar Categories (委托给 CatalogPresenter 深模块) ==========
 function renderSidebarCategories(): void {
   const container = $('sidebar-categories');
   if (!container) return;
 
   const recentIds = getRecentAlgorithmIds();
+  const filteredAlgos = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
+
   catalogPresenter.renderCategoryNav(container, {
-    algorithms: allAlgorithms,
+    algorithms: filteredAlgos,
     currentCategory,
     expandedCategories,
     recentCount: recentIds.length,
@@ -105,20 +141,29 @@ function updateContentHeader(): void {
   if (!titleEl || !countEl) return;
 
   const visibleCards = getVisibleCards();
+  const courseFiltered = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
 
   if (searchQuery.trim()) {
     titleEl.innerHTML = `搜索结果`;
     countEl.textContent = `(${visibleCards.length} 个匹配)`;
   } else if (currentCategory === 'all') {
-    titleEl.innerHTML = `全部算法`;
-    countEl.textContent = `(${allAlgorithms.length} 个)`;
+    if (currentCourse === 'zuo') {
+      titleEl.innerHTML = `🎓 算法通关课`;
+      countEl.textContent = `(${courseFiltered.length} 关)`;
+    } else if (currentCourse === 'standard') {
+      titleEl.innerHTML = `📘 经典题库`;
+      countEl.textContent = `(${courseFiltered.length} 关)`;
+    } else {
+      titleEl.innerHTML = `全部算法`;
+      countEl.textContent = `(${allAlgorithms.length} 个)`;
+    }
   } else if (currentCategory === 'recent') {
     const recentCount = getRecentAlgorithmIds().length;
     titleEl.innerHTML = `🕒 最近访问`;
     countEl.textContent = `(${recentCount} 个记录)`;
   } else {
     const config = CATEGORY_CONFIG[currentCategory] || { name: currentCategory, icon: '📁' };
-    const count = allAlgorithms.filter((a) => a.category === currentCategory).length;
+    const count = courseFiltered.filter((a) => a.category === currentCategory).length;
     titleEl.innerHTML = `${config.icon} ${config.name}`;
     countEl.textContent = `(${count} 关)`;
   }
@@ -126,10 +171,12 @@ function updateContentHeader(): void {
 
 // ========== Get Visible Cards ==========
 function getVisibleCards(): AlgorithmMetadata[] {
+  const courseFiltered = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
+
   if (currentCategory === 'recent') {
     const recentIds = getRecentAlgorithmIds();
     let recentAlgos = recentIds
-      .map(id => allAlgorithms.find(a => a.id === id))
+      .map(id => courseFiltered.find(a => a.id === id))
       .filter((a): a is AlgorithmMetadata => Boolean(a));
 
     if (searchQuery.trim()) {
@@ -143,7 +190,7 @@ function getVisibleCards(): AlgorithmMetadata[] {
     return recentAlgos;
   }
 
-  let filtered = allAlgorithms;
+  let filtered = courseFiltered;
 
   // Filter by category
   if (currentCategory !== 'all') {
@@ -443,6 +490,9 @@ export const algorithmVizPlugin: Plugin = {
     allAlgorithms = algorithmRegistry.getAllMetadata();
     console.log(`[AlgorithmVizPlugin] Loaded ${allAlgorithms.length} algorithms`);
 
+    // 渲染课程体系过滤栏
+    renderCourseFilterUI();
+
     // 渲染侧边栏关卡链与底部最近访问
     renderSidebarCategories();
 
@@ -462,6 +512,7 @@ export const algorithmVizPlugin: Plugin = {
         renderSidebarRecentFooter();
       };
       _selectorShownHandler = () => {
+        renderCourseFilterUI();
         renderSidebarCategories();
         renderSidebarRecentFooter();
       };
@@ -495,6 +546,7 @@ export const algorithmVizPlugin: Plugin = {
       _sidebarSplitter = null;
     }
     currentCategory = 'all';
+    currentCourse = 'all';
     searchQuery = '';
     expandedCategories.clear();
     console.log('[AlgorithmVizPlugin] Destroyed');

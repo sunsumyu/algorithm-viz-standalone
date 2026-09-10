@@ -533,7 +533,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     word,
     matchedLen: 1,
     path: [[0, 0], [1, 1]],
-    status: 'explore',
+    status: 'match',
     decision: '⬇️ 尝试向下分支 dfsMemo(b, w, 2, 1, 2, memo)',
     message: '路径 A 尝试向下探索下一个字符',
     log: '|   ⬇️ 【向下分支】dfsMemo(i=1, j=1) 尝试向下探查',

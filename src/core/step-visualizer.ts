@@ -34,7 +34,7 @@ export interface StepBase {
   /** 日志文本，用于日志面板显示 */
   log?: string;
   /** 当前步骤的变量快照，用于变量监视面板 */
-  vars?: StepVar[];
+  vars?: StepVar[] | any;
 }
 
 export abstract class StepVisualizer<TStep extends StepBase> implements IVisualizer {

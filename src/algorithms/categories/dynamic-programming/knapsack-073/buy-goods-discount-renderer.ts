@@ -337,17 +337,22 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         const { initialBudget, a, b, w } = parseBuyGoodsInputs(inputs);
         return buildBuyGoodsRecursionSteps(initialBudget, a, b, w);
       },
-      renderCanvas: (container, step) =>
+      renderCanvas: (container, step) => {
+        const infoHtml = `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px;">
+            <div style="font-size:12px; font-weight:700; color:#1e293b; margin-bottom:4px;">${step.decision}</div>
+            <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
+          </div>
+        `;
         renderSpecialRecursionCard1(
           container,
-          step.callStack,
           step.i < step.n
             ? `正在决策普通游戏 #${step.normalGames?.[step.i]?.id ?? '—'} (花费:${step.normalGames?.[step.i]?.cost ?? '—'}, 快乐:${step.normalGames?.[step.i]?.val ?? '—'})`
             : '所有普通游戏决策完成',
-          step.remCap,
-          step.decision,
-          step.returnValue
-        ),
+          step.callStack || [],
+          infoHtml
+        );
+      },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
           <div style="display:flex; flex-direction:column; gap:10px; height:100%; width:100%; justify-content:center; align-items:center; background:rgba(241, 245, 249, 0.9); border:1px solid #e2e8f0; border-radius:8px; padding:16px; box-sizing:border-box;">
@@ -650,10 +655,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
     const selectedNormal = step.selectedNormalGames || [];
 
     const cardsHtml = step.games
-      .map((g, idx) => {
+      .map((g: any, idx: number) => {
         const isCur = step.gameIndex === idx;
         const isFree = g.isFree;
-        const normalIdx = step.normalGames.findIndex((ng) => ng.id === idx + 1);
+        const normalIdx = step.normalGames.findIndex((ng: any) => ng.id === idx + 1);
         const isChosenInDp = normalIdx >= 0 && selectedNormal.includes(normalIdx);
 
         let bg = 'rgba(241, 245, 249, 0.9)';

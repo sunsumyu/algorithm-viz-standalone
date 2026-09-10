@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 多重背包二进制拆分 (洛谷 P1776 宝物筛选) - 声明式 4-Card 沙盘渲染器
  * 核心：多重背包按二进制 1, 2, 4, 8... 位权拆分为独立衍生 01 包，随后执行 01 空间压缩
  * 架构重构：引入四语言代码高亮映射、装载回溯与双层沙盘
@@ -373,7 +373,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
         const { t, derivedItems } = parseBinarySplitInputs(inputs);
         return buildBinarySplitRecursionSteps(t, derivedItems);
       },
-      renderCanvas: (container, step) => {
+      renderCanvas: (container, step: any) => {
         const infoHtml = `
           <div style="background:rgba(15, 23, 42, 0.7); border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -393,7 +393,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
           infoHtml
         );
       },
-      renderCustomMetrics: (container, step) => {
+      renderCustomMetrics: (container, step: any) => {
         RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId);
       },
     },
@@ -415,7 +415,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
         const { t, derivedItems } = parseBinarySplitInputs(inputs);
         return buildBinarySplitMemoSteps(t, derivedItems);
       },
-      renderCanvas: (container, step) =>
+      renderCanvas: (container, step: any) =>
         renderSpecialMemoCard1(
           container,
           `dfsMemo(idx=${step.i}, remCap=${step.remCap})`,
@@ -426,7 +426,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
           step.message,
           step.cachedVal
         ),
-      renderCustomMetrics: (container, step) =>
+      renderCustomMetrics: (container, step: any) =>
         renderSpecialMemoCard2(
           container,
           '衍生 01 背包备忘录 memo[idx][remCap]',
@@ -453,7 +453,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
         const { t, derivedItems } = parseBinarySplitInputs(inputs);
         return buildBinarySplit2DSteps(t, derivedItems);
       },
-      renderCanvas: (container, step) =>
+      renderCanvas: (container, step: any) =>
         renderSpecial2DCard1(
           container,
           `dp[${step.curI}][${step.curJ}]`,
@@ -462,7 +462,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
           step.decision,
           step.message
         ),
-      renderCustomMetrics: (container, step) =>
+      renderCustomMetrics: (container, step: any) =>
         renderSpecial2DCard2(
           container,
           '严格二维状态表 dp[i][j] (i 对应衍生包序号)',

@@ -15,6 +15,7 @@
 import { RecursionTreeAdapter } from '../../../../core/renderers/recursion-tree-adapter';
 import { GridVisualAdapter, type GridRenderOptions } from '../../../../core/renderers/grid-visual-adapter';
 import { ThreeGridVisualAdapter } from '../../../../core/renderers/three-grid-visual-adapter';
+import { ThreeRecursionStackAdapter } from '../../../../core/renderers/three-recursion-stack-adapter';
 import { ThreeViewControlsAdapter } from '../../../../core/renderers/three-view-controls-adapter';
 import type { UniversalStep } from '../../../../core/universal-stage-engine';
 import type { StepVar } from '../../../../core/interfaces';
@@ -616,7 +617,7 @@ function renderLcsDualSandboxContainer(
         </div>
 
         <!-- 2D 经典平面沙盘容器 -->
-        <div id="lcs-2d-board-wrapper" class="w-full h-full flex flex-col items-center justify-center p-2 overflow-auto ${is3D ? 'hidden' : ''}" style="width: 100%; height: 100%;"></div>
+        <div id="lcs-2d-board-wrapper" class="w-full h-full flex flex-col items-center justify-center p-2 ${is3D ? 'hidden' : ''}" style="width: 100%; height: 100%; overflow: visible;"></div>
       </div>
     `;
 
@@ -773,7 +774,7 @@ export function renderMemoGridCard(
 
         const adventurerHtml = isActive
           ? `
-            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
               ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
             </div>
           `
@@ -840,7 +841,7 @@ export function renderMemoGridCard(
         justify-content: center;
         padding: 10px 4px;
         box-sizing: border-box;
-        overflow: auto;
+        overflow: visible;
         user-select: none;
       ">
         <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; background: rgba(248, 250, 252, 0.75); border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1207,7 +1208,7 @@ export function renderDp2DCard2(
 
         const adventurerHtml = isActive
           ? `
-            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
               ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
             </div>
           `
@@ -1279,7 +1280,7 @@ export function renderDp2DCard2(
         justify-content: center;
         padding: 10px 4px;
         box-sizing: border-box;
-        overflow: auto;
+        overflow: visible;
         user-select: none;
       ">
         <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; background: rgba(248, 250, 252, 0.75); border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1420,14 +1421,19 @@ export function renderStage1GridCard(
   activeJ: number,
   rowLabels?: string[],
   colLabels?: string[],
-  is3DExplicit?: boolean
+  is3DExplicit?: boolean,
+  step?: any
 ): void {
   if (!container) return;
 
-  const dummyGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
-  if (activeI >= 0 && activeI < rows && activeJ >= 0 && activeJ < cols) {
-    dummyGrid[activeI][activeJ] = 1;
-  }
+  const dummyGrid = Array.from({ length: rows }, (_, r) =>
+    Array.from({ length: cols }, (_, c) => {
+      const k = `${r},${c}`;
+      if (r === activeI && c === activeJ) return 1;
+      if (step?.visitedMap?.[k]) return step.visitedMap[k].val ?? 0;
+      return null;
+    })
+  );
 
   const stepData: UniversalStep = {
     i: activeI >= 0 ? activeI : 0,
@@ -1448,6 +1454,9 @@ export function renderStage1GridCard(
   renderLcsDualSandboxContainer(container, stepData, renderOpts, is3DExplicit, (wrapper) => {
     const isFinish = (activeI === rows - 1 && activeJ === cols - 1) || (activeI === 0 && activeJ === 0);
     const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(rows, cols))));
+
+    const activeTrailSet = new Set<string>(step?.activeTrail || []);
+    const visitedMap = step?.visitedMap || {};
 
     // 1. 顶部列标尺 (s2 字符列轴)
     const headerColsHtml = Array.from({ length: cols }, (_, c) => {
@@ -1480,7 +1489,13 @@ export function renderStage1GridCard(
       const rLabel = rowLabels && rowLabels[r] !== undefined ? rowLabels[r] : `${r}`;
 
       const cellsHtml = Array.from({ length: cols }, (_, c) => {
+        const key = `${r},${c}`;
         const isActive = r === activeI && c === activeJ;
+        const isTrail = !isActive && activeTrailSet.has(key);
+        const visitedInfo = visitedMap[key];
+        const isVisited = !isActive && !isTrail && Boolean(visitedInfo);
+        const isMatch = visitedInfo?.isMatch;
+
         let style = `
           width: ${cellPx}px;
           height: ${cellPx}px;
@@ -1494,34 +1509,75 @@ export function renderStage1GridCard(
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         `;
 
+        let cellContent = '';
+        let badgeHtml = '';
+
         if (isActive) {
           style += `
             background: #eff6ff;
-            border: 2px solid #3b82f6;
+            border: 2px solid #2563eb;
             color: #1d4ed8;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 2px 8px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(37, 99, 235, 0.25);
             transform: scale(1.06);
             z-index: 20;
           `;
+          cellContent = `<span style="font-size: ${cellPx >= 44 ? '13px' : '11px'}; font-weight: 800; margin-top: 5px; z-index: 10;">👣</span>`;
+        } else if (isTrail) {
+          style += `
+            background: #f0f9ff;
+            border: 1.5px solid #60a5fa;
+            color: #0284c7;
+            box-shadow: 0 1px 3px rgba(56, 189, 248, 0.18);
+            z-index: 10;
+          `;
+          cellContent = `<span style="font-size: 11px; font-weight: 700; opacity: 0.85;">👣</span>`;
+          badgeHtml = `<span style="position: absolute; bottom: 2px; right: 2px; font-size: 7.5px; color: #0284c7; font-weight: 700;">栈</span>`;
+        } else if (isVisited) {
+          if (isMatch) {
+            style += `
+              background: #f0fdf4;
+              border: 1.5px solid #4ade80;
+              color: #15803d;
+              box-shadow: 0 1px 3px rgba(74, 222, 128, 0.15);
+            `;
+            badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">✨</span>`;
+          } else {
+            style += `
+              background: #f8fafc;
+              border: 1px solid #cbd5e1;
+              color: #334155;
+            `;
+          }
+          cellContent = `<span style="font-size: ${cellPx >= 44 ? '13px' : '11px'}; font-weight: 800;">${visitedInfo.val ?? 0}</span>`;
         } else {
           style += `
             background: #ffffff;
             border: 1px dashed #cbd5e1;
             color: #94a3b8;
           `;
+          cellContent = `<span style="font-size: 11px; font-weight: 600;">-</span>`;
         }
 
         const adventurerHtml = isActive
           ? `
-            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
               ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
             </div>
           `
           : '';
 
+        const coordColor = isActive
+          ? '#2563eb'
+          : isTrail
+          ? '#0284c7'
+          : isVisited
+          ? (isMatch ? '#16a34a' : '#64748b')
+          : '#94a3b8';
+
         return `
-          <div class="viz-cell ${isActive ? 'is-cur' : ''}" style="${style}">
+          <div class="viz-cell ${isActive ? 'is-cur' : isTrail ? 'is-trail' : isVisited ? 'is-visited' : ''}" style="${style}">
             ${adventurerHtml}
+            ${badgeHtml}
             <span style="
               position: absolute;
               top: 2px;
@@ -1529,16 +1585,10 @@ export function renderStage1GridCard(
               font-size: 8px;
               font-weight: 700;
               font-family: 'JetBrains Mono', monospace;
-              color: ${isActive ? '#2563eb' : '#94a3b8'};
+              color: ${coordColor};
               line-height: 1;
             ">${r},${c}</span>
-            <span style="
-              font-size: ${cellPx >= 44 ? '13px' : '11px'};
-              font-weight: 800;
-              font-family: 'JetBrains Mono', monospace;
-              margin-top: 5px;
-              z-index: 10;
-            ">${isActive ? '👣' : '·'}</span>
+            ${cellContent}
           </div>
         `;
       }).join('');
@@ -1569,6 +1619,9 @@ export function renderStage1GridCard(
       `;
     }).join('');
 
+    const visitedCount = Object.keys(visitedMap).length;
+    const trailDepth = activeTrailSet.size || (activeI >= 0 ? 1 : 0);
+
     wrapper.innerHTML = `
       <div style="
         width: 100%;
@@ -1579,7 +1632,7 @@ export function renderStage1GridCard(
         justify-content: center;
         padding: 10px 4px;
         box-sizing: border-box;
-        overflow: auto;
+        overflow: visible;
         user-select: none;
       ">
         <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; background: rgba(248, 250, 252, 0.75); border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1603,9 +1656,13 @@ export function renderStage1GridCard(
           font-weight: 600;
           display: flex;
           align-items: center;
-          gap: 5px;
+          gap: 6px;
         ">
-          <span>🧭 递归探索指针正考察状态坐标 <b>[${activeI}, ${activeJ}]</b></span>
+          <span>🧭 考察坐标: <b>[${activeI}, ${activeJ}]</b></span>
+          <span style="opacity: 0.5;">|</span>
+          <span>📌 调用栈深: <b>${trailDepth}</b></span>
+          <span style="opacity: 0.5;">|</span>
+          <span>🎯 已解状态: <b>${visitedCount}</b></span>
         </div>
       </div>
     `;
@@ -1739,7 +1796,7 @@ export function renderStage4RollingGridCard(
 
         const adventurerHtml = isActive
           ? `
-            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
               ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
             </div>
           `
@@ -1811,7 +1868,7 @@ export function renderStage4RollingGridCard(
         justify-content: center;
         padding: 10px 4px;
         box-sizing: border-box;
-        overflow: auto;
+        overflow: visible;
         user-select: none;
       ">
         <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; background: rgba(248, 250, 252, 0.75); border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1844,15 +1901,16 @@ export function renderStage4RollingGridCard(
   });
 }
 
-let lcsCard2ActiveSubView: 'tree' | 'strings' = 'tree';
+let lcsCard2ActiveSubView: 'tree' | 'strings' | '3d-stack' = 'tree';
 
 /**
- * Card 2 复合视图调度器 (支持【决策展开树】与【双字符串比对卡片】一键平滑切换)
+ * Card 2 复合视图调度器 (支持【决策依赖树】、【双字符串比对】与【🧊 3D 递归代码栈 (样板)】一键平滑切换)
  */
 export function renderLcsCard2CompoundView(
   container: HTMLElement,
   renderTree: (subContainer: HTMLElement) => void,
-  renderStrings: (subContainer: HTMLElement) => void
+  renderStrings: (subContainer: HTMLElement) => void,
+  render3DStack?: (subContainer: HTMLElement) => void
 ): void {
   if (!container) return;
 
@@ -1869,6 +1927,11 @@ export function renderLcsCard2CompoundView(
             <button id="lcs-tab-strings" style="padding: 2px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; outline: none;">
               🔤 双字符串比对
             </button>
+            <button id="lcs-tab-3d-stack" style="padding: 2px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; outline: none; display: flex; align-items: center; gap: 3px;">
+              <span>🧊</span>
+              <span>3D 递归代码树</span>
+              <span style="font-size: 8.5px; background: #dbeafe; color: #1d4ed8; padding: 0.5px 3px; border-radius: 3px; font-weight: 800;">样板</span>
+            </button>
           </div>
           <span style="font-size: 10px; color: #94a3b8; font-weight: 500;">
             点击切换卡片 2 视图
@@ -1884,21 +1947,60 @@ export function renderLcsCard2CompoundView(
 
   const btnTree = compoundRoot.querySelector('#lcs-tab-tree') as HTMLButtonElement | null;
   const btnStrings = compoundRoot.querySelector('#lcs-tab-strings') as HTMLButtonElement | null;
+  const btn3DStack = compoundRoot.querySelector('#lcs-tab-3d-stack') as HTMLButtonElement | null;
   const contentWrapper = compoundRoot.querySelector('#lcs-card2-subview-content') as HTMLElement | null;
 
   const updateTabStyles = () => {
-    const isTree = lcsCard2ActiveSubView === 'tree';
     if (btnTree) {
+      const isTree = lcsCard2ActiveSubView === 'tree';
       btnTree.style.background = isTree ? '#ffffff' : 'transparent';
       btnTree.style.color = isTree ? '#4f46e5' : '#64748b';
       btnTree.style.boxShadow = isTree ? '0 1px 2px rgba(0,0,0,0.06)' : 'none';
       btnTree.style.border = isTree ? '1px solid #c7d2fe' : '1px solid transparent';
     }
     if (btnStrings) {
-      btnStrings.style.background = !isTree ? '#ffffff' : 'transparent';
-      btnStrings.style.color = !isTree ? '#4f46e5' : '#64748b';
-      btnStrings.style.boxShadow = !isTree ? '0 1px 2px rgba(0,0,0,0.06)' : 'none';
-      btnStrings.style.border = !isTree ? '1px solid #c7d2fe' : '1px solid transparent';
+      const isStrings = lcsCard2ActiveSubView === 'strings';
+      btnStrings.style.background = isStrings ? '#ffffff' : 'transparent';
+      btnStrings.style.color = isStrings ? '#4f46e5' : '#64748b';
+      btnStrings.style.boxShadow = isStrings ? '0 1px 2px rgba(0,0,0,0.06)' : 'none';
+      btnStrings.style.border = isStrings ? '1px solid #c7d2fe' : '1px solid transparent';
+    }
+    if (btn3DStack) {
+      const is3D = lcsCard2ActiveSubView === '3d-stack';
+      btn3DStack.style.background = is3D ? '#ffffff' : 'transparent';
+      btn3DStack.style.color = is3D ? '#4f46e5' : '#64748b';
+      btn3DStack.style.boxShadow = is3D ? '0 1px 2px rgba(0,0,0,0.06)' : 'none';
+      btn3DStack.style.border = is3D ? '1px solid #c7d2fe' : '1px solid transparent';
+    }
+  };
+
+  const renderActiveView = () => {
+    if (!contentWrapper) return;
+    if (lcsCard2ActiveSubView === 'tree') {
+      ThreeRecursionStackAdapter.getInstance().dispose();
+      contentWrapper.innerHTML = '';
+      if (contentWrapper.style) contentWrapper.style.background = '#ffffff';
+      renderTree(contentWrapper);
+    } else if (lcsCard2ActiveSubView === 'strings') {
+      ThreeRecursionStackAdapter.getInstance().dispose();
+      contentWrapper.innerHTML = '';
+      if (contentWrapper.style) contentWrapper.style.background = '#ffffff';
+      renderStrings(contentWrapper);
+    } else if (lcsCard2ActiveSubView === '3d-stack') {
+      if (render3DStack) {
+        // 若当前容器内尚未挂载 3D Canvas (如刚从 2D 树或字符比对切过来)，才清理一次旧 DOM
+        const hasCanvas = contentWrapper.querySelector('canvas') !== null;
+        if (!hasCanvas) {
+          contentWrapper.innerHTML = '';
+        }
+        render3DStack(contentWrapper);
+      } else {
+        ThreeRecursionStackAdapter.getInstance().dispose();
+        contentWrapper.innerHTML = '';
+        if (contentWrapper.style) contentWrapper.style.background = '#ffffff';
+        contentWrapper.innerHTML =
+          '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 11px;">（当前阶段暂无 3D 代码树数据）</div>';
+      }
     }
   };
 
@@ -1907,10 +2009,7 @@ export function renderLcsCard2CompoundView(
       e.stopPropagation();
       lcsCard2ActiveSubView = 'tree';
       updateTabStyles();
-      if (contentWrapper) {
-        contentWrapper.innerHTML = '';
-        renderTree(contentWrapper);
-      }
+      renderActiveView();
     };
   }
 
@@ -1919,19 +2018,19 @@ export function renderLcsCard2CompoundView(
       e.stopPropagation();
       lcsCard2ActiveSubView = 'strings';
       updateTabStyles();
-      if (contentWrapper) {
-        contentWrapper.innerHTML = '';
-        renderStrings(contentWrapper);
-      }
+      renderActiveView();
+    };
+  }
+
+  if (btn3DStack) {
+    btn3DStack.onclick = (e) => {
+      e.stopPropagation();
+      lcsCard2ActiveSubView = '3d-stack';
+      updateTabStyles();
+      renderActiveView();
     };
   }
 
   updateTabStyles();
-  if (contentWrapper) {
-    if (lcsCard2ActiveSubView === 'tree') {
-      renderTree(contentWrapper);
-    } else {
-      renderStrings(contentWrapper);
-    }
-  }
+  renderActiveView();
 }

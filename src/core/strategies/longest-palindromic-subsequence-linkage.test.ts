@@ -46,7 +46,7 @@ describe('最长回文子序列 (LPS) 代码联动与生命周期规范核验', 
     // 4. 黄金断言：所有步进的高亮行必须在合法代码范围内，且对应行绝不能是纯注释行或空行！
     for (let idx = 0; idx < steps.length; idx++) {
       const step = steps[idx];
-      const lineNum = step.line;
+      const lineNum = step.line!;
       expect(lineNum, `步骤 #${idx + 1} 行号必须 >= 1`).toBeGreaterThanOrEqual(1);
       expect(lineNum, `步骤 #${idx + 1} 行号必须 <= ${cleanLines.length}`).toBeLessThanOrEqual(cleanLines.length);
 
@@ -78,7 +78,7 @@ describe('最长回文子序列 (LPS) 代码联动与生命周期规范核验', 
 
     for (let idx = 0; idx < steps.length; idx++) {
       const step = steps[idx];
-      const lineNum = step.line;
+      const lineNum = step.line!;
       expect(lineNum).toBeGreaterThanOrEqual(1);
       expect(lineNum).toBeLessThanOrEqual(cleanLines.length);
       const codeText = cleanLines[lineNum - 1].trim();
@@ -95,7 +95,7 @@ describe('最长回文子序列 (LPS) 代码联动与生命周期规范核验', 
 
     for (let idx = 0; idx < steps3.length; idx++) {
       const step = steps3[idx];
-      const lineNum = step.line;
+      const lineNum = step.line!;
       expect(lineNum).toBeGreaterThanOrEqual(1);
       expect(lineNum).toBeLessThanOrEqual(cleanLines3.length);
       const codeText = cleanLines3[lineNum - 1].trim();
@@ -110,7 +110,7 @@ describe('最长回文子序列 (LPS) 代码联动与生命周期规范核验', 
 
     for (let idx = 0; idx < steps4.length; idx++) {
       const step = steps4[idx];
-      const lineNum = step.line;
+      const lineNum = step.line!;
       expect(lineNum).toBeGreaterThanOrEqual(1);
       expect(lineNum).toBeLessThanOrEqual(cleanLines4.length);
       const codeText = cleanLines4[lineNum - 1].trim();

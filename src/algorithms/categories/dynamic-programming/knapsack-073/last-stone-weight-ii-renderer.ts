@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 最后一块石头的重量 II (LeetCode 1049) - 声明式 4-Card 沙盘渲染器
  * 核心：石头碰撞相消 -> 两堆石头和差值最小化 -> 容量 <= sum/2 最接近值的 01 背包
  * 架构重构：引入四语言代码高亮、子集划分回溯与碰撞天平实时载荷舱
@@ -267,17 +267,22 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         const { stones } = parseLastStoneInputs(inputs);
         return buildLastStoneRecursionSteps(stones);
       },
-      renderCanvas: (container, step) =>
+      renderCanvas: (container, step) => {
+        const infoHtml = `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px;">
+            <div style="font-size:12px; font-weight:700; color:#1e293b; margin-bottom:4px;">${step.decision}</div>
+            <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
+          </div>
+        `;
         renderSpecialRecursionCard1(
           container,
-          step.callStack,
           step.i < step.n
             ? `正在决策石头 #${step.i + 1} (重:${step.stones?.[step.i] ?? '—'})`
             : '所有石头决策完成',
-          step.remCap,
-          step.decision,
-          step.returnValue
-        ),
+          step.callStack || [],
+          infoHtml
+        );
+      },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
           <div style="display:flex; flex-direction:column; gap:10px; height:100%; width:100%; justify-content:center; align-items:center; background:rgba(241, 245, 249, 0.9); border:1px solid #e2e8f0; border-radius:8px; padding:16px; box-sizing:border-box;">
@@ -526,13 +531,13 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
   },
   renderCanvas: (container, step) => {
     const selectedA = step.selectedStones || [];
-    const weightA = selectedA.reduce((sum, idx) => sum + (step.stones[idx] || 0), 0);
+    const weightA = selectedA.reduce((sum: number, idx: number) => sum + (step.stones[idx] || 0), 0);
     const weightB = step.sum - weightA;
     const diff = Math.abs(weightB - weightA);
     const ratio = Math.min(100, Math.round((weightA / Math.max(1, step.targetCapacity)) * 100));
 
     const stoneEls = step.stones
-      .map((s, idx) => {
+      .map((s: number, idx: number) => {
         const isCur = step.stoneIndex === idx;
         const isInA = selectedA.includes(idx);
 
@@ -562,7 +567,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       })
       .join('');
 
-    const chipsA = selectedA.map((idx) => `
+    const chipsA = selectedA.map((idx: number) => `
       <span style="background:rgba(209, 250, 229, 0.9); border:1px solid #10b981; border-radius:4px; padding:2px 6px; font-size:10px; color:#a7f3d0;">
         #${idx + 1} (${step.stones[idx]}磅)
       </span>

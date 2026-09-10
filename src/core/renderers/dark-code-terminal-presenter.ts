@@ -31,6 +31,7 @@ export type HighlightTarget =
   | string
   | SingleLangHighlightTarget
   | Record<string, SingleLangHighlightTarget>
+  | object
   | { anchor: string };
 
 export interface DarkCodeTerminalConfig {
@@ -176,6 +177,7 @@ export class DarkCodeTerminalPresenter {
         switchTab: () => {},
         getCurrentLanguage: () => config.initialLang || 'java',
         getFontSize: () => config.fontSize || 12,
+        copyCode: async () => false,
         destroy: () => {},
       };
     }
@@ -255,22 +257,23 @@ export class DarkCodeTerminalPresenter {
     if (!btnCopy) {
       const fontContainer = (root.querySelector('#code-font-container') || root.querySelector('.font-tools')) as HTMLElement | null;
       if (fontContainer && typeof fontContainer.appendChild === 'function') {
-        btnCopy = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-copy');
-        btnCopy.className = 'btn-code-copy';
-        btnCopy.title = '复制当前完整代码';
-        btnCopy.style.cssText =
+        const createdBtn = DarkCodeTerminalPresenter.createSafeElement('button', 'btn-code-copy') as HTMLElement;
+        createdBtn.className = 'btn-code-copy';
+        createdBtn.title = '复制当前完整代码';
+        createdBtn.style.cssText =
           'background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 2px 7px; color: #94a3b8; font-size: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease; white-space: nowrap; user-select: none;';
-        btnCopy.innerHTML = `
+        createdBtn.innerHTML = `
           <span class="copy-icon" style="display: inline-flex; align-items: center;">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </span>
           <span class="copy-text">复制</span>
         `;
         if (typeof fontContainer.insertBefore === 'function' && fontContainer.firstChild) {
-          fontContainer.insertBefore(btnCopy, fontContainer.firstChild);
+          fontContainer.insertBefore(createdBtn, fontContainer.firstChild);
         } else {
-          fontContainer.appendChild(btnCopy);
+          fontContainer.appendChild(createdBtn);
         }
+        btnCopy = createdBtn;
       }
     }
 
@@ -718,12 +721,13 @@ export class DarkCodeTerminalPresenter {
           copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
         }
 
+        const targetBtn = btnCopy;
         if (copyResetTimer) clearTimeout(copyResetTimer);
         copyResetTimer = setTimeout(() => {
-          btnCopy.classList.remove('copied');
-          btnCopy.style.borderColor = '#334155';
-          btnCopy.style.color = '#94a3b8';
-          btnCopy.style.background = '#0f172a';
+          targetBtn.classList.remove('copied');
+          targetBtn.style.borderColor = '#334155';
+          targetBtn.style.color = '#94a3b8';
+          targetBtn.style.background = '#0f172a';
           if (copyText) copyText.textContent = '复制';
           if (copyIcon) {
             copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
@@ -772,7 +776,7 @@ export class DarkCodeTerminalPresenter {
 
     // 智能创建/获取全局单例调试悬停气泡 (Debug Hover Tooltip)
     let hoverTooltip: HTMLElement | null = null;
-    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof document.getElementById === 'function') {
       hoverTooltip = document.getElementById('algo-debug-hover-tooltip');
       if (!hoverTooltip && document.body) {
         hoverTooltip = document.createElement('div');

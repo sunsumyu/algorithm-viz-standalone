@@ -246,6 +246,16 @@
   transform-origin: bottom center;
 }
 
+/* 探险家角色容器规范 (Vanilla CSS 基础定义，确保始终立于单元格上方且置于最顶层，避免被坐标或数字遮挡) */
+.adventurer-char-holder {
+  position: absolute !important;
+  top: -24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  pointer-events: none !important;
+  z-index: 50 !important;
+}
+
 /* ===== 数字输入框样式 ===== */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -727,7 +737,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* 3D 广告牌探险家角色 (直立朝向观察者) */
 .grid-3d-board .adventurer-char-holder {
-  transform: rotateZ(35deg) rotateX(-55deg) translateY(-14px) !important;
+  transform: translateX(-50%) rotateZ(35deg) rotateX(-55deg) translateY(-14px) !important;
   transform-origin: 50% 100%;
   filter: drop-shadow(-4px 8px 8px rgba(0, 0, 0, 0.35));
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1163,6 +1173,81 @@ button[class*="-chip"]:hover {
   flex: 1;
   min-height: 0;
 }
+
+/* ===== Universal Collapsible Panels (双击标题行折叠/展开) ===== */
+.dsp-card-header,
+.terminal-auto-header,
+.ct-header,
+.dark-code-terminal-header,
+[class*="-card-header"],
+.card-header,
+.panel-header,
+.algo-panel-header {
+  user-select: none;
+}
+
+/* 折叠状态面板样式（原有面板视觉风格完全保留，仅高度紧凑自适应并隐藏内部主体） */
+.algo-panel-collapsed,
+.dsp-card.algo-panel-collapsed,
+.dsp-log-card.algo-panel-collapsed,
+.dsp-terminal-card.algo-panel-collapsed,
+.dark-terminal-auto-frame.algo-panel-collapsed,
+[class*="-card"].algo-panel-collapsed,
+.card.algo-panel-collapsed,
+.panel.algo-panel-collapsed {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.algo-panel-collapsed > :not(.dsp-card-header):not(.terminal-auto-header):not(.ct-header):not(.dark-code-terminal-header):not([class*="-card-header"]):not(.card-header):not(.panel-header):not([class*="-panel-header"]):not(.algo-panel-header) {
+  display: none !important;
+}
+
+.algo-panel-collapsed > .dsp-card-header,
+.algo-panel-collapsed > .terminal-auto-header,
+.algo-panel-collapsed > .ct-header,
+.algo-panel-collapsed > .dark-code-terminal-header,
+.algo-panel-collapsed > [class*="-card-header"],
+.algo-panel-collapsed > .card-header,
+.algo-panel-collapsed > .panel-header,
+.algo-panel-collapsed > .algo-panel-header {
+  margin-bottom: 0 !important;
+}
+
+/* 当同列上方卡片折叠时，下方卡片自动弹性撑满剩余全部垂直空间，杜绝底部大片空白 */
+.dsp-left-section > .dsp-card:first-child.algo-panel-collapsed ~ .dsp-card:last-child:not(.algo-panel-collapsed),
+.dsp-right-section > .dsp-terminal-card.algo-panel-collapsed ~ .dsp-log-card:not(.algo-panel-collapsed),
+.dsp-right-section > .code-terminal-card.algo-panel-collapsed ~ .dsp-log-card:not(.algo-panel-collapsed),
+.dsp-right-section > .dark-terminal-auto-frame.algo-panel-collapsed ~ .dsp-log-card:not(.algo-panel-collapsed),
+[class*="-left-section"] > [class*="-card"]:first-child.algo-panel-collapsed ~ [class*="-card"]:last-child:not(.algo-panel-collapsed),
+[class*="-right-section"] > [class*="-card"]:first-child.algo-panel-collapsed ~ [class*="-card"]:last-child:not(.algo-panel-collapsed),
+[class*="-left-section"] > .card:first-child.algo-panel-collapsed ~ .card:last-child:not(.algo-panel-collapsed),
+[class*="-right-section"] > .card:first-child.algo-panel-collapsed ~ .card:last-child:not(.algo-panel-collapsed) {
+  flex: 1 1 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* 当同列下方卡片折叠时，自动沉底收起贴紧容器底部，杜绝悬浮在半空中 */
+.dsp-left-section > .dsp-card:last-child.algo-panel-collapsed,
+.dsp-right-section > .dsp-log-card.algo-panel-collapsed,
+.dsp-right-section > [class*="-card"]:last-child.algo-panel-collapsed,
+[class*="-left-section"] > [class*="-card"]:last-child.algo-panel-collapsed,
+[class*="-right-section"] > [class*="-card"]:last-child.algo-panel-collapsed,
+[class*="-left-section"] > .card:last-child.algo-panel-collapsed,
+[class*="-right-section"] > .card:last-child.algo-panel-collapsed,
+.dsp-left-section > .panel:last-child.algo-panel-collapsed,
+.dsp-right-section > .panel:last-child.algo-panel-collapsed {
+  margin-top: auto !important;
+}
+
+
+
 
 
 

@@ -12,6 +12,8 @@ import { createDeclarativeVisualizer } from '../../../../core/declarative-algori
 import { registerAlgorithm } from '../../../../core/registry';
 import { DP_067_PROBLEMS } from './dp-067-problem-content';
 import { RecursionTreeAdapter } from '../../../../core/renderers/recursion-tree-adapter';
+import { ThreeRecursionStackAdapter } from '../../../../core/renderers/three-recursion-stack-adapter';
+import { SequenceAlignmentPresenter } from '../../../../core/renderers/sequence-alignment-adapter';
 import {
   LCS_STAGE1_CODE_LANGUAGES,
   LCS_STAGE2_CODE_LANGUAGES,
@@ -89,6 +91,10 @@ export interface LcsRecStep {
   treeRoot?: LcsTreeNode | null;
   activeNodeId?: string;
   vars?: StepVar[];
+  activeTrail?: string[];
+  visitedMap?: Record<string, { val: number; status: 'visited' | 'base' | 'match'; isMatch?: boolean }>;
+  matchedIndices1?: number[];
+  matchedIndices2?: number[];
 }
 
 export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecStep[] {
@@ -119,9 +125,22 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
     combineMaxReturn: { java: 16, cpp: 14, python: 9, javascript: 9 },
   };
 
+  const activeTrailCoords: string[] = [];
+  const visitedMap: Record<string, { val: number; status: 'visited' | 'base' | 'match'; isMatch?: boolean }> = {};
+  const currentMatched1: number[] = [];
+  const currentMatched2: number[] = [];
+
   const pushStep = (st: LcsRecStep) => {
     if (!st.vars) {
       st.vars = makeLcsStage1Vars({ i: st.i, j: st.j, s1, s2 });
+    }
+    st.activeTrail = [...activeTrailCoords];
+    st.visitedMap = { ...visitedMap };
+    if (!st.matchedIndices1) {
+      st.matchedIndices1 = [...currentMatched1];
+    }
+    if (!st.matchedIndices2) {
+      st.matchedIndices2 = [...currentMatched2];
     }
     steps.push(st);
   };
@@ -176,7 +195,6 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
     if (steps.length > 500) return 0;
     callCount++;
     const indent = '| '.repeat(stack.length + 1);
-
     let currentNode: LcsTreeNode;
     if (!parentNode) {
       currentNode = rootTreeNode;
@@ -195,6 +213,7 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
 
     // 1. 函数入口栈帧
     stack.push({ label: `f(${i}, ${j})` });
+    activeTrailCoords.push(`${i},${j}`);
     pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
@@ -255,6 +274,8 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      visitedMap[`${i},${j}`] = { val: 0, status: 'base', isMatch: false };
+      activeTrailCoords.pop();
       stack.pop();
       return 0;
     }
@@ -300,10 +321,14 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
         activeNodeId: currentNode.id,
       });
 
+      currentMatched1.push(i);
+      currentMatched2.push(j);
       const sub = fForward(i + 1, j + 1, currentNode, `↘️'${c1}'`);
+      currentMatched1.pop();
+      currentMatched2.pop();
       const ans = 1 + sub;
       currentNode.status = 'visited';
-      currentNode.tag = `↘️${ans}`;
+      currentNode.tag = `✨${ans}`;
       currentNode.val = `f(${i},${j})=${ans}`;
 
       pushStep({
@@ -321,6 +346,8 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      visitedMap[`${i},${j}`] = { val: ans, status: 'match', isMatch: true };
+      activeTrailCoords.pop();
       stack.pop();
       return ans;
     } else {
@@ -381,6 +408,8 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      visitedMap[`${i},${j}`] = { val: ans, status: 'visited', isMatch: false };
+      activeTrailCoords.pop();
       stack.pop();
       return ans;
     }
@@ -444,9 +473,22 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
     combineMaxReturn: { java: 16, cpp: 14, python: 10, javascript: 12 },
   };
 
+  const activeTrailCoords: string[] = [];
+  const visitedMap: Record<string, { val: number; status: 'visited' | 'base' | 'match'; isMatch?: boolean }> = {};
+  const currentMatched1: number[] = [];
+  const currentMatched2: number[] = [];
+
   const pushStep = (st: LcsRecStep) => {
     if (!st.vars) {
       st.vars = makeLcsStage1Vars({ i: st.i, j: st.j, s1, s2 });
+    }
+    st.activeTrail = [...activeTrailCoords];
+    st.visitedMap = { ...visitedMap };
+    if (!st.matchedIndices1) {
+      st.matchedIndices1 = [...currentMatched1];
+    }
+    if (!st.matchedIndices2) {
+      st.matchedIndices2 = [...currentMatched2];
     }
     steps.push(st);
   };
@@ -518,8 +560,11 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
       parentNode.children.push(currentNode);
     }
 
+    const gridKey = `${Math.max(0, i + 1)},${Math.max(0, j + 1)}`;
+
     // 1. 函数签名帧 (Callee Entry Frame)
     stack.push({ label: `f(${i}, ${j})` });
+    activeTrailCoords.push(gridKey);
     pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
@@ -582,6 +627,8 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      visitedMap[gridKey] = { val: 0, status: 'base', isMatch: false };
+      activeTrailCoords.pop();
       stack.pop();
       return 0;
     }
@@ -628,7 +675,11 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         activeNodeId: currentNode.id,
       });
 
+      currentMatched1.push(i);
+      currentMatched2.push(j);
       const sub = f(i - 1, j - 1, currentNode, `↖️'${c1}'`);
+      currentMatched1.pop();
+      currentMatched2.pop();
       const ans = 1 + sub;
       currentNode.status = 'visited';
       currentNode.tag = `↖️${ans}`;
@@ -650,6 +701,8 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      visitedMap[gridKey] = { val: ans, status: 'match', isMatch: true };
+      activeTrailCoords.pop();
       stack.pop();
       return ans;
     } else {
@@ -710,6 +763,8 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      visitedMap[gridKey] = { val: ans, status: 'visited', isMatch: false };
+      activeTrailCoords.pop();
       stack.pop();
       return ans;
     }
@@ -2730,7 +2785,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         { label: '字符匹配 (+1)', color: '#16a34a' },
         { label: '待探查', color: '#94a3b8' },
       ],
-      codeLanguages: LCS_STAGE1_CODE_LANGUAGES,
+      codeLanguages: LCS_STAGE1_FORWARD_CODE_LANGUAGES,
       modeCodeLanguages: {
         reverse: LCS_STAGE1_CODE_LANGUAGES,
         forward: LCS_STAGE1_FORWARD_CODE_LANGUAGES,
@@ -2738,23 +2793,39 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       has3D: true,
       buildSteps: buildLcsStage1Steps,
       renderCanvas: (container, step, extra) => {
+        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+        const gridI = isForward ? step.i : Math.max(0, step.i + 1);
+        const gridJ = isForward ? step.j : Math.max(0, step.j + 1);
         renderStage1GridCard(
           container,
           'LCS 递归探索网格 (i, j)',
           step.s1.length + 1,
           step.s2.length + 1,
-          step.i,
-          step.j,
+          gridI,
+          gridJ,
           ['Ø', ...step.s1.split('')],
           ['Ø', ...step.s2.split('')],
-          extra?.is3DMode
+          extra?.is3DMode,
+          step
         );
       },
       renderCustomMetrics: (container, step) => {
         renderLcsCard2CompoundView(
           container,
           (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, false),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j)
+          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2),
+          (stackBox) =>
+            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+              treeRoot: step.treeRoot,
+              activeNodeId: step.activeNodeId,
+              currentCall: step.currentCall,
+              i: step.i,
+              j: step.j,
+              s1: step.s1,
+              s2: step.s2,
+              vars: step.vars,
+              callStack: step.callStack,
+            })
         );
       },
     },
@@ -2777,7 +2848,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         { label: '未命中算值 (Miss)', color: '#ef4444' },
         { label: '未计算 (-1)', color: '#94a3b8' },
       ],
-      codeLanguages: LCS_STAGE2_CODE_LANGUAGES,
+      codeLanguages: LCS_STAGE2_FORWARD_CODE_LANGUAGES,
       modeCodeLanguages: {
         reverse: LCS_STAGE2_CODE_LANGUAGES,
         forward: LCS_STAGE2_FORWARD_CODE_LANGUAGES,
@@ -2800,7 +2871,19 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         renderLcsCard2CompoundView(
           container,
           (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, true),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j)
+          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2),
+          (stackBox) =>
+            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+              treeRoot: step.treeRoot,
+              activeNodeId: step.activeNodeId,
+              currentCall: step.currentCall,
+              i: step.i,
+              j: step.j,
+              s1: step.s1,
+              s2: step.s2,
+              vars: step.vars,
+              callStack: step.callStack,
+            })
         );
       },
     },
@@ -2823,7 +2906,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         { label: '依赖前驱单元格', color: '#6366f1' },
         { label: '已计算', color: '#64748b' },
       ],
-      codeLanguages: LCS_STAGE3_CODE_LANGUAGES,
+      codeLanguages: LCS_STAGE3_FORWARD_CODE_LANGUAGES,
       modeCodeLanguages: {
         reverse: LCS_STAGE3_CODE_LANGUAGES,
         forward: LCS_STAGE3_FORWARD_CODE_LANGUAGES,
@@ -2847,7 +2930,18 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         renderLcsCard2CompoundView(
           container,
           (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, false),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.curI, step.curJ)
+          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.curI, step.curJ),
+          (stackBox) =>
+            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+              treeRoot: step.treeRoot,
+              activeNodeId: step.activeNodeId,
+              currentCall: `dp[${step.curI}][${step.curJ}]`,
+              i: step.curI,
+              j: step.curJ,
+              s1: step.s1,
+              s2: step.s2,
+              vars: step.vars,
+            })
         );
       },
     },
@@ -2903,7 +2997,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
           },
           (subBox) => {
             renderStringAlignment(subBox, step.s1, step.s2, step.curI - 1, step.curJ - 1);
-          }
+          },
+          (stackBox) =>
+            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+              currentCall: `dp[${step.curJ}]`,
+              i: step.curI,
+              j: step.curJ,
+              s1: step.s1,
+              s2: step.s2,
+              vars: step.vars,
+            })
         );
       },
     },
@@ -2921,132 +3024,18 @@ function renderStringAlignment(
   s1: string,
   s2: string,
   curI: number,
-  curJ: number
+  curJ: number,
+  matchedIndices1?: number[],
+  matchedIndices2?: number[]
 ): void {
-  if (!container) return;
-  const isMatch = curI >= 0 && curJ >= 0 && curI < s1.length && curJ < s2.length && s1[curI] === s2[curJ];
-
-  const s1Spans = s1.split('').map((char, idx) => {
-    const isCur = idx === curI;
-    const isMatchChar = isCur && isMatch;
-    let bg = '#ffffff';
-    let color = '#475569';
-    let border = '1px solid #e2e8f0';
-    let shadow = 'none';
-
-    if (isMatchChar) {
-      bg = '#dcfce7';
-      color = '#15803d';
-      border = '2px solid #16a34a';
-      shadow = '0 2px 6px rgba(22, 163, 74, 0.25)';
-    } else if (isCur) {
-      bg = '#e0f2fe';
-      color = '#0284c7';
-      border = '2px solid #0284c7';
-      shadow = '0 2px 6px rgba(2, 132, 199, 0.2)';
-    }
-
-    return `
-      <div style="
-        padding: 8px 12px;
-        font-family: monospace;
-        font-size: 15px;
-        font-weight: 700;
-        background: ${bg};
-        color: ${color};
-        border: ${border};
-        border-radius: 8px;
-        box-shadow: ${shadow};
-        text-align: center;
-        min-width: 32px;
-        transition: all 0.2s ease;
-      ">${char}</div>
-    `;
-  }).join('');
-
-  const s2Spans = s2.split('').map((char, idx) => {
-    const isCur = idx === curJ;
-    const isMatchChar = isCur && isMatch;
-    let bg = '#ffffff';
-    let color = '#475569';
-    let border = '1px solid #e2e8f0';
-    let shadow = 'none';
-
-    if (isMatchChar) {
-      bg = '#dcfce7';
-      color = '#15803d';
-      border = '2px solid #16a34a';
-      shadow = '0 2px 6px rgba(22, 163, 74, 0.25)';
-    } else if (isCur) {
-      bg = '#e0f2fe';
-      color = '#0284c7';
-      border = '2px solid #0284c7';
-      shadow = '0 2px 6px rgba(2, 132, 199, 0.2)';
-    }
-
-    return `
-      <div style="
-        padding: 8px 12px;
-        font-family: monospace;
-        font-size: 15px;
-        font-weight: 700;
-        background: ${bg};
-        color: ${color};
-        border: ${border};
-        border-radius: 8px;
-        box-shadow: ${shadow};
-        text-align: center;
-        min-width: 32px;
-        transition: all 0.2s ease;
-      ">${char}</div>
-    `;
-  }).join('');
-
-  let statusBadgeHtml = '';
-  if (curI < 0 || curJ < 0) {
-    statusBadgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 2px 8px; border-radius: 6px;">🛡️ 边界基底 (越界或空串，return 0)</span>`;
-  } else if (isMatch) {
-    statusBadgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 2px 8px; border-radius: 6px;">✨ 字符匹配成功：s1[${curI}] == s2[${curJ}] ('${s1[curI]}') 触发对角线转移 (+1)</span>`;
-  } else {
-    statusBadgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 6px;">🔍 字符比对：s1[${curI}]('${s1[curI]}') != s2[${curJ}]('${s2[curJ]}')，双向分支择大</span>`;
-  }
-
-  container.innerHTML = `
-    <div style="
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 12px;
-      box-sizing: border-box;
-      justify-content: center;
-      align-items: center;
-    ">
-      <!-- 字符串 1 容器 (行维度) -->
-      <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 460px; background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-        <div style="font-size: 11.5px; font-weight: 700; color: #334155; display: flex; justify-content: space-between;">
-          <span>字符串 1 (行维度 text1)</span>
-          <span style="color: #64748b; font-family: monospace;">长度 ${s1.length} | 当前索引: ${curI >= 0 ? curI : '边界/未选'}</span>
-        </div>
-        <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px;">${s1Spans}</div>
-      </div>
-
-      <!-- 字符串 2 容器 (列维度) -->
-      <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 460px; background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-        <div style="font-size: 11.5px; font-weight: 700; color: #334155; display: flex; justify-content: space-between;">
-          <span>字符串 2 (列维度 text2)</span>
-          <span style="color: #64748b; font-family: monospace;">长度 ${s2.length} | 当前索引: ${curJ >= 0 ? curJ : '边界/未选'}</span>
-        </div>
-        <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px;">${s2Spans}</div>
-      </div>
-
-      <!-- 底部推导决策与状态提示徽章 (统一置于下方) -->
-      <div style="display: flex; align-items: center; justify-content: center; margin-top: 2px;">
-        ${statusBadgeHtml}
-      </div>
-    </div>
-  `;
+  SequenceAlignmentPresenter.render(container, {
+    s1,
+    s2,
+    curI,
+    curJ,
+    matchedIndices1,
+    matchedIndices2,
+  });
 }
 
 export const LongestCommonSubsequenceVisualizer = Visualizer;

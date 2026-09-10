@@ -17,6 +17,9 @@ export interface InputControlDef {
   width?: string;
   placeholder?: string;
   options?: { label: string; value: any }[];
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 export interface ModeOptionDef {
@@ -75,20 +78,25 @@ export interface DeclarativeStageSpec<TStep = any> {
   has3D?: boolean;
   codeLanguages: Record<string, string[]>;
   modeCodeLanguages?: Record<string, Record<string, string[]>>;
-  buildSteps: (inputs: Record<string, any>, mode?: string) => TStep[];
+  buildSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
+  generateSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
   renderCanvas?: (container: HTMLElement, step: TStep, extra?: any) => void;
   renderCustomMetrics?: (container: HTMLElement, step: TStep, extra?: any) => void;
 }
 
 export interface DeclarativeAlgorithmSpec<TStep = any> {
   id: string;
-  name: string;
+  name?: string;
+  title?: string;
   viewId?: string;
   category: string;
+  categoryName?: string;
   icon?: string;
   description?: string;
-  difficulty?: 1 | 2 | 3;
+  difficulty?: 1 | 2 | 3 | 'easy' | 'medium' | 'hard' | string;
   levelOrder?: number;
+  timeComplexity?: string;
+  spaceComplexity?: string;
   learningGoal?: string;
   badge?: {
     mode: string;
@@ -112,12 +120,15 @@ export interface DeclarativeAlgorithmSpec<TStep = any> {
   presets?: PresetCaseDef[];
   modes?: ModeOptionDef[];
   metrics?: MetricCardDef[];
-  codeLanguages: Record<string, string[]>;
-  problemHtml: string;
-  analysisHtml: string;
+  codeLanguages?: Record<string, string[]>;
+  sourceCodes?: any;
+  problemHtml?: string;
+  analysisHtml?: string;
+  problemContent?: any;
   stages?: DeclarativeStageSpec<TStep>[];
   defaultStage?: string;
-  buildSteps: (inputs: Record<string, any>, mode?: string) => TStep[];
+  buildSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
+  generateSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
   renderCanvas?: (container: HTMLElement, step: TStep, extra?: any) => void;
   renderCustomMetrics?: (container: HTMLElement, step: TStep, extra?: any) => void;
 }
@@ -165,10 +176,13 @@ export class DeclarativeStagePresenter {
             </div>
           `;
         }
+        const minAttr = input.min !== undefined ? `min="${input.min}"` : '';
+        const maxAttr = input.max !== undefined ? `max="${input.max}"` : '';
+        const stepAttr = input.step !== undefined ? `step="${input.step}"` : '';
         return `
           <div class="dsp-input-group">
             <label for="${input.id}">${cleanLabel}:</label>
-            <input type="${input.type}" id="${input.id}" value="${input.defaultValue}" class="dsp-input" placeholder="${input.placeholder || ''}" ${widthStyle} />
+            <input type="${input.type}" id="${input.id}" value="${input.defaultValue}" class="dsp-input" placeholder="${input.placeholder || ''}" ${minAttr} ${maxAttr} ${stepAttr} ${widthStyle} />
           </div>
         `;
       })
@@ -311,17 +325,14 @@ export class DeclarativeStagePresenter {
   #${viewId} .dsp-header-left-zone {
     display: flex;
     align-items: center;
-    flex: 1;
-    min-width: 0;
+    flex-shrink: 0;
     gap: 12px;
   }
   #${viewId} .dsp-stage-nav-wrap {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 36px;
-    flex: 1;
-    min-width: 0;
+    gap: 8px;
+    flex-shrink: 0;
   }
   #${viewId} .dsp-header-right-zone {
     display: flex;
@@ -332,7 +343,7 @@ export class DeclarativeStagePresenter {
   #${viewId} .dsp-dir-nav-wrap {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 4px;
     flex-shrink: 0;
   }
   #${viewId} .dsp-stage-tabs-wrap {
@@ -634,6 +645,10 @@ export class DeclarativeStagePresenter {
   }
   #${viewId} .dsp-left-section .dsp-card:last-child {
     flex: 0 0 240px;
+  }
+  #${viewId} .dsp-left-section .dsp-card:last-child.algo-panel-collapsed,
+  #${viewId} .dsp-right-section .dsp-log-card.algo-panel-collapsed {
+    margin-top: auto !important;
   }
   #${viewId} .dsp-sandbox-wrap {
     flex: 1;

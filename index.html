@@ -695,6 +695,177 @@
       font-weight: 600;
     }
 
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      gap: 0.5rem;
+    }
+
+    .card-footer-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .zuo-course-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.12rem 0.45rem;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      letter-spacing: 0.01em;
+      box-shadow: 0 1px 2px rgba(67, 56, 202, 0.06);
+      transition: all 0.2s ease;
+    }
+
+    .algo-card:hover .zuo-course-badge {
+      background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+      border-color: #a5b4fc;
+      color: #3730a3;
+    }
+
+    /* ========== Course Filter Switchers ========== */
+    .content-course-tabs {
+      display: inline-flex;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 9999px;
+      border: 1px solid #e2e8f0;
+      gap: 3px;
+    }
+
+    .course-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #64748b;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .course-tab-btn:hover {
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .course-tab-btn.active {
+      color: #2563eb;
+      background: #ffffff;
+      border-color: #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      font-weight: 700;
+    }
+
+    .course-tab-btn[data-course="zuo"].active {
+      color: #4338ca;
+      border-color: #c7d2fe;
+      background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+      box-shadow: 0 1px 3px rgba(67, 56, 202, 0.12);
+    }
+
+    .course-tab-btn .tab-badge {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      background: #e2e8f0;
+      color: #475569;
+      font-family: monospace;
+      font-weight: 600;
+    }
+
+    .course-tab-btn.active .tab-badge {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .course-tab-btn[data-course="zuo"].active .tab-badge {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+
+    .sidebar-course-filter {
+      display: flex;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      border: 1px solid #e2e8f0;
+      gap: 2px;
+    }
+
+    .sidebar-course-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 5px 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #64748b;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .sidebar-course-btn:hover {
+      color: #0f172a;
+    }
+
+    .sidebar-course-btn.active {
+      background: #ffffff;
+      color: #2563eb;
+      font-weight: 700;
+      border-color: #cbd5e1;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .sidebar-course-btn[data-course="zuo"].active {
+      color: #4338ca;
+      border-color: #c7d2fe;
+      background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+    }
+
+    .sidebar-course-count {
+      font-size: 0.68rem;
+      padding: 1px 5px;
+      border-radius: 9999px;
+      background: #e2e8f0;
+      color: #64748b;
+      font-family: monospace;
+    }
+
+    .sidebar-course-btn.active .sidebar-course-count {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .sidebar-course-btn[data-course="zuo"].active .sidebar-course-count {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+
     /* ========== Empty State ========== */
     .empty-state {
       display: flex;
@@ -2444,6 +2615,7 @@
               <div class="search-history-list" id="search-history-list"></div>
             </div>
           </div>
+          <div class="sidebar-course-filter-container" id="sidebar-course-filter-container"></div>
         </div>
         <nav class="sidebar-categories" id="sidebar-categories">
           <!-- Category items injected by plugin -->
@@ -2457,6 +2629,7 @@
       <div class="content-area">
         <div class="content-header" id="content-header">
           <h2 id="content-title">📊 数组 <span class="result-count" id="result-count"></span></h2>
+          <div class="content-course-tabs-container" id="content-course-tabs-container"></div>
         </div>
         <div class="cards-grid" id="cards-grid">
           <!-- Cards injected by plugin -->

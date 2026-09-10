@@ -325,11 +325,11 @@ export interface Lip2DStep {
 }
 
 
-export function buildLipStage3Steps(inputs: Record<string, any>): LipDpStep[] {
+export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
   const matrix = parseMatrixInputs(inputs);
   const m = matrix.length;
   const n = matrix[0].length;
-  const steps: LipDpStep[] = [];
+  const steps: Lip2DStep[] = [];
   const dp: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
   const outdegree: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
 
