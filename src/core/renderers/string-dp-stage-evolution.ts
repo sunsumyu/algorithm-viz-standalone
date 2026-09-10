@@ -14,85 +14,14 @@
  */
 
 import { HighlightTarget } from './dark-code-terminal-presenter';
+import { getStringDpAnchor } from './string-dp-stage-codes';
 
 export type StringDpKind = 'regex' | 'wildcard';
 
-// ==========================================
-// 1. 各阶段代码行号映射字典
-// ==========================================
-
-export interface StringStageLineMap {
-  [action: string]: HighlightTarget;
+// Stage code line resolution via CodeStepIndexer @step:anchor compilation
+function getLine(stage: number, kind: StringDpKind, anchor: string): HighlightTarget {
+  return getStringDpAnchor(stage, kind, anchor);
 }
-
-export const REGEX_STAGE1_LINE_MAP: StringStageLineMap = {
-  callRoot: { java: 3, cpp: 3, python: 3, javascript: 3 },
-  fnEnter: { java: 5, cpp: 5, python: 5, javascript: 5 },
-  baseCheck: { java: 6, cpp: 6, python: 6, javascript: 6 },
-  firstMatch: { java: 7, cpp: 7, python: 7, javascript: 7 },
-  starCheck: { java: 8, cpp: 8, python: 8, javascript: 8 },
-  starBranch0: { java: 9, cpp: 9, python: 9, javascript: 9 },
-  starBranch1: { java: 10, cpp: 10, python: 10, javascript: 10 },
-  charBranch: { java: 12, cpp: 12, python: 12, javascript: 12 },
-  returnResult: { java: 12, cpp: 12, python: 12, javascript: 12 },
-};
-
-export const REGEX_STAGE2_LINE_MAP: StringStageLineMap = {
-  memoInit: { java: 9, cpp: 7, python: 4, javascript: 3 },
-  callRoot: { java: 10, cpp: 8, python: 14, javascript: 12 },
-  fnEnter: { java: 13, cpp: 8, python: 5, javascript: 4 },
-  memoCheck: { java: 14, cpp: 9, python: 6, javascript: 5 },
-  baseCheck: { java: 17, cpp: 11, python: 8, javascript: 7 },
-  firstMatch: { java: 21, cpp: 14, python: 10, javascript: 9 },
-  starCheck: { java: 23, cpp: 16, python: 11, javascript: 10 },
-  memoStore: { java: 28, cpp: 20, python: 13, javascript: 11 },
-};
-
-export const REGEX_STAGE3_LINE_MAP: StringStageLineMap = {
-  initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
-  baseEmpty: { java: 9, cpp: 9, python: 4, javascript: 4 },
-  baseStarLoop: { java: 10, cpp: 10, python: 5, javascript: 5 },
-  baseStarSet: { java: 11, cpp: 11, python: 6, javascript: 6 },
-  outerLoop: { java: 13, cpp: 13, python: 7, javascript: 8 },
-  innerLoop: { java: 14, cpp: 14, python: 8, javascript: 9 },
-  charTransition: { java: 16, cpp: 16, python: 10, javascript: 11 },
-  starTransition: { java: 18, cpp: 18, python: 12, javascript: 13 },
-  returnAns: { java: 22, cpp: 22, python: 13, javascript: 15 },
-};
-
-// 通配符阶段行号映射
-export const WILDCARD_STAGE1_LINE_MAP: StringStageLineMap = {
-  callRoot: { java: 3, cpp: 3, python: 3, javascript: 3 },
-  fnEnter: { java: 5, cpp: 5, python: 5, javascript: 5 },
-  baseCheck: { java: 6, cpp: 6, python: 6, javascript: 6 },
-  starCheck: { java: 7, cpp: 7, python: 7, javascript: 7 },
-  starBranch0: { java: 8, cpp: 8, python: 8, javascript: 8 },
-  starBranch1: { java: 9, cpp: 9, python: 9, javascript: 9 },
-  charBranch: { java: 12, cpp: 12, python: 12, javascript: 12 },
-  returnResult: { java: 12, cpp: 12, python: 12, javascript: 12 },
-};
-
-export const WILDCARD_STAGE2_LINE_MAP: StringStageLineMap = {
-  memoInit: { java: 9, cpp: 7, python: 4, javascript: 3 },
-  callRoot: { java: 10, cpp: 8, python: 14, javascript: 12 },
-  fnEnter: { java: 13, cpp: 8, python: 5, javascript: 4 },
-  memoCheck: { java: 14, cpp: 9, python: 6, javascript: 5 },
-  baseCheck: { java: 17, cpp: 11, python: 8, javascript: 7 },
-  starCheck: { java: 21, cpp: 14, python: 10, javascript: 9 },
-  memoStore: { java: 26, cpp: 18, python: 13, javascript: 11 },
-};
-
-export const WILDCARD_STAGE3_LINE_MAP: StringStageLineMap = {
-  initDp: { java: 8, cpp: 8, python: 3, javascript: 3 },
-  baseEmpty: { java: 9, cpp: 9, python: 4, javascript: 4 },
-  baseStarLoop: { java: 10, cpp: 10, python: 5, javascript: 5 },
-  baseStarSet: { java: 11, cpp: 11, python: 6, javascript: 6 },
-  outerLoop: { java: 13, cpp: 13, python: 7, javascript: 8 },
-  innerLoop: { java: 14, cpp: 14, python: 8, javascript: 9 },
-  charTransition: { java: 16, cpp: 16, python: 10, javascript: 11 },
-  starTransition: { java: 18, cpp: 18, python: 12, javascript: 13 },
-  returnAns: { java: 22, cpp: 20, python: 13, javascript: 15 },
-};
 
 // ==========================================
 // 2. 阶段 1: 暴力递归数据模型与生成器
@@ -123,7 +52,7 @@ export function buildStringDpRecursionSteps(
   pat: string
 ): StringDpRecursionStep[] {
   const steps: StringDpRecursionStep[] = [];
-  const lineMap = kind === 'regex' ? REGEX_STAGE1_LINE_MAP : WILDCARD_STAGE1_LINE_MAP;
+  const resolveLine = (anchor: string) => getLine(1, kind, anchor);
   const s = str;
   const p = pat;
   const n = s.length;
@@ -147,7 +76,7 @@ export function buildStringDpRecursionSteps(
       totalSteps: 0,
       kind,
       action,
-      codeLine: lineMap[codeLineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(codeLineKey),
       i,
       j,
       s,
@@ -334,7 +263,7 @@ export function buildStringDpMemoSteps(
   pat: string
 ): StringDpMemoStep[] {
   const steps: StringDpMemoStep[] = [];
-  const lineMap = kind === 'regex' ? REGEX_STAGE2_LINE_MAP : WILDCARD_STAGE2_LINE_MAP;
+  const resolveLine = (anchor: string) => getLine(2, kind, anchor);
   const s = str;
   const p = pat;
   const n = s.length;
@@ -361,7 +290,7 @@ export function buildStringDpMemoSteps(
       totalSteps: 0,
       kind,
       action,
-      codeLine: lineMap[codeLineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(codeLineKey),
       i,
       j,
       s,
@@ -542,7 +471,7 @@ export function buildStringDp2DSteps(
   pat: string
 ): StringDp2DStep[] {
   const steps: StringDp2DStep[] = [];
-  const lineMap = kind === 'regex' ? REGEX_STAGE3_LINE_MAP : WILDCARD_STAGE3_LINE_MAP;
+  const resolveLine = (anchor: string) => getLine(3, kind, anchor);
   const s = str;
   const p = pat;
   const n = s.length;
@@ -566,7 +495,7 @@ export function buildStringDp2DSteps(
       totalSteps: 0,
       kind,
       action,
-      codeLine: lineMap[codeLineKey] || { java: 1, cpp: 1, python: 1, javascript: 1 },
+      codeLine: resolveLine(codeLineKey),
       i,
       j,
       s,
