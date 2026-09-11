@@ -17,12 +17,14 @@ import {
   buildCoinsFromPilesRecursionSteps,
   buildCoinsFromPilesMemoSteps,
   buildCoinsFromPiles2DSteps,
+} from './knapsack-special-stage-evolution';
+import {
   renderSpecialRecursionCard1,
   renderSpecialMemoCard1,
   renderSpecialMemoCard2,
   renderSpecial2DCard1,
   renderSpecial2DCard2,
-} from './knapsack-special-stage-evolution';
+} from './special-stage-cards';
 import {
   buildBoundedNaiveRecursionSteps,
   buildBoundedNaiveMemoSteps,
@@ -158,19 +160,48 @@ describe('Knapsack 4-Stage Evolution Engine & Renderers', () => {
       // Card rendering
       const c1 = createMockContainer();
       const c2 = createMockContainer();
-      renderSpecialRecursionCard1(c1, 'Buying Hay', recSteps[0].callStack, '<div>info</div>');
+      renderSpecialRecursionCard1(c1, {
+        title: 'Buying Hay',
+        callStack: recSteps[0].callStack,
+        customInfoHtml: '<div>info</div>',
+      });
       expect(c1.innerHTML).toContain('运行时调用栈');
 
-      renderSpecialMemoCard1(c2, 'f(0, 10)', false, '决策', '说明', 2, 5);
+      renderSpecialMemoCard1(c2, {
+        stateStr: 'f(0, 10)',
+        cacheHit: false,
+        decision: '决策',
+        message: '说明',
+        hitCount: 2,
+        missCount: 5,
+      });
       expect(c2.innerHTML).toContain('CACHE MISS');
 
-      renderSpecialMemoCard2(c2, 'Memo Grid', [[0, 1], [2, 3]], 0, 1, true);
+      renderSpecialMemoCard2(c2, {
+        title: 'Memo Grid',
+        memo: [[0, 1], [2, 3]],
+        curI: 0,
+        curJ: 1,
+        isHit: true,
+      });
       expect(c2.innerHTML).toContain('Memo Grid');
 
-      renderSpecial2DCard1(c1, 'dp[1][5]', '12', [{ label: 'dp[0][5]', val: 10 }], '选', '更新');
+      renderSpecial2DCard1(c1, {
+        cellName: 'dp[1][5]',
+        cellValStr: '12',
+        depCells: [{ label: 'dp[0][5]', val: 10 }],
+        decision: '选',
+        message: '更新',
+      });
       expect(c1.innerHTML).toContain('dp[1][5]');
 
-      renderSpecial2DCard2(c2, 'DP Table', [[0, 0], [0, 12]], 1, 1, [{ r: 0, c: 1 }]);
+      renderSpecial2DCard2(c2, {
+        title: 'DP Table',
+        dp: [[0, 0], [0, 12]],
+        curI: 1,
+        curJ: 1,
+        depCells: [{ r: 0, c: 1 }],
+      });
       expect(c2.innerHTML).toContain('DP Table');
     });
 

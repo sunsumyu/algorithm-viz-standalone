@@ -350,12 +350,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsChangeKindsSte
             <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
           </div>
         `;
-        renderSpecialRecursionCard1(
-          container,
-          step.i < step.n ? `正在决策货币 #${step.i + 1}` : '所有货币枚举完成',
-          step.callStack || [],
-          infoHtml
-        );
+        renderSpecialRecursionCard1(container, {
+          title: step.i < step.n ? `正在决策货币 #${step.i + 1}` : '所有货币枚举完成',
+          callStack: step.callStack || [],
+          customInfoHtml: infoHtml,
+        });
       },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
@@ -397,24 +396,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsChangeKindsSte
         return buildCoinsChangeMemoSteps(m, valList, cntList);
       },
       renderCanvas: (container, step) =>
-        renderSpecialMemoCard1(
-          container,
-          `checkMemo(i=${step.i}, rem=${step.remCap})`,
-          step.memoHit,
-          step.hitCount,
-          step.missCount,
-          step.decision,
-          step.message,
-          step.cachedVal === 1 ? 1 : 0
-        ),
+        renderSpecialMemoCard1(container, {
+          stateStr: `checkMemo(i=${step.i}, rem=${step.remCap})`,
+          cacheHit: step.memoHit,
+          hitCount: step.hitCount,
+          missCount: step.missCount,
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecialMemoCard2(
-          container,
-          '找零备忘录 memo[i][rem] (1=True, 0=False)',
-          step.memoGrid,
-          step.i,
-          step.remCap
-        ),
+        renderSpecialMemoCard2(container, {
+          title: '找零备忘录 memo[i][rem] (1=True, 0=False)',
+          memo: step.memoGrid,
+          curI: step.i,
+          curJ: step.remCap,
+        }),
     },
     {
       id: 'stage-3',
@@ -435,23 +431,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<CoinsChangeKindsSte
         return buildCoinsChange2DSteps(m, valList, cntList);
       },
       renderCanvas: (container, step) =>
-        renderSpecial2DCard1(
-          container,
-          `dp[${step.curI}][${step.curJ}]`,
-          `${step.dpTable?.[step.curI]?.[step.curJ] === 1 ? 'True (可凑出)' : 'False (不可凑出)'}`,
-          step.depCells || [],
-          step.decision,
-          step.message
-        ),
+        renderSpecial2DCard1(container, {
+          cellName: `dp[${step.curI}][${step.curJ}]`,
+          cellValStr: `${step.dpTable?.[step.curI]?.[step.curJ] === 1 ? 'True (可凑出)' : 'False (不可凑出)'}`,
+          depCells: step.depCells || [],
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecial2DCard2(
-          container,
-          '严格二维状态表 dp[i][j] (1=True, 0=False)',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
-        ),
+        renderSpecial2DCard2(container, {
+          title: '严格二维状态表 dp[i][j] (1=True, 0=False)',
+          dp: step.dpTable,
+          curI: step.curI,
+          curJ: step.curJ,
+          depCells: (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c })),
+        }),
     },
     {
       id: 'stage-4',

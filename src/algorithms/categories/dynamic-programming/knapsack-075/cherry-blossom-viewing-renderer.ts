@@ -603,12 +603,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<CherryBlossomViewin
             <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
           </div>
         `;
-        renderSpecialRecursionCard1(
-          container,
-          `dfsCherry(idx=${step.i}, remTime=${step.remCap})`,
-          step.callStack || [],
-          infoHtml
-        );
+        renderSpecialRecursionCard1(container, {
+          title: `dfsCherry(idx=${step.i}, remTime=${step.remCap})`,
+          callStack: step.callStack || [],
+          customInfoHtml: infoHtml,
+        });
       },
       renderCustomMetrics: (container, step) => {
         RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId);
@@ -633,24 +632,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<CherryBlossomViewin
         return buildBinarySplitMemoSteps(t, derivedItems);
       },
       renderCanvas: (container, step) =>
-        renderSpecialMemoCard1(
-          container,
-          `dfsCherryMemo(idx=${step.i}, remTime=${step.remCap})`,
-          step.memoHit,
-          step.hitCount,
-          step.missCount,
-          step.decision,
-          step.message,
-          step.cachedVal
-        ),
+        renderSpecialMemoCard1(container, {
+          stateStr: `dfsCherryMemo(idx=${step.i}, remTime=${step.remCap})`,
+          cacheHit: step.memoHit,
+          hitCount: step.hitCount,
+          missCount: step.missCount,
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecialMemoCard2(
-          container,
-          '观赏樱花备忘录 memo[idx][remTime]',
-          step.memoGrid,
-          step.i,
-          step.remCap
-        ),
+        renderSpecialMemoCard2(container, {
+          title: '观赏樱花备忘录 memo[idx][remTime]',
+          memo: step.memoGrid,
+          curI: step.i,
+          curJ: step.remCap,
+        }),
     },
     {
       id: 'stage-3',
@@ -671,23 +667,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<CherryBlossomViewin
         return buildBinarySplit2DSteps(t, derivedItems);
       },
       renderCanvas: (container, step) =>
-        renderSpecial2DCard1(
-          container,
-          `dp[${step.curI}][${step.curJ}]`,
-          `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
-          step.depCells || [],
-          step.decision,
-          step.message
-        ),
+        renderSpecial2DCard1(container, {
+          cellName: `dp[${step.curI}][${step.curJ}]`,
+          cellValStr: `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
+          depCells: step.depCells || [],
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecial2DCard2(
-          container,
-          '严格二维状态表 dp[i][j] (i 对应衍生樱花树)',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
-        ),
+        renderSpecial2DCard2(container, {
+          title: '严格二维状态表 dp[i][j] (i 对应衍生樱花树)',
+          dp: step.dpTable,
+          curI: step.curI,
+          curJ: step.curJ,
+          depCells: (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c })),
+        }),
     },
     {
       id: 'stage-4',

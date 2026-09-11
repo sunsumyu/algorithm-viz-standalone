@@ -2,8 +2,8 @@
  * 背包族通用阶段演化渲染卡片 (SpecialStageCards)
  *
  * 从 knapsack-special-stage-evolution.ts 拆分出的纯渲染组件层：
- * 步骤生成（stage-evolution）与渲染卡片（本模块）职责分离，
- * 支持命名选项对象 (opts) 与经典位置参数双重重载，全面兼容全库调用与单测。
+ * 步骤生成（stage-evolution）与渲染卡片（本模块）职责分离。
+ * 全部函数采用命名选项对象 (opts) 签名。
  */
 
 // ==========================================
@@ -19,28 +19,7 @@ export interface SpecialRecursionCard1Options {
 export function renderSpecialRecursionCard1(
   container: HTMLElement,
   opts: SpecialRecursionCard1Options
-): void;
-export function renderSpecialRecursionCard1(
-  container: HTMLElement,
-  title: string,
-  callStack: Array<{ label: string }>,
-  customInfoHtml: string
-): void;
-export function renderSpecialRecursionCard1(
-  container: HTMLElement,
-  titleOrOpts: string | SpecialRecursionCard1Options,
-  callStackArg?: Array<{ label: string }>,
-  customInfoHtmlArg?: string
 ): void {
-  const opts: SpecialRecursionCard1Options =
-    typeof titleOrOpts === 'string'
-      ? {
-          title: titleOrOpts,
-          callStack: callStackArg || [],
-          customInfoHtml: customInfoHtmlArg || '',
-        }
-      : titleOrOpts;
-
   const { title, callStack, customInfoHtml } = opts;
   const stackHtml = callStack
     .map((frame, idx) => {
@@ -90,44 +69,7 @@ export interface SpecialMemoCard1Options {
 export function renderSpecialMemoCard1(
   container: HTMLElement,
   opts: SpecialMemoCard1Options
-): void;
-export function renderSpecialMemoCard1(
-  container: HTMLElement,
-  stateStr: string,
-  cacheHit: boolean,
-  ...rest: any[]
-): void;
-export function renderSpecialMemoCard1(
-  container: HTMLElement,
-  stateStrOrOpts: string | SpecialMemoCard1Options,
-  cacheHitArg?: boolean,
-  ...rest: any[]
 ): void {
-  let opts: SpecialMemoCard1Options;
-  if (typeof stateStrOrOpts === 'string') {
-    if (typeof rest[0] === 'number') {
-      opts = {
-        stateStr: stateStrOrOpts,
-        cacheHit: Boolean(cacheHitArg),
-        hitCount: rest[0],
-        missCount: rest[1],
-        decision: rest[2],
-        message: rest[3],
-      };
-    } else {
-      opts = {
-        stateStr: stateStrOrOpts,
-        cacheHit: Boolean(cacheHitArg),
-        decision: rest[0],
-        message: rest[1],
-        hitCount: rest[2],
-        missCount: rest[3],
-      };
-    }
-  } else {
-    opts = stateStrOrOpts;
-  }
-
   const { stateStr, cacheHit } = opts;
   const decision = opts.decision ?? '';
   const message = opts.message ?? '';
@@ -198,34 +140,7 @@ export interface SpecialMemoCard2Options {
 export function renderSpecialMemoCard2(
   container: HTMLElement,
   opts: SpecialMemoCard2Options
-): void;
-export function renderSpecialMemoCard2(
-  container: HTMLElement,
-  title: string,
-  memo: number[][],
-  curI: number,
-  curJ: number,
-  isHit?: boolean
-): void;
-export function renderSpecialMemoCard2(
-  container: HTMLElement,
-  titleOrOpts: string | SpecialMemoCard2Options,
-  memoArg?: number[][],
-  curIArg?: number,
-  curJArg?: number,
-  isHitArg?: boolean
 ): void {
-  const opts: SpecialMemoCard2Options =
-    typeof titleOrOpts === 'string'
-      ? {
-          title: titleOrOpts,
-          memo: memoArg || [],
-          curI: curIArg ?? -1,
-          curJ: curJArg ?? -1,
-          isHit: isHitArg,
-        }
-      : titleOrOpts;
-
   const { title, memo, curI, curJ } = opts;
   const isHit = opts.isHit ?? false;
   const rows = memo?.length || 0;
@@ -299,34 +214,7 @@ export interface Special2DCard1Options {
 export function renderSpecial2DCard1(
   container: HTMLElement,
   opts: Special2DCard1Options
-): void;
-export function renderSpecial2DCard1(
-  container: HTMLElement,
-  cellName: string,
-  cellValStr: string,
-  depCells: Array<{ label: string; val: number }>,
-  decision: string,
-  message: string
-): void;
-export function renderSpecial2DCard1(
-  container: HTMLElement,
-  cellNameOrOpts: string | Special2DCard1Options,
-  cellValStrArg?: string,
-  depCellsArg?: Array<{ label: string; val: number }>,
-  decisionArg?: string,
-  messageArg?: string
 ): void {
-  const opts: Special2DCard1Options =
-    typeof cellNameOrOpts === 'string'
-      ? {
-          cellName: cellNameOrOpts,
-          cellValStr: cellValStrArg || '',
-          depCells: depCellsArg || [],
-          decision: decisionArg || '',
-          message: messageArg || '',
-        }
-      : cellNameOrOpts;
-
   const { cellName, cellValStr, depCells, decision, message } = opts;
   const depsHtml =
     depCells.length === 0
@@ -390,34 +278,7 @@ export interface Special2DCard2Options {
 export function renderSpecial2DCard2(
   container: HTMLElement,
   opts: Special2DCard2Options
-): void;
-export function renderSpecial2DCard2(
-  container: HTMLElement,
-  title: string,
-  dp: number[][],
-  curI: number,
-  curJ: number,
-  depCells: Array<{ r: number; c: number }>
-): void;
-export function renderSpecial2DCard2(
-  container: HTMLElement,
-  titleOrOpts: string | Special2DCard2Options,
-  dpArg?: number[][],
-  curIArg?: number,
-  curJArg?: number,
-  depCellsArg?: Array<{ r: number; c: number }>
 ): void {
-  const opts: Special2DCard2Options =
-    typeof titleOrOpts === 'string'
-      ? {
-          title: titleOrOpts,
-          dp: dpArg || [],
-          curI: curIArg ?? -1,
-          curJ: curJArg ?? -1,
-          depCells: depCellsArg || [],
-        }
-      : titleOrOpts;
-
   const { title, dp, curI, curJ, depCells } = opts;
   const rows = dp?.length || 0;
   const cols = dp?.[0]?.length || 0;

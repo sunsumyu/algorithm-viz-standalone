@@ -301,14 +301,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackMono
             <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
           </div>
         `;
-        renderSpecialRecursionCard1(
-          container,
-          step.i < step.n
-            ? `正在决策宝物 #${step.i + 1} (重:${step.wList[step.i]}, 价:${step.vList[step.i]}, 上限:${step.cList[step.i]})`
-            : '所有宝物决策完成',
-          step.callStack || [],
-          infoHtml
-        );
+        renderSpecialRecursionCard1(container, {
+          title: step.i < step.n ? `正在决策宝物 #${step.i + 1} (重:${step.wList[step.i]}, 价:${step.vList[step.i]}, 上限:${step.cList[step.i]})` : '所有宝物决策完成',
+          callStack: step.callStack || [],
+          customInfoHtml: infoHtml,
+        });
       },
       renderCustomMetrics: (container, step) => {
         container.innerHTML = `
@@ -350,24 +347,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackMono
         return buildBoundedNaiveMemoSteps(t, vList, wList, cList);
       },
       renderCanvas: (container, step) =>
-        renderSpecialMemoCard1(
-          container,
-          `dfsMemo(i=${step.i}, remCap=${step.remCap})`,
-          step.memoHit,
-          step.hitCount,
-          step.missCount,
-          step.decision,
-          step.message,
-          step.cachedVal
-        ),
+        renderSpecialMemoCard1(container, {
+          stateStr: `dfsMemo(i=${step.i}, remCap=${step.remCap})`,
+          cacheHit: step.memoHit,
+          hitCount: step.hitCount,
+          missCount: step.missCount,
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecialMemoCard2(
-          container,
-          '备忘录矩阵 memo[i][remCap]',
-          step.memoGrid,
-          step.i,
-          step.remCap
-        ),
+        renderSpecialMemoCard2(container, {
+          title: '备忘录矩阵 memo[i][remCap]',
+          memo: step.memoGrid,
+          curI: step.i,
+          curJ: step.remCap,
+        }),
     },
     {
       id: 'stage-3',
@@ -388,23 +382,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackMono
         return buildBoundedNaive2DSteps(t, vList, wList, cList);
       },
       renderCanvas: (container, step) =>
-        renderSpecial2DCard1(
-          container,
-          `dp[${step.curI}][${step.curJ}]`,
-          `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
-          step.depCells || [],
-          step.decision,
-          step.message
-        ),
+        renderSpecial2DCard1(container, {
+          cellName: `dp[${step.curI}][${step.curJ}]`,
+          cellValStr: `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
+          depCells: step.depCells || [],
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step) =>
-        renderSpecial2DCard2(
-          container,
-          '严格二维状态表 dp[i][j]',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
-        ),
+        renderSpecial2DCard2(container, {
+          title: '严格二维状态表 dp[i][j]',
+          dp: step.dpTable,
+          curI: step.curI,
+          curJ: step.curJ,
+          depCells: (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c })),
+        }),
     },
     {
       id: 'stage-4',

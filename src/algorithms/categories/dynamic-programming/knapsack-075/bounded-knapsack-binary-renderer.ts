@@ -389,12 +389,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
             <div style="font-size:11px; color:#64748b; line-height:1.5;">${step.message}</div>
           </div>
         `;
-        renderSpecialRecursionCard1(
-          container,
-          `dfsBinary(idx=${step.i}, remCap=${step.remCap})`,
-          step.callStack || [],
-          infoHtml
-        );
+        renderSpecialRecursionCard1(container, {
+          title: `dfsBinary(idx=${step.i}, remCap=${step.remCap})`,
+          callStack: step.callStack || [],
+          customInfoHtml: infoHtml,
+        });
       },
       renderCustomMetrics: (container, step: any) => {
         RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId);
@@ -419,24 +418,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
         return buildBinarySplitMemoSteps(t, derivedItems);
       },
       renderCanvas: (container, step: any) =>
-        renderSpecialMemoCard1(
-          container,
-          `dfsMemo(idx=${step.i}, remCap=${step.remCap})`,
-          step.memoHit,
-          step.hitCount,
-          step.missCount,
-          step.decision,
-          step.message,
-          step.cachedVal
-        ),
+        renderSpecialMemoCard1(container, {
+          stateStr: `dfsMemo(idx=${step.i}, remCap=${step.remCap})`,
+          cacheHit: step.memoHit,
+          hitCount: step.hitCount,
+          missCount: step.missCount,
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step: any) =>
-        renderSpecialMemoCard2(
-          container,
-          '衍生 01 背包备忘录 memo[idx][remCap]',
-          step.memoGrid,
-          step.i,
-          step.remCap
-        ),
+        renderSpecialMemoCard2(container, {
+          title: '衍生 01 背包备忘录 memo[idx][remCap]',
+          memo: step.memoGrid,
+          curI: step.i,
+          curJ: step.remCap,
+        }),
     },
     {
       id: 'stage-3',
@@ -457,23 +453,21 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedKnapsackBina
         return buildBinarySplit2DSteps(t, derivedItems);
       },
       renderCanvas: (container, step: any) =>
-        renderSpecial2DCard1(
-          container,
-          `dp[${step.curI}][${step.curJ}]`,
-          `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
-          step.depCells || [],
-          step.decision,
-          step.message
-        ),
+        renderSpecial2DCard1(container, {
+          cellName: `dp[${step.curI}][${step.curJ}]`,
+          cellValStr: `${step.dpTable?.[step.curI]?.[step.curJ] ?? 0}`,
+          depCells: step.depCells || [],
+          decision: step.decision,
+          message: step.message,
+        }),
       renderCustomMetrics: (container, step: any) =>
-        renderSpecial2DCard2(
-          container,
-          '严格二维状态表 dp[i][j] (i 对应衍生包序号)',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c }))
-        ),
+        renderSpecial2DCard2(container, {
+          title: '严格二维状态表 dp[i][j] (i 对应衍生包序号)',
+          dp: step.dpTable,
+          curI: step.curI,
+          curJ: step.curJ,
+          depCells: (step.depCells || []).map((d: any) => ({ r: d.r, c: d.c })),
+        }),
     },
     {
       id: 'stage-4',
