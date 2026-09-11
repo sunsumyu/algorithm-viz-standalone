@@ -417,7 +417,16 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'first-missing-positive': '🔎',
   'word-break-ii': '🧩',
   'binary-tree-maximum-path-sum': '🌳',
+  'paper-folding-040': '📄',
+  'linked-list-cycle-ii-041': '🔄',
+  'copy-list-random-pointer-042': '📋',
+  'product-except-self-238': '✖️',
+  'find-duplicate-number-287': '🔍',
+  'count-submatrices-all-ones-1504': '🧱',
+  'find-min-rotated-sorted-array-ii': '📉',
+  'min-remove-valid-parentheses': '🧹',
 };
+
 
 
 /**

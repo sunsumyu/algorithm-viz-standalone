@@ -98,6 +98,8 @@ export interface DeclarativeAlgorithmSpec<TStep = any> {
   timeComplexity?: string;
   spaceComplexity?: string;
   learningGoal?: string;
+  /** 名称别名（中英文变体、旧称）：参与搜索命中，不参与目录展示 */
+  aliases?: string[];
   badge?: {
     mode: string;
     complexity: string;

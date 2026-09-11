@@ -15,7 +15,8 @@
     "typecheck:watch": "tsc -b --noEmit --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "export:standalone": "node scripts/export-standalone.mjs"
+    "export:standalone": "node scripts/export-standalone.mjs",
+    "meta:sync": "vite-node scripts/catalog-sync.ts"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",

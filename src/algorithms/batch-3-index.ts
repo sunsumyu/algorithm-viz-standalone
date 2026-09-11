@@ -21,6 +21,7 @@ import './categories/tree/tree-serialization-021-renderer';
 import './categories/tree/tree-recursion-patterns-019-renderer';// 左程云通关课 Class 036
 import './categories/tree/max-sum-bst-036-renderer';
 import './categories/tree/tree-serialization-037-renderer';
+import './categories/tree/paper-folding-040-renderer';
 import './categories/tree/binary-tree-maximum-path-sum-renderer';
 
 export {};

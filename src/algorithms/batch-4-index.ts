@@ -29,8 +29,14 @@ import './categories/advanced-topics/hard-interview/hard-largest-rectangle-histo
 import './categories/advanced-topics/hard-interview/merge-k-sorted-lists-renderer';
 import './categories/advanced-topics/hard-interview/median-two-sorted-arrays-renderer';
 import './categories/bit-manipulation/bitwise-xor-odd-times-034-renderer';
+import './categories/array/find-duplicate-number-287-renderer';
+import './categories/search/find-min-rotated-sorted-array-ii-renderer';
+import './categories/array/product-except-self-238-renderer';
 
 export {};
+
+
+
 
 
 

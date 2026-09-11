@@ -20,6 +20,8 @@ export interface AlgorithmMetadata {
   levelOrder: number;
   /** 本关的学习目标（一句话） */
   learningGoal?: string;
+  /** 名称别名（中英文变体、旧称、课程别称）：同一概念的全部名称表现统一收纳于此，用于检索命中，不参与目录展示 */
+  aliases?: string[];
 }
 
 export interface AlgorithmManifest extends AlgorithmMetadata {

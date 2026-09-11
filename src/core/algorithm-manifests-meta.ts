@@ -6080,8 +6080,97 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 124,
     "learningGoal": "深刻理解单边延伸贡献度（用于向上传递）与拐点闭合路径和（用于更新全局最优）的经典解耦"
+  },
+  {
+    "id": "paper-folding-040",
+    "name": "折纸问题 (Class 040)",
+    "viewId": "algo-paper-folding-040-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 040：对折 N 次展开折痕凹凸规律，本质为凹根满二叉树中序遍历，O(N) 空间递归输出。",
+    "icon": "📄",
+    "difficulty": 2,
+    "levelOrder": 40,
+    "learningGoal": "理解折纸物理展开与满二叉树中序遍历的数学同构关系，掌握不建树利用递归栈完成 O(N) 空间求解的技巧"
+  },
+  {
+    "id": "linked-list-cycle-ii-041",
+    "name": "环形链表入环点判定 (Class 041)",
+    "viewId": "algo-linked-list-cycle-ii-041-view",
+    "category": "linked-list",
+    "description": "左程云算法通关课 Class 041：寻找单链表中的入环节点 (LeetCode 142)，Floyd 快慢指针相遇与头指针同速追赶。",
+    "icon": "🔄",
+    "difficulty": 2,
+    "levelOrder": 41,
+    "learningGoal": "掌握 Floyd 快慢指针判圈算法，深刻理解 a = k*L - b 距离公式推导，学会 O(1) 空间精准定位入环节点"
+  },
+  {
+    "id": "copy-list-random-pointer-042",
+    "name": "复杂链表的复制 (Class 042)",
+    "viewId": "algo-copy-list-random-pointer-042-view",
+    "category": "linked-list",
+    "description": "左程云算法通关课 Class 042：复杂链表的复制 (LeetCode 138)，原地交织插入、跨步 random 关联与无损分离，O(1) 空间。",
+    "icon": "📋",
+    "difficulty": 2,
+    "levelOrder": 42,
+    "learningGoal": "掌握利用链表就地插入建立映射的精妙技巧，彻底摆脱哈希表实现 O(1) 额外空间复杂度的复杂链表深拷贝"
+  },
+  {
+    "id": "product-except-self-238",
+    "name": "除自身以外数组的乘积 (LeetCode 238)",
+    "viewId": "algo-product-except-self-238-view",
+    "category": "array",
+    "description": "大厂高频基石题：LeetCode 238 无除法且 O(1) 辅助空间，前缀积与后缀积双向扫描就地累乘。",
+    "icon": "✖️",
+    "difficulty": 2,
+    "levelOrder": 238,
+    "learningGoal": "掌握前缀积与后缀积双向扫描拆解数组乘积的核心思想，体会利用返回结果复用空间的 O(1) 优化技巧"
+  },
+  {
+    "id": "find-duplicate-number-287",
+    "name": "Hard 25: 寻找重复数 (LeetCode 287)",
+    "viewId": "algo-find-duplicate-number-287-view",
+    "category": "array",
+    "description": "大厂高频压轴题：LeetCode 287 不改数组 + O(1) 空间，下标链表化映射与快慢指针寻找环入口。",
+    "icon": "🔍",
+    "difficulty": 3,
+    "levelOrder": 287,
+    "learningGoal": "掌握将静态数组转化为有向图链表的数学抽象技巧，深刻理解鸽巢原理与 Floyd 快慢指针在数组查重中的经典运用"
+  },
+  {
+    "id": "count-submatrices-all-ones-1504",
+    "name": "Hard 26: 统计全 1 子矩形 (LeetCode 1504)",
+    "viewId": "algo-count-submatrices-all-ones-1504-view",
+    "category": "monotonic-stack",
+    "description": "大厂高频压轴题：LeetCode 1504 单调栈与矩阵压缩，高度阶梯差值与组合数极速求解全 1 子矩形总数。",
+    "icon": "🧱",
+    "difficulty": 3,
+    "levelOrder": 1504,
+    "learningGoal": "掌握二维矩阵压缩高度后运用单调递增栈快速统计子矩形数量的组合数学公式与 O(M * N) 算法实现"
+  },
+  {
+    "id": "find-min-rotated-sorted-array-ii",
+    "name": "Hard 27: 寻找旋转排序数组最小值 II (LeetCode 154)",
+    "viewId": "algo-find-min-rotated-sorted-array-ii-view",
+    "category": "search",
+    "description": "大厂高频压轴题：LeetCode 154 含重复元素的三路二分查找，相等时 right-- 平缓收缩防漏解。",
+    "icon": "📉",
+    "difficulty": 3,
+    "levelOrder": 154,
+    "learningGoal": "深刻理解带重复元素二分查找的三分支决策模型，掌握通过 right-- 平缓降级解决单调性歧义的关键技巧"
+  },
+  {
+    "id": "min-remove-valid-parentheses",
+    "name": "Hard 28: 移除无效的括号 (LeetCode 1249)",
+    "viewId": "algo-min-remove-valid-parentheses-view",
+    "category": "stack",
+    "description": "大厂高频压轴题：LeetCode 1249 索引栈记录未匹配括号，布尔标记线性重构最长有效平衡串。",
+    "icon": "🧹",
+    "difficulty": 3,
+    "levelOrder": 1249,
+    "learningGoal": "掌握利用索引栈标记未匹配括号的线性重构技巧，理解布尔数组在字符串原地/单趟过滤中的核心应用"
   }
 ];
+
 
 
 

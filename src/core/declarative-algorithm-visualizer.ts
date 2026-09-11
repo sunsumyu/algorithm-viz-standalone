@@ -716,6 +716,7 @@ export function registerDeclarativeAlgorithm<TStep extends StepBase = any>(
     difficulty: (typeof spec.difficulty === 'number' ? spec.difficulty : (spec.difficulty === 'easy' ? 1 : spec.difficulty === 'hard' ? 3 : 2)) as 1 | 2 | 3,
     levelOrder: spec.levelOrder || 99,
     learningGoal: spec.learningGoal || '',
+    aliases: spec.aliases && spec.aliases.length > 0 ? spec.aliases : undefined,
     template: result.template,
     Visualizer: result.Visualizer,
   });
