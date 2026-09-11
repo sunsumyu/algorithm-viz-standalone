@@ -32,6 +32,7 @@ import './categories/bit-manipulation/bitwise-xor-odd-times-034-renderer';
 import './categories/array/find-duplicate-number-287-renderer';
 import './categories/search/find-min-rotated-sorted-array-ii-renderer';
 import './categories/array/product-except-self-238-renderer';
+import './categories/math/max-points-on-a-line-renderer';
 
 export {};
 

@@ -425,6 +425,15 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'count-submatrices-all-ones-1504': '🧱',
   'find-min-rotated-sorted-array-ii': '📉',
   'min-remove-valid-parentheses': '🧹',
+  'find-peak-element': '⛰️',
+  'koko-eating-bananas': '🍌',
+  'max-points-on-a-line': '📐',
+  'course-schedule-iv': '🎓',
+  'longest-consecutive-sequence': '🔗',
+  'palindrome-partitioning-ii': '✂️',
+  'remove-k-digits': '🔢',
+  'subarray-sum-equals-k': '🎯',
+  'longest-repeating-character-replacement': '🪟',
 };
 
 

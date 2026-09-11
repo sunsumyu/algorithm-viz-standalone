@@ -42,6 +42,7 @@ import './categories/advanced-topics/hard-interview/dungeon-game-renderer';
 import './categories/advanced-topics/hard-interview/freedom-trail-renderer';
 import './categories/dynamic-programming/recursion-to-dp-038-renderer';
 import './categories/dynamic-programming/word-break-ii-renderer';
+import './categories/dynamic-programming/palindrome-partitioning-ii-renderer';
 
 export {};
 
