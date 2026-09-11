@@ -19,7 +19,7 @@ import {
   buildCoinsFromPilesRecursionSteps,
   buildCoinsFromPilesMemoSteps,
   buildCoinsFromPiles2DSteps,
-} from '../../../../core/renderers/knapsack-special-stage-evolution';
+} from './knapsack-special-stage-evolution';
 import {
   renderSpecialRecursionCard1,
   renderSpecialMemoCard1,

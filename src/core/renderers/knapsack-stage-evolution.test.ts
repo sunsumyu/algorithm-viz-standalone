@@ -17,7 +17,7 @@ import {
   buildCoinsFromPilesRecursionSteps,
   buildCoinsFromPilesMemoSteps,
   buildCoinsFromPiles2DSteps,
-} from './knapsack-special-stage-evolution';
+} from '../../algorithms/categories/dynamic-programming/knapsack-074/knapsack-special-stage-evolution';
 import {
   renderSpecialRecursionCard1,
   renderSpecialMemoCard1,
@@ -35,7 +35,7 @@ import {
   buildCoinsChangeRecursionSteps,
   buildCoinsChangeMemoSteps,
   buildCoinsChange2DSteps,
-} from './bounded-knapsack-stage-evolution';
+} from '../../algorithms/categories/dynamic-programming/knapsack-075/bounded-knapsack-stage-evolution';
 import {
   buildStringDpRecursionSteps,
   buildStringDpMemoSteps,

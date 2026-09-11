@@ -8,8 +8,8 @@
  * 3. 阶段 3: 严格位置依赖二维动态规划 (dp[i][j] 填表)
  */
 
-import { HighlightTarget } from './dark-code-terminal-presenter';
-import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../step-types';
+import { HighlightTarget } from '../../../../core/renderers/dark-code-terminal-presenter';
+import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { getBoundedKnapsackAnchor, type BoundedKnapsackKind } from './bounded-knapsack-stage-codes';
 
 // ==========================================

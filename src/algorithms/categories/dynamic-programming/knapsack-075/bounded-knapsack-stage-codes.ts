@@ -5,8 +5,8 @@
  * 彻底消除 bounded-knapsack-stage-evolution.ts 中 9 处内联 lineMap。
  */
 
-import { createStageCodeRegistry, type StageCodeMap } from '../stage-code-registry';
-import type { HighlightTarget } from './dark-code-terminal-presenter';
+import { createStageCodeRegistry, type StageCodeMap } from '../../../../core/stage-code-registry';
+import type { HighlightTarget } from '../../../../core/renderers/dark-code-terminal-presenter';
 import {
   BOUNDED_NAIVE_STAGE1_CODE_LANGUAGES,
   BOUNDED_NAIVE_STAGE2_CODE_LANGUAGES,
@@ -17,7 +17,7 @@ import {
   COINS_CHANGE_STAGE1_CODE_LANGUAGES,
   COINS_CHANGE_STAGE2_CODE_LANGUAGES,
   COINS_CHANGE_STAGE3_CODE_LANGUAGES,
-} from '../../algorithms/categories/dynamic-programming/knapsack-075/knapsack-075-stage-codes';
+} from './knapsack-075-stage-codes';
 
 export type BoundedKnapsackKind = 'bounded-naive' | 'binary-split' | 'coins-change';
 

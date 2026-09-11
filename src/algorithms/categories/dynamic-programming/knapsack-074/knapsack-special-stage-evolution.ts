@@ -13,8 +13,8 @@
  * - 阶段 4: 一维空间压缩/斜率优化 (已有高精沙盘)
  */
 
-import { HighlightTarget } from './dark-code-terminal-presenter';
-import { type RecursionStepBase, type MemoStepBase } from '../step-types';
+import { HighlightTarget } from '../../../../core/renderers/dark-code-terminal-presenter';
+import { type RecursionStepBase, type MemoStepBase } from '../../../../core/step-types';
 import { getSpecialKnapsackAnchor } from './knapsack-special-stage-codes';
 
 // ==========================================
@@ -670,12 +670,3 @@ export function buildCoinsFromPiles2DSteps(
   steps.forEach((s) => (s.totalSteps = total));
   return steps;
 }
-
-export {
-  renderSpecialRecursionCard1,
-  renderSpecialMemoCard1,
-  renderSpecialMemoCard2,
-  renderSpecial2DCard1,
-  renderSpecial2DCard2,
-} from './special-stage-cards';
-

@@ -5,8 +5,8 @@
  * 彻底消除 knapsack-special-stage-evolution.ts 中 6 处内联 lineMap。
  */
 
-import { createStageCodeRegistry, type StageCodeMap } from '../stage-code-registry';
-import type { HighlightTarget } from './dark-code-terminal-presenter';
+import { createStageCodeRegistry, type StageCodeMap } from '../../../../core/stage-code-registry';
+import type { HighlightTarget } from '../../../../core/renderers/dark-code-terminal-presenter';
 import {
   BUYING_HAY_STAGE1_CODE_LANGUAGES,
   BUYING_HAY_STAGE2_CODE_LANGUAGES,
@@ -14,7 +14,7 @@ import {
   COINS_FROM_PILES_STAGE1_CODE_LANGUAGES,
   COINS_FROM_PILES_STAGE2_CODE_LANGUAGES,
   COINS_FROM_PILES_STAGE3_CODE_LANGUAGES,
-} from '../../algorithms/categories/dynamic-programming/knapsack-074/knapsack-074-problem-content';
+} from './knapsack-074-problem-content';
 
 export type SpecialKnapsackKind = 'buying-hay' | 'coins-from-piles';
 

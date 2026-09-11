@@ -4,7 +4,7 @@
  * 遵循 Zero-Subbox 规范，直接在浅灰画布上居中渲染 SVG
  */
 
-import { TreeNode, renderTreeSVG } from '../../../algorithms/categories/tree/tree-template';
+import { TreeNode, renderTreeSVG } from '../tree-svg';
 
 export interface TreeCanvasState {
   tree: TreeNode | null;

@@ -19,7 +19,7 @@ import {
   buildBinarySplitRecursionSteps,
   buildBinarySplitMemoSteps,
   buildBinarySplit2DSteps,
-} from '../../../../core/renderers/bounded-knapsack-stage-evolution';
+} from './bounded-knapsack-stage-evolution';
 import {
   renderSpecialRecursionCard1,
   renderSpecialMemoCard1,

@@ -47,7 +47,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
     });
 
     it('阶段 1 暴力递归应能正确运行并产生完整的递归调用栈帧', async () => {
-      const { buildBoundedNaiveRecursionSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBoundedNaiveRecursionSteps } = await import('./bounded-knapsack-stage-evolution');
       const steps = buildBoundedNaiveRecursionSteps(10, [3, 4, 7], [2, 3, 5], [2, 3, 2]);
       expect(steps.length).toBeGreaterThan(0);
       expect(steps[0].action).toBe('callRoot');
@@ -56,7 +56,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
     });
 
     it('阶段 2 记忆化搜索应记录缓存命中并返回与递归一致的解', async () => {
-      const { buildBoundedNaiveMemoSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBoundedNaiveMemoSteps } = await import('./bounded-knapsack-stage-evolution');
       const steps = buildBoundedNaiveMemoSteps(10, [3, 4, 7, 8], [2, 2, 4, 5], [2, 2, 2, 2]);
       expect(steps.length).toBeGreaterThan(0);
       const hitSteps = steps.filter((s) => s.memoHit);
@@ -64,7 +64,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
     });
 
     it('阶段 3 严格二维动态规划能自底向上正确填满二维表', async () => {
-      const { buildBoundedNaive2DSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBoundedNaive2DSteps } = await import('./bounded-knapsack-stage-evolution');
       const steps = buildBoundedNaive2DSteps(10, [3, 4, 7], [2, 3, 5], [2, 3, 2]);
       expect(steps.length).toBeGreaterThan(0);
       const lastStep = steps[steps.length - 1];
@@ -91,7 +91,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
     });
 
     it('阶段 1 衍生01包暴力递归应产生正确的调用分支', async () => {
-      const { buildBinarySplitRecursionSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBinarySplitRecursionSteps } = await import('./bounded-knapsack-stage-evolution');
       const derived = [
         { origIndex: 0, multiplier: 1, val: 3, weight: 2 },
         { origIndex: 0, multiplier: 1, val: 3, weight: 2 },
@@ -105,7 +105,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
     });
 
     it('阶段 2 衍生01包记忆化搜索应能记录缓存命中', async () => {
-      const { buildBinarySplitMemoSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBinarySplitMemoSteps } = await import('./bounded-knapsack-stage-evolution');
       const derived = [
         { origIndex: 0, multiplier: 1, val: 3, weight: 2 },
         { origIndex: 0, multiplier: 1, val: 3, weight: 2 },
@@ -119,7 +119,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
     });
 
     it('阶段 3 衍生01包严格二维 DP 能自底向上正确递推', async () => {
-      const { buildBinarySplit2DSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBinarySplit2DSteps } = await import('./bounded-knapsack-stage-evolution');
       const derived = [
         { origIndex: 0, multiplier: 1, val: 3, weight: 2 },
         { origIndex: 0, multiplier: 1, val: 3, weight: 2 },
@@ -155,7 +155,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 1 统一二进制拆分后的衍生 01 递归分治能正确生成调用栈', async () => {
       const { parseCherryDerivedItems } = await import('./cherry-blossom-viewing-renderer');
-      const { buildBinarySplitRecursionSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBinarySplitRecursionSteps } = await import('./bounded-knapsack-stage-evolution');
       const { t, derivedItems } = parseCherryDerivedItems({
         'input-t': 10,
         'input-costs': '2, 3, 5',
@@ -169,7 +169,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 2 观赏樱花记忆化搜索应能记录缓存命中', async () => {
       const { parseCherryDerivedItems } = await import('./cherry-blossom-viewing-renderer');
-      const { buildBinarySplitMemoSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBinarySplitMemoSteps } = await import('./bounded-knapsack-stage-evolution');
       const { t, derivedItems } = parseCherryDerivedItems({
         'input-t': 10,
         'input-costs': '2, 3',
@@ -184,7 +184,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 3 观赏樱花严格二维动态规划能正确自底向上填表', async () => {
       const { parseCherryDerivedItems } = await import('./cherry-blossom-viewing-renderer');
-      const { buildBinarySplit2DSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBinarySplit2DSteps } = await import('./bounded-knapsack-stage-evolution');
       const { t, derivedItems } = parseCherryDerivedItems({
         'input-t': 10,
         'input-costs': '2, 3, 5',
@@ -219,7 +219,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 1 暴力递归应能被单调队列演化管线复用并正确推演', async () => {
       const { parseMonoQueueInputs } = await import('./bounded-knapsack-monotonic-queue-renderer');
-      const { buildBoundedNaiveRecursionSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBoundedNaiveRecursionSteps } = await import('./bounded-knapsack-stage-evolution');
       const { t, vList, wList, cList } = parseMonoQueueInputs({
         'input-t': 10,
         'input-v': '3, 4',
@@ -232,7 +232,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 2 记忆化搜索与阶段 3 严格二维DP应能正确产生步骤', async () => {
       const { parseMonoQueueInputs } = await import('./bounded-knapsack-monotonic-queue-renderer');
-      const { buildBoundedNaiveMemoSteps, buildBoundedNaive2DSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildBoundedNaiveMemoSteps, buildBoundedNaive2DSteps } = await import('./bounded-knapsack-stage-evolution');
       const { t, vList, wList, cList } = parseMonoQueueInputs({
         'input-t': 10,
         'input-v': '3, 4',
@@ -276,7 +276,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 1 暴力递归判定应正确执行', async () => {
       const { parseCoinsChangeInputs } = await import('./coins-change-kinds-renderer');
-      const { buildCoinsChangeRecursionSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildCoinsChangeRecursionSteps } = await import('./bounded-knapsack-stage-evolution');
       const { m, valList, cntList } = parseCoinsChangeInputs({
         'input-m': 5,
         'input-vals': '1, 2',
@@ -289,7 +289,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 2 找零记忆化搜索应记录缓存命中并加速判定', async () => {
       const { parseCoinsChangeInputs } = await import('./coins-change-kinds-renderer');
-      const { buildCoinsChangeMemoSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildCoinsChangeMemoSteps } = await import('./bounded-knapsack-stage-evolution');
       const { m, valList, cntList } = parseCoinsChangeInputs({
         'input-m': 6,
         'input-vals': '1, 2, 3',
@@ -303,7 +303,7 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
 
     it('阶段 3 严格二维布尔动态规划填表结果应统计出正确的面值种类', async () => {
       const { parseCoinsChangeInputs } = await import('./coins-change-kinds-renderer');
-      const { buildCoinsChange2DSteps } = await import('../../../../core/renderers/bounded-knapsack-stage-evolution');
+      const { buildCoinsChange2DSteps } = await import('./bounded-knapsack-stage-evolution');
       const { m, valList, cntList } = parseCoinsChangeInputs({
         'input-m': 10,
         'input-vals': '1, 2, 4',
