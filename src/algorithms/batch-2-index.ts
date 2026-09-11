@@ -195,6 +195,11 @@ import './categories/array/next-permutation-renderer';
 import './categories/stack/valid-parenthesis-string-renderer';
 import './categories/array/subarray-product-less-than-k-renderer';
 import './categories/string/find-all-anagrams-in-a-string-renderer';
+import './categories/greedy/task-scheduler-renderer';
+import './categories/array/shuffle-an-array-renderer';
+import './categories/tree/find-duplicate-subtrees-renderer';
+import './categories/monotonic-stack/verify-preorder-sequence-in-bst-renderer';
+import './categories/stack/min-stack-renderer';
 
 export {};
 
