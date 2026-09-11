@@ -55,9 +55,16 @@ export class CodeStepIndexer {
   }
 
   /**
+   * 剥离单语言源码中的 @step: 锚点标签，输出干净代码行
+   */
+  public stripAnchors(rawLines: string[]): string[] {
+    return this.parseLanguageLines(rawLines).cleanLines;
+  }
+
+  /**
    * 解析单语言代码行数组，提取锚点并清洗源码
    */
-  public parseLanguageLines(rawLines: string[]): { cleanLines: string[]; anchors: Record<string, CodeAnchorTarget> } {
+  private parseLanguageLines(rawLines: string[]): { cleanLines: string[]; anchors: Record<string, CodeAnchorTarget> } {
     const cleanLines: string[] = [];
     const anchors: Record<string, CodeAnchorTarget> = {};
 

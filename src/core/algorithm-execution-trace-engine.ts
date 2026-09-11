@@ -205,7 +205,7 @@ export class AlgorithmExecutionTraceEngine {
     const result: Record<string, string[]> = {};
     const indexer = CodeStepIndexer.getInstance();
     for (const [lang, lines] of Object.entries(codeLanguages)) {
-      result[lang] = indexer.parseLanguageLines(lines).cleanLines;
+      result[lang] = indexer.stripAnchors(lines);
     }
     return result;
   }
