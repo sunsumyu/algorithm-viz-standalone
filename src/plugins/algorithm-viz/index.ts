@@ -147,7 +147,10 @@ function updateContentHeader(): void {
     titleEl.innerHTML = `搜索结果`;
     countEl.textContent = `(${visibleCards.length} 个匹配)`;
   } else if (currentCategory === 'all') {
-    if (currentCourse === 'zuo') {
+    if (currentCourse === 'bigtech') {
+      titleEl.innerHTML = `🔥 大厂高频面试真题`;
+      countEl.textContent = `(${courseFiltered.length} 关)`;
+    } else if (currentCourse === 'zuo') {
       titleEl.innerHTML = `🎓 算法通关课`;
       countEl.textContent = `(${courseFiltered.length} 关)`;
     } else if (currentCourse === 'standard') {

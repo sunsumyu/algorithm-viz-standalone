@@ -18,6 +18,7 @@ import {
   type CourseType,
   type CourseFilterStats,
   extractZuoCourseTag,
+  extractBigTechTag,
 } from '../curriculum-filter';
 
 export { resolveAlgorithmIcon } from './catalog-icons';
@@ -280,6 +281,11 @@ export class CatalogPresenter {
         ? `<span class="zuo-course-badge" title="左程云《算法通关课》系列：${zuoTag}">🎓 ${zuoTag}</span>`
         : '';
 
+      const bigTechTag = extractBigTechTag(algo);
+      const bigTechBadgeHtml = bigTechTag
+        ? `<span class="bigtech-badge" title="大厂面试高频真题：${bigTechTag}">🔥 ${bigTechTag}</span>`
+        : '';
+
       card.innerHTML = `
         <div class="card-header">
           <div class="card-icon ${iconClass}">${icon}</div>
@@ -290,6 +296,7 @@ export class CatalogPresenter {
         <div class="card-footer">
           <div class="card-footer-badges">
             <span class="difficulty-badge" style="color: ${diff.color}; background: ${diff.bg}">${diff.dot} ${diff.label}</span>
+            ${bigTechBadgeHtml}
             ${zuoBadgeHtml}
           </div>
           <span class="card-category">${catName}</span>
@@ -317,6 +324,7 @@ export class CatalogPresenter {
 
     const tabsDef: { id: CourseType; icon: string; label: string; count: number }[] = [
       { id: 'all', icon: '🌐', label: '全部题库', count: stats.total },
+      { id: 'bigtech', icon: '🔥', label: '大厂高频', count: stats.bigtech },
       { id: 'zuo', icon: '🎓', label: '算法通关课', count: stats.zuo },
       { id: 'standard', icon: '📘', label: '经典随想录', count: stats.standard },
     ];
@@ -359,7 +367,8 @@ export class CatalogPresenter {
     filterWrapper.className = 'sidebar-course-filter';
 
     const items: { id: CourseType; label: string; count: number }[] = [
-      { id: 'all', label: '全部题库', count: stats.total },
+      { id: 'all', label: '全部', count: stats.total },
+      { id: 'bigtech', label: '🔥 大厂', count: stats.bigtech },
       { id: 'zuo', label: '🎓 通关课', count: stats.zuo },
     ];
 

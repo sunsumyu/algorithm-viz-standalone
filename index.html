@@ -732,6 +732,28 @@
       color: #3730a3;
     }
 
+    .bigtech-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.12rem 0.45rem;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+      color: #e11d48;
+      border: 1px solid #fecdd3;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      letter-spacing: 0.01em;
+      box-shadow: 0 1px 2px rgba(225, 29, 72, 0.08);
+      transition: all 0.2s ease;
+    }
+
+    .algo-card:hover .bigtech-badge {
+      background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+      border-color: #fda4af;
+      color: #be123c;
+    }
+
     /* ========== Course Filter Switchers ========== */
     .content-course-tabs {
       display: inline-flex;
@@ -780,6 +802,13 @@
       box-shadow: 0 1px 3px rgba(67, 56, 202, 0.12);
     }
 
+    .course-tab-btn[data-course="bigtech"].active {
+      color: #e11d48;
+      border-color: #fecdd3;
+      background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%);
+      box-shadow: 0 1px 3px rgba(225, 29, 72, 0.15);
+    }
+
     .course-tab-btn .tab-badge {
       font-size: 0.68rem;
       padding: 1px 6px;
@@ -798,6 +827,11 @@
     .course-tab-btn[data-course="zuo"].active .tab-badge {
       background: #e0e7ff;
       color: #4338ca;
+    }
+
+    .course-tab-btn[data-course="bigtech"].active .tab-badge {
+      background: #ffe4e6;
+      color: #e11d48;
     }
 
     .sidebar-course-filter {
@@ -847,6 +881,12 @@
       background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
     }
 
+    .sidebar-course-btn[data-course="bigtech"].active {
+      color: #e11d48;
+      border-color: #fecdd3;
+      background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%);
+    }
+
     .sidebar-course-count {
       font-size: 0.68rem;
       padding: 1px 5px;
@@ -864,6 +904,11 @@
     .sidebar-course-btn[data-course="zuo"].active .sidebar-course-count {
       background: #e0e7ff;
       color: #4338ca;
+    }
+
+    .sidebar-course-btn[data-course="bigtech"].active .sidebar-course-count {
+      background: #ffe4e6;
+      color: #e11d48;
     }
 
     /* ========== Empty State ========== */

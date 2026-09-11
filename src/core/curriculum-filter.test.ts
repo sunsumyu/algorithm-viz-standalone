@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   isZuoCourseAlgorithm,
   extractZuoCourseTag,
+  isBigTechAlgorithm,
+  extractBigTechTag,
   getCourseStats,
   filterAlgorithmsByCourse,
 } from './curriculum-filter';
-import { ALL_ALGORITHM_METADATA } from './algorithm-manifests-meta';
+import { ALL_ALGORITHM_METADATA } from './algorithm-catalog.generated';
 
 describe('课程归属与筛选领域服务 (curriculum-filter) 测试套件', () => {
   it('1. 正确识别左神算法通关课特征', () => {
@@ -86,6 +88,25 @@ describe('课程归属与筛选领域服务 (curriculum-filter) 测试套件', (
     const above100 = allCoveredClasses.filter((c) => c >= 100);
     expect(below100.length).toBeGreaterThanOrEqual(30);
     expect(above100.length).toBeGreaterThanOrEqual(80);
+  });
+
+  it('5. 正确识别大厂高频面试题特征与标签提取', () => {
+    expect(isBigTechAlgorithm({ id: 'first-missing-positive', name: 'Hard 22: 缺失的第一个正数' })).toBe(true);
+    expect(isBigTechAlgorithm({ id: 'task-scheduler', name: '任务调度器' })).toBe(true);
+    expect(isBigTechAlgorithm({ id: 'min-stack', name: '最小栈' })).toBe(true);
+    expect(isBigTechAlgorithm({ id: 'basic-calculator-full', name: '大厂高频真题: 全功能表达式计算器' })).toBe(true);
+
+    expect(extractBigTechTag({ id: 'first-missing-positive', name: 'Hard 22: 缺失的第一个正数' })).toBe('Hard 22');
+    expect(extractBigTechTag({ id: 'task-scheduler', name: '任务调度器' })).toBe('大厂高频');
+
+    const stats = getCourseStats(ALL_ALGORITHM_METADATA);
+    expect(stats.bigtech).toBeGreaterThanOrEqual(50);
+
+    const bigtechOnly = filterAlgorithmsByCourse(ALL_ALGORITHM_METADATA, 'bigtech');
+    expect(bigtechOnly.length).toBe(stats.bigtech);
+    for (const a of bigtechOnly) {
+      expect(isBigTechAlgorithm(a)).toBe(true);
+    }
   });
 });
 
