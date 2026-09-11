@@ -28,7 +28,9 @@ import './categories/math/random-generator-035-renderer';
 import './categories/advanced-topics/hard-interview/hard-largest-rectangle-histogram-renderer';
 import './categories/advanced-topics/hard-interview/merge-k-sorted-lists-renderer';
 import './categories/advanced-topics/hard-interview/median-two-sorted-arrays-renderer';
+import './categories/bit-manipulation/bitwise-xor-odd-times-034-renderer';
 
 export {};
+
 
 

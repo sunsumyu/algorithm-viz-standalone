@@ -20,5 +20,7 @@ import './categories/advanced-topics/hard-interview/min-window-substring-rendere
 import './categories/advanced-topics/hard-interview/longest-valid-parentheses-renderer';
 import './categories/advanced-topics/hard-interview/russian-doll-envelopes-renderer';
 import './categories/advanced-topics/hard-interview/substring-concatenation-renderer';
+import './categories/string/nested-recursion-decode-039-renderer';
 
 export {};
+

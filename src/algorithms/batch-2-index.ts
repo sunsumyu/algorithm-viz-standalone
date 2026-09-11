@@ -178,5 +178,7 @@ import './categories/linked-list/linked-list-basics-006-renderer';
 import './categories/advanced-topics/hard-interview/maximal-rectangle-renderer';
 import './categories/binary-search/binary-search-logarithmic-004-renderer';
 import './categories/queue/circular-deque-007-renderer';
+import './categories/linked-list/reverse-nodes-in-k-group-renderer';
+import './categories/array/first-missing-positive-renderer';
 
-export {};
+export {};

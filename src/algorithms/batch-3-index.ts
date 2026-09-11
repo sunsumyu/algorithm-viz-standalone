@@ -18,6 +18,9 @@ import './categories/tree/trie-xor-max-107-renderer';
 import './categories/tree/trie-tree-017-renderer';
 import './categories/tree/tree-traversal-iterative-020-renderer';
 import './categories/tree/tree-serialization-021-renderer';
-import './categories/tree/tree-recursion-patterns-019-renderer';
+import './categories/tree/tree-recursion-patterns-019-renderer';// 左程云通关课 Class 036
+import './categories/tree/max-sum-bst-036-renderer';
+import './categories/tree/tree-serialization-037-renderer';
+import './categories/tree/binary-tree-maximum-path-sum-renderer';
 
 export {};

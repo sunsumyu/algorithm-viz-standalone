@@ -41,6 +41,7 @@ import './categories/advanced-topics/hard-interview/stock-trading-state-machine-
 import './categories/advanced-topics/hard-interview/dungeon-game-renderer';
 import './categories/advanced-topics/hard-interview/freedom-trail-renderer';
 import './categories/dynamic-programming/recursion-to-dp-038-renderer';
+import './categories/dynamic-programming/word-break-ii-renderer';
 
 export {};
 

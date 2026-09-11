@@ -1530,72 +1530,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "levelOrder": 54
   },
   {
-    "id": "largest-number",
-    "name": "最大数",
-    "viewId": "algo-largest-number-view",
-    "category": "greedy",
-    "description": "左程云算法讲解089 Code01：LeetCode 179 最大数，自定义拼接比较器贪心排序与前导0特判",
-    "icon": "🔢",
-    "difficulty": 2,
-    "levelOrder": 891,
-    "learningGoal": "掌握自定义拼接比较器 (b+a).compareTo(a+b) 的全序性证明与邻项交换法反证逻辑"
-  },
-  {
-    "id": "two-city-scheduling",
-    "name": "两地调度",
-    "viewId": "algo-two-city-scheduling-view",
-    "category": "greedy",
-    "description": "左程云算法讲解089 Code02：LeetCode 1029 两地调度，差额排序贪心策略与数学置换反证法",
-    "icon": "✈️",
-    "difficulty": 2,
-    "levelOrder": 892,
-    "learningGoal": "理解差额排序在多选一资源分配中的恒等式转化，掌握增量排序的本质"
-  },
-  {
-    "id": "minimum-eat-oranges",
-    "name": "吃橘子的最少天数",
-    "viewId": "algo-minimum-eat-oranges-view",
-    "category": "greedy",
-    "description": "左程云算法讲解089 Code03：LeetCode 1553 吃掉N个橘子的最少天数，贪心跨步整除飞跃与记忆化剪枝",
-    "icon": "🍊",
-    "difficulty": 3,
-    "levelOrder": 893,
-    "learningGoal": "掌握贪心策略如何大幅压缩递归搜索状态空间，理解 (n%2+1) 跨步跳跃的数学本质"
-  },
-  {
-    "id": "meeting-rooms-ii",
-    "name": "会议室 II",
-    "viewId": "algo-meeting-rooms-ii-view",
-    "category": "greedy",
-    "description": "左程云算法讲解089 Code04：LeetCode 253 会议室 II，小根堆动态维护最早结束时间与多轨道甘特图",
-    "icon": "🏢",
-    "difficulty": 2,
-    "levelOrder": 894,
-    "learningGoal": "掌握小根堆在区间调度与重叠问题中的核心应用，理解最早空闲复用的贪心策略"
-  },
-  {
-    "id": "course-schedule-iii",
-    "name": "课程表 III",
-    "viewId": "algo-course-schedule-iii-view",
-    "category": "greedy",
-    "description": "左程云算法讲解089 Code05：LeetCode 630 课程表 III，经典反悔贪心大根堆与时间余裕置换",
-    "icon": "📅",
-    "difficulty": 3,
-    "levelOrder": 895,
-    "learningGoal": "深入理解反悔贪心 (Regret Greedy) 思想，掌握大根堆在动态优化历史选择中的应用"
-  },
-  {
-    "id": "minimum-cost-connect-sticks",
-    "name": "连接棒材的最低费用",
-    "viewId": "algo-minimum-cost-connect-sticks-view",
-    "category": "greedy",
-    "description": "左程云算法讲解089 Code06：LeetCode 1167 / 洛谷 P1090 合并果子，小根堆贪心与最优哈夫曼树",
-    "icon": "🥢",
-    "difficulty": 2,
-    "levelOrder": 896,
-    "learningGoal": "掌握哈夫曼树在加权路径长度最小化中的核心应用，理解小根堆合并的贪心选择性"
-  },
-  {
     "id": "backtracking-theory",
     "name": "回溯算法理论基础",
     "viewId": "algo-backtracking-theory-view",
@@ -2134,7 +2068,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     "id": "multiple-knapsack",
-    "name": "多重背包理论基础",
+    "name": "多重背包问题",
     "viewId": "multiple-knapsack",
     "category": "dynamic-programming",
     "description": "每种物品有有限数量上限，可展开为 0-1 背包或二进制拆分。",
@@ -6058,8 +5992,97 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     "difficulty": 3,
     "levelOrder": 4,
     "learningGoal": "掌握双数组虚拟二分切分与交叉不等式收敛原理，体会 O(log(min(M, N))) 极速分治模型"
+  },
+  {
+    "id": "bitwise-xor-odd-times-034",
+    "name": "异或运算与奇数次频度提取 (Class 034)",
+    "viewId": "algo-bitwise-xor-odd-times-034-view",
+    "category": "bit-manipulation",
+    "description": "左程云算法通关课 Class 034：异或运算性质、提取最右侧 1 (eor & -eor)、单奇数次与双奇数次提取实战。",
+    "icon": "⚡",
+    "difficulty": 2,
+    "levelOrder": 34,
+    "learningGoal": "掌握异或运算无进位相加与自反性，熟练应用提取最右 1 解决海量数据奇偶频度统计"
+  },
+  {
+    "id": "max-sum-bst-036",
+    "name": "二叉搜索子树最大键值和 (Class 036)",
+    "viewId": "algo-max-sum-bst-036-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 036：二叉搜索子树的最大键值和 (LeetCode 1373/333)。树形 DP 递归套路与 Info 结构体设计。",
+    "icon": "🌲",
+    "difficulty": 3,
+    "levelOrder": 36,
+    "learningGoal": "掌握后序遍历搜集子树 isBST/min/max/sum 决策模型，理解树形 DP 统一信息结构体设计"
+  },
+  {
+    "id": "tree-serialization-037",
+    "name": "二叉树先序与层序序列化 (Class 037)",
+    "viewId": "algo-tree-serialization-037-view",
+    "category": "tree",
+    "description": "左程云算法通关课 Class 037：二叉树先序与层序序列化与反序列化 (LeetCode 297)，队列状态驱动与哨兵重构。",
+    "icon": "📦",
+    "difficulty": 2,
+    "levelOrder": 37,
+    "learningGoal": "掌握二叉树拓扑到线性字节流的双向转化，理解层序队列重构与先序递归重构"
+  },
+  {
+    "id": "nested-recursion-decode-039",
+    "name": "嵌套递归与表达式解码 (Class 039)",
+    "viewId": "algo-nested-recursion-decode-039-view",
+    "category": "string",
+    "description": "左程云算法通关课 Class 039：嵌套递归模型，字符串解码 (LeetCode 394) 与基础计算器递归套路。",
+    "icon": "📜",
+    "difficulty": 3,
+    "levelOrder": 39,
+    "learningGoal": "掌握全局游标 where 指针在多层括号嵌套递归中的下传与上交，消除冗余栈结构"
+  },
+  {
+    "id": "reverse-nodes-in-k-group",
+    "name": "Hard 21: K 个一组翻转链表 (Reverse Nodes in k-Group)",
+    "viewId": "algo-reverse-nodes-in-k-group-view",
+    "category": "linked-list",
+    "description": "大厂高频压轴题：LeetCode 25 链表 K 分组翻转，虚拟头节点、子链反转与前后驱指针精密缝合。",
+    "icon": "🔗",
+    "difficulty": 3,
+    "levelOrder": 25,
+    "learningGoal": "掌握链表指针微操之王，理解分组探测、局部倒转与前后断点无缝拼合"
+  },
+  {
+    "id": "first-missing-positive",
+    "name": "Hard 22: 缺失的第一个正数 (First Missing Positive)",
+    "viewId": "algo-first-missing-positive-view",
+    "category": "array",
+    "description": "大厂高频压轴题：LeetCode 41 原地哈希置换，nums[i] 与 nums[nums[i]-1] 交换实现 O(N) 时间 O(1) 空间探测。",
+    "icon": "🔎",
+    "difficulty": 3,
+    "levelOrder": 41,
+    "learningGoal": "掌握原地哈希桶映射思想，理解鸽巢原理与常数空间指针交换收敛性"
+  },
+  {
+    "id": "word-break-ii",
+    "name": "Hard 23: 单词拆分 II (Word Break II)",
+    "viewId": "algo-word-break-ii-view",
+    "category": "dynamic-programming",
+    "description": "大厂高频压轴题：LeetCode 140 记忆化回溯与全路径拓扑重构，前缀树剪枝与所有有效句子生成。",
+    "icon": "🧩",
+    "difficulty": 3,
+    "levelOrder": 140,
+    "learningGoal": "掌握记忆化搜索与路径重构结合范式，避免重复分支爆炸"
+  },
+  {
+    "id": "binary-tree-maximum-path-sum",
+    "name": "Hard 24: 二叉树中的最大路径和 (Binary Tree Maximum Path Sum)",
+    "viewId": "algo-binary-tree-maximum-path-sum-view",
+    "category": "tree",
+    "description": "大厂高频压轴题：LeetCode 124 树形 DP 单边贡献度与双边拐点和分离，后序遍历自底向上求解。",
+    "icon": "🌳",
+    "difficulty": 3,
+    "levelOrder": 124,
+    "learningGoal": "深刻理解单边延伸贡献度（用于向上传递）与拐点闭合路径和（用于更新全局最优）的经典解耦"
   }
 ];
+
 
 
 

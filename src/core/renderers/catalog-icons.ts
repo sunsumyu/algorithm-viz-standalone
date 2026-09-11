@@ -409,7 +409,16 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'merge-k-sorted-lists': '🔗',
   'n-queens-bitwise-speed': '👑',
   'median-two-sorted-arrays': '⚖️',
+  'bitwise-xor-odd-times-034': '⚡',
+  'max-sum-bst-036': '🌲',
+  'tree-serialization-037': '📦',
+  'nested-recursion-decode-039': '📜',
+  'reverse-nodes-in-k-group': '🔗',
+  'first-missing-positive': '🔎',
+  'word-break-ii': '🧩',
+  'binary-tree-maximum-path-sum': '🌳',
 };
+
 
 /**
  * 解析算法对应的呈现图标
