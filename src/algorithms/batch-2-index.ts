@@ -200,6 +200,11 @@ import './categories/array/shuffle-an-array-renderer';
 import './categories/tree/find-duplicate-subtrees-renderer';
 import './categories/monotonic-stack/verify-preorder-sequence-in-bst-renderer';
 import './categories/stack/min-stack-renderer';
+import './categories/string/palindrome-pairs-renderer';
+import './categories/linked-list/reorder-list-renderer';
+import './categories/hash-table/sort-characters-by-frequency-renderer';
+import './categories/graph/number-of-provinces-renderer';
+import './categories/tree/sum-root-to-leaf-numbers-renderer';
 
 export {};
 
