@@ -33,6 +33,7 @@ import './categories/array/find-duplicate-number-287-renderer';
 import './categories/search/find-min-rotated-sorted-array-ii-renderer';
 import './categories/array/product-except-self-238-renderer';
 import './categories/math/max-points-on-a-line-renderer';
+import './categories/bit-manipulation/divide-two-integers-renderer';
 
 export {};
 

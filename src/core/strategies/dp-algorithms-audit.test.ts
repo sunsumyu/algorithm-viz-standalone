@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ALL_ALGORITHM_METADATA } from '../algorithm-manifests-meta';
+import { ALL_ALGORITHM_METADATA } from '../algorithm-catalog.generated';
 import { AlgorithmModelRepository } from '../model-repository';
 import { AlgorithmStrategyRegistry } from './algorithm-strategy-registry';
 import { registerBuiltinStrategies } from './index';

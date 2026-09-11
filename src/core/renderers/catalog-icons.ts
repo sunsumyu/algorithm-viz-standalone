@@ -434,6 +434,11 @@ export const ALGORITHM_EXPLICIT_ICONS: Record<string, string> = {
   'remove-k-digits': '🔢',
   'subarray-sum-equals-k': '🎯',
   'longest-repeating-character-replacement': '🪟',
+  'divide-two-integers': '➗',
+  'next-permutation': '🔀',
+  'valid-parenthesis-string': '✨',
+  'subarray-product-less-than-k': '✖️',
+  'find-all-anagrams-in-a-string': '🔍',
 };
 
 

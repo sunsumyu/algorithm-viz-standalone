@@ -191,6 +191,10 @@ import './categories/hash-table/longest-consecutive-sequence-renderer';
 import './categories/monotonic-stack/remove-k-digits-renderer';
 import './categories/hash-table/subarray-sum-equals-k-renderer';
 import './categories/string/longest-repeating-character-replacement-renderer';
+import './categories/array/next-permutation-renderer';
+import './categories/stack/valid-parenthesis-string-renderer';
+import './categories/array/subarray-product-less-than-k-renderer';
+import './categories/string/find-all-anagrams-in-a-string-renderer';
 
 export {};
 
