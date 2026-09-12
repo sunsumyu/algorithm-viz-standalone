@@ -4,6 +4,7 @@
  * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { ArrayTrackAdapter } from '../../../core/renderers/adapters/array-track-adapter';
@@ -23,14 +24,6 @@ export interface RemoveStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
-}
-
-export function parseArray(input: string): number[] {
-  const arr = input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-  return arr.length > 0 ? arr : [3, 2, 2, 3];
 }
 
 export function buildRemoveElementSteps(arr: number[], val: number): RemoveStep[] {
@@ -160,7 +153,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<RemoveStep>({
   analysisHtml: REMOVE_ELEMENT_ANALYSIS_HTML,
   buildSteps: (inputs) => {
     const raw = inputs['input-array'] || '3, 2, 2, 3';
-    const arr = parseArray(raw);
+    const arr = parseNumberList(raw, [3, 2, 2, 3]);
     const val = parseInt(inputs['input-val'] || '3', 10);
     return buildRemoveElementSteps(arr, val);
   },

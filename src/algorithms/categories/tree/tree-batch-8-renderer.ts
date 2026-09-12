@@ -3,6 +3,7 @@
  * 包含: 最大二叉树、合并二叉树、中序+后序构造、BST LCA、BST插入、BST最小差、BST众数、BST删除、BST修剪、有序数组转BST、BST转累加树
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import { TreeNode, buildTreeFromArr, renderTreeSVG, renderLog, BstStep } from './tree-template';
@@ -17,17 +18,6 @@ import bstDeleteTemplate from './bst-delete.html';
 import bstTrimTemplate from './bst-trim.html';
 import sortedArrayToBstTemplate from './sorted-array-to-bst.html';
 import bstToGstTemplate from './bst-to-gst.html';
-
-function parseArray(input: string): (number | null)[] {
-  return input
-    .split(/[,，\s]+/)
-    .map((s) => {
-      const t = s.trim();
-      if (t === '' || t.toLowerCase() === 'null') return null;
-      const n = parseInt(t, 10);
-      return Number.isFinite(n) ? n : null;
-    });
-}
 
 // ========== Level 17: 最大二叉树 ==========
 interface MaxTreeStep {
@@ -231,8 +221,8 @@ class MergeTreesVisualizer extends StepVisualizer<MergeTreesStep> {
     const inp2 = this.root.querySelector('#mg-inp2') as HTMLInputElement | null;
     if (runBtn && inp1 && inp2) {
       runBtn.addEventListener('click', () => {
-        this.treeData = parseArray(inp1.value);
-        this.treeData2 = parseArray(inp2.value);
+        this.treeData = parseNumberList(inp1.value, []);
+        this.treeData2 = parseNumberList(inp2.value, []);
         this.start();
       });
     }

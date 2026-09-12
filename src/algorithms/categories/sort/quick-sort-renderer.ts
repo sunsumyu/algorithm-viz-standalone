@@ -11,7 +11,7 @@ import {
   QUICK_SORT_ANALYSIS_HTML,
   QUICK_SORT_CODE_LANGUAGES,
 } from './quick-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface QSStep {
   array: number[];
@@ -322,6 +322,6 @@ registerDeclarativeAlgorithm({
   problemHtml: QUICK_SORT_PROBLEM_HTML,
   analysisHtml: QUICK_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(quickSortSteps(parseArray(String(inputs.array ?? '6, 1, 2, 7, 9, 3, 4, 5, 10, 8')))),
+    withMetrics(quickSortSteps(parseNumberList(String(inputs.array ?? '6, 1, 2, 7, 9, 3, 4, 5, 10, 8'), []))),
   renderCanvas: (container, step) => renderQuickSortCanvas(container, step as QSStep),
 });

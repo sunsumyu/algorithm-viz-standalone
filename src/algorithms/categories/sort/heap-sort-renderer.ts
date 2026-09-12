@@ -11,7 +11,7 @@ import {
   HEAP_SORT_ANALYSIS_HTML,
   HEAP_SORT_CODE_LANGUAGES,
 } from './heap-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface HSStep {
   array: number[];
@@ -294,6 +294,6 @@ registerDeclarativeAlgorithm({
   problemHtml: HEAP_SORT_PROBLEM_HTML,
   analysisHtml: HEAP_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(heapSortSteps(parseArray(String(inputs.array ?? '4, 10, 3, 5, 1')))),
+    withMetrics(heapSortSteps(parseNumberList(String(inputs.array ?? '4, 10, 3, 5, 1'), []))),
   renderCanvas: (container, step) => renderHeapSortCanvas(container, step as HSStep),
 });

@@ -9,7 +9,7 @@ import {
   RADIX_SORT_ANALYSIS_HTML,
   RADIX_SORT_CODE_LANGUAGES,
 } from './radix-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface RadixStep {
   array: number[];
@@ -365,6 +365,6 @@ registerDeclarativeAlgorithm({
   problemHtml: RADIX_SORT_PROBLEM_HTML,
   analysisHtml: RADIX_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(radixSortSteps(parseArray(String(inputs.array ?? '170, 45, 75, 90, 802, 24, 2, 66')))),
+    withMetrics(radixSortSteps(parseNumberList(String(inputs.array ?? '170, 45, 75, 90, 802, 24, 2, 66'), []))),
   renderCanvas: (container, step) => renderRadixSortCanvas(container, step as RadixStep),
 });

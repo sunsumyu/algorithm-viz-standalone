@@ -11,7 +11,7 @@ import {
   SELECTION_SORT_ANALYSIS_HTML,
   SELECTION_SORT_CODE_LANGUAGES,
 } from './selection-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface SSStep {
   array: number[];
@@ -255,6 +255,6 @@ registerDeclarativeAlgorithm({
   problemHtml: SELECTION_SORT_PROBLEM_HTML,
   analysisHtml: SELECTION_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(selectionSortSteps(parseArray(String(inputs.array ?? '29, 10, 14, 37, 13')))),
+    withMetrics(selectionSortSteps(parseNumberList(String(inputs.array ?? '29, 10, 14, 37, 13'), []))),
   renderCanvas: (container, step) => renderSelectionSortCanvas(container, step as SSStep),
 });

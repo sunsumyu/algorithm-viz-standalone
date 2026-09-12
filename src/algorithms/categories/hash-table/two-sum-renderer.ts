@@ -3,6 +3,7 @@
  * LeetCode 1：哈希表一次遍历
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
@@ -24,14 +25,6 @@ export interface TwoSumStep {
   log: string;
   codeLine: HighlightTarget;
   metrics?: Record<string, string>;
-}
-
-export function parseArray(input: string): number[] {
-  const arr = input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-  return arr.length > 0 ? arr : [2, 7, 11, 15];
 }
 
 export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
@@ -269,7 +262,7 @@ registerDeclarativeAlgorithm({
   problemHtml: TWO_SUM_PROBLEM_HTML,
   analysisHtml: TWO_SUM_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const nums = parseArray(String(inputs.nums ?? '2, 7, 11, 15'));
+    const nums = parseNumberList(String(inputs.nums ?? '2, 7, 11, 15'), [2, 7, 11, 15]);
     const target = parseInt(String(inputs.target ?? '9'), 10);
     return withMetrics(buildTwoSumSteps(nums, isNaN(target) ? 9 : target), isNaN(target) ? 9 : target);
   },

@@ -9,7 +9,7 @@ import {
   MERGE_SORT_ANALYSIS_HTML,
   MERGE_SORT_CODE_LANGUAGES,
 } from './merge-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface MSStep {
   array: number[];
@@ -393,6 +393,6 @@ registerDeclarativeAlgorithm({
   problemHtml: MERGE_SORT_PROBLEM_HTML,
   analysisHtml: MERGE_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(mergeSortSteps(parseArray(String(inputs.array ?? '38, 27, 43, 3, 9, 82, 10')))),
+    withMetrics(mergeSortSteps(parseNumberList(String(inputs.array ?? '38, 27, 43, 3, 9, 82, 10'), []))),
   renderCanvas: (container, step) => renderMergeSortCanvas(container, step as MSStep),
 });

@@ -3,6 +3,7 @@
  * 相邻比较、元素交换、末尾冒泡到位、早停优化
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { BarsCanvasAdapter } from '../../../core/renderers/bars-canvas-adapter';
 import type { VisualStateId } from '../../../core/renderers/visual-state-tokens';
@@ -27,14 +28,6 @@ export interface BSStep {
   log: string;
   codeLine: number | number[];
   metrics?: Record<string, string>;
-}
-
-export function parseArray(input: string): number[] {
-  const arr = input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-  return arr.length > 0 ? arr : [5, 2, 9, 1, 5, 6];
 }
 
 export function bubbleSortSteps(input: number[]): BSStep[] {
@@ -263,6 +256,6 @@ registerDeclarativeAlgorithm({
   problemHtml: BUBBLE_SORT_PROBLEM_HTML,
   analysisHtml: BUBBLE_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(bubbleSortSteps(parseArray(String(inputs.array ?? '5, 2, 9, 1, 5, 6')))),
+    withMetrics(bubbleSortSteps(parseNumberList(String(inputs.array ?? '5, 2, 9, 1, 5, 6'), [5, 2, 9, 1, 5, 6]))),
   renderCanvas: (container, step) => renderBubbleSortCanvas(container, step as BSStep),
 });

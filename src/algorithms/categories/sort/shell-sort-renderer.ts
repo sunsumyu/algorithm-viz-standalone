@@ -11,7 +11,7 @@ import {
   SHELL_SORT_ANALYSIS_HTML,
   SHELL_SORT_CODE_LANGUAGES,
 } from './shell-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface ShellStep {
   array: number[];
@@ -254,6 +254,6 @@ registerDeclarativeAlgorithm({
   problemHtml: SHELL_SORT_PROBLEM_HTML,
   analysisHtml: SHELL_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(shellSortSteps(parseArray(String(inputs.array ?? '9, 8, 3, 7, 5, 6, 4, 1')))),
+    withMetrics(shellSortSteps(parseNumberList(String(inputs.array ?? '9, 8, 3, 7, 5, 6, 4, 1'), []))),
   renderCanvas: (container, step) => renderShellSortCanvas(container, step as ShellStep),
 });

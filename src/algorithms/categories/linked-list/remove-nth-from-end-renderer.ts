@@ -3,6 +3,7 @@
  * LeetCode 19：dummyHead 虚拟头节点 + 快慢指针定距一趟扫描
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
@@ -23,14 +24,6 @@ export interface RNStep {
   metrics?: Record<string, string>;
   /** 初始链表值（withMetrics 附带）：done 阶段 values 已是删除后链表，渲染器仍需展示被删前完整链表 */
   originalValues?: number[];
-}
-
-export function parseValues(input: string): number[] {
-  const arr = input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-  return arr.length > 0 ? arr : [1, 2, 3, 4, 5];
 }
 
 export function buildRNSteps(values: number[], n: number): RNStep[] {
@@ -300,7 +293,7 @@ registerDeclarativeAlgorithm({
   generateSteps: (inputs) =>
     withMetrics(
       buildRNSteps(
-        parseValues(String(inputs.list ?? '1,2,3,4,5')),
+        parseNumberList(String(inputs.list ?? '1,2,3,4,5'), [1, 2, 3, 4, 5]),
         parseInt(String(inputs.n ?? '2'), 10) || 2
       )
     ),

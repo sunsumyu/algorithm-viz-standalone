@@ -9,7 +9,7 @@ import {
   BUCKET_SORT_ANALYSIS_HTML,
   BUCKET_SORT_CODE_LANGUAGES,
 } from './bucket-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface BucketStep {
   array: (number | null)[];
@@ -301,6 +301,6 @@ registerDeclarativeAlgorithm({
   problemHtml: BUCKET_SORT_PROBLEM_HTML,
   analysisHtml: BUCKET_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(bucketSortSteps(parseArray(String(inputs.array ?? '29, 25, 3, 49, 9, 37, 21, 43')), 5)),
+    withMetrics(bucketSortSteps(parseNumberList(String(inputs.array ?? '29, 25, 3, 49, 9, 37, 21, 43'), []), 5)),
   renderCanvas: (container, step) => renderBucketSortCanvas(container, step as BucketStep),
 });

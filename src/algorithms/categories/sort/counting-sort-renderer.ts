@@ -9,7 +9,7 @@ import {
   COUNTING_SORT_ANALYSIS_HTML,
   COUNTING_SORT_CODE_LANGUAGES,
 } from './counting-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface CSStep {
   array: number[];
@@ -300,6 +300,6 @@ registerDeclarativeAlgorithm({
   problemHtml: COUNTING_SORT_PROBLEM_HTML,
   analysisHtml: COUNTING_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(countingSortSteps(parseArray(String(inputs.array ?? '4, 2, 2, 8, 3, 3, 1')))),
+    withMetrics(countingSortSteps(parseNumberList(String(inputs.array ?? '4, 2, 2, 8, 3, 3, 1'), []))),
   renderCanvas: (container, step) => renderCountingSortCanvas(container, step as CSStep),
 });

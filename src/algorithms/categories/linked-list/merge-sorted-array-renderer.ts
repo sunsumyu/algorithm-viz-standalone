@@ -3,6 +3,7 @@
  * LeetCode 88
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
@@ -24,14 +25,6 @@ export interface MSAStep {
   chosenValue?: number;
   message: string;
   codeLine: HighlightTarget;
-}
-
-export function parseValues(input: string, defaultVals: number[]): number[] {
-  const arr = input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-  return arr.length > 0 ? arr : defaultVals;
 }
 
 export function buildMSASteps(nums1Valid: number[], nums2Arr: number[]): MSAStep[] {
@@ -292,13 +285,6 @@ export function renderMergeSortedArrayCanvas(container: HTMLElement, step: MSASt
   container.innerHTML = html;
 }
 
-function parseNums(raw: string): number[] {
-  return String(raw ?? '')
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => !isNaN(n));
-}
-
 registerDeclarativeAlgorithm({
   id: 'merge-sorted-array',
   name: '合并两个有序数组（双指针）',
@@ -332,8 +318,8 @@ registerDeclarativeAlgorithm({
   problemHtml: MERGE_SORTED_ARRAY_PROBLEM_HTML,
   analysisHtml: MERGE_SORTED_ARRAY_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const n1 = parseNums(String(inputs.n1 ?? '1, 2, 3')).sort((a, b) => a - b);
-    const n2 = parseNums(String(inputs.n2 ?? '2, 5, 6')).sort((a, b) => a - b);
+    const n1 = parseNumberList(String(inputs.n1 ?? '1, 2, 3'), []).sort((a, b) => a - b);
+    const n2 = parseNumberList(String(inputs.n2 ?? '2, 5, 6'), []).sort((a, b) => a - b);
     return withMetrics(buildMSASteps(n1.length ? n1 : [1, 2, 3], n2));
   },
   renderCanvas: (container, step) => renderMergeSortedArrayCanvas(container, step as MSAStep),

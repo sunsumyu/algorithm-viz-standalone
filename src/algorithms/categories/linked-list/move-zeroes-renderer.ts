@@ -3,6 +3,7 @@
  * LeetCode 283
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
@@ -18,14 +19,6 @@ export interface MoveZeroesStep {
   action: 'init' | 'check_zero' | 'check_nonzero' | 'swap' | 'done';
   message: string;
   codeLine: HighlightTarget;
-}
-
-export function parseValues(input: string, defaultVals: number[]): number[] {
-  const arr = input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-  return arr.length > 0 ? arr : defaultVals;
 }
 
 export function buildMoveZeroesSteps(initialNums: number[]): MoveZeroesStep[] {
@@ -185,13 +178,6 @@ export function renderMoveZeroesCanvas(container: HTMLElement, step: MoveZeroesS
   container.innerHTML = html;
 }
 
-function parseNums(raw: string): number[] {
-  return String(raw ?? '')
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => !isNaN(n));
-}
-
 registerDeclarativeAlgorithm({
   id: 'move-zeroes',
   name: '移动零（双指针原地操作）',
@@ -225,7 +211,7 @@ registerDeclarativeAlgorithm({
   problemHtml: MOVE_ZEROES_PROBLEM_HTML,
   analysisHtml: MOVE_ZEROES_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const nums = parseNums(String(inputs.nums ?? '0, 1, 0, 3, 12'));
+    const nums = parseNumberList(String(inputs.nums ?? '0, 1, 0, 3, 12'), []);
     return withMetrics(buildMoveZeroesSteps(nums.length ? nums : [0, 1, 0, 3, 12]));
   },
   renderCanvas: (container, step) => renderMoveZeroesCanvas(container, step as MoveZeroesStep),

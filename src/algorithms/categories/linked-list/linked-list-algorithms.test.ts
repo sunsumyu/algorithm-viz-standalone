@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
-import { buildReverseSteps, parseValues } from './reverse-linked-list-renderer';
+import { buildReverseSteps } from './reverse-linked-list-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 import { REVERSE_LINKED_LIST_CODE_LANGUAGES } from './reverse-linked-list-problem-content';
 import { buildRNSteps } from './remove-nth-from-end-renderer';
 import { REMOVE_NTH_FROM_END_CODE_LANGUAGES } from './remove-nth-from-end-problem-content';
@@ -55,9 +56,9 @@ function verifyStepsLineBounds(
 describe('Linked List Algorithms Step Generation (链表核心算法推导测试)', () => {
   describe('Reverse Linked List (反转链表)', () => {
     it('1. parseValues 正确解析逗号/空格分隔的数字字符串', () => {
-      expect(parseValues('1, 2, 3, 4, 5')).toEqual([1, 2, 3, 4, 5]);
-      expect(parseValues('10 20 30')).toEqual([10, 20, 30]);
-      expect(parseValues('')).toEqual([1, 2, 3, 4, 5]);
+      expect(parseNumberList('1, 2, 3, 4, 5', [])).toEqual([1, 2, 3, 4, 5]);
+      expect(parseNumberList('10 20 30', [])).toEqual([10, 20, 30]);
+      expect(parseNumberList('', [1, 2, 3, 4, 5])).toEqual([1, 2, 3, 4, 5]);
     });
 
     it('2. 反转 [1, 2, 3] 正确将各节点 next 指向反转并验证多语言行号', () => {

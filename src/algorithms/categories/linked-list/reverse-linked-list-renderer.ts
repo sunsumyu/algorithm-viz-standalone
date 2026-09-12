@@ -3,6 +3,7 @@
  * LeetCode 206：双指针迭代，暂存 next 后继，原地反转指针指向
  */
 
+import { parseNumberList } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
@@ -24,14 +25,6 @@ export interface RLStep {
   codeLine: HighlightTarget;
   log?: string;
   metrics?: Record<string, string>;
-}
-
-export function parseValues(input: string): number[] {
-  const arr = input
-    .split(/[,，\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n));
-  return arr.length > 0 ? arr : [1, 2, 3, 4, 5];
 }
 
 export function buildReverseSteps(values: number[]): RLStep[] {
@@ -312,6 +305,6 @@ registerDeclarativeAlgorithm({
   problemHtml: REVERSE_LINKED_LIST_PROBLEM_HTML,
   analysisHtml: REVERSE_LINKED_LIST_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildReverseSteps(parseValues(String(inputs.list ?? '1,2,3,4,5')))),
+    withMetrics(buildReverseSteps(parseNumberList(String(inputs.list ?? '1,2,3,4,5'), [1, 2, 3, 4, 5]))),
   renderCanvas: (container, step) => renderReverseLinkedListCanvas(container, step as RLStep),
 });

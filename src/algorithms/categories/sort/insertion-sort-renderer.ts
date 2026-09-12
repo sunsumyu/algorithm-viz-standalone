@@ -11,7 +11,7 @@ import {
   INSERTION_SORT_ANALYSIS_HTML,
   INSERTION_SORT_CODE_LANGUAGES,
 } from './insertion-sort-problem-content';
-import { parseArray } from './bubble-sort-renderer';
+import { parseNumberList } from '../../../core/input-primitives';
 
 export interface ISStep {
   array: number[];
@@ -249,6 +249,6 @@ registerDeclarativeAlgorithm({
   problemHtml: INSERTION_SORT_PROBLEM_HTML,
   analysisHtml: INSERTION_SORT_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(insertionSortSteps(parseArray(String(inputs.array ?? '12, 11, 13, 5, 6')))),
+    withMetrics(insertionSortSteps(parseNumberList(String(inputs.array ?? '12, 11, 13, 5, 6'), []))),
   renderCanvas: (container, step) => renderInsertionSortCanvas(container, step as ISStep),
 });
