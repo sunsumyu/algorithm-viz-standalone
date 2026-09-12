@@ -16,6 +16,7 @@
 import { HighlightTarget } from './dark-code-terminal-presenter';
 import { type RecursionStepBase, type MemoStepBase } from '../step-types';
 import { getStringDpAnchor } from './string-dp-stage-codes';
+import { GridVisualAdapter, type GridRenderOptions } from './grid-visual-adapter';
 
 export type StringDpKind = 'regex' | 'wildcard';
 
@@ -860,61 +861,45 @@ export function renderStringDpMemoCard2(
   const n = step.s.length;
   const m = step.p.length;
 
-  let tableHtml = '<table style="border-collapse:collapse; width:100%; font-family:\'JetBrains Mono\', monospace; font-size:11px;">';
-  // 表头 (p 的字符)
-  tableHtml += '<thead><tr><th style="padding:6px; color:#64748b; border:1px solid #334155; background:#0f172a;">s \\ p</th>';
-  for (let j = 0; j <= m; j++) {
-    const charP = j < m ? `'${step.p[j]}'` : 'EOF';
-    tableHtml += `<th style="padding:6px; color:${j === step.j ? '#fbbf24' : '#94a3b8'}; border:1px solid #334155; background:${
-      j === step.j ? 'rgba(245, 158, 11, 0.15)' : '#0f172a'
-    };">${charP}<br><span style="font-size:9px; color:#64748b;">${j}</span></th>`;
-  }
-  tableHtml += '</tr></thead><tbody>';
+  const rowLabels = Array.from({ length: n + 1 }, (_, i) => (i < n ? `'${step.s[i]}'` : 'EOF'));
+  const colLabels = Array.from({ length: m + 1 }, (_, j) => (j < m ? `'${step.p[j]}'` : 'EOF'));
 
-  for (let i = 0; i <= n; i++) {
-    const charS = i < n ? `'${step.s[i]}'` : 'EOF';
-    tableHtml += `<tr><td style="padding:6px; color:${i === step.i ? '#60a5fa' : '#94a3b8'}; border:1px solid #334155; background:${
-      i === step.i ? 'rgba(59, 130, 246, 0.15)' : '#0f172a'
-    }; font-weight:700;">${charS} <span style="font-size:9px; color:#64748b;">${i}</span></td>`;
-    for (let j = 0; j <= m; j++) {
-      const val = step.memo[i]?.[j] ?? -1;
-      const isCur = i === step.i && j === step.j;
-      let bg = 'transparent';
-      let textColor = '#475569';
-      let text = '·';
-      if (val === 1) {
-        bg = 'rgba(16, 185, 129, 0.2)';
-        textColor = '#34d399';
-        text = 'T';
-      } else if (val === 0) {
-        bg = 'rgba(239, 68, 68, 0.2)';
-        textColor = '#f87171';
-        text = 'F';
-      }
-      if (isCur) {
-        bg = step.cacheHit ? 'rgba(16, 185, 129, 0.45)' : 'rgba(59, 130, 246, 0.45)';
-        textColor = '#ffffff';
-      }
+  const stepData = {
+    i: step.i,
+    j: step.j,
+    grid: (step.memo || []).map((row) =>
+      row.map((v) => (v === 1 ? 'T' : v === 0 ? 'F' : null))
+    ),
+    type: step.cacheHit ? '缓存命中' : '未命中试算',
+    msg: `memo[${step.i}][${step.j}]`,
+  };
 
-      tableHtml += `<td style="padding:6px; text-align:center; border:1px solid ${
-        isCur ? '#60a5fa' : '#334155'
-      }; background:${bg}; color:${textColor}; font-weight:${isCur || val !== -1 ? 700 : 400};">${text}</td>`;
-    }
-    tableHtml += '</tr>';
-  }
-  tableHtml += '</tbody></table>';
+  const renderOpts: GridRenderOptions = {
+    m: n + 1,
+    n: m + 1,
+    isReverse: false,
+    isGridProblem: false,
+    modelId: 'string-dp-memo',
+    rowLabels,
+    colLabels,
+    isMatch: (r, c) => r < n && c < m && (step.p[c] === step.s[r] || step.p[c] === '.' || step.p[c] === '?'),
+  };
 
   container.innerHTML = `
-    <div style="display:flex; flex-direction:column; height:100%; width:100%;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:12px; font-weight:700; color:#38bdf8;">🎯 备忘录缓存矩阵 memo[0..${n}][0..${m}]</span>
-        <span style="font-size:11px; color:#94a3b8;">T = True (命中可用), F = False, · = 未计算</span>
+    <div style="display:flex; flex-direction:column; height:100%; width:100%; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
+        <span style="font-size:12px; font-weight:700; color:#0284c7;">🎯 备忘录缓存矩阵 memo[0..${n}][0..${m}]</span>
+        <span style="font-size:11px; color:#64748b;">T = True (命中), F = False, · = 未探查</span>
       </div>
-      <div style="flex:1; min-height:0; overflow:auto; background:rgba(15, 23, 42, 0.6); border:1px solid #334155; border-radius:6px; padding:6px;">
-        ${tableHtml}
+      <div class="string-dp-memo-grid-wrapper" style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
       </div>
     </div>
   `;
+
+  const wrapper = container.querySelector('.string-dp-memo-grid-wrapper') as HTMLElement | null;
+  if (wrapper) {
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
+  }
 }
 
 export function renderStringDp2DCard1(
@@ -980,60 +965,55 @@ export function renderStringDp2DCard2(
   const n = step.s.length;
   const m = step.p.length;
 
-  let tableHtml = '<table style="border-collapse:collapse; width:100%; font-family:\'JetBrains Mono\', monospace; font-size:11px;">';
-  tableHtml += '<thead><tr><th style="padding:6px; color:#64748b; border:1px solid #334155; background:#0f172a;">s \\ p</th>';
-  for (let j = 0; j <= m; j++) {
-    const charP = j < m ? `'${step.p[j]}'` : 'EOF';
-    tableHtml += `<th style="padding:6px; color:${j === step.j ? '#fbbf24' : '#94a3b8'}; border:1px solid #334155; background:${
-      j === step.j ? 'rgba(245, 158, 11, 0.15)' : '#0f172a'
-    };">${charP}<br><span style="font-size:9px; color:#64748b;">${j}</span></th>`;
-  }
-  tableHtml += '</tr></thead><tbody>';
+  const rowLabels = Array.from({ length: n + 1 }, (_, i) => (i < n ? `'${step.s[i]}'` : 'EOF'));
+  const colLabels = Array.from({ length: m + 1 }, (_, j) => (j < m ? `'${step.p[j]}'` : 'EOF'));
 
-  for (let i = 0; i <= n; i++) {
-    const charS = i < n ? `'${step.s[i]}'` : 'EOF';
-    tableHtml += `<tr><td style="padding:6px; color:${i === step.i ? '#60a5fa' : '#94a3b8'}; border:1px solid #334155; background:${
-      i === step.i ? 'rgba(59, 130, 246, 0.15)' : '#0f172a'
-    }; font-weight:700;">${charS} <span style="font-size:9px; color:#64748b;">${i}</span></td>`;
-    for (let j = 0; j <= m; j++) {
-      const val = step.dp[i]?.[j] ?? false;
-      const isCur = i === step.i && j === step.j;
-      const isDep = step.depCells.some((dep) => dep.r === i && dep.c === j);
+  const deps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }> = (
+    step.depCells || []
+  ).map((dep) => {
+    let type: 'top' | 'left' | 'diag' | undefined;
+    if (dep.r === step.i - 1 && dep.c === step.j) type = 'top';
+    else if (dep.r === step.i && dep.c < step.j) type = 'left';
+    else if (dep.r < step.i && dep.c < step.j) type = 'diag';
+    return { r: dep.r, c: dep.c, type, label: dep.label };
+  });
 
-      let bg = val ? 'rgba(16, 185, 129, 0.15)' : 'transparent';
-      let textColor = val ? '#34d399' : '#475569';
-      let border = '#334155';
+  const stepData = {
+    i: step.i,
+    j: step.j,
+    grid: (step.dp || []).map((row) => row.map((v) => (v ? 'T' : 'F'))),
+    deps,
+    msg: `dp[${step.i}][${step.j}]`,
+  };
 
-      if (isDep) {
-        border = '#f59e0b';
-        bg = 'rgba(245, 158, 11, 0.25)';
-      }
-      if (isCur) {
-        border = '#3b82f6';
-        bg = 'rgba(59, 130, 246, 0.4)';
-        textColor = '#ffffff';
-      }
-
-      tableHtml += `<td style="padding:6px; text-align:center; border:1px solid ${border}; background:${bg}; color:${textColor}; font-weight:${
-        isCur || val ? 700 : 400
-      };">${val ? 'T' : 'F'}</td>`;
-    }
-    tableHtml += '</tr>';
-  }
-  tableHtml += '</tbody></table>';
+  const renderOpts: GridRenderOptions = {
+    m: n + 1,
+    n: m + 1,
+    isReverse: false,
+    isGridProblem: false,
+    modelId: 'string-dp-2d',
+    rowLabels,
+    colLabels,
+    deps,
+    isMatch: (r, c) => r < n && c < m && (step.p[c] === step.s[r] || step.p[c] === '.' || step.p[c] === '?'),
+  };
 
   container.innerHTML = `
-    <div style="display:flex; flex-direction:column; height:100%; width:100%;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:12px; font-weight:700; color:#34d399;">📐 二维动态规划表 dp[0..${n}][0..${m}] (自底向上从右往左)</span>
-        <span style="font-size:11px; color:#94a3b8;">
-          <span style="display:inline-block; width:8px; height:8px; background:#3b82f6; border-radius:2px; margin-right:4px;"></span>当前格
-          <span style="display:inline-block; width:8px; height:8px; background:#f59e0b; border-radius:2px; margin-left:8px; margin-right:4px;"></span>依赖格
-        </span>
+    <div style="display:flex; flex-direction:column; height:100%; width:100%; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
+        <span style="font-size:12px; font-weight:700; color:#059669;">📐 二维动态规划表 dp[0..${n}][0..${m}] (自底向上从右往左)</span>
+        <div style="display:flex; gap:8px; font-size:11px;">
+          <span style="color:#2563eb;">■ 当前格</span>
+          <span style="color:#d97706;">■ 依赖格</span>
+        </div>
       </div>
-      <div style="flex:1; min-height:0; overflow:auto; background:rgba(15, 23, 42, 0.6); border:1px solid #334155; border-radius:6px; padding:6px;">
-        ${tableHtml}
+      <div class="string-dp-2d-grid-wrapper" style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
       </div>
     </div>
   `;
+
+  const wrapper = container.querySelector('.string-dp-2d-grid-wrapper') as HTMLElement | null;
+  if (wrapper) {
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
+  }
 }

@@ -3,15 +3,13 @@
  * 演示栈 (LIFO) 和队列 (FIFO) 的核心受控访问操作
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   STACK_QUEUE_THEORY_PROBLEM_HTML,
   STACK_QUEUE_THEORY_ANALYSIS_HTML,
   STACK_QUEUE_THEORY_CODE_LANGUAGES,
 } from './stack-queue-theory-problem-content';
-import template from './stack-queue-theory.html?raw';
 
 export interface SQStep {
   mode: 'stack' | 'queue';
@@ -20,6 +18,8 @@ export interface SQStep {
   value: number | null;
   message: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
+  log?: string;
 }
 
 export function buildStackSteps(): SQStep[] {
@@ -221,224 +221,100 @@ export function buildQueueSteps(): SQStep[] {
 }
 
 /* ── Visualizer class ─────────────────────────────────────── */
-export class StackQueueTheoryVisualizer extends StepVisualizer<SQStep> {
-  protected codeLanguages = STACK_QUEUE_THEORY_CODE_LANGUAGES;
-  protected codeLines = STACK_QUEUE_THEORY_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '栈与队列理论 代码调试';
 
-  private currentMode: 'stack' | 'queue' = 'stack';
-  private sandboxContainer: HTMLElement | null = null;
-  private endpointStatusContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#sqt-sandbox-container');
-    this.endpointStatusContainer = this.root.querySelector('#sqt-endpoint-status-container');
-    this.decisionMonitorContainer = this.root.querySelector('#sqt-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#sqt-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: SQStep[]): SQStep[] {
+  return steps.map((s) => {
+    const isStack = s.mode === 'stack';
+    const topOrFront = s.data.length > 0 ? (isStack ? s.data[s.data.length - 1] : s.data[0]) : null;
 
-    // 绑定模式切换
-    const btnStack = this.root.querySelector('#btn-mode-stack') as HTMLButtonElement | null;
-    const btnQueue = this.root.querySelector('#btn-mode-queue') as HTMLButtonElement | null;
-
-    btnStack?.addEventListener('click', () => {
-      this.currentMode = 'stack';
-      btnStack.classList.add('active');
-      btnQueue?.classList.remove('active');
-      const title = this.root?.querySelector('#sqt-sandbox-title');
-      if (title) title.textContent = '🥞 栈 (Stack - LIFO) 容器沙盘';
-      this.start();
-    });
-
-    btnQueue?.addEventListener('click', () => {
-      this.currentMode = 'queue';
-      btnQueue.classList.add('active');
-      btnStack?.classList.remove('active');
-      const title = this.root?.querySelector('#sqt-sandbox-title');
-      if (title) title.textContent = '🔄 队列 (Queue - FIFO) 容器沙盘';
-      this.start();
-    });
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: STACK_QUEUE_THEORY_PROBLEM_HTML,
-      analysisHtml: STACK_QUEUE_THEORY_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): SQStep[] {
-    return this.currentMode === 'stack' ? buildStackSteps() : buildQueueSteps();
-  }
-
-  protected renderStep(step: SQStep): void {
-    const isStack = step.mode === 'stack';
-    const data = step.data;
-
-    // 1. 渲染沙盘 (Card 1)
-    if (this.sandboxContainer) {
-      const itemsHtml = data
-        .map((num, idx) => {
-          const isTopOrFront = isStack ? idx === data.length - 1 : idx === 0;
-          const isRear = !isStack && idx === data.length - 1;
-
-          let badge = '';
-          if (isStack && isTopOrFront) badge = '🥇栈顶Top';
-          else if (!isStack && isTopOrFront) badge = '🥇队头Front';
-          else if (!isStack && isRear) badge = '队尾Rear';
-          else badge = `[${idx}]`;
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-              <span style="font-size: 8.5px; color: ${isTopOrFront ? '#2563eb' : '#94a3b8'}; font-weight: 700;">
-                ${badge}
-              </span>
-              <div style="min-width: 42px; height: 42px; padding: 0 8px; border-radius: 8px; background: ${isTopOrFront ? '#eff6ff' : '#ffffff'}; border: 2px solid ${isTopOrFront ? '#2563eb' : '#e2e8f0'}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: ${isTopOrFront ? '#1d4ed8' : '#0f172a'}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                ${num}
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569;">
-            <span>${isStack ? '🥞 栈容器 (栈底 &rarr; 栈顶Top)' : '🔄 队列容器 (队头Front &rarr; 队尾Rear)'}:</span>
-          </div>
-          <div style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; min-height: 56px; align-items: center;">
-            ${data.length > 0 ? itemsHtml : `<span style="font-size: 10.5px; color: #94a3b8;">${isStack ? '空栈 (Empty Stack)' : '空队列 (Empty Queue)'}</span>`}
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. 渲染端点状态 (Card 2 Left)
-    if (this.endpointStatusContainer) {
-      const topOrFront = data.length > 0 ? (isStack ? data[data.length - 1] : data[0]) : null;
-
-      this.endpointStatusContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前模式:</span>
-            <span style="font-family: monospace; font-weight:800; color: #2563eb;">
-              ${isStack ? '栈 (Stack - LIFO)' : '队列 (Queue - FIFO)'}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>${isStack ? '当前栈顶元素:' : '当前队头元素:'}</span>
-            <span style="font-family: monospace; font-weight:700; color: #059669; font-size: 13px;">
-              ${topOrFront !== null ? topOrFront : '（空）'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染操作决策监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #64748b;">当前操作动作:</span>
-            <span style="font-weight: 800; color: #2563eb; font-family: monospace; font-size: 12px; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">
-              ${step.action.toUpperCase()}
-            </span>
-          </div>
-          <div style="color: #334155; line-height: 1.4; margin-top: 2px;">
-            ${step.message}
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染核心指标 (Card 2 Right)
-    if (this.metricsContainer) {
-      this.metricsContainer.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; text-align: center;">
-            <div style="font-size: 9.5px; color: #64748b;">当前容量</div>
-            <div style="font-size: 13px; font-weight: 800; color: #0f172a; font-family: monospace;">${data.length}</div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; text-align: center;">
-            <div style="font-size: 9.5px; color: #64748b;">时间复杂度</div>
-            <div style="font-size: 13px; font-weight: 800; color: #059669; font-family: monospace;">O(1)</div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 6. 暗色终端代码行高亮
-    this.codeTerminal?.highlightLine(step.codeLine);
-
-    // 7. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '状态';
-
-        if (st.action === 'push' || st.action === 'enqueue') {
-          badgeColor = '#2563eb';
-          badgeBg = '#eff6ff';
-          badgeText = '入端';
-        } else if (st.action === 'pop' || st.action === 'dequeue') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '出端';
-        } else if (st.action === 'peek') {
-          badgeColor = '#d97706';
-          badgeBg = '#fffbeb';
-          badgeText = '查看';
-        } else if (st.action === 'done') {
-          badgeColor = '#10b981';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
-        }
-
-        return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
-          </div>
-        `;
-      });
-
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
+    return {
+      ...s,
+      log: s.message,
+      metrics: {
+        'cur-mode': isStack ? '栈 (Stack - LIFO)' : '队列 (Queue - FIFO)',
+        'top-or-front': topOrFront !== null ? String(topOrFront) : '（空）',
+        action: s.action.toUpperCase(),
+        size: String(s.data.length),
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：栈 / 队列容器沙盘 */
+export function renderStackQueueTheoryCanvas(container: HTMLElement, step: SQStep): void {
+  const isStack = step.mode === 'stack';
+  const data = step.data;
+
+  const itemsHtml = data
+    .map((num, idx) => {
+      const isTopOrFront = isStack ? idx === data.length - 1 : idx === 0;
+      const isRear = !isStack && idx === data.length - 1;
+
+      let badge = '';
+      if (isStack && isTopOrFront) badge = '🥇栈顶Top';
+      else if (!isStack && isTopOrFront) badge = '🥇队头Front';
+      else if (!isStack && isRear) badge = '队尾Rear';
+      else badge = `[${idx}]`;
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="font-size: 8.5px; color: ${isTopOrFront ? '#2563eb' : '#94a3b8'}; font-weight: 700;">
+            ${badge}
+          </span>
+          <div style="min-width: 42px; height: 42px; padding: 0 8px; border-radius: 8px; background: ${isTopOrFront ? '#eff6ff' : '#ffffff'}; border: 2px solid ${isTopOrFront ? '#2563eb' : '#e2e8f0'}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: ${isTopOrFront ? '#1d4ed8' : '#0f172a'}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            ${num}
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 14px; box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569; width: 100%;">
+        <span>${isStack ? '🥞 栈容器 (栈底 &rarr; 栈顶Top)' : '🔄 队列容器 (队头Front &rarr; 队尾Rear)'}:</span>
+        <span style="color: #059669;">容量: ${data.length} · 操作 O(1)</span>
+      </div>
+      <div style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; min-height: 56px; align-items: center; max-width: 100%;">
+        ${data.length > 0 ? itemsHtml : `<span style="font-size: 10.5px; color: #94a3b8;">${isStack ? '空栈 (Empty Stack)' : '空队列 (Empty Queue)'}</span>`}
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm<SQStep>({
   id: 'stack-queue-theory',
   name: '栈与队列理论基础',
-  viewId: 'algo-stack-queue-theory-view',
   category: 'stack',
   description: '栈 (LIFO) 与队列 (FIFO) 的核心受控访问语义、操作复杂度及 C++/Java 底层实现机制',
   icon: '🥞',
-  template,
-  Visualizer: StackQueueTheoryVisualizer,
   difficulty: 1,
   levelOrder: 0,
   learningGoal: '透彻理解栈 (后入先出) 与队列 (先入先出) 的核心区别与容器适配器本质',
+  modes: [
+    { id: 'stack', label: '🥞 栈 (Stack - LIFO)' },
+    { id: 'queue', label: '🔄 队列 (Queue - FIFO)' },
+  ],
+  inputs: [],
+  presets: [
+    { label: '栈演示 (push 1/2/3 → peek → pop×2)', values: {} },
+  ],
+  metrics: [
+    { id: 'cur-mode', label: '当前模式', color: '#2563eb' },
+    { id: 'top-or-front', label: '栈顶 / 队头', color: '#059669' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+    { id: 'size', label: '当前容量', color: '#0f172a' },
+  ],
+  legend: [
+    { label: '栈顶 / 队头', color: '#2563eb' },
+    { label: '普通元素', color: '#94a3b8' },
+  ],
+  codeLanguages: STACK_QUEUE_THEORY_CODE_LANGUAGES,
+  problemHtml: STACK_QUEUE_THEORY_PROBLEM_HTML,
+  analysisHtml: STACK_QUEUE_THEORY_ANALYSIS_HTML,
+  generateSteps: (inputs, mode) =>
+    withMetrics(mode === 'queue' ? buildQueueSteps() : buildStackSteps()),
+  renderCanvas: (container, step) => renderStackQueueTheoryCanvas(container, step as SQStep),
 });

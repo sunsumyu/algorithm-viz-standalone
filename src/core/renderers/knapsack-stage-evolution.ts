@@ -12,6 +12,7 @@
 import { KnapsackItem } from '../knapsack-execution-engine';
 import { HighlightTarget } from './dark-code-terminal-presenter';
 import { getKnapsackAnchor } from './knapsack-stage-codes';
+import { GridVisualAdapter, type GridRenderOptions } from './grid-visual-adapter';
 
 export type KnapsackKind = '01' | 'unbounded' | 'partitioned';
 
@@ -758,46 +759,28 @@ export function renderKnapsackMemoCard2(
   container: HTMLElement,
   step: KnapsackMemoStep
 ): void {
-  const rows = step.memoGrid.length;
-  const cols = step.memoGrid[0]?.length || 0;
+  const rows = step.memoGrid?.length || 0;
+  const cols = step.memoGrid?.[0]?.length || 0;
+  const rowLabels = step.memoGrid?.map((_, i) => `i=${i}`) || [];
+  const colLabels = Array.from({ length: cols }, (_, j) => `${j}`);
 
-  let tableRows = '';
-  for (let i = 0; i < Math.min(rows, 6); i++) {
-    let cells = '';
-    for (let j = 0; j < Math.min(cols, 16); j++) {
-      const val = step.memoGrid[i]?.[j];
-      const isCur = step.memoCoord?.i === i && step.memoCoord?.j === j;
-      let bg = '#f8fafc';
-      let border = '#e2e8f0';
-      let text = '—';
-      let color = '#94a3b8';
+  const stepData = {
+    i: step.memoCoord?.i ?? 0,
+    j: step.memoCoord?.j ?? 0,
+    grid: step.memoGrid || [],
+    type: step.memoHit ? '缓存命中' : '未命中试算',
+    msg: `memo[${step.memoCoord?.i ?? 0}][${step.memoCoord?.j ?? 0}]`,
+  };
 
-      if (val !== null && val !== undefined) {
-        bg = '#f0fdf4';
-        border = '#bbf7d0';
-        text = `${val}`;
-        color = '#166534';
-      }
-
-      if (isCur) {
-        border = '#f59e0b';
-        bg = '#fef3c7';
-        color = '#b45309';
-      }
-
-      cells += `
-        <td style="border:1px solid ${border}; background:${bg}; color:${color}; font-size:10px; text-align:center; padding:3px; min-width:26px; height:24px; font-family:'JetBrains Mono', monospace; font-weight:700;">
-          ${text}
-        </td>
-      `;
-    }
-    tableRows += `
-      <tr>
-        <td style="border:1px solid #cbd5e1; background:#f1f5f9; color:#475569; font-size:9.5px; font-weight:700; text-align:center; padding:3px 6px;">i=${i}</td>
-        ${cells}
-      </tr>
-    `;
-  }
+  const renderOpts: GridRenderOptions = {
+    m: rows,
+    n: cols,
+    isReverse: false,
+    isGridProblem: false,
+    modelId: 'knapsack-memo',
+    rowLabels,
+    colLabels,
+  };
 
   container.innerHTML = `
     <div style="display:flex; flex-direction:column; height:100%; gap:10px; box-sizing:border-box;">
@@ -820,16 +803,18 @@ export function renderKnapsackMemoCard2(
 
       <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
         <div style="font-size:11px; font-weight:700; color:#334155; margin-bottom:6px;">
-          💾 2D 备忘录缓存矩阵 memo[i][j] (展示部分)
+          💾 2D 备忘录缓存矩阵 memo[i][j]
         </div>
-        <div style="flex:1; overflow:auto;">
-          <table style="border-collapse:collapse; width:100%;">
-            <tbody>${tableRows}</tbody>
-          </table>
+        <div class="knapsack-memo-grid-wrapper" style="flex:1; min-height:0; overflow:auto;">
         </div>
       </div>
     </div>
   `;
+
+  const wrapper = container.querySelector('.knapsack-memo-grid-wrapper') as HTMLElement | null;
+  if (wrapper) {
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
+  }
 }
 
 // ==========================================
@@ -843,91 +828,68 @@ export function renderKnapsack2DCard1(
   const m = step.items.length;
   const t = step.capacity;
 
-  let headerCells = '<th style="border:1px solid #cbd5e1; background:#f8fafc; color:#64748b; padding:4px 6px; font-size:10px; position:sticky; left:0; top:0; z-index:30;">物品 \\ j</th>';
-  for (let j = 0; j <= t; j++) {
-    const isCurJ = j === step.curJ;
-    headerCells += `
-      <th style="border:1px solid ${isCurJ ? '#38bdf8' : '#cbd5e1'}; background:${isCurJ ? '#e0f2fe' : '#f8fafc'}; color:${isCurJ ? '#0284c7' : '#475569'}; padding:4px 6px; font-size:10px; font-family:'JetBrains Mono', monospace; font-weight:700; position:sticky; top:0; z-index:20;">
-        ${j}
-      </th>
-    `;
+  const rowLabels = Array.from({ length: m + 1 }, (_, i) => (i === 0 ? 'base' : `#${i}`));
+  const colLabels = Array.from({ length: t + 1 }, (_, j) => `${j}`);
+
+  const deps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }> = [];
+  if (step.depNoPick) {
+    deps.push({ r: step.depNoPick.r, c: step.depNoPick.c, type: 'top', label: '不选源' });
+  }
+  if (step.depPick) {
+    const isSameRow = step.depPick.r === step.curI;
+    deps.push({
+      r: step.depPick.r,
+      c: step.depPick.c,
+      type: isSameRow ? 'left' : 'diag',
+      label: '选入源',
+    });
   }
 
-  let tableRows = '';
-  for (let i = 0; i <= m; i++) {
-    const isCurI = i === step.curI;
-    const itemLabel = i === 0 ? 'base (0)' : `#${i} (${step.items[i - 1].cost}, ${step.items[i - 1].val})`;
-    let cells = '';
+  const stepData = {
+    i: step.curI,
+    j: step.curJ,
+    topI: step.depNoPick?.r,
+    topJ: step.depNoPick?.c,
+    diagI: step.depPick && step.depPick.r !== step.curI ? step.depPick.r : undefined,
+    diagJ: step.depPick && step.depPick.r !== step.curI ? step.depPick.c : undefined,
+    leftI: step.depPick && step.depPick.r === step.curI ? step.depPick.r : undefined,
+    leftJ: step.depPick && step.depPick.r === step.curI ? step.depPick.c : undefined,
+    grid: step.dpTable || [],
+    deps,
+    msg: `dp[${step.curI}][${step.curJ}]`,
+  };
 
-    for (let j = 0; j <= t; j++) {
-      const isCurCell = i === step.curI && j === step.curJ;
-      const isDepNoPick = step.depNoPick && i === step.depNoPick.r && j === step.depNoPick.c;
-      const isDepPick = step.depPick && i === step.depPick.r && j === step.depPick.c;
-
-      let bg = '#ffffff';
-      let border = '#e2e8f0';
-      let color = '#334155';
-      let badge = '';
-
-      if (isCurCell) {
-        bg = '#fef3c7';
-        border = '#f59e0b';
-        color = '#b45309';
-        badge = '<span style="display:block; font-size:8px; color:#b45309; font-weight:800;">NOW</span>';
-      } else if (isDepPick) {
-        bg = '#f0fdf4';
-        border = '#16a34a';
-        color = '#15803d';
-        badge = '<span style="display:block; font-size:8px; color:#15803d; font-weight:800;">选入源</span>';
-      } else if (isDepNoPick) {
-        bg = '#eff6ff';
-        border = '#2563eb';
-        color = '#1d4ed8';
-        badge = '<span style="display:block; font-size:8px; color:#1d4ed8; font-weight:800;">不选源</span>';
-      } else if (i < step.curI || (i === step.curI && j < step.curJ)) {
-        bg = '#f8fafc';
-        color = '#475569';
-      }
-
-      const val = step.dpTable[i]?.[j] ?? 0;
-
-      cells += `
-        <td id="dp-cell-${i}-${j}" style="border:1px solid ${border}; background:${bg}; color:${color}; font-size:11px; text-align:center; padding:3px 5px; min-width:32px; height:28px; font-family:'JetBrains Mono', monospace; font-weight:700;">
-          ${val}
-          ${badge}
-        </td>
-      `;
-    }
-
-    tableRows += `
-      <tr>
-        <td style="border:1px solid #cbd5e1; background:${isCurI ? '#fef3c7' : '#f8fafc'}; color:${isCurI ? '#b45309' : '#475569'}; font-size:10px; font-weight:700; padding:4px 8px; white-space:nowrap; position:sticky; left:0; z-index:10;">
-          ${itemLabel}
-        </td>
-        ${cells}
-      </tr>
-    `;
-  }
+  const renderOpts: GridRenderOptions = {
+    m: m + 1,
+    n: t + 1,
+    isReverse: false,
+    isGridProblem: false,
+    modelId: 'knapsack-2d',
+    rowLabels,
+    colLabels,
+    deps,
+  };
 
   container.innerHTML = `
     <div style="display:flex; flex-direction:column; height:100%; gap:8px; box-sizing:border-box;">
       <div style="display:flex; justify-content:space-between; align-items:center; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:8px 12px;">
         <span style="font-size:11.5px; font-weight:700; color:#1e3a8a;">${step.message}</span>
-        <span style="font-size:10.5px; color:#64748b;">阶段 3: 严格二维表拓扑填表</span>
+        <span style="font-size:10.5px; color:#64748b;">阶段 3: 严格二维表拓扑填表 (dp[${step.curI}][${step.curJ}])</span>
       </div>
 
-      <div style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:6px;" id="dp2d-table-wrapper">
-        <table style="border-collapse:collapse; width:100%;">
-          <thead><tr>${headerCells}</tr></thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+      <div class="knapsack-2d-table-wrapper" style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:6px;" id="dp2d-table-wrapper">
       </div>
     </div>
   `;
 
+  const wrapper = container.querySelector('.knapsack-2d-table-wrapper') as HTMLElement | null;
+  if (wrapper) {
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
+  }
+
   // 自动滚到当前单元格
   setTimeout(() => {
-    const el = container.querySelector(`#dp-cell-${step.curI}-${step.curJ}`);
+    const el = container.querySelector(`[data-coord="${step.curI},${step.curJ}"]`);
     if (el && typeof el.scrollIntoView === 'function') {
       el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
     }

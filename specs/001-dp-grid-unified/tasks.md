@@ -84,6 +84,28 @@
 
 ---
 
+## Phase 7: User Story 4 - 全背包系列 (073, 074, 075) 视觉收敛至全局 GridVisualAdapter (Priority: P1)
+
+**Goal**: 将背包 13 大算法（01背包、完全背包、分组背包、最后一块石头 II、目标和、买商品打折、硬币挑选、买干草最小花费、零钱兑换种类、赏樱花、多重背包朴素/二进制拆分/单调队列优化）全部统一至 `GridVisualAdapter`，消除原生 `<table>` 拼接与重复代码。
+
+- [x] T019 [US4] 扩展 `GridVisualAdapter` 原生支持 `deps` 数组（前驱依赖标注 ⬆️, ⬅️, ↖️, 🔗）与高亮连线
+- [x] T020 [US4] 重构 `special-stage-cards.ts` 中的 `renderSpecialMemoCard2` 与 `renderSpecial2DCard2` 委托至 `GridVisualAdapter.renderGrid`
+- [x] T021 [US4] 重构 `knapsack-stage-evolution.ts` 中的 `renderKnapsackMemoCard2` 与 `renderKnapsack2DCard1` 委托至 `GridVisualAdapter.renderGrid`
+- [x] T022 [US4] 保持测试断言百分之百兼容，通过全部 136 项背包与 DP 相关测试以及全库 1996 项单元测试
+
+---
+
+## Phase 8: User Story 5 - 字符串双串 DP (正则表达式与通配符匹配 LeetCode 10/44) 视觉收敛至 GridVisualAdapter (Priority: P1)
+
+**Goal**: 将 `string-dp-stage-evolution.ts` 中的备忘录矩阵与 2D DP 填表完全委托至 `GridVisualAdapter`，消除原生 `<table>` 拼接，实现字符标尺、探险家角色、匹配标徽与转移依赖箭头无缝统一。
+
+- [x] T023 [US5] 引入 `GridVisualAdapter` 并重构 `renderStringDpMemoCard2` 委托至 `GridVisualAdapter.renderGrid`
+- [x] T024 [US5] 重构 `renderStringDp2DCard2` 委托至 `GridVisualAdapter.renderGrid`，将 `depCells` 映射为 `deps` 数组与方向依赖
+- [x] T025 [US5] 保持现有测试断言 100% 兼容，通过 `knapsack-stage-evolution.test.ts` 与全部相关单测
+- [x] T026 [US5] 执行 `npm run typecheck` 与全库门禁无任何报错
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

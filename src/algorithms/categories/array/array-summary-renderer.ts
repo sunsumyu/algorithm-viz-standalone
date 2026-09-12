@@ -3,15 +3,13 @@
  * 系统回顾数组专题所有核心技巧：双指针、二分、滑动窗口、前缀和、模拟边界等
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   ARRAY_SUMMARY_PROBLEM_HTML,
   ARRAY_SUMMARY_ANALYSIS_HTML,
   ARRAY_SUMMARY_CODE_LANGUAGES,
 } from './array-summary-problem-content';
-import template from './array-summary.html?raw';
 
 export interface ASStep {
   section:
@@ -29,6 +27,7 @@ export interface ASStep {
   codeLine: HighlightTarget;
   technique: string;
   problems: string[];
+  metrics?: Record<string, string>;
 }
 
 export interface DemoQuestion {
@@ -164,192 +163,139 @@ export function buildArraySummarySteps(): ASStep[] {
   return steps;
 }
 
-export class ArraySummaryVisualizer extends StepVisualizer<ASStep> {
-  protected codeLanguages = ARRAY_SUMMARY_CODE_LANGUAGES;
-  protected codeLines = ARRAY_SUMMARY_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '数组核心范式 速查速览';
 
-  private currentQuizIdx = 0;
-  private quizScore = 0;
-  private paradigmCards: NodeListOf<HTMLElement> | null = null;
-  private metricTopicEl: HTMLElement | null = null;
-  private metricTrickEl: HTMLElement | null = null;
-  private metricProblemsEl: HTMLElement | null = null;
-  private metricScoreEl: HTMLElement | null = null;
-  private quizQuestionEl: HTMLElement | null = null;
-  private quizOptionsEl: HTMLElement | null = null;
-  private quizFeedbackEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+const TOPIC_NAMES: Record<string, string> = {
+  intro: '全景导读',
+  basics: '基础理论',
+  'two-pointer': '双指针三剑客',
+  'binary-search': '二分查找',
+  'prefix-sum': '前缀和差分',
+  matrix: '螺旋模拟',
+  patterns: '总结升华',
+  done: '通关大吉',
+};
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.paradigmCards = this.root.querySelectorAll('.as-paradigm-card');
-    this.metricTopicEl = this.root.querySelector('#metric-topic');
-    this.metricTrickEl = this.root.querySelector('#metric-trick');
-    this.metricProblemsEl = this.root.querySelector('#metric-problems');
-    this.metricScoreEl = this.root.querySelector('#metric-score');
-    this.quizQuestionEl = this.root.querySelector('#quiz-question');
-    this.quizOptionsEl = this.root.querySelector('#quiz-options');
-    this.quizFeedbackEl = this.root.querySelector('#quiz-feedback');
-    this.liveTextEl = this.root.querySelector('#as-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 范式卡片点击切换步进
-    this.paradigmCards?.forEach((card) => {
-      card.addEventListener('click', () => {
-        const idx = parseInt(card.dataset.idx || '0', 10);
-        const targetStep = Math.min(this.steps.length - 1, idx + 1);
-        this.goToStep(targetStep);
-      });
-    });
-
-    // 渲染测验题目
-    this.renderQuiz(0);
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: ARRAY_SUMMARY_PROBLEM_HTML,
-      analysisHtml: ARRAY_SUMMARY_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  private renderQuiz(qIdx: number): void {
-    if (!this.quizQuestionEl || !this.quizOptionsEl || !this.quizFeedbackEl) return;
-    this.currentQuizIdx = qIdx % DEMO_QUESTIONS.length;
-    const q = DEMO_QUESTIONS[this.currentQuizIdx];
-
-    this.quizQuestionEl.textContent = `【自测题 ${this.currentQuizIdx + 1}/${DEMO_QUESTIONS.length}】${q.problem}`;
-    this.quizFeedbackEl.textContent = '';
-    this.quizOptionsEl.innerHTML = q.options
-      .map(
-        (opt, idx) => `
-      <button class="as-quiz-btn" data-opt="${idx}">${String.fromCharCode(65 + idx)}. ${opt}</button>
-    `
-      )
-      .join('');
-
-    this.quizOptionsEl.querySelectorAll<HTMLButtonElement>('.as-quiz-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const chosen = parseInt(btn.dataset.opt || '0', 10);
-        const isCorrect = chosen === q.correct;
-        btn.classList.add(isCorrect ? 'correct' : 'wrong');
-
-        if (isCorrect) {
-          this.quizScore++;
-          if (this.metricScoreEl) this.metricScoreEl.textContent = `${this.quizScore} / ${DEMO_QUESTIONS.length}`;
-          if (this.quizFeedbackEl) {
-            this.quizFeedbackEl.innerHTML = `<span style="color:#15803d; font-weight:700;">✓ 回答正确！</span> ${q.explanation}`;
-          }
-        } else {
-          if (this.quizFeedbackEl) {
-            this.quizFeedbackEl.innerHTML = `<span style="color:#b91c1c; font-weight:700;">✗ 回答错误。</span> 正确答案为 ${String.fromCharCode(65 + q.correct)}。${q.explanation}`;
-          }
-        }
-
-        // 2.5秒后切到下一题
-        setTimeout(() => {
-          this.renderQuiz(this.currentQuizIdx + 1);
-        }, 2500);
-      });
-    });
-  }
-
-  protected buildSteps(): ASStep[] {
-    return buildArraySummarySteps();
-  }
-
-  protected renderStep(step: ASStep): void {
-    const { section, index, message, technique, problems } = step;
-
-    // 1. 高亮对应范式卡片
-    this.paradigmCards?.forEach((card) => {
-      const cardIdx = parseInt(card.dataset.idx || '0', 10);
-      if (cardIdx === index - 1) card.classList.add('active');
-      else card.classList.remove('active');
-    });
-
-    // 2. 更新状态监视器
-    if (this.metricTopicEl) {
-      const topicNames: Record<string, string> = {
-        intro: '全景导读',
-        basics: '基础理论',
-        'two-pointer': '双指针三剑客',
-        'binary-search': '二分查找',
-        'prefix-sum': '前缀和差分',
-        matrix: '螺旋模拟',
-        patterns: '总结升华',
-        done: '通关大吉',
-      };
-      this.metricTopicEl.textContent = topicNames[section] || section;
-    }
-    if (this.metricTrickEl) this.metricTrickEl.textContent = technique;
-    if (this.metricProblemsEl) {
-      this.metricProblemsEl.textContent = `${problems.length} 个经典例题`;
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg = st.section === 'done' ? '#f0fdf4' : '#eff6ff';
-        let color = st.section === 'done' ? '#15803d' : '#1d4ed8';
-        let border = st.section === 'done' ? '#bbf7d0' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeTopic = this.root?.querySelector('#badge-topic');
-    if (badgeTopic) {
-      const topicNames: Record<string, string> = {
-        intro: '全景导读',
-        basics: '基础理论',
-        'two-pointer': '双指针三剑客',
-        'binary-search': '二分查找',
-        'prefix-sum': '前缀和差分',
-        matrix: '螺旋模拟',
-        patterns: '总结升华',
-        done: '通关大吉',
-      };
-      badgeTopic.textContent = topicNames[section] || section;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    this.quizScore = 0;
-    if (this.metricScoreEl) this.metricScoreEl.textContent = `0 / ${DEMO_QUESTIONS.length}`;
-    this.renderQuiz(0);
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: ASStep[]): ASStep[] {
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      topic: TOPIC_NAMES[s.section] || s.section,
+      trick: s.technique,
+      problems: `${s.problems.length} 个经典例题`,
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 测验小部件状态（跨步骤持久） */
+let quizIdx = 0;
+let quizScore = 0;
+
+function renderQuizPanel(host: HTMLElement): void {
+  const q = DEMO_QUESTIONS[quizIdx % DEMO_QUESTIONS.length];
+  const qEl = host.querySelector<HTMLElement>('.as-quiz-question');
+  const optsEl = host.querySelector<HTMLElement>('.as-quiz-options');
+  const fbEl = host.querySelector<HTMLElement>('.as-quiz-feedback');
+  const scoreEl = host.querySelector<HTMLElement>('.as-quiz-score');
+  if (!qEl || !optsEl || !fbEl || !scoreEl) return;
+
+  qEl.textContent = `【自测题 ${(quizIdx % DEMO_QUESTIONS.length) + 1}/${DEMO_QUESTIONS.length}】${q.problem}`;
+  scoreEl.textContent = `${quizScore} / ${DEMO_QUESTIONS.length}`;
+  fbEl.innerHTML = '';
+  optsEl.innerHTML = q.options
+    .map((opt, i) => `<button class="as-quiz-btn" data-opt="${i}" style="padding: 6px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s;">${String.fromCharCode(65 + i)}. ${opt}</button>`)
+    .join('');
+
+  optsEl.querySelectorAll<HTMLButtonElement>('.as-quiz-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const chosen = parseInt(btn.dataset.opt || '0', 10);
+      const isCorrect = chosen === q.correct;
+      btn.style.borderColor = isCorrect ? '#22c55e' : '#ef4444';
+      btn.style.background = isCorrect ? '#f0fdf4' : '#fef2f2';
+
+      if (isCorrect) {
+        quizScore++;
+        scoreEl.textContent = `${quizScore} / ${DEMO_QUESTIONS.length}`;
+        fbEl.innerHTML = `<span style="color:#15803d; font-weight:700;">✓ 回答正确！</span> ${q.explanation}`;
+      } else {
+        fbEl.innerHTML = `<span style="color:#b91c1c; font-weight:700;">✗ 回答错误。</span> 正确答案为 ${String.fromCharCode(65 + q.correct)}。${q.explanation}`;
+      }
+
+      setTimeout(() => {
+        quizIdx = (quizIdx + 1) % DEMO_QUESTIONS.length;
+        renderQuizPanel(host);
+      }, 2500);
+    });
+  });
+}
+
+const PARADIGM_CARDS: Array<{ title: string; desc: string }> = [
+  { title: '📦 基础操作', desc: '寻址 O(1) · 增删 O(n)' },
+  { title: '👆 双指针三剑客', desc: '快慢 / 对撞 / 滑动窗口' },
+  { title: '🎯 二分查找', desc: '区间开闭与循环不变量' },
+  { title: '➕ 前缀和差分', desc: '一维区间和 · 二维容斥' },
+  { title: '🌀 螺旋模拟', desc: '四边界顺时针收缩' },
+  { title: '🏆 通关大吉', desc: '六大范式融会贯通' },
+];
+
+/** 主视觉：六大范式卡片 + 自测题小部件 */
+export function renderArraySummaryCanvas(container: HTMLElement, step: ASStep): void {
+  const activeIdx = step.index - 1;
+
+  const cardsHtml = PARADIGM_CARDS.map((c, i) => {
+    const isActive = i === activeIdx;
+    return `
+      <div style="width: 150px; padding: 12px 10px; border-radius: 12px; background: ${isActive ? '#eff6ff' : '#ffffff'}; border: 2px solid ${isActive ? '#3b82f6' : '#e2e8f0'}; box-shadow: ${isActive ? '0 4px 14px rgba(59,130,246,0.2)' : '0 1px 3px rgba(0,0,0,0.04)'}; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.25s ease; box-sizing: border-box;">
+        <div style="font-size: 12px; font-weight: 800; color: ${isActive ? '#1d4ed8' : '#0f172a'};">${c.title}</div>
+        <div style="font-size: 10px; color: #64748b;">${c.desc}</div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 14px; box-sizing: border-box; overflow-y: auto;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+        ${cardsHtml}
+      </div>
+      <div class="as-quiz-panel" style="width: 100%; max-width: 560px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; background: #f8fafc; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">🎯 范式自测（点击作答，答对自动下一题）</span>
+          <span class="as-quiz-score" style="font-family: monospace; font-weight: 800; color: #16a34a; font-size: 11px;">0 / ${DEMO_QUESTIONS.length}</span>
+        </div>
+        <div class="as-quiz-question" style="font-size: 11.5px; font-weight: 700; color: #0f172a; line-height: 1.4;"></div>
+        <div class="as-quiz-options" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+        <div class="as-quiz-feedback" style="font-size: 11px; color: #334155; line-height: 1.4; min-height: 16px;"></div>
+      </div>
+    </div>
+  `;
+
+  renderQuizPanel(container);
+}
+
+registerDeclarativeAlgorithm<ASStep>({
   id: 'array-summary',
   name: '数组专题总结篇',
-  viewId: 'algo-array-summary-view',
   category: 'array',
   description: '回顾数组专题所有核心技巧',
   icon: '📝',
   difficulty: 1,
   levelOrder: 8,
   learningGoal: '系统回顾数组专题所有核心技巧',
-  template,
-  Visualizer: ArraySummaryVisualizer,
+  inputs: [],
+  presets: [
+    { label: '六大范式速览', values: {} },
+  ],
+  metrics: [
+    { id: 'topic', label: '当前主题', color: '#2563eb' },
+    { id: 'trick', label: '核心技巧', color: '#a855f7' },
+    { id: 'problems', label: '关联例题', color: '#f59e0b' },
+  ],
+  legend: [
+    { label: '当前范式', color: '#3b82f6' },
+  ],
+  codeLanguages: ARRAY_SUMMARY_CODE_LANGUAGES,
+  problemHtml: ARRAY_SUMMARY_PROBLEM_HTML,
+  analysisHtml: ARRAY_SUMMARY_ANALYSIS_HTML,
+  generateSteps: (inputs) => withMetrics(buildArraySummarySteps()),
+  renderCanvas: (container, step) => renderArraySummaryCanvas(container, step as ASStep),
 });

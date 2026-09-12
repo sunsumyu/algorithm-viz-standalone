@@ -8,17 +8,6 @@ import type { AlgorithmMetadata } from './registry';
 
 export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
-    id: "array-theory",
-    name: "数组理论基础",
-    viewId: "algo-array-theory-view",
-    category: "array",
-    description: "数组的内存布局、基本操作和时间复杂度",
-    icon: "📖",
-    difficulty: 1,
-    levelOrder: 0,
-    learningGoal: "理解数组的连续内存特性和基本操作",
-  },
-  {
     id: "remove-element",
     name: "移除元素",
     viewId: "algo-remove-element-view",
@@ -126,6 +115,17 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 3,
     levelOrder: 99,
+  },
+  {
+    id: "array-theory",
+    name: "数组理论基础",
+    viewId: "algo-array-theory-view",
+    category: "array",
+    description: "数组的内存布局、基本操作和时间复杂度",
+    icon: "📖",
+    difficulty: 1,
+    levelOrder: 99,
+    learningGoal: "理解数组的连续内存特性和基本操作",
   },
   {
     id: "next-permutation",
@@ -5435,17 +5435,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     levelOrder: 99,
   },
   {
-    id: "stack-queue-theory",
-    name: "栈与队列理论基础",
-    viewId: "algo-stack-queue-theory-view",
-    category: "stack",
-    description: "栈 (LIFO) 与队列 (FIFO) 的核心受控访问语义、操作复杂度及 C++/Java 底层实现机制",
-    icon: "🥞",
-    difficulty: 1,
-    levelOrder: 0,
-    learningGoal: "透彻理解栈 (后入先出) 与队列 (先入先出) 的核心区别与容器适配器本质",
-  },
-  {
     id: "bracket",
     name: "有效的括号",
     viewId: "algo-bracket-view",
@@ -5543,6 +5532,17 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "掌握双栈同步机制，支持 push、pop、top 及常数时间 O(1) 检索最小元素",
+  },
+  {
+    id: "stack-queue-theory",
+    name: "栈与队列理论基础",
+    viewId: "algo-stack-queue-theory-view",
+    category: "stack",
+    description: "栈 (LIFO) 与队列 (FIFO) 的核心受控访问语义、操作复杂度及 C++/Java 底层实现机制",
+    icon: "🥞",
+    difficulty: 1,
+    levelOrder: 99,
+    learningGoal: "透彻理解栈 (后入先出) 与队列 (先入先出) 的核心区别与容器适配器本质",
   },
   {
     id: "valid-parenthesis-string",

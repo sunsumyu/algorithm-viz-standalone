@@ -3,15 +3,13 @@
  * 演示连续内存布局、随机寻址与插入/删除移动元素
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   ARRAY_THEORY_PROBLEM_HTML,
   ARRAY_THEORY_ANALYSIS_HTML,
   ARRAY_THEORY_CODE_LANGUAGES,
 } from './array-theory-problem-content';
-import template from './array-theory.html?raw';
 
 export interface ATStep {
   array: (number | null)[];
@@ -32,6 +30,7 @@ export interface ATStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function buildAccessSteps(idx: number): ATStep[] {
@@ -268,189 +267,141 @@ export function buildDeleteSteps(arr: number[], deleteIdx: number): ATStep[] {
   return steps;
 }
 
-export class ArrayTheoryVisualizer extends StepVisualizer<ATStep> {
-  protected codeLanguages = ARRAY_THEORY_CODE_LANGUAGES;
-  protected codeLines = ARRAY_THEORY_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '数组基础操作 代码实现';
 
-  private currentOp: 'access' | 'search' | 'insert' | 'delete' = 'access';
-  private trackRowEl: HTMLElement | null = null;
-  private metricOpEl: HTMLElement | null = null;
-  private metricCompEl: HTMLElement | null = null;
-  private metricAddrEl: HTMLElement | null = null;
-  private metricShiftEl: HTMLElement | null = null;
-  private formulaIdxEl: HTMLElement | null = null;
-  private formulaAddrEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#at-track-row');
-    this.metricOpEl = this.root.querySelector('#metric-op');
-    this.metricCompEl = this.root.querySelector('#metric-comp');
-    this.metricAddrEl = this.root.querySelector('#metric-addr');
-    this.metricShiftEl = this.root.querySelector('#metric-shift');
-    this.formulaIdxEl = this.root.querySelector('#formula-idx');
-    this.formulaAddrEl = this.root.querySelector('#formula-addr');
-    this.liveTextEl = this.root.querySelector('#at-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 操作切换按钮
-    this.root.querySelectorAll<HTMLButtonElement>('.at-op-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.root?.querySelectorAll('.at-op-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.currentOp = (btn.dataset.op as any) || 'access';
-        this.start();
-      });
-    });
-
-    // 快捷演示 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.at-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const demo = btn.dataset.demo;
-        if (demo?.startsWith('access')) {
-          this.currentOp = 'access';
-        } else if (demo?.startsWith('search')) {
-          this.currentOp = 'search';
-        } else if (demo?.startsWith('insert')) {
-          this.currentOp = 'insert';
-        } else if (demo?.startsWith('delete')) {
-          this.currentOp = 'delete';
-        }
-        this.root?.querySelectorAll('.at-op-btn').forEach((b) => {
-          if ((b as HTMLElement).dataset.op === this.currentOp) b.classList.add('active');
-          else b.classList.remove('active');
-        });
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: ARRAY_THEORY_PROBLEM_HTML,
-      analysisHtml: ARRAY_THEORY_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): ATStep[] {
-    switch (this.currentOp) {
-      case 'access':
-        return buildAccessSteps(2);
-      case 'search':
-        return buildSearchSteps([3, 5, 7, 11, 15], 11);
-      case 'insert':
-        return buildInsertSteps([3, 5, 7, 11, 15], 1, 99);
-      case 'delete':
-        return buildDeleteSteps([3, 5, 7, 11, 15], 2);
-      default:
-        return buildAccessSteps(2);
-    }
-  }
-
-  protected renderStep(step: ATStep): void {
-    const { array, action, index, shiftCount, status, message } = step;
-
-    // 1. 渲染物理内存沙盘
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = array
-        .map((num, idx) => {
-          const isActive = index === idx && status !== 'done';
-          const isShifting = status.includes('shift') && index === idx;
-          const hexAddr = `0x${(0x1000 + idx * 4).toString(16).toUpperCase()}`;
-
-          let boxClasses = 'at-cell-box';
-          if (isActive) boxClasses += ' is-active';
-          if (isShifting) boxClasses += ' is-shifting';
-
-          return `
-            <div class="at-cell-wrapper">
-              <span class="at-addr" style="font-size: 8.5px; font-family: monospace; color: #2563eb; font-weight: 700;">${hexAddr}</span>
-              <div class="${boxClasses}">
-                <span class="val">${num !== null ? num : '—'}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricOpEl) {
-      const opNames: Record<string, string> = {
-        access: '下标访问',
-        search: '线性搜索',
-        insert: '元素插入',
-        delete: '元素删除',
-      };
-      this.metricOpEl.textContent = opNames[action] || action;
-    }
-    if (this.metricCompEl) {
-      this.metricCompEl.textContent = action === 'access' ? 'O(1)' : 'O(n)';
-      this.metricCompEl.style.color = action === 'access' ? '#10b981' : '#f59e0b';
-    }
-    if (this.metricAddrEl) {
-      this.metricAddrEl.textContent =
-        index >= 0 ? `0x${(0x1000 + index * 4).toString(16).toUpperCase()}` : '—';
-    }
-    if (this.metricShiftEl) {
-      this.metricShiftEl.textContent = `${shiftCount} 次`;
-    }
-
-    if (this.formulaIdxEl) this.formulaIdxEl.textContent = index >= 0 ? String(index) : 'i';
-    if (this.formulaAddrEl) {
-      this.formulaAddrEl.textContent =
-        index >= 0 ? `0x${(0x1000 + index * 4).toString(16).toUpperCase()}` : '0x1000 + i*4B';
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg = st.status === 'done' ? '#f0fdf4' : '#eff6ff';
-        let color = st.status === 'done' ? '#15803d' : '#1d4ed8';
-        let border = st.status === 'done' ? '#bbf7d0' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeComp = this.root?.querySelector('#badge-comp');
-    if (badgeComp) {
-      const comp = action === 'access' ? 'O(1)' : 'O(n)';
-      badgeComp.textContent = `复杂度: ${comp}`;
-    }
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: ATStep[]): ATStep[] {
+  const opNames: Record<string, string> = {
+    access: '下标访问',
+    search: '线性搜索',
+    insert: '元素插入',
+    delete: '元素删除',
+  };
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      op: opNames[s.action] || s.action,
+      comp: s.action === 'access' ? 'O(1)' : 'O(n)',
+      addr:
+        s.index >= 0
+          ? `0x${(0x1000 + s.index * 4).toString(16).toUpperCase()}`
+          : '0x1000 + i*4B',
+      shifts: `${s.shiftCount} 次`,
+      idx: s.index >= 0 ? String(s.index) : 'i',
+    },
+  }));
 }
 
-registerAlgorithm({
+const CELL_BASE =
+  'min-width: 42px; height: 44px; padding: 2px 4px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: \'JetBrains Mono\', monospace; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-sizing: border-box;';
+
+/** 主视觉：物理内存沙盘（十六进制地址 + 单元格状态） */
+export function renderArrayTheoryCanvas(container: HTMLElement, step: ATStep): void {
+  const { array, index, status } = step;
+
+  const cellsHtml = array
+    .map((num, idx) => {
+      const hexAddr = `0x${(0x1000 + idx * 4).toString(16).toUpperCase()}`;
+      const isActive = index === idx && status !== 'done';
+      const isShifting = status.includes('shift') && index === idx;
+
+      let bg = '#ffffff';
+      let border = '#cbd5e1';
+      let color = '#0f172a';
+      let transform = 'none';
+      if (isShifting) {
+        bg = '#fef3c7';
+        border = '#f59e0b';
+        color = '#b45309';
+        transform = 'translateY(-3px)';
+      } else if (isActive) {
+        bg = '#eff6ff';
+        border = '#3b82f6';
+        color = '#1d4ed8';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+          <span style="font-size: 8.5px; font-family: monospace; color: #2563eb; font-weight: 700;">${hexAddr}</span>
+          <div style="${CELL_BASE} background: ${bg}; border: 1.5px solid ${border}; color: ${color}; transform: ${transform};">
+            <span style="font-size: 14px; font-weight: 800;">${num !== null ? num : '—'}</span>
+            <span style="font-size: 9px; color: #94a3b8;">[${idx}]</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; box-sizing: border-box; flex-wrap: wrap;">
+      ${cellsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm<ATStep>({
   id: 'array-theory',
   name: '数组理论基础',
-  viewId: 'algo-array-theory-view',
   category: 'array',
   description: '数组的内存布局、基本操作和时间复杂度',
   icon: '📖',
   difficulty: 1,
   levelOrder: 0,
   learningGoal: '理解数组的连续内存特性和基本操作',
-  template,
-  Visualizer: ArrayTheoryVisualizer,
+  modes: [
+    { id: 'access', label: '🔍 O(1) 随机访问' },
+    { id: 'search', label: '🔎 O(n) 线性搜索' },
+    { id: 'insert', label: '✏️ O(n) 插入' },
+    { id: 'delete', label: '🗑️ O(n) 删除' },
+  ],
+  inputs: [
+    { id: 'array', label: '演示数组', type: 'text', defaultValue: '3, 5, 7, 11, 15' },
+    { id: 'idx', label: '操作下标', type: 'number', defaultValue: '2' },
+    { id: 'value', label: '插入值 / 搜索目标', type: 'number', defaultValue: '11' },
+  ],
+  presets: [
+    { label: '访问 arr[2]', values: { array: '3, 5, 7, 11, 15', idx: '2', value: '11' } },
+    { label: '搜索 11', values: { array: '3, 5, 7, 11, 15', idx: '2', value: '11' } },
+    { label: '下标 1 插入 99', values: { array: '3, 5, 7, 11, 15', idx: '1', value: '99' } },
+    { label: '删除下标 2', values: { array: '3, 5, 7, 11, 15', idx: '2', value: '11' } },
+  ],
+  metrics: [
+    { id: 'op', label: '当前操作', color: '#2563eb' },
+    { id: 'comp', label: '时间复杂度', color: '#10b981' },
+    { id: 'addr', label: '物理地址', color: '#a855f7' },
+    { id: 'shifts', label: '元素移动数', color: '#f59e0b' },
+    { id: 'idx', label: '寻址下标 i', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前操作位', color: '#3b82f6' },
+    { label: '搬移中', color: '#f59e0b' },
+  ],
+  codeLanguages: ARRAY_THEORY_CODE_LANGUAGES,
+  problemHtml: ARRAY_THEORY_PROBLEM_HTML,
+  analysisHtml: ARRAY_THEORY_ANALYSIS_HTML,
+  generateSteps: (inputs, mode) => {
+    const parseArr = (raw: string): number[] =>
+      String(raw ?? '3, 5, 7, 11, 15')
+        .split(/[,，\s]+/)
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n));
+    const arr = parseArr(String(inputs.array ?? '3, 5, 7, 11, 15'));
+    const list = arr.length ? arr : [3, 5, 7, 11, 15];
+    let idx = parseInt(String(inputs.idx ?? '2'), 10);
+    if (!Number.isFinite(idx)) idx = 2;
+    let value = parseInt(String(inputs.value ?? '11'), 10);
+    if (!Number.isFinite(value)) value = 11;
+
+    switch (mode) {
+      case 'search':
+        return withMetrics(buildSearchSteps(list, value));
+      case 'insert':
+        return withMetrics(buildInsertSteps(list, Math.max(0, Math.min(idx, list.length)), value));
+      case 'delete':
+        return withMetrics(buildDeleteSteps(list, Math.max(0, Math.min(idx, list.length - 1))));
+      case 'access':
+      default:
+        return withMetrics(buildAccessSteps(idx));
+    }
+  },
+  renderCanvas: (container, step) => renderArrayTheoryCanvas(container, step as ATStep),
 });
