@@ -3,25 +3,11 @@
  * 包含: 最小深度、平衡二叉树、左叶子之和、二叉树所有路径、完全二叉树节点个数、找树左下角的值
  */
 
+import { parseTreeArray } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { TreeNode, buildTreeFromArr, renderTreeSVG } from './tree-template';
 
 /** 通用：树层数组输入解析（空串按空树处理交给 buildTreeFromArr） */
-function parseTreeInput(raw: unknown, fallback: (number | null)[]): (number | null)[] {
-  const text = String(raw ?? '').trim();
-  if (!text) return fallback;
-  try {
-    const parsed = JSON.parse(text);
-    if (Array.isArray(parsed)) return parsed.map((v) => (v === null ? null : Number(v)));
-  } catch {
-    // 逗号分隔兜底
-    return text
-      .split(/[,，\s]+/)
-      .map((s) => (s === 'null' ? null : Number.isFinite(Number(s)) ? Number(s) : null));
-  }
-  return fallback;
-}
-
 /** 通用：树 SVG 主视觉（渲染深模块 renderTreeSVG） */
 function renderTreeCanvas(
   container: HTMLElement,
@@ -146,7 +132,7 @@ registerDeclarativeAlgorithm<MinDepthStep>({
     ].join('\n'),
   },
   generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [3, 9, 20, null, null, 15, 7]));
+    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [3, 9, 20, null, null, 15, 7]));
     return buildMinDepthSteps(root).map((s) => ({
       ...s,
       metrics: {
@@ -278,7 +264,7 @@ registerDeclarativeAlgorithm<BalancedStep>({
     ].join('\n'),
   },
   generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [3, 9, 20, null, null, 15, 7]));
+    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [3, 9, 20, null, null, 15, 7]));
     return buildBalancedSteps(root).map((s) => ({
       ...s,
       metrics: {
@@ -402,7 +388,7 @@ registerDeclarativeAlgorithm<LeftLeavesStep>({
     ].join('\n'),
   },
   generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [3, 9, 20, null, null, 15, 7]));
+    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [3, 9, 20, null, null, 15, 7]));
     return buildLeftLeavesSteps(root).map((s) => ({
       ...s,
       metrics: {
@@ -544,7 +530,7 @@ registerDeclarativeAlgorithm<AllPathsStep>({
     ].join('\n'),
   },
   generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [1, 2, 3, null, 5]));
+    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [1, 2, 3, null, 5]));
     return buildAllPathsSteps(root).map((s) => ({
       ...s,
       metrics: {
@@ -666,7 +652,7 @@ registerDeclarativeAlgorithm<CountNodesStep>({
     ].join('\n'),
   },
   generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [1, 2, 3, 4, 5, 6]));
+    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [1, 2, 3, 4, 5, 6]));
     return buildCountNodesSteps(root).map((s) => ({
       ...s,
       metrics: {
@@ -801,7 +787,7 @@ registerDeclarativeAlgorithm<BottomLeftStep>({
     ].join('\n'),
   },
   generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [2, 1, 3]));
+    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [2, 1, 3]));
     return buildBottomLeftSteps(root).map((s) => ({
       ...s,
       metrics: {

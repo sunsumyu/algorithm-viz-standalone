@@ -4,6 +4,7 @@
  * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
+import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
@@ -143,15 +144,6 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
   return steps;
 }
 
-function parseTreeInput(raw: string): (number | null)[] {
-  return (raw || '4, 2, 7, 1, 3, 6, 9')
-    .split(/[,，\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
-    .filter((n) => n === null || !isNaN(n));
-}
-
 const { template, Visualizer } = createDeclarativeVisualizer<InvertStep>({
   id: 'tree-invert',
   name: '翻转二叉树',
@@ -193,7 +185,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<InvertStep>({
   analysisHtml: TREE_INVERT_ANALYSIS_HTML,
   buildSteps: (inputs) => {
     const raw = inputs['input-tree'] || '4, 2, 7, 1, 3, 6, 9';
-    const arr = parseTreeInput(raw);
+    const arr = parseTreeArray(raw, [4, 2, 7, 1, 3, 6, 9]);
     const root = buildTree(arr);
     return buildTreeInvertSteps(root);
   },

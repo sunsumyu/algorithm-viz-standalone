@@ -3,6 +3,7 @@
  * LeetCode 968：后序自底向上推导，0=无覆盖, 1=有摄像头, 2=已覆盖；贪心在叶子父节点装摄像头
  */
 
+import { parseTreeArray } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   TREE_CAMERAS_PROBLEM_HTML,
@@ -332,18 +333,6 @@ export function renderTreeCamerasCanvas(container: HTMLElement, step: CameraStep
   `;
 }
 
-function parseTreeInput(raw: string): (number | null)[] {
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed.map((v) => (v === null ? null : Number(v)));
-    }
-  } catch {
-    // fall through
-  }
-  return [0, 0, null, 0, 0];
-}
-
 registerDeclarativeAlgorithm({
   id: 'tree-cameras',
   name: '监控二叉树',
@@ -382,6 +371,6 @@ registerDeclarativeAlgorithm({
   problemHtml: TREE_CAMERAS_PROBLEM_HTML,
   analysisHtml: TREE_CAMERAS_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildTreeCameraSteps(parseTreeFromArray(parseTreeInput(String(inputs.tree ?? '[0,0,null,0,0]'))))),
+    withMetrics(buildTreeCameraSteps(parseTreeFromArray(parseTreeArray(inputs.tree, [0, 0, null, 0, 0])))),
   renderCanvas: (container, step) => renderTreeCamerasCanvas(container, step as CameraStep),
 });

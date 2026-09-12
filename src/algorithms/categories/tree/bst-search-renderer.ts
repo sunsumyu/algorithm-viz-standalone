@@ -4,6 +4,7 @@
  * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
+import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
@@ -156,15 +157,6 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
   return steps;
 }
 
-function parseTreeInput(raw: string): (number | null)[] {
-  return (raw || '4, 2, 7, 1, 3')
-    .split(/[,，\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
-    .filter((n) => n === null || !isNaN(n));
-}
-
 const { template, Visualizer } = createDeclarativeVisualizer<BSTSStep>({
   id: 'bst-search',
   name: '二叉搜索树中的搜索',
@@ -214,7 +206,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BSTSStep>({
   analysisHtml: BST_SEARCH_ANALYSIS_HTML,
   buildSteps: (inputs) => {
     const raw = inputs['input-tree'] || '4, 2, 7, 1, 3';
-    const arr = parseTreeInput(raw);
+    const arr = parseTreeArray(raw, [4, 2, 7, 1, 3]);
     const root = buildTree(arr);
     const target = parseInt(inputs['input-target'] || '2', 10);
     return buildBSTSearchSteps(root, target);

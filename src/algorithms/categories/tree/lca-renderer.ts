@@ -4,6 +4,7 @@
  * 遵循 Zero-Subbox 规范，扁平纯净沙盘
  */
 
+import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
@@ -189,15 +190,6 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
   return steps;
 }
 
-function parseTreeInput(raw: string): (number | null)[] {
-  return (raw || '3, 5, 1, 6, 2, 0, 8, null, null, 7, 4')
-    .split(/[,，\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map((s) => (s === 'null' || s === '#' ? null : parseInt(s, 10)))
-    .filter((n) => n === null || !isNaN(n));
-}
-
 const { template, Visualizer } = createDeclarativeVisualizer<LCAStep>({
   id: 'lca',
   name: '二叉树的最近公共祖先',
@@ -255,7 +247,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<LCAStep>({
   analysisHtml: LCA_ANALYSIS_HTML,
   buildSteps: (inputs) => {
     const raw = inputs['input-tree'] || '3, 5, 1, 6, 2, 0, 8, null, null, 7, 4';
-    const arr = parseTreeInput(raw);
+    const arr = parseTreeArray(raw, [3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]);
     const root = buildTree(arr);
     const p = parseInt(inputs['input-p'] || '5', 10);
     const q = parseInt(inputs['input-q'] || '1', 10);
